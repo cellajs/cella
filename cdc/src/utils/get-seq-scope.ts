@@ -1,4 +1,4 @@
-import { isProductEntity } from 'shared';
+import { hierarchy, isProductEntity } from 'shared';
 import type { TableRegistryEntry } from '../types';
 
 /** Prefix for public (org-less) entity seq keys in contextCountersTable */
@@ -6,38 +6,51 @@ export const PUBLIC_SEQ_PREFIX = 'public';
 
 /**
  * Seq scope — all sequences are stored in contextCountersTable.
- * Org-scoped entities use org ID as entityId.
- * Org-less entities use 'public:{entityType}' as entityId.
+ * Parent-scoped entities use the direct parent's ID as contextKey.
+ * Parentless entities use 'public:{entityType}' as contextKey.
  */
 export interface SeqScope {
   contextKey: string;
   column: 'seq' | 'mSeq';
-  /** Product entity type for per-entityType seq tracking within orgs (e.g. 'attachment', 'page') */
-  entityType?: string;
 }
 
 /**
  * Determine the sequence scope for an activity.
  *
- * For org-scoped product entities → increment seq on contextCountersTable (orgId)
- * For org-less product entities → increment seq on contextCountersTable (public:{type})
+ * Hierarchy-aware: uses the entity's direct parent ID as context key.
+ * For example, if attachment.parent = 'organization', key = row.organizationId.
+ * If task.parent = 'project', key = row.projectId.
+ * If page.parent = null, key = 'public:page'.
+ *
  * For membership resources → increment mSeq on contextCountersTable (orgId)
  * For other resources → null (no seq tracking)
+ *
+ * Note: Per-entityType seq (counts['s:<entityType>']) is managed by the
+ * stamp_entity_seq_at database trigger, not by CDC.
  */
 export function getSeqScope(entry: TableRegistryEntry, row: Record<string, unknown>): SeqScope | null {
-  const orgId = row.organizationId;
-  const hasOrgId = orgId && typeof orgId === 'string';
-
-  // Product entities: track seq
+  // Product entities: track seq scoped to direct parent
   if (entry.kind === 'entity' && isProductEntity(entry.type)) {
-    const contextKey = hasOrgId ? orgId : `${PUBLIC_SEQ_PREFIX}:${entry.type}`;
-    // Include entityType for org-scoped entities so CDC can track per-entityType seq in counts JSONB
-    return { contextKey, column: 'seq', entityType: hasOrgId ? entry.type : undefined };
+    const parentType = hierarchy.getParent(entry.type);
+
+    if (parentType) {
+      // Parent-scoped: use the parent's ID column (e.g., organizationId, projectId)
+      const parentIdKey = `${parentType}Id`;
+      const parentId = row[parentIdKey];
+      if (parentId && typeof parentId === 'string') {
+        return { contextKey: parentId, column: 'seq' };
+      }
+      return null; // Missing parent ID — shouldn't happen
+    }
+
+    // Parentless: use 'public:{entityType}'
+    return { contextKey: `${PUBLIC_SEQ_PREFIX}:${entry.type}`, column: 'seq' };
   }
 
   // Membership resources: track mSeq on the org's contextCounters row
   if (entry.kind === 'resource' && entry.type === 'membership') {
-    if (hasOrgId) return { contextKey: orgId, column: 'mSeq' };
+    const orgId = row.organizationId;
+    if (orgId && typeof orgId === 'string') return { contextKey: orgId, column: 'mSeq' };
     return null;
   }
 

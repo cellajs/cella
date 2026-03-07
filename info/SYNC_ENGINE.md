@@ -129,7 +129,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  │ (org-123)    │ (org-123)    │ (org-456)    │        │        │        │
 │  │  └──────┬───────┴──────────────┴──────────────┴────────┘        │        │
 │  │         │  event: change                                        │        │
-│  │         │  data: { action, entityType, entityId, seq, stx }      │        │
+│  │         │  data: { action, entityType, entityId, seq, seqAt, stx } │        │
 │  │         ▼                                                       │        │
 │  └─────────────────────────────────────────────────────────────────┘        │
 │                                                                             │
@@ -151,7 +151,8 @@ interface StreamNotification {
   entityType: string;              // 'page' | 'attachment'
   entityId: string;
   organizationId: string | null;
-  seq: number;                     // Scoped sequence for gap detection
+  seq: number;                     // Org-level sequence for gap detection
+  seqAt: number;                   // Per-entity sequence stamped by trigger (for delta fetch)
   stx: {
     id: string;                    // Mutation ID
     sourceId: string;              // Tab/instance ID for echo prevention
@@ -198,9 +199,9 @@ Unauthenticated stream for public entities (e.g., pages).
 The backend returns a summary per scope (orgId for app stream, entityType for public stream):
 ```typescript
 interface CatchupChangeSummary {
-  seq: number;            // Current max seq for this scope
+  seq: number;            // Current max seq for this scope (org-level, CDC-managed)
   deletedIds: string[];   // Entity IDs deleted since cursor
-  entitySeqs?: Record<string, number>;    // Per-entityType seqs (e.g. { attachment: 42, page: 17 })
+  entitySeqs?: Record<string, number>;    // Per-entityType seqs from context_counters counts JSONB (trigger-managed)
   deletedByType?: Record<string, string[]>; // Deleted IDs grouped by entityType
 }
 ```
@@ -209,9 +210,9 @@ The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup — fast, in connect flow before SSE opens):**
 - Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
-- Compares per-entityType `serverSeq` with stored `clientSeq`
+- Compares per-entityType `serverEntitySeq` (from trigger-managed `context_counters.counts['s:{type}']`) with stored `clientEntitySeq`
 - If creates/updates detected for an entity type → marks its list queries as stale (`invalidateEntityList(keys, 'none')`)
-- Updates stored seqs
+- Updates stored seqs (both org-level and per-entityType)
 - Catchup **never triggers refetches** — it only patches and marks staleness
 
 **Phase B (sync service — background, after SSE reaches `live`):**
@@ -290,11 +291,17 @@ Replaying the same mutation (same `stx.mutationId`) produces the same result wit
 
 Uses per-scope sequence numbers (`seq`) for **list-level gap detection**. Seq is monotonic (never decremented by deletes) and scoped per org (app stream) or per entityType (public stream).
 
+**Sequence architecture:**
+- **`seqAt`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq_at`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seqAt`. This is the source of truth for per-entityType sequences.
+- **Hierarchy-aware scoping** — The trigger reads the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
+- **`seq` / `mSeq`** — Org-level counters managed by CDC Worker's `getNextSeq()`. Used for coarse gap detection (has anything changed in this org?). The trigger does NOT touch these.
+- **`afterSeq`** — Query parameter on list endpoints. Returns entities with `seqAt > afterSeq`, enabling delta fetches instead of full list refetches.
+
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored `clientSeq` with `serverSeq` from catchup summary. The delta tells whether creates/updates happened beyond just deletes.
+1. **Catchup (offline/reconnect):** Client compares stored per-entityType `clientEntitySeq` with `serverEntitySeq` from catchup summary (sourced from trigger-managed `context_counters.counts['s:{type}']`). The delta tells whether creates/updates happened beyond just deletes.
 
-2. **Live (SSE):** Each notification includes `seq`. Client updates stored seq on each notification. On reconnect, the catchup summary comparison detects any missed changes.
+2. **Live (SSE):** Each notification includes `seq` (org-level) and `seqAt` (per-entity). Client updates stored seq on each notification. On reconnect, the catchup summary comparison detects any missed changes.
 
 **How it works:**
 ```typescript
@@ -326,13 +333,18 @@ for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
 // During live SSE — tracks both org-level and per-entityType:
 if (seq !== null && organizationId) {
   seqs[organizationId] = seq;
-  seqs[`${organizationId}:s:${entityType}`] = seq;
+}
+if (seqAt !== null) {
+  const key = `${organizationId}:s:${entityType}`;
+  if (seqAt > (seqs[key] ?? 0)) seqs[key] = seqAt;
 }
 ```
 
 **Key features:**
-- Two-level seq tracking: org-level (`orgId`) for backward compat + per-entityType (`orgId:s:attachment`) for granularity
-- CDC atomically increments both org-level `seq` column and `counts['s:{entityType}']` JSONB key in same upsert
+- Two-level seq tracking: org-level (`orgId`) for coarse gap detection + per-entityType (`orgId:s:attachment`) for granularity
+- `seqAt` on entity rows is stamped atomically by PostgreSQL trigger (`stamp_entity_seq_at`) — same trigger also updates `context_counters.counts['s:{entityType}']`
+- CDC only increments org-level `seq`/`mSeq` columns (for gap detection), not per-entityType counts
+- List endpoints support `afterSeq` query param for delta fetches (`WHERE seq_at > afterSeq`)
 - Persisted across tabs/reloads via localStorage (sync store)
 - Catchup summary provides entitySeqs + deletedByType per org — enables per-entityType processing
 - Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
@@ -612,11 +624,11 @@ The client sync cycle is a two-phase process that runs on every stream connect (
 │     │                                                                       │
 │     ▼                                                                       │
 │  Phase A: Catchup (synchronous, before SSE opens)                           │
-│     │  1. Fetch catchup summary from backend (seq + deletedIds per org)      │
+│     │  1. Fetch catchup summary from backend (seq + entitySeqs + deletes)    │
 │     │  2. Patch deletes into detail + list caches (no invalidation)          │
-│     │  3. Mark changed entity types as stale (refetchType: 'none')           │
-│     │  4. Update stored seqs                                                │
-│     │  5. Handle membership changes                                         │
+│     │  3. Compare per-entityType seqs, mark changed types stale             │
+│     │  4. Update stored seqs (org-level + per-entityType)                   │
+│     │  5. Handle membership changes (mSeq gap detection)                    │
 │     ▼                                                                       │
 │  SSE opens → offset event → state = 'live'                                  │
 │     │                                                                       │

@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, gte, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, gte, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { appConfig } from 'shared';
 import { unsafeInternalAdminDb } from '#/db/db';
@@ -36,7 +36,7 @@ const attachmentRouteHandlers = app
    * Get list of attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, limit, offset, modifiedAfter } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset, modifiedAfter, afterSeq } = ctx.req.valid('query');
 
     const organization = ctx.var.organization;
 
@@ -44,9 +44,11 @@ const attachmentRouteHandlers = app
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
-    // Delta sync filter: match entities modified OR created after the given timestamp.
-    // modifiedAt is nullable (null for never-modified entities), so also check createdAt.
-    if (modifiedAfter) {
+    // Sequence-based delta sync filter (preferred over modifiedAfter)
+    if (afterSeq !== undefined) {
+      filters.push(gt(attachmentsTable.seqAt, afterSeq));
+    } else if (modifiedAfter) {
+      // Legacy timestamp-based delta sync filter
       filters.push(
         or(
           gte(attachmentsTable.modifiedAt, modifiedAfter),

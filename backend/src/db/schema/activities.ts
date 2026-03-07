@@ -1,5 +1,5 @@
-import { desc, sql } from 'drizzle-orm';
-import { foreignKey, index, integer, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { foreignKey, index, jsonb, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import type { ActivityError } from '#/db/utils/activity-error-schema';
@@ -36,7 +36,6 @@ export const activitiesTable = pgTable(
     createdAt: timestampColumns.createdAt,
     changedKeys: jsonb().$type<string[]>(),
     stx: jsonb().$type<StxBase>(),
-    seq: integer(),
     error: jsonb().$type<ActivityError>(),
   },
   (table) => [
@@ -51,7 +50,6 @@ export const activitiesTable = pgTable(
     index('activities_stx_id_index').on(sql`(stx->>'mutationId')`),
     index('activities_error_lsn_index').on(sql`(error->>'lsn')`).where(sql`error IS NOT NULL`),
     index('activities_organization_id_index').on(table.organizationId),
-    index('activities_organization_id_seq_index').on(table.organizationId, desc(table.seq)),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [usersTable.id],

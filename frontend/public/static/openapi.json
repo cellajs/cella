@@ -581,6 +581,12 @@
               "null"
             ]
           },
+          "seqAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "stx": {
             "allOf": [
               {
@@ -609,6 +615,7 @@
           "organizationId",
           "contextType",
           "seq",
+          "seqAt",
           "stx",
           "cacheToken"
         ],
@@ -621,7 +628,8 @@
           "organizationId": "c2u05q7olzsfy1csy8m2q98f",
           "contextType": null,
           "seq": 550,
-          "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
+          "seqAt": 458,
+          "cacheToken": "yMeEcuBnWoD28KSeQr21dJgZDmxiD2Ws",
           "stx": {
             "mutationId": "g5bhj6q04ey9pbycghixqzn7",
             "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
@@ -975,14 +983,6 @@
               }
             ]
           },
-          "seq": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "minimum": -2147483648,
-            "maximum": 2147483647
-          },
           "error": {
             "anyOf": [
               {
@@ -1008,7 +1008,6 @@
           "createdAt",
           "changedKeys",
           "stx",
-          "seq",
           "error"
         ],
         "description": "An auditable event recording an entity change, used for sync and history.",
@@ -2109,6 +2108,11 @@
               }
             ]
           },
+          "seqAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -2145,6 +2149,7 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "seqAt",
           "status",
           "publicAccess",
           "parentId",
@@ -2166,9 +2171,10 @@
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+          "seqAt": 183,
           "stx": {
-            "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-            "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+            "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+            "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
             "version": 1,
             "fieldVersions": {}
           }
@@ -2275,6 +2281,11 @@
               }
             ]
           },
+          "seqAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "public": {
             "type": "boolean"
           },
@@ -2350,6 +2361,7 @@
           "keywords",
           "createdBy",
           "modifiedBy",
+          "seqAt",
           "public",
           "publicAccess",
           "bucketName",
@@ -2386,13 +2398,14 @@
           "createdBy": "0uwim8y2tppz7th9tol75wjz",
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+          "seqAt": 352,
           "stx": {
-            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+            "mutationId": "keuemouu8t58r8fuj3tlenhq",
+            "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
             "version": 1,
             "fieldVersions": {}
           },
-          "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
+          "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
         }
       },
       "Membership": {
@@ -2574,6 +2587,14 @@
             },
             "required": false,
             "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
             "in": "query"
           },
           {
@@ -7209,6 +7230,14 @@
             "required": false,
             "name": "modifiedAfter",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
           }
         ],
         "responses": {
@@ -8522,6 +8551,14 @@
           },
           {
             "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "maxLength": 50
             },
@@ -9206,6 +9243,14 @@
             "required": false,
             "name": "modifiedAfter",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
           }
         ],
         "responses": {
@@ -9248,9 +9293,10 @@
                       "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "seqAt": 448,
                       "stx": {
-                        "mutationId": "wze7f9laxgipngemr8sw32uu",
-                        "sourceId": "src_t4knu3429mt5fozr7xnl9ep5",
+                        "mutationId": "ze7f9laxgipngemr8sw32uut",
+                        "sourceId": "src_4knu3429mt5fozr7xnl9ep5i",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9270,9 +9316,10 @@
                       "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "seqAt": 393,
                       "stx": {
-                        "mutationId": "s5f7pbd9n5lo3trj7zs5tm52",
-                        "sourceId": "src_k08c1clt9dndbazjnqfpde0y",
+                        "mutationId": "5f7pbd9n5lo3trj7zs5tm52k",
+                        "sourceId": "src_08c1clt9dndbazjnqfpde0yh",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9350,9 +9397,10 @@
                   "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "seqAt": 183,
                   "stx": {
-                    "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-                    "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+                    "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+                    "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
                     "version": 1,
                     "fieldVersions": {}
                   }
@@ -9492,9 +9540,10 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "seqAt": 414,
                       "stx": {
-                        "mutationId": "tv7c2iwkoinaqza4bosjduty",
-                        "sourceId": "src_ik5h0xu5y768gn5ffv4gc3q4",
+                        "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                        "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9514,9 +9563,10 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "seqAt": 376,
                       "stx": {
-                        "mutationId": "rf755ogeuz554svbh4529ky7",
-                        "sourceId": "src_g0a1z7lt0jg9k2qywaejzjku",
+                        "mutationId": "f755ogeuz554svbh4529ky7g",
+                        "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9580,9 +9630,10 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "seqAt": 414,
                       "stx": {
-                        "mutationId": "tv7c2iwkoinaqza4bosjduty",
-                        "sourceId": "src_ik5h0xu5y768gn5ffv4gc3q4",
+                        "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                        "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9602,9 +9653,10 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "seqAt": 376,
                       "stx": {
-                        "mutationId": "rf755ogeuz554svbh4529ky7",
-                        "sourceId": "src_g0a1z7lt0jg9k2qywaejzjku",
+                        "mutationId": "f755ogeuz554svbh4529ky7g",
+                        "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                         "version": 1,
                         "fieldVersions": {}
                       }
@@ -9905,9 +9957,10 @@
                   "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
                   "modifiedAt": "2024-08-06T10:28:33.226Z",
                   "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
+                  "seqAt": 183,
                   "stx": {
-                    "mutationId": "ddpjr10hjxeiyafi3dyq5b0b",
-                    "sourceId": "src_n6oc3kzaq1t0rhuibm65boac",
+                    "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+                    "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
                     "version": 1,
                     "fieldVersions": {}
                   }
@@ -10015,6 +10068,14 @@
             },
             "required": false,
             "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
             "in": "query"
           },
           {
@@ -10417,6 +10478,14 @@
             "required": false,
             "name": "modifiedAfter",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
           }
         ],
         "responses": {
@@ -10466,13 +10535,14 @@
                       "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
                       "modifiedAt": "2024-11-21T04:00:59.122Z",
                       "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
+                      "seqAt": 444,
                       "stx": {
-                        "mutationId": "vx9cfyey6mqh9hmikgme3gy3",
-                        "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
+                        "mutationId": "x9cfyey6mqh9hmikgme3gy3a",
+                        "sourceId": "src_9lhe0ctrmzc53x7z222ydtq5",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "57iu31mz5oaqf10oe7y51pr5"
+                      "organizationId": "7iu31mz5oaqf10oe7y51pr5l"
                     },
                     {
                       "id": "yahbgyu01sr6utecq3o02wpa",
@@ -10496,13 +10566,14 @@
                       "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                       "modifiedAt": "2024-10-29T08:46:20.790Z",
                       "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
+                      "seqAt": 290,
                       "stx": {
-                        "mutationId": "k6bwmvl0e44bpmhsyauxcwuw",
-                        "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
+                        "mutationId": "6bwmvl0e44bpmhsyauxcwuwj",
+                        "sourceId": "src_srzvzac8qx1h9s6vzhgvcj0r",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "rs3xtuk03gxco9kzp2r8sr1z"
+                      "organizationId": "s3xtuk03gxco9kzp2r8sr1z8"
                     }
                   ],
                   "total": 2
@@ -10716,13 +10787,14 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "seqAt": 155,
                       "stx": {
-                        "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
-                        "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                        "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
+                        "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
+                      "organizationId": "njjhhc4mupuqz0iqmny8wdl2"
                     },
                     {
                       "id": "pxxbqdej8622zpgo54qw5fqo",
@@ -10746,13 +10818,14 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "seqAt": 476,
                       "stx": {
-                        "mutationId": "y4dvzpz75e03ldr2ga54hj92",
-                        "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                        "mutationId": "4dvzpz75e03ldr2ga54hj92y",
+                        "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
+                      "organizationId": "81k5rbzt4yq63pob5r5tp1lp"
                     }
                   ],
                   "rejectedItemIds": []
@@ -10820,13 +10893,14 @@
                       "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
                       "modifiedAt": "2024-04-19T14:04:35.773Z",
                       "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
+                      "seqAt": 155,
                       "stx": {
-                        "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
-                        "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                        "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
+                        "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "rnjjhhc4mupuqz0iqmny8wdl"
+                      "organizationId": "njjhhc4mupuqz0iqmny8wdl2"
                     },
                     {
                       "id": "pxxbqdej8622zpgo54qw5fqo",
@@ -10850,13 +10924,14 @@
                       "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
                       "modifiedAt": "2024-02-25T13:01:35.301Z",
                       "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
+                      "seqAt": 476,
                       "stx": {
-                        "mutationId": "y4dvzpz75e03ldr2ga54hj92",
-                        "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                        "mutationId": "4dvzpz75e03ldr2ga54hj92y",
+                        "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
                         "version": 1,
                         "fieldVersions": {}
                       },
-                      "organizationId": "q81k5rbzt4yq63pob5r5tp1l"
+                      "organizationId": "81k5rbzt4yq63pob5r5tp1lp"
                     }
                   ],
                   "rejectedItemIds": []
@@ -11179,13 +11254,14 @@
                   "createdBy": "0uwim8y2tppz7th9tol75wjz",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+                  "seqAt": 352,
                   "stx": {
-                    "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-                    "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+                    "mutationId": "keuemouu8t58r8fuj3tlenhq",
+                    "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
                     "version": 1,
                     "fieldVersions": {}
                   },
-                  "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
+                  "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
                 }
               }
             }
@@ -11351,13 +11427,14 @@
                   "createdBy": "0uwim8y2tppz7th9tol75wjz",
                   "modifiedAt": "2024-10-12T17:43:05.360Z",
                   "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
+                  "seqAt": 352,
                   "stx": {
-                    "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-                    "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+                    "mutationId": "keuemouu8t58r8fuj3tlenhq",
+                    "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
                     "version": 1,
                     "fieldVersions": {}
                   },
-                  "organizationId": "7eswx7d6csd6xo4nqwl7k09e"
+                  "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
                 }
               }
             }
@@ -12057,6 +12134,14 @@
           },
           {
             "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "maxLength": 50
             },
@@ -12338,6 +12423,14 @@
             },
             "required": false,
             "name": "modifiedAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
             "in": "query"
           },
           {

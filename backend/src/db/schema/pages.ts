@@ -24,6 +24,7 @@ export const pagesTable = pgTable(
   },
   (table) => [
     index('pages_tenant_id_idx').on(table.tenantId),
+    index('pages_seq_at_idx').on(table.seqAt),
     unique('pages_group_order').on(table.parentId, table.displayOrder),
     ...publicAccessCrudPolicies('pages', table),
   ],
