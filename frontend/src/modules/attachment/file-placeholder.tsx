@@ -34,6 +34,6 @@ interface Props {
 }
 
 export function FilePlaceholder({ contentType, iconSize = 20, strokeWidth = 1.5, className }: Props) {
-  const Icon = getFileIcon(contentType);
-  return <Icon size={iconSize} strokeWidth={strokeWidth} className={className} />;
+  const FileIconComponent = getFileIcon(contentType);
+  return <FileIconComponent size={iconSize} strokeWidth={strokeWidth} className={className} />;
 }

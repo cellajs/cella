@@ -1,0 +1,13 @@
+Rule: react-hooks-js/purity
+Severity: error
+Category: React Compiler
+Count: 1
+
+React Compiler can't optimize this code
+
+Suggestion: Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+Files:
+  src/modules/ui/sidebar.tsx: 486

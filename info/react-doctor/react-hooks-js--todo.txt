@@ -1,0 +1,21 @@
+Rule: react-hooks-js/todo
+Severity: error
+Category: React Compiler
+Count: 12
+
+React Compiler can't optimize this code
+
+Suggestion: Todo: (BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause
+
+Files:
+  src/modules/auth/mfa-page.tsx: 28
+  src/modules/ui/calendar.tsx: 26, 27
+  src/modules/ui/combobox.tsx: 42
+  src/modules/common/data-grid/tree-data-grid.tsx: 179
+  src/hooks/use-auto-save.tsx: 70
+  src/modules/common/uploader/use-uppy-upload.tsx: 98
+  src/modules/attachment/delete-attachments.tsx: 25
+  src/modules/common/blocknote/block-note-editor.tsx: 96
+  src/modules/tenants/table/tenants-bar.tsx: 62
+  src/modules/docs/code-viewer.tsx: 22
+  src/modules/common/root.tsx: 18

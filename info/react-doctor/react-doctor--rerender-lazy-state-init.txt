@@ -1,0 +1,13 @@
+Rule: react-doctor/rerender-lazy-state-init
+Severity: warning
+Category: Performance
+Count: 3
+
+useState(isOnline()) calls initializer on every render — use useState(() => isOnline()) for lazy initialization
+
+Suggestion: Wrap in an arrow function so it only runs once: `useState(() => expensiveComputation())`
+
+Files:
+  src/hooks/use-online-manager.tsx: 12
+  src/modules/ui/stories/date-picker.stories.tsx: 114
+  src/modules/common/form-fields/domains.tsx: 27

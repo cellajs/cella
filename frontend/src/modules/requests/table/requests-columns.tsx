@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from '~/api.gen';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -10,72 +10,68 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<Request>[] = [
-      CheckboxColumn,
-      {
-        key: 'type',
-        name: t('common:request_type'),
-        sortable: true,
-        resizable: true,
-        width: 160,
-        renderCell: ({ row: { type, wasInvited } }) => (
-          <div className="flex flew-row gap-2 items-center">
-            {t(`common:${type}`)}
-            {type === 'waitlist' && (
-              <TooltipButton
-                toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)}
-                disabled={type !== 'waitlist'}
-              >
-                <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />
-              </TooltipButton>
-            )}
-          </div>
-        ),
-      },
-      {
-        key: 'email',
-        name: t('common:email'),
-        sortable: false,
-        resizable: true,
-        minWidth: 120,
-        renderCell: ({ row, tabIndex }) => {
-          return (
-            <a
-              href={`mailto:${row.email}`}
-              tabIndex={tabIndex}
-              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+  const columns: ColumnOrColumnGroup<Request>[] = [
+    CheckboxColumn,
+    {
+      key: 'type',
+      name: t('common:request_type'),
+      sortable: true,
+      resizable: true,
+      width: 160,
+      renderCell: ({ row: { type, wasInvited } }) => (
+        <div className="flex flew-row gap-2 items-center">
+          {t(`common:${type}`)}
+          {type === 'waitlist' && (
+            <TooltipButton
+              toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)}
+              disabled={type !== 'waitlist'}
             >
-              {row.email || <span className="text-muted">-</span>}
-            </a>
-          );
-        },
+              <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />
+            </TooltipButton>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      name: t('common:email'),
+      sortable: false,
+      resizable: true,
+      minWidth: 120,
+      renderCell: ({ row, tabIndex }) => {
+        return (
+          <a
+            href={`mailto:${row.email}`}
+            tabIndex={tabIndex}
+            className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+          >
+            {row.email || <span className="text-muted">-</span>}
+          </a>
+        );
       },
-      {
-        key: 'message',
-        name: t('common:message'),
-        minBreakpoint: 'md',
-        sortable: false,
-        resizable: true,
-        minWidth: 200,
-        placeholderValue: '-',
-        renderCell: ({ row }) =>
-          row.message ? <span className="font-light whitespace-pre-line leading-5">{row.message}</span> : null,
-      },
-      {
-        key: 'createdAt',
-        name: t('common:created_at'),
-        sortable: true,
-        minBreakpoint: 'md',
-        resizable: true,
-        width: 180,
-        placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.createdAt),
-      },
-    ];
-
-    return cols;
-  }, []);
+    },
+    {
+      key: 'message',
+      name: t('common:message'),
+      minBreakpoint: 'md',
+      sortable: false,
+      resizable: true,
+      minWidth: 200,
+      placeholderValue: '-',
+      renderCell: ({ row }) =>
+        row.message ? <span className="font-light whitespace-pre-line leading-5">{row.message}</span> : null,
+    },
+    {
+      key: 'createdAt',
+      name: t('common:created_at'),
+      sortable: true,
+      minBreakpoint: 'md',
+      resizable: true,
+      width: 180,
+      placeholderValue: '-',
+      renderCell: ({ row }) => dateShort(row.createdAt),
+    },
+  ];
 
   return useState<ColumnOrColumnGroup<Request>[]>(columns);
 };

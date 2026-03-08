@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import zxcvbn from 'zxcvbn';
 
 interface PasswordStrengthProps {
@@ -15,12 +14,7 @@ function PasswordStrength({
   barColors = ['#cccccc30', '#ef4836', '#f6b44d', '#2b90ef', '#25c281'],
   minLength = 4,
 }: PasswordStrengthProps) {
-  const [score, setScore] = useState(0);
-
-  useEffect(() => {
-    const result = zxcvbn(password, userInputs);
-    setScore(result.score);
-  }, [password]);
+  const score = zxcvbn(password, userInputs).score;
 
   return (
     <div

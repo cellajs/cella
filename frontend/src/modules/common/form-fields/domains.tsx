@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
@@ -24,7 +24,7 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
   const { getValues } = useFormContext();
   const formValue = getValues(name);
 
-  const [domains, setDomains] = useState<string[]>(formValue.map((dom: string) => dom));
+  const domains: string[] = formValue.map((dom: string) => dom);
   const [currentValue, setCurrentValue] = useState('');
 
   // Validate input while typing
@@ -37,8 +37,6 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
   const checkValidDomain = (domain: string) => {
     return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
   };
-
-  useEffect(() => setDomains(formValue.map((dom: string) => dom)), [formValue]);
 
   return (
     <FormField
@@ -58,7 +56,6 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
                 onInputChange={(newValue) => setCurrentValue(newValue)}
                 onBlur={() => {
                   if (checkValidDomain(currentValue)) {
-                    setDomains((prev) => [...prev, currentValue]);
                     onChange([...domains, currentValue]);
                   }
                   setCurrentValue('');
@@ -68,7 +65,6 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
                 placeholder={t('common:placeholder.email_domains')}
                 tags={domains}
                 setTags={(newTags) => {
-                  setDomains(newTags);
                   if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag));
                   setCurrentValue('');
                 }}

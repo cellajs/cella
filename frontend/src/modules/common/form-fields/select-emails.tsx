@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { TagInput, type TagInputProps } from '~/modules/ui/tag-input';
 import { isEmail } from '~/utils/is-email';
 
@@ -41,12 +40,7 @@ export const SelectEmails = ({
   delimiter = defaultEmailDelimiter,
   ...tagInputProps
 }: SelectEmailsProps) => {
-  const [tags, setTags] = useState<string[]>(emails ?? []);
-
-  // Sync external emails prop with internal state
-  useEffect(() => {
-    if (emails) setTags(emails);
-  }, [emails]);
+  const tags = emails ?? [];
 
   /** Validates email format, optionally allowing display name format */
   const validateEmail = (value: string): boolean => {
@@ -56,26 +50,23 @@ export const SelectEmails = ({
 
   /** Handles tag changes, applies email extraction and duplicate filtering */
   const handleSetTags: React.Dispatch<React.SetStateAction<string[]>> = (newTagsOrFn) => {
-    setTags((prevTags) => {
-      const newTags = typeof newTagsOrFn === 'function' ? newTagsOrFn(prevTags) : newTagsOrFn;
+    const newTags = typeof newTagsOrFn === 'function' ? newTagsOrFn(tags) : newTagsOrFn;
 
-      // Process tags: extract emails if needed
-      let processedTags = stripDisplayName ? newTags.map((tag) => extractEmail(tag, true)) : newTags;
+    // Process tags: extract emails if needed
+    let processedTags = stripDisplayName ? newTags.map((tag) => extractEmail(tag, true)) : newTags;
 
-      // Filter duplicates unless allowed
-      if (!allowDuplicate) {
-        const seen = new Set<string>();
-        processedTags = processedTags.filter((email) => {
-          const lower = email.toLowerCase();
-          if (seen.has(lower)) return false;
-          seen.add(lower);
-          return true;
-        });
-      }
+    // Filter duplicates unless allowed
+    if (!allowDuplicate) {
+      const seen = new Set<string>();
+      processedTags = processedTags.filter((email) => {
+        const lower = email.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
+    }
 
-      onChange?.(processedTags);
-      return processedTags;
-    });
+    onChange?.(processedTags);
   };
 
   return (

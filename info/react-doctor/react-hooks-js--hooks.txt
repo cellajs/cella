@@ -1,0 +1,29 @@
+Rule: react-hooks-js/hooks
+Severity: error
+Category: React Compiler
+Count: 24
+
+React Compiler can't optimize this code
+
+Suggestion: Error: Hooks may not be referenced as normal values, they must be called. See https://react.dev/reference/rules/react-calls-components-and-hooks#never-pass-around-hooks-as-regular-values
+
+Files:
+  src/modules/me/mfa/switch.tsx: 11
+  src/modules/user/user-cell.tsx: 27
+  src/modules/me/passkeys/list.tsx: 14
+  src/modules/user/invite-search-form.tsx: 26, 27
+  src/modules/me/totp.tsx: 16
+  src/modules/common/sheeter/drawer.tsx: 11
+  src/modules/common/focus-view.tsx: 22
+  src/modules/common/data-table/export.tsx: 31
+  src/modules/common/themer.tsx: 41, 42
+  src/modules/common/page/header.tsx: 41
+  src/modules/common/country-flag.tsx: 21
+  src/modules/navigation/menu-sheet/section.tsx: 32
+  src/modules/navigation/app-search.tsx: 78
+  src/modules/common/blocknote/custom-side-menu/side-menu.tsx: 23, 24
+  src/modules/docs/operations/operation-detail.tsx: 91
+  src/modules/me/account-page.tsx: 49
+  src/modules/memberships/pending-memberships-count.tsx: 24
+  src/modules/page/table/pages-columns.tsx: 81
+  src/modules/common/devtools/sync-devtools.tsx: 419, 425, 428

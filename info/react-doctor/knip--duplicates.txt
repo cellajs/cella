@@ -1,0 +1,13 @@
+Rule: knip/duplicates
+Severity: warning
+Category: Dead Code
+Count: 15
+
+Duplicate export: zMe|zGetMeResponse
+
+Files:
+  src/api.gen/zod.gen.ts
+  vite/openapi-parser/plugin.ts
+  src/modules/common/gleap-support.tsx
+  src/modules/memberships/pending-table/pending-memberships-table.tsx
+  src/modules/common/data-table/table-filter-bar.tsx

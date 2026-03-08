@@ -1,0 +1,21 @@
+Rule: react-doctor/no-render-in-render
+Severity: warning
+Category: Architecture
+Count: 14
+
+Inline render function "renderOption()" — extract to a separate component for proper reconciliation
+
+Suggestion: Extract to a named component: `const ListItem = ({ item }) => <div>{item.name}</div>`
+
+Files:
+  src/modules/ui/combobox.tsx: 113, 165
+  src/modules/docs/sidebar/collapsible-tag-item.tsx: 118
+  src/modules/common/data-grid/edit-cell.tsx: 182
+  src/modules/common/data-grid/sort-status.tsx: 6, 7
+  src/modules/common/sheet-tabs.tsx: 49
+  src/modules/common/stepper/vertical-step.tsx: 168
+  src/modules/common/data-grid/render-header-cell.tsx: 24
+  src/modules/common/data-grid/data-grid.tsx: 1287
+  src/modules/common/expandable-list.tsx: 46
+  src/modules/common/data-grid/cell.tsx: 121
+  src/modules/marketing/nav.tsx: 98, 137

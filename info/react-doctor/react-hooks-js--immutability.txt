@@ -1,0 +1,14 @@
+Rule: react-hooks-js/immutability
+Severity: error
+Category: React Compiler
+Count: 4
+
+React Compiler can't optimize this code
+
+Suggestion: Error: Cannot access variable before it is declared
+
+`cancelTask` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+Files:
+  src/modules/common/data-grid/edit-cell.tsx: 104, 65
+  src/modules/common/data-grid/data-grid.tsx: 692, 558

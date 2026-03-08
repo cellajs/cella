@@ -15,6 +15,13 @@ interface FocusViewProps {
   iconOnly?: boolean;
 }
 
+interface FocusViewContainerProps {
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+}
+
+/** Button to toggle focus view mode, which hides non-essential UI elements for a more immersive experience. */
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { t } = useTranslation();
   const { focusView, setFocusView } = useUIStore();
@@ -39,17 +46,20 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   );
 };
 
-export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+/** Container that applies focus view styles when focus view mode is active. Should wrap the main content of the page. */
+export const FocusViewContainer = ({ children, className = '', disabled }: FocusViewContainerProps) => {
   const focusView = useUIStore((state) => state.focusView);
 
-  useBodyClass({ 'focus-view': focusView });
+  const isActive = focusView && !disabled;
+
+  useBodyClass({ 'focus-view': isActive });
 
   return (
     <div
       className={cn(
         'focus-view-container container min-h-screen flex flex-col pt-3 gap-2',
         className,
-        focusView ? 'w-full max-w-none min-w-full min-h-full' : '',
+        isActive ? 'w-full max-w-none min-w-full min-h-full' : '',
       )}
     >
       {children}

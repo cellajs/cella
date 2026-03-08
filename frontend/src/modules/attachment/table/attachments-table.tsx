@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
@@ -13,6 +13,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 
@@ -44,18 +45,22 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
   const columnsFromHook = useColumns(contextEntity, isSheet, isCompact);
-  const [columns, setColumns] = useState(columnsFromHook);
-  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
-
-  // Sync columns when isCompact changes (preserve hidden settings)
-  useEffect(() => {
-    setColumns((prev) =>
+  const hiddenOverrides = useRef<Record<string, boolean>>({});
+  const columns = useMemo(
+    () =>
       columnsFromHook.map((col) => ({
         ...col,
-        hidden: prev.find((p) => p.key === col.key)?.hidden ?? col.hidden,
+        hidden: hiddenOverrides.current[col.key] ?? col.hidden,
       })),
-    );
-  }, [isCompact]);
+    [columnsFromHook],
+  );
+  const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
+    const newCols = typeof updater === 'function' ? updater(columns) : updater;
+    for (const col of newCols) {
+      if (col.hidden !== undefined) hiddenOverrides.current[col.key] = col.hidden;
+    }
+  };
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = attachmentsListQueryOptions({
     tenantId: contextEntity.tenantId,

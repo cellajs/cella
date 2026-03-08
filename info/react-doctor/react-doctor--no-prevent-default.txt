@@ -1,0 +1,11 @@
+Rule: react-doctor/no-prevent-default
+Severity: warning
+Category: Correctness
+Count: 1
+
+preventDefault() on <a> onClick — use a <button> or routing component instead
+
+Suggestion: Use `<form action={serverAction}>` (works without JS) or `<button>` instead of `<a>` with preventDefault
+
+Files:
+  src/modules/common/stories/data-grid.stories.tsx: 211

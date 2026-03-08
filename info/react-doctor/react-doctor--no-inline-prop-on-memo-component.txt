@@ -1,0 +1,9 @@
+Rule: react-doctor/no-inline-prop-on-memo-component
+Severity: warning
+Category: Other
+Count: 1
+
+JSX attribute values should not contain Arrays created in the same scope — JsonNode is wrapped in memo(), so new references cause unnecessary re-renders
+
+Files:
+  src/modules/docs/json-viewer/json-node.tsx: 422

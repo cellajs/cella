@@ -1,0 +1,23 @@
+Rule: jsx-a11y/no-autofocus
+Severity: warning
+Category: Accessibility
+Count: 15
+
+The `autoFocus` attribute is found here, which can cause usability issues for sighted and non-sighted users.
+
+Suggestion: Remove the `autoFocus` attribute.
+
+Files:
+  src/modules/auth/totp-verify-code-form.tsx: 57
+  src/modules/system/create-newsletter-form.tsx: 113
+  src/modules/auth/steps/sign-up.tsx: 124, 146
+  src/modules/requests/waitlist-form.tsx: 94
+  src/modules/auth/steps/sign-in.tsx: 150, 171
+  src/modules/auth/steps/check-email.tsx: 83
+  src/modules/docs/operations/operations-table/operations-columns.tsx: 193
+  src/modules/auth/request-password-form.tsx: 45
+  src/modules/auth/create-password-page.tsx: 99
+  src/modules/attachment/table/attachments-columns.tsx: 65
+  src/modules/common/form-fields/blocknote.tsx: 49
+  src/modules/common/form-fields/input.tsx: 91
+  src/modules/page/update-page-form.tsx: 161

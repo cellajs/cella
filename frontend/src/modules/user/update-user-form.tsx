@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -51,13 +50,10 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   const updateUser = useUserUpdateMutation();
   const isPending = updateSelf.isPending || updateUser.isPending;
 
-  const formOptions: UseFormProps<FormValues> = useMemo(
-    () => ({
-      resolver: zodResolver(formSchema),
-      defaultValues: user,
-    }),
-    [],
-  );
+  const formOptions: UseFormProps<FormValues> = {
+    resolver: zodResolver(formSchema),
+    defaultValues: user,
+  };
 
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });

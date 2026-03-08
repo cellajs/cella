@@ -1,0 +1,33 @@
+Rule: knip/files
+Severity: warning
+Category: Dead Code
+Count: 23
+
+Unused file
+
+Suggestion: This file is not imported by any other file in the project.
+
+Files:
+  vitest.shims.d.ts
+  src/hooks/use-double-click.tsx
+  src/hooks/use-offline-table-search.tsx
+  src/query/index.ts
+  src/utils/clean-url.ts
+  src/utils/date-is-recent.ts
+  src/utils/date-mini.ts
+  src/utils/get-nested-value.ts
+  src/utils/hex-to-hsl.ts
+  src/utils/sanitize-url.ts
+  src/utils/wait-for.ts
+  src/modules/common/board-column.tsx
+  src/modules/common/board-layout.tsx
+  src/modules/common/board-ui.ts
+  src/modules/common/debug-toolbars.tsx
+  src/modules/organization/subscription.tsx
+  src/query/realtime/sync-service.ts
+  src/modules/attachment/table/sync-status-cell.tsx
+  src/modules/common/data-table/toggle-expand.tsx
+  src/modules/marketing/about/counters.tsx
+  src/modules/marketing/about/faq.tsx
+  src/modules/page/utils/mutations.ts
+  src/modules/common/form-fields/select-combobox/parent.tsx

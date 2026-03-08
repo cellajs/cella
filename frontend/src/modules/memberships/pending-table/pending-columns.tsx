@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingMembership } from '~/modules/memberships/types';
@@ -8,63 +8,59 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<PendingMembership>[] = [
-      {
-        key: 'email',
-        name: t('common:email'),
-        sortable: false,
-        minWidth: 140,
-        placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) => {
-          if (!row.email) return null;
-          return (
-            <a
-              href={`mailto:${row.email}`}
-              tabIndex={tabIndex}
-              className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
-            >
-              {row.email}
-            </a>
-          );
-        },
+  const columns: ColumnOrColumnGroup<PendingMembership>[] = [
+    {
+      key: 'email',
+      name: t('common:email'),
+      sortable: false,
+      minWidth: 140,
+      placeholderValue: '-',
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.email) return null;
+        return (
+          <a
+            href={`mailto:${row.email}`}
+            tabIndex={tabIndex}
+            className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+          >
+            {row.email}
+          </a>
+        );
       },
-      {
-        key: 'role',
-        name: t('common:role'),
-        sortable: false,
-        width: 100,
-        placeholderValue: '-',
-        renderCell: ({ row }) =>
-          row.role ? (
-            <div className="inline-flex items-center gap-1 relative group h-full w-full">
-              {t(row.role, { ns: ['app', 'common'] })}
-            </div>
-          ) : null,
-      },
-      {
-        key: 'createdAt',
-        name: t('common:invited_at'),
-        sortable: true,
-        minBreakpoint: 'md',
-        placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.createdAt),
-        minWidth: 80,
-      },
-      {
-        key: 'createdBy',
-        name: t('common:invited_by'),
-        sortable: false,
-        minBreakpoint: 'md',
-        minWidth: 80,
-        placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) =>
-          row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
-      },
-    ];
-
-    return cols;
-  }, []);
+    },
+    {
+      key: 'role',
+      name: t('common:role'),
+      sortable: false,
+      width: 100,
+      placeholderValue: '-',
+      renderCell: ({ row }) =>
+        row.role ? (
+          <div className="inline-flex items-center gap-1 relative group h-full w-full">
+            {t(row.role, { ns: ['app', 'common'] })}
+          </div>
+        ) : null,
+    },
+    {
+      key: 'createdAt',
+      name: t('common:invited_at'),
+      sortable: true,
+      minBreakpoint: 'md',
+      placeholderValue: '-',
+      renderCell: ({ row }) => dateShort(row.createdAt),
+      minWidth: 80,
+    },
+    {
+      key: 'createdBy',
+      name: t('common:invited_by'),
+      sortable: false,
+      minBreakpoint: 'md',
+      minWidth: 80,
+      placeholderValue: '-',
+      renderCell: ({ row, tabIndex }) =>
+        row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+    },
+  ];
 
   return useState<ColumnOrColumnGroup<PendingMembership>[]>(columns);
 };

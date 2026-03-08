@@ -21,7 +21,7 @@ export const Sheeter = () => {
   const isMobile = useBreakpointBelow('sm');
   const sheets = useSheeter((state) => state.sheets);
   // Mode string used in keys to force clean remount when crossing breakpoint,
-  // ensuring Vaul/Radix overlays are properly destroyed and recreated
+  // ensuring overlays are properly destroyed and recreated
   const mode = isMobile ? 'drawer' : 'sheet';
   const { lockUI, unlockUI } = useUIStore();
 

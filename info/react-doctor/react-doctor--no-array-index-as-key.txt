@@ -1,0 +1,23 @@
+Rule: react-doctor/no-array-index-as-key
+Severity: warning
+Category: Correctness
+Count: 14
+
+Array index "index" used as key — causes bugs when list is reordered or filtered
+
+Suggestion: Use a stable unique identifier: `key={item.id}` or `key={item.slug}` — index keys break on reorder/filter
+
+Files:
+  src/modules/ui/stories/card.stories.tsx: 41
+  src/modules/ui/combobox.tsx: 157
+  src/modules/common/text-effect.tsx: 35
+  src/modules/ui/slider.tsx: 45
+  src/modules/ui/fields.tsx: 208
+  src/modules/common/board-column.tsx: 100, 114
+  src/modules/ui/stories/avatar-group.stories.tsx: 49
+  src/modules/common/data-grid/grouped-column-header-row.tsx: 39
+  src/modules/common/data-grid/data-grid.tsx: 1256
+  src/modules/common/expandable-list.tsx: 38
+  src/modules/ui/stories/totp.stories.tsx: 254
+  src/modules/docs/json-viewer/json-node.tsx: 346
+  src/modules/docs/json-viewer/utils.tsx: 140

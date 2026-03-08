@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { InfoIcon, SendIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -37,13 +37,10 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
 
   const [testOnly, setTestOnly] = useState<boolean>(false);
 
-  const formOptions: UseFormProps<FormValues> = useMemo(
-    () => ({
-      resolver: zodResolver(formSchema),
-      defaultValues: { organizationIds, subject: '', roles: [], content: '' },
-    }),
-    [],
-  );
+  const formOptions: UseFormProps<FormValues> = {
+    resolver: zodResolver(formSchema),
+    defaultValues: { organizationIds, subject: '', roles: [], content: '' },
+  };
 
   // Create form
   const formContainerId = 'create-newsletter';

@@ -1,0 +1,19 @@
+Rule: jsx-a11y/click-events-have-key-events
+Severity: warning
+Category: Accessibility
+Count: 9
+
+Enforce a clickable non-interactive element has at least one keyboard event listener.
+
+Suggestion: Visible, non-interactive elements with click handlers must have one of `keyup`, `keydown`, or `keypress` listener.
+
+Files:
+  src/modules/ui/tag-input.tsx: 277
+  src/modules/ui/input-group.tsx: 60
+  src/modules/common/stepper/horizontal-step.tsx: 49
+  src/modules/common/data-grid/group-cell.tsx: 42
+  src/modules/common/data-grid/cell.tsx: 102
+  src/modules/docs/json-viewer/json-node.tsx: 369
+  src/modules/docs/json-viewer/primitive-value.tsx: 120
+  src/modules/common/blocknote/static-view.tsx: 142
+  src/modules/attachment/render/image-viewer.tsx: 115

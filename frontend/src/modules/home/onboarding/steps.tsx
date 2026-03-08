@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { XIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/api.gen';
 import { useMountedState } from '~/hooks/use-mounted-state';
@@ -30,7 +30,6 @@ export function Onboarding({ onboarding = 'start', setOnboardingState }: Onboard
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 
-  const [steps, setSteps] = useState(onboardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
 
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
@@ -40,9 +39,7 @@ export function Onboarding({ onboarding = 'start', setOnboardingState }: Onboard
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 
-  useEffect(() => {
-    if (hasOrganizations) setSteps([onboardingSteps[0]]);
-  }, [hasOrganizations]);
+  const steps = hasOrganizations ? [onboardingSteps[0]] : onboardingSteps;
 
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">

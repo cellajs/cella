@@ -52,10 +52,10 @@ function TenantsTable() {
   });
 
   // isFetching already includes next page fetch scenario
-  const fetchMore = useCallback(async () => {
+  const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();
-  }, [hasNextPage, isLoading, isFetching]);
+  };
 
   // Memoize callback to prevent unnecessary re-renders
   const onSelectedRowsChange = useCallback(

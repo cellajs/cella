@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MailIcon, MessageSquareIcon, SendIcon, UserIcon } from 'lucide-react';
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -28,13 +28,10 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
 
   type FormValues = z.infer<typeof formSchema>;
 
-  const formOptions: UseFormProps<FormValues> = useMemo(
-    () => ({
-      resolver: zodResolver(formSchema),
-      defaultValues: { name: user?.name ?? '', email: user?.email ?? '', message: '', type: 'contact' },
-    }),
-    [],
-  );
+  const formOptions: UseFormProps<FormValues> = {
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: user?.name ?? '', email: user?.email ?? '', message: '', type: 'contact' },
+  };
 
   const form = useFormWithDraft<FormValues>('contact-form', { formOptions });
 

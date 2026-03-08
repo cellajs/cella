@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { CheckIcon, ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { ContextEntityBase } from '~/api.gen';
@@ -43,13 +43,10 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
     });
   };
 
-  const handleSetActive = useCallback(
-    (item: string) => {
-      if (selected.includes(item)) return handleUnselect(item);
-      setSelected((prevSelected) => [...prevSelected, item]);
-    },
-    [selected],
-  );
+  const handleSetActive = (item: string) => {
+    if (selected.includes(item)) return handleUnselect(item);
+    setSelected((prevSelected) => [...prevSelected, item]);
+  };
 
   const onSelect = (item: string) => {
     handleSetActive(item);

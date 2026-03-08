@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { nanoid } from 'shared/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
@@ -20,7 +20,7 @@ interface SchemasSidebarProps {
 
 /** Sidebar listing schema tags with their schemas. */
 export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
-  const layoutId = useRef(nanoid()).current;
+  const [layoutId] = useState(() => nanoid());
   const { prerender } = usePrerenderTrigger('schemas');
 
   const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);

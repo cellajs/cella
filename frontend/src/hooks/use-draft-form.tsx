@@ -60,7 +60,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
 
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [loading, setLoading] = useState(true);
   const isResetting = useRef(false);
 
@@ -86,7 +85,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     const current = JSON.stringify(allFields);
     const original = JSON.stringify(defaultValues);
     // Form is reset to default values, clear the draft
-    if (current === original && unsavedChanges) {
+    if (current === original && isDirty) {
       resetDraftForm(formId);
       form.reset();
       return;
@@ -100,7 +99,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   // Update dirty state UI, flag, and store
   useEffect(() => {
-    setUnsavedChanges(isDirty);
     toggleUnsavedBadge(isDirty);
     setFormDirty(formId, isDirty);
   }, [isDirty]);
@@ -119,7 +117,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   return {
     ...form,
-    unsavedChanges,
+    unsavedChanges: isDirty,
     isDirty,
     loading,
     // Override `handleSubmit` to always process `onInvalid` through a fallback handler
@@ -129,7 +127,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       isResetting.current = true;
       resetDraftForm(formId);
       setFormDirty(formId, false);
-      setUnsavedChanges(false);
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);
     },

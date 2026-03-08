@@ -1,0 +1,11 @@
+Rule: react-doctor/client-passive-event-listeners
+Severity: warning
+Category: Performance
+Count: 1
+
+"wheel" listener without { passive: true } — blocks scrolling performance
+
+Suggestion: Add `{ passive: true }` as the third argument: `addEventListener('scroll', handler, { passive: true })`
+
+Files:
+  src/modules/attachment/render/image-viewer.tsx: 221

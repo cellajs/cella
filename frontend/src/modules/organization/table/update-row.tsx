@@ -13,7 +13,10 @@ interface Props {
   tabIndex: number;
 }
 
-function openUpdateSheet(organization: Organization | Organization, buttonRef: RefObject<HTMLButtonElement | null>) {
+export function openUpdateSheet(
+  organization: Organization | Organization,
+  buttonRef: RefObject<HTMLButtonElement | null>,
+) {
   useSheeter.getState().create(
     <div className="container w-full">
       <Card className="mb-20">

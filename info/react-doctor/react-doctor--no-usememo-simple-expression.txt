@@ -1,0 +1,11 @@
+Rule: react-doctor/no-usememo-simple-expression
+Severity: warning
+Category: Performance
+Count: 1
+
+useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
+
+Suggestion: Remove useMemo — property access, math, and ternaries are already cheap without memoization
+
+Files:
+  src/query/provider.tsx: 65
