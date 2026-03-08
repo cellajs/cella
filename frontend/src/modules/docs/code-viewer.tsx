@@ -12,31 +12,33 @@ interface CodeViewerProps {
  * Supports TypeScript and Zod code display.
  */
 export const CodeViewer = ({ code, language }: CodeViewerProps) => {
-  const [html, setHtml] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [state, setState] = useState<{ html: string; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
 
   useEffect(() => {
+    let cancelled = false;
+    setState((prev) => ({ ...prev, isLoading: true }));
+
     const highlight = async () => {
-      setIsLoading(true);
       try {
         const highlighted = await codeToHtml(code, {
           lang: 'typescript',
           theme: mode === 'dark' ? 'github-dark-default' : 'github-light-default',
         });
-        setHtml(highlighted);
+        if (!cancelled) setState({ html: highlighted, isLoading: false });
       } catch {
         // Fallback to plain code if highlighting fails
-        setHtml(`<pre><code>${code}</code></pre>`);
-      } finally {
-        setIsLoading(false);
+        if (!cancelled) setState({ html: `<pre><code>${code}</code></pre>`, isLoading: false });
       }
     };
 
     highlight();
+    return () => {
+      cancelled = true;
+    };
   }, [code, language, mode]);
 
-  if (isLoading) {
+  if (state.isLoading) {
     return <div className="animate-pulse bg-muted rounded h-24" />;
   }
 
@@ -44,7 +46,7 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
     <div
       className="text-sm [&_pre]:bg-transparent! [&_code]:bg-transparent!"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is safe
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: state.html }}
     />
   );
 };

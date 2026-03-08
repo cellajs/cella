@@ -5,7 +5,7 @@ import type { Member } from '~/modules/memberships/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
-export const renderSelect = <TRow extends User | Member | EnrichedOrganization>({
+export const RenderSelect = <TRow extends User | Member | EnrichedOrganization>({
   row,
   options,
   onRowChange,

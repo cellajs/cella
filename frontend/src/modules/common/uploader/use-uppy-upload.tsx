@@ -81,7 +81,13 @@ export function useUploadUppy() {
           .on('transloadit:complete', (assembly) => {
             if (assembly?.error) throw new Error(assembly?.error);
             console.info('Upload complete:', assembly);
-            statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>);
+            Promise.resolve(
+              statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>),
+            ).catch((err) => {
+              console.error('onComplete handler failed:', err);
+              Sentry.captureException(err);
+              toaster(t('error:create_resource', { resource: t('common:attachment').toLowerCase() }), 'error');
+            });
           });
         // Plugin Options
         const imageEditorOptions = getImageEditorOptions(templateId);

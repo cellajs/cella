@@ -50,7 +50,7 @@ type Story = StoryObj<typeof meta>;
  * Default single date selection calendar.
  */
 export const Default: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -68,7 +68,7 @@ export const Default: Story = {
  * Calendar with dropdown month/year selection.
  */
 export const WithDropdowns: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -87,7 +87,7 @@ export const WithDropdowns: Story = {
  * Calendar with disabled dates (past dates disabled).
  */
 export const WithDisabledDates: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const disabled = { before: new Date() };
 
@@ -108,7 +108,7 @@ export const WithDisabledDates: Story = {
  * Calendar with hidden outside days.
  */
 export const HiddenOutsideDays: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -127,7 +127,7 @@ export const HiddenOutsideDays: Story = {
  * Multiple months view for extended date selection.
  */
 export const MultipleMonths: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -146,7 +146,7 @@ export const MultipleMonths: Story = {
  * Calendar with different button variants.
  */
 export const DifferentButtonVariants: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
 
     return (
@@ -193,7 +193,7 @@ export const DifferentButtonVariants: Story = {
  * Calendar with week numbers.
  */
 export const WithWeekNumbers: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -212,7 +212,7 @@ export const WithWeekNumbers: Story = {
  * Calendar with fixed week starts.
  */
 export const FixedWeeks: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
       <Calendar
@@ -231,7 +231,7 @@ export const FixedWeeks: Story = {
  * Disabled calendar state.
  */
 export const Disabled: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [date] = useState<Date | undefined>(new Date());
     return (
       <Calendar

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { appConfig, type Theme } from 'shared';
-import { type Mode, useUIStore } from '~/store/ui';
+import { type Mode, uiStore } from '~/store/ui';
 
 const root = window.document.documentElement;
 
@@ -29,17 +29,17 @@ function setBrandColor(passedTheme: Theme) {
  */
 export const Themer = () => {
   useEffect(() => {
-    useUIStore.subscribe(({ mode }) => {
+    uiStore.subscribe(({ mode }) => {
       setModeClass(mode);
     });
-    useUIStore.subscribe(({ theme }) => {
+    uiStore.subscribe(({ theme }) => {
       setBrandColor(theme);
     });
   }, []);
 
   // Set initial theme and mode
-  setModeClass(useUIStore.getState().mode);
-  setBrandColor(useUIStore.getState().theme);
+  setModeClass(uiStore.getState().mode);
+  setBrandColor(uiStore.getState().theme);
 
   return null;
 };

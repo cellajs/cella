@@ -22,7 +22,7 @@ type Story = StoryObj;
  * Default tag input with basic functionality.
  */
 export const Default: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['react', 'typescript', 'storybook']);
     return <TagInput tags={tags} setTags={setTags} placeholder="Add a tag..." showCount={true} />;
   },
@@ -32,7 +32,7 @@ export const Default: Story = {
  * Tag input with maximum tag limit.
  */
 export const WithMaxTags: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['frontend', 'backend', 'database']);
     return <TagInput tags={tags} setTags={setTags} maxTags={5} showCount={true} placeholder="Add up to 5 tags..." />;
   },
@@ -42,7 +42,7 @@ export const WithMaxTags: Story = {
  * Tag input with character length validation.
  */
 export const WithLengthValidation: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['short', 'medium-length', 'very-long-tag-example']);
     return (
       <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" />
@@ -54,7 +54,7 @@ export const WithLengthValidation: Story = {
  * Tag input with clear all functionality.
  */
 export const WithClearAll: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['important', 'urgent', 'review', 'pending']);
     return <TagInput tags={tags} setTags={setTags} showClearAllButton={true} placeholder="Add tags..." />;
   },
@@ -64,7 +64,7 @@ export const WithClearAll: Story = {
  * Tag input with custom badge styling.
  */
 export const CustomStyling: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['feature', 'bug', 'enhancement']);
     return (
       <TagInput
@@ -88,7 +88,7 @@ export const CustomStyling: Story = {
  * Tag input with tag truncation for long tags.
  */
 export const WithTruncation: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState([
       'very-long-tag-name-that-should-be-truncated',
       'another-extremely-long-tag-for-testing-purposes',
@@ -102,7 +102,7 @@ export const WithTruncation: Story = {
  * Tag input with add on blur functionality.
  */
 export const AddOnBlur: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['existing-tag']);
     return <TagInput tags={tags} setTags={setTags} addTagsOnBlur={true} placeholder="Type and click away to add tag" />;
   },
@@ -112,7 +112,7 @@ export const AddOnBlur: Story = {
  * Tag input with custom validation function.
  */
 export const CustomValidation: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['valid-tag-1', 'valid-tag-2']);
 
     const validateTag = (tag: string) => {
@@ -135,7 +135,7 @@ export const CustomValidation: Story = {
  * Tag input with tag click handler.
  */
 export const WithTagClick: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['clickable', 'interactive', 'responsive']);
 
     const handleTagClick = (tag: string) => {
@@ -152,7 +152,7 @@ export const WithTagClick: Story = {
  * Empty tag input ready for user interaction.
  */
 export const Empty: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState<string[]>([]);
     return <TagInput tags={tags} setTags={setTags} placeholder="Start typing to add tags..." />;
   },
@@ -162,7 +162,7 @@ export const Empty: Story = {
  * Complex example with all features enabled.
  */
 export const FullFeatured: Story = {
-  render: () => {
+  render: function Render() {
     const [tags, setTags] = useState(['react', 'typescript', 'storybook', 'testing']);
 
     const handleTagAdd = (tag: string) => {

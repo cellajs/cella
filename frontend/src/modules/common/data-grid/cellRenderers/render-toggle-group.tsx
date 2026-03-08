@@ -16,7 +16,7 @@ export function ToggleGroup<R, SR>({ groupKey, isExpanded, tabIndex, toggleGroup
   const d = isExpanded ? 'M1 1 L 7 7 L 13 1' : 'M1 7 L 7 1 L 13 7';
 
   return (
-    <span className={groupCellContentClassname} tabIndex={tabIndex} onKeyDown={handleKeyDown}>
+    <span className={groupCellContentClassname} role="button" tabIndex={tabIndex} onKeyDown={handleKeyDown}>
       {groupKey as string}
       <svg
         viewBox="0 0 14 8"

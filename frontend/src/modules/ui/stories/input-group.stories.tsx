@@ -163,7 +163,7 @@ export const TextareaGroup: Story = {
  * Password input with toggle visibility.
  */
 export const PasswordToggle: Story = {
-  render: () => {
+  render: function Render() {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
@@ -300,7 +300,7 @@ export const UrlInput: Story = {
  * Number input with controls.
  */
 export const NumberInput: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('0');
 
     const increment = () => setValue((prev) => String(Number(prev) + 1));

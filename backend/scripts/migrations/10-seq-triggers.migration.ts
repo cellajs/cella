@@ -76,6 +76,10 @@ BEGIN
   ELSE
     -- Dynamically read the parent column value (e.g., NEW.organization_id, NEW.project_id)
     EXECUTE format('SELECT ($1).%I', TG_ARGV[0]) INTO ctx_key USING NEW;
+    -- Fallback: if parent column is NULL (e.g., attachment without project), use organization_id
+    IF ctx_key IS NULL THEN
+      EXECUTE 'SELECT ($1).organization_id' INTO ctx_key USING NEW;
+    END IF;
   END IF;
 
   seq_key := 's:' || entity_type;

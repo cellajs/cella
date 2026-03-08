@@ -23,7 +23,7 @@ type Story = StoryObj<typeof SelectEmails>;
  * Default email input with basic functionality.
  */
 export const Default: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState(['user@example.com', 'test@domain.org']);
     return (
       <div className="w-80">
@@ -37,7 +37,7 @@ export const Default: Story = {
  * Empty email input ready for user input.
  */
 export const Empty: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-80">
@@ -52,7 +52,7 @@ export const Empty: Story = {
  * Accepts emails in format "Name <email@domain.com>".
  */
 export const WithDisplayName: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState(['John Doe <john@example.com>', 'jane@example.com']);
     return (
       <div className="w-96">
@@ -71,7 +71,7 @@ export const WithDisplayName: Story = {
  * Email input that strips display names to extract only the email address.
  */
 export const StripDisplayName: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-96">
@@ -97,7 +97,7 @@ export const StripDisplayName: Story = {
  * Email input allowing duplicate entries.
  */
 export const AllowDuplicates: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState(['user@example.com']);
     return (
       <div className="w-80">
@@ -112,7 +112,7 @@ export const AllowDuplicates: Story = {
  * Email input with maximum tag limit.
  */
 export const WithMaxEmails: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState(['first@example.com', 'second@example.com']);
     return (
       <div className="w-80">
@@ -133,7 +133,7 @@ export const WithMaxEmails: Story = {
  * Email input with custom styling.
  */
 export const CustomStyling: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState(['styled@example.com']);
     return (
       <div className="w-80">
@@ -159,7 +159,7 @@ export const CustomStyling: Story = {
  * Try pasting: "test1@example.com, test2@example.com; test3@example.com"
  */
 export const PasteMultiple: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-96">
@@ -176,7 +176,7 @@ export const PasteMultiple: Story = {
  * Email input with event callbacks.
  */
 export const WithCallbacks: Story = {
-  render: () => {
+  render: function Render() {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-80">

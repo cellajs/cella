@@ -26,19 +26,13 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     const { create } = useDropdowner.getState();
     const isMobile = window.innerWidth < 640;
 
-    const DropdownContent = () => (
-      <>
+    create(
+      <div role="menu" className="flex-col flex gap-2 p-1">
         {options.map(({ label, icon: Icon, onSelect }) => (
           <DropdownActionItem key={label} isMobile={isMobile} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
             {label}
           </DropdownActionItem>
         ))}
-      </>
-    );
-
-    create(
-      <div role="menu" className="flex-col flex gap-2 p-1">
-        <DropdownContent />
       </div>,
       {
         id: 'row-dropdown',

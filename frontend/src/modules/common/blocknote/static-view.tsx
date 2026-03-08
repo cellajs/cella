@@ -71,13 +71,15 @@ function BlockNoteStaticView({
 }: BlockNoteStaticViewProps) {
   const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [html, setHtml] = useState('');
-  const [mediaItems, setMediaItems] = useState<CarouselItemData[]>([]);
+  const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>({
+    html: '',
+    mediaItems: [],
+  });
 
   useEffect(() => {
     const blocks = getParsedContent(defaultValue);
     if (!blocks) {
-      setHtml('');
+      setRenderState({ html: '', mediaItems: [] });
       return;
     }
 
@@ -104,8 +106,7 @@ function BlockNoteStaticView({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      setHtml(getHeadlessEditor().blocksToFullHTML(resolved));
-      setMediaItems(media);
+      setRenderState({ html: getHeadlessEditor().blocksToFullHTML(resolved), mediaItems: media });
     }
 
     render(blocks);
@@ -115,7 +116,7 @@ function BlockNoteStaticView({
   }, [defaultValue, publicFiles]);
 
   const handleClick: MouseEventHandler = (event) => {
-    if (!clickOpensPreview || mediaItems.length === 0) return;
+    if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
     const target = event.target as HTMLElement;
     const mediaElement = target.closest('img, video, audio');
@@ -125,12 +126,12 @@ function BlockNoteStaticView({
     const clickedSrc = (mediaElement as HTMLMediaElement).src;
     const attachmentIndex = Math.max(
       0,
-      mediaItems.findIndex(({ url }) => url === clickedSrc),
+      renderState.mediaItems.findIndex(({ url }) => url === clickedSrc),
     );
 
     openAttachmentDialog({
       attachmentIndex,
-      attachments: mediaItems,
+      attachments: renderState.mediaItems,
       triggerRef: containerRef as React.RefObject<null>,
     });
   };
@@ -139,11 +140,12 @@ function BlockNoteStaticView({
     <div
       id={id}
       ref={containerRef}
+      role="presentation"
       className={`bn-container bn-shadcn ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
       data-color-scheme={mode}
       onClick={handleClick}
     >
-      <div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: renderState.html }} />
     </div>
   );
 }

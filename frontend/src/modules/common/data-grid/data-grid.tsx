@@ -541,6 +541,51 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const selectedCellIsWithinViewportBounds = isCellWithinViewportBounds(selectedPosition);
   const scrollHeight = headerRowHeight + totalRowHeight + horizontalScrollbarHeight;
 
+  function selectCell(position: Position, options?: SelectCellOptions): void {
+    if (!isCellSelectionEnabled) return;
+    if (!isCellWithinSelectionBounds(position)) return;
+    commitEditorChanges();
+
+    const samePosition = isSamePosition(selectedPosition, position);
+
+    if (options?.enableEditor && isCellEditable(position)) {
+      const row = rows[position.rowIdx];
+      setSelectedPosition({ ...position, mode: 'EDIT', row, originalRow: row });
+    } else if (samePosition) {
+      // Avoid re-renders if the selected cell state is the same
+      scrollIntoView(getCellToScroll(gridRef.current!));
+    } else {
+      setShouldFocusCell(options?.shouldFocusCell === true);
+      setSelectedPosition({ ...position, mode: 'SELECT' });
+    }
+
+    if (onSelectedCellChange && !samePosition) {
+      onSelectedCellChange({
+        rowIdx: position.rowIdx,
+        row: isRowIdxWithinViewportBounds(position.rowIdx) ? rows[position.rowIdx] : undefined,
+        column: columns[position.idx],
+      });
+    }
+
+    if (selectionMode === 'cell-range') {
+      const shouldExtendSelection = options?.extendSelection === true;
+      const fallbackAnchor = isDataCellPosition(selectedPosition) ? selectedPosition : position;
+      const anchor = shouldExtendSelection ? (cellRangeAnchor ?? fallbackAnchor) : position;
+
+      if (isDataCellPosition(anchor) && isDataCellPosition(position)) {
+        setSelectedCellRange(createRange(anchor, position));
+        setCellRangeAnchor(anchor);
+      } else {
+        setSelectedCellRange(null);
+        setCellRangeAnchor(null);
+      }
+    }
+  }
+
+  function selectHeaderCell({ idx, rowIdx }: Position): void {
+    selectCell({ rowIdx: minRowIdx + rowIdx - 1, idx });
+  }
+
   /**
    * The identity of the wrapper function is stable so it won't break memoization
    */
@@ -922,51 +967,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return isCellWithinEditBounds(position) && isSelectedCellEditable({ columns, rows, selectedPosition: position });
   }
 
-  function selectCell(position: Position, options?: SelectCellOptions): void {
-    if (!isCellSelectionEnabled) return;
-    if (!isCellWithinSelectionBounds(position)) return;
-    commitEditorChanges();
-
-    const samePosition = isSamePosition(selectedPosition, position);
-
-    if (options?.enableEditor && isCellEditable(position)) {
-      const row = rows[position.rowIdx];
-      setSelectedPosition({ ...position, mode: 'EDIT', row, originalRow: row });
-    } else if (samePosition) {
-      // Avoid re-renders if the selected cell state is the same
-      scrollIntoView(getCellToScroll(gridRef.current!));
-    } else {
-      setShouldFocusCell(options?.shouldFocusCell === true);
-      setSelectedPosition({ ...position, mode: 'SELECT' });
-    }
-
-    if (onSelectedCellChange && !samePosition) {
-      onSelectedCellChange({
-        rowIdx: position.rowIdx,
-        row: isRowIdxWithinViewportBounds(position.rowIdx) ? rows[position.rowIdx] : undefined,
-        column: columns[position.idx],
-      });
-    }
-
-    if (selectionMode === 'cell-range') {
-      const shouldExtendSelection = options?.extendSelection === true;
-      const fallbackAnchor = isDataCellPosition(selectedPosition) ? selectedPosition : position;
-      const anchor = shouldExtendSelection ? (cellRangeAnchor ?? fallbackAnchor) : position;
-
-      if (isDataCellPosition(anchor) && isDataCellPosition(position)) {
-        setSelectedCellRange(createRange(anchor, position));
-        setCellRangeAnchor(anchor);
-      } else {
-        setSelectedCellRange(null);
-        setCellRangeAnchor(null);
-      }
-    }
-  }
-
-  function selectHeaderCell({ idx, rowIdx }: Position): void {
-    selectCell({ rowIdx: minRowIdx + rowIdx - 1, idx });
-  }
-
   function getNextPosition(key: string, ctrlKey: boolean, shiftKey: boolean): Position {
     const { idx, rowIdx } = selectedPosition;
     const isRowSelected = selectedCellIsWithinSelectionBounds && idx === -1;
@@ -1204,7 +1204,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   return (
     <div
-      role={role}
+      role={role ?? 'grid'}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-description={ariaDescription}

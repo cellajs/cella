@@ -208,14 +208,9 @@ const linkColumns: Column<Person>[] = [
     name: 'Email link',
     width: 260,
     renderCell: ({ row }) => (
-      <a
-        href={`mailto:${row.email}`}
-        tabIndex={0}
-        onClick={(event) => event.preventDefault()}
-        className="text-primary underline underline-offset-2"
-      >
+      <button type="button" tabIndex={0} className="text-primary underline underline-offset-2">
         {row.email}
-      </a>
+      </button>
     ),
   },
   { key: 'department', name: 'Department', width: 140 },
@@ -367,7 +362,7 @@ export const SelectionModeCell: Story = {
  * Cell range selection mode - shift+click or shift+arrow to select multiple cells.
  */
 export const SelectionModeCellRange: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [selectedRange, setSelectedRange] = useState<{
       start: { idx: number; rowIdx: number };
       end: { idx: number; rowIdx: number };
@@ -401,7 +396,7 @@ export const SelectionModeCellRange: Story = {
  * Single row selection mode.
  */
 export const SelectionModeRow: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
 
     return (
@@ -431,7 +426,7 @@ export const SelectionModeRow: Story = {
  * Multiple row selection mode with shift+click support.
  */
 export const SelectionModeRowMulti: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
 
     return (
@@ -462,7 +457,7 @@ export const SelectionModeRowMulti: Story = {
  * Interactive selection mode switcher.
  */
 export const SelectionModeSwitcher: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [mode, setMode] = useState<SelectionMode>('row-multi');
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
 
@@ -529,7 +524,7 @@ export const TouchModeResponsive: Story = {
  * Mobile sub-rows with expandable details.
  */
 export const MobileSubRows: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set([0]));
 
     return (
@@ -553,7 +548,7 @@ export const MobileSubRows: Story = {
  * Mobile sub-rows enabled only below md breakpoint.
  */
 export const MobileSubRowsResponsive: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
 
     return (
@@ -664,7 +659,7 @@ export const CustomRowClass: Story = {
  * Combined touch mode and mobile sub-rows.
  */
 export const MobileOptimized: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
 
     return (
@@ -694,7 +689,7 @@ export const MobileOptimized: Story = {
  * All features combined for comprehensive testing.
  */
 export const AllFeatures: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
     const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
     const [mode, setMode] = useState<SelectionMode>('row-multi');
@@ -829,7 +824,7 @@ export const ShouldNavigateWithArrowKeys: Story = {
 export const ShouldSelectRowOnClick: Story = {
   name: 'when row is clicked, should select it',
   tags: ['!dev', '!autodocs'],
-  render: (args) => {
+  render: function Render(args) {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
     return (
       <div style={{ height: 300 }}>
@@ -893,7 +888,7 @@ export const ShouldSkipNonFocusableColumns: Story = {
 export const ShouldExpandMobileSubRow: Story = {
   name: 'when expand toggle is clicked, should show sub-row',
   tags: ['!dev', '!autodocs'],
-  render: (args) => {
+  render: function Render(args) {
     const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
     return (
       <div style={{ height: 400 }}>

@@ -31,7 +31,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
+import { userStore, useUserStore } from '~/store/user';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -46,7 +46,7 @@ function UserAccountPage() {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  const { enabledOAuth } = useUserStore.getState();
+  const { enabledOAuth } = userStore.getState();
 
   const deleteButtonRef = useRef(null);
 

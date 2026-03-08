@@ -1,8 +1,8 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { Logo } from '~/modules/common/logo';
 import { Spinner } from '~/modules/common/spinner';
 import { useNavigationStore } from '~/store/navigation';
@@ -16,8 +16,13 @@ import { cn } from '~/utils/cn';
  * Uses debounced loading state to avoid flickering for quick loads.
  */
 export function AppNavLoader({ className }: { className?: string }) {
-  const { hasLoaded } = useMountedState();
+  const [hasLoaded, setHasLoaded] = useState(false);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setHasLoaded(true), 3000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const isFetching = useIsFetching({
     predicate: (query) => {

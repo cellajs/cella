@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { renderSelect } from '~/modules/common/data-table/select-column';
+import { RenderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
@@ -61,7 +61,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         width: 100,
         ...(isAdmin && {
           renderEditCell: ({ row, onRowChange }) =>
-            renderSelect({
+            RenderSelect({
               row,
               onRowChange,
               options: roles.all,

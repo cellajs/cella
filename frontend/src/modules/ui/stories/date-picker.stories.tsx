@@ -35,7 +35,7 @@ export const WithPopover: Story = {
     captionLayout: 'dropdown',
   },
 
-  render: (args) => {
+  render: function Render(args) {
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState<Date | undefined>(undefined);
     return (
@@ -107,7 +107,7 @@ export const WithInput: Story = {
     captionLayout: 'dropdown',
   },
 
-  render: (args) => {
+  render: function Render(args) {
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState<Date | undefined>(new Date('2025-06-01'));
     const [month, setMonth] = useState<Date | undefined>(date);
@@ -209,7 +209,7 @@ export const WithDateTime: Story = {
     captionLayout: 'dropdown',
   },
 
-  render: (args) => {
+  render: function Render(args) {
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState<Date | undefined>(undefined);
     return (

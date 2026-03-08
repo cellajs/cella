@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase, UserMinimalBase } from '~/api.gen';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useFindEntityInListCache } from '~/query/basic';
 import { cn } from '~/utils/cn';
@@ -24,7 +24,7 @@ export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps &
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
-  const setTriggerRef = useSheeter.getState().setTriggerRef;
+  const setTriggerRef = sheeter.getState().setTriggerRef;
 
   return (
     <Button

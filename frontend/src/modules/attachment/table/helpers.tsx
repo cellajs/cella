@@ -3,6 +3,7 @@ import { appConfig } from 'shared';
 import { createAttachments } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { createStxForCreate } from '~/query/offline';
@@ -14,17 +15,22 @@ const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.m
 export const useAttachmentsUploadDialog = (tenantId: string, organizationId: string) => {
   const open = () => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
-      const attachments = parseUploadedAttachments(result, organizationId);
+      try {
+        const attachments = parseUploadedAttachments(result, organizationId);
 
-      // Create attachments via API with transaction metadata (stx embedded in each item)
-      const stx = createStxForCreate();
-      const body = attachments.map((att) => ({ ...att, stx }));
-      await createAttachments({ path: { tenantId, orgId: organizationId }, body });
+        // Create attachments via API with transaction metadata (stx embedded in each item)
+        const stx = createStxForCreate();
+        const body = attachments.map((att) => ({ ...att, stx }));
+        await createAttachments({ path: { tenantId, orgId: organizationId }, body });
 
-      // Invalidate the cache to refresh the table
-      queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
+        // Invalidate the cache to refresh the table
+        queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
 
-      useUploader.getState().remove();
+        useUploader.getState().remove();
+      } catch (error) {
+        toaster(t('error:create_resource', { resource: t('common:attachment').toLowerCase() }), 'error');
+        throw error;
+      }
     };
 
     useUploader.getState().create({

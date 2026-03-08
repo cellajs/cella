@@ -2,7 +2,7 @@ import { ExpandIcon, ShrinkIcon } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
@@ -26,7 +26,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { t } = useTranslation();
   const { focusView, setFocusView } = useUIStore();
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
-  const removeSheet = useSheeter.getState().remove;
+  const removeSheet = sheeter.getState().remove;
 
   const toggleFocus = () => {
     toaster(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');

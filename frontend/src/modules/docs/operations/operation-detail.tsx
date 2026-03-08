@@ -83,13 +83,13 @@ export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 
-  // Guard against empty operations to prevent fetching with undefined tag name
-  if (operations.length === 0) return null;
-
   // Fetch tag details once and build a lookup map
-  const tagName = operations[0].tags[0];
+  const tagName = operations.length > 0 ? operations[0].tags[0] : '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const detailsMap = new Map(tagDetails.map((d) => [d.operationId, d]));
+
+  // Guard against empty operations to prevent fetching with undefined tag name
+  if (operations.length === 0) return null;
 
   return (
     <div className="border-t">

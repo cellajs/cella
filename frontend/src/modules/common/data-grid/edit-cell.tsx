@@ -65,6 +65,18 @@ export function EditCell<R, SR>({
     onClose(true, false);
   });
 
+  function cancelTask() {
+    captureEventRef.current = undefined;
+    if (abortControllerRef.current !== undefined) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = undefined;
+    }
+    if (frameRequestRef.current !== undefined) {
+      cancelAnimationFrame(frameRequestRef.current);
+      frameRequestRef.current = undefined;
+    }
+  }
+
   useLayoutEffect(() => {
     if (!commitOnOutsideClick) return;
 
@@ -104,18 +116,6 @@ export function EditCell<R, SR>({
       cancelTask();
     };
   }, [commitOnOutsideClick]);
-
-  function cancelTask() {
-    captureEventRef.current = undefined;
-    if (abortControllerRef.current !== undefined) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = undefined;
-    }
-    if (frameRequestRef.current !== undefined) {
-      cancelAnimationFrame(frameRequestRef.current);
-      frameRequestRef.current = undefined;
-    }
-  }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (onKeyDown) {

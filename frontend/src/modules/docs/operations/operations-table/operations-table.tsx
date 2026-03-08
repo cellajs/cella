@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -46,11 +46,13 @@ function OperationsTable() {
 
   // Local state for operations to enable editing
   const [localOperations, setLocalOperations] = useState<GenOperationSummary[]>(operations);
+  const [prevOperations, setPrevOperations] = useState(operations);
 
-  // Sync local state when operations data changes
-  useEffect(() => {
+  // Sync local state when operations data changes (render-time adjustment)
+  if (operations !== prevOperations) {
+    setPrevOperations(operations);
     setLocalOperations(operations);
-  }, [operations]);
+  }
 
   // Filter operations based on search query (searches all text fields)
   // Multiple space-separated terms are treated as AND conditions

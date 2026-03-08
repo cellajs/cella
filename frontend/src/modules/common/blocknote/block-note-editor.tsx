@@ -83,6 +83,9 @@ type BlockNoteProps =
       user?: never;
     });
 
+const EMPTY_BLOCK_TYPES: CustomBlockRegularTypes[] = [];
+const EMPTY_FILE_BLOCK_TYPES: CustomBlockFileTypes[] = [];
+
 function BlockNote({
   id,
   type,
@@ -99,8 +102,8 @@ function BlockNote({
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
-  excludeBlockTypes = [], // default types
-  excludeFileBlockTypes = [], // default filetypes
+  excludeBlockTypes = EMPTY_BLOCK_TYPES, // default types
+  excludeFileBlockTypes = EMPTY_FILE_BLOCK_TYPES, // default filetypes
   members, // for mentions
   publicFiles,
   filePanel,

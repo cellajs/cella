@@ -122,3 +122,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
     { enabled: isDebugMode, name: 'navigation store' },
   ),
 );
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useNavigationStore as navigationStore };

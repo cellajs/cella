@@ -6,12 +6,12 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { userStore } from '~/store/user';
 
 export function PasskeysList() {
   const { t } = useTranslation();
 
-  const { user, hasPasskey } = useUserStore.getState();
+  const { user, hasPasskey } = userStore.getState();
 
   const { mutate: createPasskey } = useCreatePasskeyMutation();
   const { mutate: deletePasskey, isPending } = useDeletePasskeyMutation();

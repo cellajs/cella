@@ -38,7 +38,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   );
 
   // Scroll to page header on load
-  if (!disableScroll) useScrollTo(scrollToRef);
+  useScrollTo(disableScroll ? null : scrollToRef);
 
   // Get parent route using app-specific resolver (handles hierarchy differences per fork)
   const parentRoute = parentData ? getContextEntityRoute(parentData) : null;

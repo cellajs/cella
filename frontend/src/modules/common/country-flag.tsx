@@ -16,9 +16,10 @@ export const CountryFlag = ({
   height = 12,
   ...props
 }: ImgProps) => {
+  const { isOnline } = useOnlineManager();
+
   if (typeof countryCode !== 'string') return null;
   if (countryCode.toLowerCase() === 'en') countryCode = 'gb';
-  const { isOnline } = useOnlineManager();
 
   const flagUrl =
     imgType === 'svg'

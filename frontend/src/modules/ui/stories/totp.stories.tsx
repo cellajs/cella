@@ -23,7 +23,7 @@ type Story = StoryObj;
  * Basic OTP input with 6 digits.
  */
 export const Default: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     return (
       <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)}>
@@ -44,7 +44,7 @@ export const Default: Story = {
  * OTP input with 4 digits for shorter codes.
  */
 export const FourDigits: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     return (
       <InputOTP maxLength={4} value={value} onChange={(value) => setValue(value)}>
@@ -63,7 +63,7 @@ export const FourDigits: Story = {
  * OTP input with separators for better readability.
  */
 export const WithSeparators: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     return (
       <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)}>
@@ -85,7 +85,7 @@ export const WithSeparators: Story = {
  * OTP input with multiple groups for complex codes.
  */
 export const MultipleGroups: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     return (
       <InputOTP maxLength={8} value={value} onChange={(value) => setValue(value)}>
@@ -111,7 +111,7 @@ export const MultipleGroups: Story = {
  * Pre-filled OTP input for demonstration.
  */
 export const Prefilled: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('123456');
     return (
       <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)}>
@@ -132,7 +132,7 @@ export const Prefilled: Story = {
  * Disabled OTP input.
  */
 export const Disabled: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('123456');
     return (
       <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)} disabled>
@@ -153,7 +153,7 @@ export const Disabled: Story = {
  * OTP input with custom styling.
  */
 export const CustomStyling: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     return (
       <div className="space-y-4">
@@ -176,7 +176,7 @@ export const CustomStyling: Story = {
  * Complete authentication form with OTP input.
  */
 export const AuthForm: Story = {
-  render: () => {
+  render: function Render() {
     const [value, setValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -233,7 +233,7 @@ export const AuthForm: Story = {
  * Recovery code input example.
  */
 export const RecoveryCodes: Story = {
-  render: () => {
+  render: function Render() {
     const [codes, setCodes] = useState(['', '', '']);
 
     const handleCodeChange = (index: number, value: string) => {

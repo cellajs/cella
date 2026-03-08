@@ -122,3 +122,6 @@ export const useUserStore = create<UserStoreState>()(
     { enabled: isDebugMode, name: 'user store' },
   ),
 );
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useUserStore as userStore };

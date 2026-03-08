@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, roles } from 'shared';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { renderSelect } from '~/modules/common/data-table/select-column';
+import { RenderSelect } from '~/modules/common/data-table/select-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -27,6 +27,7 @@ export const useColumns = (isCompact: boolean) => {
       key: 'name',
       name: t('common:name'),
       sortable: true,
+      minWidth: 200,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
         <Link
@@ -110,7 +111,7 @@ export const useColumns = (isCompact: boolean) => {
           <span className="text-muted">-</span>
         ),
       renderEditCell: ({ row, onRowChange }) =>
-        renderSelect({
+        RenderSelect({
           row,
           onRowChange,
           options: roles.all,
