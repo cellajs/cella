@@ -15,7 +15,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { useFindInListCache } from '~/query/basic';
+import { useFindEntityInListCache } from '~/query/basic';
 import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
@@ -33,7 +33,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
 
   // Find parent entity from cache
-  const parentData = useFindInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
+  const parentData = useFindEntityInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
     parent ? item.id === parent.entityId || item.slug === parent.entityId : false,
   );
 

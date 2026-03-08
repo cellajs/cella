@@ -6,7 +6,7 @@ import type { UserBase, UserMinimalBase } from '~/api.gen';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useFindInListCache } from '~/query/basic';
+import { useFindEntityInListCache } from '~/query/basic';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';
 
@@ -74,15 +74,13 @@ export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps &
 
 /**
  * Wrapper around UserCell to get userCell by ID from query cache.
- * Searches in both 'user' and 'member' queries since members contain UserBase data.
  */
 export const UserCellById = ({
   userId,
   cacheOnly,
   ...baseProps
 }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
-  // Find user from cache (search in both 'user' and 'member' queries)
-  const user = useFindInListCache<UserBase>([['user'], ['member']], userId ?? '');
+  const user = useFindEntityInListCache<UserBase>(['user'], userId ?? '');
 
   if (!userId) return <span className="text-muted">-</span>;
 

@@ -22,7 +22,7 @@ import {
   baseInfiniteQueryOptions,
   createEntityKeys,
   createOptimisticEntity,
-  findInListCache,
+  findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
   useMutateQueryData,
@@ -98,12 +98,12 @@ export const attachmentQueryOptions = (tenantId: string, orgId: string, id: stri
   initialData: () => findAttachmentInListCache(id),
 });
 
-export const findAttachmentInListCache = (id: string) => findInListCache<Attachment>(keys.list.base, id);
+export const findAttachmentInListCache = (id: string) => findEntityInListCache<Attachment>('attachment', id);
 
 export const findAttachmentInCache = (id: string): Attachment | undefined => {
   const detail = queryClient.getQueryData<Attachment>(keys.detail.byId(id));
   if (detail) return detail;
-  return findInListCache<Attachment>(keys.list.base, id);
+  return findEntityInListCache<Attachment>('attachment', id);
 };
 
 /** Get all attachments matching a groupId, subscribes to list query. */

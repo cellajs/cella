@@ -81,7 +81,7 @@ export const ViewerGroup = ({
       <ToggleGroup
         type="single"
         value={viewMode}
-        onValueChange={(value) => value && setViewMode(value as SchemaViewMode)}
+        onValueChange={(value: string | string[]) => value && setViewMode(value as SchemaViewMode)}
         size="xs"
         variant="outline"
         className="max-md:hidden absolute top-2 bg-muted/50 right-2 z-10"

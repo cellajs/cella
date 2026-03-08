@@ -31,7 +31,7 @@ import type { HmrContext, ModuleNode, Plugin } from 'vite';
 const CUSTOM_EVENT = 'i18next-hmr:update' as const;
 
 /** Configuration options for the LocalesHMR plugin */
-export interface LocalesHMROptions {
+interface LocalesHMROptions {
   /** Source directory containing locale files (default: ../locales) */
   srcDir?: string;
   /** Output cache directory for processed locales (default: ../.vscode/.locales-cache) */
@@ -198,7 +198,7 @@ async function syncAllLanguages(options: Required<LocalesHMROptions>): Promise<v
  * Build the locales cache on-demand.
  * Can be called outside of Vite (e.g., in build scripts).
  */
-export async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
+async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
   const options = resolveOptions(userOptions);
   await syncAllLanguages(options);
 }

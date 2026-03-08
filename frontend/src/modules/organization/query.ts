@@ -17,7 +17,7 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
-  findInListCache,
+  findEntityInListCache,
   invalidateIfLastMutation,
   preserveIncluded,
   registerEntityQueryKeys,
@@ -39,7 +39,7 @@ export const organizationQueryKeys = keys;
 
 /** Find an organization in the list cache by id or slug. */
 export const findOrganizationInListCache = (idOrSlug: string) =>
-  findInListCache<Organization>(keys.list.base, (org) => org.id === idOrSlug || org.slug === idOrSlug);
+  findEntityInListCache<Organization>('organization', (org) => org.id === idOrSlug || org.slug === idOrSlug);
 
 /**
  * Query options for a single organization by ID.
