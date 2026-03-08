@@ -2,6 +2,15 @@ import { BlockNoteEditor } from '@blocknote/core';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 
+// Shared headless editor singleton — avoids expensive BlockNoteEditor.create() on every call
+let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
+export const getHeadlessEditor = () => {
+  if (!headlessEditor) {
+    headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
+  }
+  return headlessEditor;
+};
+
 export const compareIsContentSame = (currentStringifiedBlocks: string, initialStringifiedBlocks: string) =>
   currentStringifiedBlocks === initialStringifiedBlocks;
 
@@ -15,10 +24,8 @@ export const getParsedContent = (initialStringifiedBlocks: string | undefined) =
 };
 
 export const blocksToHTML = (srtBlocks: string) => {
-  const editor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
   const blocks = JSON.parse(srtBlocks) as CustomBlock[];
-
-  return editor.blocksToHTMLLossy(blocks);
+  return getHeadlessEditor().blocksToHTMLLossy(blocks);
 };
 
 /**
@@ -30,7 +37,7 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
 
   try {
     const blocks = JSON.parse(strBlocks) as CustomBlock[];
-    const editor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
+    const editor = getHeadlessEditor();
 
     const markdown = editor.blocksToMarkdownLossy(blocks);
     const html = editor.blocksToHTMLLossy(blocks);

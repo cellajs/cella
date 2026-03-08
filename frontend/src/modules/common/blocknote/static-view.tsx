@@ -1,15 +1,13 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 
-import { BlockNoteEditor } from '@blocknote/core';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
 
@@ -106,8 +104,7 @@ function BlockNoteStaticView({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      const editor = BlockNoteEditor.create({ schema: customSchema, _headless: true });
-      setHtml(editor.blocksToFullHTML(resolved));
+      setHtml(getHeadlessEditor().blocksToFullHTML(resolved));
       setMediaItems(media);
     }
 
