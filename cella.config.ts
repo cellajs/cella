@@ -74,7 +74,7 @@ export default defineConfig({
       "frontend/src/modules/common/app/app-sheets.tsx",
       "frontend/src/modules/common/logo.tsx",
       "frontend/src/modules/common/blocknote/blocknote-config.ts",
-      "frontend/src/modules/home/index.tsx",
+      "frontend/src/modules/home/home-page.tsx",
       "frontend/src/modules/home/onboarding/onboarding-config.ts",
       "frontend/src/modules/marketing/marketing-config.tsx",
       "frontend/src/modules/marketing/about/about-page.tsx",

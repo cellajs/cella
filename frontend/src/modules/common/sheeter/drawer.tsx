@@ -1,5 +1,5 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
@@ -8,13 +8,13 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
   // Drawers on mobile are always modal (overlay + outside click to close)
   const { id, side, description, title, titleContent = title, className, content, open = true } = sheet;
 
-  const updateSheet = useSheeter.getState().update;
+  const updateSheet = sheeter.getState().update;
 
   // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
   // onClose trigger handles by remove method
-  const closeSheet = () => useSheeter.getState().remove(sheet.id);
+  const closeSheet = () => sheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {
     updateSheet(sheet.id, { open });

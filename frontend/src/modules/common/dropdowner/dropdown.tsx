@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
@@ -6,8 +7,7 @@ import { Popover, PopoverContent } from '~/modules/ui/popover';
 export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
 
-  const triggerFocusRef = useRef<HTMLElement | null>(null);
-  triggerFocusRef.current = triggerEl ?? null;
+  const triggerFocusRef = useLatestRef(triggerEl ?? null);
 
   // Watch for trigger removal from DOM
   useEffect(() => {

@@ -9,6 +9,10 @@ import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 import { objectEntries } from '~/utils/object';
 
+function Icon({ icon: IconEl, size = 20 }: { icon: React.ElementType<LucideProps>; size?: number }) {
+  return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
+}
+
 interface UserThemeProps {
   size?: number;
   buttonClassName?: string;
@@ -29,10 +33,6 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
   ] as const;
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
-
-  function Icon({ icon: IconEl, size = 20 }: { icon: React.ElementType<LucideProps>; size?: number }) {
-    return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
-  }
 
   // if just one theme, use switch
   if (!themes.length) {

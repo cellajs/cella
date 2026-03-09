@@ -35,6 +35,8 @@ export interface ComboboxProps {
   };
 }
 
+const defaultPlaceholders = {};
+
 export function Combobox({
   options,
   value,
@@ -43,7 +45,7 @@ export function Combobox({
   renderAvatar = false,
   contentWidthMatchInput = true,
   disabled = false,
-  placeholders: passedPlaceholders = {},
+  placeholders: passedPlaceholders = defaultPlaceholders,
 }: ComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');

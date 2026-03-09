@@ -78,7 +78,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   // Auto-save draft on change
   useEffect(() => {
     // Skip auto-save when form was explicitly reset (e.g. after submit)
-    if (isResetting.current) {
+    // Also skip when form is not dirty to prevent stale isDirty from re-saving defaults
+    if (isResetting.current || !isDirty) {
       isResetting.current = false;
       return;
     }

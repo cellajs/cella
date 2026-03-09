@@ -1,5 +1,5 @@
 import type { RenderCheckboxProps } from '../types';
-import { renderCheckbox as defaultRenderCheckbox } from './render-checkbox';
+import { RenderCheckbox as defaultRenderCheckbox } from './render-checkbox';
 
 type SharedInputProps = Pick<
   RenderCheckboxProps,

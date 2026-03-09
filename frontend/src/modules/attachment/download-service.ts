@@ -10,7 +10,7 @@
  * Integration with react-query:
  * - Attachments are fetched via normal queries and cached
  * - This service queues them for blob download in background
- * - Uses findInListCache to lookup attachment metadata from react-query cache
+ * - Uses findEntityInListCache to lookup attachment metadata from react-query cache
  * - Blobs are stored in IndexedDB for offline access
  */
 import { onlineManager } from '@tanstack/react-query';
@@ -19,8 +19,7 @@ import type { Attachment } from '~/api.gen';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
-import { attachmentQueryKeys } from '~/modules/attachment/query';
-import { findInListCache } from '~/query/basic';
+import { findEntityInListCache } from '~/query/basic';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
@@ -203,7 +202,7 @@ class AttachmentDownloadService {
       await attachmentStorage.updateDownloadStatus(attachmentId, 'downloading');
 
       // Lookup attachment in react-query cache
-      const attachment = findInListCache<Attachment>(attachmentQueryKeys.list.base, attachmentId);
+      const attachment = findEntityInListCache<Attachment>('attachment', attachmentId);
 
       if (!attachment) {
         console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, will retry later`);

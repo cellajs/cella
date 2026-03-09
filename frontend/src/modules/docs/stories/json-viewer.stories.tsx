@@ -287,7 +287,7 @@ export const WideIndent: Story = {
  * Interactive search with highlighting.
  */
 export const WithSearch: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [searchText, setSearchText] = useState('');
     return (
       <div className="space-y-4">
@@ -419,7 +419,7 @@ export const EdgeCases: Story = {
  * All features combined for comprehensive testing.
  */
 export const AllFeatures: Story = {
-  render: (args) => {
+  render: function Render(args) {
     const [searchText, setSearchText] = useState('');
     return (
       <div className="space-y-4">

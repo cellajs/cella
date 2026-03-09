@@ -5,14 +5,14 @@ import { useTranslation } from 'react-i18next';
 import type { ContextEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { collectContextIds } from '~/modules/navigation/menu-sheet/helpers/collect-context-ids';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
-import { useNavigationStore } from '~/store/navigation';
+import { navigationStore, useNavigationStore } from '~/store/navigation';
 
 export type MenuSectionOptions = {
   label: string;
@@ -29,7 +29,7 @@ interface MenuSheetSectionProps {
 export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
-  const { toggleSection, setNavSheetOpen } = useNavigationStore.getState();
+  const { toggleSection, setNavSheetOpen } = navigationStore.getState();
   const activeSections = useNavigationStore((state) => state.activeSections);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -44,7 +44,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {
-      useSheeter.getState().remove('nav-sheet');
+      sheeter.getState().remove('nav-sheet');
       setNavSheetOpen(null);
     }
     options.createAction?.(ref);

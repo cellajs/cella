@@ -22,7 +22,7 @@ import {
   baseInfiniteQueryOptions,
   createEntityKeys,
   createOptimisticEntity,
-  findInListCache,
+  findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
   useMutateQueryData,
@@ -51,12 +51,12 @@ const handleError = createResourceError('page');
 
 // --- Query options ---
 
-export const findPageInListCache = (id: string) => findInListCache<Page>(keys.list.base, id);
+export const findPageInListCache = (id: string) => findEntityInListCache<Page>('page', id);
 
 export const findPageInCache = (id: string): Page | undefined => {
   const detail = queryClient.getQueryData<Page>(keys.detail.byId(id));
   if (detail) return detail;
-  return findInListCache<Page>(keys.list.base, id);
+  return findEntityInListCache<Page>('page', id);
 };
 
 /** Uses initialData from list cache for instant loading while revalidating. */

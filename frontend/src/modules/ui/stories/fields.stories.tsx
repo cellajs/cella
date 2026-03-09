@@ -118,7 +118,7 @@ export const WithError: Story = {
  * Field with multiple error messages.
  */
 export const WithMultipleErrors: Story = {
-  render: () => {
+  render: function Render() {
     const errors = [
       { message: 'Password is too short' },
       { message: 'Must include uppercase letter' },
@@ -313,7 +313,7 @@ export const RadioGroupExample: Story = {
  * Complex form example using multiple field components.
  */
 export const ComplexForm: Story = {
-  render: () => {
+  render: function Render() {
     const [selectedPlan, setSelectedPlan] = useState('basic');
 
     return (

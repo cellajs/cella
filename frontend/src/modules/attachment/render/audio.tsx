@@ -4,7 +4,7 @@ function RenderAudio({ src, className }: { src: string; className?: string }) {
   return (
     <MediaThemeSutroAudio className={className}>
       {/* biome-ignore lint/a11y/useMediaCaption: by author */}
-      <audio slot="media" src={src} playsInline crossOrigin="anonymous" />
+      <audio slot="media" src={src} crossOrigin="anonymous" />
     </MediaThemeSutroAudio>
   );
 }

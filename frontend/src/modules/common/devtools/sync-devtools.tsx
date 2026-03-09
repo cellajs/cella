@@ -413,9 +413,6 @@ interface SyncDevtoolsProps {
 
 /** Sync Devtools floating panel. Only renders in debug mode. */
 export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
-  // Only render in debug mode
-  if (!isDebugMode || !isOpen) return null;
-
   const [state, setState] = useState<SyncDevtoolsState>({
     isOpen: true,
     activeTab: 'spans',
@@ -429,6 +426,9 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
     const unsubscribe = subscribeToSpans(setSpans);
     return unsubscribe;
   }, []);
+
+  // Only render in debug mode
+  if (!isDebugMode || !isOpen) return null;
 
   return (
     <div style={styles.container}>

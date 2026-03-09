@@ -1,5 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
@@ -62,7 +62,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   // Select persister based on offline access mode
   // - offlineAccess: IndexedDB (survives browser restart)
   // - session: sessionStorage (survives refresh, cleared on tab close)
-  const activePersister = useMemo(() => (offlineAccess ? persister : sessionPersister), [offlineAccess]);
+  const activePersister = offlineAccess ? persister : sessionPersister;
 
   // Track online/offline status and update staleTime accordingly
   useEffect(() => {

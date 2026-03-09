@@ -9,7 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useUserStore } from '~/store/user';
 
-export function Home() {
+export function HomePage() {
   const { t } = useTranslation();
   const { user, isSystemAdmin } = useUserStore();
 

@@ -8,12 +8,12 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { userStore } from '~/store/user';
 
 export function Totp() {
   const { t } = useTranslation();
 
-  const { hasTotp, user } = useUserStore.getState();
+  const { hasTotp, user } = userStore.getState();
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);

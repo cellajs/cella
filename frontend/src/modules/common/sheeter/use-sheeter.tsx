@@ -141,3 +141,6 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     return get().triggerRefs[id] ?? null;
   },
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useSheeter as sheeter };

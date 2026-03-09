@@ -1,7 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import z from 'zod';
-import { Home } from '~/modules/home/home';
+import { HomePage } from '~/modules/home/home-page';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
@@ -23,7 +23,7 @@ export const HomeRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <Home />
+      <HomePage />
     </Suspense>
   ),
 });
@@ -48,7 +48,7 @@ export const HomeAliasRoute = createRoute({
   },
   component: () => (
     <Suspense>
-      <Home />
+      <HomePage />
     </Suspense>
   ),
 });

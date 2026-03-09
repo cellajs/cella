@@ -7,7 +7,7 @@ import type { BaseUser } from '~/modules/user/types';
 import {
   baseInfiniteQueryOptions,
   createEntityKeys,
-  findInListCache,
+  findEntityInListCache,
   invalidateIfLastMutation,
   useMutateQueryData,
 } from '~/query/basic';
@@ -21,7 +21,7 @@ export const userQueryKeys = keys;
 
 /** Find a user in the list cache by id. */
 export const findUserInListCache = (entityId: string) =>
-  findInListCache<User>(keys.list.base, (user) => user.id === entityId);
+  findEntityInListCache<User>('user', (user) => user.id === entityId);
 
 /**
  * Query options for fetching a user by ID.

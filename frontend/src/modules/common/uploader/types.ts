@@ -18,7 +18,7 @@ export type StatusEventHandlers = {
   onFileEditorComplete?: (file: CustomUppyFile) => void;
   onUploadStart?: (uploadId: string, files: CustomUppyFile[]) => void;
   onError?: (error: Error) => void;
-  onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void;
+  onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void | Promise<void>;
 };
 
 // Use a mapped object type for the index signature

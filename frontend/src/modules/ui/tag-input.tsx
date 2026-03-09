@@ -276,6 +276,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse  */}
       <div
         id="tag-input-wrapper"
+        role="group"
         onClick={handleClick}
         className={cn(
           'flex flex-wrap items-center py-1 px-3 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium shadow-xs sm:focus-within:ring-2 sm:focus-within:ring-offset-2 ring-offset-background sm:focus-within:ring-ring',

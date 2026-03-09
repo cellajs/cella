@@ -10,10 +10,12 @@ interface SectionArchiveButtonProps {
   archivedContextIds?: string[];
 }
 
+const EMPTY_CONTEXT_IDS: string[] = [];
+
 export const SectionArchiveButton = ({
   archiveToggleClick,
   archivedCount,
-  archivedContextIds = [],
+  archivedContextIds = EMPTY_CONTEXT_IDS,
 }: SectionArchiveButtonProps) => {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedContextIds);

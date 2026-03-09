@@ -55,7 +55,7 @@ export const Default: Story = {
     value: '',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -75,7 +75,7 @@ export const WithAvatars: Story = {
     onChange: () => {},
     renderAvatar: true,
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -94,7 +94,7 @@ export const CustomRenderOption: Story = {
     value: '',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -125,7 +125,7 @@ export const Disabled: Story = {
     onChange: () => {},
     disabled: true,
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value] = useState(args.value);
     return (
       <div className="w-80">
@@ -145,7 +145,7 @@ export const FullWidthContent: Story = {
     onChange: () => {},
     contentWidthMatchInput: false,
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -176,7 +176,7 @@ export const LargeOptions: Story = {
     value: '',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -195,7 +195,7 @@ export const CustomPlaceholders: Story = {
     value: '',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -224,7 +224,7 @@ export const WithPreselectedValue: Story = {
     value: '2',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
@@ -243,7 +243,7 @@ export const Multiple: Story = {
     value: '',
     onChange: () => {},
   },
-  render: (args) => {
+  render: function Render(args) {
     const [value1, setValue1] = useState('');
     const [value2, setValue2] = useState('');
     const [value3, setValue3] = useState('');

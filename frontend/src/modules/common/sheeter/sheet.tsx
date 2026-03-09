@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -11,14 +12,14 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   const {
     id,
     modal,
-    side: sheetSide,
+    side,
     open,
     triggerRef,
     description,
     title,
     titleContent = title,
     showCloseButton = true,
-    className: sheetClassName,
+    className,
     content,
     closeSheetOnEsc = true,
     disablePointerDismissal,
@@ -31,15 +32,6 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   const containerElement = container?.ref?.current ?? null;
 
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  // State to retain side value even after sheet removal
-  const [side, setSide] = useState(sheetSide);
-  const [className, setClassName] = useState(sheetClassName);
-
-  useEffect(() => {
-    setSide(sheetSide);
-    setClassName(sheetClassName);
-  }, [sheetSide, sheetClassName]);
 
   // onClose trigger handles by remove method
   const closeSheet = () => {
@@ -84,8 +76,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
   };
 
   // Create a ref for finalFocus to focus trigger on close
-  const triggerFocusRef = useRef<HTMLElement | null>(null);
-  triggerFocusRef.current = triggerRef?.current ?? null;
+  const triggerFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal} disablePointerDismissal={disablePointerDismissal}>

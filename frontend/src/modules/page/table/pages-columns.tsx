@@ -77,7 +77,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       renderCell: ({ row }) => {
         return <span className="font-light">{t(`common:${row.status}`)}</span>;
       },
-      renderEditCell: ({ row, onRowChange }) => {
+      renderEditCell: function StatusEditCell({ row, onRowChange }) {
         const { t } = useTranslation();
 
         const onChooseValue = (value: string) => {

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -36,7 +36,7 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
   const isMobile = useBreakpointBelow('sm');
 
   // Unique layoutId for the animated indicator
-  const layoutId = useRef(nanoid()).current;
+  const [layoutId] = useState(() => nanoid());
 
   // Track which subject is expanded and the previous subject to detect changes
   const [expanded, setExpanded] = useState<LegalSubject | null>(currentSubject);

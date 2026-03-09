@@ -1,5 +1,5 @@
-import { useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
@@ -40,8 +40,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   };
 
   // Create a ref for finalFocus to focus trigger on close
-  const triggerFocusRef = useRef<HTMLElement | null>(null);
-  triggerFocusRef.current = triggerRef?.current ?? null;
+  const triggerFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={modal}>

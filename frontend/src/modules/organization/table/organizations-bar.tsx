@@ -1,4 +1,4 @@
-import { MailboxIcon, PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
+import { MailboxIcon, PlusIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -10,15 +10,13 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
-import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
@@ -49,7 +47,6 @@ export const OrganizationsTableBar = ({
   const total = useInfiniteQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
-  const deleteButtonRef = useRef(null);
   const newsletterButtonRef = useRef(null);
 
   const { q, order, sort } = searchVars;
@@ -68,36 +65,6 @@ export const OrganizationsTableBar = ({
 
   const onCreateOrganization = () => {
     removeDialog('create-organization');
-  };
-
-  const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<EnrichedOrganization[]>) => {
-      if (args.status === 'success') {
-        const message =
-          args.data.length === 1
-            ? t('common:success.delete_resource', { resource: t('common:organization') })
-            : t('common:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('common:organizations').toLowerCase(),
-              });
-        toaster(message, 'success');
-      }
-      clearSelection();
-    };
-
-    // Selection is already constrained to one tenant at a time (see isRowSelectionDisabled in organizations-table)
-    const tenantId = selected[0]?.tenantId ?? '';
-    createDialog(<DeleteOrganizations tenantId={tenantId} organizations={selected} dialog callback={callback} />, {
-      id: 'delete-organizations',
-      triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('common:delete'),
-      description: t('common:confirm.delete_counted_resource', {
-        count: selected.length,
-        resource:
-          selected.length > 1 ? t('common:organizations').toLowerCase() : t('common:organization').toLowerCase(),
-      }),
-    });
   };
 
   const openNewsletterSheet = () => {
@@ -144,14 +111,6 @@ export const OrganizationsTableBar = ({
                 icon={MailboxIcon}
                 badge={selected.length}
                 className="relative"
-              />
-              <TableBarButton
-                variant="destructive"
-                label="common:remove"
-                icon={TrashIcon}
-                className="relative"
-                badge={selected.length}
-                onClick={openDeleteDialog}
               />
               <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
             </>

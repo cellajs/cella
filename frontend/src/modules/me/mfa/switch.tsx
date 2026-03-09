@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
 import { Switch } from '~/modules/ui/switch';
-import { useUserStore } from '~/store/user';
+import { userStore } from '~/store/user';
 
 export const MfaSwitch = () => {
   const { t } = useTranslation();
-  const { user, hasPasskey, hasTotp } = useUserStore.getState();
+  const { user, hasPasskey, hasTotp } = userStore.getState();
 
   const { create: createDialog } = useDialoger();
 

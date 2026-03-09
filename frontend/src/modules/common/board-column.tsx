@@ -88,7 +88,9 @@ export interface CollapsedColumnViewProps {
   className?: string;
 }
 
-export function CollapsedColumnView({ mainCount, sections = [], className }: CollapsedColumnViewProps) {
+const EMPTY_SECTIONS: CollapsedSection[] = [];
+
+export function CollapsedColumnView({ mainCount, sections = EMPTY_SECTIONS, className }: CollapsedColumnViewProps) {
   const topSections = sections.filter((s) => s.position === 'top');
   const bottomSections = sections.filter((s) => s.position === 'bottom');
 

@@ -21,10 +21,11 @@ interface Props {
  */
 export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
   const { t } = useTranslation();
-  if (!contextEntity) return null;
 
   const form = useInviteFormDraft(contextEntity?.id);
   const { mutate: invite, isPending } = useInviteMemberMutation();
+
+  if (!contextEntity) return null;
 
   const onSubmit = (values: InviteFormValues) => {
     invite(

@@ -10,11 +10,13 @@ interface DataTableSkeletonProps {
   shrinkTable?: boolean;
 }
 
+const EMPTY_CELL_WIDTHS: string[] = [];
+
 // TODO can we sing minimal code show a simplified skeleton on mobile?
 export const DataTableSkeleton = ({
   columnCount = 4,
   cellHeight = 40,
-  cellsWidths = [],
+  cellsWidths = EMPTY_CELL_WIDTHS,
   rowCount = 20,
   shrinkTable = false,
 }: DataTableSkeletonProps) => {
