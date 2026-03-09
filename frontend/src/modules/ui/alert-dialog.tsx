@@ -101,7 +101,7 @@ function AlertDialogDescription({
   );
 }
 
-function AlertDialogMedia({ className, ...props }: React.ComponentProps<'div'>) {
+export function AlertDialogMedia({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-dialog-media"
@@ -148,15 +148,12 @@ function AlertDialogCancel({
 
 export {
   AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogMedia,
   AlertDialogAction,
   AlertDialogCancel,
 };

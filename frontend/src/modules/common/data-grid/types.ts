@@ -6,8 +6,6 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Maybe<T> = T | undefined | null;
 
-export type StateSetter<S> = React.Dispatch<React.SetStateAction<S>>;
-
 /** Supported breakpoint keys for responsive features */
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 

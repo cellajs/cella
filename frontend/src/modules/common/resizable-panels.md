@@ -13,7 +13,6 @@ Constants used in all examples below:
 | Prop | Value |
 |------|-------|
 | `minWidth` | 300 |
-| `maxWidth` | 600 (derived: minWidth x 2) |
 | `collapsedWidth` | 50 |
 | Collapse snap | `(50 + 300) / 2.2 ~ 159` |
 | Expand gap | `300 - 50 = 250` |
@@ -31,6 +30,10 @@ swipe reverses the entire layout change automatically, no special undo logic.
 ### LAYOUT
 Panels use pixel widths (`style.width`) inside a flex container.
 No CSS grid, no fr tracks. Stored widths always equal rendered widths.
+No max-width cap on the grower — it absorbs all freed pixels to keep
+the total panel sum constant during drag. The viewport clamp in
+`redistributePanels` prevents any panel from exceeding the visible
+area after drag ends.
 
 ---
 
@@ -122,12 +125,12 @@ the full expand gap (250px) before B snaps to minWidth.
   +-------------+||+--------------------+
                  <- drag
 
-  Keeps dragging -> B grows (capped at 600 in overflow, uncapped in autoFill):
+  Keeps dragging -> B grows (no cap, absorbs all freed pixels):
 
   +--+||+----------------- B ---------------------+
-  |  |||            600px (overflow cap)      |
-  | A|||                                      |
-  +--+||+-------------------------------------+
+  |  |||            750px                         |
+  | A|||       (grower, uncapped)                 |
+  +--+||+-----------------------------------------+
      <- drag
 ```
 
@@ -153,7 +156,7 @@ collapse on the left panel of the separator.
 ## G6 — Mode detection
 
 Collapsed panels contribute `collapsedWidth`, non-collapsed panels
-contribute `minWidth * 1.5`. If ideal sum + separator space <=
+contribute `minWidth * 1.25`. If ideal sum + separator space <=
 parentWidth -> autoFill, else -> overflow. Computed at drag
 start and fixed for the entire drag. In overflow mode the
 container min-width is set to the ideal sum so panels have
@@ -161,16 +164,17 @@ room to grow without collapsing others.
 
 ---
 
-## G8 — Zero-sum resize
+## G8 — Zero-sum resize (no max-width cap)
 
-Every pixel freed by victims goes to the grower. In autoFill
-mode the grower has no upper cap. In overflow mode the grower
-stops at `maxWidth` (`minWidth x 2`) for normal resize, but
-collapse-freed pixels extend the cap so the grower absorbs
-the space instead of leaving a trailing gap. Additionally,
-the `maxWidth` cap is lifted entirely when enforcing it would
-push the total panel sum below `idealSum` -- this prevents
-panels from snapping back on drag release.
+Every pixel freed by victims goes to the grower. The grower has
+no upper cap in either mode — it absorbs all freed pixels to keep
+the total panel sum constant during drag. This eliminates trailing
+gaps and removes the need for mid-drag container width adjustments
+or scroll compensation.
+
+After drag ends, `redistributePanels` rebalances panels
+proportionally, and its viewport clamp ensures no single panel
+exceeds the scroll parent's visible width.
 
 ```
   Before:
@@ -189,14 +193,6 @@ panels from snapping back on drag release.
   +-------------------------+||+-------------++--------------------+
                               -> drag
 ```
-
-### Cap lift (overflow mode)
-
-In overflow mode the grower is normally capped at `maxWidth` + `collapseFreed`.
-But if enforcing that cap would push the total panel sum below `idealSum`,
-the cap is lifted entirely so the grower absorbs all freed pixels. This is
-a safety valve that prevents `redistributePanels` from snapping panels back
-to larger sizes on drag release (it would find `ratio > 1` and scale panels up).
 
 ---
 
@@ -288,14 +284,14 @@ While `totalFreed < expandCost`, A cannot collapse.
 
 ## AUTOFILL MODE
 
-Panels fit the container. `maxWidth` not enforced.
+Panels fit the container. Grower absorbs all freed pixels (no cap).
 Collapse freed pixels go to grower (A2).
 
 ### A2 — Collapse funds the grower (autoFill)
 
 In autoFill mode, freed collapse pixels go to the grower.
-The grower has no upper cap in autoFill (G8), so it absorbs
-all freed pixels. `redistributePanels` will rebalance on drop.
+The grower has no upper cap (G8), so it absorbs all freed
+pixels. `redistributePanels` will rebalance on drop.
 
 ```
   AutoFill -- before:
@@ -320,17 +316,17 @@ all freed pixels. `redistributePanels` will rebalance on drop.
 ## OVERFLOW MODE
 
 Panels exceed container, horizontal scroll.
-Collapse freed pixels go to grower (`maxWidth` extended by
-`collapseFreed` so grower can absorb the space -- G8).
+Grower absorbs all freed pixels (no cap) — total panel sum stays
+constant during drag, so the container width is static mid-drag.
 Expand is free: expand cost is subtracted from remaining
 delta before victims are shrunk (O2).
 
 ### O1 — Collapse freed pixels fund grower (overflow)
 
 In overflow mode, collapse freed pixels go to the grower just like
-in autoFill. The grower's `maxWidth` cap is extended by `collapseFreed`
-so it can absorb the space (see G8). The container `min-width` is
-tightened to the actual panel sum mid-drag so no trailing gap appears.
+in autoFill. The grower has no cap (G8), so it absorbs all freed
+pixels. Total panel sum stays constant — no trailing gap, no
+mid-drag container width changes needed.
 
 ```
   Overflow -- before:
@@ -341,15 +337,15 @@ tightened to the actual panel sum mid-drag so no trailing gap appears.
   +--------------------+||+--------------++--------------++--------------+
                         -> drag (Phase 2 begins)
 
-  B collapses -> 250 freed pixels extend A's cap and fund A:
+  B collapses -> 250 freed pixels fund A:
 
   +----------------- A -----------------+||+--++----- C ------++----- D ------+
   |             700px                   |||50||   400px       ||   350px       |
-  |     (grower, cap extended by 250)   ||| B||               ||               |
-  +---------------------------------+||+--++--------------++--------------+
-                                     -> drag
+  |     (grower, absorbs all freed)     ||| B||               ||               |
+  +-------------------------------------+||+--++--------------++--------------+
+                                         -> drag
 
-  Container min-width tightened to actual sum. No trailing gap.
+  Total panel sum unchanged. Container width static.
 ```
 
 ### O2 — Expand is free in overflow mode
@@ -383,6 +379,19 @@ to victims.
 
 ---
 
+## Viewport clamp (redistributePanels)
+
+After drag ends (and on window resize), `redistributePanels` runs
+a pre-pass that clamps any panel exceeding the scroll parent's
+visible width. This prevents a single panel from being wider than
+the viewport, which would make it impossible to view fully even
+by scrolling.
+
+The clamp runs before the proportional ratio scaling, so it fires
+even when the total panel sum matches available space (ratio ≈ 1).
+
+---
+
 ## Pre-collapsed panels in cascade
 
 Panels already collapsed at drag start are skipped (X) in both
@@ -397,7 +406,7 @@ Phase 1 and Phase 2 cascade.
   |      450px         ||  50   |||      400px         |
   |   (victim 2)      || X     |||     (grower)       |
   +--------------------++-------+||+--------------------+
-                                <- drag 200px
+                               <- drag 200px
 
   Phase 1: A is first victim in cascade order -- but B is
   between separator and A. B is collapsed -> X skip.
@@ -434,58 +443,19 @@ Phase 1 and Phase 2 cascade.
 
 ---
 
-## Grower maxWidth cap during collapse (overflow only)
-
-In overflow mode, the grower's normal cap is `maxWidth` (2x minWidth).
-Collapse freed pixels extend this cap by `collapseFreed` (G8). If
-even the extended cap is insufficient and enforcing it would push the
-total sum below `idealSum`, the cap is lifted entirely (cap lift).
-
-In autoFill mode there is no cap -- the grower absorbs all freed
-pixels (see A2). No spacer or gap is created.
-
-### Overflow -- grower cap extended by collapseFreed
-
-```
-  A at 550px, overflow mode. B at minWidth, Phase 2 begins:
-
-  +----------- A -----------+||+----- B ------++----- C ------+
-  |     550px                |||   300px       ||   300px       |
-  |    (grower)              |||   (min)       ||   (min)       |
-  +--------------------------+||+--------------++--------------+
-                              -> drag
-
-  B collapses -> frees 250px. Normal cap = 600. Extended cap = 600+250 = 850.
-  A grows from 550 to 800 (550 + 250 freed):
-
-  +--------------------- A ---------------------+||+--++----- C ------+
-  |                  800px                      |||50||   300px       |
-  |       (grower, within extended cap 850)     ||| B||   (min)       |
-  +---------------------------------------------+||+--++--------------+
-                                                 -> drag
-```
-
----
-
 ## G11 — Per-panel cascade (last victim off-screen)
 
 When the last victim panel is not visible in the scroll
 container viewport at drag start (overflow mode only),
-the two-phase cascade (G9) is replaced by a gated
+the two-phase cascade (G9) is replaced by a per-panel
 two-pass cascade:
 
 **Phase 1** — shrink all victims to `minWidth`, nearest first
 (identical to G9 Phase 1).
 
-**Grower gate** — if the grower is still below its `maxWidth`
-cap after Phase 1, skip collapse entirely. The freed shrink
-pixels are sufficient; no panel needs to collapse.
-
-**Phase 2** — per-panel collapse, nearest first. Only runs when
-the grower has reached its cap. Each victim enters the collapse
-zone and collapses before the next is touched. This ensures
-nearest-first collapse order without premature collapse when
-the grower still has room to grow.
+**Phase 2** — per-panel collapse, nearest first. Each victim
+enters the collapse zone and collapses before the next is
+touched. This ensures nearest-first collapse order.
 
 Computed at drag start, fixed for the entire drag.
 
@@ -527,86 +497,12 @@ E is scrolled out of view. Per-panel cascade activates.
                         -> drag                      viewport edge : off-screen
 
   Phase 1: B->300, C->300, D->300, E->300 (all shrink to min).
-  Grower gate: A would be 550 + 200 = 750. maxWidth = 600.
-  750 >= 600 -> gate passed -> Phase 2 proceeds.
-
   Phase 2: B enters collapse zone -> collapses to 50.
   Then C -> collapses. Then D. Then E. Nearest first.
 
-  +-------------- A ---------------+||+--++--++--++--+  :+----------+
-  |          (grower)               |||50||50||50||50|  :|          |
-  |                                 ||| B|| C|| D|| E|  :|          |
-  +---------------------------------+||+--++--++--++--+  :+----------+
+  +-------------- A ---------------+||+--++--++--++--+
+  |          (grower)               |||50||50||50||50|
+  |     (absorbs all freed)        ||| B|| C|| D|| E|
+  +---------------------------------+||+--++--++--++--+
                                      -> drag
 ```
-
-### Grower gate prevents premature collapse
-
-```
-  5 panels, E off-screen. Drag right (A at 350, grower):
-
-  +--- A ----+||+--- B ----++--- C ----++--- D ----+  :+--- E ----+
-  |  350px    |||  400px    ||  400px    ||  400px    |  :|  400px    |
-  | (grower)  ||| (victim1) || (victim2) || (victim3) |  :| (victim4) |
-  +-----------+||+----------++----------++----------+  :+----------+
-               -> drag 400px
-
-  Phase 1: B->300 (100), C->300 (100), D->300 (100), E->300 (100).
-  totalFreed = 400. remaining = 0.
-  Grower gate: A would be 350 + 400 = 750. But remaining is 0.
-  No collapse needed. A grows to 600 (cap). No layout shift.
-
-  (Without gate: B would shrink to 300 and then immediately collapse
-   even though A only needed 250px to reach maxWidth.)
-```
-
----
-
-## G12 — Scroll compensation on expand (overflow)
-
-Only applies when the grower panel (right of separator)
-is at or past the right edge of the scroll container
-viewport at drag start. When expanding such a collapsed
-panel (dragging left), the expand adds content to the
-right without moving the separator. After the expand
-gate (G3) clears, `scrollLeft` is adjusted by `expandCost`
-so the separator stays aligned with the cursor.
-Reversing back into the gate scrolls to the right end
-so the collapsed panel stays visible.
-Computed at drag start, fixed for the entire drag.
-
-```
-  Overflow -- B collapsed, user drags last separator left:
-
-  +-------- A ---------+||+--+
-  |      400px         |||50|
-  |    (victim)        ||| B|
-  +--------------------+||+--+
-                        <- drag
-
-  Expand gate active (G3): user drags 250px left.
-  Handle frozen, hint shows progress.
-  Cursor is now 250px left of separator.
-
-  Gate clears -> B snaps to 300px. Content grows right:
-
-  +-------- A ---------+||+-------- B ---------+
-  |      400px         |||      300px         |
-  |    (victim)        |||    (expanded!)     |
-  +--------------------+||+--------------------+
-                                               <- cursor is here
-            ^ separator is here (250px gap!)
-
-  G12: scrollLeft += 250. Separator aligns with cursor:
-
-  +-------- A ---------+||+-------- B ---------+
-  |      400px         |||      300px         |
-  |    (victim)        |||    (expanded!)     |
-  +--------------------+||+--------------------+
-                        <- cursor + separator aligned
-```
-
-Reversing back into the gate undoes the scroll adjustment.
-This only applies to left-dragging (grower to the right).
-Right-dragging with a left-side grower naturally moves the
-separator with the cursor -- no compensation needed.

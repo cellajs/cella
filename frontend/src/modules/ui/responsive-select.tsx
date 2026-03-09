@@ -7,13 +7,13 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/d
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
-export interface ResponsiveSelectOption {
+interface ResponsiveSelectOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
 }
 
-export interface ResponsiveSelectProps {
+interface ResponsiveSelectProps {
   options: ResponsiveSelectOption[];
   value: string;
   onChange: (value: string) => void;

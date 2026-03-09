@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { CalculatedColumn } from './types';
 
-export interface MobileSubRowProps<R, SR> {
+interface MobileSubRowProps<R, SR> {
   /** The row data */
   row: R;
   /** Row index in the grid */
@@ -55,7 +55,7 @@ export function MobileSubRow<R, SR>({ row, rowIdx, subColumns, isExpanded }: Mob
   );
 }
 
-export interface MobileExpandToggleProps {
+interface MobileExpandToggleProps {
   /** Whether the row is expanded */
   isExpanded: boolean;
   /** Callback to toggle expansion */

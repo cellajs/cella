@@ -5,7 +5,7 @@
 import { hierarchy, roles } from './default-config';
 import { appConfig } from './app-config';
 
-export type { ConfigMode } from './app-config';
+;
 
 /******************************************************************************
  * ENTITY TYPES

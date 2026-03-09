@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '~/utils/cn';
 
-export interface BoardColumnHeaderProps {
+interface BoardColumnHeaderProps {
   leading?: ReactNode;
   title?: ReactNode;
   actions?: ReactNode;
@@ -29,7 +29,7 @@ export function BoardColumnHeader({ leading, title, actions, isCollapsed, classN
   );
 }
 
-export interface BoardColumnBodyProps {
+interface BoardColumnBodyProps {
   children: ReactNode;
   highlighted?: boolean;
   hasSelection?: boolean;
@@ -82,7 +82,7 @@ export interface CollapsedSection {
   position: 'top' | 'bottom';
 }
 
-export interface CollapsedColumnViewProps {
+interface CollapsedColumnViewProps {
   mainCount: number;
   sections?: CollapsedSection[];
   className?: string;

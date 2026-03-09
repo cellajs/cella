@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { StepperProvider } from '~/modules/common/stepper/context';
 import { Step } from '~/modules/common/stepper/step';
-import type { StepItem, StepProps, StepperProps } from '~/modules/common/stepper/types';
+import type { StepperProps } from '~/modules/common/stepper/types';
 import { useMediaQuery } from '~/modules/common/stepper/use-media-query';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { cn } from '~/utils/cn';
@@ -166,4 +166,3 @@ function HorizontalContent({ children }: { children: React.ReactNode }) {
 }
 
 export { Step, useStepper };
-export type { StepItem, StepProps, StepperProps };

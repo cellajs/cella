@@ -290,13 +290,4 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   );
 }
 
-export {
-  Carousel,
-  CarouselContent,
-  CarouselDots,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  useCarousel,
-  type CarouselApi,
-};
+export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious };

@@ -156,7 +156,6 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    ...(autoFocus && editable ? { autofocus: 'end' as const } : {}),
     collaboration: collaborationConfig,
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
@@ -319,6 +318,7 @@ function BlockNote({
       theme={mode}
       editor={editor}
       editable={editable}
+      autoFocus={autoFocus}
       ref={blockNoteRef}
       className={`${dense ? 'bn-dense' : ''} ${className}`}
       data-color-scheme={mode}

@@ -70,7 +70,7 @@ import {
   sign,
 } from './utils/grid-utils';
 
-export interface SelectCellState extends Position {
+interface SelectCellState extends Position {
   readonly mode: 'SELECT';
 }
 

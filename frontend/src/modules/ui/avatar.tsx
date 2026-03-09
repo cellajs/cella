@@ -108,7 +108,7 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
   return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
 }
 
-export interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
+interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
 
 export const AvatarOverflowIndicator = React.forwardRef<
   HTMLSpanElement,

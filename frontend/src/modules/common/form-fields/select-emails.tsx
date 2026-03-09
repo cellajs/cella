@@ -1,8 +1,7 @@
 import { TagInput, type TagInputProps } from '~/modules/ui/tag-input';
 import { isEmail } from '~/utils/is-email';
 
-export interface SelectEmailsProps
-  extends Omit<TagInputProps, 'tags' | 'setTags' | 'validateTag' | 'delimiter' | 'onChange'> {
+interface SelectEmailsProps extends Omit<TagInputProps, 'tags' | 'setTags' | 'validateTag' | 'delimiter' | 'onChange'> {
   emails?: string[];
   onChange?: (emails: string[]) => void;
   /** Allow display name format like "Name <email@example.com>" */

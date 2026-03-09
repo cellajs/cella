@@ -41,7 +41,7 @@ let activeSpinner: Ora | null = null;
 /**
  * Get the header line for CLI output.
  */
-export function getHeader(): string {
+function getHeader(): string {
   const right = 'cellajs.com';
   // Account for ANSI codes when calculating padding
   const visibleLeft = `⧈ ${NAME} v${VERSION}`;
@@ -63,7 +63,7 @@ export function printHeader(): void {
  * Print a completed step with checkmark.
  * Optionally include a detail line in grey, followed by a blank line.
  */
-export function printStep(label: string, detail?: string): void {
+function printStep(label: string, detail?: string): void {
   console.info(`${pc.green('✓')} ${label}`);
   if (detail) {
     console.info(`  ${pc.dim(detail)}`);
@@ -289,7 +289,7 @@ export function printSummary(summary: AnalysisSummary, title = 'summary'): void 
 /**
  * Print a group of files with a specific status, including section header and footer.
  */
-export function printFileGroup(
+function printFileGroup(
   files: AnalyzedFile[],
   status: FileStatus,
   linkOptions: LinkOptions,
@@ -365,22 +365,6 @@ export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptio
     hint: 'both changed, fork wins (pinned in cella.config.ts).',
     dateSource: 'upstream',
   });
-}
-
-/**
- * Print actual unresolved conflicts after sync.
- * These require manual intervention to resolve.
- */
-export function printConflicts(conflicts: string[]): void {
-  if (conflicts.length === 0) return;
-
-  printSectionHeader(`${pc.red('✗')} unresolved conflicts (${conflicts.length} files)`);
-
-  for (const file of conflicts) {
-    console.info(`  ${pc.red('!')} ${file}`);
-  }
-
-  console.info();
 }
 
 /**

@@ -136,7 +136,7 @@ export async function countCommitsBetween(cwd: string, fromRef: string, toRef: s
 /**
  * File change info with date and commit hash.
  */
-export interface FileChangeInfo {
+interface FileChangeInfo {
   date: string;
   hash: string;
 }
@@ -293,10 +293,10 @@ export async function getMergeBase(cwd: string, ref1: string, ref2: string): Pro
 }
 
 /** File change status codes from git diff-tree */
-export type FileChangeStatus = 'A' | 'D' | 'M' | 'T' | 'R';
+type FileChangeStatus = 'A' | 'D' | 'M' | 'T' | 'R';
 
 /** File change info from git diff-tree */
-export interface FileChange {
+interface FileChange {
   status: FileChangeStatus;
   baseHash: string | null;
   targetHash: string | null;

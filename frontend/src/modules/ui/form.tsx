@@ -69,7 +69,7 @@ export function FormField<
   );
 }
 
-export function useFormField() {
+function useFormField() {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
 

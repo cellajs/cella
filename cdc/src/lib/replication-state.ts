@@ -1,7 +1,7 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
 
 /** Replication state for health monitoring */
-export type ReplicationState = 'active' | 'paused' | 'stopped';
+type ReplicationState = 'active' | 'paused' | 'stopped';
 
 /**
  * Centralized state management for CDC replication.

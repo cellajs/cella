@@ -11,7 +11,7 @@ import { cn } from '~/utils/cn';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
-export interface NavButtonProps {
+interface NavButtonProps {
   navItem: NavItem;
   isActive: boolean;
   isCollapsed: boolean;
@@ -21,7 +21,7 @@ export interface NavButtonProps {
 /**
  * App nav icon (avatar for account, loader for home, or item icon) used by both sidebar and bottom bar.
  */
-export function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
+function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
   const { user } = useUserStore();
 
   if (navItem.id === 'account' && user) {

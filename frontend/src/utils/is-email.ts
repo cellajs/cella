@@ -1,12 +1,12 @@
 // forked from https://github.com/chriso/validator.js
 
-export interface IFqdnOptions {
+interface IFqdnOptions {
   requireTld?: boolean;
   allowUnderscores?: boolean;
   allowTrailingDot?: boolean;
 }
 
-export interface IEmailOptions {
+interface IEmailOptions {
   allowDisplayName?: boolean;
   requireDisplayName?: boolean;
   allowUtf8LocalPart?: boolean;

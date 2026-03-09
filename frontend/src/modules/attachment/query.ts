@@ -28,7 +28,13 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
+import {
+  createStxForCreate,
+  createStxForDelete,
+  createStxForUpdate,
+  squashPendingMutation,
+  syncEntityToCache,
+} from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { getCacheToken } from '~/query/realtime';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
@@ -41,7 +47,7 @@ type UpdateAttachmentItem = UpdateAttachmentData['body'];
 type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'stx'>;
 type UpdateAttachmentVars = { id: string; key: UpdateAttachmentInput['key']; data: UpdateAttachmentInput['data'] };
 
-export const attachmentsLimit = appConfig.requestLimits.attachments;
+const attachmentsLimit = appConfig.requestLimits.attachments;
 
 type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> & {
   tenantId: string;
@@ -201,11 +207,20 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
         queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
       }
     },
-    onSuccess: (updatedAttachment) => {
-      mutateCache.update([updatedAttachment]);
-      queryClient.setQueryData<Attachment>(keys.detail.byId(updatedAttachment.id), (old) =>
-        old ? { ...old, ...updatedAttachment } : old,
-      );
+    onSuccess: (updatedAttachment, variables) => {
+      const detailKey = keys.detail.byId(updatedAttachment.id);
+      const cached = findAttachmentInListCache(updatedAttachment.id);
+      // Merge only the mutated field + stx from server, preserving other optimistic values
+      const merged = cached
+        ? {
+            ...cached,
+            [variables.key]: updatedAttachment[variables.key],
+            stx: updatedAttachment.stx,
+            modifiedAt: updatedAttachment.modifiedAt,
+            ...('modifiedBy' in updatedAttachment ? { modifiedBy: updatedAttachment.modifiedBy } : {}),
+          }
+        : updatedAttachment;
+      syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {

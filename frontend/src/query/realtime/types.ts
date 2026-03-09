@@ -4,7 +4,7 @@ import type { StreamNotification } from '~/api.gen';
 export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
 
 /** Base options for stream hooks. */
-export interface BaseStreamOptions {
+interface BaseStreamOptions {
   enabled?: boolean;
   onStateChange?: (state: StreamState) => void;
 }

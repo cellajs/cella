@@ -21,7 +21,7 @@ interface SchemaDetailProps {
  * Single schema detail card with collapsible ViewerGroup.
  * Lazily loads types/zod content via React Query.
  */
-export const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
+const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
   const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
 

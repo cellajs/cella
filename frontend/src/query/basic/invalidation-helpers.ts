@@ -28,7 +28,7 @@ import { getEntityQueryKeys } from './entity-query-registry';
  * }
  * ```
  */
-export function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
+function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
   // When onSettled runs, the current mutation is still counted as "mutating"
   // So if count === 1, this is the last mutation and we should invalidate
   // If count > 1, other mutations are pending and will handle invalidation

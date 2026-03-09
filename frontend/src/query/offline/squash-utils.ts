@@ -78,6 +78,32 @@ export function coalescePendingCreate(
 }
 
 /**
+ * Check if there are pending update mutations for an entity.
+ * Used in onSuccess to skip full cache writes when another update is queued,
+ * preserving optimistic state and only syncing stx for version tracking.
+ *
+ * @param queryClient - React Query client
+ * @param updateMutationKey - Update mutation key (e.g., ['task', 'update'])
+ * @param entityId - Entity ID to check
+ */
+export function hasPendingUpdate(
+  queryClient: QueryClient,
+  updateMutationKey: readonly unknown[],
+  entityId: string,
+): boolean {
+  const mutationCache = queryClient.getMutationCache();
+  const mutations = mutationCache.findAll({ mutationKey: updateMutationKey });
+
+  for (const mutation of mutations) {
+    if (mutation.state.status !== 'pending') continue;
+    const variables = mutation.state.variables as { id?: string } | undefined;
+    if (variables?.id === entityId) return true;
+  }
+
+  return false;
+}
+
+/**
  * Check if there's a pending delete for an entity.
  * Use this to skip updates to entities being deleted.
  *

@@ -7,7 +7,7 @@
  * @param trackedFields - Fields to check for changes
  * @returns Array of field names that changed
  */
-export function detectChangedFields<T extends object>(
+function detectChangedFields<T extends object>(
   current: T | undefined,
   incoming: Partial<T>,
   trackedFields: readonly (keyof T)[],

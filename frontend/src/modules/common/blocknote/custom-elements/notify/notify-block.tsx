@@ -72,7 +72,7 @@ export const notifyBlock = createReactBlockSpec(
 
 // Slash menu item to insert an Notify block
 // add key on custom slash items it check allowance by it
-export const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
+const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Notify',
   key: 'notify',
   onItemClick: () => {

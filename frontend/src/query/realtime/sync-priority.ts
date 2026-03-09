@@ -1,7 +1,7 @@
 import { hierarchy, type ProductEntityType } from 'shared';
 import router from '~/routes/router';
 
-export type SyncPriority = 'high' | 'medium' | 'low';
+type SyncPriority = 'high' | 'medium' | 'low';
 
 interface SyncNotification {
   entityType: ProductEntityType;
