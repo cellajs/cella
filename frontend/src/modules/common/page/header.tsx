@@ -15,7 +15,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { useFindEntityInListCache } from '~/query/basic';
+import { useFindEntityInListCache } from '~/query/basic/find-in-list-cache';
 import { getContextEntityRoute } from '~/routes-resolver';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {

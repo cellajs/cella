@@ -19,9 +19,7 @@ const cdcMessageSchema = z.object({
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     entityId: z.string(),
-    // seq is the org-level sequence from contextCounters (for gap detection)
-    seq: z.number().optional(),
-    // seqAt is the per-entity sequence stamped by the trigger (for delta fetching)
+    // seqAt: entity-type sequence stamped by trigger (product entities only)
     seqAt: z.number().optional(),
     // error is only set for dead letter activities, not sent via WebSocket
     error: z.union([activityErrorSchema, z.null()]).optional(),
@@ -179,7 +177,6 @@ class CdcWebSocketServer {
       const activityEvent = {
         ...message.activity,
         type,
-        seq: message.activity.seq ?? null,
         seqAt: message.activity.seqAt ?? null,
         entity: message.entity,
         cacheToken: message.cacheToken,

@@ -12,7 +12,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type EntityGridBarSearch = {
   q?: string;

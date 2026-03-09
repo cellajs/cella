@@ -84,7 +84,6 @@ export type StreamNotification = {
   entityId: string;
   organizationId: string | null;
   contextType: 'organization' | null;
-  seq: number | null;
   seqAt: number | null;
   stx: StxBase &
     ({
@@ -490,7 +489,6 @@ export type GetActivitiesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page';
@@ -2315,7 +2313,7 @@ export type PostPublicCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     * Client-side sequence numbers per scope: { "orgId:s:page": 42 }
      */
     seqs?: {
       [key: string]: number;
@@ -2361,9 +2359,7 @@ export type PostPublicCatchupResponses = {
      */
     changes: {
       [key: string]: {
-        seq: number;
         deletedIds: Array<string>;
-        mSeq?: number;
         entitySeqs?: {
           [key: string]: number;
         };
@@ -2430,7 +2426,7 @@ export type PostAppCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     * Client-side sequence numbers per scope: { "orgId:s:page": 42 }
      */
     seqs?: {
       [key: string]: number;
@@ -2476,9 +2472,7 @@ export type PostAppCatchupResponses = {
      */
     changes: {
       [key: string]: {
-        seq: number;
         deletedIds: Array<string>;
-        mSeq?: number;
         entitySeqs?: {
           [key: string]: number;
         };
@@ -3075,7 +3069,6 @@ export type GetRequestsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/requests';
@@ -3665,7 +3658,6 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     relatableUserId?: string;
     role?: 'admin' | 'member';
@@ -3830,7 +3822,6 @@ export type GetPagesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/pages';
@@ -4108,7 +4099,6 @@ export type GetUsersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     role?: 'admin';
   };
@@ -4281,7 +4271,6 @@ export type GetAttachmentsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/{tenantId}/{orgId}/attachments';
@@ -4822,7 +4811,6 @@ export type GetMembersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     entityId: string;
     entityType: 'organization';
@@ -4889,7 +4877,6 @@ export type GetPendingMembershipsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     entityId: string;
     entityType: 'organization';

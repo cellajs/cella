@@ -1,4 +1,4 @@
-import { bigint, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
@@ -7,22 +7,14 @@ import { maxLength } from '#/db/utils/constraints';
  * One row per context entity (org, project, etc.) keyed by its ID,
  * plus 'public:{entityType}' rows for parentless product entities.
  *
- * - seq: monotonic counter for product entity changes (CDC-managed, for coarse gap detection)
- * - mSeq: monotonic counter for membership changes (CDC-managed)
  * - counts: extensible JSONB for entity counts, membership role breakdown,
- *   and per-entityType seqs (s:{type} keys, managed by stamp_entity_seq_at trigger)
+ *   and entity-type seqs (s:{type} keys, managed by stamp_entity_seq_at trigger)
  *
- * Hot-path columns (seq, mSeq) are native integers for O(1) lookup.
- * Flexible counts use JSONB for zero-migration extensibility.
- *
- * CDC worker increments seq/mSeq atomically via upsert.
  * The stamp_entity_seq_at trigger increments counts['s:{entityType}'] and stamps entity.seqAt.
- * Backend reads for catchup gap detection and entity count display.
+ * Backend reads counts for catchup gap detection and entity count display.
  */
 export const contextCountersTable = pgTable('context_counters', {
   contextKey: varchar('context_key', { length: maxLength.id }).primaryKey(),
-  seq: bigint({ mode: 'number' }).notNull().default(0),
-  mSeq: bigint('m_seq', { mode: 'number' }).notNull().default(0),
   counts: jsonb().$type<Record<string, number>>().notNull().default({}),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

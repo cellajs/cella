@@ -1,7 +1,7 @@
 import { appConfig, type ContextEntityType, isProductEntity, type ProductEntityType } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { seenKeys } from '~/modules/seen/query';
-import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic';
+import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
@@ -18,10 +18,8 @@ import type { AppStreamNotification } from './types';
  * to trigger refetch, or use cacheToken for efficient fetches.
  */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const { entityId, action, resourceType, entityType, stx, organizationId, contextType, seq, cacheToken, _trace } =
+  const { entityId, action, resourceType, entityType, stx, organizationId, contextType, seqAt, cacheToken, _trace } =
     notification;
-  // seqAt available after API types regeneration (pnpm generate:openapi)
-  const seqAt = (notification as Record<string, unknown>).seqAt as number | null | undefined;
 
   withSpanSync(syncSpanNames.messageProcess, { entityType, action, entityId, _trace }, () => {
     // Store cache token if present (for product entities)
@@ -31,10 +29,6 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 
     // Membership events (resourceType = 'membership')
     if (resourceType === 'membership') {
-      // Track mSeq for membership gap detection (scoped per org with :m suffix)
-      if (seq !== null && organizationId) {
-        useSyncStore.getState().setSeq(`${organizationId}:m`, seq);
-      }
       handleMembershipNotification(action, organizationId, contextType);
       return;
     }
@@ -45,7 +39,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     const keys = getEntityQueryKeys(entityType);
     if (!organizationId) return console.error('Missing organizationId for product entity event:', entityType, entityId);
 
-    handleEntityNotification(entityType, entityId, action, stx, organizationId, seq, seqAt ?? null, keys);
+    handleEntityNotification(entityType, entityId, action, stx, organizationId, seqAt ?? null, keys);
   });
 }
 
@@ -94,7 +88,6 @@ function handleEntityNotification(
   action: AppStreamNotification['action'],
   stx: AppStreamNotification['stx'],
   organizationId: string,
-  seq: number | null,
   seqAt: number | null,
   keys: EntityQueryKeys,
 ): void {
@@ -104,12 +97,7 @@ function handleEntityNotification(
     return;
   }
 
-  // Track seq for gap detection — scoped per org for app stream
-  if (seq !== null) {
-    useSyncStore.getState().setSeq(organizationId, seq);
-  }
-
-  // Track per-entityType seq watermark for delta fetch support
+  // Track contextEntity-scoped seq watermark (from stamp_entity_seq_at trigger)
   if (seqAt !== null) {
     const seqKey = `${organizationId}:s:${entityType}`;
     const store = useSyncStore.getState();
@@ -129,7 +117,7 @@ function handleEntityNotification(
         cacheOps.invalidateEntityList(keys, 'none');
       } else {
         // Fetch single entity and patch both detail and list caches
-        cacheOps.fetchEntityAndUpdateList(entityId, keys, action, organizationId);
+        cacheOps.fetchEntityAndUpdateList(entityId, keys, action, organizationId, entityType);
       }
 
       // Optimistically increment unseen count for new entities from other users

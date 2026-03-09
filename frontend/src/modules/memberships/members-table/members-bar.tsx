@@ -26,7 +26,7 @@ import type { MembersTableWrapperProps } from '~/modules/memberships/members-tab
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { InviteUsers } from '~/modules/user/invite-users';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 

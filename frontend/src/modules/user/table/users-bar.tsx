@@ -22,7 +22,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 

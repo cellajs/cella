@@ -119,13 +119,11 @@
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "seq": { "type": "integer", "required": true },
                   "deletedIds": {
                     "type": "array",
                     "required": true,
                     "itemType": "string"
                   },
-                  "mSeq": { "type": "integer", "required": false },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
@@ -205,7 +203,7 @@
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+            "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
             "additionalProperties": { "type": "integer", "required": false }
           }
         },
@@ -278,13 +276,11 @@
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "seq": { "type": "integer", "required": true },
                   "deletedIds": {
                     "type": "array",
                     "required": true,
                     "itemType": "string"
                   },
-                  "mSeq": { "type": "integer", "required": false },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
@@ -318,7 +314,6 @@
         "example": {
           "changes": {
             "org-example-id": {
-              "seq": 42,
               "deletedIds": []
             }
           },
@@ -373,7 +368,7 @@
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+            "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
             "additionalProperties": { "type": "integer", "required": false }
           }
         },

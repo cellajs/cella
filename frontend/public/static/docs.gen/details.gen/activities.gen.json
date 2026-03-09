@@ -141,9 +141,8 @@
               "createdAt": "2024-11-21T04:00:59.122Z",
               "changedKeys": null,
               "stx": null,
-              "seq": 511,
               "error": null,
-              "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
+              "organizationId": "iweg2q4gqa3vx9cfyey6mqh9"
             },
             {
               "id": "5ogh3yr2b2dbwf7b9eckajcl",
@@ -158,9 +157,8 @@
               "createdAt": "2024-10-29T08:46:20.790Z",
               "changedKeys": ["slug", "name", "email"],
               "stx": null,
-              "seq": 810,
               "error": null,
-              "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
+              "organizationId": "t5nr6k4huj5qv4k6bwmvl0e4"
             }
           ],
           "total": 2
@@ -222,11 +220,6 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "modifiedAfter": {
-            "type": "string",
-            "required": false,
-            "format": "date-time"
-          },
           "afterSeq": { "type": "string", "required": false },
           "userId": {
             "type": ["string", "null"],

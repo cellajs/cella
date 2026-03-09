@@ -16,7 +16,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateTenantForm } from '~/modules/tenants/create-tenant-form';
 import { useTenantArchiveMutation } from '~/modules/tenants/query';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type TenantsTableBarProps = BaseTableBarProps<Tenant, TenantsRouteSearchParams>;
 

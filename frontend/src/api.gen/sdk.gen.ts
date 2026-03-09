@@ -294,7 +294,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string | null=} options.query.userid - `string | null` (optional)
  * @param {enum=} options.query.entitytype - `enum` (optional)
@@ -1752,7 +1751,6 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -1996,7 +1994,6 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string=} options.query.relatableuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
@@ -2112,7 +2109,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2247,7 +2243,6 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2341,7 +2336,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2661,7 +2655,6 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
@@ -2698,7 +2691,6 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`

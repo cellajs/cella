@@ -80,7 +80,6 @@ export const zStreamNotification = z.object({
   entityId: z.string(),
   organizationId: z.string().nullable(),
   contextType: z.enum(['organization']).nullable(),
-  seq: z.int().nullable(),
   seqAt: z.int().nullable(),
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   cacheToken: z.string().nullable(),
@@ -454,7 +453,6 @@ export const zGetActivitiesData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
       userId: z.string().max(50).nullish(),
       entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
@@ -1060,9 +1058,7 @@ export const zPostPublicCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
-      seq: z.int(),
       deletedIds: z.array(z.string()),
-      mSeq: z.int().optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       deletedByType: z.record(z.string(), z.array(z.string())).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
@@ -1093,9 +1089,7 @@ export const zPostAppCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
-      seq: z.int(),
       deletedIds: z.array(z.string()),
-      mSeq: z.int().optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       deletedByType: z.record(z.string(), z.array(z.string())).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
@@ -1311,7 +1305,6 @@ export const zGetRequestsData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
     })
     .optional(),
@@ -1540,7 +1533,6 @@ export const zGetOrganizationsData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
       relatableUserId: z.string().max(50).optional(),
       role: z.enum(['admin', 'member']).optional(),
@@ -1626,7 +1618,6 @@ export const zGetPagesData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
     })
     .optional(),
@@ -1742,7 +1733,6 @@ export const zGetUsersData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
       role: z.enum(['admin']).optional(),
     })
@@ -1824,7 +1814,6 @@ export const zGetAttachmentsData = z.object({
       order: z.enum(['asc', 'desc']).optional(),
       offset: z.string().optional(),
       limit: z.string().optional(),
-      modifiedAfter: z.iso.datetime().optional(),
       afterSeq: z.string().optional(),
     })
     .optional(),
@@ -2033,7 +2022,6 @@ export const zGetMembersData = z.object({
     order: z.enum(['asc', 'desc']).optional(),
     offset: z.string().optional(),
     limit: z.string().optional(),
-    modifiedAfter: z.iso.datetime().optional(),
     afterSeq: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),
@@ -2069,7 +2057,6 @@ export const zGetPendingMembershipsData = z.object({
     order: z.enum(['asc', 'desc']).optional(),
     offset: z.string().optional(),
     limit: z.string().optional(),
-    modifiedAfter: z.iso.datetime().optional(),
     afterSeq: z.string().optional(),
     entityId: z.string().max(50),
     entityType: z.enum(['organization']),

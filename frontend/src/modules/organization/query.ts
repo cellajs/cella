@@ -21,8 +21,8 @@ import {
   invalidateIfLastMutation,
   preserveIncluded,
   registerEntityQueryKeys,
-  useMutateQueryData,
 } from '~/query/basic';
+import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import type { MutationData } from '~/query/types';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;

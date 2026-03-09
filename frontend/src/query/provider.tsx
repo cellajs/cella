@@ -9,6 +9,7 @@ import '~/modules/attachment/query';
 import '~/modules/page/query';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 import { useUIStore } from '~/store/ui';
 
@@ -109,13 +110,17 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
         },
       }}
       onSuccess={() => {
-        // After successful cache restoration, resume any paused mutations and revalidate.
-        queryClient.resumePausedMutations().then(() => {
-          // Only invalidate queries if we're in offline mode (IDB persister)
-          // Session mode doesn't need aggressive revalidation
-          if (offlineAccess) {
-            queryClient.invalidateQueries();
-          }
+        // Wait for stream catchup to complete before resuming paused mutations.
+        // This ensures the cache has fresh data (and fresh stx versions) so replayed
+        // mutations don't send stale lastReadVersion values causing avoidable 409s.
+        waitForActiveCatchup().then(() => {
+          queryClient.resumePausedMutations().then(() => {
+            // Only invalidate queries if we're in offline mode (IDB persister)
+            // Session mode doesn't need aggressive revalidation
+            if (offlineAccess) {
+              queryClient.invalidateQueries();
+            }
+          });
         });
       }}
     >

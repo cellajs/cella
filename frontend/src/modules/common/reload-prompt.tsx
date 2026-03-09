@@ -1,5 +1,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
 
 export function ReloadPrompt() {
@@ -30,6 +32,13 @@ export function ReloadPrompt() {
       console.info('SW registration error', error);
     },
   });
+
+  // In development, auto-reload on SW update (skip prompt during offline:watch)
+  useEffect(() => {
+    if (needRefresh && appConfig.mode === 'development') {
+      updateServiceWorker(true);
+    }
+  }, [needRefresh, updateServiceWorker]);
 
   const close = () => {
     setNeedRefresh(false);

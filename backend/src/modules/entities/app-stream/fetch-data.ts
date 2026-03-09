@@ -8,11 +8,13 @@ import type { AppCatchupResponse } from '#/schemas';
 /**
  * Fetch catchup summary for a user.
  *
- * Uses contextCountersTable for O(1) seq + mSeq lookup per org.
- * When clientSeqs are provided, scopes with matching seq AND mSeq
- * are excluded from the response — the client already has the correct state.
+ * Uses contextCountersTable for O(1) entitySeqs lookup per org.
+ * contextEntity-scoped seqs (from stamp_entity_seq_at trigger) are the primary
+ * mechanism for detecting creates/updates. Deletes and membership changes
+ * are always scanned from the activities table (cursor-bounded, watertight).
  *
- * When cursor is null (fresh connect), only seq/mSeq baselines are returned.
+ * When cursor is null (fresh connect), baselines are returned and membership
+ * queries are always invalidated on the client side.
  */
 export async function fetchUserCatchupSummary(
   userId: string,
@@ -24,35 +26,84 @@ export async function fetchUserCatchupSummary(
 
   const orgIdArray = Array.from(orgIds);
 
-  // Step 1: Get current seq + mSeq + counts from contextCountersTable (fast PK lookup)
+  // Step 1: Get counts from contextCountersTable (fast PK lookup)
   const counterRows = await db
     .select({
       contextKey: contextCountersTable.contextKey,
-      seq: contextCountersTable.seq,
-      mSeq: contextCountersTable.mSeq,
       counts: contextCountersTable.counts,
     })
     .from(contextCountersTable)
     .where(inArray(contextCountersTable.contextKey, orgIdArray));
 
-  const serverCounters = new Map(
-    counterRows.map((r) => [r.contextKey, { seq: r.seq, mSeq: r.mSeq, counts: r.counts }]),
-  );
+  const serverCounters = new Map(counterRows.map((r) => [r.contextKey, { counts: r.counts }]));
 
-  // Step 2: Build changes for scopes with seq or mSeq gaps
+  // Step 2: Build changes for scopes with entitySeq gaps
   const changes: AppCatchupResponse['changes'] = {};
-  const changedProductScopes: string[] = [];
 
   for (const orgId of orgIdArray) {
-    const server = serverCounters.get(orgId) ?? { seq: 0, mSeq: 0, counts: {} };
-    const clientSeq = clientSeqs?.[orgId] ?? 0;
-    const clientMSeq = clientSeqs?.[`${orgId}:m`] ?? 0;
+    const server = serverCounters.get(orgId) ?? { counts: {} };
 
-    const seqChanged = !clientSeqs || server.seq !== clientSeq;
-    const mSeqChanged = !clientSeqs || server.mSeq !== clientMSeq;
+    // Extract contextEntity-scoped seqs (s: prefix) and counts (e: prefix) from counts JSONB
+    const entitySeqs: Record<string, number> = {};
+    const entityCounts: Record<string, number> = {};
+    if (server.counts) {
+      for (const [key, value] of Object.entries(server.counts)) {
+        if (typeof value !== 'number') continue;
+        if (key.startsWith('s:')) entitySeqs[key.slice(2)] = value;
+        else if (key.startsWith('e:')) entityCounts[key.slice(2)] = value;
+      }
+    }
 
-    if (seqChanged || mSeqChanged) {
-      // Extract per-entityType seqs (s: prefix) and counts (e: prefix) from counts JSONB
+    // Check if any contextEntity-scoped seq changed
+    const entitySeqChanged =
+      !clientSeqs ||
+      Object.entries(entitySeqs).some(([entityType, serverVal]) => {
+        const clientVal = clientSeqs[`${orgId}:s:${entityType}`] ?? 0;
+        return serverVal !== clientVal;
+      });
+
+    if (entitySeqChanged) {
+      changes[orgId] = {
+        deletedIds: [],
+        entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
+        entityCounts: Object.keys(entityCounts).length > 0 ? entityCounts : undefined,
+      };
+    }
+  }
+
+  // Step 3: Scan activities for deletes AND membership changes (cursor-bounded, watertight)
+  // Entity-type seqs only track creates/updates (trigger fires on INSERT/UPDATE).
+  // Delete and membership change detection relies entirely on the activities table scan.
+  if (cursor) {
+    const activityResults = await db
+      .select({
+        organizationId: activitiesTable.organizationId,
+        entityId: activitiesTable.entityId,
+        entityType: activitiesTable.entityType,
+        resourceType: activitiesTable.resourceType,
+      })
+      .from(activitiesTable)
+      .where(
+        and(
+          gt(activitiesTable.id, cursor),
+          inArray(activitiesTable.organizationId, orgIdArray),
+          or(
+            // Product entity deletes
+            and(
+              inArray(activitiesTable.entityType, [...appConfig.productEntityTypes]),
+              sql`${activitiesTable.action} = 'delete'`,
+            ),
+            // Any membership activity (create/update/delete)
+            eq(activitiesTable.resourceType, 'membership'),
+          ),
+        ),
+      )
+      .limit(1000);
+
+    // Helper to ensure a changes entry exists for an org
+    const ensureChangesEntry = (orgId: string) => {
+      if (changes[orgId]) return;
+      const server = serverCounters.get(orgId) ?? { counts: {} };
       const entitySeqs: Record<string, number> = {};
       const entityCounts: Record<string, number> = {};
       if (server.counts) {
@@ -62,50 +113,35 @@ export async function fetchUserCatchupSummary(
           else if (key.startsWith('e:')) entityCounts[key.slice(2)] = value;
         }
       }
-
       changes[orgId] = {
-        seq: server.seq,
-        mSeq: server.mSeq,
         deletedIds: [],
         entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
         entityCounts: Object.keys(entityCounts).length > 0 ? entityCounts : undefined,
       };
-      if (server.seq !== clientSeq) changedProductScopes.push(orgId);
-    }
-  }
+    };
 
-  // Step 3: Query activities only for product entity deletes (changed scopes)
-  // Membership no longer needs activities scan — mSeq gap is sufficient
-  // Skipped entirely when no cursor (fresh connect — no cache to reconcile)
-  if (cursor && changedProductScopes.length > 0) {
-    const deletedResults = await db
-      .select({
-        organizationId: activitiesTable.organizationId,
-        entityId: activitiesTable.entityId,
-        entityType: activitiesTable.entityType,
-      })
-      .from(activitiesTable)
-      .where(
-        and(
-          gt(activitiesTable.id, cursor),
-          inArray(activitiesTable.organizationId, changedProductScopes),
-          inArray(activitiesTable.entityType, [...appConfig.productEntityTypes]),
-          sql`${activitiesTable.action} = 'delete'`,
-        ),
-      )
-      .limit(1000);
+    for (const row of activityResults) {
+      if (!row.organizationId) continue;
 
-    for (const row of deletedResults) {
-      if (row.entityId && row.organizationId && changes[row.organizationId]) {
-        changes[row.organizationId].deletedIds.push(row.entityId);
+      // Membership activity — just ensure the org has a changes entry
+      // (client always invalidates membership queries on catchup)
+      if (row.resourceType === 'membership') {
+        ensureChangesEntry(row.organizationId);
+        continue;
+      }
 
-        // Group deletes by entityType for granular cache removal
-        if (row.entityType) {
-          const scope = changes[row.organizationId];
-          if (!scope.deletedByType) scope.deletedByType = {};
-          if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
-          scope.deletedByType[row.entityType].push(row.entityId);
-        }
+      // Product entity delete
+      if (!row.entityId) continue;
+      ensureChangesEntry(row.organizationId);
+
+      changes[row.organizationId].deletedIds.push(row.entityId);
+
+      // Group deletes by entityType for granular cache removal
+      if (row.entityType) {
+        const scope = changes[row.organizationId];
+        if (!scope.deletedByType) scope.deletedByType = {};
+        if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
+        scope.deletedByType[row.entityType].push(row.entityId);
       }
     }
   }

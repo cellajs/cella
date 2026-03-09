@@ -70,8 +70,6 @@ export interface ActivityEventWithEntity extends ActivityEvent {
   entity?: unknown;
   /** Cache token for server-side entity cache (realtime entities only). */
   cacheToken?: string | null;
-  /** Org-level sequence number from contextCounters (for gap detection). */
-  seq?: number | null;
   /** Per-entity sequence number stamped by trigger (for delta fetching). */
   seqAt?: number | null;
   /** Trace context for end-to-end correlation. */

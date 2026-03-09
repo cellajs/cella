@@ -3,11 +3,42 @@
  * Used by both live handler and catchup processor.
  */
 
-import { type EntityQueryKeys, getEntityQueryKeys, hasEntityQueryKeys, type ItemData } from '~/query/basic';
+import {
+  type EntityQueryKeys,
+  getEntityDeltaFetch,
+  getEntityQueryKeys,
+  hasEntityQueryKeys,
+} from '~/query/basic/entity-query-registry';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
+import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import { removeCacheToken, storeCacheToken } from './cache-token-store';
+
+/**
+ * Check if an entity has any pending (in-flight or paused) mutation.
+ * When true, remote cache writes should be skipped to preserve optimistic state.
+ * The mutation's own onSuccess will reconcile the cache when it settles.
+ *
+ * Checks update, create, and delete mutation keys following the standard
+ * [entityType, 'update'|'create'|'delete'] convention from createEntityKeys.
+ */
+export function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
+  const mutationCache = queryClient.getMutationCache();
+  for (const suffix of ['update', 'create', 'delete'] as const) {
+    const mutations = mutationCache.findAll({ mutationKey: [entityType, suffix] });
+    for (const mutation of mutations) {
+      if (mutation.state.status !== 'pending') continue;
+      const variables = mutation.state.variables as { id?: string } | { id?: string }[] | undefined;
+      if (Array.isArray(variables)) {
+        if (variables.some((v) => v.id === entityId)) return true;
+      } else if (variables?.id === entityId) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 /** Store cache token for entity (live notifications only) */
 export function storeEntityCacheToken(entityType: string, entityId: string, token: string): void {
@@ -104,7 +135,15 @@ export async function fetchEntityAndUpdateList(
   keys: EntityQueryKeys,
   action: 'create' | 'update',
   organizationId?: string,
+  entityType?: string,
 ): Promise<void> {
+  // Skip remote writes for entities with pending mutations to preserve optimistic state.
+  // The mutation's onSuccess will reconcile the cache when it settles.
+  if (entityType && hasPendingMutationForEntity(entityType, entityId)) {
+    console.debug(`[CacheOps] Skipping remote ${action} for ${entityType}:${entityId} — has pending mutation`);
+    return;
+  }
+
   try {
     const entity = await queryClient.fetchQuery<ItemData>({
       queryKey: keys.detail.byId(entityId),
@@ -140,4 +179,53 @@ export function invalidateAllEntityLists(refetchType: 'active' | 'none' | 'all' 
     },
     refetchType,
   });
+}
+
+/**
+ * Delta fetch changed entities and patch them into list + detail caches.
+ * Uses the registered deltaFetch function to call the list endpoint with `afterSeq`.
+ * Returns true if delta fetch succeeded, false if not available (caller should fall back to full invalidation).
+ *
+ * Each returned entity is upserted into all matching list caches and the detail cache is updated.
+ */
+export async function deltaFetchAndPatchList(
+  entityType: string,
+  orgId: string | null,
+  afterSeq: number,
+  keys: EntityQueryKeys,
+): Promise<boolean> {
+  const deltaFetch = getEntityDeltaFetch(entityType);
+  if (!deltaFetch) return false;
+
+  try {
+    const { items } = await deltaFetch(orgId, afterSeq);
+    if (items.length === 0) return true;
+
+    // Upsert each entity into list caches and detail cache
+    for (const entity of items) {
+      // Skip entities with pending mutations to preserve optimistic state
+      if (hasPendingMutationForEntity(entityType, entity.id)) {
+        console.debug(`[CacheOps] Delta fetch: skipping ${entityType}:${entity.id} — has pending mutation`);
+        continue;
+      }
+
+      // Update detail cache
+      queryClient.setQueryData(keys.detail.byId(entity.id), entity);
+
+      // Upsert into all matching list caches
+      for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
+        if (isInfiniteQueryData(queryData)) {
+          changeInfiniteQueryData(queryKey, [entity], 'update');
+        } else if (isQueryData(queryData)) {
+          changeQueryData(queryKey, [entity], 'update');
+        }
+      }
+    }
+
+    console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (afterSeq=${afterSeq})`);
+    return true;
+  } catch (error) {
+    console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
+    return false;
+  }
 }

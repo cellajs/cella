@@ -575,12 +575,6 @@
               null
             ]
           },
-          "seq": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
           "seqAt": {
             "type": [
               "integer",
@@ -614,7 +608,6 @@
           "entityId",
           "organizationId",
           "contextType",
-          "seq",
           "seqAt",
           "stx",
           "cacheToken"
@@ -627,9 +620,8 @@
           "entityId": "gj2w2bwxrkgnv0oa592jxwar",
           "organizationId": "c2u05q7olzsfy1csy8m2q98f",
           "contextType": null,
-          "seq": 550,
-          "seqAt": 458,
-          "cacheToken": "yMeEcuBnWoD28KSeQr21dJgZDmxiD2Ws",
+          "seqAt": 275,
+          "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
           "stx": {
             "mutationId": "g5bhj6q04ey9pbycghixqzn7",
             "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
@@ -1028,9 +1020,8 @@
             "email"
           ],
           "stx": null,
-          "seq": 66,
           "error": null,
-          "organizationId": "pg8iwtnhw3666j3aifuxshox"
+          "organizationId": "2pg8iwtnhw3666j3aifuxsho"
         }
       },
       "Me": {
@@ -2582,15 +2573,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -2719,9 +2701,8 @@
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "changedKeys": null,
                       "stx": null,
-                      "seq": 511,
                       "error": null,
-                      "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
+                      "organizationId": "iweg2q4gqa3vx9cfyey6mqh9"
                     },
                     {
                       "id": "5ogh3yr2b2dbwf7b9eckajcl",
@@ -2740,9 +2721,8 @@
                         "email"
                       ],
                       "stx": null,
-                      "seq": 810,
                       "error": null,
-                      "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
+                      "organizationId": "t5nr6k4huj5qv4k6bwmvl0e4"
                     }
                   ],
                   "total": 2
@@ -5834,10 +5814,9 @@
                     "additionalProperties": {
                       "type": "integer"
                     },
-                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
                     "example": {
-                      "abc123": 10,
-                      "abc123:m": 3
+                      "abc123:s:page": 10
                     }
                   }
                 }
@@ -5858,17 +5837,11 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "seq": {
-                            "type": "integer"
-                          },
                           "deletedIds": {
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
-                          },
-                          "mSeq": {
-                            "type": "integer"
                           },
                           "entitySeqs": {
                             "type": "object",
@@ -5893,7 +5866,6 @@
                           }
                         },
                         "required": [
-                          "seq",
                           "deletedIds"
                         ]
                       },
@@ -6013,10 +5985,9 @@
                     "additionalProperties": {
                       "type": "integer"
                     },
-                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
                     "example": {
-                      "abc123": 10,
-                      "abc123:m": 3
+                      "abc123:s:page": 10
                     }
                   }
                 }
@@ -6037,17 +6008,11 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "seq": {
-                            "type": "integer"
-                          },
                           "deletedIds": {
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
-                          },
-                          "mSeq": {
-                            "type": "integer"
                           },
                           "entitySeqs": {
                             "type": "object",
@@ -6072,7 +6037,6 @@
                           }
                         },
                         "required": [
-                          "seq",
                           "deletedIds"
                         ]
                       },
@@ -6094,7 +6058,6 @@
                 "example": {
                   "changes": {
                     "org-example-id": {
-                      "seq": 42,
                       "deletedIds": []
                     }
                   },
@@ -7232,15 +7195,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -8554,15 +8508,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -9245,15 +9190,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -10075,15 +10011,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -10480,15 +10407,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -12137,15 +12055,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -12426,15 +12335,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {

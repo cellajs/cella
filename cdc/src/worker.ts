@@ -17,7 +17,7 @@ import { getErrorCode, withRetry } from './lib/retry';
 import type { ProcessMessageResult } from './process-message';
 import { processMessage } from './process-message';
 import { activityAttrs, cdcAttrs, cdcSpanNames, recordCdcMetric, withSpan, type TraceContext } from './tracing';
-import { getNextSeq, getSeqScope, getCountDeltas, updateContextCounts } from './utils';
+import { getCountDeltas, updateContextCounts } from './utils';
 import { wsClient } from './websocket-client';
 
 const LOG_PREFIX = '[worker]';
@@ -64,9 +64,6 @@ async function persistAndSendActivity(
   const activityWithId = { ...processResult.activity, id: activityId };
 
   await withSpan(cdcSpanNames.createActivity, activityAttrs(activityWithId), async () => {
-    const seqScope = getSeqScope(processResult.entry, processResult.entityData);
-    const seq = seqScope ? await getNextSeq(seqScope) : undefined;
-
     // For product entities, read seqAt stamped by the trigger (available in WAL data)
     const seqAt = typeof processResult.entityData.seqAt === 'number' ? processResult.entityData.seqAt : undefined;
 
@@ -106,7 +103,7 @@ async function persistAndSendActivity(
       ...(processResult.activity.changedKeys && { changedKeys: processResult.activity.changedKeys }),
     });
 
-    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq, seqAt);
+    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seqAt);
   });
 }
 

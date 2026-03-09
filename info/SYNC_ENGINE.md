@@ -67,7 +67,7 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
 ### Realtime mechanics
-- **Gap detection** - Scoped sequence numbers (`seq`) detect missed entity changes
+- **Gap detection** - Entity-type sequence numbers (`seqAt`) detect missed entity changes; deletes always scanned
 - **Single-writer multi-tab** - One leader tab owns SSE connection and mutations, broadcast for follower
 - **TTL entity cache** - Server-side cache with request coalescing for efficient notification-triggered fetches
 - **Fetch prioritizer** - Client schedules fetches based on user's current view (high/medium/low priority)
@@ -129,7 +129,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  │ (org-123)    │ (org-123)    │ (org-456)    │        │        │        │
 │  │  └──────┬───────┴──────────────┴──────────────┴────────┘        │        │
 │  │         │  event: change                                        │        │
-│  │         │  data: { action, entityType, entityId, seq, seqAt, stx } │        │
+│  │         │  data: { action, entityType, entityId, seqAt, stx }    │        │
 │  │         ▼                                                       │        │
 │  └─────────────────────────────────────────────────────────────────┘        │
 │                                                                             │
@@ -151,8 +151,7 @@ interface StreamNotification {
   entityType: string;              // 'page' | 'attachment'
   entityId: string;
   organizationId: string | null;
-  seq: number;                     // Org-level sequence for gap detection
-  seqAt: number;                   // Per-entity sequence stamped by trigger (for delta fetch)
+  seqAt: number | null;            // Entity-type sequence stamped by trigger (for sync)
   stx: {
     id: string;                    // Mutation ID
     sourceId: string;              // Tab/instance ID for echo prevention
@@ -199,11 +198,10 @@ Unauthenticated stream for public entities (e.g., pages).
 The backend returns a summary per scope (orgId for app stream, entityType for public stream):
 ```typescript
 interface CatchupChangeSummary {
-  seq: number;            // Current max seq for this scope (org-level, CDC-managed)
-  deletedIds: string[];   // Entity IDs deleted since cursor
-  entitySeqs?: Record<string, number>;    // Per-entityType seqs from context_counters counts JSONB (trigger-managed)
+  deletedIds: string[];   // Entity IDs deleted since cursor (always scanned, watertight)
+  entitySeqs?: Record<string, number>;    // Entity-type seqs from context_counters counts JSONB (trigger-managed)
   deletedByType?: Record<string, string[]>; // Deleted IDs grouped by entityType
-  entityCounts?: Record<string, number>;  // Per-entityType total counts (e:{type} keys) for cache integrity
+  entityCounts?: Record<string, number>;  // Entity-type total counts (e:{type} keys) for cache integrity
 }
 ```
 
@@ -211,10 +209,11 @@ The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup — fast, in connect flow before SSE opens):**
 - Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
-- Compares per-entityType `serverEntitySeq` (from trigger-managed `context_counters.counts['s:{type}']`) with stored `clientEntitySeq`
+- Compares entity-type `serverEntitySeq` (from trigger-managed `context_counters.counts['s:{type}']`) with stored `clientEntitySeq`
 - If creates/updates detected for an entity type → invalidates active list queries (`invalidateEntityList(keys, 'active')`) so mounted queries refetch immediately
 - **Cache integrity check**: Compares server `entityCounts` (from `context_counters.counts['e:{type}']`) with cached list totals — if counts diverge despite matching seqs, invalidates the affected list queries
-- Updates stored seqs (both org-level and per-entityType)
+- Updates stored entity-type seqs
+- Always invalidates membership queries (lightweight, deduplicated by React Query)
 
 **Phase B (sync service — background, after SSE reaches `live`):**
 - Runs `ensureQueryData` / `ensureInfiniteQueryData` for entity queries
@@ -288,40 +287,44 @@ Replaying the same mutation (same `stx.mutationId`) produces the same result wit
 
 ## Offline sync
 
-### Gap detection (seq)
+### Gap detection (seqAt + always-scan deletes)
 
-Uses per-scope sequence numbers (`seq`) for **list-level gap detection**. Seq is monotonic (never decremented by deletes) and scoped per org (app stream) or per entityType (public stream).
+Uses entity-type sequence numbers (`seqAt`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
 
 **Sequence architecture:**
-- **`seqAt`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq_at`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seqAt`. This is the source of truth for per-entityType sequences.
+- **`seqAt`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq_at`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seqAt`. This is the **sole source of truth** for detecting creates/updates.
 - **Hierarchy-aware scoping** — The trigger reads the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
-- **`seq` / `mSeq`** — Org-level counters managed by CDC Worker's `getNextSeq()`. Used for coarse gap detection (has anything changed in this org?). The trigger does NOT touch these.
+- **Membership detection** — Membership changes are detected via cursor-bounded activity scan (same scan used for deletes). No counter needed — the client unconditionally refreshes membership queries on every catchup.
+- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The `seqAt` trigger only fires on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
 - **`afterSeq`** — Query parameter on list endpoints. Returns entities with `seqAt > afterSeq`, enabling delta fetches instead of full list refetches.
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored per-entityType `clientEntitySeq` with `serverEntitySeq` from catchup summary (sourced from trigger-managed `context_counters.counts['s:{type}']`). The delta tells whether creates/updates happened beyond just deletes.
+1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from trigger-managed `context_counters.counts['s:{type}']`). The delta tells whether creates/updates happened. Deletes are always included via activities scan.
 
-2. **Live (SSE):** Each notification includes `seq` (org-level) and `seqAt` (per-entity). Client updates stored seq on each notification. On reconnect, the catchup summary comparison detects any missed changes.
+2. **Live (SSE):** Each product entity notification includes `seqAt` (entity-type). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
 **How it works:**
 ```typescript
 // Per-scope sequence tracking (persisted in sync store)
-// App stream: orgId → seq, orgId:s:entityType → per-entityType seq
+// App stream: orgId:s:entityType → contextEntity-scoped seq
 // Public stream: entityType → seq
 const seqs: Record<string, number> = {};
 
-// During catchup (Phase A) — per-entityType granularity:
+// During catchup (Phase A) — entity-type granularity:
+// Step 1: Apply deletes (always provided by backend, watertight)
+for (const [entityType, ids] of Object.entries(deletedByType)) {
+  for (const entityId of ids) {
+    removeEntityFromCache(entityType, entityId);
+    removeEntityFromListCache(entityId, keys);
+  }
+}
+
+// Step 2: Detect creates/updates via entitySeqs delta
 for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
   const clientEntitySeq = seqs[`${orgId}:s:${entityType}`] ?? 0;
   const deletedForType = deletedByType?.[entityType] ?? [];
   const entityDelta = serverEntitySeq - clientEntitySeq;
-
-  // Patch deletes directly into list caches (no invalidation)
-  for (const entityId of deletedForType) {
-    removeEntityFromCache(entityType, entityId);
-    removeEntityFromListCache(entityId, keys);
-  }
 
   // Only mark stale if creates/updates happened (delta > deletes)
   if (entityDelta > deletedForType.length) {
@@ -331,10 +334,7 @@ for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
   seqs[`${orgId}:s:${entityType}`] = serverEntitySeq;
 }
 
-// During live SSE — tracks both org-level and per-entityType:
-if (seq !== null && organizationId) {
-  seqs[organizationId] = seq;
-}
+// During live SSE — tracks entity-type seq only:
 if (seqAt !== null) {
   const key = `${organizationId}:s:${entityType}`;
   if (seqAt > (seqs[key] ?? 0)) seqs[key] = seqAt;
@@ -342,14 +342,14 @@ if (seqAt !== null) {
 ```
 
 **Key features:**
-- Two-level seq tracking: org-level (`orgId`) for coarse gap detection + per-entityType (`orgId:s:attachment`) for granularity
+- Single-level entity-type seq tracking (`orgId:s:attachment`, `orgId:s:page`) — no org-level seq needed
 - `seqAt` on entity rows is stamped atomically by PostgreSQL trigger (`stamp_entity_seq_at`) — same trigger also updates `context_counters.counts['s:{entityType}']`
-- CDC only increments org-level `seq`/`mSeq` columns (for gap detection), not per-entityType counts
+- Product entity seqs are fully trigger-managed; membership changes detected via activity scan
+- Deletes and membership changes are always scanned from activities table (cursor-bounded) — watertight, no counter tricks
 - List endpoints support `afterSeq` query param for delta fetches (`WHERE seq_at > afterSeq`)
 - Persisted across tabs/reloads via localStorage (sync store)
-- Catchup summary provides entitySeqs + deletedByType per org — enables per-entityType processing
+- Catchup summary provides entitySeqs + deletedByType per org — enables entity-type processing
 - Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
-- Fallback to org-level invalidation when backend doesn't provide `entitySeqs` (backward compat)
 
 ### Cache freshness strategy (staleTime)
 
@@ -366,7 +366,7 @@ Only product entity queries opt in to `syncStaleTime` — they are the only enti
 
 ### Cache integrity check (entityCounts)
 
-After seq-based processing, catchup performs a **count integrity check** to detect cache/server drift that seq comparison alone might miss. The backend includes `entityCounts` in the catchup response — per-entityType totals from `context_counters.counts['e:{type}']` (pre-computed by database triggers).
+After seq-based processing, catchup performs a **count integrity check** to detect cache/server drift that seq comparison alone might miss. The backend includes `entityCounts` in the catchup response — entity-type totals from `context_counters.counts['e:{type}']` (pre-computed by database triggers).
 
 The client compares these server-reported counts against the `total` field from the first page of cached infinite query data. If counts diverge (e.g., cache says 15 items, server says 20), the affected list query is invalidated regardless of seq state.
 
@@ -662,11 +662,11 @@ The client sync cycle is a two-phase process that runs on every stream connect (
 │     │                                                                       │
 │     ▼                                                                       │
 │  Phase A: Catchup (synchronous, before SSE opens)                           │
-│     │  1. Fetch catchup summary from backend (seq + entitySeqs + deletes)    │
+│     │  1. Fetch catchup summary from backend (entitySeqs + deletes)          │
 │     │  2. Patch deletes into detail + list caches (no invalidation)          │
-│     │  3. Compare per-entityType seqs, mark changed types stale             │
-│     │  4. Update stored seqs (org-level + per-entityType)                   │
-│     │  5. Handle membership changes (mSeq gap detection)                    │
+│     │  3. Compare entity-type seqs, mark changed types stale                │
+│     │  4. Update stored entity-type seqs                                    │
+│     │  5. Always refresh memberships (unconditional invalidation)           │
 │     │  6. Cache integrity: compare entityCounts vs cached totals            │
 │     ▼                                                                       │
 │  SSE opens → offset event → state = 'live'                                  │
@@ -716,6 +716,45 @@ The `offlineAccess` toggle controls two things:
 | `frontend/src/offline-config.tsx` | Pure mapping: entity type → sync query options |
 | `frontend/src/query/provider.tsx` | Wires sync service to stream 'live' state transitions |
 | `frontend/src/store/sync.ts` | Persisted seqs, cursor, lastSyncAt |
+
+---
+
+## Local offline testing
+
+Testing PWA and offline capabilities locally requires a production-style build with a real Workbox service worker. The `offline` scripts provide a one-command workflow for this.
+
+### Commands
+
+| Command | What it does | Best for |
+|---------|-------------|----------|
+| `pnpm offline` | Starts backend+CDC, builds frontend, serves via preview server | One-off validation before PR |
+| `pnpm offline:watch` | Same, but frontend rebuilds automatically on file changes | Active offline feature development |
+| `pnpm dev` + DevTools Offline | Standard dev server, toggle Network → Offline in DevTools | Mutation queue/sync logic (no SW) |
+
+### How it works
+
+1. Backend + CDC start in development mode (`DEV_MODE=full`)
+2. Frontend builds with Workbox service worker (precaches all assets)
+3. Vite preview server serves the built app on `http://localhost:3000`
+4. Service worker registers on `localhost` (no HTTPS required)
+
+### Quick start
+
+```bash
+# One-shot: build + preview (backend must be running or will start)
+pnpm offline
+
+# Iterative: auto-rebuild on changes + preview
+pnpm offline:watch
+```
+
+Then in the app:
+1. Open preferences and toggle **Offline access** on
+2. Wait for sync to complete (check console for `[Sync]` logs)
+3. Open DevTools → Network → check **Offline**
+4. Refresh the page — app loads from SW cache
+5. Create/edit entities — mutations queue locally
+6. Uncheck Offline — mutations replay and sync
 
 ---
 

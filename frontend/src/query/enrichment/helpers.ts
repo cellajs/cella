@@ -1,7 +1,11 @@
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import { meKeys } from '~/modules/me/query';
-import { type EntityQueryKeys, getEntityQueryKeys, getRegisteredEntityTypes } from '~/query/basic';
+import {
+  type EntityQueryKeys,
+  getEntityQueryKeys,
+  getRegisteredEntityTypes,
+} from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
 /** Safely access a dynamic key on an object with varying shapes */

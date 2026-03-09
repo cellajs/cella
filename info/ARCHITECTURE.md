@@ -114,9 +114,9 @@ Cella has a hybrid approach to sync and offline. Context entities (e.g. organiza
 
 The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent SSE streams:
 - **App stream** (`/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
-- **Public stream** (`/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election). On connect, catches up via seq-based delta comparison, then switches to live-only SSE.
+- **Public stream** (`/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
 
-Sequence numbers are hierarchy-aware: a PostgreSQL trigger (`stamp_entity_seq_at`) atomically stamps `seqAt` on entity rows, scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `afterSeq` for efficient delta fetches.
+Sequence numbers are hierarchy-aware: a PostgreSQL trigger (`stamp_entity_seq_at`) atomically stamps `seqAt` on all product entity rows. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. List endpoints support `afterSeq` for efficient delta fetches during catchup.
 
 ### Client sync cycle
 
@@ -124,7 +124,7 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 1. **Phase A (catchup)** — fast, synchronous, before SSE opens:
    - Patches deletes directly into detail + list caches (no invalidation)
-   - Compares per-entityType seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
+   - Compares entity-type seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
    - Handles membership changes
    - **Cache integrity check**: compares server entity counts vs cached totals to catch seq/cache drift
 

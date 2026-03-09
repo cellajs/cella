@@ -6,6 +6,7 @@
  */
 
 import type { ContextEntityType } from 'shared';
+import { getMyMemberships } from '~/api.gen';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
@@ -70,6 +71,15 @@ export function invalidateMemberQueries(organizationId: string | null): void {
  */
 export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
+}
+
+/**
+ * Fetch memberships via fetchQuery — ensures fresh data while deduplicating
+ * with any in-flight getMyMemberships request (e.g., from getMenuData's ensureQueryData).
+ * Preferred over invalidateQueries during catchup to avoid redundant fetches on app init.
+ */
+export function fetchMemberships(): void {
+  queryClient.fetchQuery({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
 }
 
 /**

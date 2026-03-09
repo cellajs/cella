@@ -8,15 +8,13 @@ import { stxBaseSchema } from './sync-transaction-schemas';
  * Stream notification schema for SSE streams.
  * Shared by both app and public streams — identical payload shape.
  * Lightweight payload - client fetches entity data via API if needed.
- * No entity data is included to keep payloads small and consistent.
  *
  * For product entities (page, attachment):
- * - Includes stx, seq, cacheToken for sync engine
- * - Client uses cacheToken to fetch entity via LRU cache
+ * - Includes stx, seqAt, cacheToken for sync engine
  *
- * For context entities (membership, organization) — app stream only:
- * - stx/seq/cacheToken are null/omitted
- * - Client invalidates queries to refetch
+ * For membership — app stream only:
+ * - seq is null (membership changes detected via activity scan on catchup)
+ * - stx/seqAt/cacheToken are null
  */
 export const streamNotificationSchema = z
   .object({
@@ -29,9 +27,7 @@ export const streamNotificationSchema = z
     organizationId: z.string().nullable(),
     /** Context entity type for membership events (organization, project, etc.) */
     contextType: z.enum(appConfig.contextEntityTypes).nullable(),
-    /** Sequence number for gap detection (org-scoped for app, entityType-scoped for public) */
-    seq: z.number().int().nullable(),
-    /** Per-entity sequence number stamped by trigger (for delta fetching of product entities) */
+    /** Per-entityType sequence number stamped by trigger (for product entity sync) */
     seqAt: z.number().int().nullable(),
     /** Sync transaction metadata for conflict detection (entities only) */
     stx: stxBaseSchema.nullable(),
@@ -58,8 +54,8 @@ export const streamCatchupBodySchema = z.object({
     .record(z.string(), z.number().int())
     .optional()
     .openapi({
-      description: 'Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }',
-      example: { abc123: 10, 'abc123:m': 3 },
+      description: 'Client-side sequence numbers per scope: { "orgId:s:page": 42 }',
+      example: { 'abc123:s:page': 10 },
     }),
 });
 
@@ -67,24 +63,20 @@ export const streamCatchupBodySchema = z.object({
  * Per-scope catchup change summary.
  * Used in catchup responses to give client minimal info to sync efficiently.
  *
- * - deletedIds: exact IDs to remove from cache
- * - seq: current sequence number for product entity changes
- * - mSeq: current sequence number for membership changes (app stream only)
- * - entitySeqs: per-entityType sequence numbers from context_counters JSONB (s:{type} keys)
+ * - entitySeqs: contextEntity-scoped sequence numbers from context_counters JSONB (s:{type} keys)
+ *   - Source of truth for create/update detection (managed by stamp_entity_seq_at trigger)
+ * - deletedIds: exact IDs to remove from cache (always scanned, watertight)
  * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal
+ * - membershipChanged: true if membership activities detected in cursor range (activity scan)
  *
- * Client logic:
- * - delta = serverSeq - clientSeq
- * - if delta == deletedIds.length → only deletes, no list fetch needed
- * - if delta > deletedIds.length → creates/updates happened → invalidate entity lists
- * - if delta == 0 → nothing changed
- * - mSeq gap > 0 → membership changes → invalidate member queries + refresh menu
- * - entitySeqs: per-entityType seq for granular invalidation within an org
+ * Client logic (per entityType):
+ * - entityDelta = serverEntitySeq - clientEntitySeq
+ * - if entityDelta > deletedForType.length → creates/updates happened → invalidate entity lists
+ * - deletedIds are always applied directly (cache patching)
+ * - On catchup: always invalidate membership queries (lightweight, deduplicated by React Query)
  */
 export const catchupChangeSummarySchema = z.object({
-  seq: z.number().int(),
   deletedIds: z.array(z.string()),
-  mSeq: z.number().int().optional(),
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   deletedByType: z.record(z.string(), z.array(z.string())).optional(),
   /** Per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */

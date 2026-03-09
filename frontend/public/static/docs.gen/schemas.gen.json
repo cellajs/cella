@@ -254,10 +254,6 @@
           "required": true,
           "enum": ["organization", null]
         },
-        "seq": {
-          "type": ["integer", "null"],
-          "required": true
-        },
         "seqAt": {
           "type": ["integer", "null"],
           "required": true
@@ -293,9 +289,8 @@
       "entityId": "gj2w2bwxrkgnv0oa592jxwar",
       "organizationId": "c2u05q7olzsfy1csy8m2q98f",
       "contextType": null,
-      "seq": 550,
-      "seqAt": 458,
-      "cacheToken": "yMeEcuBnWoD28KSeQr21dJgZDmxiD2Ws",
+      "seqAt": 275,
+      "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
       "stx": {
         "mutationId": "g5bhj6q04ey9pbycghixqzn7",
         "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
@@ -730,9 +725,8 @@
       "createdAt": "2024-10-11T19:21:02.239Z",
       "changedKeys": ["description", "name", "email"],
       "stx": null,
-      "seq": 66,
       "error": null,
-      "organizationId": "pg8iwtnhw3666j3aifuxshox"
+      "organizationId": "2pg8iwtnhw3666j3aifuxsho"
     }
   },
   {

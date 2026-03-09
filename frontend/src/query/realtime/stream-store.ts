@@ -67,6 +67,26 @@ function createStreamStore(name: string) {
   );
 }
 
+/**
+ * Module-level gate that resolves when the first stream completes catchup
+ * after page load. Used by the query provider to delay `resumePausedMutations`
+ * until the cache is fresh — even though the provider's `onSuccess` fires
+ * before any stream has called `connect()`.
+ *
+ * The gate is created eagerly at import time. Once resolved it stays resolved
+ * for the lifetime of the page (we only need to gate the initial cache restore).
+ */
+let initialCatchupResolve: (() => void) | null = null;
+let initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
+  initialCatchupResolve = resolve;
+});
+
+/** Called by any StreamManager after its first successful catchup. */
+function resolveInitialCatchupGate() {
+  initialCatchupResolve?.();
+  initialCatchupResolve = null;
+}
+
 /** Manages SSE connection lifecycle with Zustand store for state. */
 class StreamManager {
   private config: StreamConfig;
@@ -81,6 +101,9 @@ class StreamManager {
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
   private leaderUnsubscribe: (() => void) | null = null;
+
+  /** Resolves when the current connect cycle's catchup completes. Reset on each connect(). */
+  private catchupResolve: (() => void) | null = null;
 
   readonly useStore: ReturnType<typeof createStreamStore>;
 
@@ -101,6 +124,13 @@ class StreamManager {
 
     const { state } = this.useStore.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
+
+    // Create a fresh resolve callback for this connect cycle (drives initialCatchupGate)
+    let resolveCatchup: () => void;
+    new Promise<void>((r) => {
+      resolveCatchup = r;
+    });
+    this.catchupResolve = resolveCatchup!;
 
     // Circuit breaker: stop if too many consecutive failures
     if (this.circuitOpen) {
@@ -152,6 +182,11 @@ class StreamManager {
 
       console.debug('[StreamStore] Catchup complete, cursor:', newCursor);
 
+      // Signal that catchup is done — paused mutations can now safely resume
+      this.catchupResolve?.();
+      this.catchupResolve = null;
+      resolveInitialCatchupGate();
+
       // Reset circuit breaker and backoff on success
       this.consecutiveFailures = 0;
       this.currentBackoff = INITIAL_BACKOFF_MS;
@@ -164,6 +199,11 @@ class StreamManager {
 
         console.error('[StreamStore] Catchup failed:', error);
         this.useStore.getState().setState('error');
+
+        // Resolve catchup promise on failure so paused mutations aren't stuck forever
+        this.catchupResolve?.();
+        this.catchupResolve = null;
+        resolveInitialCatchupGate();
 
         // Open circuit breaker for permanent errors or after max failures
         if (isPermanentError || this.consecutiveFailures >= MAX_FAILURES) {
@@ -356,6 +396,7 @@ class StreamManager {
   disconnect() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
+    this.resolvePendingCatchup();
 
     this.abortController?.abort();
     this.abortController = null;
@@ -388,6 +429,13 @@ class StreamManager {
     this.disconnect();
     this.connect();
   }
+
+  /** Resolve any pending catchup promise (used on disconnect to prevent dangling waits). */
+  private resolvePendingCatchup() {
+    this.catchupResolve?.();
+    this.catchupResolve = null;
+    resolveInitialCatchupGate();
+  }
 }
 
 // Public Stream
@@ -402,7 +450,7 @@ export const publicStreamManager = new StreamManager('PublicStream', {
     const response = await postPublicCatchup({
       body: { cursor: offset ?? undefined, seqs: seqsParam },
     });
-    processPublicCatchup(response);
+    await processPublicCatchup(response);
     return response.cursor ?? null;
   },
   processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
@@ -425,8 +473,20 @@ export const appStreamManager = new StreamManager('AppStream', {
     const response = await postAppCatchup({
       body: { cursor: offset ?? undefined, seqs: seqsParam },
     });
-    processAppCatchup(response);
+    await processAppCatchup(response);
     return response.cursor ?? null;
   },
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
 });
+
+/**
+ * Wait for the first stream catchup to complete after page load.
+ * Returns a promise created at module init time and resolved when
+ * any stream (app or public) finishes its first catchup — or fails.
+ *
+ * Safe to call before any stream has connected: the promise is
+ * already pending and will resolve once a stream catches up.
+ */
+export function waitForActiveCatchup(): Promise<void> {
+  return initialCatchupGate;
+}

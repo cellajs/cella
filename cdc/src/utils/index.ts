@@ -5,8 +5,5 @@ export { extractActivityContext,  } from './extract-activity-context';
 export { extractRowData } from './extract-row-data';
 export { extractStxData } from './extract-stx-data';
 export { getChangedKeys } from './get-changed-keys';
-export { getNextSeq } from './get-next-seq';
-;
-export { getSeqScope } from './get-seq-scope';
 export { getTableEntry } from './get-table-entry';
 export { getCountDeltas, updateContextCounts } from './update-counts';
