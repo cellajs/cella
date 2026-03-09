@@ -21,7 +21,7 @@ type ChartContextProps = {
   config: ChartConfig;
 };
 
-export type CustomTooltipProps = Omit<TooltipContentProps<ValueType, NameType>, 'active'> & {
+type CustomTooltipProps = Omit<TooltipContentProps<ValueType, NameType>, 'active'> & {
   active?: boolean;
   className?: string;
   hideLabel?: boolean;
@@ -44,7 +44,7 @@ export type CustomTooltipProps = Omit<TooltipContentProps<ValueType, NameType>, 
   color?: string;
 };
 
-export type ChartLegendContentProps = {
+type ChartLegendContentProps = {
   className?: string;
   hideIcon?: boolean;
   verticalAlign?: LegendProps['verticalAlign'];
@@ -95,7 +95,7 @@ export function ChartContainer({
   );
 }
 
-export function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
+function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color);
 
   if (!colorConfig.length) {

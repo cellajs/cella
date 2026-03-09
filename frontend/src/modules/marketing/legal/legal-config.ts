@@ -6,13 +6,13 @@ export interface LegalSection {
   label: string | null;
 }
 
-export interface LegalTextConfig {
+interface LegalTextConfig {
   component: React.LazyExoticComponent<() => JSX.Element>;
   label: string;
   sections: LegalSection[];
 }
 
-export type LegalTexts = Record<string, LegalTextConfig>;
+type LegalTexts = Record<string, LegalTextConfig>;
 
 export type LegalSubject = keyof typeof legalConfig;
 

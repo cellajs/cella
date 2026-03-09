@@ -20,7 +20,7 @@ export type PackageJsonSyncKey =
   | 'overrides';
 
 /** Merge strategy for syncing upstream changes */
-export type MergeStrategy = 'merge' | 'squash';
+type MergeStrategy = 'merge' | 'squash';
 
 /**
  * Sync settings - all configurable options for the sync CLI.

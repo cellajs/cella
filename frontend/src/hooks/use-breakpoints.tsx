@@ -79,7 +79,7 @@ function getServerSnapshot() {
 }
 
 /** Breakpoint key type for responsive utilities. */
-export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 /**
  * Hook to get the current breakpoint key based on viewport width.

@@ -5,7 +5,7 @@ import type { TsdocPlugin } from './types';
 /**
  * Default plugin configuration for `tsdoc-plugin`.
  */
-export const defaultConfig: TsdocPlugin['Config'] = {
+const defaultConfig: TsdocPlugin['Config'] = {
   /**
    * Optional list of plugin dependencies that must run before this one.
    */

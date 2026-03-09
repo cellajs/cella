@@ -7,7 +7,7 @@ import type { Attachment } from '~/api.gen';
 import type { BlobVariant } from '~/modules/attachment/dexie/attachments-db';
 import { type ResolveOptions, resolveAttachmentUrl } from '~/modules/attachment/helpers';
 
-export interface UseAttachmentUrlResult {
+interface UseAttachmentUrlResult {
   url: string | null;
   isLocal: boolean;
   resolvedVariant: BlobVariant | null;
@@ -15,7 +15,7 @@ export interface UseAttachmentUrlResult {
   error: Error | null;
 }
 
-export interface UseAttachmentUrlOptions extends ResolveOptions {
+interface UseAttachmentUrlOptions extends ResolveOptions {
   skip?: boolean;
 }
 

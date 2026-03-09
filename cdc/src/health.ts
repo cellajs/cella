@@ -10,7 +10,7 @@ import { getCdcMetrics } from './tracing';
 import { RESOURCE_LIMITS } from './constants';
 import { wsClient } from './websocket-client';
 
-export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
+type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
 interface HealthResponse {
   status: HealthStatus;

@@ -1,6 +1,11 @@
-import { Fragment, type ReactNode, useCallback } from 'react';
+import { Fragment, type ReactNode, useCallback, useImperativeHandle, useRef } from 'react';
 import { useBoardUIStore } from '~/modules/common/board-ui';
-import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
+import {
+  type PanelGroupApi,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizableSeparator,
+} from '~/modules/common/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -11,7 +16,12 @@ export interface BoardLayoutColumn {
   panelId: string;
 }
 
-export interface BoardLayoutProps {
+export interface BoardLayoutHandle {
+  /** Expand a collapsed panel and scroll it into view. */
+  expandAndScrollToPanel: (panelId: string) => void;
+}
+
+interface BoardLayoutProps {
   boardId: string;
   columns: BoardLayoutColumn[];
   defaultLayout: Record<string, number>;
@@ -22,6 +32,7 @@ export interface BoardLayoutProps {
   className?: string;
   groupClassName?: string;
   separatorClassName?: string;
+  ref?: React.Ref<BoardLayoutHandle>;
 }
 
 /**
@@ -40,8 +51,26 @@ export function BoardLayout({
   className,
   groupClassName,
   separatorClassName,
+  ref,
 }: BoardLayoutProps) {
   const setCollapseState = useBoardUIStore((state) => state.togglePanelCollapsedState);
+  const panelGroupApiRef = useRef<PanelGroupApi | null>(null);
+
+  const handleReady = useCallback((api: PanelGroupApi) => {
+    panelGroupApiRef.current = api;
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    expandAndScrollToPanel(panelId: string) {
+      panelGroupApiRef.current?.expandPanel(panelId);
+
+      // Wait one frame for layout to settle after expand, then scroll
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-panel="${CSS.escape(panelId)}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
+      });
+    },
+  }));
 
   const handleLayoutChanged = useCallback(
     (layout: Record<string, number>) => {
@@ -69,6 +98,7 @@ export function BoardLayout({
         defaultLayout={defaultLayout}
         onLayoutChanged={handleLayoutChanged}
         onCollapseChange={handleCollapseChange}
+        onReady={handleReady}
         className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
       >
         {columns.map(({ panelId }, i) => (
@@ -98,7 +128,7 @@ export function BoardLayout({
   );
 }
 
-export interface BoardPanelContentProps {
+interface BoardPanelContentProps {
   isCollapsed: boolean;
   collapsedContent: ReactNode;
   children: ReactNode;

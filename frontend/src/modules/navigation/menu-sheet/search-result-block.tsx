@@ -8,7 +8,7 @@ import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
 
-export type SearchBlockResult = EnrichedContextEntity | UserBase;
+type SearchBlockResult = EnrichedContextEntity | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];

@@ -2,7 +2,7 @@
  * Categorization helpers for OpenAPI schemas.
  */
 
-export type SchemaTag = 'base' | 'data' | 'errors';
+type SchemaTag = 'base' | 'data' | 'errors';
 
 /**
  * Categorize a schema into a schema tag based on its name.

@@ -4,35 +4,35 @@ import type { CalculatedColumn, CellRange, Position } from '../types';
 import { getCellsInRange, normalizeCellRange } from '../utils/cell-range-utils';
 import { parseTSVToCells, serializeCellsToHTML, serializeCellsToTSV } from '../utils/clipboard-utils';
 
-export interface CopyPasteCallbackArgs<R, SR> {
+interface CopyPasteCallbackArgs<R, SR> {
   row: R;
   column: CalculatedColumn<R, SR>;
   rowIdx: number;
 }
 
-export interface CopyCallbackArgs<R, SR> extends CopyPasteCallbackArgs<R, SR> {
+interface CopyCallbackArgs<R, SR> extends CopyPasteCallbackArgs<R, SR> {
   value: unknown;
 }
 
-export interface PasteCallbackArgs<R, SR> extends CopyPasteCallbackArgs<R, SR> {
+interface PasteCallbackArgs<R, SR> extends CopyPasteCallbackArgs<R, SR> {
   pastedValue: string;
 }
 
 /** Args passed to onCopyRange callback */
-export interface CopyRangeArgs<R, SR> {
+interface CopyRangeArgs<R, SR> {
   range: CellRange;
   cells: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }>;
   textValue: string;
 }
 
 /** Args passed to onPasteRange callback */
-export interface PasteRangeArgs<R, SR> {
+interface PasteRangeArgs<R, SR> {
   startPosition: Position;
   values: string[][];
   affectedCells: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number; value: string }>;
 }
 
-export interface CopyPasteOptions<R, SR> {
+interface CopyPasteOptions<R, SR> {
   /** Current selected cell position */
   selectedPosition: Position;
   /** Current cell range selection (for multi-cell operations) */
@@ -55,7 +55,7 @@ export interface CopyPasteOptions<R, SR> {
   onRowsChange?: (updates: Array<{ rowIdx: number; row: R }>) => void;
 }
 
-export interface CopyPasteResult {
+interface CopyPasteResult {
   /** Handle copy event on the grid */
   handleCopy: (event: React.ClipboardEvent) => void;
   /** Handle paste event on the grid */

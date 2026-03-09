@@ -39,7 +39,7 @@ export function registerWorktree(repoPath: string, worktreePath: string): void {
 /**
  * Unregister the worktree (call after successful cleanup).
  */
-export function unregisterWorktree(): void {
+function unregisterWorktree(): void {
   currentRepoPath = null;
   currentWorktreePath = null;
 }
@@ -124,20 +124,4 @@ export function registerSignalHandlers(): void {
   process.on('SIGTERM', () => handleAbort('SIGTERM'));
 
   cleanupRegistered = true;
-}
-
-/**
- * Run a function with automatic cleanup on error.
- */
-export async function withCleanup<T>(repoPath: string, worktreePath: string, fn: () => Promise<T>): Promise<T> {
-  registerWorktree(repoPath, worktreePath);
-  registerSignalHandlers();
-
-  try {
-    return await fn();
-  } catch (error) {
-    // Clean up on error
-    await cleanupWorktree(repoPath, worktreePath);
-    throw error;
-  }
 }

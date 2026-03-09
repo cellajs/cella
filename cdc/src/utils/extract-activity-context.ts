@@ -3,7 +3,7 @@ import type { TableRegistryEntry } from '../types';
 import { extractContextEntityIds, type ContextEntityIds } from './extract-context-entity-ids';
 import { getRowValue } from './get-row-value';
 
-export interface ActivityContext extends ContextEntityIds {
+interface ActivityContext extends ContextEntityIds {
   entityId: string | null;
   userId: string | null;
   tenantId: string | null;

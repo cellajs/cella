@@ -1,10 +1,10 @@
 import type { CalculatedColumn, Column, Maybe } from '../types';
 
 /** Default line height in pixels for wrap-text row height calculation */
-export const wrapTextLineHeight = 20;
+const wrapTextLineHeight = 20;
 
 /** Default vertical padding per cell in pixels */
-export const wrapTextPadding = 12;
+const wrapTextPadding = 12;
 
 /** Default max lines when wrapText is `true` (unlimited) */
 const defaultMaxLines = 10;
@@ -28,7 +28,7 @@ export function resolveWrapTextLines(wrapText: Maybe<number | boolean>): number 
  * This is the "B" part of the A+B hybrid: a lightweight data-aware heuristic
  * that counts explicit newlines to size rows that need fewer lines than the cap.
  */
-export function estimateTextLines(value: unknown): number {
+function estimateTextLines(value: unknown): number {
   if (value == null) return 1;
   const str = String(value);
   if (str.length === 0) return 1;

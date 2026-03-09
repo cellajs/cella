@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /**
  * Recursively checks if a value or any of its children contain the search text.
  */
-export const containsSearchMatch = (value: unknown, searchText: string): boolean => {
+const containsSearchMatch = (value: unknown, searchText: string): boolean => {
   if (!searchText) return false;
   const lowerSearch = searchText.toLowerCase();
 

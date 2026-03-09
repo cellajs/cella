@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-export interface ExpandableRowOptions<R> {
+interface ExpandableRowOptions<R> {
   /** Function to get a unique key for each row */
   getRowKey: (row: R) => string | number;
   /** Initially expanded row keys */
@@ -11,7 +11,7 @@ export interface ExpandableRowOptions<R> {
   onExpandedRowKeysChange?: (keys: Set<string | number>) => void;
 }
 
-export interface ExpandableRowResult<R> {
+interface ExpandableRowResult<R> {
   /** Set of currently expanded row keys */
   expandedRowKeys: Set<string | number>;
   /** Check if a specific row is expanded */

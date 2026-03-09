@@ -33,7 +33,7 @@ const tagTypeConfig = {
   },
 };
 
-export type TagType = keyof typeof tagTypeConfig;
+type TagType = keyof typeof tagTypeConfig;
 
 type CollapsibleTagItemProps<T> = {
   type: TagType;

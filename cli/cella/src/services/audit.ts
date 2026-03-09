@@ -34,7 +34,7 @@ import {
 import { createSpinner, spinnerSuccess } from '../utils/display';
 
 /** Options for the audit service */
-export interface AuditOptions {
+interface AuditOptions {
   /** Whether to clear the changelog cache before running */
   clearCache?: boolean;
   /** Whether to bypass pnpm metadata cache for fresh registry data */

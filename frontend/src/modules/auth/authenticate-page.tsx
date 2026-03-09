@@ -29,10 +29,6 @@ function shouldShowDivider(step: AuthStep): boolean {
   );
 }
 
-export interface StepBaseProp {
-  emailEnabled: boolean;
-}
-
 export function AuthenticatePage() {
   const { t } = useTranslation();
 

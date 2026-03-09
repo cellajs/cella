@@ -8,7 +8,7 @@ interface GridDimensions {
   gridRect: DOMRect | null;
 }
 
-export interface GridDimensionsResult extends GridDimensions {
+interface GridDimensionsResult extends GridDimensions {
   gridRef: RefObject<HTMLDivElement | null>;
 }
 

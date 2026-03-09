@@ -12,11 +12,11 @@ function ContextMenuTrigger({ ...props }: ContextMenuPrimitive.Trigger.Props & R
   return <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />;
 }
 
-function ContextMenuGroup({ ...props }: ContextMenuPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
+export function ContextMenuGroup({ ...props }: ContextMenuPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
   return <ContextMenuPrimitive.Group data-slot="context-menu-group" {...props} />;
 }
 
-function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {
+export function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {
   return <ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />;
 }
 
@@ -200,8 +200,6 @@ export {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuShortcut,
-  ContextMenuGroup,
-  ContextMenuPortal,
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuRadioGroup,

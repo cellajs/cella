@@ -78,7 +78,7 @@ export type EntityView = UserEntityView | ContextEntityView | ProductEntityView;
 // Hierarchy Builder
 
 /** Builder for entity hierarchy. Chain calls to define entities, then call build(). */
-export class EntityHierarchyBuilder<
+class EntityHierarchyBuilder<
   TRoles extends { all: readonly string[] },
   TContexts extends string = never,
   TProducts extends string = never,

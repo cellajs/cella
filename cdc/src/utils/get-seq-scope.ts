@@ -2,7 +2,7 @@ import { hierarchy, isProductEntity } from 'shared';
 import type { TableRegistryEntry } from '../types';
 
 /** Prefix for public (org-less) entity seq keys in contextCountersTable */
-export const PUBLIC_SEQ_PREFIX = 'public';
+const PUBLIC_SEQ_PREFIX = 'public';
 
 /**
  * Seq scope — all sequences are stored in contextCountersTable.

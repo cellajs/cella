@@ -28,7 +28,7 @@ type SharedHeaderRowProps<R, SR> = Pick<
   | 'onColumnsReorder'
 >;
 
-export interface HeaderCellProps<R, SR> extends SharedHeaderRowProps<R, SR> {
+interface HeaderCellProps<R, SR> extends SharedHeaderRowProps<R, SR> {
   column: CalculatedColumn<R, SR>;
   colSpan: number | undefined;
   rowIdx: number;

@@ -17,7 +17,7 @@ const PING_INTERVAL_MS = 30_000;
 /**
  * WebSocket connection state.
  */
-export type WsState = 'connecting' | 'open' | 'closed' | 'reconnecting';
+type WsState = 'connecting' | 'open' | 'closed' | 'reconnecting';
 
 /**
  * Callbacks for WebSocket state changes.

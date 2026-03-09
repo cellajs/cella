@@ -13,7 +13,7 @@ import pc from 'picocolors';
  * Types
  ************************************************************************************************/
 
-export interface OutdatedPackage {
+interface OutdatedPackage {
   current: string;
   latest: string;
   wanted: string;
@@ -28,13 +28,13 @@ export interface NpmRegistryData {
   bugs?: { url: string };
 }
 
-export interface CachedPackageData {
+interface CachedPackageData {
   repoUrl: string | null;
   changelogUrl: string | null;
   fetchedAt: number;
 }
 
-export interface ChangelogCache {
+interface ChangelogCache {
   [packageName: string]: CachedPackageData;
 }
 
@@ -95,7 +95,7 @@ export interface AuditAdvisory {
 }
 
 /** Parsed dependency path info from pnpm audit */
-export interface DependencyPathInfo {
+interface DependencyPathInfo {
   /** The workspace name (e.g., 'frontend', 'backend') */
   workspace: string | null;
   /** The direct dependency in the workspace that starts the chain */
@@ -110,7 +110,7 @@ export interface DependencyPathInfo {
 export const CACHE_FILE = path.join(import.meta.dirname, '..', '.audit.cache.json');
 
 /** Cache TTL: 7 days in ms */
-export const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 /** Common changelog file paths to check in GitHub repos */
 export const CHANGELOG_PATHS = ['CHANGELOG.md', 'CHANGELOG', 'changelog.md', 'HISTORY.md', 'CHANGES.md', 'NEWS.md'];
@@ -214,7 +214,7 @@ function isGitHubRepoUrl(repoUrl: string | null): repoUrl is string {
  * Checks if a file exists in a GitHub repo and returns the branch name if found.
  * Returns null if file doesn't exist on any branch.
  */
-export async function findGitHubFile(repoUrl: string, filePath: string): Promise<string | null> {
+async function findGitHubFile(repoUrl: string, filePath: string): Promise<string | null> {
   if (!isGitHubRepoUrl(repoUrl)) return null;
 
   for (const branch of DEFAULT_BRANCHES) {
@@ -377,7 +377,7 @@ export function runPnpmAudit(cwd: string): AuditResult | null {
  *   - "backend>jsx-email>esbuild" -> { workspace: 'backend', directDependency: 'jsx-email' }
  *   - "esbuild" (direct) -> { workspace: null, directDependency: null }
  */
-export function parseDependencyPath(paths: string[]): DependencyPathInfo {
+function parseDependencyPath(paths: string[]): DependencyPathInfo {
   for (const pathStr of paths) {
     const parts = pathStr.split('>');
     if (parts.length >= 2) {
