@@ -129,11 +129,10 @@ const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.passwor
 const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
 
   try {
-    console.info('[roles] Executing CREATE ROLE SQL...');
     await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
-    throw new Error(`Failed to setup roles: ${error}`);
+    throw new Error(`${pc.red('✖')} Failed to setup roles: ${error}`);
   }
 }
 
