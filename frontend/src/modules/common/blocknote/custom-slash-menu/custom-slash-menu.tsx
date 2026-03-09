@@ -1,5 +1,7 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
-import { useEffect, useRef } from 'react';
+import type React from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
@@ -24,8 +26,43 @@ export const CustomSlashMenuComponent = ({
 }: CustomSlashMenuComponentProps) => {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const isMobile = useBreakpointBelow('sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
+
+  // Track the position of the floating-ui parent container so we can mirror
+  // it on the portaled menu. This lets us escape overflow:hidden and transform
+  // stacking contexts created by ancestor elements (ResizablePanel, motion.div).
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+
+  useLayoutEffect(() => {
+    if (isMobile) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    // The sentinel is rendered inside GenericPopover's floating div.
+    // Walk up to that div to read its computed position.
+    const floatingDiv = sentinel.parentElement;
+    if (!floatingDiv) return;
+
+    const sync = () => {
+      const rect = floatingDiv.getBoundingClientRect();
+      setPortalStyle({
+        position: 'fixed',
+        top: rect.top,
+        left: rect.left,
+        zIndex: 300,
+      });
+    };
+
+    sync();
+
+    // Re-sync whenever floating-ui updates the position (observed via style mutations)
+    const observer = new MutationObserver(sync);
+    observer.observe(floatingDiv, { attributes: true, attributeFilter: ['style'] });
+
+    return () => observer.disconnect();
+  }, [isMobile, items, selectedIndex]);
 
   const handleKeyPress = (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
@@ -110,5 +147,16 @@ export const CustomSlashMenuComponent = ({
     );
   }
 
-  return menuContent;
+  return (
+    <>
+      {/* Invisible sentinel stays in the floating-ui container to track position */}
+      <div ref={sentinelRef} style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />
+      {createPortal(
+        <div {...{ ['data-slash-menu-portal']: '' }} style={portalStyle}>
+          {menuContent}
+        </div>,
+        document.body,
+      )}
+    </>
+  );
 };
