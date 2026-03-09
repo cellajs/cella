@@ -28,7 +28,13 @@ import {
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, squashPendingMutation } from '~/query/offline';
+import {
+  createStxForCreate,
+  createStxForDelete,
+  createStxForUpdate,
+  squashPendingMutation,
+  syncEntityToCache,
+} from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { createResourceError } from '~/utils/resource-error';
 
@@ -51,9 +57,9 @@ const handleError = createResourceError('page');
 
 // --- Query options ---
 
-export const findPageInListCache = (id: string) => findEntityInListCache<Page>('page', id);
+const findPageInListCache = (id: string) => findEntityInListCache<Page>('page', id);
 
-export const findPageInCache = (id: string): Page | undefined => {
+const findPageInCache = (id: string): Page | undefined => {
   const detail = queryClient.getQueryData<Page>(keys.detail.byId(id));
   if (detail) return detail;
   return findEntityInListCache<Page>('page', id);
@@ -169,11 +175,20 @@ export const usePageUpdateMutation = () => {
         queryClient.setQueryData(keys.detail.byId(context.previousPage.id), context.previousPage);
       }
     },
-    onSuccess: (updatedPage) => {
-      mutateCache.update([updatedPage]);
-      queryClient.setQueryData<Page>(keys.detail.byId(updatedPage.id), (old) =>
-        old ? { ...old, ...updatedPage } : old,
-      );
+    onSuccess: (updatedPage, variables) => {
+      const detailKey = keys.detail.byId(updatedPage.id);
+      const cached = findPageInListCache(updatedPage.id);
+      // Merge only the mutated field + stx from server, preserving other optimistic values
+      const merged = cached
+        ? {
+            ...cached,
+            [variables.key]: updatedPage[variables.key],
+            stx: updatedPage.stx,
+            modifiedAt: updatedPage.modifiedAt,
+            ...('modifiedBy' in updatedPage ? { modifiedBy: updatedPage.modifiedBy } : {}),
+          }
+        : updatedPage;
+      syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {

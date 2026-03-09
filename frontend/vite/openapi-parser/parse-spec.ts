@@ -29,7 +29,7 @@ const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityTy
  * Result of parsing an OpenAPI spec.
  * Contains all the data needed to generate documentation files.
  */
-export interface ParsedOpenApiSpec {
+interface ParsedOpenApiSpec {
   operations: GenOperationSummary[];
   tags: GenTagSummary[];
   info: GenInfoSummary;

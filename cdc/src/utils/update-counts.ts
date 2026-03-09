@@ -7,7 +7,7 @@ import type { TableRegistryEntry } from '../types';
 /**
  * Count delta to apply to contextCountersTable.counts JSONB.
  */
-export interface CountDelta {
+interface CountDelta {
   /** Context key (orgId or 'public:{type}') — the row to update */
   contextKey: string;
   /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */

@@ -7,7 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { CodeViewer } from './code-viewer';
 import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
 
-export type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
+type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
 interface ViewerGroupProps {
   /** Schema to display in format mode */

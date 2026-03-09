@@ -23,7 +23,7 @@ import type {
 } from './types';
 import { assertIsValidKeyGetter, getLeftRightKey } from './utils/grid-utils';
 
-export interface TreeDataGridProps<R, SR = unknown, K extends Key = Key>
+interface TreeDataGridProps<R, SR = unknown, K extends Key = Key>
   extends Omit<DataGridProps<R, SR, K>, 'columns' | 'role' | 'aria-rowcount' | 'rowHeight' | 'isRowSelectionDisabled'> {
   columns: readonly Column<NoInfer<R>, NoInfer<SR>>[];
   rowHeight?: Maybe<number | ((args: RowHeightArgs<NoInfer<R>>) => number)>;

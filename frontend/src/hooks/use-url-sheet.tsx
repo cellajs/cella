@@ -19,7 +19,7 @@ interface OverlayConfig<TOptions> {
   options: TOptions;
 }
 
-export type UseUrlSheetConfig = OverlayConfig<SheetOptions>;
+type UseUrlSheetConfig = OverlayConfig<SheetOptions>;
 
 /** Navigate to clear search params (always replace, no history.back) */
 function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] = []) {

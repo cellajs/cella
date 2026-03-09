@@ -22,7 +22,7 @@ type TenantFilters = Omit<GetTenantsData['query'], 'limit' | 'offset'>;
  * Query keys for tenant operations.
  * Tenants are resources (not entities), so we define keys manually.
  */
-export const tenantQueryKeys = {
+const tenantQueryKeys = {
   all: ['tenant'] as const,
   list: {
     base: ['tenant', 'list'] as const,

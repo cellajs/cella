@@ -56,4 +56,4 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
     </nav>
   );
 }
-export { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
+export { type FloatingNavItem } from '~/modules/navigation/floating-nav/button';

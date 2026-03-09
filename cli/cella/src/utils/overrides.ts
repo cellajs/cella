@@ -71,18 +71,8 @@ export function isPinned(filePath: string, config: CellaCliConfig): boolean {
   return patterns.some((pattern) => matchPattern(filePath, pattern));
 }
 
-/**
- * Get override status for a file.
- */
-export function getOverrideStatus(filePath: string, config: CellaCliConfig): { isIgnored: boolean; isPinned: boolean } {
-  return {
-    isIgnored: isIgnored(filePath, config),
-    isPinned: isPinned(filePath, config),
-  };
-}
-
 /** Validation warning */
-export interface ConfigWarning {
+interface ConfigWarning {
   type: 'pinned-glob' | 'pinned-not-found' | 'ignored-no-match' | 'single-level-glob';
   pattern: string;
   message: string;

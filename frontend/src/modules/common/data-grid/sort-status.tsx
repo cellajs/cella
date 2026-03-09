@@ -9,7 +9,7 @@ export function renderSortStatus({ sortDirection, priority }: RenderSortStatusPr
   );
 }
 
-export function renderSortIcon({ sortDirection }: RenderSortIconProps) {
+function renderSortIcon({ sortDirection }: RenderSortIconProps) {
   if (sortDirection === undefined) return null;
 
   return (
@@ -19,6 +19,6 @@ export function renderSortIcon({ sortDirection }: RenderSortIconProps) {
   );
 }
 
-export function renderSortPriority({ priority }: RenderSortPriorityProps) {
+function renderSortPriority({ priority }: RenderSortPriorityProps) {
   return priority;
 }

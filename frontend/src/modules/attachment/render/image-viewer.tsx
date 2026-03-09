@@ -1,13 +1,13 @@
 import * as React from 'react';
 
-export interface ImageDragData {
+interface ImageDragData {
   x: number;
   y: number;
   dx: number;
   dy: number;
 }
 
-export interface ImageViewerStateType {
+interface ImageViewerStateType {
   dragging: boolean;
   mouseDown: boolean;
   comesFromDragging: boolean;
@@ -15,7 +15,7 @@ export interface ImageViewerStateType {
   matrixData: number[];
 }
 
-export interface ImageViewerProps {
+interface ImageViewerProps {
   height?: string;
   width?: string;
   className?: string;

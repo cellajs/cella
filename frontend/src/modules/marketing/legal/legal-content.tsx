@@ -10,11 +10,6 @@ import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { objectEntries } from '~/utils/object';
 
-export interface LegalSubjectConfig {
-  id: LegalSubject;
-  label: string;
-}
-
 /**
  * Legal content component.
  */

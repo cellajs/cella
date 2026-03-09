@@ -18,7 +18,7 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
   );
 }
 
-function CommandDialog({
+export function CommandDialog({
   title = 'Command Palette',
   description = 'Search for a command to run...',
   children,
@@ -157,7 +157,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
   );
 }
 
-function CommandShortcut({ className, ...props }: React.ComponentProps<'span'>) {
+export function CommandShortcut({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="command-shortcut"
@@ -167,7 +167,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<'span'>) 
   );
 }
 
-function CommandLoading({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Loading>) {
+export function CommandLoading({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Loading>) {
   return (
     <CommandPrimitive.Loading
       className={cn(
@@ -179,15 +179,4 @@ function CommandLoading({ className, ...props }: React.ComponentProps<typeof Com
   );
 }
 
-export {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandLoading,
-  CommandSeparator,
-  CommandShortcut,
-};
+export { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator };

@@ -20,8 +20,7 @@ const keys = createEntityKeys<UserFilters>('user');
 export const userQueryKeys = keys;
 
 /** Find a user in the list cache by id. */
-export const findUserInListCache = (entityId: string) =>
-  findEntityInListCache<User>('user', (user) => user.id === entityId);
+const findUserInListCache = (entityId: string) => findEntityInListCache<User>('user', (user) => user.id === entityId);
 
 /**
  * Query options for fetching a user by ID.

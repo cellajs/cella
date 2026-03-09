@@ -17,7 +17,7 @@ import type { StxRequestBase } from '~/api.gen';
 export const sourceId = `src_${nanoid()}`;
 
 /** Sync transaction metadata sent to API in { data, stx } wrapper - reuses StxRequestBase from api.gen */
-export type StxMetadata = StxRequestBase;
+type StxMetadata = StxRequestBase;
 
 /** Represents a JSONB type from the database that may contain stx metadata. */
 type JsonbStx = string | number | boolean | null | { [key: string]: unknown } | unknown[];

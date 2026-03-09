@@ -36,14 +36,14 @@ let initPromise: Promise<void> | null = null;
 /**
  * Check if Web Locks API is available.
  */
-export const isWebLocksAvailable = (): boolean => {
+const isWebLocksAvailable = (): boolean => {
   return typeof navigator !== 'undefined' && 'locks' in navigator;
 };
 
 /**
  * Check if BroadcastChannel is available.
  */
-export const isBroadcastChannelAvailable = (): boolean => {
+const isBroadcastChannelAvailable = (): boolean => {
   return typeof BroadcastChannel !== 'undefined';
 };
 
@@ -210,7 +210,7 @@ export const onNotification = (handler: (notification: AppStreamNotification, or
 /**
  * Release leadership and clean up resources.
  */
-export const releaseLeadership = (): void => {
+const releaseLeadership = (): void => {
   if (lockController) {
     lockController.abort();
     lockController = null;

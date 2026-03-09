@@ -14,7 +14,7 @@ export interface FooterLinkProps {
   href: string;
 }
 
-export const FooterLink = ({ id, href }: FooterLinkProps) => {
+const FooterLink = ({ id, href }: FooterLinkProps) => {
   const { t } = useTranslation();
 
   return (

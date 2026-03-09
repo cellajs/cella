@@ -20,7 +20,7 @@ interface PrerenderState {
   setTarget: (scope: string, sectionId: string | undefined) => void;
 }
 
-export const usePrerenderStore = create<PrerenderState>((set) => ({
+const usePrerenderStore = create<PrerenderState>((set) => ({
   targets: {},
   setTarget: (scope, sectionId) =>
     set((state) => {

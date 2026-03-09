@@ -400,4 +400,4 @@ function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
   );
 }
 
-export { TagInput, Delimiter, type TagInputProps };
+export { TagInput, type TagInputProps };

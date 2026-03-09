@@ -14,7 +14,7 @@ import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import { useInfiniteQueryTotal } from '~/query/basic';
 
-export type EntityGridBarSearch = {
+type EntityGridBarSearch = {
   q?: string;
   sort?: 'name' | 'createdAt';
   role?: string;

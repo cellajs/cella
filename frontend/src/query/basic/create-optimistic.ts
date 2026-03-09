@@ -171,8 +171,3 @@ export const createOptimisticEntity = <T extends z.ZodObject<z.ZodRawShape>>(
     _optimistic: true,
   } as z.infer<T>;
 };
-
-/**
- * Type helper to extract the entity type from a Zod schema.
- */
-export type EntityFromSchema<T extends z.ZodTypeAny> = z.infer<T>;

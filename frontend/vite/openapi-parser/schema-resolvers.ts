@@ -8,7 +8,7 @@ import type { OpenApiSchema, OpenApiSpec } from './types';
 /**
  * Resolves a $ref path to the actual schema from components
  */
-export function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
+function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
   // Handle refs like "#/components/schemas/User" or "#/components/responses/BadRequestError"
   const parts = ref.split('/');
   const name = parts[parts.length - 1];
@@ -31,7 +31,7 @@ export function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSch
  * Required arrays are combined.
  * The first $ref encountered is preserved as extendsRef for inheritance tracking.
  */
-export function mergeAllOfSchemas(
+function mergeAllOfSchemas(
   allOfSchemas: OpenApiSchema[],
   spec: OpenApiSpec,
   visited: Set<string>,

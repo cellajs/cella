@@ -15,7 +15,7 @@ import { createOptimisticEntity } from '~/query/basic';
  * Constructs a public CDN URL for a file key.
  * Use for public files to avoid the presigned URL endpoint.
  */
-export function getPublicFileUrl(key: string): string {
+function getPublicFileUrl(key: string): string {
   return `${appConfig.s3.publicCDNUrl}/${key}`;
 }
 
@@ -31,7 +31,7 @@ export async function getFileUrl(key: string, isPublic: boolean, tenantId: strin
 }
 
 /** Result of resolving an attachment URL */
-export interface ResolvedUrl {
+interface ResolvedUrl {
   url: string;
   isLocal: boolean;
   variant: BlobVariant | null;
