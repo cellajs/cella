@@ -79,4 +79,4 @@ interface StepSharedProps extends StepProps {
   isLoading?: boolean;
 }
 
-export type { IconType, StepItem, StepOptions, StepperProps, StepProps, StepSharedProps };
+export type { IconType, StepItem, StepperProps, StepProps, StepSharedProps };

@@ -10,7 +10,7 @@ import {
   type UploadStatus,
 } from '~/modules/attachment/dexie/attachments-db';
 
-export interface BlobUploadInfo {
+interface BlobUploadInfo {
   uploadStatus: UploadStatus | null;
   hasLocalBlob: boolean;
   storedVariants: BlobVariant[];

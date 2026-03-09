@@ -253,9 +253,3 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   // User defaults
   defaultUserFlags: Record<string, boolean>;
 }
-
-/**
- * Shorthand for RequiredConfig with all defaults.
- * Use this when you don't need to preserve specific literal types.
- */
-export type BaseRequiredConfig = RequiredConfig;

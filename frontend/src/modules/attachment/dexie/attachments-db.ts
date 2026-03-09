@@ -158,7 +158,7 @@ export interface DownloadQueueEntry {
   attempts: number;
 }
 
-export class AttachmentsDatabase extends Dexie {
+class AttachmentsDatabase extends Dexie {
   blobs!: EntityTable<AttachmentBlob, 'id'>;
   downloadQueue!: EntityTable<DownloadQueueEntry, 'id'>;
 

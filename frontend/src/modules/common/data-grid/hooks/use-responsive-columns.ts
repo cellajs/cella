@@ -4,10 +4,10 @@ import { appConfig } from 'shared';
 import { useEventListener } from '~/hooks/use-event-listener';
 import type { Column, ColumnOrColumnGroup } from '../types';
 
-export type ResponsiveBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type ResponsiveBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 /** Column with responsive visibility configuration */
-export interface ResponsiveColumn<R, SR = unknown> extends Column<R, SR> {
+interface ResponsiveColumn<R, SR = unknown> extends Column<R, SR> {
   /** Minimum breakpoint at which this column is visible. If undefined, always visible */
   minBreakpoint?: ResponsiveBreakpoint;
   /** Maximum breakpoint at which this column is visible. If undefined, no max */
@@ -16,7 +16,7 @@ export interface ResponsiveColumn<R, SR = unknown> extends Column<R, SR> {
   showInDetail?: boolean;
 }
 
-export interface ResponsiveColumnGroup<R, SR = unknown> {
+interface ResponsiveColumnGroup<R, SR = unknown> {
   name: string;
   headerCellClass?: string;
   children: readonly ResponsiveColumn<R, SR>[];
@@ -24,14 +24,14 @@ export interface ResponsiveColumnGroup<R, SR = unknown> {
   maxBreakpoint?: ResponsiveBreakpoint;
 }
 
-export type ResponsiveColumnOrColumnGroup<R, SR = unknown> = ResponsiveColumn<R, SR> | ResponsiveColumnGroup<R, SR>;
+type ResponsiveColumnOrColumnGroup<R, SR = unknown> = ResponsiveColumn<R, SR> | ResponsiveColumnGroup<R, SR>;
 
 /** Breakpoints from appConfig, matching Tailwind screen config */
 const DEFAULT_BREAKPOINTS: Record<ResponsiveBreakpoint, number> = Object.fromEntries(
   Object.entries(appConfig.theme.screenSizes).map(([key, value]) => [key, Number.parseInt(value, 10)]),
 ) as Record<ResponsiveBreakpoint, number>;
 
-export interface ResponsiveColumnsOptions<R, SR> {
+interface ResponsiveColumnsOptions<R, SR> {
   /** All columns with responsive configuration */
   columns: readonly ResponsiveColumnOrColumnGroup<R, SR>[];
   /** Custom breakpoint widths (defaults to Tailwind breakpoints) */
@@ -40,7 +40,7 @@ export interface ResponsiveColumnsOptions<R, SR> {
   windowWidth?: number;
 }
 
-export interface ResponsiveColumnsResult<R, SR> {
+interface ResponsiveColumnsResult<R, SR> {
   /** Columns visible at the current breakpoint */
   visibleColumns: readonly ColumnOrColumnGroup<R, SR>[];
   /** Columns hidden at the current breakpoint (for row detail rendering) */

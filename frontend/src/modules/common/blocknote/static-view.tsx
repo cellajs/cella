@@ -145,7 +145,11 @@ function BlockNoteStaticView({
       data-color-scheme={mode}
       onClick={handleClick}
     >
-      <div className="bn-editor bn-default-styles" dangerouslySetInnerHTML={{ __html: renderState.html }} />
+      <div
+        className="bn-default-styles"
+        style={{ color: 'var(--bn-colors-editor-text)' }}
+        dangerouslySetInnerHTML={{ __html: renderState.html }}
+      />
     </div>
   );
 }

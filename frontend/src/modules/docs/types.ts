@@ -188,34 +188,6 @@ export interface GenResponseSummary {
 }
 
 /**
- * Parameter summary for path/query parameters
- */
-export interface GenParameterSummary {
-  /** Parameter name */
-  name: string;
-  /** Parameter location (path, query) */
-  in: 'path' | 'query';
-  /** Whether the parameter is required */
-  required: boolean;
-  /** Parameter description */
-  description?: string;
-  /** Parameter schema */
-  schema?: GenSchemaProperty;
-}
-
-/**
- * Request body summary
- */
-export interface GenRequestBodySummary {
-  /** Whether the request body is required */
-  required: boolean;
-  /** Content type (e.g., 'application/json') */
-  contentType: string;
-  /** Request body schema */
-  schema?: GenSchema;
-}
-
-/**
  * Request section for path, query, or body.
  * These are organizational containers, not actual schema types.
  */
@@ -308,12 +280,6 @@ export interface GenSchemaTagSummary {
   /** Number of schemas with this tag */
   count: number;
 }
-
-/**
- * Tag name type - represents API operation tag names.
- * This is a string type that allows for dynamic tag names from the OpenAPI spec.
- */
-export type TagName = string;
 
 /**
  * Component schema summary for schemas list page.

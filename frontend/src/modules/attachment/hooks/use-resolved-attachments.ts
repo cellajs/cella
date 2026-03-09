@@ -9,7 +9,7 @@ import type { CarouselItemData } from '~/modules/attachment/carousel';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
-export interface ResolvedAttachmentsResult {
+interface ResolvedAttachmentsResult {
   items: CarouselItemData[];
   isLoading: boolean;
   hasErrors: boolean;

@@ -12,7 +12,7 @@ export * from './selected-cell-utils';
 export * from './style-utils';
 export * from './wrap-text-utils';
 
-export const { min, max, floor, sign, abs } = Math;
+export const { min, max, floor, sign } = Math;
 
 export function assertIsValidKeyGetter<R, K extends React.Key>(
   keyGetter: Maybe<(row: NoInfer<R>) => K>,

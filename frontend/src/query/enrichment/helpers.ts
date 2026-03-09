@@ -30,7 +30,7 @@ export function getCachedMemberships(): MembershipBase[] | null {
 }
 
 /** Get the entity ID a membership belongs to */
-export function getMembershipEntityId(m: MembershipBase): string | null {
+function getMembershipEntityId(m: MembershipBase): string | null {
   return m[appConfig.entityIdColumnKeys[m.contextType]];
 }
 

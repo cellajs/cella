@@ -1,6 +1,6 @@
 import type { EntityType } from 'shared';
 
-export type StandardEntityKeys<E extends EntityType, LF extends object = {}, SID extends string | number = string> = {
+type StandardEntityKeys<E extends EntityType, LF extends object = {}, SID extends string | number = string> = {
   all: [E];
   list: {
     base: [E, 'list'];

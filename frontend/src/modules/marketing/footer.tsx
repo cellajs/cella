@@ -45,7 +45,7 @@ function FooterLinks() {
   );
 }
 
-export const Credits = ({ className }: { className?: string }) => {
+const Credits = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
 
   return (

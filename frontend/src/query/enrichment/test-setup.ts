@@ -49,7 +49,7 @@ export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType
 
 // --- Shared test helpers ---
 
-export interface TestMembership {
+interface TestMembership {
   organizationId: string;
   contextType: string;
   archived: boolean;

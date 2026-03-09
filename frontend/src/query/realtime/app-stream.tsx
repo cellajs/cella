@@ -6,7 +6,7 @@ import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
  * Thin React wrapper around appStreamManager for real-time updates.
  * All reconnect logic (visibility, leader changes) is handled by StreamManager.
  */
-export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
+function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
   const { enabled = true, onStateChange } = options;
 
   const state = appStreamManager.useStore((s) => s.state);
@@ -40,8 +40,6 @@ export function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamRet
  * Use in AppLayout for app-wide real-time sync.
  */
 export function AppStream() {
-  console.debug('[AppStream] Initializing app stream...');
-
   useAppStream({
     onStateChange: (state) => {
       if (state === 'live') console.debug('[AppStream] Connected and live');

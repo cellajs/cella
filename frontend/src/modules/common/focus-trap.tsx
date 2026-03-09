@@ -1,5 +1,17 @@
 import { useEffect, useRef } from 'react';
 
+// Selector for focusable elements, excluding aria-hidden elements (e.g. Base UI's
+// hidden checkbox <input>) which must never enter the tab order.
+const notHidden = ':not([aria-hidden="true"])';
+const focusableSelector = [
+  `a[href]${notHidden}`,
+  `button${notHidden}`,
+  `textarea${notHidden}`,
+  `input${notHidden}`,
+  `select${notHidden}`,
+  `[tabindex]${notHidden}:not([tabindex="-1"]):not([data-exclude-from-focus-trap="true"])`,
+].join(', ');
+
 export function FocusTrap({
   children,
   mainElementId,
@@ -14,9 +26,7 @@ export function FocusTrap({
   const handleTabKey = (e: KeyboardEvent) => {
     if (!focusTrapRef || !focusTrapRef.current) return;
     // Get all focusable elements
-    const focusableElements = focusTrapRef.current.querySelectorAll(
-      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"]):not([data-exclude-from-focus-trap="true"])',
-    );
+    const focusableElements = focusTrapRef.current.querySelectorAll(focusableSelector);
     const firstElement = focusableElements[0] as HTMLElement | undefined;
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement | undefined;
 
@@ -57,9 +67,7 @@ export function FocusTrap({
     if (!trap) return;
 
     // Get all focusable elements
-    const focusableElements = trap.querySelectorAll(
-      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"]):not([data-exclude-from-focus-trap="true"])',
-    );
+    const focusableElements = trap.querySelectorAll(focusableSelector);
     // Update tabindex based on the active state
     for (const element of focusableElements) element.setAttribute('tabindex', active ? '0' : '-1');
 

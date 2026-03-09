@@ -170,38 +170,6 @@ export function fetchUpstream(forkPath: string): void {
 }
 
 /**
- * Write a cella.config.ts to the fork.
- */
-export function writeTestConfig(
-  forkPath: string,
-  options: {
-    pinned?: string[];
-    ignored?: string[];
-    mergeStrategy?: 'merge' | 'squash';
-  } = {},
-): void {
-  const { pinned = [], ignored = [], mergeStrategy = 'squash' } = options;
-
-  const config = `import { defineConfig } from './cli/cella/src/config/types';
-
-export default defineConfig({
-  settings: {
-    upstreamUrl: 'local-test',
-    upstreamBranch: 'main',
-    forkBranch: 'main',
-    mergeStrategy: '${mergeStrategy}',
-  },
-  overrides: {
-    pinned: ${JSON.stringify(pinned)},
-    ignored: ${JSON.stringify(ignored)},
-  },
-});
-`;
-
-  fs.writeFileSync(path.join(forkPath, 'cella.config.ts'), config);
-}
-
-/**
  * Build a RuntimeConfig for testing without going through CLI.
  */
 export function buildRuntimeConfig(

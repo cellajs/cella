@@ -5,7 +5,7 @@ import type { StreamState } from './types';
 const debugLabel = 'PublicStream';
 
 /** Options for usePublicStream hook */
-export interface UsePublicStreamOptions {
+interface UsePublicStreamOptions {
   /** Whether the stream is enabled. Default: true */
   enabled?: boolean;
   /** Callback when state changes */
@@ -13,7 +13,7 @@ export interface UsePublicStreamOptions {
 }
 
 /** Return value from usePublicStream hook */
-export interface UsePublicStreamReturn {
+interface UsePublicStreamReturn {
   /** Current connection state */
   state: StreamState;
   /** Last received cursor/offset */
@@ -35,7 +35,7 @@ export interface UsePublicStreamReturn {
  * 3. SSE: Connect with offset=now for live-only updates
  * 4. Invalidate entity lists for create/update refetches
  */
-export function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
+function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
   const { enabled = true, onStateChange } = options;
 
   // Subscribe to store state

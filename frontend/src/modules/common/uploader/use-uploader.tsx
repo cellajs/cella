@@ -14,7 +14,7 @@ type CommonUploadData = {
   description?: string;
 };
 
-export type UploadData =
+type UploadData =
   | (CommonUploadData & {
       personalUpload: true;
       organizationId?: never;

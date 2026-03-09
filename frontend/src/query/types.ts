@@ -1,4 +1,4 @@
-import type { InfiniteData, QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 
 /** Extract usable mutation variables from a generated *Data type (strips `url` and `path`). */
 export type MutationData<T> = Omit<T, 'url'>;
@@ -25,14 +25,6 @@ export type ContextQueryProp<TItem, TOptimisticId = undefined, TPageParam = Page
   | null
   ? BaseQueryResponce<TItem, TPageParam>
   : [...BaseQueryResponce<TItem, TPageParam>, TOptimisticId];
-
-export type ContextProp<T, K = undefined> = K extends undefined | null
-  ? [QueryKey, T | undefined]
-  : [QueryKey, T | undefined, K];
-
-export type InfiniteOptions<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
-  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, PageParams>
->[0];
 
 /** Org context needed by mutation defaults for offline persistence. */
 export type QueryOrgContext = { tenantId: string; orgId: string };

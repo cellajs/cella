@@ -6,7 +6,7 @@ export function renderToggleGroup<R, SR>(props: RenderGroupCellProps<R, SR>) {
   return <ToggleGroup {...props} />;
 }
 
-export function ToggleGroup<R, SR>({ groupKey, isExpanded, tabIndex, toggleGroup }: RenderGroupCellProps<R, SR>) {
+function ToggleGroup<R, SR>({ groupKey, isExpanded, tabIndex, toggleGroup }: RenderGroupCellProps<R, SR>) {
   function handleKeyDown({ key }: React.KeyboardEvent<HTMLSpanElement>) {
     if (key === 'Enter') {
       toggleGroup();

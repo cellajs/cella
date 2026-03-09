@@ -21,7 +21,7 @@ import { isDebugMode } from '~/env';
 
 // Re-export span names (aliased for backwards compatibility)
 export { frontendSpanNames as syncSpanNames };
-export type { SpanData, SpanStats, LightweightSpan };
+export type { SpanData };
 
 // ================================
 // Span Store

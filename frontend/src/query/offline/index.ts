@@ -7,6 +7,6 @@
  * - Mutation squashing and coalescing
  */
 
-export { detectChangedFields } from './detect-changed-fields';
-export { coalescePendingCreate, hasPendingDelete, squashPendingMutation } from './squash-utils';
-export { createStxForCreate, createStxForDelete, createStxForUpdate, type StxMetadata, sourceId } from './stx-utils';
+export { squashPendingMutation } from './squash-utils';
+export { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from './stx-utils';
+export { syncEntityToCache } from './update-success-utils';

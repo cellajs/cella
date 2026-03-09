@@ -52,10 +52,10 @@ import {
 import { isIgnored, isPinned } from '../utils/overrides';
 
 /** Progress callback type - receives message and optional detail for sub-line */
-export type ProgressCallback = (message: string, detail?: string) => void;
+type ProgressCallback = (message: string, detail?: string) => void;
 
 /** Step completion callback - marks a step as done with optional detail */
-export type StepCallback = (label: string, detail?: string) => void;
+type StepCallback = (label: string, detail?: string) => void;
 
 /**
  * Convert a git remote URL to a GitHub base URL.

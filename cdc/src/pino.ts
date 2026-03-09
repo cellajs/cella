@@ -26,7 +26,7 @@ export const cdcLogger = pino(
 );
 
 /** Severity levels supported by logEvent. */
-export type CdcSeverity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+type CdcSeverity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
 /**
  * Logs significant CDC events with optional metadata.

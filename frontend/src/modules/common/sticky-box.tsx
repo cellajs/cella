@@ -351,24 +351,17 @@ function setup(node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
   );
 }
 
-export type StickyBoxConfig = {
+type StickyBoxConfig = {
   offsetTop?: number;
   offsetBottom?: number;
   bottom?: boolean;
   enabled?: boolean;
 };
 
-export type UseStickyBoxOptions = StickyBoxConfig;
-
 /**
  * Provides sticky positioning behavior for a target element.
  */
-export function useStickyBox({
-  offsetTop = 0,
-  offsetBottom = 0,
-  bottom = false,
-  enabled = true,
-}: StickyBoxConfig = {}) {
+function useStickyBox({ offsetTop = 0, offsetBottom = 0, bottom = false, enabled = true }: StickyBoxConfig = {}) {
   const [node, setNode] = useState<HTMLElement | null>(null);
   const [isSticky, setIsSticky] = useState<boolean>(false);
 
@@ -435,7 +428,7 @@ export function useStickyBox({
   return [setNode, isSticky] as const;
 }
 
-export type StickyBoxCompProps = StickyBoxConfig &
+type StickyBoxCompProps = StickyBoxConfig &
   Omit<ComponentProps<'div'>, 'ref'> & {
     /** When true, hides the sticky box when its natural position scrolls out of the viewport */
     hideWhenOutOfView?: boolean;

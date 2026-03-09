@@ -13,7 +13,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
 /** Input type for dialog - url is optional since it may need resolution */
-export type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
+type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
 
 /**
  * Attachment dialog that displays a carousel of attachments.

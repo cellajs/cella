@@ -5,7 +5,7 @@ import { cdcLogger } from '../pino';
  * Lightweight error class for CDC worker.
  * Simplified version of backend AppError - no i18n, no complex metadata.
  */
-export class CdcError extends Error {
+class CdcError extends Error {
   readonly status: number;
   readonly type: string;
   readonly severity: 'error' | 'warn' | 'fatal';

@@ -66,7 +66,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
 /**
  * Default plugin configuration
  */
-export const defaultConfig: OpenApiParserPlugin['Config'] = {
+const defaultConfig: OpenApiParserPlugin['Config'] = {
   dependencies: ['@hey-api/typescript'],
   handler,
   name: 'openapi-parser',
@@ -79,5 +79,3 @@ export const defaultConfig: OpenApiParserPlugin['Config'] = {
  * Plugin factory function
  */
 export const defineConfig = definePluginConfig(defaultConfig);
-
-export default defineConfig;

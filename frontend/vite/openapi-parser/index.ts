@@ -1,17 +1,7 @@
-export type { SchemaTag } from './categorize';
-
 // Categorization
-export { getSchemaTag } from './categorize';
 // File generators
-export { generateOperationHash } from './file-generators';
-export type { ParsedOpenApiSpec } from './parse-spec';
-
 // Spec parsing
-export { parseOpenApiSpec } from './parse-spec';
 // Plugin exports
-export { default, defaultConfig, defineConfig } from './plugin';
-
+export { defineConfig } from './plugin';
 // Schema resolution
-export { mergeAllOfSchemas, resolveRef, resolveSchema, resolveSchemaProperty } from './schema-resolvers';
 // Types
-export type { OpenApiParameter, OpenApiRequestBody, OpenApiSchema, OpenApiSpec } from './types';

@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { type FieldValues, useController } from 'react-hook-form';
+import { type FieldValues, useController, useFormContext } from 'react-hook-form';
 import { appConfig } from 'shared';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
@@ -64,18 +64,21 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
 
   const hasSingleOption = options.length === 1;
 
-  // Auto-select when only one tenant is available
+  // Auto-select when only one tenant is available (without marking form dirty)
   const { field } = useController({ control, name });
+  const { setValue } = useFormContext();
   useEffect(() => {
     if (hasSingleOption && field.value !== options[0].value) {
-      field.onChange(options[0].value);
+      setValue(name, options[0].value as never, { shouldDirty: false });
     }
-  }, [hasSingleOption, options, field]);
+  }, [hasSingleOption, options, field.value]);
 
-  // Hide the field when autoHide is enabled and only one tenant exists
-  if (autoHide && hasSingleOption) return null;
+  // When autoHide is enabled, render nothing until data loads (prevents flash),
+  // then nothing if ≤1 option, or an animated expand if multiple options
+  const isLoading = isSystemAdmin ? tenantsQuery.isLoading : membershipsQuery.isLoading;
+  if (autoHide && (isLoading || options.length <= 1)) return null;
 
-  return (
+  const fieldElement = (
     <FormField
       control={control}
       name={name}
@@ -106,4 +109,10 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
+
+  if (autoHide) {
+    return <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">{fieldElement}</div>;
+  }
+
+  return fieldElement;
 };
