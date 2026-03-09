@@ -2370,6 +2370,9 @@ export type PostPublicCatchupResponses = {
         deletedByType?: {
           [key: string]: Array<string>;
         };
+        entityCounts?: {
+          [key: string]: number;
+        };
       };
     };
     /**
@@ -2481,6 +2484,9 @@ export type PostAppCatchupResponses = {
         };
         deletedByType?: {
           [key: string]: Array<string>;
+        };
+        entityCounts?: {
+          [key: string]: number;
         };
       };
     };

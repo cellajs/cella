@@ -25,6 +25,7 @@ import {
   findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
+  syncStaleTime,
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
@@ -89,6 +90,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
       return result;
     },
     ...baseInfiniteQueryOptions,
+    staleTime: syncStaleTime,
   });
 };
 

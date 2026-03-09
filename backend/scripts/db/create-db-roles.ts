@@ -120,7 +120,7 @@ if (env.DEV_MODE === 'basic') {
 const runtime = parseCredentials(env.DATABASE_URL);
 const cdcUrl = process.env.DATABASE_CDC_URL;
 
-// For admin_role, use a dedicated env var or fall back to same password as runtime
+// TODO review: For admin_role, use a dedicated env var or fall back to same password as runtime
 const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
 // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)

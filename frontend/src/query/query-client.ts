@@ -72,7 +72,7 @@ export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void
     },
   });
 
-  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '1min (online)'}`);
+  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '30s (online)'}`);
 }
 
 /**

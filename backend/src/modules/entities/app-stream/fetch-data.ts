@@ -52,13 +52,14 @@ export async function fetchUserCatchupSummary(
     const mSeqChanged = !clientSeqs || server.mSeq !== clientMSeq;
 
     if (seqChanged || mSeqChanged) {
-      // Extract per-entityType seqs from counts JSONB (keys prefixed with 's:')
+      // Extract per-entityType seqs (s: prefix) and counts (e: prefix) from counts JSONB
       const entitySeqs: Record<string, number> = {};
+      const entityCounts: Record<string, number> = {};
       if (server.counts) {
         for (const [key, value] of Object.entries(server.counts)) {
-          if (key.startsWith('s:') && typeof value === 'number') {
-            entitySeqs[key.slice(2)] = value;
-          }
+          if (typeof value !== 'number') continue;
+          if (key.startsWith('s:')) entitySeqs[key.slice(2)] = value;
+          else if (key.startsWith('e:')) entityCounts[key.slice(2)] = value;
         }
       }
 
@@ -67,6 +68,7 @@ export async function fetchUserCatchupSummary(
         mSeq: server.mSeq,
         deletedIds: [],
         entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
+        entityCounts: Object.keys(entityCounts).length > 0 ? entityCounts : undefined,
       };
       if (server.seq !== clientSeq) changedProductScopes.push(orgId);
     }

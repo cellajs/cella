@@ -139,6 +139,11 @@
                       "required": false,
                       "itemType": "string"
                     }
+                  },
+                  "entityCounts": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
                   }
                 }
               }
@@ -293,6 +298,11 @@
                       "required": false,
                       "itemType": "string"
                     }
+                  },
+                  "entityCounts": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
                   }
                 }
               }

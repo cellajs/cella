@@ -25,6 +25,7 @@ import {
   findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
+  syncStaleTime,
   useMutateQueryData,
 } from '~/query/basic';
 import { addMutationRegistrar } from '~/query/mutation-registry';
@@ -90,7 +91,6 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
 
   return infiniteQueryOptions({
     queryKey,
-    staleTime: 1000 * 30, // 30 seconds - explicit to ensure route prefetch respects it
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
@@ -102,6 +102,7 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
       return result;
     },
     ...baseInfiniteQueryOptions,
+    staleTime: syncStaleTime,
   });
 };
 

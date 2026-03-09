@@ -24,7 +24,7 @@ function DropdownMenuTrigger({
   children,
   ...props
 }: MenuPrimitive.Trigger.Props & RefAttributes<HTMLButtonElement> & { asChild?: boolean }) {
-  // Translate Radix's asChild pattern to Base UI's render prop
+  // TODO: review:  Translate Radix's asChild pattern to Base UI's render prop
   if (asChild && isValidElement(children)) {
     return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" render={children as ReactElement} {...props} />;
   }

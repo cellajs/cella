@@ -5884,6 +5884,12 @@
                                 "type": "string"
                               }
                             }
+                          },
+                          "entityCounts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            }
                           }
                         },
                         "required": [
@@ -6056,6 +6062,12 @@
                               "items": {
                                 "type": "string"
                               }
+                            }
+                          },
+                          "entityCounts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
                             }
                           }
                         },

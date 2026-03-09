@@ -87,6 +87,8 @@ export const catchupChangeSummarySchema = z.object({
   mSeq: z.number().int().optional(),
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   deletedByType: z.record(z.string(), z.array(z.string())).optional(),
+  /** Per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */
+  entityCounts: z.record(z.string(), z.number().int()).optional(),
 });
 
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;

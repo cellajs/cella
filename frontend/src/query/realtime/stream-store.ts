@@ -408,6 +408,11 @@ export const publicStreamManager = new StreamManager('PublicStream', {
   processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
 });
 
+/** Check if the app sync stream is in 'live' state (catchup done, SSE connected). */
+export function isSyncStreamLive(): boolean {
+  return appStreamManager.useStore.getState().state === 'live';
+}
+
 // App Stream
 
 export const appStreamManager = new StreamManager('AppStream', {

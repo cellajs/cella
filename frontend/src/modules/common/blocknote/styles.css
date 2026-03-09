@@ -108,6 +108,13 @@
   -webkit-font-smoothing: auto;
 }
 
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
+}
+
 /* Dense mode - tighter line height and no vertical spacing between blocks */
 .bn-shadcn.bn-dense p {
   line-height: 1.3;

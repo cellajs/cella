@@ -3,7 +3,7 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-// Override onValueChange to maintain Radix-compatible signature (value is always string, not null)
+//  TODO: migrate?: Override onValueChange to maintain Radix-compatible signature (value is always string, not null)
 type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & {
   onValueChange?: (value: string) => void;
 };

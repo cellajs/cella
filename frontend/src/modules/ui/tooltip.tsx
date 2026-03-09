@@ -48,7 +48,7 @@ export function TooltipTrigger({
   children,
   ...props
 }: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
-  // Translate Radix's asChild pattern to Base UI's render prop
+  // TODO: migrate?: Translate Radix's asChild pattern to Base UI's render prop
   if (asChild && isValidElement(children)) {
     return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" render={children as ReactElement} {...props} />;
   }

@@ -203,6 +203,7 @@ interface CatchupChangeSummary {
   deletedIds: string[];   // Entity IDs deleted since cursor
   entitySeqs?: Record<string, number>;    // Per-entityType seqs from context_counters counts JSONB (trigger-managed)
   deletedByType?: Record<string, string[]>; // Deleted IDs grouped by entityType
+  entityCounts?: Record<string, number>;  // Per-entityType total counts (e:{type} keys) for cache integrity
 }
 ```
 
@@ -211,9 +212,9 @@ The client processes catchup in a two-phase sync cycle:
 **Phase A (catchup — fast, in connect flow before SSE opens):**
 - Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
 - Compares per-entityType `serverEntitySeq` (from trigger-managed `context_counters.counts['s:{type}']`) with stored `clientEntitySeq`
-- If creates/updates detected for an entity type → marks its list queries as stale (`invalidateEntityList(keys, 'none')`)
+- If creates/updates detected for an entity type → invalidates active list queries (`invalidateEntityList(keys, 'active')`) so mounted queries refetch immediately
+- **Cache integrity check**: Compares server `entityCounts` (from `context_counters.counts['e:{type}']`) with cached list totals — if counts diverge despite matching seqs, invalidates the affected list queries
 - Updates stored seqs (both org-level and per-entityType)
-- Catchup **never triggers refetches** — it only patches and marks staleness
 
 **Phase B (sync service — background, after SSE reaches `live`):**
 - Runs `ensureQueryData` / `ensureInfiniteQueryData` for entity queries
@@ -324,7 +325,7 @@ for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
 
   // Only mark stale if creates/updates happened (delta > deletes)
   if (entityDelta > deletedForType.length) {
-    invalidateEntityList(keys, 'none'); // Mark stale, no refetch
+    invalidateEntityList(keys, 'active'); // Refetch mounted queries immediately
   }
 
   seqs[`${orgId}:s:${entityType}`] = serverEntitySeq;
@@ -349,6 +350,43 @@ if (seqAt !== null) {
 - Catchup summary provides entitySeqs + deletedByType per org — enables per-entityType processing
 - Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
 - Fallback to org-level invalidation when backend doesn't provide `entitySeqs` (backward compat)
+
+### Cache freshness strategy (staleTime)
+
+Product entity queries use a sync-aware `staleTime` function (`syncStaleTime`) that returns **Infinity** when the sync stream is live, and **5 minutes** as fallback when the stream is disconnected. This prevents redundant refetches on app restart — freshness is controlled by catchup-based seq invalidation and count-based integrity checks, not time-based staleness.
+
+| staleTime | When | Effect |
+|-----------|------|--------|
+| 30s (global default) | Non-synced queries (users, tenants, requests) | Standard React Query behavior |
+| Infinity (`syncStaleTime`) | Product entity queries, stream live | Catchup + count integrity handle freshness exclusively |
+| 5 min (`syncStaleTime`) | Product entity queries, stream disconnected | Fallback so queries refresh on navigation |
+| Infinity | Offline mode (when device is offline) | Always serve from cache until back online |
+
+Only product entity queries opt in to `syncStaleTime` — they are the only entities covered by the CDC → catchup pipeline. Context entities (organizations, memberships) and non-synced queries keep the global 30s default.
+
+### Cache integrity check (entityCounts)
+
+After seq-based processing, catchup performs a **count integrity check** to detect cache/server drift that seq comparison alone might miss. The backend includes `entityCounts` in the catchup response — per-entityType totals from `context_counters.counts['e:{type}']` (pre-computed by database triggers).
+
+The client compares these server-reported counts against the `total` field from the first page of cached infinite query data. If counts diverge (e.g., cache says 15 items, server says 20), the affected list query is invalidated regardless of seq state.
+
+**What it catches:**
+- Creates that got lost (failed refetch after invalidation) → count mismatch → caught
+- Deletes that got lost (cache patching failed) → count mismatch → caught
+- Content updates with no count change → not caught (but seq comparison already covers this)
+
+**How it works:**
+```typescript
+// After seq-based processing in catchup:
+for (const [entityType, serverCount] of Object.entries(entityCounts)) {
+  const cachedTotal = getCachedListTotal(keys, orgId);
+  if (cachedTotal !== null && cachedTotal !== serverCount) {
+    invalidateEntityListForOrg(keys, orgId, 'active');
+  }
+}
+```
+
+**Cost:** Zero extra DB queries — `entityCounts` comes from the same `counts` JSONB column already fetched for `entitySeqs`. On the client, it's a single integer comparison per entity type per org.
 
 ### Conflict detection (version)
 
@@ -629,6 +667,7 @@ The client sync cycle is a two-phase process that runs on every stream connect (
 │     │  3. Compare per-entityType seqs, mark changed types stale             │
 │     │  4. Update stored seqs (org-level + per-entityType)                   │
 │     │  5. Handle membership changes (mSeq gap detection)                    │
+│     │  6. Cache integrity: compare entityCounts vs cached totals            │
 │     ▼                                                                       │
 │  SSE opens → offset event → state = 'live'                                  │
 │     │                                                                       │
@@ -659,6 +698,7 @@ The `offlineAccess` toggle controls two things:
 |---------|-----------------|-------------------|
 | Cache persistence | IndexedDB (survives restart) | Session storage (survives refresh) |
 | StaleTime when offline | Infinity | Default (30s) |
+| Product entity staleTime (online) | Infinity (sync-aware) | Infinity (sync-aware) |
 | Product entity sync (current org) | Yes | Yes |
 | Product entity sync (other orgs) | Yes (offline cache fill) | No (refetch on navigation) |
 | Member sync (eager) | Yes | No |
@@ -672,6 +712,7 @@ The `offlineAccess` toggle controls two things:
 | `frontend/src/query/realtime/sync-service.ts` | Phase B: priority-based ensureQueryData |
 | `frontend/src/query/realtime/app-stream-handler.ts` | Live SSE: fetch + patch (high) or invalidate (low) |
 | `frontend/src/query/realtime/cache-ops.ts` | Shared cache primitives (remove, invalidate, fetch+patch) |
+| `frontend/src/query/basic/sync-stale-config.ts` | Sync-aware staleTime for product entity queries |
 | `frontend/src/offline-config.tsx` | Pure mapping: entity type → sync query options |
 | `frontend/src/query/provider.tsx` | Wires sync service to stream 'live' state transitions |
 | `frontend/src/store/sync.ts` | Persisted seqs, cursor, lastSyncAt |

@@ -3,7 +3,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-// Compatibility layer: map Radix-style `type`/`collapsible` props to Base UI's `multiple` prop
+// TODO review: Compatibility layer: map Radix-style `type`/`collapsible` props to Base UI's `multiple` prop
 interface AccordionProps extends Omit<AccordionPrimitive.Root.Props, 'multiple'> {
   type?: 'single' | 'multiple';
   collapsible?: boolean;

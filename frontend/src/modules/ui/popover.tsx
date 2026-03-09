@@ -19,7 +19,7 @@ export function PopoverTrigger({
   children,
   ...props
 }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
-  // Translate Radix's asChild pattern to Base UI's render prop
+  // TODO: migrate?: Translate Radix's asChild pattern to Base UI's render prop
   if (asChild && isValidElement(children)) {
     return <PopoverPrimitive.Trigger data-slot="popover-trigger" render={children as ReactElement} {...props} />;
   }

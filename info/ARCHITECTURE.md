@@ -124,8 +124,9 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 1. **Phase A (catchup)** — fast, synchronous, before SSE opens:
    - Patches deletes directly into detail + list caches (no invalidation)
-   - Marks changed entity types as stale per org via per-entityType `seqAt` comparison (`refetchType: 'none'`)
+   - Compares per-entityType seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
    - Handles membership changes
+   - **Cache integrity check**: compares server entity counts vs cached totals to catch seq/cache drift
 
 2. **Phase B (sync service)** — background, after SSE reaches `live`:
    - High priority: `ensureQueryData` for current org (resolves staleness from Phase A)
@@ -143,6 +144,8 @@ For full details on CDC, the realtime pipeline, stx transactions, offline mutati
 ## Query layer
 
 React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`). Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `entityQueryRegistry`, enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`useMutateQueryData`, `createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
+
+Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
 
 ### Cache persistence
 

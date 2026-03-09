@@ -15,11 +15,13 @@
  * Public stream: scoped per entityType
  */
 
+import type { PostAppCatchupResponse, PostPublicCatchupResponse } from '~/api.gen';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic';
+import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
+import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
-import type { AppCatchupResponse, PublicCatchupResponse } from './types';
 
 /**
  * Process app stream catchup response.
@@ -33,7 +35,7 @@ import type { AppCatchupResponse, PublicCatchupResponse } from './types';
  * Only active (mounted) queries refetch immediately. Inactive queries become stale
  * and refetch on next access — no separate sync service needed.
  */
-export function processAppCatchup(response: AppCatchupResponse): void {
+export function processAppCatchup(response: PostAppCatchupResponse): void {
   const { changes } = response;
   const syncStore = useSyncStore.getState();
   const scopes = Object.keys(changes);
@@ -128,6 +130,74 @@ export function processAppCatchup(response: AppCatchupResponse): void {
     // Step 4: Update stored org-level seq
     syncStore.setSeq(orgId, serverSeq);
   }
+
+  // Step 5: Cache integrity check — compare server entity counts with cached totals.
+  // Catches drift where seqs matched but cache is out of sync (e.g., failed refetch after invalidation).
+  verifyCacheIntegrity(changes);
+}
+
+/**
+ * Verify cache integrity by comparing server-reported entity counts against
+ * cached totals for each org. If counts diverge, the cache is stale despite
+ * matching seqs — invalidate the affected list queries.
+ *
+ * Only checks product entity types that have registered query keys and
+ * where entityCounts are provided by the backend.
+ */
+function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void {
+  for (const [orgId, scope] of Object.entries(changes)) {
+    if (!scope.entityCounts) continue;
+
+    for (const [entityType, serverCount] of Object.entries(scope.entityCounts)) {
+      if (!hasEntityQueryKeys(entityType)) continue;
+
+      const keys = getEntityQueryKeys(entityType);
+      const cachedTotal = getCachedListTotal(keys, orgId);
+
+      // Skip if no cached data (will be fetched fresh by ensureQueryData)
+      if (cachedTotal === null) continue;
+
+      if (cachedTotal !== serverCount) {
+        cacheOps.invalidateEntityListForOrg(keys, orgId, 'active');
+        console.debug(
+          `[CatchupProcessor] Integrity: ${entityType} in org ${orgId} count mismatch — cached=${cachedTotal}, server=${serverCount} → invalidated`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Get the total count from the first matching cached list query for an entity type scoped to an org.
+ * Returns null if no cached data exists.
+ */
+function getCachedListTotal(keys: ReturnType<typeof getEntityQueryKeys>, orgId: string): number | null {
+  const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
+
+  for (const [queryKey, data] of queries) {
+    if (!data) continue;
+
+    // Check if this query is scoped to the target org
+    const filters = queryKey[2];
+    if (
+      filters &&
+      typeof filters === 'object' &&
+      'orgId' in filters &&
+      (filters as { orgId: string }).orgId !== orgId
+    ) {
+      continue;
+    }
+
+    // Extract total from either infinite or standard query data
+    if (isInfiniteQueryData(data)) {
+      const firstPage = data.pages[0];
+      if (firstPage && 'total' in firstPage) return (firstPage as { total: number }).total;
+    } else if (isQueryData(data)) {
+      return (data as { total: number }).total;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -139,7 +209,7 @@ export function processAppCatchup(response: AppCatchupResponse): void {
  * 3. If creates/updates detected, invalidate list
  * 4. Update stored seq
  */
-export function processPublicCatchup(response: PublicCatchupResponse): void {
+export function processPublicCatchup(response: PostPublicCatchupResponse): void {
   const { changes } = response;
   const syncStore = useSyncStore.getState();
   const scopes = Object.keys(changes);
