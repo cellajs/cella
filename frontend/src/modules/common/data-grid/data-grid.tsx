@@ -37,7 +37,6 @@ import type {
   ColumnOrColumnGroup,
   ColumnWidths,
   Maybe,
-  MobileSubRowConfig,
   Position,
   Renderers,
   RowsChangeData,
@@ -56,7 +55,6 @@ import {
   computeWrapTextRowHeight,
   createCellEvent,
   createRange,
-  evaluateMobileSubRows,
   evaluateTouchMode,
   getColSpan,
   getLeftRightKey,
@@ -225,23 +223,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * @default false
    */
   touchMode?: Maybe<TouchModeConfig>;
-  /**
-   * Enable mobile sub-row rendering for columns with mobileRole="sub"
-   * - true: Always enabled
-   * - false: Always disabled
-   * - { max: breakpoint }: Enable below breakpoint
-   * @default false
-   */
-  enableMobileSubRows?: Maybe<MobileSubRowConfig>;
-  /**
-   * Set of row indices that are expanded to show mobile sub-rows
-   * Use with onExpandedRowsChange for controlled expansion
-   */
-  expandedRows?: Maybe<ReadonlySet<number>>;
-  /**
-   * Callback triggered when expanded rows change
-   */
-  onExpandedRowsChange?: Maybe<(expandedRows: Set<number>) => void>;
 
   /**
    * Infinite scroll support
@@ -324,9 +305,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     selectedCellRange: selectedCellRangeProp,
     onSelectedCellRangeChange,
     touchMode: rawTouchMode,
-    enableMobileSubRows: rawEnableMobileSubRows,
-    expandedRows: expandedRowsProp,
-    onExpandedRowsChange,
     // Infinite scroll
     onRowsEndApproaching,
     rowsEndApproachingThreshold: rawRowsEndApproachingThreshold,
@@ -373,9 +351,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
 
-  // Evaluate touch mode and mobile sub-rows based on current breakpoint
+  // Evaluate touch mode based on current breakpoint
   const isTouchModeActive = evaluateTouchMode(rawTouchMode ?? false, currentBreakpoint);
-  const isMobileSubRowsActive = evaluateMobileSubRows(rawEnableMobileSubRows ?? false, currentBreakpoint);
 
   /**
    * states
@@ -387,7 +364,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const [previousRowIdx, setPreviousRowIdx] = useState(-1);
   const [selectedCellRangeInternal, setSelectedCellRangeInternal] = useState<CellRange | null>(null);
   const [cellRangeAnchor, setCellRangeAnchor] = useState<Position | null>(null);
-  const [expandedRowsInternal, setExpandedRowsInternal] = useState<Set<number>>(new Set());
 
   // Controlled vs uncontrolled cell range
   const isSelectedCellRangeControlled = selectedCellRangeProp !== undefined && onSelectedCellRangeChange != null;
@@ -397,13 +373,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         onSelectedCellRangeChange({ range });
       }
     : setSelectedCellRangeInternal;
-
-  // Controlled vs uncontrolled expanded rows
-  const isExpandedRowsControlled = expandedRowsProp != null && onExpandedRowsChange != null;
-  const expandedRows = isExpandedRowsControlled ? expandedRowsProp : expandedRowsInternal;
-  const setExpandedRows = isExpandedRowsControlled
-    ? (rows: Set<number>) => onExpandedRowsChange(rows)
-    : setExpandedRowsInternal;
 
   const isColumnWidthsControlled = columnWidthsRaw != null && onColumnWidthsChangeRaw != null && !isColumnResizing;
   const columnWidths = isColumnWidthsControlled ? columnWidthsRaw : columnWidthsInternal;
@@ -434,13 +403,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     templateColumns,
     layoutCssVars,
     totalFrozenColumnWidth,
-    subColumns,
   } = useCalculatedColumns({
     rawColumns,
     defaultColumnOptions,
     getColumnWidth,
     currentBreakpoint,
-    isMobileSubRowsActive,
     isCompact: isCompact ?? false,
   });
 
@@ -610,20 +577,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const handleFormatterRowChangeLatest = useLatestCallback(updateRow);
   const selectCellLatest = useLatestCallback(selectCell);
   const selectHeaderCellLatest = useLatestCallback(selectHeaderCell);
-  const handleToggleRowExpandLatest = useLatestCallback(handleToggleRowExpand);
 
-  /**
-   * callbacks
-   */
-  function handleToggleRowExpand(rowIdx: number) {
-    const newExpandedRows = new Set(expandedRows);
-    if (newExpandedRows.has(rowIdx)) {
-      newExpandedRows.delete(rowIdx);
-    } else {
-      newExpandedRows.add(rowIdx);
-    }
-    setExpandedRows(newExpandedRows);
-  }
   const focusCell = useCallback(
     (shouldScroll = true) => {
       const cell = getCellToScroll(gridRef.current!);
@@ -1183,9 +1137,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           selectedCellEditor: getCellEditor(rowIdx),
           selectedCellRange: selectedCellRange ?? undefined,
           renderCell,
-          subColumns: isMobileSubRowsActive && subColumns.length > 0 ? subColumns : undefined,
-          isRowExpanded: expandedRows.has(rowIdx),
-          onToggleRowExpand: handleToggleRowExpandLatest,
         }),
       );
     }
@@ -1227,7 +1178,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         rootClassname,
         {
           'rdg-touch-mode': isTouchModeActive,
-          'rdg-mobile-sub-rows': isMobileSubRowsActive && subColumns.length > 0,
         },
         className,
       )}

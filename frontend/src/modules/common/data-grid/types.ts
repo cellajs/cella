@@ -101,17 +101,7 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * @example maxBreakpoint: 'sm'  // Only visible on xs, sm (mobile-only)
    */
   readonly maxBreakpoint?: BreakpointKey;
-  /**
-   * Mobile rendering behavior.
-   * - undefined: Normal column behavior
-   * - 'sub': Hidden on mobile, rendered in expandable sub-row
-   */
-  readonly mobileRole?: Maybe<'sub'>;
-  /**
-   * Custom label for sub-row display (defaults to column name).
-   * Only used when mobileRole is 'sub'.
-   */
-  readonly mobileLabel?: Maybe<string>;
+
   /**
    * Enable text wrapping in cells.
    * - number: Max visible lines (CSS line-clamp). Row height auto-adjusts per row based on content.
@@ -318,12 +308,6 @@ export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderR
   renderCell: (key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode;
   /** Current cell range for range selection styling */
   selectedCellRange?: CellRange | null;
-  /** Columns to render in mobile sub-row (when mobileRole: 'sub') */
-  subColumns?: readonly CalculatedColumn<TRow, TSummaryRow>[];
-  /** Whether this row is expanded (for mobile sub-rows) */
-  isRowExpanded?: boolean;
-  /** Callback to toggle row expansion */
-  onToggleRowExpand?: (rowIdx: number) => void;
 }
 
 export interface RowsChangeData<R, SR = unknown> {
@@ -436,11 +420,5 @@ export type SelectionMode = 'none' | 'cell' | 'cell-range' | 'row' | 'row-multi'
  * Can be boolean or breakpoint-based auto-detection.
  */
 export type TouchModeConfig = boolean | { max: BreakpointKey } | { min: BreakpointKey };
-
-/**
- * Mobile sub-row configuration.
- * Can be boolean or breakpoint-based auto-detection.
- */
-export type MobileSubRowConfig = boolean | { max: BreakpointKey };
 
 export type ResizedWidth = number | 'max-content';

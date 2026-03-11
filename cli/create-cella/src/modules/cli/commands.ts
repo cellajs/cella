@@ -8,7 +8,6 @@ import type { CLIConfig, CLIOptions } from './types';
 // Initialize CLI variables
 let directory: string | null = null;
 let newBranchName: string | null = null;
-let createNewBranch: boolean | null = null;
 const packageManager = 'pnpm';
 
 /**
@@ -51,7 +50,6 @@ export function runCli(): CLIConfig {
     args: command.args,
     directory,
     newBranchName,
-    createNewBranch,
     packageManager,
   };
 }

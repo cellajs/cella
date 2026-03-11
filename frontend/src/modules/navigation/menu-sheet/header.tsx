@@ -59,6 +59,7 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
       modal: false,
       disablePointerDismissal: true,
       className: navSheetClassName,
+      contentKey: 'account',
       onClose: () => setNavSheetOpen(null),
     });
   };

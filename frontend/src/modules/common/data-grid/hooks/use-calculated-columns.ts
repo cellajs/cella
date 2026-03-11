@@ -31,8 +31,7 @@ interface CalculatedColumnsArgs<R, SR> {
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
   /** Current breakpoint for responsive column visibility */
   currentBreakpoint?: BreakpointKey;
-  /** Whether mobile sub-rows are active (hides columns with mobileRole: 'sub') */
-  isMobileSubRowsActive?: boolean;
+
   /** Whether compact mode is active (applies column compact overrides) */
   isCompact?: boolean;
 }
@@ -42,7 +41,7 @@ export function useCalculatedColumns<R, SR>({
   defaultColumnOptions,
   getColumnWidth,
   currentBreakpoint = 'lg',
-  isMobileSubRowsActive = false,
+
   isCompact = false,
 }: CalculatedColumnsArgs<R, SR>) {
   const defaultWidth = defaultColumnOptions?.width ?? DEFAULT_COLUMN_WIDTH;
@@ -57,11 +56,10 @@ export function useCalculatedColumns<R, SR>({
   // Disable resizing on mobile breakpoints (xs, sm) since it's not useful on touch devices
   const isMobile = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
 
-  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, subColumns } = useMemo(() => {
+  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount } = useMemo(() => {
     let lastFrozenColumnIndex = -1;
     let headerRowsCount = 1;
     const columns: MutableCalculatedColumn<R, SR>[] = [];
-    const subColumns: MutableCalculatedColumn<R, SR>[] = [];
 
     collectColumns(rawColumns, 1);
 
@@ -112,12 +110,6 @@ export function useCalculatedColumns<R, SR>({
           renderHeaderCell: rawColumn.renderHeaderCell ?? defaultRenderHeaderCell,
         };
 
-        // If mobile sub-rows are active and column has mobileRole: 'sub', move to subColumns
-        if (isMobileSubRowsActive && rawColumn.mobileRole === 'sub') {
-          subColumns.push(column);
-          continue;
-        }
-
         columns.push(column);
 
         if (frozen) {
@@ -161,7 +153,6 @@ export function useCalculatedColumns<R, SR>({
       colSpanColumns,
       lastFrozenColumnIndex,
       headerRowsCount,
-      subColumns,
     };
   }, [
     rawColumns,
@@ -174,7 +165,6 @@ export function useCalculatedColumns<R, SR>({
     defaultSortable,
     defaultDraggable,
     currentBreakpoint,
-    isMobileSubRowsActive,
     isCompact,
   ]);
 
@@ -229,7 +219,6 @@ export function useCalculatedColumns<R, SR>({
     headerRowsCount,
     lastFrozenColumnIndex,
     totalFrozenColumnWidth,
-    subColumns,
   };
 }
 

@@ -39,8 +39,8 @@ export const Sheeter = () => {
 
   // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {
-    return router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
-      if (!hrefChanged) return;
+    return router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+      if (!pathChanged) return;
 
       const navState = useNavigationStore.getState();
       const sheetsToClose = useSheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);

@@ -1,7 +1,6 @@
 export * from './use-calculated-columns';
 export * from './use-column-widths';
 export * from './use-copy-paste';
-export * from './use-expandable-rows';
 export * from './use-grid-dimensions';
 export * from './use-responsive-columns';
 export * from './use-roving-tab-index';

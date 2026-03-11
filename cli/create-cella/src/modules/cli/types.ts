@@ -9,7 +9,6 @@ export interface CLIConfig {
   args: string[];
   directory: string | null;
   newBranchName: string | null;
-  createNewBranch: boolean | null;
   packageManager: string;
 }
 
