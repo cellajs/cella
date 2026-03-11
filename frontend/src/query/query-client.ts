@@ -50,9 +50,18 @@ export const queryClient: QueryClient =
     },
   });
 
+/** Promise that resolves once the PersistQueryClientProvider has restored the IDB cache. */
+let resolveCacheRestored: () => void;
+export const cacheRestored: Promise<void> =
+  (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
+export function markCacheRestored() {
+  resolveCacheRestored();
+}
+
 // Preserve queryClient and listener state across HMR
 if (import.meta.hot) {
   import.meta.hot.data.queryClient = queryClient;
+  import.meta.hot.data.cacheRestored = cacheRestored;
   import.meta.hot.data.listenersAttached = true;
 }
 

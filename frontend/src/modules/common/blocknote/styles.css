@@ -1,7 +1,19 @@
+/* Lift editing task card above sibling virtualizer items so BlockNote floating UI (slash menu, toolbar) isn't clipped */
+li:has([data-state="editing"]),
+li:has(.is-focused) {
+  z-index: 100;
+}
+
 /* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
 
-.bn-shadcn {
+.bn-container.bn-shadcn {
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+}
+
+/* Override BlockNote's hardcoded font-family on .bn-default-styles (from @blocknote/core)
+   which bypasses the --bn-font-family CSS variable */
+.bn-container.bn-shadcn .bn-default-styles {
+  font-family: "Open Sans", ui-sans-serif, sans-serif;
 }
 
 /* To hide selction of file content when editor not editable */
@@ -40,7 +52,7 @@
 }
 
 .bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
-  color: var(--blocknote-placeholder);
+  color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
 }
 
 .bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
@@ -156,6 +168,13 @@
   position: relative;
   left: -0.6rem;
   top: -0.15rem;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.bn-shadcn .bn-side-menu:hover,
+.bn-shadcn .bn-side-menu:focus-within {
+  opacity: 1;
 }
 
 @media (max-width: 639px) {
@@ -250,17 +269,6 @@
 }
 .slash-menu-item:hover {
   background-color: color-mix(in oklch, var(--accent) 60%, transparent);
-}
-
-/* Mobile-specific styles for slash menu */
-@media (max-width: 640px) {
-  .slash-menu {
-    align-items: center;
-    padding: 24px 0px;
-  }
-  .slash-menu-item {
-    justify-content: center;
-  }
 }
 
 .notify {

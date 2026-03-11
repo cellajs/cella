@@ -171,6 +171,7 @@ export const recalculateContextCounters = async (db: DbOrTx): Promise<number> =>
           jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq_at), 0)),
           NOW()
         FROM ${tableName} t
+        WHERE t.${parentFkColumn} IS NOT NULL
         GROUP BY t.${parentFkColumn}
         ON CONFLICT (context_key) DO UPDATE SET
           counts = context_counters.counts || EXCLUDED.counts,

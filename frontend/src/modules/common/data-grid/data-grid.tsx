@@ -268,6 +268,12 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   rowClass?: Maybe<(row: NoInfer<R>, rowIdx: number) => Maybe<string>>;
   /** Custom class name for the header row */
   headerRowClass?: Maybe<string>;
+  /**
+   * Enable compact mode. When true, columns with a `compact` override use their compact widths,
+   * and `data-is-compact="true"` is set on the grid root for CSS-based content hiding.
+   * @default false
+   */
+  isCompact?: Maybe<boolean>;
   'data-testid'?: Maybe<string>;
   'data-cy'?: Maybe<string>;
 }
@@ -337,6 +343,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     'aria-description': ariaDescription,
     'aria-describedby': ariaDescribedBy,
     'aria-rowcount': rawAriaRowCount,
+    isCompact,
     'data-testid': testId,
     'data-cy': dataCy,
   } = props;
@@ -434,6 +441,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     getColumnWidth,
     currentBreakpoint,
     isMobileSubRowsActive,
+    isCompact: isCompact ?? false,
   });
 
   // Compute effective rowHeight, wrapping baseRowHeight with wrapText-aware logic
@@ -1248,6 +1256,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       onPaste={isCellSelectionEnabled ? handleCellPaste : undefined}
       data-testid={testId}
       data-cy={dataCy}
+      data-is-compact={isCompact || undefined}
     >
       <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>
         <HeaderRowSelectionContext value={headerSelectionValue}>

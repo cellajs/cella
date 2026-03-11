@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
 interface ResponsiveSelectOption {
@@ -94,7 +94,8 @@ export function ResponsiveSelect({
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger disabled={disabled} className={cn('w-auto', className)}>
-        <SelectValue placeholder={placeholder} />
+        {selectedOption?.icon}
+        {selectedOption?.label ?? placeholder}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (

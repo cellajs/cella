@@ -1,33 +1,13 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import {
-  type ComponentProps,
-  type ComponentPropsWithoutRef,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  type RefAttributes,
-  useRef,
-} from 'react';
+import { type ComponentProps, type ComponentPropsWithoutRef, type ReactNode, type RefAttributes, useRef } from 'react';
 import { cn } from '~/utils/cn';
 
 export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-export function PopoverTrigger({
-  asChild,
-  children,
-  ...props
-}: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
-  // TODO: migrate?: Translate Radix's asChild pattern to Base UI's render prop
-  if (asChild && isValidElement(children)) {
-    return <PopoverPrimitive.Trigger data-slot="popover-trigger" render={children as ReactElement} {...props} />;
-  }
-  return (
-    <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props}>
-      {children}
-    </PopoverPrimitive.Trigger>
-  );
+export function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
 export function PopoverContent({

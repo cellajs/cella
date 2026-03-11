@@ -8,6 +8,13 @@ declare const __BACKEND_URL__: string;
 // Take control of all pages immediately
 clientsClaim();
 
+// Allow the client to trigger skipWaiting via postMessage
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Workbox precaching — manifest injected by vite-plugin-pwa
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);

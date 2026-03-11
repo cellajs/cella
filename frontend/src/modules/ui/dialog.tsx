@@ -67,7 +67,7 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'overflow-x-clip overflow-y-clip bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
+            'overflow-x-clip overflow-y-clip max-sm:overflow-y-auto max-sm:max-h-[85vh] bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
             className,
           )}
           {...props}
@@ -88,11 +88,15 @@ function DialogContent({
   );
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
+function DialogHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn(
+        'flex flex-col gap-2 text-center sm:text-left',
+        sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
+        className,
+      )}
       {...props}
     />
   );

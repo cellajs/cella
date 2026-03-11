@@ -11,13 +11,15 @@ import { getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
 
-interface BlockNoteStaticViewProps {
+interface BlockNoteFullHtmlProps {
   id: string;
   defaultValue: string;
   className?: string;
   dense?: boolean;
   clickOpensPreview?: boolean;
   publicFiles?: boolean;
+  tenantId?: string;
+  organizationId?: string;
 }
 
 // File block types that have a url prop
@@ -61,14 +63,16 @@ async function processBlocks(
   return { resolved, media };
 }
 
-function BlockNoteStaticView({
+function BlockNoteFullHtml({
   id,
   defaultValue,
   className = '',
   dense = false,
   clickOpensPreview = false,
   publicFiles = false,
-}: BlockNoteStaticViewProps) {
+  tenantId: propTenantId,
+  organizationId: propOrganizationId,
+}: BlockNoteFullHtmlProps) {
   const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
   const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>({
@@ -96,8 +100,8 @@ function BlockNoteStaticView({
         }
 
         const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
-        const tenantId = cachedAttachment?.tenantId;
-        const organizationId = cachedAttachment?.organizationId;
+        const tenantId = cachedAttachment?.tenantId ?? propTenantId;
+        const organizationId = cachedAttachment?.organizationId ?? propOrganizationId;
 
         if (!tenantId || !organizationId) return key;
         return getFileUrl(key, publicFiles, tenantId, organizationId);
@@ -141,17 +145,12 @@ function BlockNoteStaticView({
       id={id}
       ref={containerRef}
       role="presentation"
-      className={`bn-container bn-shadcn ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
+      className={`bn-container bn-shadcn bn-default-styles ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
       data-color-scheme={mode}
       onClick={handleClick}
-    >
-      <div
-        className="bn-default-styles"
-        style={{ color: 'var(--bn-colors-editor-text)' }}
-        dangerouslySetInnerHTML={{ __html: renderState.html }}
-      />
-    </div>
+      dangerouslySetInnerHTML={{ __html: renderState.html }}
+    />
   );
 }
 
-export default BlockNoteStaticView;
+export default BlockNoteFullHtml;

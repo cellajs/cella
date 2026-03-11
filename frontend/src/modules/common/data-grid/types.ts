@@ -120,6 +120,21 @@ export interface Column<TRow, TSummaryRow = unknown> {
    * @default undefined (single-line truncation)
    */
   readonly wrapText?: Maybe<number | boolean>;
+  /**
+   * Custom line estimator for variable row height calculation.
+   * When provided, overrides the default newline-counting heuristic.
+   * Should return the estimated number of content lines for the given row.
+   */
+  readonly estimateLines?: (row: TRow) => number;
+  /**
+   * Override width, minWidth, and maxWidth when the grid is in compact mode.
+   * Values here take precedence over the base width/minWidth/maxWidth when `isCompact` is true.
+   */
+  readonly compact?: Maybe<{
+    readonly width?: Maybe<number | string>;
+    readonly minWidth?: Maybe<number>;
+    readonly maxWidth?: Maybe<number>;
+  }>;
   /** Options for cell editing */
   readonly editorOptions?: Maybe<{
     /**

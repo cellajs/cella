@@ -1,5 +1,6 @@
 import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { SimpleHeader } from '~/modules/common/simple-header';
@@ -20,7 +21,9 @@ export function SystemPage() {
 
       <ScrollReset>
         <PageTabNav parentRouteId={SystemRoute.id} />
-        <Outlet />
+        <FocusViewContainer>
+          <Outlet />
+        </FocusViewContainer>
       </ScrollReset>
     </>
   );

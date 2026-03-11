@@ -11,14 +11,6 @@ export const CustomSlashMenu = ({ editor, allowedTypes, headingLevels }: CustomB
     <SuggestionMenuController
       triggerCharacter={'/'}
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
-      floatingUIOptions={{
-        useDismissProps: {
-          // The menu content is portaled to document.body to escape overflow:hidden
-          // and transform stacking contexts. Without this guard, floating-ui's
-          // useDismiss treats clicks on the portaled menu as "outside" clicks.
-          outsidePress: (e) => !(e.target as HTMLElement)?.closest?.(`[data-slash-menu-portal]`),
-        },
-      }}
       suggestionMenuComponent={(props) => (
         <CustomSlashMenuComponent {...props} originalItemCount={slashMenuItems.length} allowedTypes={allowedTypes} />
       )}

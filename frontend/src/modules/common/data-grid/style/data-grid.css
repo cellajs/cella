@@ -33,8 +33,6 @@
     --rdg-row-hover-background-color: oklch(from var(--muted) l c h / 0.5);
     --rdg-row-selected-background-color: var(--accent);
     --rdg-row-selected-hover-background-color: var(--accent);
-    /* Z-index for frozen rows portal - can be overridden per grid instance */
-    --rdg-frozen-row-z-index: 100;
 
     display: grid;
     accent-color: var(--primary);

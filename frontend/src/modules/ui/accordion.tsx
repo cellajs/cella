@@ -3,16 +3,8 @@ import { ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-// TODO review: Compatibility layer: map Radix-style `type`/`collapsible` props to Base UI's `multiple` prop
-interface AccordionProps extends Omit<AccordionPrimitive.Root.Props, 'multiple'> {
-  type?: 'single' | 'multiple';
-  collapsible?: boolean;
-  multiple?: boolean;
-}
-
-export function Accordion({ type, collapsible: _collapsible, multiple, ...props }: AccordionProps) {
-  const isMultiple = multiple ?? type === 'multiple';
-  return <AccordionPrimitive.Root data-slot="accordion" multiple={isMultiple} {...props} />;
+export function Accordion({ ...props }: AccordionPrimitive.Root.Props) {
+  return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }
 
 export function AccordionItem({

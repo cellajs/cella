@@ -100,7 +100,7 @@ export function CollapsedColumnView({ mainCount, sections = EMPTY_SECTIONS, clas
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections
           key={`top-${i}`}
-          className={cn('flex p-2 h-8 justify-center items-center text-xs', section.colorClass, section.borderClass)}
+          className={cn('flex p-2 h-9 justify-center items-center text-xs', section.colorClass, section.borderClass)}
         >
           {section.count}
         </div>
@@ -114,7 +114,7 @@ export function CollapsedColumnView({ mainCount, sections = EMPTY_SECTIONS, clas
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections
           key={`bottom-${i}`}
-          className={cn('flex p-2 h-8 justify-center items-center text-xs', section.colorClass, section.borderClass)}
+          className={cn('flex p-2 h-9 justify-center items-center text-xs', section.colorClass, section.borderClass)}
         >
           {section.count}
         </div>

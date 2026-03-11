@@ -7,7 +7,7 @@ export function FAQ() {
   const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-3xl">
-      <Accordion type="single" className="w-full" collapsible>
+      <Accordion className="w-full">
         {faqsData.map((faq, index) => {
           const question = `about:faq.question_${index + 1}`;
           const answer = `about:faq.answer_${index + 1}`;

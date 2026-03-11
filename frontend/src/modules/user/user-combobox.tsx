@@ -108,7 +108,7 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
               size="sm"
               variant="secondary"
               key={el}
-              className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60"
+              className="data-disabled:bg-muted-foreground data-disabled:text-muted-foreground/50 data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60"
             >
               <span className="truncate">{el}</span>
               <button

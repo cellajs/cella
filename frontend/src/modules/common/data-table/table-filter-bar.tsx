@@ -135,7 +135,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
   };
 
   return (
-    <div className="flex items-center max-sm:relative max-sm:flex-1 w-full">
+    <div className="flex items-center max-sm:relative max-sm:flex-1 gap-2 w-full">
       <TableFilterBarContext.Provider value={{ isFilterActive: effectiveFilterActive, setFilterActive }}>
         {children}
       </TableFilterBarContext.Provider>

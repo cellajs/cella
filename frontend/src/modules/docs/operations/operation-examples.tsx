@@ -50,7 +50,7 @@ function ExamplesAccordion({ responses, schemas, operationId, zodIndex, typesInd
   const defaultValue = [String(responsesWithExamples[0].status)];
 
   return (
-    <Accordion type="single" className="w-full" collapsible defaultValue={defaultValue}>
+    <Accordion className="w-full" defaultValue={defaultValue}>
       {responsesWithExamples.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (

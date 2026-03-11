@@ -27,13 +27,17 @@ BEGIN
   ELSE
     -- Dynamically read the parent column value (e.g., NEW.organization_id, NEW.project_id)
     EXECUTE format('SELECT ($1).%I', TG_ARGV[0]) INTO ctx_key USING NEW;
+    -- Fallback: if parent column is NULL (e.g., attachment without project), use organization_id
+    IF ctx_key IS NULL THEN
+      EXECUTE 'SELECT ($1).organization_id' INTO ctx_key USING NEW;
+    END IF;
   END IF;
 
   seq_key := 's:' || entity_type;
 
   -- Atomic upsert: increment counts['s:<entityType>'] and return new value
-  INSERT INTO context_counters (context_key, seq, m_seq, counts, updated_at)
-  VALUES (ctx_key, 0, 0, jsonb_build_object(seq_key, 1), now())
+  INSERT INTO context_counters (context_key, counts, updated_at)
+  VALUES (ctx_key, jsonb_build_object(seq_key, 1), now())
   ON CONFLICT (context_key) DO UPDATE
   SET counts = context_counters.counts || jsonb_build_object(
     seq_key,

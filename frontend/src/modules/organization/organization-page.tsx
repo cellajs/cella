@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
@@ -73,7 +74,9 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           parentRouteId={OrganizationRoute.id}
           filterTabIds={filterTabIds}
         />
-        <Outlet />
+        <FocusViewContainer>
+          <Outlet />
+        </FocusViewContainer>
       </ScrollReset>
     </>
   );

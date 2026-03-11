@@ -33,6 +33,8 @@ interface CalculatedColumnsArgs<R, SR> {
   currentBreakpoint?: BreakpointKey;
   /** Whether mobile sub-rows are active (hides columns with mobileRole: 'sub') */
   isMobileSubRowsActive?: boolean;
+  /** Whether compact mode is active (applies column compact overrides) */
+  isCompact?: boolean;
 }
 
 export function useCalculatedColumns<R, SR>({
@@ -41,6 +43,7 @@ export function useCalculatedColumns<R, SR>({
   getColumnWidth,
   currentBreakpoint = 'lg',
   isMobileSubRowsActive = false,
+  isCompact = false,
 }: CalculatedColumnsArgs<R, SR>) {
   const defaultWidth = defaultColumnOptions?.width ?? DEFAULT_COLUMN_WIDTH;
   const defaultMinWidth = defaultColumnOptions?.minWidth ?? DEFAULT_COLUMN_MIN_WIDTH;
@@ -89,6 +92,9 @@ export function useCalculatedColumns<R, SR>({
 
         const frozen = rawColumn.frozen ?? false;
 
+        // Resolve compact overrides when compact mode is active
+        const compactOverrides = isCompact ? rawColumn.compact : undefined;
+
         const column: MutableCalculatedColumn<R, SR> = {
           ...rawColumn,
           parent,
@@ -96,9 +102,9 @@ export function useCalculatedColumns<R, SR>({
           level: 0,
           frozen,
           focusable: rawColumn.focusable ?? true,
-          width: rawColumn.width ?? defaultWidth,
-          minWidth: rawColumn.minWidth ?? defaultMinWidth,
-          maxWidth: rawColumn.maxWidth ?? defaultMaxWidth,
+          width: compactOverrides?.width ?? rawColumn.width ?? defaultWidth,
+          minWidth: compactOverrides?.minWidth ?? rawColumn.minWidth ?? defaultMinWidth,
+          maxWidth: compactOverrides?.maxWidth ?? rawColumn.maxWidth ?? defaultMaxWidth,
           sortable: rawColumn.sortable ?? defaultSortable,
           resizable: isMobile ? false : (rawColumn.resizable ?? defaultResizable),
           draggable: rawColumn.draggable ?? defaultDraggable,
@@ -169,6 +175,7 @@ export function useCalculatedColumns<R, SR>({
     defaultDraggable,
     currentBreakpoint,
     isMobileSubRowsActive,
+    isCompact,
   ]);
 
   const { templateColumns, layoutCssVars, totalFrozenColumnWidth } = useMemo((): {
