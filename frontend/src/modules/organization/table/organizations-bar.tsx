@@ -98,7 +98,7 @@ export const OrganizationsTableBar = ({
   };
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={40}>
+    <TableBarContainer searchVars={searchVars} offsetTop={48}>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>

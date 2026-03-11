@@ -1,4 +1,5 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
+import { resetConnectivityCache } from '~/lib/connectivity';
 import { onError } from '~/query/on-error';
 import { onSuccess } from '~/query/on-success';
 
@@ -13,6 +14,7 @@ const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
  */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
+  if (navigator.onLine) resetConnectivityCache();
 }
 
 if (!import.meta.hot?.data?.listenersAttached) {

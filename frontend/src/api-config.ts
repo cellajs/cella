@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import type { CreateClientConfig } from '~/api.gen/client.gen';
 import { ApiError, clientConfig } from '~/lib/api';
+import { checkConnectivity } from '~/lib/connectivity';
 
 /**
  * Runtime client configuration for the API client after it generated.
@@ -14,7 +15,15 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   responseStyle: 'data',
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-    const response = await clientConfig.fetch(input, init);
+    let response: Response;
+
+    try {
+      response = await clientConfig.fetch(input, init);
+    } catch (error) {
+      // Network-level failure (no HTTP response) — probe actual connectivity
+      if (error instanceof TypeError) checkConnectivity();
+      throw error;
+    }
 
     if (response.ok) return response;
 
