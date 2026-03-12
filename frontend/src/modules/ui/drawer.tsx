@@ -110,9 +110,9 @@ function DrawerContent({
             {/* Drag handle — outside Content (no data-swipe-ignore) so mouse/pointer swipe works here. Hidden on left/right. */}
             <div
               className={cn(
-                'flex shrink-0 cursor-grab items-center justify-center active:cursor-grabbing',
+                'sticky top-0 z-10 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing',
                 'group-data-[swipe-direction=down]/drawer-content:py-2',
-                'group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=up]/drawer-content:py-2',
+                'group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=up]/drawer-content:py-2',
                 'group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden',
               )}
             >

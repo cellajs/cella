@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { forceOnline } from '~/lib/connectivity';
 import { healthCheck } from '~/lib/health-check';
 import { CloseButton } from '~/modules/common/close-button';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -18,10 +19,21 @@ const downAlertConfig = {
     getContent: (dismissAlert: () => void) => {
       const offlineAccess = useUIStore.getState().offlineAccess;
       const i18nKey = offlineAccess ? 'common:offline_access.offline' : 'common:offline.text';
-      const components = offlineAccess
-        ? { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> }
-        : undefined;
-      return <Trans t={t} className="max-sm:hidden" i18nKey={i18nKey} components={components} />;
+      const retry = () => {
+        forceOnline();
+        dismissAlert();
+      };
+      return (
+        <Trans
+          t={t}
+          className="max-sm:hidden"
+          i18nKey={i18nKey}
+          components={{
+            site_anchor: <button type="button" className="underline" onClick={dismissAlert} />,
+            retry_anchor: <button type="button" className="underline" onClick={retry} />,
+          }}
+        />
+      );
     },
     textKey: 'common:offline.text',
     variant: 'warning',

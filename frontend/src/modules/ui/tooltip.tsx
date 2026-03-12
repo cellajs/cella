@@ -1,11 +1,5 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-import {
-  type ComponentPropsWithoutRef,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  type RefAttributes,
-} from 'react';
+import { type ComponentPropsWithoutRef, type ReactNode, type RefAttributes } from 'react';
 import { cn } from '~/utils/cn';
 
 export function TooltipProvider({
@@ -43,20 +37,8 @@ export function Tooltip({
   );
 }
 
-export function TooltipTrigger({
-  asChild,
-  children,
-  ...props
-}: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement> & { asChild?: boolean }) {
-  // Translate Radix's asChild pattern to Base UI's render prop
-  if (asChild && isValidElement(children)) {
-    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" render={children as ReactElement} {...props} />;
-  }
-  return (
-    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props}>
-      {children}
-    </TooltipPrimitive.Trigger>
-  );
+export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
 export function TooltipContent({

@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, gt, gte, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { appConfig } from 'shared';
 import { unsafeInternalAdminDb } from '#/db/db';
@@ -36,7 +36,7 @@ const attachmentRouteHandlers = app
    * Get list of attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, limit, offset, modifiedAfter, afterSeq } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset, afterSeq } = ctx.req.valid('query');
 
     const organization = ctx.var.organization;
 
@@ -44,17 +44,9 @@ const attachmentRouteHandlers = app
 
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
-    // Sequence-based delta sync filter (preferred over modifiedAfter)
+    // Sequence-based delta sync filter
     if (afterSeq !== undefined) {
       filters.push(gt(attachmentsTable.seqAt, afterSeq));
-    } else if (modifiedAfter) {
-      // Legacy timestamp-based delta sync filter
-      filters.push(
-        or(
-          gte(attachmentsTable.modifiedAt, modifiedAfter),
-          and(isNull(attachmentsTable.modifiedAt), gte(attachmentsTable.createdAt, modifiedAfter)),
-        )!,
-      );
     }
 
     if (q?.trim()) {

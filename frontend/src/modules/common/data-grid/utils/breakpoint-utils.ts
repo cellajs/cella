@@ -1,4 +1,4 @@
-import type { BreakpointKey, Maybe, MobileSubRowConfig, TouchModeConfig } from '../types';
+import type { BreakpointKey, Maybe, TouchModeConfig } from '../types';
 
 /** Ordered breakpoints from smallest to largest */
 export const breakpointOrder: Record<BreakpointKey, number> = {
@@ -24,22 +24,6 @@ export function evaluateTouchMode(config: Maybe<TouchModeConfig>, currentBreakpo
   }
   if ('min' in config) {
     return current >= breakpointOrder[config.min];
-  }
-
-  return false;
-}
-
-/**
- * Evaluate mobile sub-row configuration against current breakpoint.
- */
-export function evaluateMobileSubRows(config: Maybe<MobileSubRowConfig>, currentBreakpoint: BreakpointKey): boolean {
-  if (config === undefined || config === null) return false;
-  if (typeof config === 'boolean') return config;
-
-  const current = breakpointOrder[currentBreakpoint];
-
-  if ('max' in config) {
-    return current <= breakpointOrder[config.max];
   }
 
   return false;

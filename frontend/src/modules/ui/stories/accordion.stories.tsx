@@ -12,15 +12,11 @@ const meta = {
   component: Accordion,
   tags: ['autodocs'],
   argTypes: {
-    type: {
-      options: ['single', 'multiple'],
-      control: { type: 'radio' },
+    multiple: {
+      control: { type: 'boolean' },
     },
   },
-  args: {
-    type: 'single',
-    collapsible: true,
-  },
+  args: {},
   render: (args) => (
     <Accordion {...args}>
       <AccordionItem value="item-1">
@@ -52,9 +48,7 @@ export const Default: Story = {};
 
 export const ShouldOnlyOpenOne: Story = {
   name: 'when accordions are clicked, should open only one item at a time',
-  args: {
-    type: 'single',
-  },
+  args: {},
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -81,7 +75,7 @@ export const ShouldOnlyOpenOne: Story = {
 export const ShouldOpenAll: Story = {
   name: 'when accordions are clicked, should open all items one at a time',
   args: {
-    type: 'multiple',
+    multiple: true,
   },
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement }) => {

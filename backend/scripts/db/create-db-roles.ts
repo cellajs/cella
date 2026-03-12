@@ -109,18 +109,16 @@ if (env.DEV_MODE === 'basic') {
   }
 
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
-  console.info('[roles] Checking if roles exist...');
   if (await rolesExist()) {
-    console.info('[roles] All roles exist, skipping');
+    console.info(`${pc.green('✔')} All roles exist, skipping`);
     return;
   }
-  console.info('[roles] Some roles missing, creating...');
 
 // Extract passwords from connection strings
 const runtime = parseCredentials(env.DATABASE_URL);
 const cdcUrl = process.env.DATABASE_CDC_URL;
 
-// For admin_role, use a dedicated env var or fall back to same password as runtime
+// TODO review: For admin_role, use a dedicated env var or fall back to same password as runtime
 const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
 // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
@@ -129,11 +127,10 @@ const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.passwor
 const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
 
   try {
-    console.info('[roles] Executing CREATE ROLE SQL...');
     await migrationDb.execute(sql.raw(createRolesSql));
     console.info(`${pc.green('✔')} Database roles configured`);
   } catch (error) {
-    throw new Error(`Failed to setup roles: ${error}`);
+    throw new Error(`${pc.red('✖')} Failed to setup roles: ${error}`);
   }
 }
 

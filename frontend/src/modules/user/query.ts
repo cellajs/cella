@@ -9,8 +9,8 @@ import {
   createEntityKeys,
   findEntityInListCache,
   invalidateIfLastMutation,
-  useMutateQueryData,
 } from '~/query/basic';
+import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import type { MutationData } from '~/query/types';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;

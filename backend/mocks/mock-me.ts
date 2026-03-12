@@ -96,7 +96,6 @@ export const mockStreamResponse = (key = 'stream:default') =>
     return {
       changes: {
         'org-example-id': {
-          seq: 42,
           deletedIds: [],
         },
       },

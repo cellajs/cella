@@ -173,23 +173,6 @@ const responsiveColumns: Column<Person>[] = [
   { key: 'role', name: 'Role', width: 150, minBreakpoint: 'xl' },
 ];
 
-// Columns with mobile sub-row support
-const mobileColumns: Column<Person>[] = [
-  { key: 'id', name: 'ID', width: 60 },
-  { key: 'firstName', name: 'First Name', width: 120 },
-  { key: 'lastName', name: 'Last Name', width: 120 },
-  { key: 'email', name: 'Email', width: 200, mobileRole: 'sub', mobileLabel: 'Email Address' },
-  { key: 'department', name: 'Department', width: 120, mobileRole: 'sub' },
-  { key: 'role', name: 'Role', width: 150, mobileRole: 'sub', mobileLabel: 'Job Title' },
-  {
-    key: 'salary',
-    name: 'Salary',
-    width: 100,
-    mobileRole: 'sub',
-    renderCell: ({ row }) => `$${row.salary.toLocaleString()}`,
-  },
-];
-
 // Columns with focusable control
 const focusableColumns: Column<Person>[] = [
   { key: 'id', name: 'ID', width: 60, focusable: false },
@@ -218,7 +201,7 @@ const linkColumns: Column<Person>[] = [
 
 /**
  * A high-performance data grid component with advanced features including
- * cell range selection, responsive columns, mobile sub-rows, and touch mode.
+ * cell range selection, responsive columns, and touch mode.
  */
 const meta: Meta<DataGridProps<Person>> = {
   title: 'common/DataGrid',
@@ -236,10 +219,6 @@ const meta: Meta<DataGridProps<Person>> = {
     touchMode: {
       control: 'boolean',
       description: 'Enable touch-friendly mode with larger targets',
-    },
-    enableMobileSubRows: {
-      control: 'boolean',
-      description: 'Enable mobile sub-row rendering',
     },
     rowHeight: {
       control: { type: 'number', min: 25, max: 80 },
@@ -520,57 +499,6 @@ export const TouchModeResponsive: Story = {
   },
 };
 
-/**
- * Mobile sub-rows with expandable details.
- */
-export const MobileSubRows: Story = {
-  render: function Render(args) {
-    const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set([0]));
-
-    return (
-      <div style={{ height: 400 }}>
-        <DataGrid
-          {...args}
-          enableMobileSubRows={true}
-          expandedRows={expandedRows}
-          onExpandedRowsChange={setExpandedRows}
-        />
-      </div>
-    );
-  },
-  args: {
-    columns: mobileColumns,
-    rows: sampleData,
-  },
-};
-
-/**
- * Mobile sub-rows enabled only below md breakpoint.
- */
-export const MobileSubRowsResponsive: Story = {
-  render: function Render(args) {
-    const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
-
-    return (
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">Resize browser below md breakpoint to see mobile sub-rows</p>
-        <div style={{ height: 350 }}>
-          <DataGrid
-            {...args}
-            enableMobileSubRows={{ max: 'md' }}
-            expandedRows={expandedRows}
-            onExpandedRowsChange={setExpandedRows}
-          />
-        </div>
-      </div>
-    );
-  },
-  args: {
-    columns: mobileColumns,
-    rows: sampleData,
-  },
-};
-
 // ============================================================================
 // Responsive Column Visibility Stories
 // ============================================================================
@@ -655,32 +583,6 @@ export const CustomRowClass: Story = {
   },
 };
 
-/**
- * Combined touch mode and mobile sub-rows.
- */
-export const MobileOptimized: Story = {
-  render: function Render(args) {
-    const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
-
-    return (
-      <div style={{ height: 400 }}>
-        <DataGrid
-          {...args}
-          touchMode={{ max: 'md' }}
-          enableMobileSubRows={{ max: 'md' }}
-          expandedRows={expandedRows}
-          onExpandedRowsChange={setExpandedRows}
-          rowHeight={44}
-        />
-      </div>
-    );
-  },
-  args: {
-    columns: mobileColumns,
-    rows: sampleData,
-  },
-};
-
 // ============================================================================
 // Complex Scenarios
 // ============================================================================
@@ -691,7 +593,6 @@ export const MobileOptimized: Story = {
 export const AllFeatures: Story = {
   render: function Render(args) {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
-    const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
     const [mode, setMode] = useState<SelectionMode>('row-multi');
 
     return (
@@ -709,9 +610,7 @@ export const AllFeatures: Story = {
               </button>
             ))}
           </div>
-          <span className="text-sm text-muted-foreground">
-            Selected: {selectedRows.size} rows | Expanded: {expandedRows.size} rows
-          </span>
+          <span className="text-sm text-muted-foreground">Selected: {selectedRows.size} rows</span>
         </div>
         <div style={{ height: 350 }}>
           <DataGrid
@@ -720,16 +619,13 @@ export const AllFeatures: Story = {
             selectedRows={selectedRows}
             onSelectedRowsChange={setSelectedRows}
             rowKeyGetter={(row) => row.id}
-            enableMobileSubRows={true}
-            expandedRows={expandedRows}
-            onExpandedRowsChange={setExpandedRows}
           />
         </div>
       </div>
     );
   },
   args: {
-    columns: mobileColumns,
+    columns: fullColumns,
     rows: sampleData,
   },
 };
@@ -878,43 +774,6 @@ export const ShouldSkipNonFocusableColumns: Story = {
         const lastNameCell = canvas.getByText('Johnson').closest('.rdg-cell');
         expect(lastNameCell).toHaveAttribute('aria-selected', 'true');
       });
-    });
-  },
-};
-
-/**
- * Tests mobile sub-row expansion.
- */
-export const ShouldExpandMobileSubRow: Story = {
-  name: 'when expand toggle is clicked, should show sub-row',
-  tags: ['!dev', '!autodocs'],
-  render: function Render(args) {
-    const [expandedRows, setExpandedRows] = useState<ReadonlySet<number>>(new Set());
-    return (
-      <div style={{ height: 400 }}>
-        <DataGrid
-          {...args}
-          enableMobileSubRows={true}
-          expandedRows={expandedRows}
-          onExpandedRowsChange={setExpandedRows}
-        />
-      </div>
-    );
-  },
-  args: {
-    columns: mobileColumns,
-    rows: sampleData,
-  },
-  play: async ({ canvas, step }) => {
-    await step('Click expand toggle for first row', async () => {
-      const expandToggle = await canvas.findAllByRole('button', { name: /expand/i });
-      if (expandToggle.length > 0) {
-        await userEvent.click(expandToggle[0], { delay: 100 });
-        // Should show sub-row with mobile labels
-        await waitFor(() => {
-          expect(canvas.queryByText('Email Address')).toBeVisible();
-        });
-      }
     });
   },
 };

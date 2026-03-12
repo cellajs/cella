@@ -6,7 +6,7 @@ import type { UserBase, UserMinimalBase } from '~/api.gen';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useFindEntityInListCache } from '~/query/basic';
+import { useFindEntityInListCache } from '~/query/basic/find-in-list-cache';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';
 

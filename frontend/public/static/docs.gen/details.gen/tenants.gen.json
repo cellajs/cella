@@ -21,13 +21,12 @@
                   "id": {
                     "type": "string",
                     "required": true,
-                    "description": "Lowercase alphanumeric tenant ID",
                     "maxLength": 24
                   },
                   "name": {
                     "type": "string",
                     "required": true,
-                    "description": "Tenant display name"
+                    "maxLength": 255
                   },
                   "status": {
                     "type": "string",
@@ -62,10 +61,35 @@
                       }
                     }
                   },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 50
+                  },
+                  "subscriptionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "subscriptionStatus": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+                  },
+                  "subscriptionPlan": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
                   "createdAt": { "type": "string", "required": true },
                   "modifiedAt": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "domainsCount": {
+                    "type": "integer",
+                    "required": true,
+                    "description": "Number of domains claimed by this tenant"
                   }
                 },
                 "ref": "#/components/schemas/Tenant"
@@ -118,16 +142,8 @@
           "q": {
             "type": "string",
             "required": false,
-            "description": "Search query"
+            "maxLength": 255
           },
-          "status": {
-            "type": "string",
-            "required": false,
-            "description": "Filter by status",
-            "enum": ["active", "suspended", "archived"]
-          },
-          "limit": { "type": "string", "required": false },
-          "offset": { "type": "string", "required": false },
           "sort": {
             "type": "string",
             "required": false,
@@ -137,6 +153,15 @@
             "type": "string",
             "required": false,
             "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "afterSeq": { "type": "string", "required": false },
+          "status": {
+            "type": "string",
+            "required": false,
+            "description": "Filter by status",
+            "enum": ["active", "suspended", "archived"]
           }
         }
       }
@@ -158,13 +183,12 @@
             "id": {
               "type": "string",
               "required": true,
-              "description": "Lowercase alphanumeric tenant ID",
               "maxLength": 24
             },
             "name": {
               "type": "string",
               "required": true,
-              "description": "Tenant display name"
+              "maxLength": 255
             },
             "status": {
               "type": "string",
@@ -199,10 +223,35 @@
                 }
               }
             },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "subscriptionId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "subscriptionStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+            },
+            "subscriptionPlan": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "domainsCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of domains claimed by this tenant"
             }
           },
           "ref": "#/components/schemas/Tenant",
@@ -252,8 +301,7 @@
           "name": {
             "type": "string",
             "required": true,
-            "description": "Tenant display name",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 255
           },
           "status": {
@@ -264,122 +312,6 @@
         },
         "required": true,
         "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "getTenantById",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Tenant",
-        "name": "Tenant",
-        "ref": "#/components/schemas/Tenant",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "description": "A tenant representing an isolated data partition for multi-tenancy.",
-          "properties": {
-            "id": {
-              "type": "string",
-              "required": true,
-              "description": "Lowercase alphanumeric tenant ID",
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "description": "Tenant display name"
-            },
-            "status": {
-              "type": "string",
-              "required": true,
-              "enum": ["active", "suspended", "archived"]
-            },
-            "restrictions": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "quotas": {
-                  "type": "object",
-                  "required": true,
-                  "description": "Entity quotas (0 = unlimited)",
-                  "additionalProperties": {
-                    "type": "integer",
-                    "required": false,
-                    "minimum": 0
-                  }
-                },
-                "rateLimits": {
-                  "type": "object",
-                  "required": true,
-                  "properties": {
-                    "apiPointsPerHour": {
-                      "type": "integer",
-                      "required": true,
-                      "description": "Max API points per hour per user within this tenant",
-                      "minimum": 0
-                    }
-                  }
-                }
-              }
-            },
-            "createdAt": { "type": "string", "required": true },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            }
-          },
-          "ref": "#/components/schemas/Tenant",
-          "contentType": "application/json"
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "description": "Tenant ID",
-            "maxLength": 24
-          }
-        }
       }
     }
   },
@@ -399,13 +331,12 @@
             "id": {
               "type": "string",
               "required": true,
-              "description": "Lowercase alphanumeric tenant ID",
               "maxLength": 24
             },
             "name": {
               "type": "string",
               "required": true,
-              "description": "Tenant display name"
+              "maxLength": 255
             },
             "status": {
               "type": "string",
@@ -440,10 +371,35 @@
                 }
               }
             },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "subscriptionId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "subscriptionStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+            },
+            "subscriptionPlan": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
             "createdAt": { "type": "string", "required": true },
             "modifiedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "domainsCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of domains claimed by this tenant"
             }
           },
           "ref": "#/components/schemas/Tenant",
@@ -492,8 +448,7 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Tenant ID",
-            "maxLength": 24
+            "maxLength": 50
           }
         }
       },
@@ -503,13 +458,28 @@
           "name": {
             "type": "string",
             "required": false,
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 255
           },
           "status": {
             "type": "string",
             "required": false,
             "enum": ["active", "suspended", "archived"]
+          },
+          "subscriptionId": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "subscriptionStatus": {
+            "type": "string",
+            "required": false,
+            "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+          },
+          "subscriptionPlan": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
           },
           "restrictions": {
             "type": "object",
@@ -546,16 +516,48 @@
     }
   },
   {
-    "operationId": "archiveTenant",
+    "operationId": "getDomains",
     "responses": [
       {
         "status": 200,
-        "description": "Archived tenant",
+        "description": "List of domains",
         "contentType": "application/json",
         "schema": {
-          "type": "object",
-          "properties": {
-            "success": { "type": "boolean", "required": true }
+          "type": "array",
+          "itemType": "object",
+          "ref": "#/components/schemas/Domain",
+          "items": {
+            "type": "object",
+            "required": true,
+            "description": "A domain claimed by a tenant for email matching and verification.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "required": true,
+                "maxLength": 50
+              },
+              "tenantId": {
+                "type": "string",
+                "required": true,
+                "maxLength": 24
+              },
+              "domain": {
+                "type": "string",
+                "required": true,
+                "maxLength": 255
+              },
+              "verified": { "type": "boolean", "required": true },
+              "verifiedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "lastCheckedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "createdAt": { "type": "string", "required": true }
+            },
+            "ref": "#/components/schemas/Domain"
           },
           "contentType": "application/json"
         }
@@ -602,8 +604,207 @@
           "tenantId": {
             "type": "string",
             "required": true,
-            "description": "Tenant ID",
-            "maxLength": 24
+            "maxLength": 50
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Created domain",
+        "name": "Domain",
+        "ref": "#/components/schemas/Domain",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A domain claimed by a tenant for email matching and verification.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "domain": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "verified": { "type": "boolean", "required": true },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/Domain",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "required": true,
+            "minLength": 4,
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain removed",
+        "name": "Domain",
+        "ref": "#/components/schemas/Domain",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A domain claimed by a tenant for email matching and verification.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "domain": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "verified": { "type": "boolean", "required": true },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/Domain",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
           }
         }
       }

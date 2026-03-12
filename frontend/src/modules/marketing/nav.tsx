@@ -133,7 +133,7 @@ export const MarketingNav = () => {
             <DrawerTitle>Navigation</DrawerTitle>
           </span>
           <div className="flex flex-col px-4 gap-2 items-stretch">
-            <UserTheme buttonClassName="xs:hidden self-end" />
+            <UserTheme buttonClassName="xs:hidden m-1 self-end" />
             {renderNavItems()}
             {appConfig.company.githubUrl && (
               <Button

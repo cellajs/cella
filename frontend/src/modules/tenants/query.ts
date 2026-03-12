@@ -1,13 +1,15 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'shared';
-import type { Tenant } from '~/api.gen';
+import type { Domain, Tenant } from '~/api.gen';
 import {
-  type ArchiveTenantData,
-  archiveTenant,
+  type CreateDomainData,
   type CreateTenantData,
+  createDomain,
   createTenant,
+  type DeleteDomainData,
+  deleteDomain,
   type GetTenantsData,
-  getTenantById,
+  getDomains,
   getTenants,
   type UpdateTenantData,
   updateTenant,
@@ -36,15 +38,6 @@ const tenantQueryKeys = {
   update: ['tenant', 'update'] as const,
   delete: ['tenant', 'delete'] as const,
 };
-
-/**
- * Query options for fetching a single tenant by ID.
- */
-export const tenantQueryOptions = (tenantId: string) =>
-  queryOptions({
-    queryKey: tenantQueryKeys.detail.byId(tenantId),
-    queryFn: async () => getTenantById({ path: { tenantId } }),
-  });
 
 /**
  * Infinite query options for fetching a paginated list of tenants.
@@ -97,22 +90,52 @@ export const useTenantUpdateMutation = () => {
     mutationKey: tenantQueryKeys.update,
     mutationFn: ({ path, body }) => updateTenant({ path, body }),
     onSuccess: () => {
-      // Invalidate tenant list to refetch
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
     },
   });
 };
 
 /**
- * Mutation hook for archiving a tenant.
+ * Query keys for domain operations.
  */
-export const useTenantArchiveMutation = () => {
+const domainQueryKeys = {
+  list: (tenantId: string) => ['domain', 'list', tenantId] as const,
+};
+
+/**
+ * Query options for fetching domains of a tenant.
+ */
+export const domainsQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: domainQueryKeys.list(tenantId),
+    queryFn: () => getDomains({ path: { tenantId } }),
+  });
+
+/**
+ * Mutation hook for adding a domain to a tenant.
+ */
+export const useDomainCreateMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<{ success: boolean }, ApiError, MutationData<ArchiveTenantData>>({
-    mutationKey: tenantQueryKeys.delete,
-    mutationFn: ({ path }) => archiveTenant({ path }),
-    onSuccess: () => {
+  return useMutation<Domain, ApiError, MutationData<CreateDomainData>>({
+    mutationFn: ({ path, body }) => createDomain({ path, body }),
+    onSuccess: (_, { path }) => {
+      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
+    },
+  });
+};
+
+/**
+ * Mutation hook for removing a domain from a tenant.
+ */
+export const useDomainDeleteMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Domain, ApiError, MutationData<DeleteDomainData>>({
+    mutationFn: ({ path }) => deleteDomain({ path }),
+    onSuccess: (_, { path }) => {
+      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
     },
   });

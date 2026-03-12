@@ -1,8 +1,9 @@
+import { XIcon } from 'lucide-react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
@@ -47,15 +48,21 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       {container?.overlay && <div className="fixed inset-0 z-30 bg-background/75 animate-in fade-in-0" />}
       <DialogContent
         id={String(id)}
-        showCloseButton={showCloseButton}
+        showCloseButton={showCloseButton && !isMobile}
         container={containerElement}
         className={cn(className, containerElement && 'z-40 in-[.sheeter-open]:z-40')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? triggerFocusRef : undefined}
       >
-        <DialogHeader className={`${title || description ? headerClassName || '' : 'hidden'}`}>
+        <DialogHeader sticky className={`${title || description ? headerClassName || '' : 'hidden'}`}>
           <DialogTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
+          {showCloseButton && isMobile && (
+            <DialogClose className="absolute right-1 top-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-effect">
+              <XIcon className="size-5" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          )}
         </DialogHeader>
 
         {/* For accessibility */}

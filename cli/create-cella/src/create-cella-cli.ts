@@ -2,7 +2,7 @@
 
 import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
-import { confirm, input, select } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import pc from 'picocolors';
 
 import { TEMPLATE_URL } from '#/constants';
@@ -40,32 +40,9 @@ async function main(): Promise<void> {
     );
   }
 
-  // Prompt to create a new branch besides the main branch (if not skipped)
-  if (cli.createNewBranch === null) {
-    cli.createNewBranch = await confirm(
-      {
-        message: 'Create a working branch (besides "main")?',
-        default: true,
-        theme: promptTheme,
-      },
-      promptContext,
-    );
-  }
-
-  // Prompt for new branch name, only if user opted to create a new branch
-  if (!cli.newBranchName && cli.createNewBranch) {
-    cli.newBranchName = await input(
-      {
-        message: 'Enter working branch name',
-        default: 'development',
-        theme: promptTheme,
-        validate: (name) => {
-          const validation = validateProjectName(basename(resolve(name)));
-          return validation.valid ? true : `Invalid branch name: ${validation.problems?.[0] ?? 'unknown error'}`;
-        },
-      },
-      promptContext,
-    );
+  // Default to creating a 'development' working branch
+  if (!cli.newBranchName) {
+    cli.newBranchName = 'development';
   }
 
   const targetFolder = resolve(cli.directory);

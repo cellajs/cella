@@ -3,7 +3,7 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-// Override onValueChange to maintain Radix-compatible signature (value is always string, not null)
+// Override onValueChange to narrow Base UI's (string | null) to string for all consumers
 type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & {
   onValueChange?: (value: string) => void;
 };
@@ -102,10 +102,7 @@ export function SelectContentNoPortal({
       >
         <SelectScrollUpButton />
         <SelectPrimitive.List
-          className={cn(
-            'p-1',
-            position === 'popper' && 'h-(--anchor-height) w-full min-w-(--anchor-width) scroll-my-1',
-          )}
+          className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}
         >
           {children}
         </SelectPrimitive.List>

@@ -9,21 +9,26 @@
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
- * Squash pending mutations for the same entity.
- * Cancels any pending mutation for the same entity from the cache.
+ * Squash pending mutations for the same entity and key.
+ * Cancels any pending mutation for the same entity+key from the cache.
+ *
+ * When `key` is provided (field-level updates), only mutations targeting the
+ * same entity AND field are squashed. This prevents editing `name` from
+ * discarding a queued `description` update. When `key` is omitted the
+ * function falls back to entity-level matching (backwards-compatible).
  *
  * Call this in onMutate before optimistic updates.
  *
  * @param queryClient - React Query client
  * @param mutationKey - Mutation key to match (e.g., ['page', 'update'])
  * @param entityId - Entity being mutated
- * @param _data - New mutation data (unused, kept for API compatibility)
+ * @param key - Optional field key to narrow the match (e.g., 'name', 'description')
  */
 export async function squashPendingMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
   entityId: string,
-  _data?: object,
+  key?: string,
 ): Promise<void> {
   const mutationCache = queryClient.getMutationCache();
   const mutations = mutationCache.findAll({ mutationKey });
@@ -33,10 +38,13 @@ export async function squashPendingMutation(
     if (mutation.state.status !== 'pending') continue;
 
     // Check if this mutation is for the same entity
-    const variables = mutation.state.variables as { id?: string } | undefined;
+    const variables = mutation.state.variables as { id?: string; key?: string } | undefined;
     if (variables?.id !== entityId) continue;
 
-    // Same entity - remove this mutation from cache (squash)
+    // When a key is specified, only squash mutations targeting the same field
+    if (key && variables?.key !== key) continue;
+
+    // Same entity+key - remove this mutation from cache (squash)
     // The new mutation will supersede the old one
     mutationCache.remove(mutation);
   }

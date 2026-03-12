@@ -25,8 +25,9 @@ import {
   findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
-  useMutateQueryData,
 } from '~/query/basic';
+import { syncStaleTime } from '~/query/basic/sync-stale-config';
+import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
   createStxForCreate,
@@ -55,7 +56,12 @@ type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> &
 };
 
 const keys = createEntityKeys<AttachmentFilters>('attachment');
-registerEntityQueryKeys('attachment', keys);
+registerEntityQueryKeys('attachment', keys, (orgId, afterSeq) =>
+  getAttachments({
+    path: { tenantId: getRouteTenantId()!, orgId: orgId! },
+    query: { afterSeq: String(afterSeq), limit: '1000' },
+  }),
+);
 export const attachmentQueryKeys = keys;
 
 const attachmentsMutationKeyBase = ['attachment'] as const;
@@ -89,6 +95,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
       return result;
     },
     ...baseInfiniteQueryOptions,
+    staleTime: syncStaleTime,
   });
 };
 
@@ -188,7 +195,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
       return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
     },
     onMutate: async ({ id, key, data }: UpdateAttachmentVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, { [key]: data });
+      await squashPendingMutation(queryClient, keys.update, id, key);
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 

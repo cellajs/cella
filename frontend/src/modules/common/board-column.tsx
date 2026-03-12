@@ -13,7 +13,7 @@ export function BoardColumnHeader({ leading, title, actions, isCollapsed, classN
   return (
     <div
       className={cn(
-        'min-h-15 max-sm:hidden border border-b-0 p-2 rounded-lg rounded-b-none flex flex-row gap-2 space-between items-center bg-background z-50',
+        'min-h-15 max-sm:hidden border border-b-0 p-2 rounded-lg rounded-b-none flex flex-row gap-2 space-between items-center z-50',
         className,
       )}
     >
@@ -100,7 +100,7 @@ export function CollapsedColumnView({ mainCount, sections = EMPTY_SECTIONS, clas
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections
           key={`top-${i}`}
-          className={cn('flex p-2 h-8 justify-center items-center text-xs', section.colorClass, section.borderClass)}
+          className={cn('flex p-2 h-9 justify-center items-center text-xs', section.colorClass, section.borderClass)}
         >
           {section.count}
         </div>
@@ -114,7 +114,7 @@ export function CollapsedColumnView({ mainCount, sections = EMPTY_SECTIONS, clas
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections
           key={`bottom-${i}`}
-          className={cn('flex p-2 h-8 justify-center items-center text-xs', section.colorClass, section.borderClass)}
+          className={cn('flex p-2 h-9 justify-center items-center text-xs', section.colorClass, section.borderClass)}
         >
           {section.count}
         </div>

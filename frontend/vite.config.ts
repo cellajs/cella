@@ -21,6 +21,7 @@ const ReactCompilerConfig = {
 };
 
 const isStorybook = process.env.STORYBOOK === 'true';
+const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
@@ -51,8 +52,9 @@ const viteConfig = {
         },
       },
     },
-    sourcemap: true,
+    sourcemap: isDev ? false : true,
     manifest: true,
+    minify: isDev ? false : 'esbuild',
   },
   optimizeDeps: {
     exclude: [],
@@ -100,11 +102,16 @@ const viteConfig = {
         },
       },
     }),
-    terser({
-      compress: {
-        pure_funcs: ['console.debug'], // Removes console.debug
-      },
-    }) as Plugin,
+    // Terser removes console.debug — skip in dev for faster builds
+    ...(isDev
+      ? []
+      : [
+          terser({
+            compress: {
+              pure_funcs: ['console.debug'],
+            },
+          }) as Plugin,
+        ]),
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {
@@ -117,13 +124,18 @@ const viteConfig = {
     'process.env': {
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
     },
+    // Injected into sw.ts for periodic badge sync
+    '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
   },
 } satisfies UserConfig;
 
-// Setup PWA
+// Setup PWA with custom service worker (injectManifest) for periodic badge sync
 viteConfig.plugins?.push(
   VitePWA({
     disable: !appConfig.has.pwa,
+    strategies: 'injectManifest',
+    srcDir: 'src',
+    filename: 'sw.ts',
     devOptions: {
       enabled: false,
       navigateFallback: 'index.html',
@@ -160,11 +172,9 @@ viteConfig.plugins?.push(
         },
       ],
     },
-    workbox: {
+    injectManifest: {
       globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
       globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
-      cleanupOutdatedCaches: true,
-      clientsClaim: true,
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   })

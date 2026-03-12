@@ -22,7 +22,6 @@ export const organizationsTable = pgTable(
     defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     notificationEmail: varchar({ length: maxLength.field }),
-    emailDomains: json().$type<string[]>().notNull().default([]),
     color: varchar({ length: maxLength.field }),
     logoUrl: varchar({ length: maxLength.url }),
     websiteUrl: varchar({ length: maxLength.url }),

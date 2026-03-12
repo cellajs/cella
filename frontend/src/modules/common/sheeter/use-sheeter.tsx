@@ -23,6 +23,8 @@ export type SheetData = {
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
   skipAnimation?: boolean;
+  /** Key to identify content for animated transitions (used with AnimatePresence). */
+  contentKey?: string;
   /** Enable auto-scrolling when dragging elements near edges. */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   onClose?: (isCleanup?: boolean) => void;

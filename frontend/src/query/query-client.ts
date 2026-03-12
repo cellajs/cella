@@ -1,4 +1,5 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
+import { resetConnectivityCache } from '~/lib/connectivity';
 import { onError } from '~/query/on-error';
 import { onSuccess } from '~/query/on-success';
 
@@ -13,6 +14,7 @@ const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
  */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
+  if (navigator.onLine) resetConnectivityCache();
 }
 
 if (!import.meta.hot?.data?.listenersAttached) {
@@ -50,9 +52,18 @@ export const queryClient: QueryClient =
     },
   });
 
+/** Promise that resolves once the PersistQueryClientProvider has restored the IDB cache. */
+let resolveCacheRestored: () => void;
+export const cacheRestored: Promise<void> =
+  (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
+export function markCacheRestored() {
+  resolveCacheRestored();
+}
+
 // Preserve queryClient and listener state across HMR
 if (import.meta.hot) {
   import.meta.hot.data.queryClient = queryClient;
+  import.meta.hot.data.cacheRestored = cacheRestored;
   import.meta.hot.data.listenersAttached = true;
 }
 
@@ -72,7 +83,7 @@ export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void
     },
   });
 
-  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '1min (online)'}`);
+  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '30s (online)'}`);
 }
 
 /**

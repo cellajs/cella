@@ -1,7 +1,6 @@
 import { memo, useMemo } from 'react';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
-import { MobileExpandToggle, MobileSubRow } from './mobile-sub-row';
 import { rowClassname, rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, RenderRowProps } from './types';
 import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils/grid-utils';
@@ -26,9 +25,6 @@ function Row<R, SR>({
   selectCell,
   renderCell,
   selectedCellRange,
-  subColumns,
-  isRowExpanded,
-  onToggleRowExpand,
   style,
   ...props
 }: RenderRowProps<R, SR>) {
@@ -36,37 +32,17 @@ function Row<R, SR>({
     onRowChange(column, rowIdx, newRow);
   });
 
-  const handleToggleExpand = useLatestCallback(() => {
-    onToggleRowExpand?.(rowIdx);
-  });
-
-  const hasSubColumns = (subColumns?.length ?? 0) > 0;
-
   className = cn(
     rowClassname,
     `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
     {
       [rowSelectedClassname]: selectedCellIdx === -1,
-      'rdg-row-expandable': hasSubColumns,
-      'rdg-row-expanded': isRowExpanded === true,
     },
     rowClass?.(row, rowIdx),
     className,
   );
 
   const cells = [];
-
-  // Add expand toggle as first element if we have sub-columns
-  if (hasSubColumns) {
-    cells.push(
-      <MobileExpandToggle
-        key="__expand_toggle__"
-        isExpanded={isRowExpanded ?? false}
-        onToggle={handleToggleExpand}
-        hasSubColumns={hasSubColumns}
-      />,
-    );
-  }
 
   for (let index = 0; index < viewportColumns.length; index++) {
     const column = viewportColumns[index];
@@ -126,9 +102,6 @@ function Row<R, SR>({
       >
         {cells}
       </div>
-      {hasSubColumns && subColumns && (
-        <MobileSubRow row={row} rowIdx={rowIdx} subColumns={subColumns} isExpanded={isRowExpanded ?? false} />
-      )}
     </RowSelectionContext>
   );
 }

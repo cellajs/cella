@@ -8,13 +8,16 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/db/schema/tenants';
+import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { paginationQuerySchema, validNameSchema } from '#/schemas';
 
 /** Tenant status enum values */
-export const tenantStatusValues = ['active', 'suspended', 'archived'] as const;
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
 /** Tenant status schema */
 export const tenantStatusSchema = z.enum(tenantStatusValues);
+const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 
 /** Restrictions: rate limits sub-schema */
 const rateLimitsSchema = z.object({
@@ -35,22 +38,19 @@ const restrictionsSchema = z.object({
  */
 export const tenantSchema = z
   .object({
-    id: z.string().max(24).describe('Lowercase alphanumeric tenant ID'),
-    name: z.string().describe('Tenant display name'),
-    status: tenantStatusSchema,
-    restrictions: restrictionsSchema,
-    createdAt: z.string(),
-    modifiedAt: z.string().nullable(),
+    ...createSelectSchema(tenantsTable, {
+      restrictions: restrictionsSchema,
+    }).omit({ subscriptionData: true }).shape,
+    domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
   })
   .openapi('Tenant', { description: 'A tenant representing an isolated data partition for multi-tenancy.' });
 
 /**
  * Schema for creating a new tenant.
  */
-export const createTenantBodySchema = z.object({
-  name: z.string().min(1).max(255).describe('Tenant display name'),
-  status: tenantStatusSchema.optional().default('active'),
-});
+export const createTenantBodySchema = createInsertSchema(tenantsTable, {
+  name: validNameSchema,
+}).pick({ name: true, status: true });
 
 /** Partial restrictions schema for update operations */
 const partialRestrictionsSchema = z
@@ -67,29 +67,27 @@ const partialRestrictionsSchema = z
 /**
  * Schema for updating a tenant.
  */
-export const updateTenantBodySchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  status: tenantStatusSchema.optional(),
-  restrictions: partialRestrictionsSchema.optional(),
-});
+export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
+  name: validNameSchema,
+  status: tenantStatusSchema,
+  subscriptionStatus: subscriptionStatusSchema,
+})
+  .pick({
+    name: true,
+    status: true,
+    subscriptionId: true,
+    subscriptionStatus: true,
+    subscriptionPlan: true,
+  })
+  .partial()
+  .extend({
+    restrictions: partialRestrictionsSchema.optional(),
+  });
 
 /**
  * Query params for listing tenants.
  */
-export const tenantListQuerySchema = z
-  .object({
-    q: z.string().optional().describe('Search query'),
-    status: tenantStatusSchema.optional().describe('Filter by status'),
-    limit: z.string().optional().default('50'),
-    offset: z.string().optional().default('0'),
-    sort: z.enum(['createdAt', 'name']).optional().default('createdAt'),
-    order: z.enum(['asc', 'desc']).optional().default('desc'),
-  })
-  .openapi('TenantListQuery', { description: 'Query parameters for listing and filtering tenants.' });
-
-/**
- * Tenant ID path parameter.
- */
-export const tenantIdParamSchema = z.object({
-  tenantId: z.string().max(24).describe('Tenant ID'),
+export const tenantListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['createdAt', 'name']).default('createdAt').optional(),
+  status: tenantStatusSchema.optional().describe('Filter by status'),
 });

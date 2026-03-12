@@ -66,9 +66,10 @@ export function computeWrapTextRowHeight<R>(
     const cap = resolveWrapTextLines(column.wrapText);
     if (cap === 0) continue;
 
-    // Read the raw value from the row using the column key
-    const value = (row as Record<string, unknown>)[column.key];
-    const estimated = estimateTextLines(value);
+    // Use custom estimator if provided, otherwise fall back to newline counting
+    const estimated = column.estimateLines
+      ? column.estimateLines(row)
+      : estimateTextLines((row as Record<string, unknown>)[column.key]);
     const clamped = Math.min(estimated, cap);
 
     if (clamped > maxLines) maxLines = clamped;

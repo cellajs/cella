@@ -120,20 +120,17 @@ export const getSlashMenuItems = (
   );
 
   // Flatten the keys to filter baseItems
-  const allowedKeys = Object.values(filteredTypeToKeys).flat();
+  const allowedKeys: Set<string> = new Set(Object.values(filteredTypeToKeys).flat());
 
   // Optional: sort by `customSlashIndexedItems`
-  const sortOrder = new Map(
+  const sortOrder = new Map<string, number>(
     customSlashIndexedItems
       .filter((type) => allowedTypes.includes(type))
-      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index])),
+      .flatMap((type, index) => filteredTypeToKeys[type].map((key) => [key, index] as const)),
   );
 
   return baseItems
-    .filter(
-      (item): item is DefaultSuggestionItem =>
-        'key' in item && allowedKeys.includes(item.key as DefaultSuggestionItem['key']),
-    )
+    .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.has(item.key as string))
     .sort(({ key: first }, { key: second }) => {
       const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
       const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;

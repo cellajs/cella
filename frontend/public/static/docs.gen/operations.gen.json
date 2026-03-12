@@ -988,25 +988,6 @@
     }
   },
   {
-    "id": "getTenantById",
-    "hash": "tag/tenants/GET/tenants/{tenantId}",
-    "method": "get",
-    "path": "/tenants/{tenantId}",
-    "tags": ["tenants"],
-    "summary": "Get tenant by ID",
-    "description": "Returns a single tenant by its ID. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
     "id": "updateTenant",
     "hash": "tag/tenants/PUT/tenants/{tenantId}",
     "method": "put",
@@ -1026,13 +1007,51 @@
     }
   },
   {
-    "id": "archiveTenant",
-    "hash": "tag/tenants/DELETE/tenants/{tenantId}",
-    "method": "delete",
-    "path": "/tenants/{tenantId}",
+    "id": "getDomains",
+    "hash": "tag/tenants/GET/tenants/{tenantId}/domains",
+    "method": "get",
+    "path": "/tenants/{tenantId}/domains",
     "tags": ["tenants"],
-    "summary": "Archive a tenant",
-    "description": "Archives a tenant (soft delete). Sets status to \"archived\". System admin access required. Data retention period applies before permanent deletion.",
+    "summary": "List domains for a tenant",
+    "description": "Returns all domains belonging to a tenant. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "createDomain",
+    "hash": "tag/tenants/POST/tenants/{tenantId}/domains",
+    "method": "post",
+    "path": "/tenants/{tenantId}/domains",
+    "tags": ["tenants"],
+    "summary": "Add a domain to a tenant",
+    "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    }
+  },
+  {
+    "id": "deleteDomain",
+    "hash": "tag/tenants/DELETE/tenants/{tenantId}/domains/{id}",
+    "method": "delete",
+    "path": "/tenants/{tenantId}/domains/{id}",
+    "tags": ["tenants"],
+    "summary": "Remove a domain",
+    "description": "Removes a domain from a tenant. System admin access required.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -1231,6 +1250,26 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "entityType": "organization"
+  },
+  {
+    "id": "autoCreateOrganization",
+    "hash": "tag/organizations/POST/organizations",
+    "method": "post",
+    "path": "/organizations",
+    "tags": ["organizations"],
+    "summary": "Create organization with auto-tenant",
+    "description": "Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },

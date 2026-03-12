@@ -123,6 +123,12 @@ function BlockNote({
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 
+  // Refs to capture latest values for unmount cleanup (closure would stale otherwise)
+  const updateDataRef = useRef(updateData);
+  updateDataRef.current = updateData;
+  const defaultValueRef = useRef(defaultValue);
+  defaultValueRef.current = defaultValue;
+
   const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
   const allowedBlockTypes = defaultAllowedBlockTypes.filter(
     (type) =>
@@ -151,8 +157,13 @@ function BlockNote({
       })()
     : undefined;
 
+  // Parse initial content once at creation time so the undo history starts clean
+  // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
+  const initialContent = getParsedContent(defaultValue);
+
   const editor = useCreateBlockNote({
     schema: customSchema,
+    initialContent,
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
@@ -298,18 +309,20 @@ function BlockNote({
   };
 
   useEffect(() => {
-    const currentContent = JSON.stringify(editor.document);
-    if (compareIsContentSame(currentContent, defaultValue)) return;
-
-    const parsedContent = getParsedContent(defaultValue);
-    if (parsedContent === undefined) editor.removeBlocks(editor.document);
-    else editor.replaceBlocks(editor.document, parsedContent);
-  }, [defaultValue]);
-
-  useEffect(() => {
     if (!onBeforeLoad || !editable) return;
     const unsubscribe = router.subscribe('onBeforeLoad', handleOnBeforeLoad);
     return () => unsubscribe();
+  }, []);
+
+  // Flush unsaved content on unmount (e.g. virtualizer drops the card while editing)
+  useEffect(() => {
+    return () => {
+      if (!updateDataRef.current) return;
+      const strBlocks = JSON.stringify(editor.document);
+      if (!compareIsContentSame(strBlocks, defaultValueRef.current)) {
+        updateDataRef.current(strBlocks);
+      }
+    };
   }, []);
 
   return (

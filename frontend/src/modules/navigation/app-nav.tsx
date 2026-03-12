@@ -72,6 +72,7 @@ export function AppNav() {
         disablePointerDismissal: true,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
+        contentKey: navItem.id,
         autoScrollOnDrag: 'vertical',
         onClose: () => setNavSheetOpen(null),
       });

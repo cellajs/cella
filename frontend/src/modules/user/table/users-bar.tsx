@@ -22,7 +22,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
@@ -106,7 +106,7 @@ export const UsersTableBar = ({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars} offsetTop={40}>
+      <TableBarContainer searchVars={searchVars} offsetTop={48}>
         {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

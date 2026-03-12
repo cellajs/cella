@@ -55,6 +55,8 @@ interface DataTableProps<TData> {
   readOnly?: boolean;
   /** Per-row function to disable selection (e.g. cross-tenant constraint) */
   isRowSelectionDisabled?: (row: TData) => boolean;
+  /** Enable compact mode — applies column compact overrides and sets data-is-compact on the grid */
+  isCompact?: boolean;
 }
 
 /**
@@ -87,6 +89,7 @@ export const DataTable = <TData,>({
   className,
   readOnly,
   isRowSelectionDisabled,
+  isCompact,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
@@ -165,6 +168,7 @@ export const DataTable = <TData,>({
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 onRowsEndApproaching={handleRowsEndApproaching}
+                isCompact={isCompact}
                 selectionMode={selectionMode ?? (readOnly ? 'none' : undefined)}
                 renderers={{
                   renderRow,

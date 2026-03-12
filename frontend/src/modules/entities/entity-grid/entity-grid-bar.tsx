@@ -12,7 +12,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type EntityGridBarSearch = {
   q?: string;
@@ -52,7 +52,7 @@ export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, isSheet,
   const onResetFilters = () => setSearch({ q: '' });
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 40}>
+    <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 48}>
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>

@@ -47,7 +47,7 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
   }
 
   return (
-    <Accordion type="single" className="w-full" collapsible>
+    <Accordion className="w-full">
       {responses.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (

@@ -217,8 +217,8 @@
     pointer-events: auto;
   }
 
-  /* Hide elements when focus view is active */
-  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *) {
+  /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */
+  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
     display: none !important;
   }
 

@@ -6,14 +6,11 @@ import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bu
  * Build stream notification from activity event.
  * Notification-only format - no entity data included.
  *
- * For realtime entities:
- * - Includes stx, seq, cacheToken for sync engine
- * - Client uses cacheToken to fetch entity via entity cache
+ * For product entities:
+ * - Includes stx, seqAt, cacheToken for sync engine
  *
  * For membership:
- * - Includes seq (mSeq from contextCounters) for gap detection
- * - stx/cacheToken are null
- * - Client invalidates queries to refetch
+ * - stx/cacheToken/seqAt are null (memberships detected via activity scan on catchup)
  */
 export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
   const { entityType } = event;
@@ -33,7 +30,6 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     entityId: event.entityId!,
     organizationId: event.organizationId,
     contextType,
-    seq: event.seq ?? null,
     seqAt: isProduct ? (event.seqAt ?? null) : null,
     stx:
       isProduct && event.stx

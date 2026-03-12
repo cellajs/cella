@@ -151,8 +151,6 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
-  /** ISO timestamp filter for delta sync — returns entities modified at or after this time (legacy, prefer afterSeq) */
-  modifiedAfter: z.iso.datetime().optional(),
   /** Sequence-based delta filter — returns entities with seqAt > this value. Hierarchy-aware: seqAt is scoped per parent context. */
   afterSeq: z
     .string()

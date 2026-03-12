@@ -1,19 +1,15 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
-import { DialogTitle } from '~/modules/ui/dialog';
-import { Drawer, DrawerContent } from '~/modules/ui/drawer';
 
 interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
   originalItemCount: number;
   allowedTypes: CustomBlockTypes[];
 }
 
-// Proper React component (not a plain function) so hooks work correctly
-// and React can optimize re-renders via reconciliation.
+// Custom slash menu component rendered inside the floating positioner.
 export const CustomSlashMenuComponent = ({
   items,
   loadingState,
@@ -24,20 +20,13 @@ export const CustomSlashMenuComponent = ({
 }: CustomSlashMenuComponentProps) => {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isMobile = useBreakpointBelow('sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
 
   const handleKeyPress = (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
     const itemIndex = Number.parseInt(pressedKey, 10) - 1;
 
-    if (
-      isMobile ||
-      items.length !== originalItemCount ||
-      Number.isNaN(itemIndex) ||
-      itemIndex < 0 ||
-      itemIndex >= indexedItemCount
-    )
+    if (items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount)
       return;
 
     const item = items[itemIndex];
@@ -68,13 +57,11 @@ export const CustomSlashMenuComponent = ({
     }
   }, [selectedIndex]);
 
-  const menuContent = (
+  return (
     <div className="slash-menu" role="listbox" ref={menuRef}>
       {items.map((item, index) => (
         <div key={item.title}>
-          {!isMobile && index === indexedItemCount && items.length === originalItemCount && (
-            <hr className="slash-menu-separator" />
-          )}
+          {index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
           <button
             ref={(el) => {
               itemRefs.current[index] = el;
@@ -90,7 +77,7 @@ export const CustomSlashMenuComponent = ({
               {item.icon}
               {item.title}
             </div>
-            {!isMobile && items.length === originalItemCount && index < indexedItemCount && (
+            {items.length === originalItemCount && index < indexedItemCount && (
               <span className="slash-menu-item-badge">{index + 1}</span>
             )}
           </button>
@@ -98,17 +85,4 @@ export const CustomSlashMenuComponent = ({
       ))}
     </div>
   );
-
-  if (isMobile) {
-    return (
-      <Drawer open={true}>
-        <DrawerContent>
-          <DialogTitle className="hidden" />
-          {menuContent}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
-  return menuContent;
 };

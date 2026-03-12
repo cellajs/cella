@@ -1,16 +1,15 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { EditIcon } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { Spinner } from '~/modules/common/spinner';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { pageQueryOptions } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
-
-const BlockNoteStaticView = lazy(() => import('~/modules/common/blocknote/static-view'));
 
 interface ViewPageProps {
   pageId: string;
@@ -66,7 +65,7 @@ function ViewPage({ pageId }: ViewPageProps) {
 
           {page.description && (
             <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-              <BlockNoteStaticView
+              <BlockNoteFullHtml
                 id={`page-${pageId}`}
                 defaultValue={page.description}
                 className="text-muted-foreground font-light"

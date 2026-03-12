@@ -36,8 +36,12 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
   const filteredItems = getSideMenuItems(dict).filter((item) => {
     if (!selectItemsType.includes(item.type)) return false;
 
-    if (item.type === 'heading' && typeof item.props?.level === 'number') {
-      return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
+    if (item.type === 'heading') {
+      // Exclude toggle headings
+      if (item.props?.isToggleable) return false;
+      if (typeof item.props?.level === 'number') {
+        return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
+      }
     }
     return true;
   });
