@@ -455,7 +455,6 @@ export const zAttachment = z.object({
   modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   seqAt: z.int().gte(-9007199254740991).lte(9007199254740991),
   public: z.boolean(),
-  publicAccess: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.string().max(50).nullable(),
   filename: z.string().max(255),
@@ -2032,7 +2031,7 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    key: z.union([z.enum(['name']), z.enum(['originalKey']), z.enum(['public'])]),
+    key: z.union([z.enum(['name']), z.enum(['originalKey'])]),
     data: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).nullable(),
     stx: zStxRequestBase,
   }),
@@ -2048,14 +2047,6 @@ export const zUpdateAttachmentData = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = zAttachment;
-
-export const zGetAttachmentLinkData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    id: z.string().max(50),
-  }),
-  query: z.never().optional(),
-});
 
 export const zDeleteMembershipsData = z.object({
   body: z.object({

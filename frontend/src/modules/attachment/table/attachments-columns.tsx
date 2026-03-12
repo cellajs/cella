@@ -1,14 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { resolvePermission } from 'shared';
 import type { Attachment } from '~/api.gen';
-import {
-  CopyUrlCell,
-  DownloadCell,
-  EllipsisCell,
-  PublicAccessCell,
-  ThumbnailCell,
-} from '~/modules/attachment/table/cells';
+import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/cells';
 import { formatBytes } from '~/modules/attachment/table/helpers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -16,12 +9,10 @@ import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { Input } from '~/modules/ui/input';
 import { UserCell } from '~/modules/user/user-cell';
-import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
-  const userId = useUserStore((state) => state.user?.id);
 
   // Attachment permission state from the parent context entity.
   // Can be `true` (admin: update any), `'own'` (member: update own), or `false` (denied).
@@ -65,27 +56,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
             <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
           ),
         }),
-      },
-      {
-        key: 'publicAccess',
-        name: '',
-        sortable: false,
-        width: 32,
-        renderCell: ({ row, tabIndex }) => (
-          <PublicAccessCell
-            row={row}
-            tabIndex={tabIndex}
-            canUpdate={resolvePermission(canUpdateState, row.createdBy?.id, userId)}
-          />
-        ),
-      },
-      {
-        key: 'url',
-        name: '',
-        minBreakpoint: 'md',
-        sortable: false,
-        width: 32,
-        renderCell: ({ row, tabIndex }) => <CopyUrlCell row={row} tabIndex={tabIndex} />,
       },
       {
         key: 'download',
@@ -183,7 +153,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
           row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
       },
     ],
-    [t, isSheet, isCompact, canUpdate, canUpdateState, userId, contextEntity.tenantId, contextEntity.id],
+    [t, isSheet, isCompact, canUpdate, contextEntity.tenantId, contextEntity.id],
   );
 
   return columns;

@@ -678,7 +678,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     }
@@ -1630,26 +1630,6 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
-    },
-    "entityType": "attachment"
-  },
-  {
-    "id": "getAttachmentLink",
-    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}/link",
-    "method": "get",
-    "path": "/{tenantId}/{orgId}/attachments/{id}/link",
-    "tags": ["attachments"],
-    "summary": "Get attachment link",
-    "description": "Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["tokenLimiter"],
-      "xCache": ["httpCache"]
     },
     "entityType": "attachment"
   },

@@ -8,6 +8,7 @@ import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
+import { invalidateMemberships } from '~/query/realtime/membership-ops';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = {
@@ -35,8 +36,10 @@ export const LeaveEntityButton = ({
       toaster(t('common:success.you_left_entity', { entity: contextEntity.entityType }), 'success');
       navigate({ to: redirectPath, replace: true });
 
-      // Clear related cache entries
-      // Note: works if queryKeys are structured like `organizationQueryKeys.single`
+      // Invalidate memberships so enrichment subscriber rebuilds menu
+      invalidateMemberships();
+
+      // Clear related cache entries for this specific entity
       queryClient.removeQueries({
         predicate: ({ queryKey }) =>
           queryKey.includes(contextEntity.entityType) &&

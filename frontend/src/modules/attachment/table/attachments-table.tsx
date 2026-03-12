@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
@@ -45,20 +45,24 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
   const columnsFromHook = useColumns(contextEntity, isSheet, isCompact);
-  const hiddenOverrides = useRef<Record<string, boolean>>({});
+  const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
     () =>
       columnsFromHook.map((col) => ({
         ...col,
-        hidden: hiddenOverrides.current[col.key] ?? col.hidden,
+        hidden: hiddenOverrides[col.key] ?? col.hidden,
       })),
-    [columnsFromHook],
+    [columnsFromHook, hiddenOverrides],
   );
   const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
     const newCols = typeof updater === 'function' ? updater(columns) : updater;
-    for (const col of newCols) {
-      if (col.hidden !== undefined) hiddenOverrides.current[col.key] = col.hidden;
-    }
+    setHiddenOverrides((prev) => {
+      const next = { ...prev };
+      for (const col of newCols) {
+        if (col.hidden !== undefined) next[col.key] = col.hidden;
+      }
+      return next;
+    });
   };
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 

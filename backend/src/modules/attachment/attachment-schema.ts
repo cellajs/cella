@@ -55,11 +55,7 @@ export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
 /** Update body using key/data pattern for single-field updates with conflict detection */
-export const attachmentUpdateStxBodySchema = createUpdateSchema([
-  z.literal('name'),
-  z.literal('originalKey'),
-  z.literal('public'),
-]);
+export const attachmentUpdateStxBodySchema = createUpdateSchema([z.literal('name'), z.literal('originalKey')]);
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);

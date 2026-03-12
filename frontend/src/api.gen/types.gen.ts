@@ -487,7 +487,6 @@ export type Attachment = {
     } | null);
   seqAt: number;
   public: boolean;
-  publicAccess: boolean;
   bucketName: string;
   groupId: string | null;
   filename: string;
@@ -4713,7 +4712,7 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body: {
-    key: 'name' | 'originalKey' | 'public';
+    key: 'name' | 'originalKey';
     data: string | number | boolean | Array<string> | null;
     stx: StxRequestBase;
   };
@@ -4759,47 +4758,6 @@ export type UpdateAttachmentResponses = {
 };
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
-
-export type GetAttachmentLinkData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{orgId}/attachments/{id}/link';
-};
-
-export type GetAttachmentLinkErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAttachmentLinkError = GetAttachmentLinkErrors[keyof GetAttachmentLinkErrors];
-
-export type GetAttachmentLinkResponses = {
-  /**
-   * Success
-   */
-  200: unknown;
-};
 
 export type DeleteMembershipsData = {
   body: {

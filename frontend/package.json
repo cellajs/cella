@@ -121,6 +121,7 @@
     "@chromatic-com/storybook": "^5.0.1",
     "@hey-api/openapi-ts": "^0.94.0",
     "@react-scan/vite-plugin-react-scan": "^0.2.3",
+    "@rolldown/plugin-babel": "^0.2.0",
     "@rollup/plugin-terser": "^1.0.0",
     "@sentry/vite-plugin": "^5.1.1",
     "@storybook/addon-a11y": "^10.2.17",

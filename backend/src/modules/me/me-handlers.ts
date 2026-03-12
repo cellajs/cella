@@ -9,6 +9,7 @@ import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { userActivityTable } from '#/db/schema/user-activity';
 import { usersTable } from '#/db/schema/users';
+import { setTenantRlsContext } from '#/db/tenant-context';
 import { env } from '#/env';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
@@ -288,15 +289,17 @@ const meRouteHandlers = app
 
     const entityIdColumnKey = appConfig.entityIdColumnKeys[entityType];
 
-    // Delete memberships
-    await db
-      .delete(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.userId, user.id),
-          eq(membershipsTable[entityIdColumnKey as EntityIdColumnNames], entity.id),
+    // Delete membership within tenant RLS context (required for memberships_delete_policy)
+    await setTenantRlsContext({ tenantId: entity.tenantId, userId: user.id }, (tx) =>
+      tx
+        .delete(membershipsTable)
+        .where(
+          and(
+            eq(membershipsTable.userId, user.id),
+            eq(membershipsTable[entityIdColumnKey as EntityIdColumnNames], entity.id),
+          ),
         ),
-      );
+    );
 
     logEvent('info', 'User left entity', { userId: user.id });
 

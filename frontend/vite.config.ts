@@ -3,7 +3,8 @@ import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 import path from 'node:path';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, Plugin, type UserConfig } from 'vite';
@@ -61,6 +62,7 @@ const viteConfig = {
   plugins: [
     // TanStackRouterVite(),
     react(),
+    babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? (sentryVitePlugin({

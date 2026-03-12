@@ -2130,7 +2130,6 @@
           "maximum": 9007199254740991
         },
         "public": { "type": "boolean", "required": true },
-        "publicAccess": { "type": "boolean", "required": true },
         "bucketName": {
           "type": "string",
           "required": true,
@@ -2198,7 +2197,6 @@
       "description": null,
       "keywords": "damno tenax arx",
       "public": false,
-      "publicAccess": false,
       "bucketName": "attachments",
       "groupId": null,
       "filename": "yet_rightfully_lest.ogx",

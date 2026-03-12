@@ -10,7 +10,7 @@ export default defineConfig({
     upstreamRemoteName: 'cella-upstream',
     forkBranch: 'development',
     syncWithPackages: true,
-    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'pnpm'],
     mergeStrategy: 'squash',
     fileLinkMode: 'file',
     // upstreamLocalPath: '../cella',
@@ -45,7 +45,6 @@ export default defineConfig({
     // Files and directories pinned to fork; prefer fork version during merge conflicts
     pinned: [
       "lefthook.yaml",
-      "package.json",
       "pnpm-lock.yaml",
       "render.yaml",
       "compose.yaml",
@@ -58,7 +57,6 @@ export default defineConfig({
       "shared/tunnel-config.ts",
       "shared/hierarchy-config.ts",
       "shared/permissions-config.ts",
-      "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",
       "frontend/public/static/openapi.json",
@@ -79,7 +77,6 @@ export default defineConfig({
       "frontend/src/modules/marketing/marketing-config.tsx",
       "frontend/src/modules/marketing/about/about-page.tsx",
       "frontend/src/modules/users/profile-page-content.tsx",
-      "backend/package.json",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",
       "backend/src/relatable-config.ts",

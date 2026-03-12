@@ -89,9 +89,6 @@ import type {
   GetAppStreamResponses,
   GetAttachmentData,
   GetAttachmentErrors,
-  GetAttachmentLinkData,
-  GetAttachmentLinkErrors,
-  GetAttachmentLinkResponses,
   GetAttachmentResponses,
   GetAttachmentsData,
   GetAttachmentsErrors,
@@ -2585,7 +2582,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.orgid - `string`
  * @param {string} options.path.id - `string`
- * @param {enum | enum | enum=} options.body.key - `enum | enum | enum` (optional)
+ * @param {enum | enum=} options.body.key - `enum | enum` (optional)
  * @param {string | number | boolean | any[] | null=} options.body.data - `string | number | boolean | any[] | null` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2608,26 +2605,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-
-/**
- * Get attachment link
- *
- * Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.
- *
- * **GET /{tenantId}/{orgId}/attachments/{id}/link** ·· [getAttachmentLink](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{orgId}/attachments/{id}/link) ·· _attachments_
- *
- * @param {getAttachmentLinkData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachmentLink = <ThrowOnError extends boolean = true>(
-  options: Options<GetAttachmentLinkData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetAttachmentLinkResponses, GetAttachmentLinkErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/{tenantId}/{orgId}/attachments/{id}/link',
-    ...options,
   });
 
 /**

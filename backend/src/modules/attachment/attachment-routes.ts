@@ -1,14 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
-import { authGuard, orgGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { httpCache } from '#/middlewares/http-cache';
-import {
-  bulkPointsLimiter,
-  presignedUrlLimiter,
-  singlePointsLimiter,
-  tokenLimiter,
-} from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
@@ -24,7 +19,6 @@ import {
   idsWithStxBodySchema,
   paginationSchema,
   tenantOrgParamSchema,
-  validIdSchema,
 } from '#/schemas';
 import {
   mockAttachmentResponse,
@@ -175,26 +169,6 @@ const attachmentRoutes = {
           },
         },
       },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Get attachment link page (OG meta + client-side redirect)
-   */
-  getAttachmentLink: createXRoute({
-    operationId: 'getAttachmentLink',
-    method: 'get',
-    path: '/{id}/link',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('attachment_redirect'),
-    xCache: httpCache({ scope: 'public', maxAge: 3600 }),
-    tags: ['attachments'],
-    summary: 'Get attachment link',
-    description:
-      'Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.',
-    request: { params: z.object({ id: validIdSchema }) },
-    responses: {
-      200: { description: 'Success' },
       ...errorResponseRefs,
     },
   }),

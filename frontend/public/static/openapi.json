@@ -2444,9 +2444,6 @@
           "public": {
             "type": "boolean"
           },
-          "publicAccess": {
-            "type": "boolean"
-          },
           "bucketName": {
             "type": "string",
             "maxLength": 255
@@ -2518,7 +2515,6 @@
           "modifiedBy",
           "seqAt",
           "public",
-          "publicAccess",
           "bucketName",
           "groupId",
           "filename",
@@ -2539,7 +2535,6 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
-          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -5524,7 +5519,8 @@
         "summary": "Leave entity",
         "description": "Removes the *current user* from an entity they are a member of.",
         "x-guard": [
-          "authGuard"
+          "authGuard",
+          "crossTenantGuard"
         ],
         "x-rate-limiter": [
           "pointsLimiter"
@@ -11046,7 +11042,6 @@
                       "description": null,
                       "keywords": "vesco audentia angustus",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "elegantly.vss",
@@ -11077,7 +11072,6 @@
                       "description": null,
                       "keywords": "auxilium non sui",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "woefully_bah.vsw",
@@ -11298,7 +11292,6 @@
                       "description": null,
                       "keywords": "nam curatio xiphias",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "excluding_ugh_besides.svgz",
@@ -11329,7 +11322,6 @@
                       "description": null,
                       "keywords": "denique tum candidus",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "gown.txt",
@@ -11404,7 +11396,6 @@
                       "description": null,
                       "keywords": "nam curatio xiphias",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "excluding_ugh_besides.svgz",
@@ -11435,7 +11426,6 @@
                       "description": null,
                       "keywords": "denique tum candidus",
                       "public": false,
-                      "publicAccess": false,
                       "bucketName": "attachments",
                       "groupId": null,
                       "filename": "gown.txt",
@@ -11765,7 +11755,6 @@
                   "description": null,
                   "keywords": "damno tenax arx",
                   "public": false,
-                  "publicAccess": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "yet_rightfully_lest.ogx",
@@ -11878,12 +11867,6 @@
                         "enum": [
                           "originalKey"
                         ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "public"
-                        ]
                       }
                     ]
                   },
@@ -11938,7 +11921,6 @@
                   "description": null,
                   "keywords": "damno tenax arx",
                   "public": false,
-                  "publicAccess": false,
                   "bucketName": "attachments",
                   "groupId": null,
                   "filename": "yet_rightfully_lest.ogx",
@@ -11963,57 +11945,6 @@
                 }
               }
             }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/{orgId}/attachments/{id}/link": {
-      "get": {
-        "security": [],
-        "operationId": "getAttachmentLink",
-        "tags": [
-          "attachments"
-        ],
-        "summary": "Get attachment link",
-        "description": "Returns an HTML page with OG meta tags for link previews and a client-side redirect to the attachment in the app.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
-        "x-cache": [
-          "httpCache"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

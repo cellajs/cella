@@ -64,9 +64,19 @@ export function isIgnored(filePath: string, config: CellaCliConfig): boolean {
 }
 
 /**
+ * Check if a file path is a package.json file.
+ * Package.json files are always auto-pinned (handled by the packages service).
+ */
+export function isPackageJson(filePath: string): boolean {
+  return filePath === 'package.json' || filePath.endsWith('/package.json');
+}
+
+/**
  * Check if a file is in the pinned list.
+ * Package.json files are always considered pinned (auto-handled by packages service).
  */
 export function isPinned(filePath: string, config: CellaCliConfig): boolean {
+  if (isPackageJson(filePath)) return true;
   const patterns = config.overrides?.pinned || [];
   return patterns.some((pattern) => matchPattern(filePath, pattern));
 }
