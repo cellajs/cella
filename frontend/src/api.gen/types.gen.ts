@@ -318,6 +318,20 @@ export type Tenant = {
 };
 
 /**
+ * A domain with its verification token for DNS setup.
+ */
+export type DomainWithToken = {
+  id: string;
+  tenantId: string;
+  domain: string;
+  verified: boolean;
+  verificationToken: string | null;
+  verifiedAt: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
+};
+
+/**
  * A domain claimed by a tenant for email matching and verification.
  */
 export type Domain = {
@@ -328,6 +342,18 @@ export type Domain = {
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   createdAt: string;
+};
+
+/**
+ * Result of a DNS TXT domain verification attempt.
+ */
+export type VerifyDomainResponse = {
+  success: boolean;
+  domain: DomainWithToken;
+  diagnostics?: {
+    recordsFound: Array<string>;
+    expectedToken: string;
+  };
 };
 
 /**
@@ -2958,7 +2984,7 @@ export type GetDomainsResponses = {
   /**
    * List of domains
    */
-  200: Array<Domain>;
+  200: Array<DomainWithToken>;
 };
 
 export type GetDomainsResponse = GetDomainsResponses[keyof GetDomainsResponses];
@@ -3051,6 +3077,94 @@ export type DeleteDomainResponses = {
 };
 
 export type DeleteDomainResponse = DeleteDomainResponses[keyof DeleteDomainResponses];
+
+export type GetDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}';
+};
+
+export type GetDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDomainError = GetDomainErrors[keyof GetDomainErrors];
+
+export type GetDomainResponses = {
+  /**
+   * Domain with verification token
+   */
+  200: DomainWithToken;
+};
+
+export type GetDomainResponse = GetDomainResponses[keyof GetDomainResponses];
+
+export type VerifyDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}/verify';
+};
+
+export type VerifyDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type VerifyDomainError = VerifyDomainErrors[keyof VerifyDomainErrors];
+
+export type VerifyDomainResponses = {
+  /**
+   * Verification result
+   */
+  200: VerifyDomainResponse;
+};
+
+export type VerifyDomainResponse2 = VerifyDomainResponses[keyof VerifyDomainResponses];
 
 export type DeleteRequestsData = {
   body: {

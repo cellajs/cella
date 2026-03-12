@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import {
-  Field,
   FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldLayout,
   FieldLegend,
   FieldSeparator,
   FieldSet,
   FieldTitle,
-} from '~/modules/ui/fields';
+} from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
@@ -26,7 +26,7 @@ import { Textarea } from '~/modules/ui/textarea';
  */
 const meta = {
   title: 'ui/Fields',
-  component: Field,
+  component: FieldLayout,
   tags: ['autodocs'],
   parameters: {
     layout: 'centered',
@@ -34,7 +34,7 @@ const meta = {
   args: {
     orientation: 'vertical',
   },
-} satisfies Meta<typeof Field>;
+} satisfies Meta<typeof FieldLayout>;
 
 export default meta;
 
@@ -45,12 +45,12 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <Field>
+    <FieldLayout>
       <FieldLabel htmlFor="email">Email Address</FieldLabel>
       <FieldContent>
         <Input id="email" type="email" placeholder="Enter your email" />
       </FieldContent>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -59,12 +59,12 @@ export const Default: Story = {
  */
 export const Horizontal: Story = {
   render: () => (
-    <Field orientation="horizontal">
+    <FieldLayout orientation="horizontal">
       <FieldLabel htmlFor="name">Full Name</FieldLabel>
       <FieldContent>
         <Input id="name" placeholder="Enter your full name" />
       </FieldContent>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -73,12 +73,12 @@ export const Horizontal: Story = {
  */
 export const Responsive: Story = {
   render: () => (
-    <Field orientation="responsive">
+    <FieldLayout orientation="responsive">
       <FieldLabel htmlFor="username">Username</FieldLabel>
       <FieldContent>
         <Input id="username" placeholder="Choose a username" />
       </FieldContent>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -87,7 +87,7 @@ export const Responsive: Story = {
  */
 export const WithDescription: Story = {
   render: () => (
-    <Field>
+    <FieldLayout>
       <FieldLabel htmlFor="password">Password</FieldLabel>
       <FieldContent>
         <Input id="password" type="password" placeholder="Enter a secure password" />
@@ -95,7 +95,7 @@ export const WithDescription: Story = {
       <FieldDescription>
         Password must be at least 8 characters long and include uppercase, lowercase, and numbers.
       </FieldDescription>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -104,13 +104,13 @@ export const WithDescription: Story = {
  */
 export const WithError: Story = {
   render: () => (
-    <Field>
+    <FieldLayout>
       <FieldLabel htmlFor="email-error">Email Address</FieldLabel>
       <FieldContent>
         <Input id="email-error" type="email" placeholder="Enter your email" aria-invalid="true" />
       </FieldContent>
       <FieldError>Please enter a valid email address</FieldError>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -126,13 +126,13 @@ export const WithMultipleErrors: Story = {
     ];
 
     return (
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="password-errors">Password</FieldLabel>
         <FieldContent>
           <Input id="password-errors" type="password" placeholder="Enter password" aria-invalid="true" />
         </FieldContent>
         <FieldError errors={errors} />
-      </Field>
+      </FieldLayout>
     );
   },
 };
@@ -142,7 +142,7 @@ export const WithMultipleErrors: Story = {
  */
 export const WithIcon: Story = {
   render: () => (
-    <Field>
+    <FieldLayout>
       <FieldLabel htmlFor="account">
         <UserIcon className="size-4" />
         Account Name
@@ -150,7 +150,7 @@ export const WithIcon: Story = {
       <FieldContent>
         <Input id="account" placeholder="Enter account name" />
       </FieldContent>
-    </Field>
+    </FieldLayout>
   ),
 };
 
@@ -160,24 +160,24 @@ export const WithIcon: Story = {
 export const FieldGroupExample: Story = {
   render: () => (
     <FieldGroup>
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="first-name">First Name</FieldLabel>
         <FieldContent>
           <Input id="first-name" placeholder="Enter first name" />
         </FieldContent>
-      </Field>
-      <Field>
+      </FieldLayout>
+      <FieldLayout>
         <FieldLabel htmlFor="last-name">Last Name</FieldLabel>
         <FieldContent>
           <Input id="last-name" placeholder="Enter last name" />
         </FieldContent>
-      </Field>
-      <Field>
+      </FieldLayout>
+      <FieldLayout>
         <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
         <FieldContent>
           <Input id="phone" type="tel" placeholder="Enter phone number" />
         </FieldContent>
-      </Field>
+      </FieldLayout>
     </FieldGroup>
   ),
 };
@@ -190,18 +190,18 @@ export const FieldSetExample: Story = {
     <FieldSet>
       <FieldLegend>Contact Information</FieldLegend>
       <FieldGroup>
-        <Field>
+        <FieldLayout>
           <FieldLabel htmlFor="email-fieldset">Email</FieldLabel>
           <FieldContent>
             <Input id="email-fieldset" type="email" placeholder="your@email.com" />
           </FieldContent>
-        </Field>
-        <Field>
+        </FieldLayout>
+        <FieldLayout>
           <FieldLabel htmlFor="phone-fieldset">Phone</FieldLabel>
           <FieldContent>
             <Input id="phone-fieldset" type="tel" placeholder="+1 (555) 123-4567" />
           </FieldContent>
-        </Field>
+        </FieldLayout>
       </FieldGroup>
     </FieldSet>
   ),
@@ -213,19 +213,19 @@ export const FieldSetExample: Story = {
 export const WithSeparator: Story = {
   render: () => (
     <FieldGroup>
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="address1">Address Line 1</FieldLabel>
         <FieldContent>
           <Input id="address1" placeholder="Street address" />
         </FieldContent>
-      </Field>
+      </FieldLayout>
       <FieldSeparator />
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="address2">Address Line 2</FieldLabel>
         <FieldContent>
           <Input id="address2" placeholder="Apartment, suite, etc. (optional)" />
         </FieldContent>
-      </Field>
+      </FieldLayout>
     </FieldGroup>
   ),
 };
@@ -236,19 +236,19 @@ export const WithSeparator: Story = {
 export const SeparatorWithContent: Story = {
   render: () => (
     <FieldGroup>
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="shipping">Shipping Address</FieldLabel>
         <FieldContent>
           <Textarea id="shipping" placeholder="Enter shipping address" rows={3} />
         </FieldContent>
-      </Field>
+      </FieldLayout>
       <FieldSeparator>Billing Address</FieldSeparator>
-      <Field>
+      <FieldLayout>
         <FieldLabel htmlFor="billing">Billing Address</FieldLabel>
         <FieldContent>
           <Textarea id="billing" placeholder="Enter billing address" rows={3} />
         </FieldContent>
-      </Field>
+      </FieldLayout>
     </FieldGroup>
   ),
 };
@@ -260,24 +260,24 @@ export const CheckboxGroup: Story = {
   render: () => (
     <FieldGroup data-slot="checkbox-group">
       <FieldTitle>Preferences</FieldTitle>
-      <Field>
+      <FieldLayout>
         <div className="flex items-center space-x-2">
           <Checkbox id="newsletter" />
           <Label htmlFor="newsletter">Subscribe to newsletter</Label>
         </div>
-      </Field>
-      <Field>
+      </FieldLayout>
+      <FieldLayout>
         <div className="flex items-center space-x-2">
           <Checkbox id="notifications" />
           <Label htmlFor="notifications">Enable notifications</Label>
         </div>
-      </Field>
-      <Field>
+      </FieldLayout>
+      <FieldLayout>
         <div className="flex items-center space-x-2">
           <Checkbox id="marketing" />
           <Label htmlFor="marketing">Receive marketing emails</Label>
         </div>
-      </Field>
+      </FieldLayout>
     </FieldGroup>
   ),
 };
@@ -289,7 +289,7 @@ export const RadioGroupExample: Story = {
   render: () => (
     <FieldGroup data-slot="radio-group">
       <FieldTitle>Account Type</FieldTitle>
-      <Field>
+      <FieldLayout>
         <RadioGroup defaultValue="personal">
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="personal" id="personal" />
@@ -304,7 +304,7 @@ export const RadioGroupExample: Story = {
             <Label htmlFor="enterprise">Enterprise Account</Label>
           </div>
         </RadioGroup>
-      </Field>
+      </FieldLayout>
     </FieldGroup>
   ),
 };
@@ -321,21 +321,21 @@ export const ComplexForm: Story = {
         <FieldSet>
           <FieldLegend>Create Account</FieldLegend>
           <FieldGroup>
-            <Field orientation="responsive">
+            <FieldLayout orientation="responsive">
               <FieldLabel htmlFor="full-name">Full Name</FieldLabel>
               <FieldContent>
                 <Input id="full-name" placeholder="John Doe" />
               </FieldContent>
               <FieldError>This field is required</FieldError>
-            </Field>
-            <Field orientation="responsive">
+            </FieldLayout>
+            <FieldLayout orientation="responsive">
               <FieldLabel htmlFor="email-create">Email Address</FieldLabel>
               <FieldContent>
                 <Input id="email-create" type="email" placeholder="john@example.com" />
               </FieldContent>
               <FieldDescription>We'll never share your email with anyone else.</FieldDescription>
-            </Field>
-            <Field orientation="responsive">
+            </FieldLayout>
+            <FieldLayout orientation="responsive">
               <FieldLabel htmlFor="plan-select">Subscription Plan</FieldLabel>
               <FieldContent>
                 <Select value={selectedPlan} onValueChange={setSelectedPlan}>
@@ -349,21 +349,21 @@ export const ComplexForm: Story = {
                   </SelectContent>
                 </Select>
               </FieldContent>
-            </Field>
+            </FieldLayout>
             <FieldSeparator>Additional Options</FieldSeparator>
             <FieldGroup data-slot="checkbox-group">
-              <Field>
+              <FieldLayout>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="terms" />
                   <Label htmlFor="terms">I agree to the terms and conditions</Label>
                 </div>
-              </Field>
-              <Field>
+              </FieldLayout>
+              <FieldLayout>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="privacy" />
                   <Label htmlFor="privacy">I agree to the privacy policy</Label>
                 </div>
-              </Field>
+              </FieldLayout>
             </FieldGroup>
           </FieldGroup>
         </FieldSet>
@@ -378,12 +378,12 @@ export const ComplexForm: Story = {
  */
 export const Disabled: Story = {
   render: () => (
-    <Field data-disabled="true">
+    <FieldLayout data-disabled="true">
       <FieldLabel htmlFor="disabled-field">Disabled Field</FieldLabel>
       <FieldContent>
         <Input id="disabled-field" placeholder="This field is disabled" disabled />
       </FieldContent>
       <FieldDescription>This field is currently disabled.</FieldDescription>
-    </Field>
+    </FieldLayout>
   ),
 };

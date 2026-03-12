@@ -12,7 +12,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 const formSchema = zUpdateTenantData.shape.body.pick({ name: true, status: true });

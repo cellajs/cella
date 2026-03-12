@@ -11,7 +11,6 @@
     "dev": "cross-env NODE_ENV=development tsx ../shared/scripts/wait-backend.ts -i 2000 -t 60000 && tsx watch --env-file=../backend/.env src/cdc-worker.ts",
     "build": "cross-env NODE_ENV=production tsup",
     "ts": "cd .. && tsgo -p cdc/tsconfig.json --pretty",
-    "ts:old": "tsc --pretty",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -34,7 +33,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.0",
     "wait-on": "^9.0.4"
   }
 }

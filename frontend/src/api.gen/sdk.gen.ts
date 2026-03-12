@@ -102,6 +102,9 @@ import type {
   GetCacheStatsData,
   GetCacheStatsErrors,
   GetCacheStatsResponses,
+  GetDomainData,
+  GetDomainErrors,
+  GetDomainResponses,
   GetDomainsData,
   GetDomainsErrors,
   GetDomainsResponses,
@@ -268,6 +271,9 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
+  VerifyDomainData,
+  VerifyDomainErrors,
+  VerifyDomainResponses,
 } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<
@@ -1670,7 +1676,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(options: Optio
 /**
  * List domains for a tenant
  *
- * Returns all domains belonging to a tenant. System admin access required.
+ * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
  *
  * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}/domains) ·· _tenants_
  *
@@ -1745,6 +1751,58 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(options: Optio
       },
     ],
     url: '/tenants/{tenantId}/domains/{id}',
+    ...options,
+  });
+
+/**
+ * Get domain with verification token
+ *
+ * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
+ *
+ * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}/domains/{id}) ·· _tenants_
+ *
+ * @param {getDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDomain = <ThrowOnError extends boolean = true>(options: Options<GetDomainData, ThrowOnError>) =>
+  (options.client ?? client).get<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}',
+    ...options,
+  });
+
+/**
+ * Verify domain ownership via DNS
+ *
+ * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
+ *
+ * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://api.cellajs.com/docs#tag/tenants/post/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_
+ *
+ * @param {verifyDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const verifyDomain = <ThrowOnError extends boolean = true>(options: Options<VerifyDomainData, ThrowOnError>) =>
+  (options.client ?? client).post<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}/verify',
     ...options,
   });
 

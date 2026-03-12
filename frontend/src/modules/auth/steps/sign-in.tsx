@@ -12,7 +12,7 @@ import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { EmailVerificationRoute, MfaRoute } from '~/routes/auth-routes';
 import { useAuthStore } from '~/store/auth';
@@ -166,7 +166,6 @@ export function SignInStep() {
                     <FormControl>
                       <Input
                         type="password"
-                        id="password-field"
                         className="h-12"
                         autoFocus={!restrictedMode && !isMobile}
                         {...field}

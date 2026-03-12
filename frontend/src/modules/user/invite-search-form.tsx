@@ -7,7 +7,7 @@ import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 import { UserCombobox } from '~/modules/user/user-combobox';
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
@@ -64,19 +64,19 @@ export const InputFormField = <TFieldValues extends FieldValues>({
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
-          <FormControl>
-            <div className="relative flex w-full items-center ">
-              {icon && (
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={iconClick}
-                  className="absolute font-light left-3 text-xs"
-                  style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
-                >
-                  {icon}
-                </button>
-              )}
+          <div className="relative flex w-full items-center">
+            {icon && (
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={iconClick}
+                className="absolute font-light left-3 text-xs"
+                style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
+              >
+                {icon}
+              </button>
+            )}
+            <FormControl>
               <InputComponent
                 className={cn(inputClassName, icon && 'pl-10')}
                 placeholder={placeholder}
@@ -95,8 +95,8 @@ export const InputFormField = <TFieldValues extends FieldValues>({
                 {...(type === 'textarea' ? { autoResize: true } : {})}
                 {...rest}
               />
-            </div>
-          </FormControl>
+            </FormControl>
+          </div>
           <FormMessage />
         </FormItem>
       )}

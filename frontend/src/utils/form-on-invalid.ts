@@ -13,7 +13,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
   if (messages.length === 0) return;
 
   // Display a toaster with a list of validation errors
-  toaster(t('error:form.invalid_form'), 'warning', {
+  toaster(t('error:form.invalid_form'), 'error', {
     description: createElement(
       'div',
       null,
@@ -35,6 +35,7 @@ const processErrors = <TFieldValues extends FieldValues>(
     if (!value) continue;
 
     const fieldName = parentFieldName ? `${parentFieldName}.${name}` : name;
+    const label = resolveFieldLabel(fieldName);
 
     // Leaf node error with 'type', 'message', or 'types'
     if ('message' in value || 'type' in value || 'types' in value) {
@@ -44,11 +45,11 @@ const processErrors = <TFieldValues extends FieldValues>(
       if (error.types) {
         for (const [subType, subMsg] of Object.entries(error.types)) {
           const message = resolveErrorMessage(subType, subMsg);
-          messages.push(`${fieldName}: ${message}`);
+          messages.push(`${label}: ${message}`);
         }
       } else {
         const message = resolveErrorMessage(error.type, error.message);
-        messages.push(`${fieldName}: ${message}`);
+        messages.push(`${label}: ${message}`);
       }
     } else {
       // Nested field group (e.g. field arrays or nested objects)
@@ -57,6 +58,17 @@ const processErrors = <TFieldValues extends FieldValues>(
   }
 
   return messages;
+};
+
+// Resolve a camelCase field name to a translated label via common:{snake_case} convention
+const resolveFieldLabel = (fieldName: string): string => {
+  // Take the last segment (e.g. 'nested.shortName' → 'shortName')
+  const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
+  // Convert camelCase to snake_case (e.g. 'shortName' → 'short_name')
+  const key = leaf.replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`);
+  const translated = t(`common:${key}`);
+  // If i18next returns the key itself, fall back to the raw field name
+  return translated !== key && translated !== `common:${key}` ? translated : fieldName;
 };
 
 // Resolves a user-friendly error message from a validation type.

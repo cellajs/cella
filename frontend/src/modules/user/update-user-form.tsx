@@ -18,7 +18,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUserUpdateMutation } from '~/modules/user/query';

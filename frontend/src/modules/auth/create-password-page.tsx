@@ -15,7 +15,7 @@ import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import type { MutationData } from '~/query/types';
 import { MfaRoute } from '~/routes/auth-routes';
@@ -91,8 +91,8 @@ export function CreatePasswordPage() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormControl>
-                <div className="relative">
+              <div className="relative">
+                <FormControl>
                   <Input
                     type="password"
                     className="h-12"
@@ -101,11 +101,11 @@ export function CreatePasswordPage() {
                     autoComplete="new-password"
                     {...field}
                   />
-                  <Suspense>
-                    <PasswordStrength password={form.getValues('password')} minLength={8} />
-                  </Suspense>
-                </div>
-              </FormControl>
+                </FormControl>
+                <Suspense>
+                  <PasswordStrength password={form.getValues('password')} minLength={8} />
+                </Suspense>
+              </div>
               <FormMessage />
             </FormItem>
           )}

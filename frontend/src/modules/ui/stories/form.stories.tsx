@@ -6,7 +6,7 @@ import { expect, userEvent } from 'storybook/test';
 import * as z from 'zod';
 
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 /**
  * Building forms with React Hook Form and Zod.

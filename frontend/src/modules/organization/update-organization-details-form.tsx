@@ -14,7 +14,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
+import { Form } from '~/modules/ui/field';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContentFormField = lazy(() => import('~/modules/common/form-fields/blocknote'));

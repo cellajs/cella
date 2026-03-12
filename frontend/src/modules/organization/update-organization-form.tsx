@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import i18n from 'i18next';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { Organization } from '~/api.gen';
 import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -20,9 +21,22 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-const formSchema = zUpdateOrganizationData.shape.body.unwrap();
+// Override generated schema: omit fields not managed by this form (welcomeText is in details form),
+// transform empty strings to null for optional fields, and add https:// validation for websiteUrl
+const formSchema = zUpdateOrganizationData.shape.body
+  .unwrap()
+  .omit({ welcomeText: true })
+  .extend({
+    websiteUrl: z
+      .string()
+      .max(2048)
+      .refine((v) => v === '' || v.startsWith('https://'), { message: i18n.t('error:invalid_url') })
+      .transform((v) => (v.trim() === '' ? null : v))
+      .nullable()
+      .optional(),
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {

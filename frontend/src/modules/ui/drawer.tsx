@@ -1,5 +1,5 @@
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { DrawerPreview as DrawerPrimitive } from '@base-ui/react/drawer';
+import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
@@ -53,7 +53,7 @@ function DrawerContent({
     const axis = typeof autoScrollOnDrag === 'string' ? autoScrollOnDrag : undefined;
     return autoScrollForElements({
       element: popupRef.current,
-      ...(axis && { getAllowedAxis: () => axis }),
+      ...(axis && { getAllowedAxis: () => axis as 'vertical' | 'horizontal' }),
     });
   }, [autoScrollOnDrag]);
 

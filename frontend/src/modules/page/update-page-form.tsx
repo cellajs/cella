@@ -17,7 +17,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { pageQueryKeys, usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
+import { Form } from '~/modules/ui/field';
 
 const BlockNoteContentFormField = lazy(() => import('~/modules/common/form-fields/blocknote'));
 

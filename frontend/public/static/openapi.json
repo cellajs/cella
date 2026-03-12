@@ -1705,6 +1705,59 @@
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy."
       },
+      "DomainWithToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "domain": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "verificationToken": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50
+          },
+          "verifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastCheckedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "domain",
+          "verified",
+          "verificationToken",
+          "verifiedAt",
+          "lastCheckedAt",
+          "createdAt"
+        ],
+        "description": "A domain with its verification token for DNS setup."
+      },
       "Domain": {
         "type": "object",
         "properties": {
@@ -1749,6 +1802,40 @@
           "createdAt"
         ],
         "description": "A domain claimed by a tenant for email matching and verification."
+      },
+      "VerifyDomainResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainWithToken"
+          },
+          "diagnostics": {
+            "type": "object",
+            "properties": {
+              "recordsFound": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expectedToken": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "recordsFound",
+              "expectedToken"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "domain"
+        ],
+        "description": "Result of a DNS TXT domain verification attempt."
       },
       "Request": {
         "type": "object",
@@ -7022,7 +7109,7 @@
           "tenants"
         ],
         "summary": "List domains for a tenant",
-        "description": "Returns all domains belonging to a tenant. System admin access required.",
+        "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
         "x-guard": [
           "authGuard",
           "sysAdminGuard"
@@ -7048,7 +7135,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Domain"
+                    "$ref": "#/components/schemas/DomainWithToken"
                   }
                 }
               }
@@ -7200,6 +7287,142 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDomain",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Get domain with verification token",
+        "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
+        "x-guard": [
+          "authGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain with verification token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainWithToken"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/domains/{id}/verify": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "verifyDomain",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Verify domain ownership via DNS",
+        "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
+        "x-guard": [
+          "authGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyDomainResponse"
                 }
               }
             }

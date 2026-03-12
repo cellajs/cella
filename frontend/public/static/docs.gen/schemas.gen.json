@@ -1353,6 +1353,48 @@
     "description": "A tenant representing an isolated data partition for multi-tenancy."
   },
   {
+    "name": "DomainWithToken",
+    "ref": "#/components/schemas/DomainWithToken",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        "domain": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
+        "verified": { "type": "boolean", "required": true },
+        "verificationToken": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 50
+        },
+        "verifiedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastCheckedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "description": "A domain with its verification token for DNS setup."
+  },
+  {
     "name": "Domain",
     "ref": "#/components/schemas/Domain",
     "type": "object",
@@ -1388,6 +1430,69 @@
     },
     "schemaTag": "data",
     "description": "A domain claimed by a tenant for email matching and verification."
+  },
+  {
+    "name": "VerifyDomainResponse",
+    "ref": "#/components/schemas/VerifyDomainResponse",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "success": { "type": "boolean", "required": true },
+        "domain": {
+          "type": "object",
+          "required": true,
+          "description": "A domain with its verification token for DNS setup.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "domain": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "verified": { "type": "boolean", "required": true },
+            "verificationToken": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/DomainWithToken"
+        },
+        "diagnostics": {
+          "type": "object",
+          "required": false,
+          "properties": {
+            "recordsFound": {
+              "type": "array",
+              "required": true,
+              "itemType": "string"
+            },
+            "expectedToken": { "type": "string", "required": true }
+          }
+        }
+      }
+    },
+    "schemaTag": "data",
+    "description": "Result of a DNS TXT domain verification attempt."
   },
   {
     "name": "Request",

@@ -1013,7 +1013,7 @@
     "path": "/tenants/{tenantId}/domains",
     "tags": ["tenants"],
     "summary": "List domains for a tenant",
-    "description": "Returns all domains belonging to a tenant. System admin access required.",
+    "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -1052,6 +1052,44 @@
     "tags": ["tenants"],
     "summary": "Remove a domain",
     "description": "Removes a domain from a tenant. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    }
+  },
+  {
+    "id": "getDomain",
+    "hash": "tag/tenants/GET/tenants/{tenantId}/domains/{id}",
+    "method": "get",
+    "path": "/tenants/{tenantId}/domains/{id}",
+    "tags": ["tenants"],
+    "summary": "Get domain with verification token",
+    "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    }
+  },
+  {
+    "id": "verifyDomain",
+    "hash": "tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify",
+    "method": "post",
+    "path": "/tenants/{tenantId}/domains/{id}/verify",
+    "tags": ["tenants"],
+    "summary": "Verify domain ownership via DNS",
+    "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

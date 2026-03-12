@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { TagInput } from '~/modules/ui/tag-input';
 
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {

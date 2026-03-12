@@ -13,7 +13,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
+import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/store/user';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));

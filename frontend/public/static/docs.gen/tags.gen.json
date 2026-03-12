@@ -62,7 +62,7 @@
   {
     "name": "tenants",
     "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and\n        soft-deleting (archiving) tenants.",
-    "count": 6
+    "count": 8
   },
   {
     "name": "seen",

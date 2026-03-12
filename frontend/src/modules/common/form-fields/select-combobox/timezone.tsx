@@ -1,8 +1,8 @@
 import type { FieldValues } from 'react-hook-form';
 import timezones from '#json/timezones.json';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { Combobox } from '~/modules/ui/combobox';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { ComboboxSelect } from '~/modules/ui/combobox';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 /**
  * Combobox form field for selecting a timezone.
@@ -27,20 +27,18 @@ export const SelectTimezone = <TFieldValues extends FieldValues>({
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
 
-          <FormControl>
-            <Combobox
-              options={options}
-              value={value}
-              onChange={onChange}
-              disabled={disabled}
-              placeholders={{
-                trigger: 'common:placeholder.select_timezone',
-                search: 'common:placeholder.search_timezone',
-                notFound: 'common:no_resource_found',
-                resource: 'common:timezone',
-              }}
-            />
-          </FormControl>
+          <ComboboxSelect
+            options={options}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            placeholders={{
+              trigger: 'common:placeholder.select_timezone',
+              search: 'common:placeholder.search_timezone',
+              notFound: 'common:no_resource_found',
+              resource: 'common:timezone',
+            }}
+          />
 
           <FormMessage />
         </FormItem>

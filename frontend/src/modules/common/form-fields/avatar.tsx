@@ -8,7 +8,7 @@ import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-av
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
-import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
+import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 
 interface Props {
   form: UseFormReturn;
@@ -64,37 +64,35 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
       render={() => (
         <FormItem>
           <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <div className="flex gap-4">
-              <EntityAvatar type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
+          <div className="flex gap-4">
+            <EntityAvatar type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
 
-              <div className="flex flex-col gap-2">
-                {appConfig.has.uploadEnabled ? (
-                  <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
-                ) : (
-                  appConfig.mode === 'development' && (
-                    <p className="font-light text-xs text-muted-foreground sm:text-sm">
-                      {t('common:restrict_image_upload')}
-                    </p>
-                  )
+            <div className="flex flex-col gap-2">
+              {appConfig.has.uploadEnabled ? (
+                <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
+              ) : (
+                appConfig.mode === 'development' && (
+                  <p className="font-light text-xs text-muted-foreground sm:text-sm">
+                    {t('common:restrict_image_upload')}
+                  </p>
+                )
+              )}
+              <div className="flex gap-2 items-center">
+                {appConfig.has.uploadEnabled && (
+                  <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
+                    <UploadIcon size={16} className="mr-2" />
+                    <span>{t('common:upload')}</span>
+                  </Button>
                 )}
-                <div className="flex gap-2 items-center">
-                  {appConfig.has.uploadEnabled && (
-                    <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
-                      <UploadIcon size={16} className="mr-2" />
-                      <span>{t('common:upload')}</span>
-                    </Button>
-                  )}
 
-                  {url && (
-                    <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
-                      <TrashIcon size={16} />
-                    </Button>
-                  )}
-                </div>
+                {url && (
+                  <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
+                    <TrashIcon size={16} />
+                  </Button>
+                )}
               </div>
             </div>
-          </FormControl>
+          </div>
         </FormItem>
       )}
     />
