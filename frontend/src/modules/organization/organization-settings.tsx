@@ -3,7 +3,7 @@ import { TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-// import Subscription from '~/modules/organization/subscription';
+// import { Subscription } from '~/modules/tenants/subscription';
 import type { Organization } from '~/api.gen';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';

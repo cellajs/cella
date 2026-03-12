@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
@@ -25,6 +26,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     disablePointerDismissal,
     container,
     skipAnimation,
+    contentKey,
     autoScrollOnDrag,
   } = sheet;
 
@@ -97,7 +99,22 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>
-        {content}
+        {contentKey ? (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={contentKey}
+              className="flex flex-col flex-1"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.15 }}
+            >
+              {content}
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          content
+        )}
       </SheetContent>
     </Sheet>
   );

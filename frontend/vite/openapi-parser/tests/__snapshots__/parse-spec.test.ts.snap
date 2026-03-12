@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "7452079727a9fc58",
+  "inputHash": "f767319c148f1ef5",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -66,11 +66,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "name": "password",
             },
             "pointsLimiter": {
-              "description": "Consumes dynamic API point(s) per request against per-tenant hourly budget",
+              "description": "Consumes 1 API point(s) per request against per-tenant hourly budget",
               "name": "points",
             },
             "presignedUrlLimiter": {
-              "description": "Max 2000 requests/hour per user/IP for presigned URLs",
+              "description": "Max 2000 requests/hour per user for presigned URLs",
               "name": "presignedUrl",
             },
             "spamLimiter": {
@@ -338,7 +338,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -361,7 +363,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -384,7 +388,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -560,7 +566,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -583,7 +591,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -823,7 +833,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -846,7 +858,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -869,7 +883,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -964,7 +980,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -1082,7 +1100,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -1174,7 +1194,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "xGuard": [
             "authGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1251,7 +1273,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -1300,7 +1324,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -1348,7 +1374,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": false,
@@ -1365,30 +1393,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a single tenant by its ID. System admin access required.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "sysAdminGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/tenants/GET/tenants/{tenantId}",
-        "id": "getTenantById",
-        "method": "get",
-        "path": "/tenants/{tenantId}",
-        "summary": "Get tenant by ID",
-        "tags": [
-          "tenants",
-        ],
-      },
-      {
-        "deprecated": false,
         "description": "Updates a tenant by ID. System admin access required.",
         "extensions": {
           "xCache": [],
@@ -1396,7 +1400,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": false,
         "hasParams": true,
@@ -1413,7 +1419,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Archives a tenant (soft delete). Sets status to "archived". System admin access required. Data retention period applies before permanent deletion.",
+        "description": "Returns all domains belonging to a tenant. System admin access required.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1426,13 +1432,65 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hasResponseBody": true,
-        "hash": "tag/tenants/DELETE/tenants/{tenantId}",
-        "id": "archiveTenant",
-        "method": "delete",
-        "path": "/tenants/{tenantId}",
-        "summary": "Archive a tenant",
+        "hash": "tag/domains/GET/tenants/{tenantId}/domains",
+        "id": "getDomains",
+        "method": "get",
+        "path": "/tenants/{tenantId}/domains",
+        "summary": "List domains for a tenant",
         "tags": [
-          "tenants",
+          "domains",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "sysAdminGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": true,
+        "hasResponseBody": true,
+        "hash": "tag/domains/POST/tenants/{tenantId}/domains",
+        "id": "createDomain",
+        "method": "post",
+        "path": "/tenants/{tenantId}/domains",
+        "summary": "Add a domain to a tenant",
+        "tags": [
+          "domains",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Removes a domain from a tenant. System admin access required.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "sysAdminGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/domains/DELETE/tenants/{tenantId}/domains/{id}",
+        "id": "deleteDomain",
+        "method": "delete",
+        "path": "/tenants/{tenantId}/domains/{id}",
+        "summary": "Remove a domain",
+        "tags": [
+          "domains",
         ],
       },
       {
@@ -1521,7 +1579,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1546,7 +1606,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1595,7 +1657,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1620,7 +1684,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": false,
@@ -1691,6 +1757,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
+        "description": "Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.",
+        "entityType": "organization",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": true,
+        "hasParams": false,
+        "hasRequestBody": true,
+        "hasResponseBody": true,
+        "hash": "tag/organizations/POST/organizations",
+        "id": "autoCreateOrganization",
+        "method": "post",
+        "path": "/organizations",
+        "summary": "Create organization with auto-tenant",
+        "tags": [
+          "organizations",
+        ],
+      },
+      {
+        "deprecated": false,
         "description": "Returns a list of *organizations*.",
         "entityType": "organization",
         "extensions": {
@@ -1750,7 +1842,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "tenantGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -1882,7 +1976,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "sysAdminGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -2099,7 +2195,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -2207,7 +2305,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "tenantGuard",
             "orgGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -2231,7 +2331,9 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "authGuard",
             "crossTenantGuard",
           ],
-          "xRateLimiter": [],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
         },
         "hasExample": true,
         "hasParams": true,
@@ -2331,7 +2433,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "base",
       },
       {
-        "count": 13,
+        "count": 14,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -2666,7 +2768,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "entityType": "attachment",
           "organizationId": "c2u05q7olzsfy1csy8m2q98f",
           "resourceType": null,
-          "seq": 550,
+          "seqAt": 275,
           "stx": {
             "fieldVersions": {
               "name": 1,
@@ -2744,7 +2846,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "null",
               ],
             },
-            "seq": {
+            "seqAt": {
               "required": true,
               "type": [
                 "integer",
@@ -3363,9 +3465,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "entityType": "page",
           "error": null,
           "id": "s933zhzgm8axl572xlcja86p",
-          "organizationId": "pg8iwtnhw3666j3aifuxshox",
+          "organizationId": "2pg8iwtnhw3666j3aifuxsho",
           "resourceType": null,
-          "seq": 66,
           "stx": null,
           "tableName": "pages",
           "tenantId": "qc8osc",
@@ -3483,15 +3584,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": [
                 "string",
-                "null",
-              ],
-            },
-            "seq": {
-              "maximum": 2147483647,
-              "minimum": -2147483648,
-              "required": true,
-              "type": [
-                "integer",
                 "null",
               ],
             },
@@ -4325,8 +4417,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
+            "createdBy": {
+              "maxLength": 50,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "domainsCount": {
+              "description": "Number of domains claimed by this tenant",
+              "required": true,
+              "type": "integer",
+            },
             "id": {
-              "description": "Lowercase alphanumeric tenant ID",
               "maxLength": 24,
               "required": true,
               "type": "string",
@@ -4339,7 +4443,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "name": {
-              "description": "Tenant display name",
+              "maxLength": 255,
               "required": true,
               "type": "string",
             },
@@ -4379,6 +4483,83 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
               "required": true,
               "type": "string",
+            },
+            "subscriptionId": {
+              "maxLength": 255,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "subscriptionPlan": {
+              "maxLength": 255,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "subscriptionStatus": {
+              "enum": [
+                "none",
+                "trialing",
+                "active",
+                "past_due",
+                "paused",
+                "canceled",
+              ],
+              "required": true,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "description": "A domain claimed by a tenant for email matching and verification.",
+        "name": "Domain",
+        "ref": "#/components/schemas/Domain",
+        "schema": {
+          "properties": {
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "domain": {
+              "maxLength": 255,
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "maxLength": 50,
+              "required": true,
+              "type": "string",
+            },
+            "lastCheckedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "tenantId": {
+              "maxLength": 24,
+              "required": true,
+              "type": "string",
+            },
+            "verified": {
+              "required": true,
+              "type": "boolean",
+            },
+            "verifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
           },
           "type": "object",
@@ -4455,7 +4636,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "createdBy": null,
           "defaultLanguage": "en",
           "description": "Multi-tiered zero trust firmware",
-          "emailDomains": [],
           "entityType": "organization",
           "id": "hmo9fwr239kqavr3yur671kl",
           "included": {
@@ -4598,11 +4778,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
               "required": true,
               "type": "string",
-            },
-            "emailDomains": {
-              "itemType": "string",
-              "required": true,
-              "type": "array",
             },
             "entityType": {
               "enum": [
@@ -4862,21 +5037,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
-          "displayOrder": 47.51,
+          "description": "[{"id":"ydeovelzeiwv1pvo6ikw8yai","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"eho7gg1xwx21e333ngqujcbp","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.","styles":{}}],"children":[]},{"id":"ple60p8h3tnk9zpovjd1ic97","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Sustainable logistical help-desk","styles":{}}],"children":[]},{"id":"rhaner6dofixisx6z8hucvnn","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Argumentum civitas suppellex illum corroboro damnatio templum.","styles":{}}],"children":[]},{"id":"fzi4ksi3o1tcsht8b45feprf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ventus apto tempus aurum delectus facilis.","styles":{}}],"children":[]},{"id":"9lzubypddo8vfjx4d5px26kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tenax cornu candidus communis comedo pauci. Votum vigilo conitor accusantium virgo sublime rem termes agnitio talis.","styles":{}}],"children":[]},{"id":"3hfq8bqakccdhvdb8s40m4i4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amiculum suus adiuvo brevis conturbo alveus ver.","styles":{}}],"children":[]},{"id":"xnbu1zzl7dazo02dcpq1pli4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Civis delicate aestivus laudantium.","styles":{}}],"children":[]},{"id":"ucueq4mygjrjwhp4cvi7x941","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the virtual XSS pixel, then you can hack the back-end panel!","styles":{}}],"children":[]},{"id":"zakz3rkdm0lo0wdzmgogrvuh","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"calculating the circuit won't do anything, we need to calculate the cross-platform XSS sensor!","styles":{}}],"children":[]},{"id":"meqd8fu6rmnt3mbgfwrb57kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Laboriosam tandem depopulo assentator architecto soleo harum aduro cohors. Utrimque animadverto quae supplanto careo. Usus defessus strenuus vitae damnatio.\\nTerminatio attonbitus censura comes uxor clam tolero absens. Ancilla tabernus amet thorax molestiae. Modi ullus repellat speculum terga quae usque quae aptus virtus.","styles":{}}],"children":[]}]",
+          "displayOrder": 22.92,
           "entityType": "page",
           "id": "co96vrmic3wbowmxzbqa1e9f",
-          "keywords": "tantillus debitis mollitia",
+          "keywords": "bibo reprehenderit suffoco",
           "modifiedAt": "2024-08-06T10:28:33.226Z",
           "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
           "name": "Torrens adfectus.",
           "parentId": null,
           "publicAccess": true,
+          "seqAt": 183,
           "status": "unpublished",
           "stx": {
             "fieldVersions": {},
-            "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
-            "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
+            "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+            "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
             "version": 1,
           },
           "tenantId": "ijllhz",
@@ -5028,6 +5204,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "boolean",
             },
+            "seqAt": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "required": true,
+              "type": "integer",
+            },
             "status": {
               "enum": [
                 "unpublished",
@@ -5129,14 +5311,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "modifiedAt": "2024-10-12T17:43:05.360Z",
           "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
           "name": "yet_rightfully_lest.ogx",
-          "organizationId": "7eswx7d6csd6xo4nqwl7k09e",
+          "organizationId": "eswx7d6csd6xo4nqwl7k09e1",
           "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
           "public": false,
+          "publicAccess": false,
+          "seqAt": 352,
           "size": "2524242",
           "stx": {
             "fieldVersions": {},
-            "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-            "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+            "mutationId": "keuemouu8t58r8fuj3tlenhq",
+            "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
             "version": 1,
           },
           "tenantId": "lphxlo",
@@ -5324,6 +5508,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "boolean",
             },
+            "publicAccess": {
+              "required": true,
+              "type": "boolean",
+            },
+            "seqAt": {
+              "maximum": 9007199254740991,
+              "minimum": -9007199254740991,
+              "required": true,
+              "type": "integer",
+            },
             "size": {
               "maxLength": 255,
               "required": true,
@@ -5498,6 +5692,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "entityId": {
                   "maxLength": 50,
                   "required": false,
@@ -5591,9 +5789,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "entityType": "page",
                     "error": null,
                     "id": "p8d07imsvjbtqtl3rtjgxd9x",
-                    "organizationId": "weg2q4gqa3vx9cfyey6mqh9h",
+                    "organizationId": "iweg2q4gqa3vx9cfyey6mqh9",
                     "resourceType": null,
-                    "seq": 511,
                     "stx": null,
                     "tableName": "attachments",
                     "tenantId": "n03u76",
@@ -5612,9 +5809,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "entityType": "page",
                     "error": null,
                     "id": "5ogh3yr2b2dbwf7b9eckajcl",
-                    "organizationId": "5nr6k4huj5qv4k6bwmvl0e44",
+                    "organizationId": "t5nr6k4huj5qv4k6bwmvl0e4",
                     "resourceType": null,
-                    "seq": 810,
                     "stx": null,
                     "tableName": "organizations",
                     "tenantId": "xs8vay",
@@ -5739,15 +5935,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "string",
-                            "null",
-                          ],
-                        },
-                        "seq": {
-                          "maximum": 2147483647,
-                          "minimum": -2147483648,
-                          "required": true,
-                          "type": [
-                            "integer",
                             "null",
                           ],
                         },
@@ -5889,12 +6076,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "query": {
               "properties": {
-                "limit": {
+                "afterSeq": {
                   "required": false,
                   "type": "string",
                 },
-                "modifiedAfter": {
-                  "format": "date-time",
+                "limit": {
                   "required": false,
                   "type": "string",
                 },
@@ -5949,14 +6135,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-11-21T04:00:59.122Z",
                     "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                     "name": "elegantly.vss",
-                    "organizationId": "57iu31mz5oaqf10oe7y51pr5",
+                    "organizationId": "7iu31mz5oaqf10oe7y51pr5l",
                     "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vss",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 444,
                     "size": "9665489",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "vx9cfyey6mqh9hmikgme3gy3",
-                      "sourceId": "src_a9lhe0ctrmzc53x7z222ydtq",
+                      "mutationId": "x9cfyey6mqh9hmikgme3gy3a",
+                      "sourceId": "src_9lhe0ctrmzc53x7z222ydtq5",
                       "version": 1,
                     },
                     "tenantId": "9nes1y",
@@ -5978,14 +6166,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-10-29T08:46:20.790Z",
                     "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "name": "woefully_bah.vsw",
-                    "organizationId": "rs3xtuk03gxco9kzp2r8sr1z",
+                    "organizationId": "s3xtuk03gxco9kzp2r8sr1z8",
                     "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 290,
                     "size": "1107841",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "k6bwmvl0e44bpmhsyauxcwuw",
-                      "sourceId": "src_jsrzvzac8qx1h9s6vzhgvcj0",
+                      "mutationId": "6bwmvl0e44bpmhsyauxcwuwj",
+                      "sourceId": "src_srzvzac8qx1h9s6vzhgvcj0r",
                       "version": 1,
                     },
                     "tenantId": "56tpd7",
@@ -6179,6 +6369,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "public": {
                           "required": true,
                           "type": "boolean",
+                        },
+                        "publicAccess": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
                         },
                         "size": {
                           "maxLength": 255,
@@ -6399,27 +6599,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
-            "example": [
-              {
-                "bucketName": "attachments",
-                "contentType": "application/vnd.ms-fontobject",
-                "convertedContentType": null,
-                "convertedKey": null,
-                "filename": "excluding_ugh_besides.svgz",
-                "groupId": null,
-                "id": "slwtksu3yccsd9ihoiny6rso",
-                "name": "excluding_ugh_besides.svgz",
-                "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
-                "public": false,
-                "size": "7651256",
-                "stx": {
-                  "lastReadVersion": 0,
-                  "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
-                  "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
-                },
-                "thumbnailKey": null,
-              },
-            ],
             "path": {
               "properties": {
                 "orgId": {
@@ -6457,14 +6636,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "excluding_ugh_besides.svgz",
-                    "organizationId": "rnjjhhc4mupuqz0iqmny8wdl",
+                    "organizationId": "njjhhc4mupuqz0iqmny8wdl2",
                     "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 155,
                     "size": "7651256",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
-                      "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                      "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
+                      "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
                       "version": 1,
                     },
                     "tenantId": "b7j0p6",
@@ -6486,14 +6667,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "gown.txt",
-                    "organizationId": "q81k5rbzt4yq63pob5r5tp1l",
+                    "organizationId": "81k5rbzt4yq63pob5r5tp1lp",
                     "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 476,
                     "size": "6125227",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "y4dvzpz75e03ldr2ga54hj92",
-                      "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                      "mutationId": "4dvzpz75e03ldr2ga54hj92y",
+                      "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
                       "version": 1,
                     },
                     "tenantId": "9wwhw5",
@@ -6687,6 +6870,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "public": {
                           "required": true,
                           "type": "boolean",
+                        },
+                        "publicAccess": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
                         },
                         "size": {
                           "maxLength": 255,
@@ -6789,14 +6982,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "excluding_ugh_besides.svgz",
-                    "organizationId": "rnjjhhc4mupuqz0iqmny8wdl",
+                    "organizationId": "njjhhc4mupuqz0iqmny8wdl2",
                     "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 155,
                     "size": "7651256",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "b6pakf4ovzm1ne3h55lgj31d",
-                      "sourceId": "src_63n9apx99a5auvr5cyj5s37i",
+                      "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
+                      "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
                       "version": 1,
                     },
                     "tenantId": "b7j0p6",
@@ -6818,14 +7013,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "gown.txt",
-                    "organizationId": "q81k5rbzt4yq63pob5r5tp1l",
+                    "organizationId": "81k5rbzt4yq63pob5r5tp1lp",
                     "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
                     "public": false,
+                    "publicAccess": false,
+                    "seqAt": 476,
                     "size": "6125227",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "y4dvzpz75e03ldr2ga54hj92",
-                      "sourceId": "src_yzr7v1itpc9wztvbcy21q04o",
+                      "mutationId": "4dvzpz75e03ldr2ga54hj92y",
+                      "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
                       "version": 1,
                     },
                     "tenantId": "9wwhw5",
@@ -7019,6 +7216,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "public": {
                           "required": true,
                           "type": "boolean",
+                        },
+                        "publicAccess": {
+                          "required": true,
+                          "type": "boolean",
+                        },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
                         },
                         "size": {
                           "maxLength": 255,
@@ -7167,15 +7374,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "ids": [
-                "triduana",
-              ],
-              "stx": {
-                "mutationId": "fF4QWCZ8fUQS3s8u",
-                "sourceId": "src_8xmTIFcPfqPJ",
-              },
             },
             "path": {
               "properties": {
@@ -7378,14 +7576,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedAt": "2024-10-12T17:43:05.360Z",
                 "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                 "name": "yet_rightfully_lest.ogx",
-                "organizationId": "7eswx7d6csd6xo4nqwl7k09e",
+                "organizationId": "eswx7d6csd6xo4nqwl7k09e1",
                 "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                 "public": false,
+                "publicAccess": false,
+                "seqAt": 352,
                 "size": "2524242",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-                  "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+                  "mutationId": "keuemouu8t58r8fuj3tlenhq",
+                  "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
                   "version": 1,
                 },
                 "tenantId": "lphxlo",
@@ -7574,6 +7774,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "public": {
                     "required": true,
                     "type": "boolean",
+                  },
+                  "publicAccess": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "seqAt": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "required": true,
+                    "type": "integer",
                   },
                   "size": {
                     "maxLength": 255,
@@ -7676,11 +7886,30 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "data": {
-                  "required": true,
-                  "type": [
-                    "string",
-                    "null",
+                  "anyOf": [
+                    {
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "required": false,
+                      "type": "number",
+                    },
+                    {
+                      "required": false,
+                      "type": "boolean",
+                    },
+                    {
+                      "itemType": "string",
+                      "required": false,
+                      "type": "array",
+                    },
+                    {
+                      "required": false,
+                      "type": "null",
+                    },
                   ],
+                  "required": true,
                 },
                 "key": {
                   "anyOf": [
@@ -7694,6 +7923,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     {
                       "enum": [
                         "originalKey",
+                      ],
+                      "required": false,
+                      "type": "string",
+                    },
+                    {
+                      "enum": [
+                        "public",
                       ],
                       "required": false,
                       "type": "string",
@@ -7730,15 +7966,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "data": "caelestis",
-              "key": "name",
-              "stx": {
-                "lastReadVersion": 0,
-                "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-                "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
-              },
             },
             "path": {
               "properties": {
@@ -7780,14 +8007,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "modifiedAt": "2024-10-12T17:43:05.360Z",
                 "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
                 "name": "yet_rightfully_lest.ogx",
-                "organizationId": "7eswx7d6csd6xo4nqwl7k09e",
+                "organizationId": "eswx7d6csd6xo4nqwl7k09e1",
                 "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
                 "public": false,
+                "publicAccess": false,
+                "seqAt": 352,
                 "size": "2524242",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "pkeuemouu8t58r8fuj3tlenh",
-                  "sourceId": "src_qurk6hu54pnfytf99mpmuhw0",
+                  "mutationId": "keuemouu8t58r8fuj3tlenhq",
+                  "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
                   "version": 1,
                 },
                 "tenantId": "lphxlo",
@@ -7976,6 +8205,16 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "public": {
                     "required": true,
                     "type": "boolean",
+                  },
+                  "publicAccess": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "seqAt": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "required": true,
+                    "type": "integer",
                   },
                   "size": {
                     "maxLength": 255,
@@ -8201,9 +8440,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "email": "jane_doe51@hotmail.com",
             },
           },
           "responses": [
@@ -8538,10 +8774,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "required": true,
             },
-            "example": {
-              "email": "jane.doe30@hotmail.com",
-              "tokenId": "tOXsWF7YstsUL118zJMObGv2",
-            },
           },
           "responses": [
             {
@@ -8706,9 +8938,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "code": "123456",
-            },
           },
           "responses": [
             {
@@ -8810,9 +9039,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "code": "123456",
-            },
           },
           "responses": [
             {
@@ -8876,10 +9102,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
-            },
-            "example": {
-              "email": "jane_doe@hotmail.com",
-              "password": "G3n$ecureP@ss!",
             },
           },
           "responses": [
@@ -8948,10 +9170,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "email": "jane.doe@gmail.com",
-              "password": "G3n$ecureP@ss!",
             },
             "path": {
               "properties": {
@@ -9033,9 +9251,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "email": "jane_doe@gmail.com",
-            },
           },
           "responses": [
             {
@@ -9094,9 +9309,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "password": "G3n$ecureP@ss!",
             },
             "path": {
               "properties": {
@@ -9184,10 +9396,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "email": "jane.doe97@yahoo.com",
-              "password": "G3n$ecureP@ss!",
-            },
           },
           "responses": [
             {
@@ -9272,11 +9480,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "attestationObject": "wbRtwJIXRrhZ3AnFzVv5adpZcLPjXKDRw9bDTR4er8KS1S4APJdvZhd5WHQTYrmbkuQBJk2LrSNUPsWoAIqEH87uNLusL9wx8FGPwN2JkiC1NMH2NpRws6hsZG1bn8xS",
-              "clientDataJSON": "dr1aQe4rjKSICQbUYh5uOrBl6nSNgXy2UcJQ7Ep05kNvwp1GQkNBBuSHf19BKUcH",
-              "nameOnDevice": "Chrome on Mac",
             },
           },
           "responses": [
@@ -9465,10 +9668,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "email": "jane.doe88@gmail.com",
-              "type": "authentication",
-            },
           },
           "responses": [
             {
@@ -9572,14 +9771,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "authenticatorObject": "DYpMPC4azlzoYrol4mJMAX4pZybP6Asx9odCB5fOGn1otsOqw52CQ6pijNd8ULI6",
-              "clientDataJSON": "OvMTGSeHqfl6xT2QivIb89Yp7ez7lDmWBbnOrxoPPtqd0cpIuik1OfpmZUCqjTJZ",
-              "credentialId": "6cWd9f7q0mqNsAgemAKSGxsKhNncm0E1",
-              "email": "jane.doe@yahoo.com",
-              "signature": "DnSA1O7pqamxMGI6PP33NHBrbeVB23A8XVedHJ6UPT0ZMT3m2M1aS8WbIacFyqiX",
-              "type": "authentication",
             },
           },
           "responses": [
@@ -10003,6 +10194,339 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
       ],
+      "domains": [
+        {
+          "operationId": "getDomains",
+          "request": {
+            "path": {
+              "properties": {
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "List of domains",
+              "schema": {
+                "contentType": "application/json",
+                "itemType": "object",
+                "items": {
+                  "description": "A domain claimed by a tenant for email matching and verification.",
+                  "properties": {
+                    "createdAt": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "domain": {
+                      "maxLength": 255,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "id": {
+                      "maxLength": 50,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "lastCheckedAt": {
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "tenantId": {
+                      "maxLength": 24,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "verified": {
+                      "required": true,
+                      "type": "boolean",
+                    },
+                    "verifiedAt": {
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                  },
+                  "ref": "#/components/schemas/Domain",
+                  "required": true,
+                  "type": "object",
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "array",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "createDomain",
+          "request": {
+            "body": {
+              "contentType": "application/json",
+              "properties": {
+                "domain": {
+                  "maxLength": 255,
+                  "minLength": 4,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+            "path": {
+              "properties": {
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Created domain",
+              "name": "Domain",
+              "ref": "#/components/schemas/Domain",
+              "schema": {
+                "contentType": "application/json",
+                "description": "A domain claimed by a tenant for email matching and verification.",
+                "properties": {
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "domain": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "lastCheckedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "verified": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "verifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "deleteDomain",
+          "request": {
+            "path": {
+              "properties": {
+                "id": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Domain removed",
+              "name": "Domain",
+              "ref": "#/components/schemas/Domain",
+              "schema": {
+                "contentType": "application/json",
+                "description": "A domain claimed by a tenant for email matching and verification.",
+                "properties": {
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "domain": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "lastCheckedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "verified": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "verifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+      ],
       "entities": [
         {
           "operationId": "checkSlug",
@@ -10025,10 +10549,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "entityType": "user",
-              "slug": "vae-antiquus",
             },
           },
           "responses": [
@@ -10138,17 +10658,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": false,
                     "type": "integer",
                   },
-                  "description": "Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }",
+                  "description": "Client-side sequence numbers per scope: { "orgId:s:page": 42 }",
                   "required": false,
                   "type": "object",
                 },
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "cursor": "0-54F6250",
-              "seqs": {},
             },
           },
           "responses": [
@@ -10161,18 +10677,35 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "changes": {
                     "additionalProperties": {
                       "properties": {
+                        "deletedByType": {
+                          "additionalProperties": {
+                            "itemType": "string",
+                            "required": false,
+                            "type": "array",
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
                         "deletedIds": {
                           "itemType": "string",
                           "required": true,
                           "type": "array",
                         },
-                        "mSeq": {
+                        "entityCounts": {
+                          "additionalProperties": {
+                            "required": false,
+                            "type": "integer",
+                          },
                           "required": false,
-                          "type": "integer",
+                          "type": "object",
                         },
-                        "seq": {
-                          "required": true,
-                          "type": "integer",
+                        "entitySeqs": {
+                          "additionalProperties": {
+                            "required": false,
+                            "type": "integer",
+                          },
+                          "required": false,
+                          "type": "object",
                         },
                       },
                       "required": false,
@@ -10297,17 +10830,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": false,
                     "type": "integer",
                   },
-                  "description": "Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }",
+                  "description": "Client-side sequence numbers per scope: { "orgId:s:page": 42 }",
                   "required": false,
                   "type": "object",
                 },
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "cursor": "d9909rsl2y2ii9vbcsc2ywg7",
-              "seqs": {},
             },
           },
           "responses": [
@@ -10318,7 +10847,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "changes": {
                   "org-example-id": {
                     "deletedIds": [],
-                    "seq": 42,
                   },
                 },
                 "cursor": "d9909rsl2y2ii9vbcsc2ywg7",
@@ -10329,18 +10857,35 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "changes": {
                     "additionalProperties": {
                       "properties": {
+                        "deletedByType": {
+                          "additionalProperties": {
+                            "itemType": "string",
+                            "required": false,
+                            "type": "array",
+                          },
+                          "required": false,
+                          "type": "object",
+                        },
                         "deletedIds": {
                           "itemType": "string",
                           "required": true,
                           "type": "array",
                         },
-                        "mSeq": {
+                        "entityCounts": {
+                          "additionalProperties": {
+                            "required": false,
+                            "type": "integer",
+                          },
                           "required": false,
-                          "type": "integer",
+                          "type": "object",
                         },
-                        "seq": {
-                          "required": true,
-                          "type": "integer",
+                        "entitySeqs": {
+                          "additionalProperties": {
+                            "required": false,
+                            "type": "integer",
+                          },
+                          "required": false,
+                          "type": "object",
                         },
                       },
                       "required": false,
@@ -10699,18 +11244,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "bannerUrl": null,
-              "firstName": "Cecilia",
-              "language": "en",
-              "lastName": "Hodkiewicz",
-              "newsletter": false,
-              "slug": "ceciliahodkiewicz17",
-              "thumbnailUrl": null,
-              "userFlags": {
-                "finishedOnboarding": false,
-              },
-            },
           },
           "responses": [
             {
@@ -11002,16 +11535,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
-            },
-            "example": {
-              "mfaRequired": false,
-              "passkeyData": {
-                "authenticatorObject": "RC14ci3QccGTmehgnGDht5WMEe5W9qgOIbBIeYbO1J9YG83liD34u3Dv2HUiN8gl",
-                "clientDataJSON": "Sg9Sjc2hXVzk31FLwyuZVZPFhKQEZssuJgCCjxjcWP6HG386rXoOX5i5tAePILPA",
-                "credentialId": "dh4Q5rHanrE2iAAl0oSDaAYGCx3r3dpy",
-                "signature": "4fv5YJ7qBt866bSd5ainzA9q9jluNW4zgqF1Y1XbszZEIbvkJ32egLerzD3ib92w",
-              },
-              "totpCode": "cornu",
             },
           },
           "responses": [
@@ -11769,11 +12292,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": false,
               "type": "object",
             },
-            "example": {
-              "ids": [
-                "terra",
-              ],
-            },
           },
           "responses": [
             {
@@ -12254,12 +12772,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "emails": [
-                "jane_doe15@hotmail.com",
-              ],
-              "role": "admin",
-            },
             "path": {
               "properties": {
                 "orgId": {
@@ -12456,11 +12968,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "ids": [
-                "cilicium",
-              ],
-            },
             "path": {
               "properties": {
                 "orgId": {
@@ -12590,12 +13097,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
-            },
-            "example": {
-              "archived": false,
-              "displayOrder": 49,
-              "muted": false,
-              "role": "admin",
             },
             "path": {
               "properties": {
@@ -12910,6 +13411,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "entityId": {
                   "maxLength": 50,
                   "required": true,
@@ -13241,6 +13746,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             },
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "entityId": {
                   "maxLength": 50,
                   "required": true,
@@ -14073,13 +14582,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
-            "example": [
-              {
-                "id": "kzmv5qbhdcqeiuvwlosan0fc",
-                "name": "Kessler and Sons",
-                "slug": "kessler-and-sons",
-              },
-            ],
             "path": {
               "properties": {
                 "tenantId": {
@@ -14108,7 +14610,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Future-proofed contextually-based moderator",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "kzmv5qbhdcqeiuvwlosan0fc",
                     "included": {
@@ -14164,7 +14665,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Quality-focused uniform throughput",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "p3t0ygxx0aa83en3sk1fs1we",
                     "included": {
@@ -14315,11 +14815,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                           "required": true,
                           "type": "string",
-                        },
-                        "emailDomains": {
-                          "itemType": "string",
-                          "required": true,
-                          "type": "array",
                         },
                         "entityType": {
                           "enum": [
@@ -14649,11 +15144,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "ids": [
-                "aduro",
-              ],
-            },
             "path": {
               "properties": {
                 "tenantId": {
@@ -14734,10 +15224,490 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
+          "operationId": "autoCreateOrganization",
+          "request": {
+            "body": {
+              "contentType": "application/json",
+              "properties": {
+                "createNewTenant": {
+                  "required": false,
+                  "type": "boolean",
+                },
+                "name": {
+                  "maxLength": 255,
+                  "minLength": 2,
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "maxLength": 255,
+                  "minLength": 2,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Organization was created",
+              "example": {
+                "authStrategies": [
+                  "password",
+                ],
+                "bannerUrl": null,
+                "chatSupport": true,
+                "color": "#ecfdfe",
+                "country": "Turks and Caicos Islands",
+                "createdAt": "2024-12-25T15:29:47.111Z",
+                "createdBy": null,
+                "defaultLanguage": "en",
+                "description": "Multi-tiered zero trust firmware",
+                "entityType": "organization",
+                "id": "hmo9fwr239kqavr3yur671kl",
+                "included": {
+                  "counts": {
+                    "entities": {
+                      "attachment": 178,
+                      "page": 257,
+                    },
+                    "membership": {
+                      "admin": 30,
+                      "member": 63,
+                      "pending": 13,
+                      "total": 93,
+                    },
+                  },
+                  "membership": {
+                    "archived": false,
+                    "contextType": "organization",
+                    "displayOrder": 69,
+                    "id": "kaba9fpc90mgtzmtjipw2v8s",
+                    "muted": false,
+                    "organizationId": "hmo9fwr239kqavr3yur671kl",
+                    "role": "admin",
+                    "tenantId": "w4hg40",
+                    "userId": "36vxzq0rzt4pucvepsu63uw1",
+                  },
+                },
+                "languages": [
+                  "en",
+                ],
+                "logoUrl": null,
+                "modifiedAt": "2024-12-25T15:29:47.111Z",
+                "modifiedBy": null,
+                "name": "Hills, Bauch and Monahan",
+                "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                "shortName": "Hills,",
+                "slug": "hills-bauch-and-monahan",
+                "tenantId": "vk6xht",
+                "thumbnailUrl": null,
+                "timezone": "America/Argentina/Buenos_Aires",
+                "websiteUrl": "https://hills-bauch-and-monahan.example",
+                "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+              },
+              "schema": {
+                "contentType": "application/json",
+                "description": "An organization with membership context.",
+                "extendsRef": "#/components/schemas/Organization",
+                "properties": {
+                  "authStrategies": {
+                    "enum": [
+                      "github",
+                      "google",
+                      "microsoft",
+                      "password",
+                      "passkey",
+                      "totp",
+                      "email",
+                    ],
+                    "itemType": "string",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "bannerUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "chatSupport": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "color": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "country": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "createdBy": {
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
+                    "required": true,
+                    "type": [
+                      "object",
+                      "null",
+                    ],
+                  },
+                  "defaultLanguage": {
+                    "enum": [
+                      "en",
+                      "nl",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "entityType": {
+                    "enum": [
+                      "organization",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "included": {
+                    "properties": {
+                      "counts": {
+                        "properties": {
+                          "entities": {
+                            "properties": {
+                              "attachment": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "page": {
+                                "required": true,
+                                "type": "number",
+                              },
+                            },
+                            "required": true,
+                            "type": "object",
+                          },
+                          "membership": {
+                            "properties": {
+                              "admin": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "member": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "pending": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "total": {
+                                "required": true,
+                                "type": "number",
+                              },
+                            },
+                            "required": true,
+                            "type": "object",
+                          },
+                        },
+                        "required": false,
+                        "type": "object",
+                      },
+                      "membership": {
+                        "description": "Core membership fields shared across active and inactive memberships.",
+                        "properties": {
+                          "archived": {
+                            "required": true,
+                            "type": "boolean",
+                          },
+                          "contextType": {
+                            "enum": [
+                              "organization",
+                            ],
+                            "required": true,
+                            "type": "string",
+                          },
+                          "displayOrder": {
+                            "maximum": 140737488355327,
+                            "minimum": -140737488355328,
+                            "required": true,
+                            "type": "number",
+                          },
+                          "id": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "muted": {
+                            "required": true,
+                            "type": "boolean",
+                          },
+                          "organizationId": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "role": {
+                            "enum": [
+                              "admin",
+                              "member",
+                            ],
+                            "required": true,
+                            "type": "string",
+                          },
+                          "tenantId": {
+                            "maxLength": 24,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "userId": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                        },
+                        "ref": "#/components/schemas/MembershipBase",
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                  "languages": {
+                    "enum": [
+                      "en",
+                      "nl",
+                    ],
+                    "itemType": "string",
+                    "minItems": 1,
+                    "required": true,
+                    "type": "array",
+                  },
+                  "logoUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "modifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "modifiedBy": {
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
+                    "required": true,
+                    "type": [
+                      "object",
+                      "null",
+                    ],
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "notificationEmail": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "shortName": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "slug": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "timezone": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "websiteUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "welcomeText": {
+                    "maxLength": 1000000,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+              "status": 201,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
           "operationId": "getOrganizations",
           "request": {
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "excludeArchived": {
                   "enum": [
                     "true",
@@ -14814,7 +15784,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Public-key context-sensitive website",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "qqp8d07imsvjbtqtl3rtjgxd",
                     "included": {
@@ -14870,7 +15839,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Reverse-engineered sustainable matrix",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "included": {
@@ -15020,11 +15988,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                           "required": true,
                           "type": "string",
-                        },
-                        "emailDomains": {
-                          "itemType": "string",
-                          "required": true,
-                          "type": "array",
                         },
                         "entityType": {
                           "enum": [
@@ -15382,7 +16345,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "createdBy": null,
                 "defaultLanguage": "en",
                 "description": "Multi-tiered zero trust firmware",
-                "emailDomains": [],
                 "entityType": "organization",
                 "id": "hmo9fwr239kqavr3yur671kl",
                 "included": {
@@ -15527,11 +16489,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
-                  },
-                  "emailDomains": {
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
                   },
                   "entityType": {
                     "enum": [
@@ -15879,13 +16836,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
-                "emailDomains": {
-                  "itemType": "string",
-                  "maxLength": 255,
-                  "minLength": 4,
-                  "required": false,
-                  "type": "array",
-                },
                 "languages": {
                   "enum": [
                     "en",
@@ -15969,29 +16919,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": false,
               "type": "object",
             },
-            "example": {
-              "authStrategies": [
-                "password",
-              ],
-              "bannerUrl": null,
-              "chatSupport": true,
-              "color": "#ecfdfe",
-              "country": "Turks and Caicos Islands",
-              "defaultLanguage": "en",
-              "emailDomains": [],
-              "languages": [
-                "en",
-              ],
-              "logoUrl": null,
-              "name": "Hills, Bauch and Monahan",
-              "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-              "shortName": "Hills,",
-              "slug": "hills-bauch-and-monahan",
-              "thumbnailUrl": null,
-              "timezone": "America/Argentina/Buenos_Aires",
-              "websiteUrl": "https://hills-bauch-and-monahan.example",
-              "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-            },
             "path": {
               "properties": {
                 "id": {
@@ -16023,7 +16950,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "createdBy": null,
                 "defaultLanguage": "en",
                 "description": "Multi-tiered zero trust firmware",
-                "emailDomains": [],
                 "entityType": "organization",
                 "id": "hmo9fwr239kqavr3yur671kl",
                 "included": {
@@ -16168,11 +17094,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
-                  },
-                  "emailDomains": {
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
                   },
                   "entityType": {
                     "enum": [
@@ -16471,12 +17392,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "query": {
               "properties": {
-                "limit": {
+                "afterSeq": {
                   "required": false,
                   "type": "string",
                 },
-                "modifiedAfter": {
-                  "format": "date-time",
+                "limit": {
                   "required": false,
                   "type": "string",
                 },
@@ -16518,21 +17438,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
-                    "description": "[{"id":"fe8cyyi0fi36nqot2vres7ib","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo adhuc virtus vesco audentia.","styles":{}}],"children":[]},{"id":"w50ks6eo9s3ge8xz8bby5uab","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voco commodi abduco deduco. Cubicularis volo utroque in comminor concedo quae.","styles":{}}],"children":[]},{"id":"3jjx6b39mzeqze56lx7sl33d","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Customizable optimizing interface","styles":{}}],"children":[]},{"id":"6pjoxjbkdc0sap9zdbaxd6xx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deduco advoco surgo angulus demens tabella.","styles":{}}],"children":[]},{"id":"jnv8h0vgayhhipoasarx8iz9","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Alioqui valens vester cavus contego.","styles":{}}],"children":[]},{"id":"52yt166d317x76lajge2znxa","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Volubilis cum vindico audacia perspiciatis supra.","styles":{}}],"children":[]},{"id":"ry8jqzijuu8413qdducdqpqg","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Chirographum depraedor rem dolorum magni deleniti.","styles":{}}],"children":[]},{"id":"pdz43zfq9o778ru9x1dbhmjc","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita defendo vitae amicitia coaegresco celo. Denuncio cum abbas conitor timidus teneo placeat.","styles":{}}],"children":[]},{"id":"99vuz904b4fwjum7pzzvughq","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aqua amissio verto bellicus voluptatibus.","styles":{}}],"children":[]},{"id":"j9tgv28u74kubiiskfzojhf8","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adstringo aduro vitae.","styles":{}}],"children":[]},{"id":"mrfzwb1ac1rhn3b1smrej9q6","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tredecim tam arx barba doloribus ubi.","styles":{}}],"children":[]},{"id":"kttyqgnueawxydklc9fcihw6","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"I'll hack the back-end SCSI panel, that should circuit the XSS pixel!","styles":{}}],"children":[]},{"id":"qfiuq9rzzontiglogctnlbkn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll parse the bluetooth SMTP system, that should bandwidth the IB application!","styles":{}}],"children":[]},{"id":"4nczri4nfhuarovin1j28t22","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Coniecto umbra apparatus patior quas creber cruentus. Acceptus cervus stultus consequuntur conitor a peccatus atrox. Verus consuasor venia vulpes delego bibo.","styles":{}}],"children":[]}]",
-                    "displayOrder": 60.77,
+                    "description": "[{"id":"45yb0gleyvjbbm5piweg2q4g","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo adhuc virtus vesco audentia.","styles":{}}],"children":[]},{"id":"he0ctrmzc53x7z222ydtq57i","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Alioqui valens vester cavus contego. Volubilis cum vindico audacia perspiciatis supra. Chirographum depraedor rem dolorum magni deleniti. Crustulum amita defendo vitae amicitia coaegresco celo pecco.","styles":{}}],"children":[]},{"id":"mz5oaqf10oe7y51pr5lcu4lm","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Streamlined bottom-line alliance","styles":{}}],"children":[]},{"id":"0l6fxcwzg7pdsllfn51vpq8c","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Spargo acceptus cervus stultus consequuntur conitor.","styles":{}}],"children":[]},{"id":"wtoksrox8rpubibp4ljoerjt","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Custodia thermae clibanus temptatio catena depereo comprehendo excepturi.","styles":{}}],"children":[]},{"id":"g4fy8snmw3q0ts7h7wl6gb11","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vita una brevis constans soleo crapula.","styles":{}}],"children":[]},{"id":"fcpxxlqco70wm7r0g3ve9eiv","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Speciosus atque accusamus caelum cattus placeat bellicus. Patria conspergo temporibus. Cinis asporto demitto sumo.","styles":{}}],"children":[]},{"id":"pxog2ydmwz53d0ojmroq27ld","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Desolo cerno contego doloribus crux tenus et adstringo terra.","styles":{}}],"children":[]},{"id":"53gmh22maakkpjiu759cx3hj","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Uberrime aequitas vicinus porro apud debilito peccatus pauci crepusculum aestivus.","styles":{}}],"children":[]},{"id":"78tk7f643ew8qqff8crqfj8p","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Statua volo apud.","styles":{}}],"children":[]},{"id":"nrb85q9053r2kpg1y4k5ngfy","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't reboot the matrix without hacking the auxiliary AI microchip!","styles":{}}],"children":[]},{"id":"kso9ivx2zf9hx3mev9yp4k02","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"If we bypass the hard drive, we can get to the HTTP firewall through the back-end HEX driver!","styles":{}}],"children":[]},{"id":"509ncgtazcd9foprltovdwq5","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"If we connect the system, we can get to the EXE sensor through the wireless JSON circuit!","styles":{}}],"children":[]},{"id":"8jgoxpcw36dspd3vmunhota7","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vir tres temptatio. Adnuo caritas cultura astrum terminatio. Congregatio balbus ab bestia odio ascit tenetur arcesso adiuvo.","styles":{}}],"children":[]}]",
+                    "displayOrder": 64.94,
                     "entityType": "page",
                     "id": "9xn03u76eo7z71y60a882cwp",
-                    "keywords": "summisse credo thymum",
+                    "keywords": "adduco angelus ustulo",
                     "modifiedAt": "2024-11-21T04:00:59.122Z",
                     "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
                     "name": "Tersus summa caterva socius.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 448,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "lfn51vpq8cnfsar9hbjwtoks",
-                      "sourceId": "src_rox8rpubibp4ljoerjtgyu7c",
+                      "mutationId": "ze7f9laxgipngemr8sw32uut",
+                      "sourceId": "src_4knu3429mt5fozr7xnl9ep5i",
                       "version": 1,
                     },
                     "tenantId": "xtanax",
@@ -16540,21 +17461,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-                    "description": "[{"id":"8ef51zv1co2b46axihgrrv5l","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Acidus advoco ventus sub cogito argentum.","styles":{}}],"children":[]},{"id":"7w0qxtz6m3t4j11x7ir53h6f","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Summa crapula bestia auxilium non sui desino amor barba. Vitiosus eligendi clementia usus demens conor auctor basium tolero.","styles":{}}],"children":[]},{"id":"8r71hk13jvjp4l7lhzoa0i9k","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Devolved national pricing structure","styles":{}}],"children":[]},{"id":"vrfol41eg0oy95ev2di5wtes","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Appello depono ultio explicabo ascit suscipio utpote.","styles":{}}],"children":[]},{"id":"2nmeaa3wtyt6baj118arxu64","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nihil aut concedo.","styles":{}}],"children":[]},{"id":"c3rkdh5mqgqvh8z6smaa8fq1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Universe pecus accusator cubitum amplus antea concedo. Repellendus deorsum thorax virga cicuta turbo vestigium coniecto. Tumultus vallum infit terra tempus voluptates utpote voluptatum cilicium contego.","styles":{}}],"children":[]},{"id":"b614yrls63mof86z60lu84it","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Villa adipiscor demo certe terreo ater valens vorago.","styles":{}}],"children":[]},{"id":"rm0ch8w8cvxknyhlaix824e5","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Delinquo ustilo consuasor iste acidus temperantia.","styles":{}}],"children":[]},{"id":"sgg5ch2djun5tkewuu6fhen3","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll index the solid state UTF8 matrix, that should alarm the THX array!","styles":{}}],"children":[]},{"id":"dr9ogzu89q28mdjoiouacs6f","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"The SMS transmitter is down, program the online panel so we can connect the EXE application!","styles":{}}],"children":[]},{"id":"g7w1xhhxy41csvdtfjcqmazw","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't input the protocol without compressing the wireless AI transmitter!","styles":{}}],"children":[]},{"id":"o8hcwwfgpmpi5tspsbu3hlqj","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Recusandae angulus civitas dolorum solvo tenuis depono. Exercitationem pel eius ancilla tardus urbs defaeco canonicus sapiente. Tamquam voluptatum vicinus perferendis molestias aliqua.","styles":{}}],"children":[]}]",
-                    "displayOrder": 27.01,
+                    "description": "[{"id":"6tpd77kpi37syiavgc67t5nr","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Acidus advoco ventus sub cogito argentum.","styles":{}}],"children":[]},{"id":"wmvl0e44bpmhsyauxcwuwjsr","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Appello depono ultio explicabo ascit suscipio utpote. Nihil aut concedo.","styles":{}}],"children":[]},{"id":"ac8qx1h9s6vzhgvcj0rs3xtu","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Virtual tangible utilisation","styles":{}}],"children":[]},{"id":"co9kzp2r8sr1z8uzj99km4ai","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Alius delibero vicissitudo.","styles":{}}],"children":[]},{"id":"vg8ngqzxmk35ee92ta8rpig1","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tenuis depono terreo exercitationem pel eius ancilla tardus.","styles":{}}],"children":[]},{"id":"vu0uyumluud11ppu88to0zzd","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Versus sufficio provident conforto atqui supellex vado adeo curso.","styles":{}}],"children":[]},{"id":"8ewazjctj7glz1gzaexz6kom","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Comitatus sordeo stips veniam umbra concido. Calcar ver sub eius antepono stabilis similique. Ex abscido dolor cruentus aestivus quisquam abbas.","styles":{}}],"children":[]},{"id":"rlgzp7mi918d0fjixbcaeao0","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Defluo deinde aureus ater ago bellum.","styles":{}}],"children":[]},{"id":"iblw7armq5i2e6x9rosj7i2y","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Commemoro vulariter vicinus decens.","styles":{}}],"children":[]},{"id":"7io4uobwejsz1uuex7e3utr4","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"If we back up the firewall, we can get to the ADP firewall through the neural DNS microchip!","styles":{}}],"children":[]},{"id":"htqa0jbzwkudp8d6d8dtenpw","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"The OCR card is down, reboot the neural transmitter so we can index the SAS hard drive!","styles":{}}],"children":[]},{"id":"jezkbd4eq8cw2u9ctrdgg4ka","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the wireless DRAM interface, then you can quantify the digital bandwidth!","styles":{}}],"children":[]},{"id":"0udadkrwj68vzxsnhz6myzso","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Velut aliquam voluptatem vigor denuo sapiente desipio. Conspergo beneficium voro ocer quasi velum spiritus usitas cursim utilis. Audeo tricesimus timor caries modi theca depono toties voro veritatis.\\nTriduana pecto tenuis vestigium varietas. Quisquam delectus molestiae ultra suadeo. Succurro cattus decerno cunctatio alter aduro.","styles":{}}],"children":[]}]",
+                    "displayOrder": 5.15,
                     "entityType": "page",
                     "id": "clxs8vayzrul7vmeyahbgyu0",
-                    "keywords": "apud cunctatio cupiditate",
+                    "keywords": "nisi est denique",
                     "modifiedAt": "2024-10-29T08:46:20.790Z",
                     "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "name": "Conitor suspendo aiunt.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 393,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "2ta8rpig1rxpmc6pv1fvu0uy",
-                      "sourceId": "src_umluud11ppu88to0zzdvgboo",
+                      "mutationId": "5f7pbd9n5lo3trj7zs5tm52k",
+                      "sourceId": "src_08c1clt9dndbazjnqfpde0yh",
                       "version": 1,
                     },
                     "tenantId": "1sr6ut",
@@ -16713,6 +17635,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "boolean",
                         },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
+                        },
                         "status": {
                           "enum": [
                             "unpublished",
@@ -16828,21 +17756,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
-                "displayOrder": 47.51,
+                "description": "[{"id":"ydeovelzeiwv1pvo6ikw8yai","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"eho7gg1xwx21e333ngqujcbp","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.","styles":{}}],"children":[]},{"id":"ple60p8h3tnk9zpovjd1ic97","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Sustainable logistical help-desk","styles":{}}],"children":[]},{"id":"rhaner6dofixisx6z8hucvnn","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Argumentum civitas suppellex illum corroboro damnatio templum.","styles":{}}],"children":[]},{"id":"fzi4ksi3o1tcsht8b45feprf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ventus apto tempus aurum delectus facilis.","styles":{}}],"children":[]},{"id":"9lzubypddo8vfjx4d5px26kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tenax cornu candidus communis comedo pauci. Votum vigilo conitor accusantium virgo sublime rem termes agnitio talis.","styles":{}}],"children":[]},{"id":"3hfq8bqakccdhvdb8s40m4i4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amiculum suus adiuvo brevis conturbo alveus ver.","styles":{}}],"children":[]},{"id":"xnbu1zzl7dazo02dcpq1pli4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Civis delicate aestivus laudantium.","styles":{}}],"children":[]},{"id":"ucueq4mygjrjwhp4cvi7x941","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the virtual XSS pixel, then you can hack the back-end panel!","styles":{}}],"children":[]},{"id":"zakz3rkdm0lo0wdzmgogrvuh","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"calculating the circuit won't do anything, we need to calculate the cross-platform XSS sensor!","styles":{}}],"children":[]},{"id":"meqd8fu6rmnt3mbgfwrb57kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Laboriosam tandem depopulo assentator architecto soleo harum aduro cohors. Utrimque animadverto quae supplanto careo. Usus defessus strenuus vitae damnatio.\\nTerminatio attonbitus censura comes uxor clam tolero absens. Ancilla tabernus amet thorax molestiae. Modi ullus repellat speculum terga quae usque quae aptus virtus.","styles":{}}],"children":[]}]",
+                "displayOrder": 22.92,
                 "entityType": "page",
                 "id": "co96vrmic3wbowmxzbqa1e9f",
-                "keywords": "tantillus debitis mollitia",
+                "keywords": "bibo reprehenderit suffoco",
                 "modifiedAt": "2024-08-06T10:28:33.226Z",
                 "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                 "name": "Torrens adfectus.",
                 "parentId": null,
                 "publicAccess": true,
+                "seqAt": 183,
                 "status": "unpublished",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
-                  "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
+                  "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+                  "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
                   "version": 1,
                 },
                 "tenantId": "ijllhz",
@@ -16996,6 +17925,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "boolean",
                   },
+                  "seqAt": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "required": true,
+                    "type": "integer",
+                  },
                   "status": {
                     "enum": [
                       "unpublished",
@@ -17129,16 +18064,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "array",
             },
-            "example": [
-              {
-                "name": "Voluntarius contra.",
-                "stx": {
-                  "lastReadVersion": 0,
-                  "mutationId": "2bb6438g9cersdww4bfs8s5t",
-                  "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
-                },
-              },
-            ],
             "path": {
               "properties": {
                 "tenantId": {
@@ -17158,21 +18083,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                    "description": "[{"id":"sv3l0q9y82rnleos35844wqy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"7skc2dn5j60735hvygvtkyzs","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.","styles":{}}],"children":[]},{"id":"7vkf76q8e9w2vwut8v199c6x","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-centric cohesive website","styles":{}}],"children":[]},{"id":"is43i6pqsz7uf78bar3xegt4","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deprimo statim eos vulnero subito eligendi.","styles":{}}],"children":[]},{"id":"xhq66fbwu2mp2mw7wfughcxg","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]},{"id":"teqijqxlxys3ahf4ezykxugo","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Colligo audio substantia coepi laudantium.","styles":{}}],"children":[]},{"id":"1ukwqptgx043xgful99mj6ti","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"558rudjism5woja0al8ngsm1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.","styles":{}}],"children":[]},{"id":"yjhvmqlluj26pj0evzkgnbkh","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vero casus celer cogo armarium cicuta tumultus utique.","styles":{}}],"children":[]},{"id":"p2ykge5xwue7zq07x3bqzd4i","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.","styles":{}}],"children":[]},{"id":"fj7ssa43aqjl7370pef4fkqt","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to index the neural PNG hard drive!","styles":{}}],"children":[]},{"id":"2fgmrbpkcki8xyjhu3jmsitr","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!","styles":{}}],"children":[]},{"id":"e9h012p9gidga883ka6jlu4q","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to connect the open-source SCSI transmitter!","styles":{}}],"children":[]},{"id":"cucoe7ekf0n7c5adhm7873ji","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 63.43,
+                    "description": "[{"id":"hoiny6rsob7j0p6kfz7rauzy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"6pakf4ovzm1ne3h55lgj31d6","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vergo deputo deprimo statim eos vulnero subito eligendi sophismata exercitationem. Cattus cilicium textilis cervus alo tactus confido colligo.","styles":{}}],"children":[]},{"id":"apx99a5auvr5cyj5s37irnjj","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Configurable motivating data-warehouse","styles":{}}],"children":[]},{"id":"qz0iqmny8wdl2xm36um7v2n0","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conspergo angulus repellat umerus sumo ulterius.","styles":{}}],"children":[]},{"id":"yotm2bb6438g9cersdww4bfs","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Quam velut suffoco comminor pectus.","styles":{}}],"children":[]},{"id":"o33lcgsn94dor3vtrwsv2ecf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Thema arcus torqueo consectetur.","styles":{}}],"children":[]},{"id":"3n6vzijsfbpwvzgocxlca7n1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Crux temeritas depopulo creber cibus cetera. Arguo collum torrens.","styles":{}}],"children":[]},{"id":"oyl7ocb37kjsew1md90vg1e6","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"In subvenio curis cilicium eligendi deripio deduco vesica delectatio.","styles":{}}],"children":[]},{"id":"aty5hb1zfo81varofu137lku","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Hic vix censura terga iste cohors tabgo suasoria tutis vobis.","styles":{}}],"children":[]},{"id":"zhmosdcr56zljv883b0lt8py","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the bluetooth SDD program, then you can copy the redundant bus!","styles":{}}],"children":[]},{"id":"wlvc29mx4klcdqp8e5uh7l2e","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to navigate the online JBOD capacitor!","styles":{}}],"children":[]},{"id":"701jo3uquhfy2zsrlhcrokfp","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the bluetooth XSS alarm, then you can connect the auxiliary application!","styles":{}}],"children":[]},{"id":"6pa1hc45awlzhwnu314tn2up","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Minima validus sed bene dicta bis cohibeo. Thesis pecco ipsam vindico attonbitus adeo tactus avaritia. Corporis cauda doloribus virga virga aggredior accusamus aspicio defessus artificiose.","styles":{}}],"children":[]}]",
+                    "displayOrder": 76.57,
                     "entityType": "page",
                     "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                    "keywords": "virgo spes tracto",
+                    "keywords": "aufero comptus tumultus",
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "Voluntarius contra.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 414,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "2bb6438g9cersdww4bfs8s5t",
-                      "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
+                      "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                      "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                       "version": 1,
                     },
                     "tenantId": "lwtksu",
@@ -17180,21 +18106,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "description": "[{"id":"tmzj0k1t3qhnnsmlidpqra3q","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"ekksfrvqfgbeh5vd8ommau3x","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.","styles":{}}],"children":[]},{"id":"ey499f8dnkjifvafohze2hk3","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Distributed analyzing throughput","styles":{}}],"children":[]},{"id":"t1w7a4028zxir0jg5cjjjm75","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Audacia virga aptus corrupti utpote vulnus subseco.","styles":{}}],"children":[]},{"id":"40z5fa10fk8cfwk0m52kpxs8","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.","styles":{}}],"children":[]},{"id":"h6yzjwgtpnk6g6wfp00truye","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Approbo depraedor inventore cervus.","styles":{}}],"children":[]},{"id":"mml90okjwbg60mvwqyzz6dcs","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"3c9a1ae5c2mufewqe1kj3fvp","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.","styles":{}}],"children":[]},{"id":"zz2uj69jg77hn5tawb9sknz5","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to navigate the cross-platform SQL application!","styles":{}}],"children":[]},{"id":"6q47bsuttblcn6m38yuz3016","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't program the array without quantifying the wireless HDD system!","styles":{}}],"children":[]},{"id":"0l22dr34xssjnmj83y5mxapg","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.","styles":{}}],"children":[]}]",
-                    "displayOrder": 18.82,
+                    "description": "[{"id":"fmg18wbwob9s8r85nah671yb","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"4hj92yzr7v1itpc9wztvbcy2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus. Degero cicuta aranea.","styles":{}}],"children":[]},{"id":"4oq81k5rbzt4yq63pob5r5tp","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Automated reciprocal adapter","styles":{}}],"children":[]},{"id":"m92qh3rrfeu660ozr0yjbedn","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Sufficio coaegresco denuncio soleo assumenda caute volup.","styles":{}}],"children":[]},{"id":"lud6hh0iebfum8827w318qwf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Corrigo arx deleo thalassinus candidus alioqui aurum similique cunae.","styles":{}}],"children":[]},{"id":"1kgq21dhh7cq7p98bue9ul9q","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Peior placeat summa acidus solitudo creo. Ceno ultra armarium anser a voveo vito tandem. Undique sortitus benigne adstringo crinis creator veritatis sopor.","styles":{}}],"children":[]},{"id":"k6yiz04y97bwd5dpef0kr8b3","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Careo thymbra bonus commodo.","styles":{}}],"children":[]},{"id":"3i7o7kdrafg5eczfdkp6l22j","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Incidunt audio comitatus.","styles":{}}],"children":[]},{"id":"6rkct63zbj5vosl8hdyhcuvu","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Synagoga vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.","styles":{}}],"children":[]},{"id":"y30q4ioqervg3e3hp1pp7j4a","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"The CSS feed is down, calculate the virtual protocol so we can compress the VGA protocol!","styles":{}}],"children":[]},{"id":"wqgzn5g4nl3n1hygl6gf3gkz","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the optical HDD feed, then you can quantify the online array!","styles":{}}],"children":[]},{"id":"9cc4m0m3pcjsymzo23ke5u9n","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Arma ipsam consequuntur solutio ab absens depono peior xiphias accusamus. Theologus ventosus avarus. Acsi doloremque volutabrum eveniet timor.","styles":{}}],"children":[]}]",
+                    "displayOrder": 56.3,
                     "entityType": "page",
                     "id": "74l7581dwpxxbqdej8622zpg",
-                    "keywords": "decipio cupressus una",
+                    "keywords": "constans thalassinus celebrer",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "Taedium spargo cetera.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 376,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "60ozr0yjbednvd5gs836nelu",
-                      "sourceId": "src_d6hh0iebfum8827w318qwfuf",
+                      "mutationId": "f755ogeuz554svbh4529ky7g",
+                      "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                       "version": 1,
                     },
                     "tenantId": "o54qw5",
@@ -17352,6 +18279,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "publicAccess": {
                           "required": true,
                           "type": "boolean",
+                        },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
                         },
                         "status": {
                           "enum": [
@@ -17432,21 +18365,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-                    "description": "[{"id":"hrp9r23m0l2686qmjp2galjp","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"iyh0dhjemexyp4wjcbkqh1m2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolor somnus vobis atavus tergiversatio tersus suadeo colo. Id abduco supplanto asporto. Curatio xiphias auxilium teneo claudeo unde vulgo.","styles":{}}],"children":[]},{"id":"0we9az2omatxtpwd8rawu9qy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-centric cohesive website","styles":{}}],"children":[]},{"id":"2r5e5nuoyplwa9t017hzko3p","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Deprimo statim eos vulnero subito eligendi.","styles":{}}],"children":[]},{"id":"j6d9aphhhx8u9s3sxgbhcofy","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Exercitationem somnus cattus cilicium textilis cervus alo tactus.","styles":{}}],"children":[]},{"id":"gbruybfqpvg7stc1meauhnu9","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Colligo audio substantia coepi laudantium.","styles":{}}],"children":[]},{"id":"s9vx42c0eqvx1wm8kn4q1xpw","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"2u9npkk0ijf01mvxej2ssrqe","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amita depereo armarium apud pariatur deinde. Alienus admoneo creo asporto amita sol certus.","styles":{}}],"children":[]},{"id":"vnvqrae3fmwx8zd4p68b7683","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vero casus celer cogo armarium cicuta tumultus utique.","styles":{}}],"children":[]},{"id":"h8bhmho2o95efmhgzocmxu3h","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ars conicio viridis fuga arbor tergo aliquam beatae dolores.","styles":{}}],"children":[]},{"id":"191i33qrp9ewe24w8a4s66uf","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to index the neural PNG hard drive!","styles":{}}],"children":[]},{"id":"dedy5bgyrrlyvn1xo3fdx2uo","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"I'll back up the optical SCSI protocol, that should pixel the TLS transmitter!","styles":{}}],"children":[]},{"id":"q8wvppm1sxf7kkfn8162jbg2","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to connect the open-source SCSI transmitter!","styles":{}}],"children":[]},{"id":"3ni3ctco9251699jk3ig0y98","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Advoco vetus quidem alii asporto tum perspiciatis. Urbanus adsuesco sint acervus. Quam velut suffoco comminor pectus.","styles":{}}],"children":[]}]",
-                    "displayOrder": 63.43,
+                    "description": "[{"id":"hoiny6rsob7j0p6kfz7rauzy","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Tergo crepusculum certe desparatus.","styles":{}}],"children":[]},{"id":"6pakf4ovzm1ne3h55lgj31d6","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vergo deputo deprimo statim eos vulnero subito eligendi sophismata exercitationem. Cattus cilicium textilis cervus alo tactus confido colligo.","styles":{}}],"children":[]},{"id":"apx99a5auvr5cyj5s37irnjj","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Configurable motivating data-warehouse","styles":{}}],"children":[]},{"id":"qz0iqmny8wdl2xm36um7v2n0","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conspergo angulus repellat umerus sumo ulterius.","styles":{}}],"children":[]},{"id":"yotm2bb6438g9cersdww4bfs","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Quam velut suffoco comminor pectus.","styles":{}}],"children":[]},{"id":"o33lcgsn94dor3vtrwsv2ecf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Thema arcus torqueo consectetur.","styles":{}}],"children":[]},{"id":"3n6vzijsfbpwvzgocxlca7n1","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Crux temeritas depopulo creber cibus cetera. Arguo collum torrens.","styles":{}}],"children":[]},{"id":"oyl7ocb37kjsew1md90vg1e6","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"In subvenio curis cilicium eligendi deripio deduco vesica delectatio.","styles":{}}],"children":[]},{"id":"aty5hb1zfo81varofu137lku","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Hic vix censura terga iste cohors tabgo suasoria tutis vobis.","styles":{}}],"children":[]},{"id":"zhmosdcr56zljv883b0lt8py","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the bluetooth SDD program, then you can copy the redundant bus!","styles":{}}],"children":[]},{"id":"wlvc29mx4klcdqp8e5uh7l2e","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"We need to navigate the online JBOD capacitor!","styles":{}}],"children":[]},{"id":"701jo3uquhfy2zsrlhcrokfp","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the bluetooth XSS alarm, then you can connect the auxiliary application!","styles":{}}],"children":[]},{"id":"6pa1hc45awlzhwnu314tn2up","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Minima validus sed bene dicta bis cohibeo. Thesis pecco ipsam vindico attonbitus adeo tactus avaritia. Corporis cauda doloribus virga virga aggredior accusamus aspicio defessus artificiose.","styles":{}}],"children":[]}]",
+                    "displayOrder": 76.57,
                     "entityType": "page",
                     "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-                    "keywords": "virgo spes tracto",
+                    "keywords": "aufero comptus tumultus",
                     "modifiedAt": "2024-04-19T14:04:35.773Z",
                     "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
                     "name": "Voluntarius contra.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 414,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "2bb6438g9cersdww4bfs8s5t",
-                      "sourceId": "src_co33lcgsn94dor3vtrwsv2ec",
+                      "mutationId": "v7c2iwkoinaqza4bosjdutyi",
+                      "sourceId": "src_k5h0xu5y768gn5ffv4gc3q45",
                       "version": 1,
                     },
                     "tenantId": "lwtksu",
@@ -17454,21 +18388,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-                    "description": "[{"id":"2v08vspdmf0ue7tz00gy8u74","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"q3k7pqym9umarjyf6ekg1014","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Defendo adinventitias carpo verecundia cometes vergo sortitus. Ceno terra cado temptatio carmen. Sequi cicuta derelinquo attollo.","styles":{}}],"children":[]},{"id":"31d5xeyvnoqxay2nej5ymln5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Distributed analyzing throughput","styles":{}}],"children":[]},{"id":"x25denpzf077f4nuck66kska","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Audacia virga aptus corrupti utpote vulnus subseco.","styles":{}}],"children":[]},{"id":"cu9x6i5pb0v5shjcc6wbylfv","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Auxilium ascit cuppedia abbas amo patior credo tenus aestus degero.","styles":{}}],"children":[]},{"id":"gch8e2frfckk9g9imoxa3nfh","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Approbo depraedor inventore cervus.","styles":{}}],"children":[]},{"id":"c84rxxdqqyust0wwwa8925pg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"v0h8gnlyam2fw1ba9108yi6v","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Voluptatem traho universe cohors coniuratio virga advoco adicio tamen acidus.","styles":{}}],"children":[]},{"id":"alvmj3fcke8c12ppav5qklno","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"We need to navigate the cross-platform SQL application!","styles":{}}],"children":[]},{"id":"brcg0hjg9ovx0qk9appf71rk","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"You can't program the array without quantifying the wireless HDD system!","styles":{}}],"children":[]},{"id":"zyzm94vr6ka16dobjdraihfu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Spiritus commodi arx temporibus arma tredecim sumo adeo. Sufficio coaegresco denuncio soleo assumenda caute volup. Chirographum aestus surculus derelinquo alioqui temporibus tergeo.","styles":{}}],"children":[]}]",
-                    "displayOrder": 18.82,
+                    "description": "[{"id":"fmg18wbwob9s8r85nah671yb","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Vehemens deprecator ventus ascit denique tum candidus.","styles":{}}],"children":[]},{"id":"4hj92yzr7v1itpc9wztvbcy2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus. Degero cicuta aranea.","styles":{}}],"children":[]},{"id":"4oq81k5rbzt4yq63pob5r5tp","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Automated reciprocal adapter","styles":{}}],"children":[]},{"id":"m92qh3rrfeu660ozr0yjbedn","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Sufficio coaegresco denuncio soleo assumenda caute volup.","styles":{}}],"children":[]},{"id":"lud6hh0iebfum8827w318qwf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Corrigo arx deleo thalassinus candidus alioqui aurum similique cunae.","styles":{}}],"children":[]},{"id":"1kgq21dhh7cq7p98bue9ul9q","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Peior placeat summa acidus solitudo creo. Ceno ultra armarium anser a voveo vito tandem. Undique sortitus benigne adstringo crinis creator veritatis sopor.","styles":{}}],"children":[]},{"id":"k6yiz04y97bwd5dpef0kr8b3","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Careo thymbra bonus commodo.","styles":{}}],"children":[]},{"id":"3i7o7kdrafg5eczfdkp6l22j","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Incidunt audio comitatus.","styles":{}}],"children":[]},{"id":"6rkct63zbj5vosl8hdyhcuvu","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Synagoga vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.","styles":{}}],"children":[]},{"id":"y30q4ioqervg3e3hp1pp7j4a","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"The CSS feed is down, calculate the virtual protocol so we can compress the VGA protocol!","styles":{}}],"children":[]},{"id":"wqgzn5g4nl3n1hygl6gf3gkz","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the optical HDD feed, then you can quantify the online array!","styles":{}}],"children":[]},{"id":"9cc4m0m3pcjsymzo23ke5u9n","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Arma ipsam consequuntur solutio ab absens depono peior xiphias accusamus. Theologus ventosus avarus. Acsi doloremque volutabrum eveniet timor.","styles":{}}],"children":[]}]",
+                    "displayOrder": 56.3,
                     "entityType": "page",
                     "id": "74l7581dwpxxbqdej8622zpg",
-                    "keywords": "decipio cupressus una",
+                    "keywords": "constans thalassinus celebrer",
                     "modifiedAt": "2024-02-25T13:01:35.301Z",
                     "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
                     "name": "Taedium spargo cetera.",
                     "parentId": null,
                     "publicAccess": true,
+                    "seqAt": 376,
                     "status": "unpublished",
                     "stx": {
                       "fieldVersions": {},
-                      "mutationId": "60ozr0yjbednvd5gs836nelu",
-                      "sourceId": "src_d6hh0iebfum8827w318qwfuf",
+                      "mutationId": "f755ogeuz554svbh4529ky7g",
+                      "sourceId": "src_0a1z7lt0jg9k2qywaejzjku3",
                       "version": 1,
                     },
                     "tenantId": "o54qw5",
@@ -17626,6 +18561,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                         "publicAccess": {
                           "required": true,
                           "type": "boolean",
+                        },
+                        "seqAt": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "required": true,
+                          "type": "integer",
                         },
                         "status": {
                           "enum": [
@@ -17748,14 +18689,23 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": true,
                   "type": "array",
                 },
+                "stx": {
+                  "properties": {
+                    "mutationId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "sourceId": {
+                      "required": true,
+                      "type": "string",
+                    },
+                  },
+                  "required": false,
+                  "type": "object",
+                },
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "ids": [
-                "coerceo",
-              ],
             },
             "path": {
               "properties": {
@@ -17945,15 +18895,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "data": "antepono",
-              "key": "name",
-              "stx": {
-                "lastReadVersion": 0,
-                "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
-                "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
-              },
-            },
             "path": {
               "properties": {
                 "id": {
@@ -17976,21 +18917,22 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-                "description": "[{"id":"ub0dxavgjm9sadg4v0ogmhfz","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"r550gp4uks6507krqn5we2du","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cubo sponte utpote crux pecco. Cunctatio dolorum vallum ut adimpleo summa valde strenuus attonbitus eligendi. Vel cado vitae cibus dolores decet surgo. Accusamus praesentium cibus subito.","styles":{}}],"children":[]},{"id":"ufa9r3kojry2kqh0cppr8lg5","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"User-friendly zero trust local area network","styles":{}}],"children":[]},{"id":"ph5kop5akylihf7wlw7zxxux","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello.","styles":{}}],"children":[]},{"id":"r8tb0px1zym610ui9vl5chbr","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tonsor ullus damnatio.","styles":{}}],"children":[]},{"id":"jkmjpgfjm6307yc09g7ezazx","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"hsh44mex2z51cbqxvwjuf4qu","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Video aer addo crinis amissio alius allatus solium delectus tabesco. Inventore contra complectus summa umquam nobis dapifer supplanto odio. Atavus absorbeo suffoco cado deorsum amor.","styles":{}}],"children":[]},{"id":"0dxzaybja5wif0689s2l9vrn","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Nam certe vulgaris sumptus spiritus vae fugit creo.","styles":{}}],"children":[]},{"id":"toc8xn3z35z17v2p23vhrdeg","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Dolorem conduco causa.","styles":{}}],"children":[]},{"id":"acp7c9vorr0w5jkx3xfv7w50","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caste pauper argumentum civitas.","styles":{}}],"children":[]},{"id":"gt4ahbzyiup2ikw08q3i2urn","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the mobile HTTP port, then you can copy the primary hard drive!","styles":{}}],"children":[]},{"id":"3o6qx8gmc0j7t3whr6p1axpl","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Try to hack the SSD feed, maybe it will input the bluetooth panel!","styles":{}}],"children":[]},{"id":"1dt1r1aehiqnc5olsb172qo7","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":false},"content":[{"type":"text","text":"Use the virtual SSL transmitter, then you can index the bluetooth capacitor!","styles":{}}],"children":[]},{"id":"oii2gkzwt8hu6o47bkpwnmq2","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Solium solvo degero ventus apto tempus aurum delectus facilis cura. Dolore animadverto maxime theatrum esse amo statua adfectus tremo contigo. Demens timidus calcar cohors appono aranea decet cultura substantia.","styles":{}}],"children":[]}]",
-                "displayOrder": 47.51,
+                "description": "[{"id":"ydeovelzeiwv1pvo6ikw8yai","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Voluptates cornu tempus eaque universe.","styles":{}}],"children":[]},{"id":"eho7gg1xwx21e333ngqujcbp","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.","styles":{}}],"children":[]},{"id":"ple60p8h3tnk9zpovjd1ic97","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Sustainable logistical help-desk","styles":{}}],"children":[]},{"id":"rhaner6dofixisx6z8hucvnn","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Argumentum civitas suppellex illum corroboro damnatio templum.","styles":{}}],"children":[]},{"id":"fzi4ksi3o1tcsht8b45feprf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Ventus apto tempus aurum delectus facilis.","styles":{}}],"children":[]},{"id":"9lzubypddo8vfjx4d5px26kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tenax cornu candidus communis comedo pauci. Votum vigilo conitor accusantium virgo sublime rem termes agnitio talis.","styles":{}}],"children":[]},{"id":"3hfq8bqakccdhvdb8s40m4i4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amiculum suus adiuvo brevis conturbo alveus ver.","styles":{}}],"children":[]},{"id":"xnbu1zzl7dazo02dcpq1pli4","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Civis delicate aestivus laudantium.","styles":{}}],"children":[]},{"id":"ucueq4mygjrjwhp4cvi7x941","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"Use the virtual XSS pixel, then you can hack the back-end panel!","styles":{}}],"children":[]},{"id":"zakz3rkdm0lo0wdzmgogrvuh","type":"checkListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","checked":true},"content":[{"type":"text","text":"calculating the circuit won't do anything, we need to calculate the cross-platform XSS sensor!","styles":{}}],"children":[]},{"id":"meqd8fu6rmnt3mbgfwrb57kw","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Laboriosam tandem depopulo assentator architecto soleo harum aduro cohors. Utrimque animadverto quae supplanto careo. Usus defessus strenuus vitae damnatio.\\nTerminatio attonbitus censura comes uxor clam tolero absens. Ancilla tabernus amet thorax molestiae. Modi ullus repellat speculum terga quae usque quae aptus virtus.","styles":{}}],"children":[]}]",
+                "displayOrder": 22.92,
                 "entityType": "page",
                 "id": "co96vrmic3wbowmxzbqa1e9f",
-                "keywords": "tantillus debitis mollitia",
+                "keywords": "bibo reprehenderit suffoco",
                 "modifiedAt": "2024-08-06T10:28:33.226Z",
                 "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
                 "name": "Torrens adfectus.",
                 "parentId": null,
                 "publicAccess": true,
+                "seqAt": 183,
                 "status": "unpublished",
                 "stx": {
                   "fieldVersions": {},
-                  "mutationId": "rd8bblxzxc0ypms2q9lzubyp",
-                  "sourceId": "src_ddo8vfjx4d5px26kw7k3q17d",
+                  "mutationId": "dpjr10hjxeiyafi3dyq5b0bn",
+                  "sourceId": "src_6oc3kzaq1t0rhuibm65boac8",
                   "version": 1,
                 },
                 "tenantId": "ijllhz",
@@ -18144,6 +19086,12 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "boolean",
                   },
+                  "seqAt": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "required": true,
+                    "type": "integer",
+                  },
                   "status": {
                     "enum": [
                       "unpublished",
@@ -18264,11 +19212,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "email": "marlin62@yahoo.com",
-              "message": "Demens terreo amiculum.",
-              "type": "contact",
-            },
           },
           "responses": [
             {
@@ -18371,6 +19314,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "limit": {
                   "required": false,
                   "type": "string",
@@ -18544,11 +19491,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "ids": [
-                "textor",
-              ],
-            },
           },
           "responses": [
             {
@@ -18707,12 +19649,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "entityIds": [
-                "cursim",
-              ],
-              "entityType": "attachment",
-            },
             "path": {
               "properties": {
                 "orgId": {
@@ -18802,11 +19738,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "emails": [
-                "jane_doe21@yahoo.com",
-              ],
             },
           },
           "responses": [
@@ -18903,11 +19834,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": true,
               "type": "object",
-            },
-            "example": {
-              "ids": [
-                "surculus",
-              ],
             },
           },
           "responses": [
@@ -19040,15 +19966,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               },
               "required": false,
               "type": "object",
-            },
-            "example": {
-              "bannerUrl": null,
-              "firstName": "Cecilia",
-              "language": "en",
-              "lastName": "Hodkiewicz",
-              "newsletter": false,
-              "slug": "ceciliahodkiewicz17",
-              "thumbnailUrl": null,
             },
             "path": {
               "properties": {
@@ -19354,16 +20271,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "content": "<p>Aliquam depulso tantillus claudeo suadeo sophismata assumenda quos subvenio. Vulnus attero itaque. Tego ciminatio terminatio vilitas coniecto incidunt audio.</p>",
-              "organizationIds": [
-                "ter",
-              ],
-              "roles": [
-                "admin",
-              ],
-              "subject": "Antepono capio saepe minus vix cum.",
-            },
             "query": {
               "properties": {
                 "toSelf": {
@@ -19431,6 +20338,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "limit": {
                   "required": false,
                   "type": "string",
@@ -19448,7 +20359,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
-                  "description": "Search query",
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -19489,8 +20400,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
+                        "createdBy": {
+                          "maxLength": 50,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "domainsCount": {
+                          "description": "Number of domains claimed by this tenant",
+                          "required": true,
+                          "type": "integer",
+                        },
                         "id": {
-                          "description": "Lowercase alphanumeric tenant ID",
                           "maxLength": 24,
                           "required": true,
                           "type": "string",
@@ -19503,7 +20426,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "name": {
-                          "description": "Tenant display name",
+                          "maxLength": 255,
                           "required": true,
                           "type": "string",
                         },
@@ -19540,6 +20463,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "active",
                             "suspended",
                             "archived",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "subscriptionId": {
+                          "maxLength": 255,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "subscriptionPlan": {
+                          "maxLength": 255,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "subscriptionStatus": {
+                          "enum": [
+                            "none",
+                            "trialing",
+                            "active",
+                            "past_due",
+                            "paused",
+                            "canceled",
                           ],
                           "required": true,
                           "type": "string",
@@ -19605,9 +20556,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "name": {
-                  "description": "Tenant display name",
                   "maxLength": 255,
-                  "minLength": 1,
+                  "minLength": 2,
                   "required": true,
                   "type": "string",
                 },
@@ -19624,10 +20574,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "object",
             },
-            "example": {
-              "name": "Dare - Kovacek",
-              "status": "active",
-            },
           },
           "responses": [
             {
@@ -19643,8 +20589,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "createdBy": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "domainsCount": {
+                    "description": "Number of domains claimed by this tenant",
+                    "required": true,
+                    "type": "integer",
+                  },
                   "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
                     "maxLength": 24,
                     "required": true,
                     "type": "string",
@@ -19657,7 +20615,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "name": {
-                    "description": "Tenant display name",
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
@@ -19698,128 +20656,30 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                },
-                "ref": "#/components/schemas/Tenant",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "getTenantById",
-          "request": {
-            "path": {
-              "properties": {
-                "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Tenant",
-              "name": "Tenant",
-              "ref": "#/components/schemas/Tenant",
-              "schema": {
-                "contentType": "application/json",
-                "description": "A tenant representing an isolated data partition for multi-tenancy.",
-                "properties": {
-                  "createdAt": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "modifiedAt": {
+                  "subscriptionId": {
+                    "maxLength": 255,
                     "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
-                  "name": {
-                    "description": "Tenant display name",
+                  "subscriptionPlan": {
+                    "maxLength": 255,
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
-                  "restrictions": {
-                    "properties": {
-                      "quotas": {
-                        "additionalProperties": {
-                          "minimum": 0,
-                          "required": false,
-                          "type": "integer",
-                        },
-                        "description": "Entity quotas (0 = unlimited)",
-                        "required": true,
-                        "type": "object",
-                      },
-                      "rateLimits": {
-                        "properties": {
-                          "apiPointsPerHour": {
-                            "description": "Max API points per hour per user within this tenant",
-                            "minimum": 0,
-                            "required": true,
-                            "type": "integer",
-                          },
-                        },
-                        "required": true,
-                        "type": "object",
-                      },
-                    },
-                    "required": true,
-                    "type": "object",
-                  },
-                  "status": {
+                  "subscriptionStatus": {
                     "enum": [
+                      "none",
+                      "trialing",
                       "active",
-                      "suspended",
-                      "archived",
+                      "past_due",
+                      "paused",
+                      "canceled",
                     ],
                     "required": true,
                     "type": "string",
@@ -19875,7 +20735,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "properties": {
                 "name": {
                   "maxLength": 255,
-                  "minLength": 1,
+                  "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
@@ -19916,25 +20776,42 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "subscriptionId": {
+                  "maxLength": 255,
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "subscriptionPlan": {
+                  "maxLength": 255,
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "subscriptionStatus": {
+                  "enum": [
+                    "none",
+                    "trialing",
+                    "active",
+                    "past_due",
+                    "paused",
+                    "canceled",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
               },
               "required": true,
               "type": "object",
             },
-            "example": {
-              "name": "Murray, Bode and McKenzie",
-              "restrictions": {
-                "quotas": {},
-                "rateLimits": {
-                  "apiPointsPerHour": 57,
-                },
-              },
-              "status": "active",
-            },
             "path": {
               "properties": {
                 "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -19955,8 +20832,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "createdBy": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "domainsCount": {
+                    "description": "Number of domains claimed by this tenant",
+                    "required": true,
+                    "type": "integer",
+                  },
                   "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
                     "maxLength": 24,
                     "required": true,
                     "type": "string",
@@ -19969,7 +20858,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "name": {
-                    "description": "Tenant display name",
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
@@ -20010,75 +20899,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                },
-                "ref": "#/components/schemas/Tenant",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "archiveTenant",
-          "request": {
-            "path": {
-              "properties": {
-                "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Archived tenant",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "success": {
+                  "subscriptionId": {
+                    "maxLength": 255,
                     "required": true,
-                    "type": "boolean",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "subscriptionPlan": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "subscriptionStatus": {
+                    "enum": [
+                      "none",
+                      "trialing",
+                      "active",
+                      "past_due",
+                      "paused",
+                      "canceled",
+                    ],
+                    "required": true,
+                    "type": "string",
                   },
                 },
+                "ref": "#/components/schemas/Tenant",
                 "type": "object",
               },
               "status": 200,
@@ -20127,6 +20977,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "limit": {
                   "required": false,
                   "type": "string",
@@ -20566,7 +21420,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "memberships",
       },
       {
-        "count": 5,
+        "count": 6,
         "description": "Operations for managing organizations, which are core context entities and the highest
         ancestor in the entity hierarchy. Supports creating, listing, retrieving, updating, and deleting
         organizations within a tenant. Cross-tenant listing is available with elevated permissions.",
@@ -20628,7 +21482,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "activities",
       },
       {
-        "count": 5,
+        "count": 3,
         "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by
         Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and
         soft-deleting (archiving) tenants.",
@@ -20640,6 +21494,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen
         count badges in navigation and view count columns in entity lists.",
         "name": "seen",
+      },
+      {
+        "count": 3,
+        "description": undefined,
+        "name": "domains",
       },
     ],
   },

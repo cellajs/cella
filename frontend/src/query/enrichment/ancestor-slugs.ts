@@ -1,7 +1,7 @@
 import { appConfig, type ContextEntityType } from 'shared';
 import type { MembershipBase } from '~/api.gen';
 import type { AncestorSlugs } from '~/modules/entities/types';
-import { getEntityQueryKeys } from '~/query/basic';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getField } from '~/query/enrichment/helpers';
 import type { EnrichableEntity, InfiniteData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';

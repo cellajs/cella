@@ -22,7 +22,12 @@ import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
 
-/** Configuration for sync queries — extended gc time for offline caching. */
+/**
+ * Configuration for sync queries — extended gc time for offline caching.
+ * Note: staleTime is NOT set here — product entity queries use syncStaleTime
+ * from their query options (Infinity when stream is live, 5 min fallback).
+ * This ensures ensureQueryData skips fresh caches after catchup.
+ */
 const syncQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // 24 hours
 };

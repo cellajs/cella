@@ -7,7 +7,7 @@ export {
   hasEntityQueryKeys,
   registerEntityQueryKeys,
 } from './entity-query-registry';
-export { findEntityInListCache, useFindEntityInListCache } from './find-in-list-cache';
+export { findEntityInListCache } from './find-in-list-cache';
 export { flattenInfiniteData } from './flatten';
 export {
   changeInfiniteQueryData,
@@ -24,5 +24,3 @@ export {
 } from './mutate-query';
 export { preserveIncluded } from './preserve-included';
 export type { ItemData } from './types';
-export { useInfiniteQueryTotal } from './use-infinite-query-total';
-export { useMutateQueryData } from './use-mutate-query-data';

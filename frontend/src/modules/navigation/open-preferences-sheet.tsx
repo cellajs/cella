@@ -17,6 +17,7 @@ export function openPreferencesSheet(triggerRef: RefObject<HTMLButtonElement | n
     modal,
     disablePointerDismissal: true,
     className: navSheetClassName,
+    contentKey: 'preferences',
     onClose: () => setNavSheetOpen(null),
   });
 }

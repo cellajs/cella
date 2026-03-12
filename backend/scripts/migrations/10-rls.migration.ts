@@ -39,8 +39,10 @@ async function run() {
     'context_counters',
     'seen_by',
     'seen_counts',
+    'domains',
+    'tenants',
   ];
-  const readOnlyTables = ['tenants', 'system_roles', 'activities'];
+  const readOnlyTables = ['system_roles', 'activities'];
 
   // ============================================================================
   // Migration SQL

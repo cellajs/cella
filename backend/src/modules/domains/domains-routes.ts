@@ -1,0 +1,92 @@
+import { createXRoute } from '#/docs/x-routes';
+import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { errorResponseRefs, tenantOnlyParamSchema } from '#/schemas';
+import { createDomainBodySchema, domainParamSchema, domainSchema } from './domains-schema';
+
+export const domainRoutes = {
+  /**
+   * List domains for a tenant (system admin only)
+   */
+  getDomains: createXRoute({
+    operationId: 'getDomains',
+    method: 'get',
+    path: '/',
+    xGuard: [authGuard, sysAdminGuard],
+    tags: ['tenants'],
+    summary: 'List domains for a tenant',
+    description: 'Returns all domains belonging to a tenant. System admin access required.',
+    request: { params: tenantOnlyParamSchema },
+    responses: {
+      200: {
+        description: 'List of domains',
+        content: {
+          'application/json': {
+            schema: domainSchema.array(),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * Add a domain to a tenant (system admin only)
+   */
+  createDomain: createXRoute({
+    operationId: 'createDomain',
+    method: 'post',
+    path: '/',
+    xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
+    tags: ['tenants'],
+    summary: 'Add a domain to a tenant',
+    description: 'Adds a new domain to a tenant. The domain starts unverified. System admin access required.',
+    request: {
+      params: tenantOnlyParamSchema,
+      body: {
+        required: true,
+        content: { 'application/json': { schema: createDomainBodySchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Created domain',
+        content: {
+          'application/json': {
+            schema: domainSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * Remove a domain from a tenant (system admin only)
+   */
+  deleteDomain: createXRoute({
+    operationId: 'deleteDomain',
+    method: 'delete',
+    path: '/{id}',
+    xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: singlePointsLimiter,
+    tags: ['tenants'],
+    summary: 'Remove a domain',
+    description: 'Removes a domain from a tenant. System admin access required.',
+    request: { params: domainParamSchema },
+    responses: {
+      200: {
+        description: 'Domain removed',
+        content: {
+          'application/json': {
+            schema: domainSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+};
+
+export default domainRoutes;

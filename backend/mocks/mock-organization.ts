@@ -52,7 +52,6 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     defaultLanguage: appConfig.defaultLanguage,
     languages: [appConfig.defaultLanguage] as Language[],
     notificationEmail: `notifications@${slug}.example`,
-    emailDomains: [] as string[],
     color: faker.color.rgb().toLowerCase(),
     thumbnailUrl: null,
     logoUrl: null,

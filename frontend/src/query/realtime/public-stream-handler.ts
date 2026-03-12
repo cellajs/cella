@@ -1,6 +1,6 @@
 import { isPublicProductEntity } from 'shared';
 import type { StreamNotification } from '~/api.gen';
-import { getEntityQueryKeys } from '~/query/basic';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline';
 import { queryClient } from '~/query/query-client';
 import { useSyncStore } from '~/store/sync';
@@ -18,7 +18,7 @@ import * as cacheOps from './cache-ops';
  * also refetch when they become active again.
  */
 export function handlePublicStreamNotification(message: StreamNotification): void {
-  const { entityType, entityId, action, seq, stx } = message;
+  const { entityType, entityId, action, seqAt, stx } = message;
 
   // Only handle configured public entity types
   if (!entityType || !isPublicProductEntity(entityType)) {
@@ -31,9 +31,11 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     return;
   }
 
-  // Track seq for gap detection — scoped per entityType for public stream
-  if (seq !== null && seq !== undefined) {
-    useSyncStore.getState().setSeq(entityType, seq);
+  // Track unscoped seq watermark (from stamp_entity_seq_at trigger)
+  if (seqAt !== null && seqAt !== undefined) {
+    const store = useSyncStore.getState();
+    const current = store.getSeq(entityType);
+    if (seqAt > current) store.setSeq(entityType, seqAt);
   }
 
   // Use registry for dynamic lookup (keys registered at module load time by entity modules)
@@ -43,7 +45,7 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     case 'create':
     case 'update':
       // Fetch single entity and patch both detail and list caches
-      cacheOps.fetchEntityAndUpdateList(entityId, keys, action);
+      cacheOps.fetchEntityAndUpdateList(entityId, keys, action, undefined, entityType);
       break;
 
     case 'delete':

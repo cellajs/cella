@@ -93,8 +93,6 @@ export async function updateContextCounts(delta: CountDelta): Promise<void> {
     .insert(contextCountersTable)
     .values({
       contextKey: delta.contextKey,
-      seq: 0,
-      mSeq: 0,
       counts: initialCounts,
       updatedAt: new Date(),
     })

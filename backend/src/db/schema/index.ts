@@ -1,6 +1,7 @@
 export * from './activities';
 export * from './attachments';
 export * from './context-counters';
+export * from './domains';
 export * from './emails';
 export * from './inactive-memberships';
 export * from './memberships';

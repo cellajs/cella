@@ -1,5 +1,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
 
 export function ReloadPrompt() {
@@ -31,6 +33,19 @@ export function ReloadPrompt() {
     },
   });
 
+  // In development, auto-reload on SW update (skip prompt during offline:watch)
+  useEffect(() => {
+    if (needRefresh && appConfig.mode === 'development') {
+      updateServiceWorker(true);
+    }
+  }, [needRefresh, updateServiceWorker]);
+
+  // Attempt SW-driven reload, fall back to hard reload after timeout
+  const reload = useCallback(() => {
+    const timeout = setTimeout(() => window.location.reload(), 3000);
+    updateServiceWorker(true).then(() => clearTimeout(timeout));
+  }, [updateServiceWorker]);
+
   const close = () => {
     setNeedRefresh(false);
   };
@@ -43,7 +58,7 @@ export function ReloadPrompt() {
             <span>{t('common:refresh_pwa_app.text')}</span>
           </div>
           <div className="space-x-2">
-            {needRefresh && <Button onClick={() => updateServiceWorker(true)}>{t('common:reload')}</Button>}
+            {needRefresh && <Button onClick={reload}>{t('common:reload')}</Button>}
             <Button variant="secondary" onClick={() => close()}>
               {t('common:close')}
             </Button>

@@ -10,6 +10,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
+import { truncateMiddle } from '~/utils/truncate-middle';
 
 export type PageTab = {
   id: string;
@@ -37,6 +38,9 @@ interface Props {
   className?: string;
 }
 
+/**
+ * Horizontal page tab navigation
+ */
 export const PageTabNav = ({
   tabs: explicitTabs,
   parentRouteId,
@@ -104,7 +108,7 @@ export const PageTabNav = ({
                     if (el) tabRefs.current[id] = el;
                   }}
                   resetScroll={false}
-                  className="relative last:mr-4 p-2 lg:px-4 rounded-sm font-medium focus-effect ring-inset ring-offset-0 group opacity-70 hover:opacity-100 data-[active=true]:opacity-100 transition-opacity"
+                  className="relative last:mr-4 py-3 px-2 lg:px-4 rounded-sm font-medium focus-effect ring-inset ring-offset-0 group opacity-70 hover:opacity-100 data-[active=true]:opacity-100 transition-opacity"
                   to={path}
                   draggable="false"
                   data-active={fallbackToFirst && index === 0 ? true : undefined}
@@ -120,7 +124,7 @@ export const PageTabNav = ({
 
                     return (
                       <>
-                        <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
+                        <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
                         {showAsActive && hasStarted && (
                           <motion.span
                             layoutId={layoutId}

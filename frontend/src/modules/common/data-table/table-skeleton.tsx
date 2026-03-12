@@ -1,3 +1,4 @@
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
@@ -12,7 +13,6 @@ interface DataTableSkeletonProps {
 
 const EMPTY_CELL_WIDTHS: string[] = [];
 
-// TODO can we sing minimal code show a simplified skeleton on mobile?
 export const DataTableSkeleton = ({
   columnCount = 4,
   cellHeight = 40,
@@ -22,6 +22,8 @@ export const DataTableSkeleton = ({
 }: DataTableSkeletonProps) => {
   const renderCellHeight = cellHeight - 18;
   const { hasMounted } = useMountedState();
+  const isMobile = useBreakpointBelow('sm', false);
+  const effectiveColumnCount = isMobile ? Math.min(columnCount, 3) : columnCount;
 
   return (
     <div
@@ -31,7 +33,7 @@ export const DataTableSkeleton = ({
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: columnCount }).map((_, j) => (
+              {Array.from({ length: effectiveColumnCount }).map((_, j) => (
                 <TableHead
                   key={j.toString()}
                   style={{
@@ -48,7 +50,7 @@ export const DataTableSkeleton = ({
         <TableBody>
           {Array.from({ length: rowCount }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: columnCount }).map((_, j) => (
+              {Array.from({ length: effectiveColumnCount }).map((_, j) => (
                 <TableCell
                   key={j.toString()}
                   style={{

@@ -9,7 +9,6 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
-import { DomainsFormField } from '~/modules/common/form-fields/domains';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectCountry } from '~/modules/common/form-fields/select-combobox/country';
 import { SelectTimezone } from '~/modules/common/form-fields/select-combobox/timezone';
@@ -95,12 +94,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
           prefix={`/${organization.tenantId}/`}
-        />
-        <DomainsFormField
-          control={form.control}
-          name="emailDomains"
-          label={t('common:email_domains')}
-          description={t('common:email_domains.text')}
         />
         <InputFormField
           control={form.control}

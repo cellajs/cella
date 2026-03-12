@@ -22,7 +22,7 @@ vi.mock('shared', () => ({
 }));
 vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'] } }));
-vi.mock('~/query/basic', () => ({
+vi.mock('~/query/basic/entity-query-registry', () => ({
   getEntityQueryKeys: mockGetEntityQueryKeys,
   getRegisteredEntityTypes: mockGetRegisteredEntityTypes,
   hasEntityQueryKeys: mockHasEntityQueryKeys,

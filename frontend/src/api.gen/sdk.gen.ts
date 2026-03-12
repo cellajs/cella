@@ -3,9 +3,9 @@
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type {
-  ArchiveTenantData,
-  ArchiveTenantErrors,
-  ArchiveTenantResponses,
+  AutoCreateOrganizationData,
+  AutoCreateOrganizationErrors,
+  AutoCreateOrganizationResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
@@ -15,6 +15,9 @@ import type {
   CreateAttachmentsData,
   CreateAttachmentsErrors,
   CreateAttachmentsResponses,
+  CreateDomainData,
+  CreateDomainErrors,
+  CreateDomainResponses,
   CreateOrganizationsData,
   CreateOrganizationsErrors,
   CreateOrganizationsResponses,
@@ -39,6 +42,9 @@ import type {
   DeleteAttachmentsData,
   DeleteAttachmentsErrors,
   DeleteAttachmentsResponses,
+  DeleteDomainData,
+  DeleteDomainErrors,
+  DeleteDomainResponses,
   DeleteMeData,
   DeleteMeErrors,
   DeleteMembershipsData,
@@ -96,6 +102,9 @@ import type {
   GetCacheStatsData,
   GetCacheStatsErrors,
   GetCacheStatsResponses,
+  GetDomainsData,
+  GetDomainsErrors,
+  GetDomainsResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -147,9 +156,6 @@ import type {
   GetSyncMetricsData,
   GetSyncMetricsErrors,
   GetSyncMetricsResponses,
-  GetTenantByIdData,
-  GetTenantByIdErrors,
-  GetTenantByIdResponses,
   GetTenantsData,
   GetTenantsErrors,
   GetTenantsResponses,
@@ -294,7 +300,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string | null=} options.query.userid - `string | null` (optional)
  * @param {enum=} options.query.entitytype - `enum` (optional)
@@ -1575,11 +1580,12 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  *
  * @param {getTenantsData} options
  * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.status - `enum` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.offset - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.afterseq - `string` (optional)
+ * @param {enum=} options.query.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getTenants = <ThrowOnError extends boolean = true>(options?: Options<GetTenantsData, ThrowOnError>) =>
@@ -1627,56 +1633,6 @@ export const createTenant = <ThrowOnError extends boolean = true>(options: Optio
   });
 
 /**
- * Archive a tenant
- *
- * Archives a tenant (soft delete). Sets status to "archived". System admin access required. Data retention period applies before permanent deletion.
- *
- * **DELETE /tenants/{tenantId}** ·· [archiveTenant](https://api.cellajs.com/docs#tag/tenants/delete/tenants/{tenantId}) ·· _tenants_
- *
- * @param {archiveTenantData} options
- * @param {string} options.path.tenantid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const archiveTenant = <ThrowOnError extends boolean = true>(options: Options<ArchiveTenantData, ThrowOnError>) =>
-  (options.client ?? client).delete<ArchiveTenantResponses, ArchiveTenantErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}',
-    ...options,
-  });
-
-/**
- * Get tenant by ID
- *
- * Returns a single tenant by its ID. System admin access required.
- *
- * **GET /tenants/{tenantId}** ·· [getTenantById](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}) ·· _tenants_
- *
- * @param {getTenantByIdData} options
- * @param {string} options.path.tenantid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getTenantById = <ThrowOnError extends boolean = true>(options: Options<GetTenantByIdData, ThrowOnError>) =>
-  (options.client ?? client).get<GetTenantByIdResponses, GetTenantByIdErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}',
-    ...options,
-  });
-
-/**
  * Update a tenant
  *
  * Updates a tenant by ID. System admin access required.
@@ -1687,6 +1643,9 @@ export const getTenantById = <ThrowOnError extends boolean = true>(options: Opti
  * @param {string} options.path.tenantid - `string`
  * @param {string=} options.body.name - `string` (optional)
  * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
+ * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
+ * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
  * @param {object=} options.body.restrictions - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -1706,6 +1665,87 @@ export const updateTenant = <ThrowOnError extends boolean = true>(options: Optio
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * List domains for a tenant
+ *
+ * Returns all domains belonging to a tenant. System admin access required.
+ *
+ * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}/domains) ·· _tenants_
+ *
+ * @param {getDomainsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getDomains = <ThrowOnError extends boolean = true>(options: Options<GetDomainsData, ThrowOnError>) =>
+  (options.client ?? client).get<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains',
+    ...options,
+  });
+
+/**
+ * Add a domain to a tenant
+ *
+ * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
+ *
+ * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://api.cellajs.com/docs#tag/tenants/post/tenants/{tenantId}/domains) ·· _tenants_
+ *
+ * @param {createDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string=} options.body.domain - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const createDomain = <ThrowOnError extends boolean = true>(options: Options<CreateDomainData, ThrowOnError>) =>
+  (options.client ?? client).post<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove a domain
+ *
+ * Removes a domain from a tenant. System admin access required.
+ *
+ * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://api.cellajs.com/docs#tag/tenants/delete/tenants/{tenantId}/domains/{id}) ·· _tenants_
+ *
+ * @param {deleteDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteDomain = <ThrowOnError extends boolean = true>(options: Options<DeleteDomainData, ThrowOnError>) =>
+  (options.client ?? client).delete<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}',
+    ...options,
   });
 
 /**
@@ -1752,7 +1792,6 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -1996,7 +2035,6 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string=} options.query.relatableuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
@@ -2018,6 +2056,39 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
     ],
     url: '/organizations',
     ...options,
+  });
+
+/**
+ * Create organization with auto-tenant
+ *
+ * Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.
+ *
+ * **POST /organizations** ·· [autoCreateOrganization](https://api.cellajs.com/docs#tag/organizations/post/organizations) ·· _organizations_
+ *
+ * @param {autoCreateOrganizationData} options
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {boolean=} options.body.createNewTenant - `boolean` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 429
+ */
+export const autoCreateOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<AutoCreateOrganizationData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<AutoCreateOrganizationResponses, AutoCreateOrganizationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/organizations',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**
@@ -2068,7 +2139,6 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.body.defaultLanguage - `enum` (optional)
  * @param {any[]=} options.body.languages - `any[]` (optional)
  * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
- * @param {any[]=} options.body.emailDomains - `any[]` (optional)
  * @param {string | null=} options.body.color - `string | null` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string | null=} options.body.logoUrl - `string | null` (optional)
@@ -2112,7 +2182,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2247,7 +2316,6 @@ export const updatePage = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
@@ -2341,7 +2409,6 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2661,7 +2728,6 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
@@ -2698,7 +2764,6 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {enum=} options.query.order - `enum` (optional)
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.modifiedafter - `string` (optional)
  * @param {string=} options.query.afterseq - `string` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`

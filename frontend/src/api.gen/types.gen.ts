@@ -84,7 +84,6 @@ export type StreamNotification = {
   entityId: string;
   organizationId: string | null;
   contextType: 'organization' | null;
-  seq: number | null;
   seqAt: number | null;
   stx: StxBase &
     ({
@@ -289,13 +288,7 @@ export type UploadToken = {
  * A tenant representing an isolated data partition for multi-tenancy.
  */
 export type Tenant = {
-  /**
-   * Lowercase alphanumeric tenant ID
-   */
   id: string;
-  /**
-   * Tenant display name
-   */
   name: string;
   status: 'active' | 'suspended' | 'archived';
   restrictions: {
@@ -312,8 +305,29 @@ export type Tenant = {
       apiPointsPerHour: number;
     };
   };
+  createdBy: string | null;
+  subscriptionId: string | null;
+  subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
+  subscriptionPlan: string | null;
   createdAt: string;
   modifiedAt: string | null;
+  /**
+   * Number of domains claimed by this tenant
+   */
+  domainsCount: number;
+};
+
+/**
+ * A domain claimed by a tenant for email matching and verification.
+ */
+export type Domain = {
+  id: string;
+  tenantId: string;
+  domain: string;
+  verified: boolean;
+  verifiedAt: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
 };
 
 /**
@@ -355,7 +369,6 @@ export type Organization = {
   defaultLanguage: 'en' | 'nl';
   languages: Array<'en' | 'nl'>;
   notificationEmail: string | null;
-  emailDomains: Array<string>;
   color: string | null;
   logoUrl: string | null;
   websiteUrl: string | null;
@@ -490,7 +503,6 @@ export type GetActivitiesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     userId?: string | null;
     entityType?: 'user' | 'organization' | 'attachment' | 'page';
@@ -2315,7 +2327,7 @@ export type PostPublicCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     * Client-side sequence numbers per scope: { "orgId:s:page": 42 }
      */
     seqs?: {
       [key: string]: number;
@@ -2361,14 +2373,15 @@ export type PostPublicCatchupResponses = {
      */
     changes: {
       [key: string]: {
-        seq: number;
         deletedIds: Array<string>;
-        mSeq?: number;
         entitySeqs?: {
           [key: string]: number;
         };
         deletedByType?: {
           [key: string]: Array<string>;
+        };
+        entityCounts?: {
+          [key: string]: number;
         };
       };
     };
@@ -2427,7 +2440,7 @@ export type PostAppCatchupData = {
      */
     cursor?: string;
     /**
-     * Client-side sequence numbers per scope: { "orgId": 42, "orgId:m": 5 }
+     * Client-side sequence numbers per scope: { "orgId:s:page": 42 }
      */
     seqs?: {
       [key: string]: number;
@@ -2473,14 +2486,15 @@ export type PostAppCatchupResponses = {
      */
     changes: {
       [key: string]: {
-        seq: number;
         deletedIds: Array<string>;
-        mSeq?: number;
         entitySeqs?: {
           [key: string]: number;
         };
         deletedByType?: {
           [key: string]: Array<string>;
+        };
+        entityCounts?: {
+          [key: string]: number;
         };
       };
     };
@@ -2748,18 +2762,16 @@ export type GetTenantsData = {
   body?: never;
   path?: never;
   query?: {
-    /**
-     * Search query
-     */
     q?: string;
+    sort?: 'createdAt' | 'name';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    afterSeq?: string;
     /**
      * Filter by status
      */
     status?: 'active' | 'suspended' | 'archived';
-    limit?: string;
-    offset?: string;
-    sort?: 'createdAt' | 'name';
-    order?: 'asc' | 'desc';
   };
   url: '/tenants';
 };
@@ -2803,9 +2815,6 @@ export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
 
 export type CreateTenantData = {
   body: {
-    /**
-     * Tenant display name
-     */
     name: string;
     status?: 'active' | 'suspended' | 'archived';
   };
@@ -2848,104 +2857,13 @@ export type CreateTenantResponses = {
 
 export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
 
-export type ArchiveTenantData = {
-  body?: never;
-  path: {
-    /**
-     * Tenant ID
-     */
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}';
-};
-
-export type ArchiveTenantErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type ArchiveTenantError = ArchiveTenantErrors[keyof ArchiveTenantErrors];
-
-export type ArchiveTenantResponses = {
-  /**
-   * Archived tenant
-   */
-  200: {
-    success: boolean;
-  };
-};
-
-export type ArchiveTenantResponse = ArchiveTenantResponses[keyof ArchiveTenantResponses];
-
-export type GetTenantByIdData = {
-  body?: never;
-  path: {
-    /**
-     * Tenant ID
-     */
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}';
-};
-
-export type GetTenantByIdErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetTenantByIdError = GetTenantByIdErrors[keyof GetTenantByIdErrors];
-
-export type GetTenantByIdResponses = {
-  /**
-   * Tenant
-   */
-  200: Tenant;
-};
-
-export type GetTenantByIdResponse = GetTenantByIdResponses[keyof GetTenantByIdResponses];
-
 export type UpdateTenantData = {
   body: {
     name?: string;
     status?: 'active' | 'suspended' | 'archived';
+    subscriptionId?: string | null;
+    subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
+    subscriptionPlan?: string | null;
     /**
      * Partial restrictions override
      */
@@ -2962,9 +2880,6 @@ export type UpdateTenantData = {
     };
   };
   path: {
-    /**
-     * Tenant ID
-     */
     tenantId: string;
   };
   query?: never;
@@ -3004,6 +2919,138 @@ export type UpdateTenantResponses = {
 };
 
 export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
+
+export type GetDomainsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains';
+};
+
+export type GetDomainsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDomainsError = GetDomainsErrors[keyof GetDomainsErrors];
+
+export type GetDomainsResponses = {
+  /**
+   * List of domains
+   */
+  200: Array<Domain>;
+};
+
+export type GetDomainsResponse = GetDomainsResponses[keyof GetDomainsResponses];
+
+export type CreateDomainData = {
+  body: {
+    domain: string;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains';
+};
+
+export type CreateDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateDomainError = CreateDomainErrors[keyof CreateDomainErrors];
+
+export type CreateDomainResponses = {
+  /**
+   * Created domain
+   */
+  200: Domain;
+};
+
+export type CreateDomainResponse = CreateDomainResponses[keyof CreateDomainResponses];
+
+export type DeleteDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}';
+};
+
+export type DeleteDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteDomainError = DeleteDomainErrors[keyof DeleteDomainErrors];
+
+export type DeleteDomainResponses = {
+  /**
+   * Domain removed
+   */
+  200: Domain;
+};
+
+export type DeleteDomainResponse = DeleteDomainResponses[keyof DeleteDomainResponses];
 
 export type DeleteRequestsData = {
   body: {
@@ -3069,7 +3116,6 @@ export type GetRequestsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/requests';
@@ -3659,7 +3705,6 @@ export type GetOrganizationsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     relatableUserId?: string;
     role?: 'admin' | 'member';
@@ -3705,6 +3750,67 @@ export type GetOrganizationsResponses = {
 };
 
 export type GetOrganizationsResponse = GetOrganizationsResponses[keyof GetOrganizationsResponses];
+
+export type AutoCreateOrganizationData = {
+  body: {
+    name: string;
+    slug: string;
+    createNewTenant?: boolean;
+  };
+  path?: never;
+  query?: never;
+  url: '/organizations';
+};
+
+export type AutoCreateOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type AutoCreateOrganizationError = AutoCreateOrganizationErrors[keyof AutoCreateOrganizationErrors];
+
+export type AutoCreateOrganizationResponses = {
+  /**
+   * An organization with membership context.
+   */
+  201: Organization & {
+    included?: {
+      membership: MembershipBase;
+      counts?: {
+        membership: {
+          admin: number;
+          member: number;
+          pending: number;
+          total: number;
+        };
+        entities: {
+          attachment: number;
+          page: number;
+        };
+      };
+    };
+  };
+};
+
+export type AutoCreateOrganizationResponse = AutoCreateOrganizationResponses[keyof AutoCreateOrganizationResponses];
 
 export type GetOrganizationData = {
   body?: never;
@@ -3763,7 +3869,6 @@ export type UpdateOrganizationData = {
     defaultLanguage?: 'en' | 'nl';
     languages?: Array<'en' | 'nl'>;
     notificationEmail?: string | null;
-    emailDomains?: Array<string>;
     color?: string | null;
     thumbnailUrl?: string | null;
     logoUrl?: string | null;
@@ -3824,7 +3929,6 @@ export type GetPagesData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/pages';
@@ -4102,7 +4206,6 @@ export type GetUsersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     role?: 'admin';
   };
@@ -4275,7 +4378,6 @@ export type GetAttachmentsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
   };
   url: '/{tenantId}/{orgId}/attachments';
@@ -4816,7 +4918,6 @@ export type GetMembersData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     entityId: string;
     entityType: 'organization';
@@ -4883,7 +4984,6 @@ export type GetPendingMembershipsData = {
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
-    modifiedAfter?: string;
     afterSeq?: string;
     entityId: string;
     entityType: 'organization';

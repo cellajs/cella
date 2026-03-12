@@ -81,6 +81,7 @@ export const AccountSheet = () => {
       disablePointerDismissal: true,
       className: navSheetClassName,
       skipAnimation: true,
+      contentKey: 'menu',
       autoScrollOnDrag: 'vertical',
       onClose: () => setNavSheetOpen(null),
     });

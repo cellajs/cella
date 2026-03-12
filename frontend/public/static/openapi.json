@@ -575,12 +575,6 @@
               null
             ]
           },
-          "seq": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
           "seqAt": {
             "type": [
               "integer",
@@ -614,7 +608,6 @@
           "entityId",
           "organizationId",
           "contextType",
-          "seq",
           "seqAt",
           "stx",
           "cacheToken"
@@ -627,9 +620,8 @@
           "entityId": "gj2w2bwxrkgnv0oa592jxwar",
           "organizationId": "c2u05q7olzsfy1csy8m2q98f",
           "contextType": null,
-          "seq": 550,
-          "seqAt": 458,
-          "cacheToken": "yMeEcuBnWoD28KSeQr21dJgZDmxiD2Ws",
+          "seqAt": 275,
+          "cacheToken": "UyMeEcuBnWoD28KSeQr21dJgZDmxiD2W",
           "stx": {
             "mutationId": "g5bhj6q04ey9pbycghixqzn7",
             "sourceId": "8ex8g1epv4xwf03jl4snuwh0",
@@ -1028,9 +1020,8 @@
             "email"
           ],
           "stx": null,
-          "seq": 66,
           "error": null,
-          "organizationId": "pg8iwtnhw3666j3aifuxshox"
+          "organizationId": "2pg8iwtnhw3666j3aifuxsho"
         }
       },
       "Me": {
@@ -1609,12 +1600,11 @@
         "properties": {
           "id": {
             "type": "string",
-            "maxLength": 24,
-            "description": "Lowercase alphanumeric tenant ID"
+            "maxLength": 24
           },
           "name": {
             "type": "string",
-            "description": "Tenant display name"
+            "maxLength": 255
           },
           "status": {
             "type": "string",
@@ -1654,6 +1644,38 @@
               "rateLimits"
             ]
           },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50
+          },
+          "subscriptionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "subscriptionStatus": {
+            "type": "string",
+            "enum": [
+              "none",
+              "trialing",
+              "active",
+              "past_due",
+              "paused",
+              "canceled"
+            ]
+          },
+          "subscriptionPlan": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
           "createdAt": {
             "type": "string"
           },
@@ -1662,6 +1684,10 @@
               "string",
               "null"
             ]
+          },
+          "domainsCount": {
+            "type": "integer",
+            "description": "Number of domains claimed by this tenant"
           }
         },
         "required": [
@@ -1669,10 +1695,60 @@
           "name",
           "status",
           "restrictions",
+          "createdBy",
+          "subscriptionId",
+          "subscriptionStatus",
+          "subscriptionPlan",
           "createdAt",
-          "modifiedAt"
+          "modifiedAt",
+          "domainsCount"
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy."
+      },
+      "Domain": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "domain": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "verifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastCheckedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "domain",
+          "verified",
+          "verifiedAt",
+          "lastCheckedAt",
+          "createdAt"
+        ],
+        "description": "A domain claimed by a tenant for email matching and verification."
       },
       "Request": {
         "type": "object",
@@ -1845,12 +1921,6 @@
             ],
             "maxLength": 255
           },
-          "emailDomains": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "color": {
             "type": [
               "string",
@@ -1971,7 +2041,6 @@
           "defaultLanguage",
           "languages",
           "notificationEmail",
-          "emailDomains",
           "color",
           "logoUrl",
           "websiteUrl",
@@ -1996,7 +2065,6 @@
             "en"
           ],
           "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "emailDomains": [],
           "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
@@ -2582,15 +2650,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -2719,9 +2778,8 @@
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "changedKeys": null,
                       "stx": null,
-                      "seq": 511,
                       "error": null,
-                      "organizationId": "weg2q4gqa3vx9cfyey6mqh9h"
+                      "organizationId": "iweg2q4gqa3vx9cfyey6mqh9"
                     },
                     {
                       "id": "5ogh3yr2b2dbwf7b9eckajcl",
@@ -2740,9 +2798,8 @@
                         "email"
                       ],
                       "stx": null,
-                      "seq": 810,
                       "error": null,
-                      "organizationId": "5nr6k4huj5qv4k6bwmvl0e44"
+                      "organizationId": "t5nr6k4huj5qv4k6bwmvl0e4"
                     }
                   ],
                   "total": 2
@@ -5834,10 +5891,9 @@
                     "additionalProperties": {
                       "type": "integer"
                     },
-                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
                     "example": {
-                      "abc123": 10,
-                      "abc123:m": 3
+                      "abc123:s:page": 10
                     }
                   }
                 }
@@ -5858,17 +5914,11 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "seq": {
-                            "type": "integer"
-                          },
                           "deletedIds": {
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
-                          },
-                          "mSeq": {
-                            "type": "integer"
                           },
                           "entitySeqs": {
                             "type": "object",
@@ -5884,10 +5934,15 @@
                                 "type": "string"
                               }
                             }
+                          },
+                          "entityCounts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            }
                           }
                         },
                         "required": [
-                          "seq",
                           "deletedIds"
                         ]
                       },
@@ -6007,10 +6062,9 @@
                     "additionalProperties": {
                       "type": "integer"
                     },
-                    "description": "Client-side sequence numbers per scope: { \"orgId\": 42, \"orgId:m\": 5 }",
+                    "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
                     "example": {
-                      "abc123": 10,
-                      "abc123:m": 3
+                      "abc123:s:page": 10
                     }
                   }
                 }
@@ -6031,17 +6085,11 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "seq": {
-                            "type": "integer"
-                          },
                           "deletedIds": {
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
-                          },
-                          "mSeq": {
-                            "type": "integer"
                           },
                           "entitySeqs": {
                             "type": "object",
@@ -6057,10 +6105,15 @@
                                 "type": "string"
                               }
                             }
+                          },
+                          "entityCounts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            }
                           }
                         },
                         "required": [
-                          "seq",
                           "deletedIds"
                         ]
                       },
@@ -6082,7 +6135,6 @@
                 "example": {
                   "changes": {
                     "org-example-id": {
-                      "seq": 42,
                       "deletedIds": []
                     }
                   },
@@ -6632,44 +6684,10 @@
           {
             "schema": {
               "type": "string",
-              "description": "Search query"
+              "maxLength": 255
             },
             "required": false,
-            "description": "Search query",
             "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "active",
-                "suspended",
-                "archived"
-              ],
-              "description": "Filter by status"
-            },
-            "required": false,
-            "description": "Filter by status",
-            "name": "status",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "default": "50"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "default": "0"
-            },
-            "required": false,
-            "name": "offset",
             "in": "query"
           },
           {
@@ -6692,10 +6710,49 @@
                 "asc",
                 "desc"
               ],
-              "default": "desc"
+              "default": "asc"
             },
             "required": false,
             "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "afterSeq",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "suspended",
+                "archived"
+              ],
+              "description": "Filter by status"
+            },
+            "required": false,
+            "description": "Filter by status",
+            "name": "status",
             "in": "query"
           }
         ],
@@ -6771,9 +6828,8 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255,
-                    "description": "Tenant display name"
+                    "minLength": 2,
+                    "maxLength": 255
                   },
                   "status": {
                     "type": "string",
@@ -6781,8 +6837,7 @@
                       "active",
                       "suspended",
                       "archived"
-                    ],
-                    "default": "active"
+                    ]
                   }
                 },
                 "required": [
@@ -6822,65 +6877,6 @@
       }
     },
     "/tenants/{tenantId}": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getTenantById",
-        "tags": [
-          "tenants"
-        ],
-        "summary": "Get tenant by ID",
-        "description": "Returns a single tenant by its ID. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 24,
-              "description": "Tenant ID"
-            },
-            "required": true,
-            "description": "Tenant ID",
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tenant",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Tenant"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
       "put": {
         "security": [
           {
@@ -6905,11 +6901,9 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "description": "Tenant ID"
+              "maxLength": 50
             },
             "required": true,
-            "description": "Tenant ID",
             "name": "tenantId",
             "in": "path"
           }
@@ -6923,7 +6917,7 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 1,
+                    "minLength": 2,
                     "maxLength": 255
                   },
                   "status": {
@@ -6933,6 +6927,31 @@
                       "suspended",
                       "archived"
                     ]
+                  },
+                  "subscriptionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "subscriptionStatus": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "trialing",
+                      "active",
+                      "past_due",
+                      "paused",
+                      "canceled"
+                    ]
+                  },
+                  "subscriptionPlan": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
                   },
                   "restrictions": {
                     "type": "object",
@@ -6989,19 +7008,81 @@
             "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/tenants/{tenantId}/domains": {
+      "get": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "archiveTenant",
+        "operationId": "getDomains",
         "tags": [
           "tenants"
         ],
-        "summary": "Archive a tenant",
-        "description": "Archives a tenant (soft delete). Sets status to \"archived\". System admin access required. Data retention period applies before permanent deletion.",
+        "summary": "List domains for a tenant",
+        "description": "Returns all domains belonging to a tenant. System admin access required.",
+        "x-guard": [
+          "authGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Domain"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createDomain",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Add a domain to a tenant",
+        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
         "x-guard": [
           "authGuard",
           "sysAdminGuard"
@@ -7014,30 +7095,111 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 24,
-              "description": "Tenant ID"
+              "maxLength": 50
             },
             "required": true,
-            "description": "Tenant ID",
             "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9].*[a-z0-9]$/i"
+                  }
+                },
+                "required": [
+                  "domain"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created domain",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Domain"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/domains/{id}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteDomain",
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Remove a domain",
+        "description": "Removes a domain from a tenant. System admin access required.",
+        "x-guard": [
+          "authGuard",
+          "sysAdminGuard"
+        ],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Archived tenant",
+            "description": "Domain removed",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "success"
-                  ]
+                  "$ref": "#/components/schemas/Domain"
                 }
               }
             }
@@ -7220,15 +7382,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -8154,7 +8307,6 @@
                             "en"
                           ],
                           "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                          "emailDomains": [],
                           "color": "#ecfdfe",
                           "thumbnailUrl": null,
                           "logoUrl": null,
@@ -8237,7 +8389,6 @@
                         "en"
                       ],
                       "notificationEmail": "notifications@kessler-and-sons.example",
-                      "emailDomains": [],
                       "color": "#ce39f9",
                       "thumbnailUrl": null,
                       "logoUrl": null,
@@ -8293,7 +8444,6 @@
                         "en"
                       ],
                       "notificationEmail": "notifications@howell-ullrich.example",
-                      "emailDomains": [],
                       "color": "#88b531",
                       "thumbnailUrl": null,
                       "logoUrl": null,
@@ -8468,6 +8618,206 @@
       }
     },
     "/organizations": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "autoCreateOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Create organization with auto-tenant",
+        "description": "Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.",
+        "x-guard": [
+          "authGuard"
+        ],
+        "x-rate-limiter": [
+          "pointsLimiter"
+        ],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255
+                  },
+                  "createNewTenant": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "slug"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organization was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Organization"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "included": {
+                          "type": "object",
+                          "properties": {
+                            "membership": {
+                              "$ref": "#/components/schemas/MembershipBase"
+                            },
+                            "counts": {
+                              "type": "object",
+                              "properties": {
+                                "membership": {
+                                  "type": "object",
+                                  "properties": {
+                                    "admin": {
+                                      "type": "number"
+                                    },
+                                    "member": {
+                                      "type": "number"
+                                    },
+                                    "pending": {
+                                      "type": "number"
+                                    },
+                                    "total": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "admin",
+                                    "member",
+                                    "pending",
+                                    "total"
+                                  ]
+                                },
+                                "entities": {
+                                  "type": "object",
+                                  "properties": {
+                                    "attachment": {
+                                      "type": "number"
+                                    },
+                                    "page": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "attachment",
+                                    "page"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "membership",
+                                "entities"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "membership"
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "description": "An organization with membership context.",
+                  "example": {
+                    "id": "hmo9fwr239kqavr3yur671kl",
+                    "tenantId": "vk6xht",
+                    "entityType": "organization",
+                    "name": "Hills, Bauch and Monahan",
+                    "slug": "hills-bauch-and-monahan",
+                    "description": "Multi-tiered zero trust firmware",
+                    "shortName": "Hills,",
+                    "country": "Turks and Caicos Islands",
+                    "timezone": "America/Argentina/Buenos_Aires",
+                    "defaultLanguage": "en",
+                    "languages": [
+                      "en"
+                    ],
+                    "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                    "color": "#ecfdfe",
+                    "thumbnailUrl": null,
+                    "logoUrl": null,
+                    "bannerUrl": null,
+                    "websiteUrl": "https://hills-bauch-and-monahan.example",
+                    "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+                    "authStrategies": [
+                      "password"
+                    ],
+                    "chatSupport": true,
+                    "createdAt": "2024-12-25T15:29:47.111Z",
+                    "createdBy": null,
+                    "modifiedAt": "2024-12-25T15:29:47.111Z",
+                    "modifiedBy": null,
+                    "included": {
+                      "membership": {
+                        "id": "kaba9fpc90mgtzmtjipw2v8s",
+                        "tenantId": "w4hg40",
+                        "contextType": "organization",
+                        "userId": "36vxzq0rzt4pucvepsu63uw1",
+                        "organizationId": "hmo9fwr239kqavr3yur671kl",
+                        "role": "admin",
+                        "displayOrder": 69,
+                        "muted": false,
+                        "archived": false
+                      },
+                      "counts": {
+                        "membership": {
+                          "admin": 30,
+                          "member": 63,
+                          "pending": 13,
+                          "total": 93
+                        },
+                        "entities": {
+                          "attachment": 178,
+                          "page": 257
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
       "get": {
         "security": [
           {
@@ -8538,15 +8888,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -8639,7 +8980,6 @@
                         "en"
                       ],
                       "notificationEmail": "notifications@dicki-jacobi.example",
-                      "emailDomains": [],
                       "color": "#f40655",
                       "thumbnailUrl": null,
                       "logoUrl": null,
@@ -8695,7 +9035,6 @@
                         "en"
                       ],
                       "notificationEmail": "notifications@witting-wuckert.example",
-                      "emailDomains": [],
                       "color": "#d9e6a7",
                       "thumbnailUrl": null,
                       "logoUrl": null,
@@ -8846,7 +9185,6 @@
                     "en"
                   ],
                   "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                  "emailDomains": [],
                   "color": "#ecfdfe",
                   "thumbnailUrl": null,
                   "logoUrl": null,
@@ -9010,14 +9348,6 @@
                     ],
                     "maxLength": 255
                   },
-                  "emailDomains": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 4,
-                      "maxLength": 255
-                    }
-                  },
                   "color": {
                     "type": [
                       "string",
@@ -9106,7 +9436,6 @@
                     "en"
                   ],
                   "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-                  "emailDomains": [],
                   "color": "#ecfdfe",
                   "thumbnailUrl": null,
                   "logoUrl": null,
@@ -9233,15 +9562,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -10063,15 +10383,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -10468,15 +10779,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {
@@ -12125,15 +12427,6 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
-            "in": "query"
-          },
-          {
-            "schema": {
               "type": "string"
             },
             "required": false,
@@ -12414,15 +12707,6 @@
             },
             "required": false,
             "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "modifiedAfter",
             "in": "query"
           },
           {

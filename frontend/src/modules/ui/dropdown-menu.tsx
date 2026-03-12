@@ -1,14 +1,6 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
-import {
-  type ComponentProps,
-  type HTMLAttributes,
-  isValidElement,
-  type ReactElement,
-  type RefAttributes,
-  type RefObject,
-  useRef,
-} from 'react';
+import { type ComponentProps, type HTMLAttributes, type RefAttributes, type RefObject, useRef } from 'react';
 import { cn } from '~/utils/cn';
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -19,20 +11,8 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
 
-function DropdownMenuTrigger({
-  asChild,
-  children,
-  ...props
-}: MenuPrimitive.Trigger.Props & RefAttributes<HTMLButtonElement> & { asChild?: boolean }) {
-  // Translate Radix's asChild pattern to Base UI's render prop
-  if (asChild && isValidElement(children)) {
-    return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" render={children as ReactElement} {...props} />;
-  }
-  return (
-    <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" nativeButton {...props}>
-      {children}
-    </MenuPrimitive.Trigger>
-  );
+function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props & RefAttributes<HTMLButtonElement>) {
+  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
 /**

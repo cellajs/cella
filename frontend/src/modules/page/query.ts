@@ -25,8 +25,9 @@ import {
   findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
-  useMutateQueryData,
 } from '~/query/basic';
+import { syncStaleTime } from '~/query/basic/sync-stale-config';
+import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
   createStxForCreate,
@@ -49,7 +50,9 @@ export const pagesLimit = appConfig.requestLimits.pages;
 type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 
 const keys = createEntityKeys<PageFilters>('page');
-registerEntityQueryKeys('page', keys);
+registerEntityQueryKeys('page', keys, (_orgId, afterSeq) =>
+  getPages({ query: { afterSeq: String(afterSeq), limit: '1000' } }),
+);
 export const pageQueryKeys = keys;
 
 const pagesMutationKeyBase = ['page'] as const;
@@ -90,7 +93,6 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
 
   return infiniteQueryOptions({
     queryKey,
-    staleTime: 1000 * 30, // 30 seconds - explicit to ensure route prefetch respects it
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
@@ -102,6 +104,7 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
       return result;
     },
     ...baseInfiniteQueryOptions,
+    staleTime: syncStaleTime,
   });
 };
 
@@ -156,7 +159,7 @@ export const usePageUpdateMutation = () => {
       return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
     },
     onMutate: async ({ id, key, data }: UpdatePageVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, { [key]: data });
+      await squashPendingMutation(queryClient, keys.update, id, key);
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 

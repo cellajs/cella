@@ -56,6 +56,4 @@ const pageSortKeys = pageSelectSchema.keyof().extract(['name', 'status', 'create
 
 export const pageListQuerySchema = paginationQuerySchema.extend({
   sort: pageSortKeys.default('createdAt').optional(),
-  /** ISO timestamp filter for delta sync - returns pages modified at or after this time (legacy, prefer afterSeq) */
-  modifiedAfter: z.iso.datetime().optional(),
 });

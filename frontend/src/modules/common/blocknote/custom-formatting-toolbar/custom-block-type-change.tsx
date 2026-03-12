@@ -32,8 +32,11 @@ export const CellaCustomBlockTypeSelect = ({
 
   const filteredItems = blockTypeSelectItems(dict).filter(({ type, props }) => {
     if (!itemsType.includes(type)) return false;
-    if (type === 'heading' && typeof props?.level === 'number') {
-      return headingLevels.includes(props.level as (typeof headingLevels)[number]);
+    if (type === 'heading') {
+      if (props?.isToggleable) return false;
+      if (typeof props?.level === 'number') {
+        return headingLevels.includes(props.level as (typeof headingLevels)[number]);
+      }
     }
     return true;
   });

@@ -1,5 +1,6 @@
 import { default as i18n, default as i18next } from 'i18next';
 import { ApiError } from '~/lib/api';
+import { checkConnectivity } from '~/lib/connectivity';
 import { toaster } from '~/modules/common/toaster/toaster';
 import router from '~/routes/router';
 import { useAlertStore } from '~/store/alert';
@@ -43,7 +44,22 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
  * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
  * @param error - The error object.
  */
+const isNetworkError = (error: Error): boolean => {
+  const msg = error.message?.toLowerCase() ?? '';
+  return (
+    msg.includes('failed to fetch') || // Chrome, Edge
+    msg.includes('load failed') || // Safari
+    msg.includes('networkerror') // Firefox
+  );
+};
+
 export const onError = (error: Error | ApiError) => {
+  // Handle network-level failures (no HTTP response received)
+  if (!(error instanceof ApiError) && error instanceof Error && isNetworkError(error)) {
+    checkConnectivity();
+    return;
+  }
+
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
 

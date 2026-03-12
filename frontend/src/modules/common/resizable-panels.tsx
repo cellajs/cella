@@ -371,6 +371,7 @@ function showResizeHint(
     s.setProperty('--hint-right', side === 'right' ? '8px' : 'auto');
   }
   s.setProperty('--hint-progress', `${progress}`);
+  s.setProperty('--content-opacity', `${1 - progress}`);
 }
 
 function clearResizeHint(element: HTMLDivElement) {
@@ -380,6 +381,7 @@ function clearResizeHint(element: HTMLDivElement) {
   s.removeProperty('--hint-flip');
   s.removeProperty('--hint-left');
   s.removeProperty('--hint-right');
+  s.removeProperty('--content-opacity');
 }
 
 // ─── ResizablePanelGroup ─────────────────────────────────────────────────────
@@ -973,7 +975,9 @@ export function ResizablePanel({
       style={{ overflow: 'hidden', position: 'relative', flexShrink: 0 }}
       {...rest}
     >
-      {children}
+      <div className="h-full" style={{ opacity: 'var(--content-opacity, 1)' }}>
+        {children}
+      </div>
       <ResizeHint />
     </div>
   );

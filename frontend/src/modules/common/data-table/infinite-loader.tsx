@@ -39,7 +39,11 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetc
 
   // Offline but more data is available
   if (!isOnline && hasNextPage)
-    return <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>;
+    return (
+      <div className="w-full mt-4 italic text-muted-foreground/50 text-sm text-center">
+        {t('common:offline.load_more')}
+      </div>
+    );
 
   return (
     <>

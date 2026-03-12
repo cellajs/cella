@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, gt, gte, ilike, inArray, or, SQL } from 'drizzle-orm';
+import { and, count, eq, getColumns, gt, ilike, inArray, or, SQL } from 'drizzle-orm';
 import { nanoid } from 'shared/nanoid';
 import { pagesTable } from '#/db/schema/pages';
 import { setPublicRlsContext } from '#/db/tenant-context';
@@ -31,19 +31,16 @@ const pageRouteHandlers = app
    * Get list of pages
    */
   .openapi(pagesRoutes.getPages, async (ctx) => {
-    const { q, sort, order, limit, offset, modifiedAfter, afterSeq } = ctx.req.valid('query');
+    const { q, sort, order, limit, offset, afterSeq } = ctx.req.valid('query');
 
     return setPublicRlsContext('public', async (tenantDb) => {
       const matchMode = 'all';
 
       const filters: SQL[] = [];
 
-      // Sequence-based delta sync filter (preferred over modifiedAfter)
+      // Sequence-based delta sync filter
       if (afterSeq !== undefined) {
         filters.push(gt(pagesTable.seqAt, afterSeq));
-      } else if (modifiedAfter) {
-        // Legacy timestamp-based delta sync filter
-        filters.push(gte(pagesTable.modifiedAt, modifiedAfter));
       }
 
       const trimmedQuery = q?.trim();

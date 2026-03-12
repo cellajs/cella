@@ -28,6 +28,17 @@ addBadgeToFavicon(appConfig.mode);
 // Initialize Sentry
 initSentry();
 
+// In dev server mode, unregister any lingering service workers left by `pnpm offline`.
+// `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister();
+      console.debug('[Dev] Unregistered lingering service worker:', registration.scope);
+    }
+  });
+}
+
 ReactDOM.createRoot(root).render(
   <StrictMode>
     <Themer />

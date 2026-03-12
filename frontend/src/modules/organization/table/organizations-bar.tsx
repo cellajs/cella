@@ -21,7 +21,7 @@ import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/mod
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
 import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
-import { useInfiniteQueryTotal } from '~/query/basic';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams> & {
   isCompact: boolean;
@@ -98,7 +98,7 @@ export const OrganizationsTableBar = ({
   };
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={40}>
+    <TableBarContainer searchVars={searchVars} offsetTop={48}>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
