@@ -1,286 +1,302 @@
 # Scaleway Deployment Guide
 
-This document describes how to deploy Cella to Scaleway cloud infrastructure using Terraform and GitHub Actions.
+Deploy Cella's Backend API and CDC Worker as Serverless Containers on Scaleway, managed with Terraform.
 
 ## Architecture
 
-| Service | Scaleway Product | Configuration |
-|---------|------------------|---------------|
-| Backend (Hono API) | Serverless Containers | Auto-scaling 0-10, 512MB RAM |
-| CDC Worker | Serverless Containers | Always-on (`minScale: 1`), 256MB RAM |
-| Frontend (React SPA) | Object Storage + Edge Services | Static hosting with CDN + WAF |
-| Database | Managed PostgreSQL 17 | Connection pooling, logical replication |
-| Routing | Load Balancer | Path-based routing, Let's Encrypt SSL |
-| Secrets | Secret Manager | All sensitive env vars |
-| DNS | Scaleway Domains | Automated DNS records |
-| Monitoring | Cockpit | Logs and metrics dashboards |
-
-## Infrastructure layout
-
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Scaleway Load Balancer                      │
-│                    (HTTPS, Let's Encrypt)                       │
-└─────────────────────┬───────────────────────────────────────────┘
+                    Internet
+                       │
+                       ▼
+              ┌────────────────┐
+              │ Backend API    │  Serverless Container (public)
+              │ Hono on :4000  │  Auto-scales 0-3, 1024 MB
+              └───────┬────────┘
                       │
-        ┌─────────────┴─────────────┐
-        │                           │
-        ▼                           ▼
-┌───────────────┐           ┌───────────────┐
-│  /api/* route │           │   /* route    │
-│               │           │               │
-│   Backend     │           │ Edge Services │
-│   Container   │           │ (Frontend CDN)│
-│   (Hono API)  │           │               │
-└───────┬───────┘           └───────┬───────┘
-        │                           │
-        │                           ▼
-        │                   ┌───────────────┐
-        │                   │ Object Storage│
-        │                   │ (Static SPA)  │
-        │                   └───────────────┘
-        │
-        ├─── WebSocket ───┐
-        │                 │
-        ▼                 ▼
-┌───────────────┐   ┌───────────────┐
-│  PostgreSQL   │   │  CDC Worker   │
-│  (Managed)    │◄──│  Container    │
-│ + Pooler      │   │ (Replication) │
-└───────────────┘   └───────────────┘
+         ┌────────────┼────────────┐
+         │            │            │
+         ▼            ▼            ▼
+  ┌────────────┐ ┌─────────┐ ┌────────────┐
+  │ PostgreSQL │ │ WebSocket│ │ CDC Worker  │  Serverless Container (private)
+  │ (External) │ │ /internal│ │ Replication │  Always-on (1:1), 512 MB
+  │ e.g. Neon  │ │ /cdc     │ │ on :4001    │
+  └────────────┘ └─────────┘ └─────┬──────┘
+                                   │
+                                   ▼
+                            ┌────────────┐
+                            │ PostgreSQL │
+                            │ (External) │
+                            └────────────┘
 ```
+
+| Service            | Scaleway Product      | Notes                                                            |
+| ------------------ | --------------------- | ---------------------------------------------------------------- |
+| Backend (Hono API) | Serverless Containers | Public, auto-scaling 0-3, health check on `/health`              |
+| CDC Worker         | Serverless Containers | Private, always-on (min/max scale = 1)                           |
+| Database           | External (e.g. Neon)  | Not managed by Terraform; connection strings passed as variables |
+| Container Registry | Scaleway Registry     | Private registry `rg.nl-ams.scw.cloud/devcella`                  |
 
 ## Prerequisites
 
-1. **Scaleway Account** with a project created
-2. **Domain** managed in Scaleway Domains (or point nameservers to Scaleway)
-3. **Terraform** >= 1.5.0 installed locally
-4. **GitHub repository** with Actions enabled
+- [Scaleway CLI](https://github.com/scaleway/scaleway-cli) (`brew install scw && scw init`)
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5.0
+- [Docker](https://docs.docker.com/get-docker/) with buildx (for cross-platform `linux/amd64` builds)
+- A PostgreSQL database with logical replication enabled (e.g. Neon, Scaleway Managed, Supabase)
 
-## Initial setup
+## Directory structure
 
-### 1. Create Scaleway API keys
+```
+infra/
+└── deploy/
+    ├── main.tf          # All resources: registry, containers, variables, outputs
+    └── dev.tfvars       # Environment-specific variable values (DO NOT commit)
+```
 
-In Scaleway Console → IAM → API Keys:
-- Create an API key with `ProjectManager` permissions
-- Note the `Access Key` and `Secret Key`
+## Quick start
 
-### 2. Create Terraform state bucket
+### 1. Authenticate
 
 ```bash
-# Install Scaleway CLI
-brew install scw  # or see https://github.com/scaleway/scaleway-cli
-
-# Configure CLI
+# Scaleway CLI (for manual container operations)
 scw init
 
-# Create state bucket (one-time setup)
-scw object bucket create name=cella-terraform-state region=nl-ams
+# Docker registry login
+docker login rg.nl-ams.scw.cloud/devcella -u nologin --password-stdin <<< "$(scw iam api-key get $(scw iam api-key list -o json | jq -r '.[0].access_key') -o json | jq -r '.secret_key')"
 ```
 
-### 3. Configure GitHub secrets
+### 2. Create `dev.tfvars`
 
-In your GitHub repository → Settings → Secrets and variables → Actions:
+Copy the example below and fill in your values. **Never commit this file** (it's in `.gitignore`).
 
-| Secret | Description |
-|--------|-------------|
-| `SCW_ACCESS_KEY` | Scaleway API access key |
-| `SCW_SECRET_KEY` | Scaleway API secret key |
-| `SCW_PROJECT_ID` | Scaleway project ID |
-| `ARGON_SECRET` | Password hashing secret (generate with `openssl rand -hex 32`) |
-| `COOKIE_SECRET` | Cookie signing secret (generate with `openssl rand -hex 32`) |
-| `UNSUBSCRIBE_TOKEN_SECRET` | Email token secret (generate with `openssl rand -hex 32`) |
-| `CDC_WS_SECRET` | CDC WebSocket auth (min 16 chars, generate with `openssl rand -hex 16`) |
+```hcl
+# infra/deploy/dev.tfvars
 
-### 4. Configure GitHub environment variables
+environment = "dev"
+region      = "nl-ams"
+zone        = "nl-ams-1"
 
-For each environment (`dev`, `staging`, `prod`), create environment-specific variables:
+# Domain
+api_domain = "api.dev.cellajs.com"
+app_domain = "dev.cellajs.com"
 
-| Variable | Example (prod) |
-|----------|----------------|
-| `BACKEND_URL` | `https://api.cellajs.com` |
-| `FRONTEND_URL` | `https://cellajs.com` |
+# Database URLs (e.g. from Neon — use sslmode=no-verify for Node.js pg v8+ compatibility)
+database_url       = "postgresql://runtime_role:PASSWORD@HOST/DB?sslmode=no-verify"
+database_admin_url = "postgresql://admin_user:PASSWORD@HOST/DB?sslmode=no-verify"
+database_cdc_url   = "postgresql://cdc_role:PASSWORD@HOST/DB?sslmode=no-verify"
 
-### 5. Initialize DNS zone
+# Secrets (generate with: openssl rand -hex 32)
+argon_secret        = ""
+cookie_secret       = ""
+session_secret      = ""
+unsubscribe_secret  = ""
+cdc_internal_secret = ""  # min 16 chars
 
-Ensure your domain is configured in Scaleway Domains. Update the `dns_zone` in your environment tfvars files.
+# App config
+admin_email               = "admin@example.com"
+system_admin_ip_allowlist = "*"
 
-## Deployment
+# Third-party (optional, leave empty if unused)
+brevo_api_key        = ""
+github_client_id     = ""
+github_client_secret = ""
+s3_access_key_id     = ""
+s3_access_key_secret = ""
+transloadit_key      = ""
+transloadit_secret   = ""
+```
 
-### Automatic deployment (production)
-
-Pushing to `main` branch automatically deploys to production:
+### 3. Initialize Terraform
 
 ```bash
-git push origin main
+cd infra/deploy
+terraform init
 ```
 
-### Manual deployment (any environment)
-
-1. Go to Actions → "Deploy to Scaleway"
-2. Click "Run workflow"
-3. Select environment (`dev`, `staging`, or `prod`)
-
-### Local Terraform operations
-
-For debugging or manual changes:
+### 4. Plan and apply
 
 ```bash
-cd infra
-
-# Initialize
-terraform init \
-  -backend-config="bucket=cella-terraform-state" \
-  -backend-config="key=dev/terraform.tfstate" \
-  -backend-config="region=nl-ams" \
-  -backend-config="endpoint=s3.nl-ams.scw.cloud" \
-  -backend-config="skip_credentials_validation=true" \
-  -backend-config="skip_region_validation=true"
-
-# Select workspace
-terraform workspace select dev
-
-# Plan
-terraform plan -var-file="environments/dev.tfvars"
-
-# Apply
-terraform apply -var-file="environments/dev.tfvars"
+terraform plan -var-file="dev.tfvars" -out=tfplan
+terraform apply "tfplan"
 ```
 
-## Environment configuration
+This creates: a container registry, a container namespace, a backend container, and a CDC container.
 
-Each environment has its own tfvars file in `infra/environments/`:
+### 5. Build and push Docker images
 
-| File | Purpose |
-|------|---------|
-| `dev.tfvars` | Development (scale-to-zero, no WAF) |
-| `staging.tfvars` | Staging (always-on, WAF enabled) |
-| `prod.tfvars` | Production (full scaling, HA database) |
+Images must be built for `linux/amd64` (Scaleway doesn't support ARM). Run from the **repo root**:
 
-## Database connections
+```bash
+# Backend
+docker buildx build \
+  --platform linux/amd64 \
+  -t rg.nl-ams.scw.cloud/devcella/backend:latest \
+  -f backend/Dockerfile \
+  --push .
 
-The infrastructure uses split database URLs:
-
-| URL | Used By | Purpose |
-|-----|---------|---------|
-| `DATABASE_URL_POOLED` | Backend API | Connection pooler (port 6432), efficient for HTTP requests |
-| `DATABASE_URL_DIRECT` | CDC Worker, Migrations | Direct connection (port 5432), required for logical replication |
-
-## Secrets management
-
-All secrets are stored in Scaleway Secret Manager and mounted into containers at runtime:
-
-```
-{env}/cella/database-url-direct
-{env}/cella/database-url-pooled
-{env}/cella/argon-secret
-{env}/cella/cookie-secret
-{env}/cella/unsubscribe-token-secret
-{env}/cella/cdc-ws-secret
+# CDC Worker
+docker buildx build \
+  --platform linux/amd64 \
+  -t rg.nl-ams.scw.cloud/devcella/cdc:latest \
+  -f cdc/Dockerfile \
+  --push .
 ```
 
-Containers reference secrets directly (not Terraform-rendered plaintext).
+### 6. Deploy containers
 
-## Monitoring
+After pushing new images, redeploy the containers:
 
-### Cockpit dashboards
+```bash
+# Get container IDs from Terraform output or Scaleway console
+scw container container deploy <backend-container-id> region=nl-ams
+scw container container deploy <cdc-container-id> region=nl-ams
+```
 
-Access Grafana dashboards via Scaleway Console → Cockpit → Open Grafana.
+Or re-run `terraform apply` which sets `deploy = true` on both containers.
 
-Pre-configured views:
-- Container metrics (CPU, memory, requests)
-- Database metrics (connections, queries, replication lag)
-- Load Balancer metrics (requests, latency, errors)
+## Environment variables
 
-### Health endpoints
+Terraform splits env vars into two categories for each container:
 
-| Endpoint | Description |
-|----------|-------------|
-| `https://api.{domain}/health` | Backend health |
-| `https://api.{domain}/cdc/health` | CDC worker health |
+### Backend
+
+| Type   | Variable                    | Description                                                          |
+| ------ | --------------------------- | -------------------------------------------------------------------- |
+| Plain  | `NODE_ENV`                  | Always `production` (required for correct appConfig and pnpm --prod) |
+| Plain  | `TZ`                        | `UTC`                                                                |
+| Plain  | `FRONTEND_URL`              | e.g. `https://dev.cellajs.com`                                       |
+| Plain  | `BACKEND_URL`               | e.g. `https://api.dev.cellajs.com`                                   |
+| Plain  | `DEV_MODE`                  | `core` (no CDC WebSocket server in dev)                              |
+| Plain  | `ADMIN_EMAIL`               | System admin email                                                   |
+| Plain  | `SYSTEM_ADMIN_IP_ALLOWLIST` | IP allowlist (`*` for any)                                           |
+| Secret | `DATABASE_URL`              | Runtime DB connection string                                         |
+| Secret | `DATABASE_ADMIN_URL`        | Admin/migration DB connection string                                 |
+| Secret | `ARGON_SECRET`              | Argon2 hashing secret                                                |
+| Secret | `COOKIE_SECRET`             | Cookie signing secret                                                |
+| Secret | `SESSION_SECRET`            | Session encryption secret                                            |
+| Secret | `UNSUBSCRIBE_SECRET`        | Email unsubscribe token secret                                       |
+| Secret | `CDC_INTERNAL_SECRET`       | Backend<->CDC shared auth secret                                     |
+| Secret | `BREVO_API_KEY`             | Email provider API key                                               |
+| Secret | `GITHUB_CLIENT_ID`          | OAuth client ID                                                      |
+| Secret | `GITHUB_CLIENT_SECRET`      | OAuth client secret                                                  |
+| Secret | `S3_ACCESS_KEY_ID`          | Object storage access key                                            |
+| Secret | `S3_ACCESS_KEY_SECRET`      | Object storage secret                                                |
+| Secret | `TRANSLOADIT_KEY`           | File processing key                                                  |
+| Secret | `TRANSLOADIT_SECRET`        | File processing secret                                               |
+
+### CDC Worker
+
+| Type   | Variable              | Description                                                             |
+| ------ | --------------------- | ----------------------------------------------------------------------- |
+| Plain  | `NODE_ENV`            | Always `production`                                                     |
+| Plain  | `TZ`                  | `UTC`                                                                   |
+| Plain  | `DEV_MODE`            | `full` (CDC requires `full` or `NODE_ENV=production`)                   |
+| Plain  | `CDC_HEALTH_PORT`     | `4001`                                                                  |
+| Plain  | `API_WS_URL`          | WebSocket URL to backend, e.g. `wss://api.dev.cellajs.com/internal/cdc` |
+| Secret | `DATABASE_CDC_URL`    | CDC replication DB connection string                                    |
+| Secret | `CDC_INTERNAL_SECRET` | Shared auth secret (same value as backend)                              |
+
+> **Important**: Do NOT set `PORT` — Scaleway reserves it and sets it automatically.
+
+> **Why `secret_environment_variables`?** Scaleway encrypts these at rest and hides them from API responses and the console. Plain `environment_variables` are visible to anyone with API/console access.
+
+## Secret management
+
+### What Terraform `sensitive = true` does and does NOT do
+
+- It hides values from `terraform plan` output and CLI logs.
+- It does **NOT** encrypt values in the state file — they're stored as plain text in `terraform.tfstate`.
+
+### Recommendations
+
+1. **Never commit `dev.tfvars`** — it contains all secrets in plain text. The `.gitignore` has rules for `*.tfvars` (with an exception for `*.tfvars.example`).
+2. **Never commit `terraform.tfstate*`** — also contains secrets. Also in `.gitignore`.
+3. Use `secret_environment_variables` in `main.tf` (already done) so secrets are encrypted by Scaleway.
+4. For teams: consider a remote state backend (S3 bucket with encryption) instead of local state.
+
+## Gotchas and known issues
+
+### SSL: `sslmode=require` fails with Node.js pg v8+
+
+Node.js `pg` v8+ treats `sslmode=require` as `verify-full`, which fails against Scaleway/Neon certificates. Use `sslmode=no-verify` in all database connection strings.
+
+### `BYPASSRLS` and `REPLICATION` not allowed on Scaleway Managed PostgreSQL
+
+Scaleway's managed PostgreSQL doesn't allow `BYPASSRLS` or `REPLICATION` on custom roles. The `create-db-roles.ts` script handles this with `EXCEPTION WHEN OTHERS` fallbacks — it tries with the privilege first, then creates without it if the provider blocks it.
+
+### `GRANT role TO CURRENT_USER` for migrations
+
+Drizzle migrations need to `ALTER TABLE ... OWNER TO admin_role`. This requires the migration user to be a member of `admin_role`. The role setup script runs `GRANT runtime_role/cdc_role/admin_role TO CURRENT_USER` to enable this.
+
+### CDC tsup build: shared subpath exports
+
+The CDC worker bundles backend code via tsup. Shared package subpath exports (e.g. `shared/nanoid`, `shared/tracing`) need explicit esbuild aliases in `cdc/tsup.config.ts` because tsup/esbuild doesn't resolve `exports` map entries from `package.json`.
+
+### Drizzle runtime migrations
+
+The backend runs Drizzle migrations on startup (`backend/src/main.ts`). This requires:
+
+- Flat `.sql` files in `backend/drizzle/` (e.g. `20260312082556_early_scarecrow.sql`)
+- A `backend/drizzle/meta/_journal.json` with entries for each migration
+
+The subdirectory format (`backend/drizzle/<name>/migration.sql`) is for `drizzle-kit` only and not used by the runtime migrator.
+
+## Useful commands
+
+```bash
+# View container logs
+scw container container logs container-id=<id> region=nl-ams
+
+# Check container status
+scw container container get container-id=<id> region=nl-ams
+
+# List containers in namespace
+scw container container list namespace-id=<namespace-id> region=nl-ams
+
+# Redeploy after pushing new image
+scw container container deploy <container-id> region=nl-ams
+
+# Full rebuild + deploy cycle (from repo root)
+docker buildx build --platform linux/amd64 -t rg.nl-ams.scw.cloud/devcella/backend:latest -f backend/Dockerfile --push .
+scw container container deploy <backend-container-id> region=nl-ams
+
+# Terraform operations (from infra/deploy/)
+terraform plan -var-file="dev.tfvars" -out=tfplan
+terraform apply "tfplan"
+terraform output                    # show endpoints
+terraform state list                # list managed resources
+terraform destroy -var-file="dev.tfvars"  # tear everything down
+```
 
 ## Troubleshooting
 
-### Container not starting
+### Container stuck in "creating" or "error" state
 
 ```bash
-# Check container logs
-scw container container logs container-id=<id>
+# Check status
+scw container container get container-id=<id> region=nl-ams
 
-# Check container status
-scw container container get container-id=<id>
+# If stuck, delete and let Terraform recreate it
+scw container container delete container-id=<id> region=nl-ams
+terraform apply -var-file="dev.tfvars"
 ```
 
-### Database connection issues
+### CDC not connecting to backend WebSocket
 
-```bash
-# Verify PostgreSQL is accessible
-scw rdb instance get instance-id=<id>
+1. Verify `API_WS_URL` points to the correct backend domain with `wss://` protocol
+2. Verify `CDC_INTERNAL_SECRET` matches between backend and CDC containers
+3. Check CDC logs for connection errors: `scw container container logs container-id=<id> region=nl-ams`
 
-# Check private network connectivity
-scw vpc private-network get private-network-id=<id>
-```
+### Database connection failures
 
-### CDC replication slot issues
+1. Ensure `sslmode=no-verify` in all connection strings
+2. Verify the database allows connections from Scaleway's IP ranges
+3. Check that the database has logical replication enabled (`wal_level=logical`)
+4. Verify replication slots: `SELECT * FROM pg_replication_slots;`
 
-If CDC fails to connect:
-1. Check `max_replication_slots` is sufficient
-2. Verify `wal_level=logical` is set
-3. Check CDC worker logs for connection errors
+### Health check failures
 
-```bash
-# List replication slots (via psql)
-SELECT * FROM pg_replication_slots;
+The backend health check hits `GET /health` every 10s with a failure threshold of 30. If the container fails health checks:
 
-# Drop orphaned slot if needed
-SELECT pg_drop_replication_slot('cdc_slot');
-```
-
-## Cost estimates
-
-| Resource | Estimated Monthly Cost (EUR) |
-|----------|------------------------------|
-| Load Balancer (LB-S) | ~10 |
-| PostgreSQL (DB-DEV-S) | ~12 |
-| Serverless Containers (dev) | ~5-15 |
-| Object Storage (10GB) | ~1 |
-| Edge Services | ~5 |
-| **Total (dev)** | **~35-45** |
-
-Production costs scale with:
-- Database tier (DB-GP-S: ~50 EUR)
-- Container scaling (per invocation)
-- Bandwidth usage
-
-## Upgrading
-
-### Schema migrations
-
-Migrations run automatically on backend container startup. For manual migrations:
-
-```bash
-# SSH into a running container or use local connection
-cd backend
-pnpm drizzle-kit push
-```
-
-### Rolling back
-
-```bash
-cd infra
-terraform workspace select prod
-
-# Revert to previous image tag
-terraform apply -var-file="environments/prod.tfvars" \
-  -var="backend_image_tag=<previous-sha>" \
-  -var="cdc_image_tag=<previous-sha>"
-```
-
-## Security considerations
-
-- All traffic uses TLS (Let's Encrypt)
-- Database accessible only via private network
-- Secrets stored in Secret Manager (not environment variables)
-- WAF enabled on production Edge Services
-- Containers run as non-root user
-- OWASP headers configured on frontend
+1. Check logs for startup errors (missing env vars, DB connection failures)
+2. Verify `DATABASE_URL` and `DATABASE_ADMIN_URL` are reachable from Scaleway
+3. The backend runs migrations on startup — slow migrations can cause initial health check failures (the high failure threshold of 30 accounts for this)
