@@ -8,7 +8,6 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { useChangeEntityRoleMutation } from '~/modules/memberships/query-mutations';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
@@ -83,7 +82,7 @@ function OrganizationsTable() {
   const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
-    <FocusViewContainer data-is-compact={isCompact}>
+    <>
       <OrganizationsTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -123,7 +122,7 @@ function OrganizationsTable() {
           ),
         }}
       />
-    </FocusViewContainer>
+    </>
   );
 }
 

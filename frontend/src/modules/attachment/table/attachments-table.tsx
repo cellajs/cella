@@ -14,7 +14,6 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 
 const LIMIT = appConfig.requestLimits.attachments;
@@ -123,7 +122,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   const clearSelection = () => setSelected([]);
 
   return (
-    <FocusViewContainer data-is-compact={isCompact}>
+    <>
       <AttachmentsTableBar
         contextEntity={contextEntity}
         selected={selected}
@@ -160,7 +159,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
           NoRowsComponent,
         }}
       />
-    </FocusViewContainer>
+    </>
   );
 }
 

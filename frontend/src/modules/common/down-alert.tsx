@@ -28,8 +28,12 @@ const downAlertConfig = {
           className="max-sm:hidden"
           i18nKey={i18nKey}
           components={{
-            site_anchor: <button type="button" className="underline" onClick={dismissAlert} />,
-            retry_anchor: <button type="button" className="underline" onClick={retry} />,
+            site_anchor: (
+              <button type="button" className="underline font-semibold underline-offset-2" onClick={dismissAlert} />
+            ),
+            retry_anchor: (
+              <button type="button" className="underline font-semibold underline-offset-2" onClick={retry} />
+            ),
           }}
         />
       );

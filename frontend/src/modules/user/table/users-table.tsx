@@ -4,7 +4,6 @@ import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
@@ -57,7 +56,7 @@ function UsersTable() {
   const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
-    <FocusViewContainer>
+    <>
       <UsersTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -87,7 +86,7 @@ function UsersTable() {
           onSortColumnsChange,
         }}
       />
-    </FocusViewContainer>
+    </>
   );
 }
 

@@ -25,7 +25,7 @@ export const Uploader = () => {
         if (!open) remove();
       }}
     >
-      <DialogContent className="w-[70vw] h-[40vh] min-h-fit md:max-w-xl">
+      <DialogContent className="w-[90vw] xs:w-[80vw] max-w-xl h-[40vh] min-h-fit md:max-w-2xl">
         <DialogHeader className="with-close-btn">
           <DialogTitle className={`${uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>
             {uploaderData.title}
