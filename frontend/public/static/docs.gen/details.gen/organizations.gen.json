@@ -139,11 +139,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "emailDomains": {
-                    "type": "array",
-                    "required": true,
-                    "itemType": "string"
-                  },
                   "color": {
                     "type": ["string", "null"],
                     "required": true,
@@ -285,7 +280,6 @@
               "defaultLanguage": "en",
               "languages": ["en"],
               "notificationEmail": "notifications@kessler-and-sons.example",
-              "emailDomains": [],
               "color": "#ce39f9",
               "thumbnailUrl": null,
               "logoUrl": null,
@@ -334,7 +328,6 @@
               "defaultLanguage": "en",
               "languages": ["en"],
               "notificationEmail": "notifications@howell-ullrich.example",
-              "emailDomains": [],
               "color": "#88b531",
               "thumbnailUrl": null,
               "logoUrl": null,
@@ -547,6 +540,354 @@
     }
   },
   {
+    "operationId": "autoCreateOrganization",
+    "responses": [
+      {
+        "status": 201,
+        "description": "Organization was created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "An organization with membership context.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["organization"]
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "name": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "modifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "modifiedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "email": {
+                  "type": "string",
+                  "required": true,
+                  "format": "email"
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "shortName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "country": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "timezone": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "defaultLanguage": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "languages": {
+              "type": "array",
+              "required": true,
+              "minItems": 1,
+              "itemType": "string",
+              "enum": ["en", "nl"]
+            },
+            "notificationEmail": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "color": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "logoUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "websiteUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "welcomeText": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+            },
+            "chatSupport": { "type": "boolean", "required": true },
+            "included": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "membership": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Core membership fields shared across active and inactive memberships.",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 24
+                    },
+                    "contextType": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["organization"]
+                    },
+                    "userId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    },
+                    "role": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["admin", "member"]
+                    },
+                    "archived": { "type": "boolean", "required": true },
+                    "muted": { "type": "boolean", "required": true },
+                    "displayOrder": {
+                      "type": "number",
+                      "required": true,
+                      "minimum": -140737488355328,
+                      "maximum": 140737488355327
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "required": true,
+                      "maxLength": 50
+                    }
+                  },
+                  "ref": "#/components/schemas/MembershipBase"
+                },
+                "counts": {
+                  "type": "object",
+                  "required": false,
+                  "properties": {
+                    "membership": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "admin": { "type": "number", "required": true },
+                        "member": { "type": "number", "required": true },
+                        "pending": { "type": "number", "required": true },
+                        "total": { "type": "number", "required": true }
+                      }
+                    },
+                    "entities": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true },
+                        "page": { "type": "number", "required": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "extendsRef": "#/components/schemas/Organization",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "hmo9fwr239kqavr3yur671kl",
+          "tenantId": "vk6xht",
+          "entityType": "organization",
+          "name": "Hills, Bauch and Monahan",
+          "slug": "hills-bauch-and-monahan",
+          "description": "Multi-tiered zero trust firmware",
+          "shortName": "Hills,",
+          "country": "Turks and Caicos Islands",
+          "timezone": "America/Argentina/Buenos_Aires",
+          "defaultLanguage": "en",
+          "languages": ["en"],
+          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+          "color": "#ecfdfe",
+          "thumbnailUrl": null,
+          "logoUrl": null,
+          "bannerUrl": null,
+          "websiteUrl": "https://hills-bauch-and-monahan.example",
+          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+          "authStrategies": ["password"],
+          "chatSupport": true,
+          "createdAt": "2024-12-25T15:29:47.111Z",
+          "createdBy": null,
+          "modifiedAt": "2024-12-25T15:29:47.111Z",
+          "modifiedBy": null,
+          "included": {
+            "membership": {
+              "id": "kaba9fpc90mgtzmtjipw2v8s",
+              "tenantId": "w4hg40",
+              "contextType": "organization",
+              "userId": "36vxzq0rzt4pucvepsu63uw1",
+              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "role": "admin",
+              "displayOrder": 69,
+              "muted": false,
+              "archived": false
+            },
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": { "attachment": 178, "page": 257 }
+            }
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "slug": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "createNewTenant": { "type": "boolean", "required": false }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
     "operationId": "getOrganizations",
     "responses": [
       {
@@ -687,11 +1028,6 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "emailDomains": {
-                    "type": "array",
-                    "required": true,
-                    "itemType": "string"
-                  },
                   "color": {
                     "type": ["string", "null"],
                     "required": true,
@@ -818,7 +1154,6 @@
               "defaultLanguage": "en",
               "languages": ["en"],
               "notificationEmail": "notifications@dicki-jacobi.example",
-              "emailDomains": [],
               "color": "#f40655",
               "thumbnailUrl": null,
               "logoUrl": null,
@@ -867,7 +1202,6 @@
               "defaultLanguage": "en",
               "languages": ["en"],
               "notificationEmail": "notifications@witting-wuckert.example",
-              "emailDomains": [],
               "color": "#d9e6a7",
               "thumbnailUrl": null,
               "logoUrl": null,
@@ -1119,11 +1453,6 @@
               "required": true,
               "maxLength": 255
             },
-            "emailDomains": {
-              "type": "array",
-              "required": true,
-              "itemType": "string"
-            },
             "color": {
               "type": ["string", "null"],
               "required": true,
@@ -1244,7 +1573,6 @@
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "emailDomains": [],
           "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
@@ -1481,11 +1809,6 @@
               "required": true,
               "maxLength": 255
             },
-            "emailDomains": {
-              "type": "array",
-              "required": true,
-              "itemType": "string"
-            },
             "color": {
               "type": ["string", "null"],
               "required": true,
@@ -1606,7 +1929,6 @@
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "emailDomains": [],
           "color": "#ecfdfe",
           "thumbnailUrl": null,
           "logoUrl": null,
@@ -1740,13 +2062,6 @@
           "notificationEmail": {
             "type": ["string", "null"],
             "required": false,
-            "maxLength": 255
-          },
-          "emailDomains": {
-            "type": "array",
-            "required": false,
-            "itemType": "string",
-            "minLength": 4,
             "maxLength": 255
           },
           "color": {

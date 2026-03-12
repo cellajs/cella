@@ -1,7 +1,7 @@
 /* Lift editing task card above sibling virtualizer items so BlockNote floating UI (slash menu, toolbar) isn't clipped */
 li:has([data-state="editing"]),
 li:has(.is-focused) {
-  z-index: 100;
+  z-index: 10;
 }
 
 /* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */

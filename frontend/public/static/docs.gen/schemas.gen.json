@@ -1277,13 +1277,12 @@
         "id": {
           "type": "string",
           "required": true,
-          "description": "Lowercase alphanumeric tenant ID",
           "maxLength": 24
         },
         "name": {
           "type": "string",
           "required": true,
-          "description": "Tenant display name"
+          "maxLength": 255
         },
         "status": {
           "type": "string",
@@ -1318,15 +1317,77 @@
             }
           }
         },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 50
+        },
+        "subscriptionId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "required": true,
+          "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+        },
+        "subscriptionPlan": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
         "createdAt": { "type": "string", "required": true },
         "modifiedAt": {
           "type": ["string", "null"],
           "required": true
+        },
+        "domainsCount": {
+          "type": "integer",
+          "required": true,
+          "description": "Number of domains claimed by this tenant"
         }
       }
     },
     "schemaTag": "data",
     "description": "A tenant representing an isolated data partition for multi-tenancy."
+  },
+  {
+    "name": "Domain",
+    "ref": "#/components/schemas/Domain",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "maxLength": 50
+        },
+        "tenantId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        "domain": {
+          "type": "string",
+          "required": true,
+          "maxLength": 255
+        },
+        "verified": { "type": "boolean", "required": true },
+        "verifiedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastCheckedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "description": "A domain claimed by a tenant for email matching and verification."
   },
   {
     "name": "Request",
@@ -1499,11 +1560,6 @@
           "required": true,
           "maxLength": 255
         },
-        "emailDomains": {
-          "type": "array",
-          "required": true,
-          "itemType": "string"
-        },
         "color": {
           "type": ["string", "null"],
           "required": true,
@@ -1624,7 +1680,6 @@
       "defaultLanguage": "en",
       "languages": ["en"],
       "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-      "emailDomains": [],
       "color": "#ecfdfe",
       "thumbnailUrl": null,
       "logoUrl": null,

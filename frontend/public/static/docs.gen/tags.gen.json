@@ -17,7 +17,7 @@
   {
     "name": "organizations",
     "description": "Operations for managing organizations, which are core context entities and the highest\n        ancestor in the entity hierarchy. Supports creating, listing, retrieving, updating, and deleting\n        organizations within a tenant. Cross-tenant listing is available with elevated permissions.",
-    "count": 5
+    "count": 6
   },
   {
     "name": "requests",
@@ -62,7 +62,7 @@
   {
     "name": "tenants",
     "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by\n        Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and\n        soft-deleting (archiving) tenants.",
-    "count": 5
+    "count": 6
   },
   {
     "name": "seen",

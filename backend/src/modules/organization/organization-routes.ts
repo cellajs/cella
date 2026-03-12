@@ -2,6 +2,7 @@ import { createXRoute } from '#/docs/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  organizationAutoCreateBodySchema,
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationQuerySchema,
@@ -50,6 +51,37 @@ const organizationRoutes = {
           'application/json': {
             schema: batchResponseSchema(organizationWithMembershipSchema),
             example: mockBatchOrganizationsResponse(),
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  /**
+   * Create an organization with auto-tenant creation (for new users without a tenant)
+   */
+  autoCreateOrganization: createXRoute({
+    operationId: 'autoCreateOrganization',
+    method: 'post',
+    path: '/organizations',
+    xGuard: [authGuard],
+    xRateLimiter: singlePointsLimiter,
+    tags: ['organizations'],
+    summary: 'Create organization with auto-tenant',
+    description:
+      'Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.',
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: organizationAutoCreateBodySchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: 'Organization was created',
+        content: {
+          'application/json': {
+            schema: organizationWithMembershipSchema,
           },
         },
       },

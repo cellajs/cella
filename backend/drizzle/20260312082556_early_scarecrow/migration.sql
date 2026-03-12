@@ -1,7 +1,3 @@
-DO $$ BEGIN
-  CREATE TYPE "tenant_status" AS ENUM('active', 'suspended', 'archived');
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;--> statement-breakpoint
 CREATE TABLE "activities" (
 	"id" varchar(50),
 	"tenant_id" varchar(24),
@@ -16,7 +12,6 @@ CREATE TABLE "activities" (
 	"created_at" timestamp DEFAULT now(),
 	"changed_keys" jsonb,
 	"stx" jsonb,
-	"seq" integer,
 	"error" jsonb,
 	CONSTRAINT "activities_pkey" PRIMARY KEY("id","created_at")
 );
@@ -33,7 +28,9 @@ CREATE TABLE "attachments" (
 	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
 	"created_by" varchar(50),
 	"modified_by" varchar(50),
+	"seq_at" bigint DEFAULT 0 NOT NULL,
 	"public" boolean DEFAULT false NOT NULL,
+	"public_access" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar(255) NOT NULL,
 	"group_id" varchar(50),
 	"filename" varchar(255) NOT NULL,
@@ -49,10 +46,19 @@ CREATE TABLE "attachments" (
 ALTER TABLE "attachments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "context_counters" (
 	"context_key" varchar(50) PRIMARY KEY,
-	"seq" bigint DEFAULT 0 NOT NULL,
-	"m_seq" bigint DEFAULT 0 NOT NULL,
 	"counts" jsonb DEFAULT '{}' NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "domains" (
+	"id" varchar(50) PRIMARY KEY,
+	"tenant_id" varchar(24) NOT NULL,
+	"domain" varchar(255) NOT NULL UNIQUE,
+	"verified" boolean DEFAULT false NOT NULL,
+	"verification_token" varchar(50),
+	"verified_at" timestamp,
+	"last_checked_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
@@ -129,7 +135,6 @@ CREATE TABLE "organizations" (
 	"default_language" varchar DEFAULT 'en' NOT NULL,
 	"languages" json DEFAULT '["en"]' NOT NULL,
 	"notification_email" varchar(255),
-	"email_domains" json DEFAULT '[]' NOT NULL,
 	"color" varchar(255),
 	"logo_url" varchar(2048),
 	"website_url" varchar(2048),
@@ -152,6 +157,7 @@ CREATE TABLE "pages" (
 	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
 	"created_by" varchar(50),
 	"modified_by" varchar(50),
+	"seq_at" bigint DEFAULT 0 NOT NULL,
 	"status" varchar DEFAULT 'unpublished' NOT NULL,
 	"public_access" boolean DEFAULT false NOT NULL,
 	"parent_id" varchar(50),
@@ -241,8 +247,13 @@ CREATE TABLE "system_roles" (
 CREATE TABLE "tenants" (
 	"id" varchar(24) PRIMARY KEY,
 	"name" varchar(255) NOT NULL,
-	"status" "tenant_status" DEFAULT 'active'::"tenant_status" NOT NULL,
+	"status" varchar DEFAULT 'active' NOT NULL,
 	"restrictions" json DEFAULT '{"quotas":{"user":1000,"organization":5,"attachment":100,"page":0},"rateLimits":{"apiPointsPerHour":1000}}' NOT NULL,
+	"created_by" varchar(50),
+	"subscription_id" varchar(255),
+	"subscription_status" varchar DEFAULT 'none' NOT NULL,
+	"subscription_plan" varchar(255),
+	"subscription_data" json,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp
 );
@@ -314,9 +325,11 @@ CREATE INDEX "activities_tenant_id_index" ON "activities" ("tenant_id");--> stat
 CREATE INDEX "activities_stx_id_index" ON "activities" ((stx->>'mutationId'));--> statement-breakpoint
 CREATE INDEX "activities_error_lsn_index" ON "activities" ((error->>'lsn')) WHERE error IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "activities_organization_id_index" ON "activities" ("organization_id");--> statement-breakpoint
-CREATE INDEX "activities_organization_id_seq_index" ON "activities" ("organization_id","seq" desc);--> statement-breakpoint
 CREATE INDEX "attachments_organization_id_index" ON "attachments" ("organization_id");--> statement-breakpoint
+CREATE INDEX "attachments_org_seq_at_index" ON "attachments" ("organization_id","seq_at");--> statement-breakpoint
 CREATE INDEX "attachments_tenant_id_index" ON "attachments" ("tenant_id");--> statement-breakpoint
+CREATE INDEX "domains_tenant_id_idx" ON "domains" ("tenant_id");--> statement-breakpoint
+CREATE INDEX "domains_domain_idx" ON "domains" ("domain");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_user_id_idx" ON "inactive_memberships" ("user_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_organization_id_idx" ON "inactive_memberships" ("organization_id");--> statement-breakpoint
 CREATE INDEX "inactive_memberships_tenant_id_idx" ON "inactive_memberships" ("tenant_id");--> statement-breakpoint
@@ -330,6 +343,7 @@ CREATE INDEX "organizations_name_index" ON "organizations" ("name" DESC NULLS LA
 CREATE INDEX "organizations_created_at_index" ON "organizations" ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_tenant_id_index" ON "organizations" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "pages_tenant_id_idx" ON "pages" ("tenant_id");--> statement-breakpoint
+CREATE INDEX "pages_seq_at_idx" ON "pages" ("seq_at");--> statement-breakpoint
 CREATE INDEX "requests_emails" ON "requests" ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "seen_by_user_context_type_index" ON "seen_by" ("user_id","context_id","entity_type");--> statement-breakpoint
@@ -339,6 +353,7 @@ CREATE INDEX "sessions_secret_idx" ON "sessions" ("secret");--> statement-breakp
 CREATE INDEX "sessions_user_id_idx" ON "sessions" ("user_id");--> statement-breakpoint
 CREATE INDEX "tenants_status_index" ON "tenants" ("status");--> statement-breakpoint
 CREATE INDEX "tenants_created_at_index" ON "tenants" ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "tenants_subscription_status_index" ON "tenants" ("subscription_status");--> statement-breakpoint
 CREATE INDEX "tokens_secret_type_idx" ON "tokens" ("secret","type");--> statement-breakpoint
 CREATE INDEX "tokens_user_id_idx" ON "tokens" ("user_id");--> statement-breakpoint
 CREATE INDEX "unsubscribe_tokens_secret_idx" ON "unsubscribe_tokens" ("secret");--> statement-breakpoint
@@ -355,6 +370,7 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fkey" 
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_Ytb3N4m0pWsH_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "domains" ADD CONSTRAINT "domains_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "emails" ADD CONSTRAINT "emails_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
@@ -382,6 +398,7 @@ ALTER TABLE "seen_by" ADD CONSTRAINT "seen_by_tenant_id_tenants_id_fkey" FOREIGN
 ALTER TABLE "seen_by" ADD CONSTRAINT "seen_by_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "system_roles" ADD CONSTRAINT "system_roles_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "tenants" ADD CONSTRAINT "tenants_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_oauth_account_id_oauth_accounts_id_fkey" FOREIGN KEY ("oauth_account_id") REFERENCES "oauth_accounts"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
@@ -390,12 +407,11 @@ ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_user
 ALTER TABLE "user_activity" ADD CONSTRAINT "user_activity_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id");--> statement-breakpoint
 CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SELECT TO public USING (
-  
+        
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
 
-  AND current_setting('app.is_authenticated', true)::boolean = true
-  AND 
+        AND (
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -403,8 +419,8 @@ CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SEL
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
-
-);--> statement-breakpoint
+ OR "attachments"."public_access" = true)
+      );--> statement-breakpoint
 CREATE POLICY "attachments_insert_policy" ON "attachments" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
   
   COALESCE(current_setting('app.tenant_id', true), '') != ''

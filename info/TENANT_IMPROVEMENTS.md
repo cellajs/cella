@@ -24,7 +24,7 @@ Plan for tenant table enhancements, subscription migration, domain verification,
 
 Add index on `subscriptionStatus` for filtering.
 
-### 1.2 New `tenant_domains` table
+### 1.2 New `domains` table
 
 Domains need cross-tenant uniqueness checks and reverse lookups (domain → tenant). This follows the same relational pattern as `emailsTable` (multiple emails per user) rather than a JSON blob.
 
@@ -32,10 +32,21 @@ Domains need cross-tenant uniqueness checks and reverse lookups (domain → tena
 - Postgres unique constraint enforces one-tenant-per-domain at DB level
 - Index-backed `domain` lookups — no GIN/`@>` needed (codebase has no JSON array querying precedent)
 - Follows existing `emailsTable` pattern: `id`, FK parent, `verified`, `verifiedAt`
-- Extensible: add `lastCheckedAt`, `expiresAt` later without touching tenant schema
+- Extensible: add `expiresAt` later without touching tenant schema
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | `varchar PK` | nanoid |
+| `tenantId` | `varchar FK → tenants` | Cascade delete |
+| `domain` | `varchar unique` | Globally unique — one claim per domain string |
+| `verified` | `boolean` | Default `false` |
+| `verificationToken` | `varchar` | Auto-generated nanoid, used in DNS TXT record value |
+| `verifiedAt` | `timestamp nullable` | Set when DNS verification succeeds |
+| `lastCheckedAt` | `timestamp nullable` | When auto-check last ran (for future periodic re-verification) |
+| `createdAt` | `timestamp` | Row creation time |
 
 ```typescript
-export const tenantDomainsTable = pgTable('tenant_domains', {
+export const domainsTable = pgTable('domains', {
   id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
   tenantId: varchar({ length: tenantIdLength }).notNull()
     .references(() => tenantsTable.id, { onDelete: 'cascade' }),
@@ -46,24 +57,12 @@ export const tenantDomainsTable = pgTable('tenant_domains', {
   lastCheckedAt: timestamp({ mode: 'string' }),
   createdAt: timestampColumns.createdAt,
 }, (table) => [
-  index('tenant_domains_tenant_id_idx').on(table.tenantId),
-  index('tenant_domains_domain_idx').on(table.domain),
+  index('domains_tenant_id_idx').on(table.tenantId),
+  index('domains_domain_idx').on(table.domain),
 ]);
 ```
 
 **Domain verification — DNS TXT only.**
-
-Researched methods used by major platforms:
-
-| Method | Used by | Security | Proves | User difficulty |
-|--------|---------|----------|--------|-----------------|
-| **DNS TXT** | Google Workspace, GitHub, Microsoft 365, Vercel, Zitadel | Strong | Domain ownership (DNS admin access) | Medium |
-| `.well-known` JSON | Let's Encrypt (ACME), Keybase | Moderate | Web hosting control, not ownership | Medium |
-| DNS CNAME | Vercel (subdomain), some CDNs | Strong | DNS ownership | Medium |
-| Admin email | Slack, AWS SES | Weak | Email access only | Easy |
-| HTML meta tag | Google (legacy fallback) | Weak | Website edit access | Medium |
-
-**Decision: DNS TXT only.** It's the industry standard, proves actual domain ownership, and is simple to implement server-side using Node.js built-in `dns.resolveTxt()` — zero extra dependencies.
 
 **Verification flow:**
 1. Tenant admin adds a domain → `verificationToken` is auto-generated (nanoid)
@@ -133,7 +132,7 @@ createTenantForUser(db, { name, createdBy }): Promise<TenantModel>
 
 - Inserts tenant with `defaultRestrictions()`
 - Sets `createdBy` to user ID
-- Inserts a row in `tenant_domains` with domain extracted from user's email (unverified)
+- Inserts a row in `domains` with domain extracted from user's email (unverified)
 - **Sends AccountSecurity email** to system admin (see 2.2)
 - Logs event: `logEvent('info', 'Tenant auto-created', { tenantId, userId })`
 
@@ -173,11 +172,11 @@ Update `createOrganizations` in `organization-handlers.ts`:
 **New flow when no `tenantId` is provided (or new route without tenant path param):**
 
 1. Extract domain from `user.email` (e.g. `user@acme.com` → `acme.com`)
-2. Query `tenant_domains` for a **verified** match:
+2. Query `domains` for a **verified** match:
    ```sql
-   SELECT td.*, t.name as tenant_name FROM tenant_domains td
-   JOIN tenants t ON t.id = td.tenant_id
-   WHERE td.domain = 'acme.com' AND td.verified = true
+   SELECT d.*, t.name as tenant_name FROM domains d
+   JOIN tenants t ON t.id = d.tenant_id
+   WHERE d.domain = 'acme.com' AND d.verified = true
    ```
 3. **If match found**: Return info response `existing_tenant_found` with tenant name + id. Frontend shows a message suggesting the user request an invitation. User can override with `createNewTenant: true`.
 4. **If no match or `createNewTenant: true`**: Call `createTenantForUser()`, then create org inside new tenant.
@@ -243,7 +242,7 @@ The existing `createTenant` handler in `tenants-handlers.ts` should delegate to 
 
 ## Implementation order
 
-1. **Phase 1.1 + 1.2 + 1.4** — Tenant schema: add fields, create `tenant_domains` table, subscription enum
+1. **Phase 1.1 + 1.2 + 1.4** — Tenant schema: add fields, create `domains` table, subscription enum
 2. **Phase 1.3** — Remove `emailDomains` from organization schema
 3. **Phase 1.5** — Move Paddle logic from org to tenant
 4. **Phase 2.2** — Add `tenant-created` to AccountSecurity email
@@ -262,7 +261,7 @@ This order prioritizes unblocking new-user onboarding (the critical gap) and dat
 | File | Change |
 |------|--------|
 | `backend/src/db/schema/tenants.ts` | Add `createdBy`, subscription fields, subscription status enum |
-| `backend/src/db/schema/tenant-domains.ts` | **New**: `tenant_domains` table with domain, verified, verificationToken |
+| `backend/src/db/schema/domains.ts` | **New**: `domains` table with domain, verified, verificationToken |
 | `backend/src/db/schema/organizations.ts` | Remove `emailDomains` column |
 | `backend/src/modules/tenants/tenants-schema.ts` | Add new tenant fields + domain schemas to API validation |
 | `backend/src/modules/tenants/tenants-handlers.ts` | Delegate to shared utility, add domain CRUD + verify endpoint |

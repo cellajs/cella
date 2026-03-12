@@ -1,21 +1,11 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "f383867c-4919-4565-984b-7b6460063063",
+  "id": "eec75c79-84c0-4f70-b001-11558351b8ad",
   "prevIds": [
-    "15510700-02c8-4eac-9f65-f3e908cac75b"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
-    {
-      "values": [
-        "active",
-        "suspended",
-        "archived"
-      ],
-      "name": "tenant_status",
-      "entityType": "enums",
-      "schema": "public"
-    },
     {
       "isRlsEnabled": false,
       "name": "activities",
@@ -31,6 +21,12 @@
     {
       "isRlsEnabled": false,
       "name": "context_counters",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "domains",
       "entityType": "tables",
       "schema": "public"
     },
@@ -686,6 +682,110 @@
       "entityType": "columns",
       "schema": "public",
       "table": "context_counters"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(24)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tenant_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "domain",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "verified",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verification_token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verified_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_checked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "domains"
     },
     {
       "type": "timestamp",
@@ -1411,19 +1511,6 @@
       "generated": null,
       "identity": null,
       "name": "notification_email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "organizations"
-    },
-    {
-      "type": "json",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'[]'",
-      "generated": null,
-      "identity": null,
-      "name": "email_domains",
       "entityType": "columns",
       "schema": "public",
       "table": "organizations"
@@ -2417,8 +2504,8 @@
       "table": "tenants"
     },
     {
-      "type": "tenant_status",
-      "typeSchema": "public",
+      "type": "varchar",
+      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": "'active'",
@@ -2438,6 +2525,71 @@
       "generated": null,
       "identity": null,
       "name": "restrictions",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'none'",
+      "generated": null,
+      "identity": null,
+      "name": "subscription_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_plan",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "type": "json",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "subscription_data",
       "entityType": "columns",
       "schema": "public",
       "table": "tenants"
@@ -3264,6 +3416,48 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "domains_tenant_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "domain",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "domains_domain_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "domains"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "user_id",
           "isExpression": false,
           "asc": true,
@@ -3782,6 +3976,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "subscription_status",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tenants_subscription_status_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "secret",
           "isExpression": false,
           "asc": true,
@@ -4088,6 +4303,23 @@
       "entityType": "fks",
       "schema": "public",
       "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "tenant_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "tenants",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "domains_tenant_id_tenants_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "domains"
     },
     {
       "nameExplicit": false,
@@ -4555,6 +4787,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "created_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "tenants_created_by_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -4733,6 +4982,16 @@
       "name": "context_counters_pkey",
       "schema": "public",
       "table": "context_counters",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "domains_pkey",
+      "schema": "public",
+      "table": "domains",
       "entityType": "pks"
     },
     {
@@ -4981,6 +5240,17 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "seen_by"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "domain"
+      ],
+      "nullsNotDistinct": false,
+      "name": "domains_domain_key",
+      "schema": "public",
+      "table": "domains",
+      "entityType": "uniques"
     },
     {
       "nameExplicit": false,

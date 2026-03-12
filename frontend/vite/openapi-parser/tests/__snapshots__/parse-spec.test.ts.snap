@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
 {
-  "inputHash": "f54e3433fc82a6cc",
+  "inputHash": "f767319c148f1ef5",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!  
@@ -1393,30 +1393,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a single tenant by its ID. System admin access required.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "sysAdminGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/tenants/GET/tenants/{tenantId}",
-        "id": "getTenantById",
-        "method": "get",
-        "path": "/tenants/{tenantId}",
-        "summary": "Get tenant by ID",
-        "tags": [
-          "tenants",
-        ],
-      },
-      {
-        "deprecated": false,
         "description": "Updates a tenant by ID. System admin access required.",
         "extensions": {
           "xCache": [],
@@ -1443,7 +1419,57 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Archives a tenant (soft delete). Sets status to "archived". System admin access required. Data retention period applies before permanent deletion.",
+        "description": "Returns all domains belonging to a tenant. System admin access required.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "sysAdminGuard",
+          ],
+          "xRateLimiter": [],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": false,
+        "hasResponseBody": true,
+        "hash": "tag/domains/GET/tenants/{tenantId}/domains",
+        "id": "getDomains",
+        "method": "get",
+        "path": "/tenants/{tenantId}/domains",
+        "summary": "List domains for a tenant",
+        "tags": [
+          "domains",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+            "sysAdminGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": false,
+        "hasParams": true,
+        "hasRequestBody": true,
+        "hasResponseBody": true,
+        "hash": "tag/domains/POST/tenants/{tenantId}/domains",
+        "id": "createDomain",
+        "method": "post",
+        "path": "/tenants/{tenantId}/domains",
+        "summary": "Add a domain to a tenant",
+        "tags": [
+          "domains",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Removes a domain from a tenant. System admin access required.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1458,13 +1484,13 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "hasParams": true,
         "hasRequestBody": false,
         "hasResponseBody": true,
-        "hash": "tag/tenants/DELETE/tenants/{tenantId}",
-        "id": "archiveTenant",
+        "hash": "tag/domains/DELETE/tenants/{tenantId}/domains/{id}",
+        "id": "deleteDomain",
         "method": "delete",
-        "path": "/tenants/{tenantId}",
-        "summary": "Archive a tenant",
+        "path": "/tenants/{tenantId}/domains/{id}",
+        "summary": "Remove a domain",
         "tags": [
-          "tenants",
+          "domains",
         ],
       },
       {
@@ -1725,6 +1751,32 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "method": "delete",
         "path": "/{tenantId}/organizations",
         "summary": "Delete organizations",
+        "tags": [
+          "organizations",
+        ],
+      },
+      {
+        "deprecated": false,
+        "description": "Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.",
+        "entityType": "organization",
+        "extensions": {
+          "xCache": [],
+          "xGuard": [
+            "authGuard",
+          ],
+          "xRateLimiter": [
+            "pointsLimiter",
+          ],
+        },
+        "hasExample": true,
+        "hasParams": false,
+        "hasRequestBody": true,
+        "hasResponseBody": true,
+        "hash": "tag/organizations/POST/organizations",
+        "id": "autoCreateOrganization",
+        "method": "post",
+        "path": "/organizations",
+        "summary": "Create organization with auto-tenant",
         "tags": [
           "organizations",
         ],
@@ -2381,7 +2433,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "base",
       },
       {
-        "count": 13,
+        "count": 14,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -4365,8 +4417,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "required": true,
               "type": "string",
             },
+            "createdBy": {
+              "maxLength": 50,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "domainsCount": {
+              "description": "Number of domains claimed by this tenant",
+              "required": true,
+              "type": "integer",
+            },
             "id": {
-              "description": "Lowercase alphanumeric tenant ID",
               "maxLength": 24,
               "required": true,
               "type": "string",
@@ -4379,7 +4443,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
             },
             "name": {
-              "description": "Tenant display name",
+              "maxLength": 255,
               "required": true,
               "type": "string",
             },
@@ -4419,6 +4483,83 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
               "required": true,
               "type": "string",
+            },
+            "subscriptionId": {
+              "maxLength": 255,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "subscriptionPlan": {
+              "maxLength": 255,
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "subscriptionStatus": {
+              "enum": [
+                "none",
+                "trialing",
+                "active",
+                "past_due",
+                "paused",
+                "canceled",
+              ],
+              "required": true,
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "schemaTag": "data",
+        "type": "object",
+      },
+      {
+        "description": "A domain claimed by a tenant for email matching and verification.",
+        "name": "Domain",
+        "ref": "#/components/schemas/Domain",
+        "schema": {
+          "properties": {
+            "createdAt": {
+              "required": true,
+              "type": "string",
+            },
+            "domain": {
+              "maxLength": 255,
+              "required": true,
+              "type": "string",
+            },
+            "id": {
+              "maxLength": 50,
+              "required": true,
+              "type": "string",
+            },
+            "lastCheckedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "tenantId": {
+              "maxLength": 24,
+              "required": true,
+              "type": "string",
+            },
+            "verified": {
+              "required": true,
+              "type": "boolean",
+            },
+            "verifiedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
             },
           },
           "type": "object",
@@ -4495,7 +4636,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "createdBy": null,
           "defaultLanguage": "en",
           "description": "Multi-tiered zero trust firmware",
-          "emailDomains": [],
           "entityType": "organization",
           "id": "hmo9fwr239kqavr3yur671kl",
           "included": {
@@ -4638,11 +4778,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               ],
               "required": true,
               "type": "string",
-            },
-            "emailDomains": {
-              "itemType": "string",
-              "required": true,
-              "type": "array",
             },
             "entityType": {
               "enum": [
@@ -10059,6 +10194,339 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
       ],
+      "domains": [
+        {
+          "operationId": "getDomains",
+          "request": {
+            "path": {
+              "properties": {
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "List of domains",
+              "schema": {
+                "contentType": "application/json",
+                "itemType": "object",
+                "items": {
+                  "description": "A domain claimed by a tenant for email matching and verification.",
+                  "properties": {
+                    "createdAt": {
+                      "required": true,
+                      "type": "string",
+                    },
+                    "domain": {
+                      "maxLength": 255,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "id": {
+                      "maxLength": 50,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "lastCheckedAt": {
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                    "tenantId": {
+                      "maxLength": 24,
+                      "required": true,
+                      "type": "string",
+                    },
+                    "verified": {
+                      "required": true,
+                      "type": "boolean",
+                    },
+                    "verifiedAt": {
+                      "required": true,
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                  },
+                  "ref": "#/components/schemas/Domain",
+                  "required": true,
+                  "type": "object",
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "array",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "createDomain",
+          "request": {
+            "body": {
+              "contentType": "application/json",
+              "properties": {
+                "domain": {
+                  "maxLength": 255,
+                  "minLength": 4,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+            "path": {
+              "properties": {
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Created domain",
+              "name": "Domain",
+              "ref": "#/components/schemas/Domain",
+              "schema": {
+                "contentType": "application/json",
+                "description": "A domain claimed by a tenant for email matching and verification.",
+                "properties": {
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "domain": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "lastCheckedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "verified": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "verifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
+          "operationId": "deleteDomain",
+          "request": {
+            "path": {
+              "properties": {
+                "id": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+                "tenantId": {
+                  "maxLength": 50,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Domain removed",
+              "name": "Domain",
+              "ref": "#/components/schemas/Domain",
+              "schema": {
+                "contentType": "application/json",
+                "description": "A domain claimed by a tenant for email matching and verification.",
+                "properties": {
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "domain": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "lastCheckedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "verified": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "verifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "ref": "#/components/schemas/Domain",
+                "type": "object",
+              },
+              "status": 200,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+      ],
       "entities": [
         {
           "operationId": "checkSlug",
@@ -14142,7 +14610,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Future-proofed contextually-based moderator",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "kzmv5qbhdcqeiuvwlosan0fc",
                     "included": {
@@ -14198,7 +14665,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Quality-focused uniform throughput",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "p3t0ygxx0aa83en3sk1fs1we",
                     "included": {
@@ -14349,11 +14815,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                           "required": true,
                           "type": "string",
-                        },
-                        "emailDomains": {
-                          "itemType": "string",
-                          "required": true,
-                          "type": "array",
                         },
                         "entityType": {
                           "enum": [
@@ -14763,6 +15224,482 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           ],
         },
         {
+          "operationId": "autoCreateOrganization",
+          "request": {
+            "body": {
+              "contentType": "application/json",
+              "properties": {
+                "createNewTenant": {
+                  "required": false,
+                  "type": "boolean",
+                },
+                "name": {
+                  "maxLength": 255,
+                  "minLength": 2,
+                  "required": true,
+                  "type": "string",
+                },
+                "slug": {
+                  "maxLength": 255,
+                  "minLength": 2,
+                  "required": true,
+                  "type": "string",
+                },
+              },
+              "required": true,
+              "type": "object",
+            },
+          },
+          "responses": [
+            {
+              "contentType": "application/json",
+              "description": "Organization was created",
+              "example": {
+                "authStrategies": [
+                  "password",
+                ],
+                "bannerUrl": null,
+                "chatSupport": true,
+                "color": "#ecfdfe",
+                "country": "Turks and Caicos Islands",
+                "createdAt": "2024-12-25T15:29:47.111Z",
+                "createdBy": null,
+                "defaultLanguage": "en",
+                "description": "Multi-tiered zero trust firmware",
+                "entityType": "organization",
+                "id": "hmo9fwr239kqavr3yur671kl",
+                "included": {
+                  "counts": {
+                    "entities": {
+                      "attachment": 178,
+                      "page": 257,
+                    },
+                    "membership": {
+                      "admin": 30,
+                      "member": 63,
+                      "pending": 13,
+                      "total": 93,
+                    },
+                  },
+                  "membership": {
+                    "archived": false,
+                    "contextType": "organization",
+                    "displayOrder": 69,
+                    "id": "kaba9fpc90mgtzmtjipw2v8s",
+                    "muted": false,
+                    "organizationId": "hmo9fwr239kqavr3yur671kl",
+                    "role": "admin",
+                    "tenantId": "w4hg40",
+                    "userId": "36vxzq0rzt4pucvepsu63uw1",
+                  },
+                },
+                "languages": [
+                  "en",
+                ],
+                "logoUrl": null,
+                "modifiedAt": "2024-12-25T15:29:47.111Z",
+                "modifiedBy": null,
+                "name": "Hills, Bauch and Monahan",
+                "notificationEmail": "notifications@hills-bauch-and-monahan.example",
+                "shortName": "Hills,",
+                "slug": "hills-bauch-and-monahan",
+                "tenantId": "vk6xht",
+                "thumbnailUrl": null,
+                "timezone": "America/Argentina/Buenos_Aires",
+                "websiteUrl": "https://hills-bauch-and-monahan.example",
+                "welcomeText": "Welcome to Hills, Bauch and Monahan!",
+              },
+              "schema": {
+                "contentType": "application/json",
+                "description": "An organization with membership context.",
+                "extendsRef": "#/components/schemas/Organization",
+                "properties": {
+                  "authStrategies": {
+                    "enum": [
+                      "github",
+                      "google",
+                      "microsoft",
+                      "password",
+                      "passkey",
+                      "totp",
+                      "email",
+                    ],
+                    "itemType": "string",
+                    "required": true,
+                    "type": "array",
+                  },
+                  "bannerUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "chatSupport": {
+                    "required": true,
+                    "type": "boolean",
+                  },
+                  "color": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "country": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "createdAt": {
+                    "required": true,
+                    "type": "string",
+                  },
+                  "createdBy": {
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
+                    "required": true,
+                    "type": [
+                      "object",
+                      "null",
+                    ],
+                  },
+                  "defaultLanguage": {
+                    "enum": [
+                      "en",
+                      "nl",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "entityType": {
+                    "enum": [
+                      "organization",
+                    ],
+                    "required": true,
+                    "type": "string",
+                  },
+                  "id": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "included": {
+                    "properties": {
+                      "counts": {
+                        "properties": {
+                          "entities": {
+                            "properties": {
+                              "attachment": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "page": {
+                                "required": true,
+                                "type": "number",
+                              },
+                            },
+                            "required": true,
+                            "type": "object",
+                          },
+                          "membership": {
+                            "properties": {
+                              "admin": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "member": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "pending": {
+                                "required": true,
+                                "type": "number",
+                              },
+                              "total": {
+                                "required": true,
+                                "type": "number",
+                              },
+                            },
+                            "required": true,
+                            "type": "object",
+                          },
+                        },
+                        "required": false,
+                        "type": "object",
+                      },
+                      "membership": {
+                        "description": "Core membership fields shared across active and inactive memberships.",
+                        "properties": {
+                          "archived": {
+                            "required": true,
+                            "type": "boolean",
+                          },
+                          "contextType": {
+                            "enum": [
+                              "organization",
+                            ],
+                            "required": true,
+                            "type": "string",
+                          },
+                          "displayOrder": {
+                            "maximum": 140737488355327,
+                            "minimum": -140737488355328,
+                            "required": true,
+                            "type": "number",
+                          },
+                          "id": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "muted": {
+                            "required": true,
+                            "type": "boolean",
+                          },
+                          "organizationId": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "role": {
+                            "enum": [
+                              "admin",
+                              "member",
+                            ],
+                            "required": true,
+                            "type": "string",
+                          },
+                          "tenantId": {
+                            "maxLength": 24,
+                            "required": true,
+                            "type": "string",
+                          },
+                          "userId": {
+                            "maxLength": 50,
+                            "required": true,
+                            "type": "string",
+                          },
+                        },
+                        "ref": "#/components/schemas/MembershipBase",
+                        "required": true,
+                        "type": "object",
+                      },
+                    },
+                    "required": true,
+                    "type": "object",
+                  },
+                  "languages": {
+                    "enum": [
+                      "en",
+                      "nl",
+                    ],
+                    "itemType": "string",
+                    "minItems": 1,
+                    "required": true,
+                    "type": "array",
+                  },
+                  "logoUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "modifiedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "modifiedBy": {
+                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "extendsRef": "#/components/schemas/UserMinimalBase",
+                    "properties": {
+                      "email": {
+                        "format": "email",
+                        "required": true,
+                        "type": "string",
+                      },
+                      "entityType": {
+                        "enum": [
+                          "user",
+                        ],
+                        "required": true,
+                        "type": "string",
+                      },
+                      "id": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "name": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "slug": {
+                        "required": true,
+                        "type": "string",
+                      },
+                      "thumbnailUrl": {
+                        "required": true,
+                        "type": [
+                          "string",
+                          "null",
+                        ],
+                      },
+                    },
+                    "required": true,
+                    "type": [
+                      "object",
+                      "null",
+                    ],
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "notificationEmail": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "shortName": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "slug": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "tenantId": {
+                    "maxLength": 24,
+                    "required": true,
+                    "type": "string",
+                  },
+                  "thumbnailUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "timezone": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "websiteUrl": {
+                    "maxLength": 2048,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "welcomeText": {
+                    "maxLength": 1000000,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                },
+                "type": "object",
+              },
+              "status": 201,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Bad request: problem processing request.",
+              "name": "BadRequestError",
+              "ref": "#/components/responses/BadRequestError",
+              "status": 400,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Unauthorized: authentication required.",
+              "name": "UnauthorizedError",
+              "ref": "#/components/responses/UnauthorizedError",
+              "status": 401,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Forbidden: insufficient permissions.",
+              "name": "ForbiddenError",
+              "ref": "#/components/responses/ForbiddenError",
+              "status": 403,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Not found: resource does not exist.",
+              "name": "NotFoundError",
+              "ref": "#/components/responses/NotFoundError",
+              "status": 404,
+            },
+            {
+              "contentType": "application/json",
+              "description": "Rate limit: too many requests.",
+              "name": "TooManyRequestsError",
+              "ref": "#/components/responses/TooManyRequestsError",
+              "status": 429,
+            },
+          ],
+        },
+        {
           "operationId": "getOrganizations",
           "request": {
             "query": {
@@ -14847,7 +15784,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Public-key context-sensitive website",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "qqp8d07imsvjbtqtl3rtjgxd",
                     "included": {
@@ -14903,7 +15839,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "createdBy": null,
                     "defaultLanguage": "en",
                     "description": "Reverse-engineered sustainable matrix",
-                    "emailDomains": [],
                     "entityType": "organization",
                     "id": "hg5ogh3yr2b2dbwf7b9eckaj",
                     "included": {
@@ -15053,11 +15988,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                           "required": true,
                           "type": "string",
-                        },
-                        "emailDomains": {
-                          "itemType": "string",
-                          "required": true,
-                          "type": "array",
                         },
                         "entityType": {
                           "enum": [
@@ -15415,7 +16345,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "createdBy": null,
                 "defaultLanguage": "en",
                 "description": "Multi-tiered zero trust firmware",
-                "emailDomains": [],
                 "entityType": "organization",
                 "id": "hmo9fwr239kqavr3yur671kl",
                 "included": {
@@ -15560,11 +16489,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
-                  },
-                  "emailDomains": {
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
                   },
                   "entityType": {
                     "enum": [
@@ -15912,13 +16836,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
-                "emailDomains": {
-                  "itemType": "string",
-                  "maxLength": 255,
-                  "minLength": 4,
-                  "required": false,
-                  "type": "array",
-                },
                 "languages": {
                   "enum": [
                     "en",
@@ -16033,7 +16950,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                 "createdBy": null,
                 "defaultLanguage": "en",
                 "description": "Multi-tiered zero trust firmware",
-                "emailDomains": [],
                 "entityType": "organization",
                 "id": "hmo9fwr239kqavr3yur671kl",
                 "included": {
@@ -16178,11 +17094,6 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                     "required": true,
                     "type": "string",
-                  },
-                  "emailDomains": {
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
                   },
                   "entityType": {
                     "enum": [
@@ -19427,6 +20338,10 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
           "request": {
             "query": {
               "properties": {
+                "afterSeq": {
+                  "required": false,
+                  "type": "string",
+                },
                 "limit": {
                   "required": false,
                   "type": "string",
@@ -19444,7 +20359,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "type": "string",
                 },
                 "q": {
-                  "description": "Search query",
+                  "maxLength": 255,
                   "required": false,
                   "type": "string",
                 },
@@ -19485,8 +20400,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           "required": true,
                           "type": "string",
                         },
+                        "createdBy": {
+                          "maxLength": 50,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "domainsCount": {
+                          "description": "Number of domains claimed by this tenant",
+                          "required": true,
+                          "type": "integer",
+                        },
                         "id": {
-                          "description": "Lowercase alphanumeric tenant ID",
                           "maxLength": 24,
                           "required": true,
                           "type": "string",
@@ -19499,7 +20426,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                           ],
                         },
                         "name": {
-                          "description": "Tenant display name",
+                          "maxLength": 255,
                           "required": true,
                           "type": "string",
                         },
@@ -19536,6 +20463,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                             "active",
                             "suspended",
                             "archived",
+                          ],
+                          "required": true,
+                          "type": "string",
+                        },
+                        "subscriptionId": {
+                          "maxLength": 255,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "subscriptionPlan": {
+                          "maxLength": 255,
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "subscriptionStatus": {
+                          "enum": [
+                            "none",
+                            "trialing",
+                            "active",
+                            "past_due",
+                            "paused",
+                            "canceled",
                           ],
                           "required": true,
                           "type": "string",
@@ -19601,9 +20556,8 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "contentType": "application/json",
               "properties": {
                 "name": {
-                  "description": "Tenant display name",
                   "maxLength": 255,
-                  "minLength": 1,
+                  "minLength": 2,
                   "required": true,
                   "type": "string",
                 },
@@ -19635,8 +20589,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "createdBy": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "domainsCount": {
+                    "description": "Number of domains claimed by this tenant",
+                    "required": true,
+                    "type": "integer",
+                  },
                   "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
                     "maxLength": 24,
                     "required": true,
                     "type": "string",
@@ -19649,7 +20615,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "name": {
-                    "description": "Tenant display name",
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
@@ -19690,128 +20656,30 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                },
-                "ref": "#/components/schemas/Tenant",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "getTenantById",
-          "request": {
-            "path": {
-              "properties": {
-                "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Tenant",
-              "name": "Tenant",
-              "ref": "#/components/schemas/Tenant",
-              "schema": {
-                "contentType": "application/json",
-                "description": "A tenant representing an isolated data partition for multi-tenancy.",
-                "properties": {
-                  "createdAt": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "modifiedAt": {
+                  "subscriptionId": {
+                    "maxLength": 255,
                     "required": true,
                     "type": [
                       "string",
                       "null",
                     ],
                   },
-                  "name": {
-                    "description": "Tenant display name",
+                  "subscriptionPlan": {
+                    "maxLength": 255,
                     "required": true,
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
                   },
-                  "restrictions": {
-                    "properties": {
-                      "quotas": {
-                        "additionalProperties": {
-                          "minimum": 0,
-                          "required": false,
-                          "type": "integer",
-                        },
-                        "description": "Entity quotas (0 = unlimited)",
-                        "required": true,
-                        "type": "object",
-                      },
-                      "rateLimits": {
-                        "properties": {
-                          "apiPointsPerHour": {
-                            "description": "Max API points per hour per user within this tenant",
-                            "minimum": 0,
-                            "required": true,
-                            "type": "integer",
-                          },
-                        },
-                        "required": true,
-                        "type": "object",
-                      },
-                    },
-                    "required": true,
-                    "type": "object",
-                  },
-                  "status": {
+                  "subscriptionStatus": {
                     "enum": [
+                      "none",
+                      "trialing",
                       "active",
-                      "suspended",
-                      "archived",
+                      "past_due",
+                      "paused",
+                      "canceled",
                     ],
                     "required": true,
                     "type": "string",
@@ -19867,7 +20735,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
               "properties": {
                 "name": {
                   "maxLength": 255,
-                  "minLength": 1,
+                  "minLength": 2,
                   "required": false,
                   "type": "string",
                 },
@@ -19908,6 +20776,34 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                   "required": false,
                   "type": "string",
                 },
+                "subscriptionId": {
+                  "maxLength": 255,
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "subscriptionPlan": {
+                  "maxLength": 255,
+                  "required": false,
+                  "type": [
+                    "string",
+                    "null",
+                  ],
+                },
+                "subscriptionStatus": {
+                  "enum": [
+                    "none",
+                    "trialing",
+                    "active",
+                    "past_due",
+                    "paused",
+                    "canceled",
+                  ],
+                  "required": false,
+                  "type": "string",
+                },
               },
               "required": true,
               "type": "object",
@@ -19915,8 +20811,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
             "path": {
               "properties": {
                 "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
+                  "maxLength": 50,
                   "required": true,
                   "type": "string",
                 },
@@ -19937,8 +20832,20 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
+                  "createdBy": {
+                    "maxLength": 50,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "domainsCount": {
+                    "description": "Number of domains claimed by this tenant",
+                    "required": true,
+                    "type": "integer",
+                  },
                   "id": {
-                    "description": "Lowercase alphanumeric tenant ID",
                     "maxLength": 24,
                     "required": true,
                     "type": "string",
@@ -19951,7 +20858,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     ],
                   },
                   "name": {
-                    "description": "Tenant display name",
+                    "maxLength": 255,
                     "required": true,
                     "type": "string",
                   },
@@ -19992,75 +20899,36 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
                     "required": true,
                     "type": "string",
                   },
-                },
-                "ref": "#/components/schemas/Tenant",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "archiveTenant",
-          "request": {
-            "path": {
-              "properties": {
-                "tenantId": {
-                  "description": "Tenant ID",
-                  "maxLength": 24,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Archived tenant",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "success": {
+                  "subscriptionId": {
+                    "maxLength": 255,
                     "required": true,
-                    "type": "boolean",
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "subscriptionPlan": {
+                    "maxLength": 255,
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "subscriptionStatus": {
+                    "enum": [
+                      "none",
+                      "trialing",
+                      "active",
+                      "past_due",
+                      "paused",
+                      "canceled",
+                    ],
+                    "required": true,
+                    "type": "string",
                   },
                 },
+                "ref": "#/components/schemas/Tenant",
                 "type": "object",
               },
               "status": 200,
@@ -20552,7 +21420,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "memberships",
       },
       {
-        "count": 5,
+        "count": 6,
         "description": "Operations for managing organizations, which are core context entities and the highest
         ancestor in the entity hierarchy. Supports creating, listing, retrieving, updating, and deleting
         organizations within a tenant. Cross-tenant listing is available with elevated permissions.",
@@ -20614,7 +21482,7 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         "name": "activities",
       },
       {
-        "count": 5,
+        "count": 3,
         "description": "System admin operations for managing tenants. Tenants are top-level isolation boundaries used by
         Row-Level Security (RLS) to partition data. Supports listing, retrieving, creating, updating, and
         soft-deleting (archiving) tenants.",
@@ -20626,6 +21494,11 @@ exports[`parseOpenApiSpec > parses cella backend spec correctly 1`] = `
         as seen (deduplicating against existing records) and incrementing view counts. Used to power unseen
         count badges in navigation and view count columns in entity lists.",
         "name": "seen",
+      },
+      {
+        "count": 3,
+        "description": undefined,
+        "name": "domains",
       },
     ],
   },

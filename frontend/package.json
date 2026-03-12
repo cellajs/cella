@@ -6,9 +6,9 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "tsx ../scripts/wait-backend.ts && pnpm generate-client && pnpm concurrently --names \"VITE,STORY\" --prefix name \"pnpm dev:run\" \"pnpm storybook\"",
+    "dev": "tsx ../shared/scripts/wait-backend.ts && pnpm generate-client && pnpm concurrently --names \"VITE,STORY\" --prefix name \"pnpm dev:run\" \"pnpm storybook\"",
     "dev:run": "cross-env NODE_ENV=development vite --mode development",
-    "tunnel": "tsx ../scripts/wait-backend.ts && cross-env NODE_ENV=tunnel vite --mode tunnel",
+    "tunnel": "tsx ../shared/scripts/wait-backend.ts && cross-env NODE_ENV=tunnel vite --mode tunnel",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "test": "vitest run",
     "ts": "cd .. && tsgo -p frontend/tsconfig.json --pretty",

@@ -24,6 +24,8 @@
   "email.account_security.totp-added.title": "Authenticator added",
   "email.account_security.totp-removed.text": "The TOTP authenticator has been removed from your {{appName}} account.",
   "email.account_security.totp-removed.title": "Authenticator removed",
+  "email.account_security.tenant-created.text": "A new tenant <strong>{{tenantName}}</strong> was created on {{appName}} by {{userEmail}} at {{timestamp}}.",
+  "email.account_security.tenant-created.title": "New tenant created",
   "email.author_email": "Message the author",
   "email.contact_request.text": "Thanks for reaching out to {{appName}}. Our team will get back to you as soon as possible.",
   "email.contact_request.title": "Our team has your request",

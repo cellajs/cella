@@ -5,6 +5,7 @@ import authOAuthRouteHandlers from '#/modules/auth/oauth/oauth-handlers';
 import authPasskeysRouteHandlers from '#/modules/auth/passkeys/passkeys-handlers';
 import authPasswordsRouteHandlers from '#/modules/auth/passwords/passwords-handlers';
 import authTotpRouteHandlers from '#/modules/auth/totps/totps-handlers';
+import domainRouteHandlers from '#/modules/domains/domains-handlers';
 import entitiesRouteHandlers from '#/modules/entities/entities-handlers';
 import meRouteHandlers from '#/modules/me/me-handlers';
 import membershipsRouteHandlers from '#/modules/memberships/memberships-handlers';
@@ -31,6 +32,7 @@ const app = baseApp
   .route('/entities', entitiesRouteHandlers)
   .route('/system', systemRouteHandlers)
   .route('/tenants', tenantRouteHandlers)
+  .route('/tenants/:tenantId/domains', domainRouteHandlers)
   .route('/requests', requestsRouteHandlers)
   .route('/metrics', metricsRouteHandlers)
   .route('/', organizationRouteHandlers)

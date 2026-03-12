@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: { index: 'src/create-cella-cli.ts' },
   outDir: 'dist',
   clean: true,
   minify: false,

@@ -109,12 +109,10 @@ if (env.DEV_MODE === 'basic') {
   }
 
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
-  console.info('[roles] Checking if roles exist...');
   if (await rolesExist()) {
-    console.info('[roles] All roles exist, skipping');
+    console.info(`${pc.green('✔')} All roles exist, skipping`);
     return;
   }
-  console.info('[roles] Some roles missing, creating...');
 
 // Extract passwords from connection strings
 const runtime = parseCredentials(env.DATABASE_URL);

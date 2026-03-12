@@ -27,5 +27,10 @@ export function DeleteOrganizations({ tenantId, organizations, callback, dialog:
     );
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  const onCancel = () => {
+    if (isDialog) removeDialog();
+    callback?.({ status: 'settle' });
+  };
+
+  return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={isPending} />;
 }

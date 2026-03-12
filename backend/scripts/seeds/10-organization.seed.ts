@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
 import { migrationDb } from '#/db/db';
+import { domainsTable } from '#/db/schema/domains';
 import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
@@ -56,12 +57,27 @@ export const organizationsSeed = async () => {
   // Create tenants (10 tenants, each will have 10 organizations)
   const tenantRecords = Array.from({ length: TENANTS_COUNT }, (_, i) => ({
     name: `Tenant ${i + 1}`,
+    createdBy: defaultAdminUser.id,
+    // Give first 2 tenants an active subscription for dev testing
+    ...(i < 2 && {
+      subscriptionId: `sub_seed_${i + 1}`,
+      subscriptionStatus: 'active' as const,
+      subscriptionPlan: 'pro',
+    }),
   }));
   const tenants = await db
     .insert(tenantsTable)
     .values(tenantRecords)
     .returning()
     .onConflictDoNothing();
+
+  // Seed domains for tenants (one domain per tenant for email matching)
+  const domainRecords = tenants.map((tenant, i) => ({
+    tenantId: tenant.id,
+    domain: `tenant${i + 1}.example`,
+    verified: i < 3, // First 3 tenants have verified domains
+  }));
+  await db.insert(domainsTable).values(domainRecords).onConflictDoNothing();
 
   // Make organizations - distribute across tenants (10 per tenant)
   // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)

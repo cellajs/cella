@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node dist/cdc-worker.js",
     "start:dev": "tsx src/cdc-worker.ts",
-    "dev": "cross-env NODE_ENV=development tsx ../scripts/wait-backend.ts -i 2000 -t 60000 && tsx watch --env-file=../backend/.env src/cdc-worker.ts",
+    "dev": "cross-env NODE_ENV=development tsx ../shared/scripts/wait-backend.ts -i 2000 -t 60000 && tsx watch --env-file=../backend/.env src/cdc-worker.ts",
     "build": "cross-env NODE_ENV=production tsup",
     "ts": "cd .. && tsgo -p cdc/tsconfig.json --pretty",
     "ts:old": "tsc --pretty",

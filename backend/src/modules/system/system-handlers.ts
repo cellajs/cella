@@ -4,10 +4,12 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
+import { baseDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
+import { tenantsTable } from '#/db/schema/tenants';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
@@ -245,12 +247,54 @@ const systemRouteHandlers = app
     try {
       if (signature && rawRequestBody) {
         const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
-        switch ((await eventData)?.eventType) {
-          case EventName.SubscriptionCreated:
-            logEvent('info', `Subscription ${(await eventData)?.data.id} was created`, { eventData });
-            break;
-          default:
-            logEvent('warn', 'Unhandled paddle event', { eventData });
+        const event = await eventData;
+        if (event) {
+          const data = event.data as {
+            id?: string;
+            status?: string;
+            customData?: { tenantId?: string };
+            items?: { price?: { id?: string } }[];
+          };
+          const tenantId = data.customData?.tenantId;
+
+          switch (event.eventType) {
+            case EventName.SubscriptionCreated:
+            case EventName.SubscriptionUpdated:
+            case EventName.SubscriptionCanceled:
+            case EventName.SubscriptionPaused:
+            case EventName.SubscriptionResumed:
+            case EventName.SubscriptionPastDue: {
+              if (!tenantId) {
+                logEvent('warn', 'Paddle subscription event missing tenantId in customData', {
+                  eventType: event.eventType,
+                  subscriptionId: data.id,
+                });
+                break;
+              }
+
+              const subscriptionPlan = data.items?.[0]?.price?.id ?? null;
+
+              await baseDb
+                .update(tenantsTable)
+                .set({
+                  subscriptionId: data.id ?? null,
+                  subscriptionStatus:
+                    (data.status as 'active' | 'canceled' | 'past_due' | 'paused' | 'trialing') ?? 'none',
+                  subscriptionPlan,
+                  subscriptionData: data,
+                  modifiedAt: new Date().toISOString(),
+                })
+                .where(eq(tenantsTable.id, tenantId));
+
+              logEvent('info', `Subscription ${event.eventType} for tenant ${tenantId}`, {
+                subscriptionId: data.id,
+                status: data.status,
+              });
+              break;
+            }
+            default:
+              logEvent('warn', 'Unhandled paddle event', { eventType: event.eventType });
+          }
         }
       }
     } catch (error) {

@@ -117,15 +117,7 @@ export const useColumns = (isCompact: boolean) => {
           options: roles.all,
         }),
     },
-    {
-      key: 'subscription',
-      name: t('common:subscription'),
-      sortable: false,
-      minBreakpoint: 'md',
-      resizable: true,
-      minWidth: 140,
-      renderCell: () => <span className="text-muted">-</span>,
-    },
+
     {
       key: 'createdAt',
       name: t('common:created_at'),

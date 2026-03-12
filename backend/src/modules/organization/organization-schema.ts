@@ -14,7 +14,6 @@ import {
   noDuplicateSlugsRefine,
   paginationQuerySchema,
   validCDNUrlSchema,
-  validDomainsSchema,
   validNameSchema,
   validSlugSchema,
   validTempIdSchema,
@@ -30,7 +29,6 @@ export const organizationSchema = z
     createdBy: userMinimalBaseSchema.nullable(),
     modifiedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
-    emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
     included: contextEntityIncludedSchema,
   })
@@ -56,13 +54,19 @@ export const organizationCreateBodySchema = organizationCreateItemSchema
   .max(10)
   .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
 
+/** Schema for creating an organization with auto-tenant creation (no tenantId in path) */
+export const organizationAutoCreateBodySchema = z.object({
+  name: validNameSchema,
+  slug: validSlugSchema,
+  createNewTenant: z.boolean().optional().default(false),
+});
+
 export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: validNameSchema,
   shortName: validNameSchema.nullable(),
   languages: z.array(languageSchema).min(1),
   defaultLanguage: languageSchema.optional(),
-  emailDomains: validDomainsSchema,
   authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
   websiteUrl: validUrlSchema.nullable(),
   thumbnailUrl: validCDNUrlSchema.nullable(),
@@ -79,7 +83,6 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
     defaultLanguage: true,
     languages: true,
     notificationEmail: true,
-    emailDomains: true,
     color: true,
     thumbnailUrl: true,
     logoUrl: true,

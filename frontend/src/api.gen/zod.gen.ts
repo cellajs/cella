@@ -291,7 +291,7 @@ export const zUploadToken = z.object({
  */
 export const zTenant = z.object({
   id: z.string().max(24),
-  name: z.string(),
+  name: z.string().max(255),
   status: z.enum(['active', 'suspended', 'archived']),
   restrictions: z.object({
     quotas: z.record(z.string(), z.int().gte(0)),
@@ -299,8 +299,26 @@ export const zTenant = z.object({
       apiPointsPerHour: z.int().gte(0),
     }),
   }),
+  createdBy: z.string().max(50).nullable(),
+  subscriptionId: z.string().max(255).nullable(),
+  subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
+  subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
+  domainsCount: z.int(),
+});
+
+/**
+ * A domain claimed by a tenant for email matching and verification.
+ */
+export const zDomain = z.object({
+  id: z.string().max(50),
+  tenantId: z.string().max(24),
+  domain: z.string().max(255),
+  verified: z.boolean(),
+  verifiedAt: z.string().nullable(),
+  lastCheckedAt: z.string().nullable(),
+  createdAt: z.string(),
 });
 
 /**
@@ -336,7 +354,6 @@ export const zOrganization = z.object({
   defaultLanguage: z.enum(['en', 'nl']),
   languages: z.array(z.enum(['en', 'nl'])).min(1),
   notificationEmail: z.string().max(255).nullable(),
-  emailDomains: z.array(z.string()),
   color: z.string().max(255).nullable(),
   logoUrl: z.string().max(2048).nullable(),
   websiteUrl: z.string().max(2048).nullable(),
@@ -1192,12 +1209,13 @@ export const zGetTenantsData = z.object({
   path: z.never().optional(),
   query: z
     .object({
-      q: z.string().optional(),
-      status: z.enum(['active', 'suspended', 'archived']).optional(),
-      limit: z.string().optional().default('50'),
-      offset: z.string().optional().default('0'),
+      q: z.string().max(255).optional(),
       sort: z.enum(['createdAt', 'name']).optional(),
       order: z.enum(['asc', 'desc']).optional(),
+      offset: z.string().optional(),
+      limit: z.string().optional(),
+      afterSeq: z.string().optional(),
+      status: z.enum(['active', 'suspended', 'archived']).optional(),
     })
     .optional(),
 });
@@ -1212,7 +1230,7 @@ export const zGetTenantsResponse = z.object({
 
 export const zCreateTenantData = z.object({
   body: z.object({
-    name: z.string().min(1).max(255),
+    name: z.string().min(2).max(255),
     status: z.enum(['active', 'suspended', 'archived']).optional(),
   }),
   path: z.never().optional(),
@@ -1224,38 +1242,13 @@ export const zCreateTenantData = z.object({
  */
 export const zCreateTenantResponse = zTenant;
 
-export const zArchiveTenantData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    tenantId: z.string().max(24),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Archived tenant
- */
-export const zArchiveTenantResponse = z.object({
-  success: z.boolean(),
-});
-
-export const zGetTenantByIdData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    tenantId: z.string().max(24),
-  }),
-  query: z.never().optional(),
-});
-
-/**
- * Tenant
- */
-export const zGetTenantByIdResponse = zTenant;
-
 export const zUpdateTenantData = z.object({
   body: z.object({
-    name: z.string().min(1).max(255).optional(),
+    name: z.string().min(2).max(255).optional(),
     status: z.enum(['active', 'suspended', 'archived']).optional(),
+    subscriptionId: z.string().max(255).nullish(),
+    subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
+    subscriptionPlan: z.string().max(255).nullish(),
     restrictions: z
       .object({
         quotas: z.record(z.string(), z.int().gte(0)).optional(),
@@ -1268,7 +1261,7 @@ export const zUpdateTenantData = z.object({
       .optional(),
   }),
   path: z.object({
-    tenantId: z.string().max(24),
+    tenantId: z.string().max(50),
   }),
   query: z.never().optional(),
 });
@@ -1277,6 +1270,52 @@ export const zUpdateTenantData = z.object({
  * Updated tenant
  */
 export const zUpdateTenantResponse = zTenant;
+
+export const zGetDomainsData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    tenantId: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * List of domains
+ */
+export const zGetDomainsResponse = z.array(zDomain);
+
+export const zCreateDomainData = z.object({
+  body: z.object({
+    domain: z
+      .string()
+      .min(4)
+      .max(255)
+      .regex(/^[a-z0-9].*[a-z0-9]$\/i/),
+  }),
+  path: z.object({
+    tenantId: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Created domain
+ */
+export const zCreateDomainResponse = zDomain;
+
+export const zDeleteDomainData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    tenantId: z.string().max(50),
+    id: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Domain removed
+ */
+export const zDeleteDomainResponse = zDomain;
 
 export const zDeleteRequestsData = z.object({
   body: z.object({
@@ -1550,6 +1589,43 @@ export const zGetOrganizationsResponse = z.object({
   total: z.number(),
 });
 
+export const zAutoCreateOrganizationData = z.object({
+  body: z.object({
+    name: z.string().min(2).max(255),
+    slug: z.string().min(2).max(255),
+    createNewTenant: z.boolean().optional().default(false),
+  }),
+  path: z.never().optional(),
+  query: z.never().optional(),
+});
+
+/**
+ * An organization with membership context.
+ */
+export const zAutoCreateOrganizationResponse = zOrganization.and(
+  z.object({
+    included: z
+      .object({
+        membership: zMembershipBase,
+        counts: z
+          .object({
+            membership: z.object({
+              admin: z.number(),
+              member: z.number(),
+              pending: z.number(),
+              total: z.number(),
+            }),
+            entities: z.object({
+              attachment: z.number(),
+              page: z.number(),
+            }),
+          })
+          .optional(),
+      })
+      .optional(),
+  }),
+);
+
 export const zGetOrganizationData = z.object({
   body: z.never().optional(),
   path: z.object({
@@ -1583,7 +1659,6 @@ export const zUpdateOrganizationData = z.object({
         .min(1)
         .optional(),
       notificationEmail: z.string().max(255).nullish(),
-      emailDomains: z.array(z.string().min(4).max(255)).optional(),
       color: z.string().max(255).nullish(),
       thumbnailUrl: z.string().max(2048).nullish(),
       logoUrl: z.string().max(2048).nullish(),

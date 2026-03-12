@@ -8,11 +8,13 @@
  */
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, ne, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { domainsTable } from '#/db/schema/domains';
 import { tenantsTable } from '#/db/schema/tenants';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { createTenantForUser } from '#/modules/tenants/tenant-service';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -27,11 +29,9 @@ const tenantHandlers = app
   .openapi(tenantRoutes.getTenants, async (ctx) => {
     const db = ctx.var.db;
     const { q, status, limit, offset, sort, order } = ctx.req.valid('query');
-    const limitNum = Math.min(Number(limit) || 50, 100);
-    const offsetNum = Number(offset) || 0;
 
-    // Build where conditions
-    const conditions = [];
+    // Build where conditions — always exclude the public tenant from listing
+    const conditions = [ne(tenantsTable.id, appConfig.publicTenant.id)];
     if (q) {
       const searchQuery = prepareStringForILikeFilter(q);
       conditions.push(ilike(tenantsTable.name, searchQuery));
@@ -40,41 +40,46 @@ const tenantHandlers = app
       conditions.push(eq(tenantsTable.status, status));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = and(...conditions);
 
     // Get order column
     const orderColumn = sort === 'name' ? tenantsTable.name : tenantsTable.createdAt;
     const orderDirection = order === 'asc' ? asc : desc;
 
+    // Domains count subquery
+    const domainsCountSq = db
+      .select({ tenantId: domainsTable.tenantId, count: count().as('domains_count') })
+      .from(domainsTable)
+      .groupBy(domainsTable.tenantId)
+      .as('domains_count_sq');
+
     // Execute queries in parallel
     const [tenants, [{ total }]] = await Promise.all([
       db
-        .select()
+        .select({
+          id: tenantsTable.id,
+          name: tenantsTable.name,
+          status: tenantsTable.status,
+          restrictions: tenantsTable.restrictions,
+          createdBy: tenantsTable.createdBy,
+          subscriptionId: tenantsTable.subscriptionId,
+          subscriptionStatus: tenantsTable.subscriptionStatus,
+          subscriptionPlan: tenantsTable.subscriptionPlan,
+          subscriptionData: tenantsTable.subscriptionData,
+          domainsCount: sql<number>`coalesce(${domainsCountSq.count}, 0)`.mapWith(Number),
+          createdAt: tenantsTable.createdAt,
+          modifiedAt: tenantsTable.modifiedAt,
+        })
         .from(tenantsTable)
+        .leftJoin(domainsCountSq, eq(tenantsTable.id, domainsCountSq.tenantId))
         .where(whereClause)
         .orderBy(orderDirection(orderColumn))
-        .limit(limitNum)
-        .offset(offsetNum),
+        .limit(limit)
+        .offset(offset),
       db.select({ total: count() }).from(tenantsTable).where(whereClause),
     ]);
 
     return ctx.json({ items: tenants, total });
-  })
-
-  /**
-   * Get a single tenant by ID.
-   */
-  .openapi(tenantRoutes.getTenantById, async (ctx) => {
-    const db = ctx.var.db;
-    const { tenantId } = ctx.req.valid('param');
-
-    const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
-
-    if (!tenant) {
-      throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
-    }
-
-    return ctx.json(tenant);
   })
 
   /**
@@ -85,17 +90,31 @@ const tenantHandlers = app
     const { name, status } = ctx.req.valid('json');
     const user = ctx.var.user;
 
-    const [tenant] = await db
-      .insert(tenantsTable)
-      .values({
-        name,
-        status: status || 'active',
-      })
-      .returning();
+    const tenant = await createTenantForUser(db, {
+      name,
+      createdBy: user.id,
+      userEmail: user.email,
+    });
 
-    logEvent('info', 'Tenant created', { tenantId: tenant.id, name, createdBy: user.id });
+    // Apply status override if provided (createTenantForUser defaults to 'active')
+    if (status && status !== 'active') {
+      const [updated] = await db
+        .update(tenantsTable)
+        .set({ status: status as typeof tenantsTable.$inferInsert.status })
+        .where(eq(tenantsTable.id, tenant.id))
+        .returning();
+      const [{ domainsCount }] = await db
+        .select({ domainsCount: count() })
+        .from(domainsTable)
+        .where(eq(domainsTable.tenantId, tenant.id));
+      return ctx.json({ ...updated, domainsCount });
+    }
 
-    return ctx.json(tenant);
+    const [{ domainsCount }] = await db
+      .select({ domainsCount: count() })
+      .from(domainsTable)
+      .where(eq(domainsTable.tenantId, tenant.id));
+    return ctx.json({ ...tenant, domainsCount });
   })
 
   /**
@@ -130,50 +149,17 @@ const tenantHandlers = app
         ...otherUpdates,
         ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
         modifiedAt: new Date().toISOString(),
-      })
+      } as typeof tenantsTable.$inferInsert)
       .where(eq(tenantsTable.id, tenantId))
       .returning();
 
     logEvent('info', 'Tenant updated', { tenantId, updates, updatedBy: user.id });
 
-    return ctx.json(tenant);
-  })
-
-  /**
-   * Archive a tenant (soft delete).
-   */
-  .openapi(tenantRoutes.archiveTenant, async (ctx) => {
-    const db = ctx.var.db;
-    const { tenantId } = ctx.req.valid('param');
-    const user = ctx.var.user;
-
-    // Protect public tenant from archival
-    if (tenantId === appConfig.publicTenant.id) {
-      throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'Cannot archive public tenant' } });
-    }
-
-    // Check tenant exists
-    const [existing] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
-
-    if (!existing) {
-      throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
-    }
-
-    if (existing.status === 'archived') {
-      throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'Tenant is already archived' } });
-    }
-
-    await db
-      .update(tenantsTable)
-      .set({
-        status: 'archived',
-        modifiedAt: new Date().toISOString(),
-      })
-      .where(eq(tenantsTable.id, tenantId));
-
-    logEvent('info', 'Tenant archived', { tenantId, archivedBy: user.id });
-
-    return ctx.json({ success: true });
+    const [{ domainsCount }] = await db
+      .select({ domainsCount: count() })
+      .from(domainsTable)
+      .where(eq(domainsTable.tenantId, tenantId));
+    return ctx.json({ ...tenant, domainsCount });
   });
 
 export default tenantHandlers;

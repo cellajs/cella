@@ -4,8 +4,11 @@ import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
 import { contextCountersTable } from '#/db/schema/context-counters';
+import { domainsTable } from '#/db/schema/domains';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { tenantsTable } from '#/db/schema/tenants';
+import { setTenantRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
@@ -15,6 +18,7 @@ import { initContextCounters } from '#/modules/entities/helpers/init-context-cou
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { type MembershipBaseModel, toMembershipBase } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organization/organization-routes';
+import { createTenantForUser } from '#/modules/tenants/tenant-service';
 import {
   auditUserSelect,
   coalesceAuditUsers,
@@ -159,6 +163,90 @@ const organizationRouteHandlers = app
     });
 
     return ctx.json({ data: organizationResponses, ...rejectionState }, 201);
+  })
+  /**
+   * Create an organization with auto-tenant creation (for new users without a tenant)
+   */
+  .openapi(organizationRoutes.autoCreateOrganization, async (ctx) => {
+    const { name, slug, createNewTenant } = ctx.req.valid('json');
+    const user = ctx.var.user;
+
+    // Check slug availability
+    const slugAvailable = await checkSlugAvailable(slug, baseDb);
+    if (!slugAvailable) {
+      throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
+    }
+
+    // Extract domain from user email
+    const emailDomain = user.email.split('@')[1];
+
+    // Check if a verified domain match exists (unless user explicitly wants a new tenant)
+    if (!createNewTenant && emailDomain) {
+      const [matchedDomain] = await baseDb
+        .select({ tenantId: domainsTable.tenantId, tenantName: tenantsTable.name })
+        .from(domainsTable)
+        .innerJoin(tenantsTable, eq(tenantsTable.id, domainsTable.tenantId))
+        .where(and(eq(domainsTable.domain, emailDomain), eq(domainsTable.verified, true)))
+        .limit(1);
+
+      if (matchedDomain) {
+        throw new AppError(409, 'existing_tenant_found', 'info', {
+          meta: { tenantId: matchedDomain.tenantId, tenantName: matchedDomain.tenantName, domain: emailDomain },
+        });
+      }
+    }
+
+    // Auto-create a new tenant for this user
+    const tenant = await createTenantForUser(baseDb, {
+      name: `${name} workspace`,
+      createdBy: user.id,
+      userEmail: user.email,
+    });
+
+    // Create organization within the new tenant using RLS context
+    const result = await setTenantRlsContext({ tenantId: tenant.id, userId: user.id }, async (tx) => {
+      const [org] = await tx
+        .insert(organizationsTable)
+        .values({
+          name,
+          shortName: name,
+          slug,
+          tenantId: tenant.id,
+          languages: [appConfig.defaultLanguage],
+          welcomeText: defaultWelcomeText,
+          defaultLanguage: appConfig.defaultLanguage,
+          createdBy: user.id,
+        })
+        .returning();
+
+      // Insert admin membership
+      const createdMemberships = await insertMemberships(tx, [
+        { userId: user.id, createdBy: user.id, role: 'admin', entity: org },
+      ]);
+
+      // Initialize context counters
+      await initContextCounters('organization', [org.id]);
+
+      const counts = buildZeroCounts('organization');
+      const membership = createdMemberships[0];
+      const orgWithAudit = await withAuditUser(org, tx, user);
+
+      return {
+        ...orgWithAudit,
+        included: {
+          membership: toMembershipBase(membership),
+          counts,
+        },
+      };
+    });
+
+    logEvent('info', 'Organization auto-created with new tenant', {
+      organizationId: result.id,
+      tenantId: tenant.id,
+      userId: user.id,
+    });
+
+    return ctx.json(result, 201);
   })
   /**
    * Get list of organizations

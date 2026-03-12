@@ -1,6 +1,8 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 import {
+  type AutoCreateOrganizationData,
+  autoCreateOrganization,
   type CreateOrganizationsData,
   createOrganizations,
   type DeleteOrganizationsData,
@@ -120,6 +122,29 @@ export const useOrganizationCreateMutation = () => {
 
       // Return the first created organization (currently only single creation supported)
       return result.data[0] as EnrichedOrganization;
+    },
+    onSuccess: (createdOrganization) => {
+      mutateCache.create([createdOrganization]);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+    },
+  });
+};
+
+/**
+ * Mutation hook for creating an organization with auto-tenant creation.
+ * Used by new users who don't have a tenant yet.
+ */
+export const useOrganizationAutoCreateMutation = () => {
+  const queryClient = useQueryClient();
+  const mutateCache = useMutateQueryData(keys.list.base);
+
+  return useMutation<EnrichedOrganization, ApiError, AutoCreateOrganizationData['body']>({
+    mutationKey: [...keys.create, 'auto'],
+    mutationFn: async (body) => {
+      const result = await autoCreateOrganization({ body });
+      return result as EnrichedOrganization;
     },
     onSuccess: (createdOrganization) => {
       mutateCache.create([createdOrganization]);

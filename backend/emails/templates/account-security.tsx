@@ -15,7 +15,8 @@ type AccountSecurityType =
   | 'passkey-added'
   | 'passkey-removed'
   | 'totp-added'
-  | 'totp-removed';
+  | 'totp-removed'
+  | 'tenant-created';
 
 interface AccountSecurityProps extends BasicTemplateType {
   name: string;
