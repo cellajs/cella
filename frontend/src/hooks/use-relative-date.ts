@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import type locale from '~/../../locales';
 import { dateMini } from '~/utils/date-mini';
@@ -7,7 +8,7 @@ const hour = 36e5;
 const day = 864e5;
 
 const getDelay = (date: string) => {
-  const age = Date.now() - new Date(date).getTime();
+  const age = dayjs().diff(dayjs.utc(date));
   if (age < minute) return 10_000;
   if (age < hour) return 30_000;
   if (age < day) return hour;
@@ -27,7 +28,10 @@ export const useRelativeDate = (date: string, loc: keyof typeof locale, addStr?:
       if (ms) id = setTimeout(tick, ms);
     };
 
-    // Schedule the first update
+    // Immediately sync text when date/loc/addStr changes
+    setText(dateMini(date, loc, addStr));
+
+    // Schedule the next update
     const ms = getDelay(date);
     if (ms) id = setTimeout(tick, ms);
 

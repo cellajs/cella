@@ -38,8 +38,6 @@ export default defineConfig({
       "frontend/public/static/screenshots/**",
       "frontend/src/modules/common/bg-animation/**",
       "backend/drizzle/**",
-      "backend/scripts/seeds/pages/**",
-      "backend/scripts/seeds/attachments/**",
       "frontend/vite/openapi-parser/tests/__snapshots__/**",
     ],
     // Files and directories pinned to fork; prefer fork version during merge conflicts
@@ -67,6 +65,7 @@ export default defineConfig({
       "frontend/src/alert-config.tsx",
       "frontend/src/offline-config.tsx",
       "frontend/src/styling/gradients.css",
+      "frontend/src/lib/custom-events/types.ts",
       "frontend/src/routes/route-tree.tsx",
       "frontend/src/routes/marketing-routes.tsx",
       "frontend/src/modules/common/app/app-sheets.tsx",

@@ -28,7 +28,7 @@ export function usePagesTableColumns(isCompact: boolean) {
     {
       key: 'name',
       name: t('common:title'),
-      minWidth: 200,
+      minWidth: 180,
       sortable: false,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
@@ -105,7 +105,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       name: t('common:created_by'),
       sortable: false,
       resizable: true,
-      minWidth: isCompact ? null : 120,
+      minWidth: isCompact ? null : 160,
       width: isCompact ? 50 : null,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
@@ -117,7 +117,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       sortable: false,
       minBreakpoint: 'md',
       resizable: true,
-      minWidth: 160,
+      minWidth: 120,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),
     },

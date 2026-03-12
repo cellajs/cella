@@ -124,7 +124,7 @@ export const RequestsTableBar = ({
               {selectedToWaitlist.length > 0 && (
                 <TableBarButton
                   badge={selectedToWaitlist.length}
-                  variant="darkSuccess"
+                  variant="success"
                   className="relative"
                   label="common:invite"
                   icon={PartyPopperIcon}

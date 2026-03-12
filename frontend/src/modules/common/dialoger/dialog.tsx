@@ -1,9 +1,9 @@
-import { XIcon } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
@@ -15,8 +15,8 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     description,
     title,
     titleContent = title,
+    drawerOnMobile = true,
     className,
-    showCloseButton,
     headerClassName,
     container,
   } = dialog;
@@ -37,36 +37,53 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     }
 
     useDialoger.getState().update(dialog.id, { open: nextOpen });
-    if (!nextOpen) closeDialog();
+    if (!nextOpen) {
+      // Delay removal to allow exit animation to complete
+      setTimeout(closeDialog, 200);
+    }
   };
 
-  // Create a ref for finalFocus to focus trigger on close
-  const triggerFocusRef = useLatestRef(triggerRef?.current ?? null);
+  // Create a ref for finalFocus to return focus to trigger on close
+  const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={modal}>
-      {container?.overlay && <div className="fixed inset-0 z-30 bg-background/75 animate-in fade-in-0" />}
+      {container?.overlay &&
+        (container.overlayRef?.current ? (
+          createPortal(
+            <div
+              className={cn(
+                'absolute inset-0 z-30 bg-background/75 duration-200',
+                open ? 'animate-in fade-in-0' : 'animate-out fade-out-0',
+              )}
+            />,
+            container.overlayRef.current,
+          )
+        ) : (
+          <div
+            className={cn(
+              'fixed inset-0 z-30 bg-background/75 duration-200',
+              open ? 'animate-in fade-in-0' : 'animate-out fade-out-0',
+            )}
+          />
+        ))}
       <DialogContent
         id={String(id)}
-        showCloseButton={showCloseButton && !isMobile}
         container={containerElement}
         className={cn(className, containerElement && 'z-40 in-[.sheeter-open]:z-40')}
         initialFocus={isMobile ? false : undefined}
-        finalFocus={triggerRef?.current ? triggerFocusRef : undefined}
+        finalFocus={triggerRef?.current ? finalFocusRef : undefined}
       >
-        <DialogHeader sticky className={`${title || description ? headerClassName || '' : 'hidden'}`}>
+        <DialogHeader
+          sticky
+          className={cn(isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName)}
+        >
           <DialogTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
-          {showCloseButton && isMobile && (
-            <DialogClose className="absolute right-1 top-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-effect">
-              <XIcon className="size-5" />
-              <span className="sr-only">Close</span>
-            </DialogClose>
-          )}
         </DialogHeader>
 
         {/* For accessibility */}
-        {!description && !title && <DialogTitle className="hidden" />}
+        {!title && <DialogTitle className="hidden" />}
         {content}
       </DialogContent>
     </Dialog>

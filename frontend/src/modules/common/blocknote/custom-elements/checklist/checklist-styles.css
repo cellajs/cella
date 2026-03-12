@@ -1,0 +1,43 @@
+/* Checklist item block */
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+  width: 100%;
+}
+
+.checklist-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.checklist-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--primary);
+  border-radius: 0.2rem;
+}
+
+.checklist-checkbox:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.checklist-content {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+p.checklist-content {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+
+.checklist-checked {
+  text-decoration: line-through;
+  opacity: 0.6;
+}

@@ -13,6 +13,7 @@ export type {
   CellRendererProps,
   Column,
   ColumnOrColumnGroup,
+  ColumnWidths,
   RenderCellProps,
   RenderHeaderCellProps,
   RenderRowProps,

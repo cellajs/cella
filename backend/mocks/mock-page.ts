@@ -40,10 +40,6 @@ const generateBlockNoteContent = (): string => {
     makeBlock('paragraph', faker.lorem.paragraph({ min: 1, max: 3 })),
     // Numbered list
     ...makeListBlocks('numberedListItem', faker.number.int({ min: 2, max: 3 })),
-    // Check list items
-    ...Array.from({ length: faker.number.int({ min: 2, max: 3 }) }, () =>
-      makeBlock('checkListItem', faker.hacker.phrase(), { checked: faker.datatype.boolean() }),
-    ),
     // Closing paragraph
     makeBlock('paragraph', faker.lorem.paragraphs({ min: 1, max: 2 })),
   ];

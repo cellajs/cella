@@ -62,7 +62,7 @@ const viteConfig = {
   plugins: [
     // TanStackRouterVite(),
     react(),
-    babel({ presets: [reactCompilerPreset()] }),
+    babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? (sentryVitePlugin({

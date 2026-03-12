@@ -47,6 +47,7 @@ export function ResponsiveSelect({
     return (
       <>
         <Button
+          type="button"
           variant="input"
           disabled={disabled}
           className={cn('w-auto justify-between gap-2 font-normal', className)}

@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
+import { XIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
@@ -8,16 +9,21 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
-        brand: 'bg-brand/10 text-brand border-brand/20',
-        destructive: 'bg-destructive text-destructive-foreground',
-        success: 'bg-success/5 text-success border-success/10',
-        plain: 'text-primary bg-background/80 border-primary/10',
+        brand: '[--intent-color:var(--brand)] bg-brand text-brand-foreground',
+        destructive: '[--intent-color:var(--destructive)] bg-destructive text-destructive-foreground',
+        success: '[--intent-color:var(--success)] bg-success text-success-foreground',
+        plain: 'text-primary bg-background/80 border-primary/20',
         secondary: 'bg-secondary text-secondary-foreground',
-        warning: 'bg-yellow-700 text-destructive-foreground',
+        warning: '[--intent-color:var(--warning)] bg-warning text-warning-foreground',
+      },
+      soft: {
+        true: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+        false: '',
       },
     },
     defaultVariants: {
       variant: 'default',
+      soft: true,
     },
   },
 );
@@ -25,9 +31,26 @@ export const alertVariants = cva(
 export function Alert({
   className,
   variant,
+  soft,
+  onClose,
+  children,
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof alertVariants>) {
-  return <div data-slot="alert" role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
+}: React.ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
+  return (
+    <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), className)} {...props}>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 p-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+        >
+          <XIcon className="size-5" strokeWidth={1.5} />
+          <span className="sr-only">Close</span>
+        </button>
+      )}
+      {children}
+    </div>
+  );
 }
 
 export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {

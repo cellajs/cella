@@ -25,10 +25,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   required,
   disabled,
   autoFocus,
-  baseBlockNoteProps: {
-    excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'],
-    ...restBlockNoteProps
-  },
+  baseBlockNoteProps: { excludeBlockTypes, ...restBlockNoteProps },
 }: BlocknoteFieldProps<TFieldValues>) => {
   return (
     <FormField

@@ -13,7 +13,7 @@ export function BoardColumnHeader({ leading, title, actions, isCollapsed, classN
   return (
     <div
       className={cn(
-        'min-h-15 max-sm:hidden border border-b-0 p-2 rounded-lg rounded-b-none flex flex-row gap-2 space-between items-center z-50',
+        'min-h-13 max-sm:hidden border border-b-0 p-2 rounded-lg rounded-b-none flex flex-row gap-2 space-between items-center z-50',
         className,
       )}
     >

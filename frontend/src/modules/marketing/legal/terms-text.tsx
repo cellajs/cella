@@ -14,13 +14,12 @@ function TermsText() {
   return (
     <div id="terms-content" className="prose dark:prose-invert text-foreground">
       <section id="spy-overview">
-        <h2 className="pt-8 mt-0 pb-4">Terms of use</h2>
-        <p className="italic mb-2">Last updated: {lastUpdated}</p>
+        <p className="italic mb-2 pt-8">Last updated: {lastUpdated}</p>
         <p>
           Here you can read our terms of use. If you have questions or comments about them, feel free to contact us.
         </p>
 
-        <LegalContact />
+        <LegalContact className="mt-8" />
       </section>
 
       <section className="mb-4 pt-4" id="spy-introduction" aria-label="Introduction">

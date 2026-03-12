@@ -1,8 +1,9 @@
-import { type Key, type ReactNode, useRef } from 'react';
+import { type Key, type ReactNode, useRef, useState } from 'react';
 import {
   type CellMouseArgs,
   type CellMouseEvent,
   type CellRendererProps,
+  type ColumnWidths,
   DataGrid,
   type RenderRowProps,
   type RowsChangeData,
@@ -95,6 +96,7 @@ export const DataTable = <TData,>({
   const isMobile = useBreakpointBelow('sm', false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
   useTableTooltip(gridRef, !isLoading);
 
   // Handle infinite scroll - guards against multiple calls while fetching
@@ -165,6 +167,8 @@ export const DataTable = <TData,>({
                 selectedRows={selectedRows}
                 onSelectedRowsChange={handleSelectedRowsChange}
                 isRowSelectionDisabled={isRowSelectionDisabled}
+                columnWidths={columnWidths}
+                onColumnWidthsChange={setColumnWidths}
                 sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 onRowsEndApproaching={handleRowsEndApproaching}

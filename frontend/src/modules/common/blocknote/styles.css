@@ -6,8 +6,16 @@ li:has(.is-focused) {
 
 /* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
 
+/* Override BlockNote's default soft editor text color with our foreground for bright editing/expanded text */
 .bn-container.bn-shadcn {
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+  --bn-colors-editor-text: var(--foreground);
+}
+
+/* Override BlockNote's hardcoded font-family on .bn-default-styles (from @blocknote/core)
+   which bypasses the --bn-font-family CSS variable */
+.bn-container.bn-shadcn .bn-default-styles {
+  font-family: "Open Sans", ui-sans-serif, sans-serif;
 }
 
 /* Override BlockNote's hardcoded font-family on .bn-default-styles (from @blocknote/core)
@@ -113,11 +121,32 @@ li:has(.is-focused) {
   padding: 0.5rem !important;
 }
 
-.bn-shadcn .bn-block-outer,
-.bn-shadcn .bn-default-styles {
-  font-family: "Open Sans", ui-sans-serif, sans-serif;
-  font-size: 0.888rem;
-  -webkit-font-smoothing: auto;
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
+}
+
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
+}
+
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
+}
+
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
 }
 
 /* Override hardcoded inline text colors from pasted content that break dark mode.
@@ -351,8 +380,8 @@ li:has(.is-focused) {
   flex-grow: 1;
 }
 
-/* For showing saved checkListItem */
-.bn-block-content[data-content-type="checkListItem"] > input {
+/* For showing saved checklistItem */
+.bn-block-content[data-content-type="checklistItem"] > input {
   margin: 0;
   margin-inline-end: 0.5em;
   margin-bottom: 0.4em;

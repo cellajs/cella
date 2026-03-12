@@ -10,10 +10,11 @@ import {
   SearchCheckIcon,
   Trash2Icon,
 } from 'lucide-react';
-import { type RefObject, useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DomainWithToken, Tenant, VerifyDomainResponse } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import {
@@ -177,46 +178,79 @@ function DomainTile({ domain, tenantId }: DomainTileProps) {
   );
 }
 
-interface ManageDomainsContentProps {
-  tenant: Tenant;
-}
+const createDomainDialogId = 'create-domain';
 
-export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
+function CreateDomainForm({ tenantId }: { tenantId: string }) {
   const { t } = useTranslation();
   const [newDomain, setNewDomain] = useState('');
   const createMutation = useDomainCreateMutation();
-
-  const { data: domains = [], isLoading } = useQuery(domainsQueryOptions(tenant.id));
 
   const handleAdd = () => {
     const domain = newDomain.trim().toLowerCase();
     if (!domain) return;
 
     createMutation.mutate(
-      { path: { tenantId: tenant.id }, body: { domain } },
+      { path: { tenantId }, body: { domain } },
       {
         onSuccess: () => {
           setNewDomain('');
           toaster(t('common:success.create_resource', { resource: t('common:domain') }), 'success');
+          useDialoger.getState().remove(createDomainDialogId);
         },
       },
     );
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <Input
-          value={newDomain}
-          onChange={(e) => setNewDomain(e.target.value)}
-          placeholder="example.com"
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-        />
-        <Button onClick={handleAdd} loading={createMutation.isPending} disabled={!newDomain.trim()}>
-          <PlusIcon size={16} />
-          {t('common:add')}
-        </Button>
-      </div>
+    <div className="flex gap-2">
+      <Input
+        autoFocus
+        value={newDomain}
+        onChange={(e) => setNewDomain(e.target.value)}
+        placeholder="example.com"
+        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+      />
+      <Button onClick={handleAdd} loading={createMutation.isPending} disabled={!newDomain.trim()}>
+        {t('common:create')}
+      </Button>
+    </div>
+  );
+}
+
+interface ManageDomainsContentProps {
+  tenant: Tenant;
+}
+
+export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
+  const { t } = useTranslation();
+  const createDialog = useDialoger((state) => state.create);
+
+  const createButtonRef = useRef(null);
+  const createContainerRef = useRef(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const { data: domains = [], isLoading } = useQuery(domainsQueryOptions(tenant.id));
+
+  const openCreateDialog = () => {
+    createDialog(<CreateDomainForm tenantId={tenant.id} />, {
+      id: createDomainDialogId,
+      triggerRef: createButtonRef,
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none border relative z-60',
+      container: { ref: createContainerRef, overlay: true, overlayRef },
+      title: t('common:create_resource', { resource: t('common:domain').toLowerCase() }),
+    });
+  };
+
+  return (
+    <div ref={overlayRef} className="relative space-y-4 pt-2">
+      <Button ref={createButtonRef} onClick={openCreateDialog} className="flex gap-2">
+        <PlusIcon size={16} />
+        {t('common:create')}
+      </Button>
+
+      {/* Container for inline create dialog */}
+      <div ref={createContainerRef} className="empty:hidden" />
 
       {isLoading && (
         <div className="flex justify-center py-4">

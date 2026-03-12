@@ -18,7 +18,7 @@ import { useUserStore } from '~/store/user';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
-// Main contact form map component
+/** Main contact form component */
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
@@ -56,47 +56,45 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   };
 
   return (
-    <div className="flex w-full flex-col gap-6 md:flex-row md:gap-10">
-      <div className="w-full">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-            <InputFormField
-              control={form.control}
-              name="name"
-              label={t('common:name')}
-              icon={<UserIcon size={16} />}
-              required
-            />
-            <InputFormField
-              control={form.control}
-              name="email"
-              label={t('common:email')}
-              type="email"
-              icon={<MailIcon size={16} />}
-              required
-            />
-            <InputFormField
-              control={form.control}
-              name="message"
-              label={t('common:message')}
-              type="textarea"
-              icon={<MessageSquareIcon size={16} />}
-            />
-            <div className="flex flex-col sm:flex-row gap-2">
-              <SubmitButton loading={isPending}>
-                <SendIcon size={16} className="mr-2" />
-                {t('common:send')}
-              </SubmitButton>
-              <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>
-                {t('common:cancel')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-        {!isMediumScreen && <LegalContact className="mb-4" addressOnly />}
-      </div>
+    <div className="flex w-full flex-col gap-4 md:flex-row md:gap-10">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4 md:space-y-6">
+          <InputFormField
+            control={form.control}
+            name="name"
+            label={t('common:name')}
+            icon={<UserIcon size={16} />}
+            required
+          />
+          <InputFormField
+            control={form.control}
+            name="email"
+            label={t('common:email')}
+            type="email"
+            icon={<MailIcon size={16} />}
+            required
+          />
+          <InputFormField
+            control={form.control}
+            name="message"
+            label={t('common:message')}
+            type="textarea"
+            icon={<MessageSquareIcon size={16} />}
+          />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <SubmitButton loading={isPending}>
+              <SendIcon size={16} className="mr-2" />
+              {t('common:send')}
+            </SubmitButton>
+            <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>
+              {t('common:cancel')}
+            </Button>
+          </div>
+        </form>
+      </Form>
+      {!isMediumScreen && <LegalContact className="w-full my-6 sm:my-0" addressOnly />}
       {isMediumScreen && (
-        <div className="w-full rounded-sm overflow-hidden bg-accent md:mb-12">
+        <div className="w-full rounded-md overflow-hidden bg-accent md:mb-12">
           <Suspense>
             <ContactFormMap />
           </Suspense>

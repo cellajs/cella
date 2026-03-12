@@ -26,5 +26,5 @@ export const flushStores = (removeAccount?: boolean) => {
   // Clear below on remove account
   useAlertStore.getState().clearAlertStore();
   useUIStore.getState().clearUIStore();
-  useUserStore.setState({ lastUser: null as unknown as MeUser, hasPasskey: false, hasTotp: false, enabledOAuth: [] });
+  useUserStore.setState({ lastUser: null as unknown as MeUser });
 };

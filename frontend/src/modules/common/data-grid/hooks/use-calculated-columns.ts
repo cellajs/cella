@@ -178,7 +178,11 @@ export function useCalculatedColumns<R, SR>({
     let totalFrozenColumnWidth = 0;
     const templateColumns: string[] = [];
 
-    for (const column of columns) {
+    let hasFlexColumn = false;
+    let lastAutoColumnIndex = -1;
+
+    for (let i = 0; i < columns.length; i++) {
+      const column = columns[i];
       const width = getColumnWidth(column);
 
       if (typeof width === 'number') {
@@ -189,11 +193,23 @@ export function useCalculatedColumns<R, SR>({
       } else {
         // CSS-native flex distribution — CSS grid handles sizing between breakpoints.
         // No JS measurement needed; minmax distributes remaining space with proper constraints.
-        const maxBound = column.maxWidth ? `${column.maxWidth}px` : '1fr';
-        templateColumns.push(`minmax(${column.minWidth}px, ${maxBound})`);
+        lastAutoColumnIndex = i;
+        if (column.maxWidth) {
+          templateColumns.push(`minmax(${column.minWidth}px, ${column.maxWidth}px)`);
+        } else {
+          hasFlexColumn = true;
+          templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);
+        }
         columnMetrics.set(column, { width: column.minWidth, left });
         left += column.minWidth;
       }
+    }
+
+    // Ensure at least one column can grow to fill remaining space
+    if (!hasFlexColumn && templateColumns.length > 0) {
+      const idx = lastAutoColumnIndex !== -1 ? lastAutoColumnIndex : templateColumns.length - 1;
+      const col = columns[idx];
+      templateColumns[idx] = `minmax(${col.minWidth}px, ${col.minWidth}fr)`;
     }
 
     if (lastFrozenColumnIndex !== -1) {

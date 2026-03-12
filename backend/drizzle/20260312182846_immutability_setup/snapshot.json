@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "eec75c79-84c0-4f70-b001-11558351b8ad",
+  "id": "687fcd95-2677-4ae8-bd19-a4dba3d32977",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -497,19 +497,6 @@
       "generated": null,
       "identity": null,
       "name": "public",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "attachments"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "public_access",
       "entityType": "columns",
       "schema": "public",
       "table": "attachments"
@@ -5324,7 +5311,7 @@
       "roles": [
         "public"
       ],
-      "using": "\n        \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n        AND (\n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n OR \"attachments\".\"public_access\" = true)\n      ",
+      "using": "\n  \n  COALESCE(current_setting('app.tenant_id', true), '') != ''\n  AND \"attachments\".\"tenant_id\" = current_setting('app.tenant_id', true)::text\n\n  AND current_setting('app.is_authenticated', true)::boolean = true\n  AND \n  COALESCE(current_setting('app.user_id', true), '') != ''\n  AND EXISTS (\n    SELECT 1 FROM memberships m\n    WHERE m.organization_id = \"attachments\".\"organization_id\"\n    AND m.user_id = current_setting('app.user_id', true)::text\n    AND m.tenant_id = \"attachments\".\"tenant_id\"\n  )\n\n",
       "withCheck": null,
       "name": "attachments_select_policy",
       "entityType": "policies",

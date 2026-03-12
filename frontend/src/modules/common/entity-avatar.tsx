@@ -24,7 +24,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
           className,
         )}
       >
-        <Icon size={16} className="opacity-70 fill-accent" />
+        <Icon className="opacity-70 fill-accent size-[70%]" strokeWidth={1.5} />
       </Avatar>
     );
 

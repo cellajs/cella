@@ -47,7 +47,6 @@ export const PreferencesSheet = () => {
       id: 'nav-sheet',
       triggerRef: backRef,
       side: 'left',
-      showCloseButton: false,
       modal: false,
       disablePointerDismissal: true,
       className: navSheetClassName,
@@ -61,18 +60,18 @@ export const PreferencesSheet = () => {
   return (
     <div className="w-full bg-card py-3 px-3 min-h-screen flex flex-col">
       <FocusTarget target="sheet" />
-      <div className="flex items-center gap-2 mb-4 px-1 py-1.5">
+      <div className="flex items-center gap-2 mb-4 px-1 py-1">
         <Button
           ref={backRef}
           variant="ghost"
           size="icon"
           onClick={goBackToMenu}
-          className="size-8 shrink-0"
+          className="size-9 shrink-0"
           aria-label={t('common:menu')}
         >
-          <ArrowLeftIcon className="size-4" />
+          <ArrowLeftIcon className="size-5" />
         </Button>
-        <h2 className="text-base font-semibold">{t('common:preferences')}</h2>
+        <h2 className="text-lg font-semibold">{t('common:preferences')}</h2>
       </div>
 
       {/* Appearance */}

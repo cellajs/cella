@@ -2,6 +2,7 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
+/** Component to display the legal contact information of the company */
 export function LegalContact({ addressOnly = false, className }: { addressOnly?: boolean; className?: string }) {
   const companyFull = appConfig.company.name;
   const streetAddress = appConfig.company.streetAddress;
@@ -13,8 +14,8 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
   const bankAccount = appConfig.company.bankAccount;
 
   return (
-    <p className={cn('flex', className)}>
-      <span className="flex flex-col items-center mr-3">
+    <div className={cn('flex', className)}>
+      <span className="flex flex-col items-center mr-6">
         <BuildingIcon size={16} className="shrink-0 mt-1" />
         <span className="w-px grow bg-border mt-1" />
       </span>
@@ -35,6 +36,6 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
         {!addressOnly && <li>{registration}</li>}
         {!addressOnly && <li>Bank account: {bankAccount}</li>}
       </ul>
-    </p>
+    </div>
   );
 }

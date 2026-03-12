@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import i18n from 'i18next';
 import type { UseFormProps } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { z } from 'zod';
@@ -140,37 +141,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="defaultLanguage"
-          render={({ field }) => {
-            // Make sure languages are loaded
-            if (form.loading) return <Spinner />;
-
-            // If defaultLanguage is not selected languages, set first language
-            const languages = form.getValues('languages') || [];
-            const correctValue =
-              field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
-
-            return (
-              <FormItem name="defaultLanguage">
-                <FormLabel>
-                  {t('common:default_language')}
-                  <span className="ml-1 opacity-50">*</span>
-                </FormLabel>
-                <FormDescription>{t('common:default_language.text')}</FormDescription>
-                <FormControl>
-                  <SelectLanguage
-                    options={form.getValues('languages') || []}
-                    value={correctValue}
-                    onChange={(val) => field.onChange(val)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
-        />
+        <DefaultLanguageField form={form} />
 
         <SelectCountry control={form.control} name="country" label={t('common:country')} />
         <SelectTimezone control={form.control} name="timezone" label={t('common:timezone')} />
@@ -205,5 +176,37 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         </div>
       </form>
     </Form>
+  );
+}
+
+function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDraft<FormValues>> }) {
+  const { t } = useTranslation();
+  const languages = useWatch({ control: form.control, name: 'languages' }) || [];
+
+  return (
+    <FormField
+      control={form.control}
+      name="defaultLanguage"
+      render={({ field }) => {
+        if (form.loading) return <Spinner />;
+
+        const correctValue =
+          field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
+
+        return (
+          <FormItem name="defaultLanguage">
+            <FormLabel>
+              {t('common:default_language')}
+              <span className="ml-1 opacity-50">*</span>
+            </FormLabel>
+            <FormDescription>{t('common:default_language.text')}</FormDescription>
+            <FormControl>
+              <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
   );
 }

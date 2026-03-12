@@ -35,7 +35,7 @@ export function AppNavLoader({ className }: { className?: string }) {
   const isLoadingRaw = isFetching > 0 || navLoading;
 
   // Debounce loading state: delays showing spinner but hides it instantly
-  const isLoading = useDebounce(isLoadingRaw, 200, { immediateValue: false });
+  const isLoading = useDebounce(isLoadingRaw, 300, { immediateValue: false });
 
   // Skip logo phase if menu sheet is open or initial load completed
   const showLogo = !hasLoaded && navSheetOpen !== 'menu';

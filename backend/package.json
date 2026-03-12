@@ -75,7 +75,7 @@
     "@t3-oss/env-core": "^0.13.10",
     "@types/zxcvbn": "^4.4.5",
     "arctic": "^3.7.0",
-    "drizzle-orm": "1.0.0-beta.15-859cf75",
+    "drizzle-orm": "1.0.0-beta.17-160831b",
     "enforce-unique": "^1.3.0",
     "hono": "^4.12.5",
     "i18next": "^25.8.18",

@@ -21,7 +21,7 @@ function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null>) {
     triggerRef,
     className: 'sm:max-w-2xl p-0 border-0 mb-4',
     drawerOnMobile: false,
-    showCloseButton: false,
+    headerClassName: '',
   });
 }
 

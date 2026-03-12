@@ -93,7 +93,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
         >
           {item.name}
         </div>
-        <div className="text-muted-foreground text-xs">
+        <div className="text-muted-foreground text-xs pointer-events-none">
           {searchResults && (
             <span>
               {t(item.entityType, { ns: ['app', 'common'] })}

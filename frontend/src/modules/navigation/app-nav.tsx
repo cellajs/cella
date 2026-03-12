@@ -67,7 +67,6 @@ export function AppNav() {
         id: 'nav-sheet',
         triggerRef,
         side: sheetSide as 'left' | 'right',
-        showCloseButton: false,
         modal: false,
         disablePointerDismissal: true,
         className: navSheetClassName,

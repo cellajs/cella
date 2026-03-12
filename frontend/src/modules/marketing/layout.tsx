@@ -10,6 +10,9 @@ interface MarketingLayoutProps {
   children?: React.ReactNode;
 }
 
+/**
+ * Layout component for marketing pages, providing a consistent structure with navigation, header, and footer.
+ */
 export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   const { t } = useTranslation();
 

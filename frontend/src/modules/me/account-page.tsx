@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { onlineManager, useMutation } from '@tanstack/react-query';
+import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
+import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
@@ -31,7 +32,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useUIStore } from '~/store/ui';
-import { userStore, useUserStore } from '~/store/user';
+import { useUserStore } from '~/store/user';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -46,7 +47,8 @@ function UserAccountPage() {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  const { enabledOAuth } = userStore.getState();
+  const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
+  const { enabledOAuth } = authData;
 
   const deleteButtonRef = useRef(null);
 

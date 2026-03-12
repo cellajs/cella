@@ -105,7 +105,7 @@ export const MenuSheet = () => {
         isSearchActive={isSearchActive}
         setSearchActive={setSearchActive}
       />
-      <div className="mt-3 flex flex-col gap-1 group-data-[search=false]/menu:hidden">
+      <div className="mt-2 flex flex-col gap-1 group-data-[search=false]/menu:hidden">
         {searchResultsListItems().length > 0 ? (
           searchResultsListItems()
         ) : (

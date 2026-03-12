@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { ResponsiveSelect } from '~/modules/ui/responsive-select';
 
 interface SelectLanguageProps {
   value: Language;
@@ -14,32 +13,20 @@ interface SelectLanguageProps {
  */
 export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+
+  const selectOptions = options.map((lang) => ({
+    value: lang,
+    label: t(`common:${lang}`),
+  }));
 
   return (
-    <Select
-      name="language"
-      disabled={appConfig.languages.length < 2}
-      open={open}
-      onOpenChange={setOpen}
-      onValueChange={(lang) => {
-        onChange(lang as Language);
-      }}
+    <ResponsiveSelect
+      options={selectOptions}
       value={value}
-    >
-      <SelectTrigger aria-expanded={open} className="w-full">
-        <SelectValue placeholder={t('common:placeholder.select_language')} />
-      </SelectTrigger>
-      <SelectContent>
-        {appConfig.languages.map((lang) => {
-          const disabled = !options.includes(lang);
-          return (
-            <SelectItem key={lang} value={lang} disabled={disabled} className="truncate">
-              <span className="truncate">{t(`common:${lang}`)}</span>
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
+      onChange={(val) => onChange(val as Language)}
+      placeholder={t('common:placeholder.select_language')}
+      disabled={appConfig.languages.length < 2}
+      className="w-full"
+    />
   );
 };

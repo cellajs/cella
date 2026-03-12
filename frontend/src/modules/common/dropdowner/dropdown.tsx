@@ -30,7 +30,7 @@ export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown })
   };
 
   return (
-    <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={dropdown.modal}>
+    <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
       <PopoverContent anchor={triggerEl} align={dropdown.align} className="z-301 p-0" finalFocus={triggerFocusRef}>
         <FocusTrap active>{dropdown.content}</FocusTrap>
       </PopoverContent>

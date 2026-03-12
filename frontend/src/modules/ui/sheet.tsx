@@ -36,7 +36,6 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & R
 export function SheetContent({
   className,
   children,
-  showCloseButton = true,
   side = 'right',
   overlay = true,
   container,
@@ -47,7 +46,6 @@ export function SheetContent({
 }: SheetPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
     side?: 'top' | 'right' | 'bottom' | 'left';
-    showCloseButton?: boolean;
     overlay?: boolean;
     container?: HTMLElement | null;
     initialFocus?: SheetPrimitive.Popup.Props['initialFocus'];
@@ -86,15 +84,6 @@ export function SheetContent({
       <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
-      {showCloseButton && (
-        <SheetPrimitive.Close
-          data-slot="sheet-close"
-          className="data-[open]:bg-secondary absolute p-1 top-4 right-4 rounded-xs opacity-50 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:pointer-events-none focus-effect"
-        >
-          <XIcon className="size-5" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
-      )}
     </SheetPrimitive.Popup>
   );
 
@@ -112,17 +101,31 @@ export function SheetContent({
   );
 }
 
-export function SheetHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+export function SheetHeader({
+  className,
+  sticky,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="sheet-header"
       className={cn(
-        'flex flex-col gap-1.5 p-4',
+        'group/header relative flex flex-col gap-1.5 p-4',
         sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      <SheetPrimitive.Close
+        data-slot="sheet-close"
+        className="hidden group-[.with-close-btn]/header:block absolute p-1 top-0 right-0 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+      >
+        <XIcon className="size-5" strokeWidth={1.5} />
+        <span className="sr-only">Close</span>
+      </SheetPrimitive.Close>
+    </div>
   );
 }
 

@@ -18,6 +18,8 @@ export type InternalDropdown = DropdownData & {
 
 interface DropdownStoreState {
   dropdown: InternalDropdown | null;
+  lastRemovedTriggerId: string | null;
+  lastRemovedAt: number;
 
   create: (content: ReactNode, data: DropdownData) => string | number;
   update: (updates: Partial<InternalDropdown>) => void;
@@ -27,6 +29,8 @@ interface DropdownStoreState {
 
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   dropdown: null,
+  lastRemovedTriggerId: null,
+  lastRemovedAt: 0,
 
   create: (content, data) => {
     const current = get().dropdown;
@@ -36,7 +40,14 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
     // Close dropdown if it's already open
     if (current?.triggerId === data.triggerId) {
-      set({ dropdown: null });
+      set({ dropdown: null, lastRemovedTriggerId: data.triggerId, lastRemovedAt: Date.now() });
+      return data.id;
+    }
+
+    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick)
+    const { lastRemovedTriggerId, lastRemovedAt } = get();
+    if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
+      set({ lastRemovedTriggerId: null });
       return data.id;
     }
 
@@ -63,8 +74,9 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   },
 
   remove: () => {
-    get().dropdown?.triggerRef.current?.removeAttribute('data-dropdowner-active');
-    set({ dropdown: null });
+    const current = get().dropdown;
+    current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
+    set({ dropdown: null, lastRemovedTriggerId: current?.triggerId ?? null, lastRemovedAt: Date.now() });
   },
 
   get: () => get().dropdown,

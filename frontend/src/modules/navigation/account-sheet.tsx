@@ -76,7 +76,6 @@ export const AccountSheet = () => {
       id: 'nav-sheet',
       triggerRef: backRef,
       side: 'left',
-      showCloseButton: false,
       modal: false,
       disablePointerDismissal: true,
       className: navSheetClassName,

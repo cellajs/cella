@@ -3,13 +3,20 @@ import { CircleAlertIcon, CopyCheckIcon, CopyIcon, RefreshCwIcon } from 'lucide-
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type CreateTotpData, type CreateTotpResponses, createTotp, generateTotpKey } from '~/api.gen';
+import {
+  type ApiError,
+  type CreateTotpData,
+  type CreateTotpResponses,
+  createTotp,
+  generateTotpKey,
+  type MeAuthData,
+} from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
 
 /**
  * A component that sets up TOTP for the user, including displaying a QR code, manual setup key fallback, and handling TOTP verification.
@@ -36,7 +43,10 @@ export const SetupTotp = () => {
     mutationFn: async (body) => await createTotp({ body }),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
-      useUserStore.getState().setMeAuthData({ hasTotp: true });
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, hasTotp: true };
+      });
       toaster(t('common:success.totp_added'), 'success');
     },
     onError: () => {
@@ -71,7 +81,6 @@ export const SetupTotp = () => {
       title: t('common:totp_manual.title'),
       description: t('common:totp_manual.description'),
       className: 'sm:max-w-md',
-      showCloseButton: true,
     });
   };
 

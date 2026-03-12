@@ -52,7 +52,7 @@ export function SignInStep() {
     mutationFn: (body) => signIn({ body }),
     onSuccess: ({ emailVerified, mfa }) => {
       if (mfa || !emailVerified) {
-        if (mfa) setLastUser({ email: form.getValues('email'), mfaRequired: true });
+        if (mfa) setLastUser({ email: form.getValues('email') });
         const navigateInfo = !emailVerified
           ? { to: EmailVerificationRoute.to, params: { reason: 'signin' } }
           : { to: MfaRoute.to };
@@ -170,7 +170,7 @@ export function SignInStep() {
                         autoFocus={!restrictedMode && !isMobile}
                         {...field}
                         ref={passwordRef}
-                        autoComplete="current-password"
+                        autoComplete="current-password webauthn"
                         placeholder={t('common:password')}
                       />
                     </FormControl>

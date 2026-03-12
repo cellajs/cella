@@ -81,6 +81,7 @@ export function CheckEmailStep() {
                     className="h-12"
                     type="email"
                     autoFocus={!isMobile}
+                    autoComplete="username webauthn"
                     placeholder={t('common:email')}
                   />
                 </FormControl>

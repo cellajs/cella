@@ -1,19 +1,21 @@
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { CheckIcon, RotateCcwKeyIcon, UnlinkIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useDeleteTotpMutation } from '~/modules/me/query';
+import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
-import { userStore } from '~/store/user';
+import { useUserStore } from '~/store/user';
 
 export function Totp() {
   const { t } = useTranslation();
 
-  const { hasTotp, user } = userStore.getState();
+  const { user } = useUserStore();
+  const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
+  const hasTotp = authData.hasTotp;
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -30,7 +32,6 @@ export function Totp() {
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
-        showCloseButton: true,
       },
     );
   };

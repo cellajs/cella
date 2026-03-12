@@ -11,7 +11,7 @@ export const useColumns = () => {
   const { t } = useTranslation();
 
   const actionButtons = [
-    { label: t('common:accept'), variant: 'darkSuccess', action: 'accept' },
+    { label: t('common:accept'), variant: 'success', action: 'accept' },
     { label: t('common:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
@@ -45,7 +45,7 @@ export const useColumns = () => {
       key: 'role',
       name: t('common:role'),
       sortable: false,
-      minWidth: 100,
+      width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) =>
         row.inactiveMembership.role ? (
@@ -59,7 +59,7 @@ export const useColumns = () => {
       name: t('common:invited_at'),
       sortable: false,
       minBreakpoint: 'md',
-      minWidth: 160,
+      minWidth: 120,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.inactiveMembership.createdAt),
     },
@@ -68,7 +68,7 @@ export const useColumns = () => {
       name: t('common:invited_by'),
       sortable: false,
       minBreakpoint: 'md',
-      minWidth: 120,
+      minWidth: 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.inactiveMembership.createdBy && (

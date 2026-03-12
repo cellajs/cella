@@ -1,5 +1,6 @@
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
+import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import {
   FilePanelExtension,
@@ -17,6 +18,7 @@ import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel/file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
@@ -104,6 +106,7 @@ function BlockNote({
   emojis = true,
   excludeBlockTypes = EMPTY_BLOCK_TYPES, // default types
   excludeFileBlockTypes = EMPTY_FILE_BLOCK_TYPES, // default filetypes
+  extensions,
   members, // for mentions
   publicFiles,
   filePanel,
@@ -168,6 +171,7 @@ function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     collaboration: collaborationConfig,
+    extensions: [checkboxesExtension(), ...(extensions ?? [])],
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
     // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)

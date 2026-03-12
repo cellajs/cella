@@ -13,7 +13,6 @@ export function openPreferencesSheet(triggerRef: RefObject<HTMLButtonElement | n
     id: 'nav-sheet',
     triggerRef,
     side: 'left',
-    showCloseButton: false,
     modal,
     disablePointerDismissal: true,
     className: navSheetClassName,

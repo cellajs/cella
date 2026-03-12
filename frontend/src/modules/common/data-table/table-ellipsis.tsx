@@ -17,6 +17,9 @@ interface Props<T> {
   options: EllipsisOption<T>[];
 }
 
+/**
+ * Renders an ellipsis button in a table cell that opens a dropdown - drawer on mobile - with given options.
+ */
 export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 

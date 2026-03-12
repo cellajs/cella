@@ -6,8 +6,10 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import { cn } from '~/utils/cn';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Button } from '~/modules/ui/button';
+import { ButtonGroup } from '~/modules/ui/button-group';
+
 import { useSheeter } from '../common/sheeter/use-sheeter';
 
 interface JsonActionsProps {
@@ -53,55 +55,63 @@ export const JsonActions = ({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const iconSize = smallMode ? 14 : 16;
-  const size = smallMode ? 'xs' : 'default';
+  const iconSize = 16;
+  const size = smallMode ? 'sm' : 'default';
 
   return (
-    <ToggleGroup type="single" variant="merged" data-small-mode={smallMode} className={cn('gap-0', className)}>
+    <ButtonGroup className={className}>
       {/* View */}
       {viewerUrl && (
-        <ToggleGroupItem value="view" aria-label={t('common:view')} className="gap-2 flex-none" size={size} asChild>
-          <Link
-            resetScroll
-            to={viewerUrl}
-            onClick={() => {
-              isMobile && useSheeter.getState().remove();
-              // Scroll the docs main content area to top (resetScroll only handles window scroll)
-              requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
-            }}
-          >
-            <span className="group-data-[small-mode=true]/toggle-group:text-xs">{filename}</span>
-          </Link>
-        </ToggleGroupItem>
+        <TooltipButton toolTipContent={t('common:view')}>
+          <Button variant="outline" size={size} className="gap-2 flex-none" asChild>
+            <Link
+              resetScroll
+              to={viewerUrl}
+              onClick={() => {
+                isMobile && useSheeter.getState().remove();
+                // Scroll the docs main content area to top (resetScroll only handles window scroll)
+                requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
+              }}
+            >
+              <span className={smallMode ? 'text-xs' : undefined}>json</span>
+            </Link>
+          </Button>
+        </TooltipButton>
       )}
       {/* Open */}
-      <ToggleGroupItem
-        value="open"
-        aria-label={t('common:open')}
-        className="gap-2 flex-none"
-        size={size}
-        onClick={handleOpen}
-      >
-        <ExternalLinkIcon size={iconSize} />
-        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:open')}</span>
-      </ToggleGroupItem>
+      <TooltipButton toolTipContent={t('common:open')}>
+        <Button
+          variant="outline"
+          size={size}
+          className="gap-2 flex-none"
+          aria-label={t('common:open')}
+          onClick={handleOpen}
+        >
+          <ExternalLinkIcon size={iconSize} />
+          {!smallMode && <span className="max-lg:hidden">{t('common:open')}</span>}
+        </Button>
+      </TooltipButton>
       {/* Copy */}
-      <ToggleGroupItem value="copy" aria-label={t('common:copy')} className="gap-2" size={size} onClick={handleCopy}>
-        {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
-        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:copy')}</span>
-      </ToggleGroupItem>
+      <TooltipButton toolTipContent={t('common:copy')}>
+        <Button variant="outline" size={size} className="gap-2" aria-label={t('common:copy')} onClick={handleCopy}>
+          {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
+          {!smallMode && <span className="max-lg:hidden">{t('common:copy')}</span>}
+        </Button>
+      </TooltipButton>
       {/* Download */}
-      <ToggleGroupItem
-        value="download"
-        aria-label={t('common:download')}
-        className="gap-2 flex-none"
-        size={size}
-        disabled={isInProgress}
-        onClick={handleDownload}
-      >
-        {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon size={iconSize} />}
-        <span className="max-lg:hidden group-data-[small-mode=true]/toggle-group:hidden">{t('common:download')}</span>
-      </ToggleGroupItem>
-    </ToggleGroup>
+      <TooltipButton toolTipContent={t('common:download')}>
+        <Button
+          variant="outline"
+          size={size}
+          className="gap-2 flex-none"
+          aria-label={t('common:download')}
+          disabled={isInProgress}
+          onClick={handleDownload}
+        >
+          {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon size={iconSize} />}
+          {!smallMode && <span className="max-lg:hidden">{t('common:download')}</span>}
+        </Button>
+      </TooltipButton>
+    </ButtonGroup>
   );
 };
