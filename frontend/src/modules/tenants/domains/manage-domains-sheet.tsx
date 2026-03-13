@@ -124,10 +124,7 @@ function DomainTile({ domain, tenantId }: DomainTileProps) {
           <Collapsible>
             <CollapsibleTrigger
               render={
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                />
+                <span className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer" />
               }
             >
               <ChevronDownIcon size={14} className="transition-transform in-data-panel-open:rotate-180" />

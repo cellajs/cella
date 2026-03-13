@@ -34,7 +34,7 @@ export const LegalNotice = ({
       id: 'legal',
       triggerRef,
       title: t(legalConfig[legalSubject].label),
-      className: 'md:max-w-3xl mb-10 p-6',
+      className: 'md:max-w-4xl mb-10 p-6',
       drawerOnMobile: false,
     });
   };

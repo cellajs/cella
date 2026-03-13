@@ -46,7 +46,7 @@ async function main(): Promise<void> {
   }
 
   const targetFolder = resolve(cli.directory);
-  const projectName = basename(targetFolder);
+  const projectName = basename(targetFolder)?.toLowerCase() || 'project';
 
   // Check if the target folder exists and is not empty
   if (existsSync(targetFolder) && !(await isEmptyDirectory(targetFolder))) {
@@ -73,6 +73,16 @@ async function main(): Promise<void> {
   // Scan sibling directories and prompt for port offset
   const portOffset = await promptPortOffset(targetFolder, promptTheme, promptContext);
 
+  // Prompt for admin email
+  const adminEmail = await input(
+    {
+      message: 'Admin email for initial seed user',
+      default: `admin@${projectName}.com`,
+      theme: promptTheme,
+    },
+    promptContext,
+  );
+
   // Proceed with the project creation
   const createOptions: CreateOptions = {
     projectName,
@@ -81,6 +91,7 @@ async function main(): Promise<void> {
     packageManager: cli.packageManager,
     templateUrl: cli.options.template,
     portOffset,
+    adminEmail,
   };
 
   await create(createOptions);

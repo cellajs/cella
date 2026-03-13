@@ -16,7 +16,7 @@ const envSchema = z.object({
   // CDC database URL (cdc_role with REPLICATION + INSERT on activities/counters)
   // Used for both replication stream and activity writes
   // Enforces append-only access - cdc_role cannot UPDATE/DELETE activities
-  DATABASE_CDC_URL: z.string().url(),
+  DATABASE_CDC_URL: z.url(),
 
   // API WebSocket URL for sending activities (derived from appConfig backend port)
   API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),

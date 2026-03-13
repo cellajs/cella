@@ -14,7 +14,15 @@ export const SelectTimezone = <TFieldValues extends FieldValues>({
   label,
   required,
 }: BaseFormFieldProps<TFieldValues>) => {
-  const options = timezones.map(({ utc, text }) => ({ value: utc[0], label: text }));
+  const seen = new Set<string>();
+  const options = timezones.reduce<{ value: string; label: string }[]>((acc, { utc, text }) => {
+    const value = utc[0];
+    if (!seen.has(value)) {
+      seen.add(value);
+      acc.push({ value, label: text });
+    }
+    return acc;
+  }, []);
 
   return (
     <FormField

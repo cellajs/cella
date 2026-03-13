@@ -27,7 +27,7 @@ export const useColumns = (isCompact: boolean) => {
       key: 'name',
       name: t('common:name'),
       sortable: true,
-      minWidth: 180,
+      minWidth: 200,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
         <Link
@@ -166,7 +166,7 @@ export const useColumns = (isCompact: boolean) => {
         name: t(`common:${type}`, { count: 2 }),
         minBreakpoint: 'md' as const,
         minWidth: 60,
-        maxWidth: 140,
+        maxWidth: 120,
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
             <BoxIcon className="mr-2 opacity-50" size={16} />

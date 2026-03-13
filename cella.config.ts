@@ -75,7 +75,6 @@ export default defineConfig({
       "frontend/src/modules/home/onboarding/onboarding-config.ts",
       "frontend/src/modules/marketing/marketing-config.tsx",
       "frontend/src/modules/marketing/about/about-page.tsx",
-      "frontend/src/modules/users/profile-page-content.tsx",
       "backend/src/custom-env.ts",
       "backend/src/table-config.ts",
       "backend/src/relatable-config.ts",

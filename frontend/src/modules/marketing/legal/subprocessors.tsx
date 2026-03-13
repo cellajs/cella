@@ -1,4 +1,4 @@
-import subprocessors from '#json/subprocessors.json';
+import { subprocessors } from '~/modules/marketing/legal/legal-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 /**

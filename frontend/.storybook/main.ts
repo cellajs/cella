@@ -1,5 +1,4 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const config: StorybookConfig = {
   "stories": [
@@ -18,9 +17,9 @@ const config: StorybookConfig = {
     "name": "@storybook/react-vite",
     "options": {}
   },
-  viteFinal: async (config, { configType }) => {
-    config.plugins = config.plugins || [];
-    config.plugins.push(tsconfigPaths());
+  viteFinal: async (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.tsconfigPaths = true;
     return config;
   },
 };

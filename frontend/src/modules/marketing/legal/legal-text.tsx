@@ -5,5 +5,9 @@ import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-
  */
 export function LegalText({ subject }: { subject: LegalSubject }) {
   const { component: SubjectText } = legalConfig[subject];
-  return <SubjectText />;
+  return (
+    <div className="prose dark:prose-invert max-w-none text-foreground">
+      <SubjectText />
+    </div>
+  );
 }

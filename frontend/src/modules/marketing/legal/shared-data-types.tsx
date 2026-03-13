@@ -1,4 +1,4 @@
-import sharedDataTypes from '#json/shared-data-types.json';
+import { sharedDataTypes } from '~/modules/marketing/legal/legal-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 /**

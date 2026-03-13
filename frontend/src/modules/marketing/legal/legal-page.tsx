@@ -60,7 +60,7 @@ export function LegalPage() {
               isActive && (
                 <div
                   key={id}
-                  className="mx-auto max-w-full lg:max-w-3xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40"
+                  className="mx-auto max-w-full lg:max-w-4xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40 prose dark:prose-invert max-w-none text-foreground"
                 >
                   <h2 className="text-2xl font-bold pt-8 pb-4">{t(legalConfig[id].label)}</h2>
                   <Component />

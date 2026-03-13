@@ -3,7 +3,7 @@ import { cp, mkdir } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { downloadTemplate } from 'giget';
 import { addRemote } from '#/add-remote';
-import { getPortEdits, TEMPLATE_URL } from '#/constants';
+import { TEMPLATE_URL } from '#/constants';
 import { type CreateOptions, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
 import { gitAddAll, gitBranch, gitCheckout, gitCommit, gitInit } from '#/utils/git';
@@ -21,7 +21,8 @@ export async function create({
   newBranchName,
   packageManager,
   templateUrl,
-  portOffset = 0,
+  portOffset,
+  adminEmail,
   silent = false,
 }: CreateOptions): Promise<void> {
   // Save the original working directory
@@ -66,10 +67,10 @@ export async function create({
       });
     }
 
-    // Clean the template and apply port offsets
+    // Clean the template, generate configs
     progress.step('cleaning template');
-    const extraEdits = getPortEdits(projectName, portOffset);
-    await cleanTemplate({ targetFolder, extraEdits });
+    const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    await cleanTemplate({ targetFolder, projectName, displayName, portOffset, adminEmail });
 
     // Install dependencies
     progress.step('installing dependencies');

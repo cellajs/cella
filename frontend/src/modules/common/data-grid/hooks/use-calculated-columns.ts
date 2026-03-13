@@ -193,13 +193,10 @@ export function useCalculatedColumns<R, SR>({
       } else {
         // CSS-native flex distribution — CSS grid handles sizing between breakpoints.
         // No JS measurement needed; minmax distributes remaining space with proper constraints.
+        // maxWidth is only enforced during resize, not for initial flex sizing.
         lastAutoColumnIndex = i;
-        if (column.maxWidth) {
-          templateColumns.push(`minmax(${column.minWidth}px, ${column.maxWidth}px)`);
-        } else {
-          hasFlexColumn = true;
-          templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);
-        }
+        hasFlexColumn = true;
+        templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);
         columnMetrics.set(column, { width: column.minWidth, left });
         left += column.minWidth;
       }

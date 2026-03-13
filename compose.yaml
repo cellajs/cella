@@ -1,4 +1,4 @@
-name: cella
+name: ${PROJECT_SLUG}
 
 volumes:
   pg_data:
@@ -6,7 +6,7 @@ volumes:
 
 services:
   db:
-    container_name: cella_db
+    container_name: ${PROJECT_SLUG}_db
     image: postgres:17
     environment:
       POSTGRES_DB: postgres
@@ -20,20 +20,20 @@ services:
       - -c
       - max_replication_slots=10
     ports:
-      - 5432:5432
+      - ${DB_PORT}:5432
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data
 
   db_test:
-    container_name: cella_db_test
+    container_name: ${PROJECT_SLUG}_db_test
     image: postgres:17
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - 5434:5432
+      - ${DB_TEST_PORT}:5432
     profiles:
       - test
     volumes:

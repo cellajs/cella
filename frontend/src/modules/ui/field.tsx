@@ -339,7 +339,7 @@ export function FormLabel({
     <Field.Label
       data-slot="form-label"
       nativeLabel={nativeLabel}
-      className={cn('text-sm/4.5 font-medium select-none data-invalid:text-destructive', className)}
+      className={cn('text-sm/4.5 font-medium w-fit select-none data-invalid:text-destructive', className)}
       {...props}
     />
   );

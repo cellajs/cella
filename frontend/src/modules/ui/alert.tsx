@@ -17,10 +17,17 @@ export const alertVariants = cva(
         warning: '[--intent-color:var(--warning)] bg-warning text-warning-foreground',
       },
       soft: {
-        true: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+        true: '',
         false: '',
       },
     },
+    compoundVariants: [
+      {
+        variant: ['brand', 'destructive', 'success', 'warning'],
+        soft: true,
+        className: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+      },
+    ],
     defaultVariants: {
       variant: 'default',
       soft: true,
