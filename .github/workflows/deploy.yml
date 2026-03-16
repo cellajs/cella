@@ -5,8 +5,6 @@
 # Triggered on pushes to main (prod) or manually for other environments
 # =============================================================================
 
-export const stxRequestSchema = z
-
 permissions:
   contents: read
 

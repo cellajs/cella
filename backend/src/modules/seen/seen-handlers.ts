@@ -1,11 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { SeenTrackedEntityType } from 'shared';
 import { appConfig, hierarchy } from 'shared';
 import { baseDb } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
+import { productCountersTable } from '#/db/schema/product-counters';
 import { seenByTable } from '#/db/schema/seen-by';
-import { seenCountsTable } from '#/db/schema/seen-counts';
 import type { Env } from '#/lib/context';
 import seenRoutes from '#/modules/seen/seen-routes';
 import { entityTables, type OrgScopedEntityTable } from '#/table-config';
@@ -16,6 +16,9 @@ import { logEvent } from '#/utils/logger';
 /** Product entity types tracked for seen/unseen — configured in appConfig.seenTrackedEntityTypes */
 const trackedEntityTypes = appConfig.seenTrackedEntityTypes;
 const trackedEntityTypeSet = new Set<string>(trackedEntityTypes);
+
+/** 90-day rolling window — entities older than this are ignored for seen/unseen tracking */
+const seenWindowMs = 90 * 24 * 60 * 60 * 1000;
 
 /** Type guard: narrows a product entity type to a seen-tracked entity type */
 function isTrackedEntityType(entityType: string): entityType is SeenTrackedEntityType {
@@ -67,11 +70,18 @@ const seenRouteHandlers = app
     const contextIdColumn =
       (columns as Record<string, typeof orgTable.organizationId>)[contextIdColumnKey] ?? orgTable.organizationId;
 
-    // Filter to only entities that exist and belong to this org
+    // Filter to only entities that exist, belong to this org, and are within 90-day window
+    const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
     const validEntities: { id: string; contextId: string }[] = await tenantDb
       .select({ id: orgTable.id, contextId: contextIdColumn })
       .from(entityTable)
-      .where(and(inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id)));
+      .where(
+        and(
+          inArray(orgTable.id, entityIds),
+          eq(orgTable.organizationId, organization.id),
+          gt(orgTable.createdAt, windowCutoff),
+        ),
+      );
 
     const validIds = validEntities.map((e) => e.id);
 
@@ -107,20 +117,20 @@ const seenRouteHandlers = app
 
       // Batch UPSERT: increment viewCount for each newly-seen entity
       await tenantDb
-        .insert(seenCountsTable)
+        .insert(productCountersTable)
         .values(
           newEntityIds.map((entityId) => ({
             entityId,
             entityType,
             viewCount: 1,
-            updatedAt: getIsoDate(),
+            lastViewedAt: getIsoDate(),
           })),
         )
         .onConflictDoUpdate({
-          target: seenCountsTable.entityId,
+          target: productCountersTable.entityId,
           set: {
-            viewCount: sql`${seenCountsTable.viewCount} + 1`,
-            updatedAt: sql`now()`,
+            viewCount: sql`${productCountersTable.viewCount} + 1`,
+            lastViewedAt: sql`now()`,
           },
         });
     }
@@ -134,9 +144,9 @@ export default seenRouteHandlers;
 /**
  * Unseen counts for current user.
  *
- * Computes unseen = total (context_counters) − seen (seen_by) per context.
- * No entity table scans, no RLS context, no per-tenant loop.
- * Both context_counters and seen_by have no RLS — queried directly via baseDb.
+ * Computes unseen = total (from context_counters) − seen (from seen_by) per context.
+ * Uses context_counters (no RLS) for entity totals instead of querying entity tables directly.
+ * seen_by is bounded to 90 days by pg_partman pruning.
  */
 const unseenApp = new OpenAPIHono<Env>({ defaultHook });
 
@@ -171,8 +181,10 @@ export const unseenRouteHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts,
 
   const uniqueContextIds = [...new Set(contextIds)];
 
-  // 1. Total entity counts from context_counters (no RLS)
-  const countRows = await baseDb
+  // 1. Total entity counts per context from context_counters (no RLS, pre-computed)
+  const totalByContext = new Map<string, Map<string, number>>();
+
+  const counterRows = await baseDb
     .select({
       contextKey: contextCountersTable.contextKey,
       counts: contextCountersTable.counts,
@@ -180,7 +192,22 @@ export const unseenRouteHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts,
     .from(contextCountersTable)
     .where(inArray(contextCountersTable.contextKey, uniqueContextIds));
 
+  for (const row of counterRows) {
+    for (const trackedType of trackedEntityTypes) {
+      const total = row.counts[`e:${trackedType}`] ?? 0;
+      if (total <= 0) continue;
+
+      let typeMap = totalByContext.get(row.contextKey);
+      if (!typeMap) {
+        typeMap = new Map();
+        totalByContext.set(row.contextKey, typeMap);
+      }
+      typeMap.set(trackedType, total);
+    }
+  }
+
   // 2. User's seen counts from seen_by grouped by contextId + entityType (no RLS)
+  // seen_by is naturally bounded to 90 days by partman pruning
   const seenRows = await baseDb
     .select({
       contextId: seenByTable.contextId,
@@ -205,16 +232,15 @@ export const unseenRouteHandlers = unseenApp.openapi(seenRoutes.getUnseenCounts,
   // 4. Compute unseen = total − seen (floored at 0)
   const results: Record<string, Record<string, number>> = {};
 
-  for (const row of countRows) {
-    for (const trackedType of trackedEntityTypes) {
-      const total = (row.counts as Record<string, number>)?.[`e:${trackedType}`] ?? 0;
+  for (const [contextId, typeMap] of totalByContext) {
+    for (const [trackedType, total] of typeMap) {
       if (total <= 0) continue;
 
-      const seen = seenByContext.get(row.contextKey)?.get(trackedType) ?? 0;
+      const seen = seenByContext.get(contextId)?.get(trackedType) ?? 0;
       const unseen = Math.max(0, total - seen);
       if (unseen > 0) {
-        if (!results[row.contextKey]) results[row.contextKey] = {};
-        results[row.contextKey][trackedType] = unseen;
+        if (!results[contextId]) results[contextId] = {};
+        results[contextId][trackedType] = unseen;
       }
     }
   }

@@ -13,5 +13,5 @@ export const contextEntityColumns = <T extends ContextEntityType>(entityType: T)
   thumbnailUrl: varchar({ length: maxLength.url }),
   bannerUrl: varchar({ length: maxLength.url }),
   createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
 });

@@ -52,7 +52,7 @@ export const pagesSeed = async () => {
     status: 'published' as const,
     tenantId: appConfig.publicTenant.id,
     createdBy: defaultAdminUser.id,
-    modifiedBy: defaultAdminUser.id,
+    updatedBy: defaultAdminUser.id,
   }));
 
   // Generate unpublished pages
@@ -61,7 +61,7 @@ export const pagesSeed = async () => {
     status: 'unpublished' as const,
     tenantId: appConfig.publicTenant.id,
     createdBy: defaultAdminUser.id,
-    modifiedBy: defaultAdminUser.id,
+    updatedBy: defaultAdminUser.id,
   }));
 
   const totalCount = PUBLISHED_COUNT + UNPUBLISHED_COUNT;

@@ -125,8 +125,8 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       archived: false,
       createdAt,
       createdBy: userId,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       tenantId: 'test01', // Default test tenant
     };
   });
@@ -195,8 +195,8 @@ export const mockMemberResponse = (key = 'member:default') =>
       language: 'en' as const,
       mfaRequired: false,
       createdAt,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
       lastSeenAt: createdAt,

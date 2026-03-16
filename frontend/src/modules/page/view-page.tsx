@@ -51,9 +51,9 @@ function ViewPage({ pageId }: ViewPageProps) {
               <div>
                 {page.status === 'published' ? t('common:published') : t('common:created')} {dateShort(page.createdAt)}
               </div>
-              {page.status === 'published' && page.modifiedAt && (
+              {page.status === 'published' && page.updatedAt && (
                 <div className="opacity-50">
-                  {t('common:last_edited')} {dateShort(page.modifiedAt)}
+                  {t('common:last_edited')} {dateShort(page.updatedAt)}
                 </div>
               )}
             </div>

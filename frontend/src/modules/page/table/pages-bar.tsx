@@ -16,13 +16,13 @@ import { FocusView } from '~/modules/common/focus-view';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 import { CreatePageForm } from '../create-page-form';
 import { DeletePages } from '../delete-pages';
 
-interface PagesTableBarProps extends Omit<BaseTableBarProps<Page, PagesRouteSearchParams>, 'queryKey'> {
+interface PagesTableBarProps extends BaseTableBarProps<Page, PagesRouteSearchParams> {
   isCompact: boolean;
   setIsCompact: (isCompact: boolean) => void;
-  total: number;
 }
 
 export const PagesTableBar = ({
@@ -34,7 +34,7 @@ export const PagesTableBar = ({
   clearSelection,
   isCompact,
   setIsCompact,
-  total,
+  queryKey,
 }: PagesTableBarProps) => {
   const { t } = useTranslation();
 
@@ -43,6 +43,8 @@ export const PagesTableBar = ({
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const { q } = searchVars;
 

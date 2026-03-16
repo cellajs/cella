@@ -1,11 +1,11 @@
 /**
- * Test: React Query scope serialization ensures sequential version freshness.
+ * Test: React Query scope serialization ensures sequential HLC freshness.
  *
  * Verifies that when multiple mutations share a `scope`, the second mutation's
  * `mutationFn` only executes after the first mutation's full lifecycle (including
  * `onSuccess`) completes. This is critical for per-key updates: the first mutation's
- * `onSuccess` writes the new `stx` to cache, so the second mutation reads a fresh
- * `lastReadVersion`.
+ * `onSuccess` writes the new `stx` to cache, so the second mutation reads fresh
+ * HLC timestamps.
  */
 
 import { MutationObserver, QueryClient } from '@tanstack/react-query';
@@ -15,18 +15,18 @@ interface FakeEntity {
   id: string;
   name: string;
   description: string;
-  stx: { version: number; fieldVersions: Record<string, number> };
+  stx: { mutationId: string; sourceId: string; fieldTimestamps: Record<string, string> };
 }
 
-describe('scope serialization: sequential version freshness', () => {
+describe('scope serialization: sequential HLC freshness', () => {
   let queryClient: QueryClient;
   const listKey = ['test', 'list'] as const;
 
-  // Tracks the lastReadVersion each mutationFn call sees
-  const capturedVersions: number[] = [];
+  // Tracks the fieldTimestamps each mutationFn call sees
+  const capturedTimestamps: Record<string, string>[] = [];
 
   beforeEach(() => {
-    capturedVersions.length = 0;
+    capturedTimestamps.length = 0;
 
     queryClient = new QueryClient({
       defaultOptions: {
@@ -34,12 +34,16 @@ describe('scope serialization: sequential version freshness', () => {
       },
     });
 
-    // Seed cache with a fake entity at version 1
+    // Seed cache with a fake entity
     const initialEntity: FakeEntity = {
       id: 'entity-1',
       name: 'Original',
       description: 'Original desc',
-      stx: { version: 1, fieldVersions: { name: 1, description: 1 } },
+      stx: {
+        mutationId: 'init',
+        sourceId: 'server',
+        fieldTimestamps: { name: '100:0001:aaa', description: '100:0002:aaa' },
+      },
     };
     queryClient.setQueryData(listKey, initialEntity);
   });
@@ -48,31 +52,27 @@ describe('scope serialization: sequential version freshness', () => {
     queryClient.clear();
   });
 
-  it('second mutation reads version bumped by first mutation onSuccess', async () => {
-    // Simulate two scoped mutations for the same entity, different fields.
-    // The mutationFn reads lastReadVersion from cache.
-    // The onSuccess writes the server-returned stx (with bumped version) back to cache.
-
-    let serverVersion = 1;
+  it('second mutation reads timestamps updated by first mutation onSuccess', async () => {
+    let counter = 1;
 
     const mutationOptions = {
       scope: { id: 'test-entity' },
       mutationFn: async ({ key, data }: { key: string; data: string }) => {
-        // Read version from cache (like createStxForUpdate does)
         const cached = queryClient.getQueryData<FakeEntity>(listKey);
-        const lastReadVersion = cached?.stx?.version ?? 0;
-        capturedVersions.push(lastReadVersion);
+        capturedTimestamps.push({ ...(cached?.stx?.fieldTimestamps ?? {}) });
 
-        // Simulate server bumping version
-        serverVersion++;
+        counter++;
         return {
           id: 'entity-1',
           [key]: data,
-          stx: { version: serverVersion, fieldVersions: { [key]: serverVersion } },
+          stx: {
+            mutationId: `mut-${counter}`,
+            sourceId: 'server',
+            fieldTimestamps: { ...cached?.stx?.fieldTimestamps, [key]: `${200 + counter}:0001:srv` },
+          },
         };
       },
       onSuccess: (result: Record<string, unknown>) => {
-        // Write bumped stx back to cache (like page/query.ts onSuccess does)
         const cached = queryClient.getQueryData<FakeEntity>(listKey);
         if (cached) {
           queryClient.setQueryData(listKey, {
@@ -84,7 +84,6 @@ describe('scope serialization: sequential version freshness', () => {
       },
     };
 
-    // Fire both mutations — scope serialization should run them sequentially
     const observer1 = new MutationObserver(queryClient, mutationOptions);
     const observer2 = new MutationObserver(queryClient, mutationOptions);
 
@@ -93,39 +92,39 @@ describe('scope serialization: sequential version freshness', () => {
 
     await Promise.all([p1, p2]);
 
-    // First mutation should see the initial version (1)
-    expect(capturedVersions[0]).toBe(1);
+    // First mutation should see initial timestamps
+    expect(capturedTimestamps[0].name).toBe('100:0001:aaa');
 
-    // Second mutation should see the version bumped by first's onSuccess (2)
-    // If scope doesn't gate on onSuccess, this would be 1 (the bug)
-    expect(capturedVersions[1]).toBe(2);
+    // Second mutation should see updated name timestamp from first's onSuccess
+    expect(capturedTimestamps[1].name).toBe('202:0001:srv');
 
-    // Cache should have the final version
+    // Cache should have final timestamps
     const final = queryClient.getQueryData<FakeEntity>(listKey);
-    expect(final?.stx?.version).toBe(3);
+    expect(final?.stx?.fieldTimestamps?.name).toBe('202:0001:srv');
+    expect(final?.stx?.fieldTimestamps?.description).toBe('203:0001:srv');
   });
 
-  it('without scope, mutations run concurrently and see stale versions', async () => {
-    // Control test: same scenario but WITHOUT scope — proves concurrent execution
-    // reads stale versions. This validates the test itself.
-
-    let serverVersion = 1;
+  it('without scope, mutations run concurrently and see stale timestamps', async () => {
+    let counter = 1;
 
     const mutationOptions = {
       // No scope — mutations run concurrently
       mutationFn: async ({ key, data }: { key: string; data: string }) => {
         const cached = queryClient.getQueryData<FakeEntity>(listKey);
-        const lastReadVersion = cached?.stx?.version ?? 0;
-        capturedVersions.push(lastReadVersion);
+        capturedTimestamps.push({ ...(cached?.stx?.fieldTimestamps ?? {}) });
 
         // Small delay to ensure overlapping execution
         await new Promise((r) => setTimeout(r, 10));
 
-        serverVersion++;
+        counter++;
         return {
           id: 'entity-1',
           [key]: data,
-          stx: { version: serverVersion, fieldVersions: { [key]: serverVersion } },
+          stx: {
+            mutationId: `mut-${counter}`,
+            sourceId: 'server',
+            fieldTimestamps: { ...cached?.stx?.fieldTimestamps, [key]: `${200 + counter}:0001:srv` },
+          },
         };
       },
       onSuccess: (result: Record<string, unknown>) => {
@@ -143,8 +142,8 @@ describe('scope serialization: sequential version freshness', () => {
     const p2 = observer2.mutate({ key: 'description', data: 'New Desc' });
     await Promise.all([p1, p2]);
 
-    // Both should see version 1 (concurrent — neither waited for the other's onSuccess)
-    expect(capturedVersions[0]).toBe(1);
-    expect(capturedVersions[1]).toBe(1);
+    // Both should see the same initial timestamps (concurrent — neither waited for the other's onSuccess)
+    expect(capturedTimestamps[0].name).toBe('100:0001:aaa');
+    expect(capturedTimestamps[1].name).toBe('100:0001:aaa');
   });
 });

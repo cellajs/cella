@@ -8,7 +8,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { usersTable } from '#/db/schema/users';
 import { setTenantRlsContext } from '#/db/tenant-context';
 import { type Env } from '#/lib/context';
@@ -484,8 +484,8 @@ const membershipsRouteHandlers = app
         ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
         ...(muted !== undefined && { muted }),
         ...(archived !== undefined && { archived }),
-        modifiedBy: user.id,
-        modifiedAt: getIsoDate(),
+        updatedBy: user.id,
+        updatedAt: getIsoDate(),
       })
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
@@ -594,7 +594,7 @@ const membershipsRouteHandlers = app
       name: usersTable.name,
       email: usersTable.email,
       createdAt: usersTable.createdAt,
-      lastSeenAt: sql`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+      lastSeenAt: sql`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
       role: membershipsTable.role,
     });
 

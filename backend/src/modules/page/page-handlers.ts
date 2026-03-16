@@ -10,13 +10,13 @@ import {
   auditUserSelect,
   coalesceAuditUsers,
   createdByUser,
-  modifiedByUser,
+  updatedByUser,
   withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { buildStx, getEntityByTransaction, isTransactionProcessed } from '#/sync';
-import { checkFieldConflicts, throwIfConflicts } from '#/sync/field-versions';
+import { filterNoOpFields, resolveFieldConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
@@ -40,7 +40,7 @@ const pageRouteHandlers = app
 
       // Sequence-based delta sync filter
       if (afterSeq !== undefined) {
-        filters.push(gt(pagesTable.seqAt, afterSeq));
+        filters.push(gt(pagesTable.seq, afterSeq));
       }
 
       const trimmedQuery = q?.trim();
@@ -74,13 +74,13 @@ const pageRouteHandlers = app
         name: pagesTable.name,
       });
 
-      const { createdBy: _cb, modifiedBy: _mb, ...pageCols } = getColumns(pagesTable);
+      const { createdBy: _cb, updatedBy: _mb, ...pageCols } = getColumns(pagesTable);
 
       const pagesQuery = tenantDb
         .select({ ...pageCols, ...auditUserSelect })
         .from(pagesTable)
         .leftJoin(createdByUser, eq(createdByUser.id, pagesTable.createdBy))
-        .leftJoin(modifiedByUser, eq(modifiedByUser.id, pagesTable.modifiedBy))
+        .leftJoin(updatedByUser, eq(updatedByUser.id, pagesTable.updatedBy))
         .where(and(or(...filters)));
 
       const [items, total] = await Promise.all([
@@ -163,27 +163,31 @@ const pageRouteHandlers = app
 
     const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
 
-    const { key, data: updateData, stx } = ctx.req.valid('json');
+    const { ops: rawOps, stx } = ctx.req.valid('json');
     const user = ctx.var.user;
 
-    // Field-level conflict detection
-    const changedFields = key ? [key] : [];
-    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
-    throwIfConflicts('page', conflicts);
+    const fields = filterNoOpFields(entity, rawOps);
+    const { accepted } = resolveFieldConflicts(fields, stx.fieldTimestamps ?? {}, entity.stx?.fieldTimestamps ?? {});
+
+    const acceptedFields: Record<string, unknown> = {};
+    for (const name of accepted) acceptedFields[name] = (fields as Record<string, unknown>)[name];
 
     const tenantDb = ctx.var.db;
-    const updatedName = key === 'name' && typeof updateData === 'string' ? updateData : entity.name;
+    const updatedName =
+      'name' in acceptedFields && typeof acceptedFields.name === 'string' ? acceptedFields.name : entity.name;
     const updatedDescription =
-      key === 'description' && typeof updateData === 'string' ? updateData : entity.description;
+      'description' in acceptedFields && typeof acceptedFields.description === 'string'
+        ? (acceptedFields.description as string)
+        : entity.description;
 
     const [updatedPageRecord] = await tenantDb
       .update(pagesTable)
       .set({
-        [key]: updateData,
+        ...acceptedFields,
         keywords: extractKeywords(updatedName, updatedDescription),
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
-        stx: buildStx(stx, entity, changedFields),
+        updatedAt: getIsoDate(),
+        updatedBy: user.id,
+        stx: buildStx(stx, entity, accepted),
       })
       .where(eq(pagesTable.id, id))
       .returning();

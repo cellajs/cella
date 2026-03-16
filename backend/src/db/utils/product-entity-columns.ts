@@ -15,7 +15,7 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
   description: varchar({ length: maxLength.html }).default(''),
   keywords: varchar({ length: maxLength.html }).notNull().default(''),
   createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
-  /** Sequence number within (parent context, entityType) scope. Set by DB trigger (`stamp_entity_seq_at`), used for delta sync. */
-  seqAt: bigint('seq_at', { mode: 'number' }).notNull().default(0),
+  updatedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
+  /** Sequence number within (parent context, entityType) scope. Set by DB trigger (`stamp_entity_seq`), used for delta sync. */
+  seq: bigint('seq', { mode: 'number' }).notNull().default(0),
 });

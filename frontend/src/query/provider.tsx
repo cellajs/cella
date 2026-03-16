@@ -7,6 +7,7 @@ import { initContextEntityEnrichment } from '~/query/enrichment/init';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import '~/modules/attachment/query';
 import '~/modules/page/query';
+import '~/modules/task/query';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
@@ -112,8 +113,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       onSuccess={() => {
         markCacheRestored();
         // Wait for stream catchup to complete before resuming paused mutations.
-        // This ensures the cache has fresh data (and fresh stx versions) so replayed
-        // mutations don't send stale lastReadVersion values causing avoidable 409s.
+        // This ensures the cache has fresh data so replayed mutations work correctly.
         waitForActiveCatchup().then(() => {
           queryClient.resumePausedMutations().then(() => {
             // Only invalidate queries if we're in offline mode (IDB persister)

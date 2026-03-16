@@ -2,7 +2,7 @@
  * Catchup processors for offline sync.
  *
  * Processes summary-based catchup responses from the backend.
- * Uses server-provided entitySeqs (from stamp_entity_seq_at trigger) to detect creates/updates.
+ * Uses server-provided entitySeqs (from stamp_entity_seq trigger) to detect creates/updates.
  * Deletes are always provided by the backend via activities table scan (watertight).
  *
  *   - entityDelta > deletedForType.length → creates/updates → delta fetch via afterSeq (or invalidate as fallback)

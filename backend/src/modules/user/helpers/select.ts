@@ -1,16 +1,16 @@
 import { getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { pickColumns } from '#/db/utils/pick-columns';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /**
- * User with activity timestamps from user_activity table.
+ * User with timestamps from user_counters table.
  * Used when selecting users with userSelect.
  */
-export type UserWithActivity = UserModel & {
+export type UserWithCounters = UserModel & {
   lastSeenAt: string | null;
   lastStartedAt: string | null;
   lastSignInAt: string | null;
@@ -18,7 +18,7 @@ export type UserWithActivity = UserModel & {
 
 /**
  * User select that merges userFlags with default ones.
- * Activity timestamps are fetched via subqueries from user_activity table to avoid CDC noise.
+ * Timestamps are fetched via subqueries from user_counters table to avoid CDC noise.
  */
 export const userSelect = (() => {
   const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
@@ -27,16 +27,16 @@ export const userSelect = (() => {
     ...safeUserSelect,
     // Merge defaults flags with DB ones
     userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
-    // Activity timestamps from user_activity table (subqueries to avoid CDC noise on frequent updates)
+    // Timestamps from user_counters table (subqueries to avoid CDC noise on frequent updates)
     lastSeenAt: sql<
       string | null
-    >`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    >`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
     lastStartedAt: sql<
       string | null
-    >`(SELECT ${userActivityTable.lastStartedAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    >`(SELECT ${userCountersTable.lastStartedAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
     lastSignInAt: sql<
       string | null
-    >`(SELECT ${userActivityTable.lastSignInAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    >`(SELECT ${userCountersTable.lastSignInAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
   };
 })();
 
@@ -63,7 +63,7 @@ export const memberSelect = (() => {
     ...userBaseSelect,
     lastSeenAt: sql<
       string | null
-    >`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+    >`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
   };
 })();
 
@@ -73,7 +73,7 @@ type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'en
 
 /**
  * User select for minimal base data only (id, name, slug, thumbnailUrl, email).
- * Used for embedding user data in createdBy/modifiedBy fields.
+ * Used for embedding user data in createdBy/updatedBy fields.
  * entityType is excluded since it's always 'user' and added as a SQL literal in joins.
  */
 export const userMinimalBaseSelect: UserMinimalBaseSelect = (() => {

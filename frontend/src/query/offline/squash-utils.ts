@@ -2,110 +2,109 @@
  * Mutation squashing and coalescing utilities.
  *
  * These utilities optimize the mutation queue by:
- * - Squashing: Canceling pending same-entity mutations when a new one arrives
- * - Coalescing: Merging updates into pending creates
+ * - Squashing: Merging ops from a new mutation into a pending same-entity mutation
+ * - Coalescing: Merging op updates into pending creates
+ *
+ * Uses the `ops` format: plain values for scalars, `{ add, remove }` for AWSet fields.
+ * Online single-field updates and offline multi-field batches use the same format.
  */
 
 import type { QueryClient } from '@tanstack/react-query';
+import { type ArrayDelta, isArrayDelta, mergeArrayDeltas } from './array-delta';
+
+type OpsVariables = { id?: string; ops?: Record<string, unknown> };
 
 /**
- * Squash pending mutations for the same entity and key.
- * Cancels any pending mutation for the same entity+key from the cache.
+ * Merge two ops objects, handling AWSet deltas properly.
+ * Scalar fields: newer wins (simple overwrite).
+ * AWSet fields: deltas are merged via mergeArrayDeltas.
+ */
+function mergeOps(older: Record<string, unknown>, newer: Record<string, unknown>): Record<string, unknown> {
+  const merged = { ...older };
+  for (const [key, value] of Object.entries(newer)) {
+    const existing = merged[key];
+    if (isArrayDelta(value) && isArrayDelta(existing)) {
+      merged[key] = mergeArrayDeltas(existing as ArrayDelta, value as ArrayDelta);
+    } else {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+/**
+ * Squash pending mutations for the same entity by merging ops.
  *
- * When `key` is provided (field-level updates), only mutations targeting the
- * same entity AND field are squashed. This prevents editing `name` from
- * discarding a queued `description` update. When `key` is omitted the
- * function falls back to entity-level matching (backwards-compatible).
+ * When a pending mutation exists for the same entity, its `ops` are merged
+ * into the new mutation's ops (new values win for overlapping scalar keys,
+ * AWSet deltas are merged via mergeArrayDeltas).
+ * The old pending mutation is then removed — the new one carries all ops.
  *
  * Call this in onMutate before optimistic updates.
  *
  * @param queryClient - React Query client
  * @param mutationKey - Mutation key to match (e.g., ['page', 'update'])
  * @param entityId - Entity being mutated
- * @param key - Optional field key to narrow the match (e.g., 'name', 'description')
+ * @param newOps - Ops from the incoming mutation
+ * @returns Merged ops (accumulated from pending + new)
  */
-export async function squashPendingMutation(
+export function squashPendingMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
   entityId: string,
-  key?: string,
-): Promise<void> {
+  newOps: Record<string, unknown>,
+): Record<string, unknown> {
   const mutationCache = queryClient.getMutationCache();
   const mutations = mutationCache.findAll({ mutationKey });
 
+  let mergedOps = { ...newOps };
+
   for (const mutation of mutations) {
-    // Skip completed or failed mutations
     if (mutation.state.status !== 'pending') continue;
 
-    // Check if this mutation is for the same entity
-    const variables = mutation.state.variables as { id?: string; key?: string } | undefined;
+    const variables = mutation.state.variables as OpsVariables | undefined;
     if (variables?.id !== entityId) continue;
 
-    // When a key is specified, only squash mutations targeting the same field
-    if (key && variables?.key !== key) continue;
+    // Merge: old ops as base, new ops override (with AWSet-aware merging)
+    if (variables.ops) {
+      mergedOps = mergeOps(variables.ops, mergedOps);
+    }
 
-    // Same entity+key - remove this mutation from cache (squash)
-    // The new mutation will supersede the old one
+    // Remove old mutation — new one will carry merged ops
     mutationCache.remove(mutation);
   }
+
+  return mergedOps;
 }
 
 /**
- * Check for pending create mutation and coalesce update into it.
- * If there's a pending create for this entity, merge the update data.
+ * Check for pending create mutation and coalesce update ops into it.
+ * If there's a pending create for this entity, merge the ops.
  *
  * @param queryClient - React Query client
  * @param createMutationKey - Create mutation key (e.g., ['page', 'create'])
  * @param entityId - Entity ID (temp ID for optimistic creates)
- * @param updateData - Update data to merge
+ * @param ops - Ops to merge into the create
  * @returns true if coalesced (caller should skip normal update flow)
  */
 export function coalescePendingCreate(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],
   entityId: string,
-  updateData: object,
+  ops: Record<string, unknown>,
 ): boolean {
   const mutationCache = queryClient.getMutationCache();
   const mutations = mutationCache.findAll({ mutationKey: createMutationKey });
 
   for (const mutation of mutations) {
-    // Only coalesce into pending creates
     if (mutation.state.status !== 'pending') continue;
 
-    // Check if this create is for the same entity
-    const variables = mutation.state.variables as ({ id?: string } & object) | undefined;
+    const variables = mutation.state.variables as OpsVariables | undefined;
     if (variables?.id !== entityId) continue;
 
-    // Merge update data into create variables
-    Object.assign(variables, updateData);
+    // Merge ops into create variables
+    Object.assign(variables, ops);
     return true;
-  }
-
-  return false;
-}
-
-/**
- * Check if there are pending update mutations for an entity.
- * Used in onSuccess to skip full cache writes when another update is queued,
- * preserving optimistic state and only syncing stx for version tracking.
- *
- * @param queryClient - React Query client
- * @param updateMutationKey - Update mutation key (e.g., ['task', 'update'])
- * @param entityId - Entity ID to check
- */
-export function hasPendingUpdate(
-  queryClient: QueryClient,
-  updateMutationKey: readonly unknown[],
-  entityId: string,
-): boolean {
-  const mutationCache = queryClient.getMutationCache();
-  const mutations = mutationCache.findAll({ mutationKey: updateMutationKey });
-
-  for (const mutation of mutations) {
-    if (mutation.state.status !== 'pending') continue;
-    const variables = mutation.state.variables as { id?: string } | undefined;
-    if (variables?.id === entityId) return true;
   }
 
   return false;

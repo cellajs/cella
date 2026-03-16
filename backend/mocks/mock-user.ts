@@ -7,7 +7,7 @@ import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';
 import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens';
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
-import type { UserWithActivity } from '#/modules/user/helpers/select';
+import type { UserWithCounters } from '#/modules/user/helpers/select';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { mockMembershipBase } from './mock-membership';
 import { mockNanoid, mockPaginated, pastIsoDate, withFakerSeed } from './utils';
@@ -59,8 +59,8 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     mfaRequired: false,
     userFlags: {} as UserFlags,
     createdAt,
-    modifiedAt: createdAt,
-    modifiedBy: null,
+    updatedAt: createdAt,
+    updatedBy: null,
   };
 };
 
@@ -68,7 +68,7 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
  * Generates a mock user API response with deterministic seeding.
  * Same key produces same data across runs.
  */
-export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
+export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
   withFakerSeed(key, () => {
     const refDate = new Date('2025-01-01T00:00:00.000Z');
     const createdAt = faker.date.past({ refDate }).toISOString();
@@ -92,8 +92,8 @@ export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
       mfaRequired: false,
       userFlags: {} as UserFlags,
       createdAt,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
       lastSeenAt: createdAt,
@@ -101,7 +101,7 @@ export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
   });
 
 /** User list item type for getUsers endpoint (includes memberships array and optional role) */
-export interface UserListItem extends UserWithActivity {
+export interface UserListItem extends UserWithCounters {
   memberships: ReturnType<typeof mockMembershipBase>[];
   role?: SystemRole;
 }

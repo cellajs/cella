@@ -24,7 +24,7 @@ export const pageSchema = z
   .object({
     ...pageSelectSchema.shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     stx: stxBaseSchema,
   })
   .openapi('Page', { description: 'A content page for documentation purposes.', example: mockPageResponse() });
@@ -39,15 +39,15 @@ export const pageCreateStxBodySchema = pageCreateBodySchema.extend({ stx: stxReq
 /** Array schema for batch creates (1-50 pages per request), each with own stx */
 export const pageCreateManyStxBodySchema = pageCreateStxBodySchema.array().min(1).max(50);
 
-/** Update body using key/data pattern for single-field updates with conflict detection */
-export const pageUpdateStxBodySchema = createUpdateSchema([
-  z.literal('name'),
-  z.literal('description'),
-  z.literal('keywords'),
-  z.literal('displayOrder'),
-  z.literal('status'),
-  z.literal('parentId'),
-]);
+/** Update body using fields pattern for single or multi-field updates with conflict detection */
+export const pageUpdateStxBodySchema = createUpdateSchema({
+  name: z.string().max(maxLength.field),
+  description: z.string().max(maxLength.html).nullable(),
+  keywords: z.string().nullable(),
+  displayOrder: z.number(),
+  status: pageStatusSchema,
+  parentId: z.string().max(maxLength.id).nullable(),
+});
 
 // Response schemas: batch operations use { data, rejectedItems }, single returns entity directly
 export const pageCreateResponseSchema = batchResponseSchema(pageSchema);

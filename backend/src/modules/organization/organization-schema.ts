@@ -27,7 +27,7 @@ export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
     included: contextEntityIncludedSchema,

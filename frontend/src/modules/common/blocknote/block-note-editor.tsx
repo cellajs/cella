@@ -11,14 +11,15 @@ import {
 import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
+import type { ProductEntityType } from 'shared';
+import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel/file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
@@ -39,8 +40,10 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import { useDerivedFieldsSender } from '~/modules/common/blocknote/use-derived-fields-sender';
 import router from '~/routes/router';
 import { useUIStore } from '~/store/ui';
+import { useYjsEditorStore } from '~/store/yjs-editor';
 
 // IDE-like wrapping characters (constant, no need to recreate per keystroke)
 const wrappingChars: Record<string, string> = {
@@ -58,6 +61,12 @@ type BlockNoteProps =
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
       collaborative: true;
+      yjsServerUrl: string;
+      yjsToken: string;
+      entityType: ProductEntityType;
+      entityId: string;
+      /** Callback that sends description update through a React Query mutation (fires lifecycle hooks). */
+      sendDerivedUpdate: (entityId: string, description: string) => Promise<void>;
       user: {
         id?: string;
         name: string;
@@ -69,6 +78,11 @@ type BlockNoteProps =
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
       collaborative?: false | undefined;
+      yjsServerUrl?: never;
+      yjsToken?: never;
+      entityType?: never;
+      entityId?: never;
+      sendDerivedUpdate?: never;
       user?: never;
     })
   | (CommonBlockNoteProps & {
@@ -82,6 +96,11 @@ type BlockNoteProps =
       filePanel?: never;
       baseFilePanelProps?: never;
       collaborative?: never;
+      yjsServerUrl?: never;
+      yjsToken?: never;
+      entityType?: never;
+      entityId?: never;
+      sendDerivedUpdate?: never;
       user?: never;
     });
 
@@ -113,6 +132,11 @@ function BlockNote({
   baseFilePanelProps,
   // Collaboration
   collaborative = false,
+  yjsServerUrl,
+  yjsToken,
+  entityType: entityTypeProp,
+  entityId: entityIdProp,
+  sendDerivedUpdate,
   user,
   // Functions
   updateData,
@@ -141,11 +165,12 @@ function BlockNote({
 
   const collaborationConfig = collaborative
     ? (() => {
-        // Share a single Y.Doc between provider and fragment so collaboration actually works
         const yDoc = new Y.Doc();
         return {
           // The Yjs Provider responsible for transporting updates:
-          provider: new WebrtcProvider(id, yDoc),
+          provider: new WebsocketProvider(yjsServerUrl!, id, yDoc, {
+            params: { token: yjsToken! },
+          }),
           // Where to store BlockNote data in the Y.Doc:
           fragment: yDoc.getXmlFragment('document-store'),
           // Information (name and color) for this user:
@@ -153,8 +178,6 @@ function BlockNote({
             name: user?.name || 'Anonymous User',
             color: user?.color || getRandomColor(),
           },
-          // When to show user labels on the collaboration cursor. Set by default to
-          // "activity" (show when the cursor moves), but can also be set to "always".
           showCursorLabels: 'activity' as const,
         };
       })()
@@ -162,7 +185,8 @@ function BlockNote({
 
   // Parse initial content once at creation time so the undo history starts clean
   // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
-  const initialContent = getParsedContent(defaultValue);
+  // When using collaboration, skip initialContent — the Yjs provider supplies the document state.
+  const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
   const editor = useCreateBlockNote({
     schema: customSchema,
@@ -171,7 +195,7 @@ function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     collaboration: collaborationConfig,
-    extensions: [checkboxesExtension(), ...(extensions ?? [])],
+    extensions: [checkedExtension(), ...(extensions ?? [])],
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
     // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)
@@ -210,6 +234,46 @@ function BlockNote({
       return getFileUrl(key, isPublic, tenantId, organizationId);
     },
   });
+
+  // Register/unregister entity with Yjs editor store for SSE suppression
+  useEffect(() => {
+    if (!collaborative || !entityTypeProp || !entityIdProp) return;
+    useYjsEditorStore.getState().register(entityTypeProp, entityIdProp);
+    return () => useYjsEditorStore.getState().unregister(entityTypeProp, entityIdProp);
+  }, [collaborative, entityTypeProp, entityIdProp]);
+
+  // Seed Y.Doc with existing content on first sync when document is empty
+  useEffect(() => {
+    const provider = collaborationConfig?.provider;
+    if (!provider || !defaultValue) return;
+
+    const onSync = (isSynced: boolean) => {
+      if (!isSynced) return;
+      // If the editor is empty after sync, seed it with existing data
+      if (editor.isEmpty) {
+        const parsed = getParsedContent(defaultValue);
+        if (parsed) editor.replaceBlocks(editor.document, parsed);
+      }
+    };
+
+    // Check if already synced
+    if (provider.synced) {
+      onSync(true);
+    }
+    provider.on('sync', onSync);
+    return () => provider.off('sync', onSync);
+  }, []); // Run once on mount
+
+  // Send derived fields (summary, checkbox counts, etc.) to backend in collaborative mode
+  useDerivedFieldsSender(
+    collaborative && entityIdProp && sendDerivedUpdate
+      ? {
+          entityId: entityIdProp,
+          editor,
+          sendUpdate: sendDerivedUpdate,
+        }
+      : null,
+  );
 
   const handleKeyDown: KeyboardEventHandler = (event) => {
     const { metaKey, ctrlKey, key } = event;
@@ -342,7 +406,7 @@ function BlockNote({
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
-      formattingToolbar={!formattingToolbar}
+      formattingToolbar={false}
       emojiPicker={!emojis}
       filePanel={false} // Because in CustomFilePanel renders default UI
       onFocus={onFocus}

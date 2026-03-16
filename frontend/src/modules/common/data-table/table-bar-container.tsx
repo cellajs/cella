@@ -7,13 +7,18 @@ import { StickyBox } from '../sticky-box';
 interface TableBarContainerProps {
   children: ReactNode;
   className?: string;
-  /** Sticky offset (px) when not in focus view. Use 36 to account for PageNav. */
+  enableSticky?: boolean;
   offsetTop?: number;
-  /** When provided, scroll the table area into view on any search/filter change */
   searchVars?: Record<string, unknown>;
 }
 
-export const TableBarContainer = ({ children, className, offsetTop, searchVars }: TableBarContainerProps) => {
+export const TableBarContainer = ({
+  children,
+  className,
+  enableSticky = false,
+  offsetTop,
+  searchVars,
+}: TableBarContainerProps) => {
   const focusView = useUIStore((state) => state.focusView);
   const scrollToReset = useScrollReset();
 
@@ -31,6 +36,7 @@ export const TableBarContainer = ({ children, className, offsetTop, searchVars }
 
   return (
     <StickyBox
+      enabled={enableSticky}
       className="group/sticky z-10 bg-background/60 backdrop-blur-xs max-sm:static! max-sm:top-auto!"
       offsetTop={focusView ? 0 : offsetTop}
       hideWhenOutOfView

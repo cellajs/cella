@@ -2,16 +2,17 @@
  * Generate pg_partman Migration Script
  *
  * This script generates SQL for setting up pg_partman automatic partitioning
- * and cleanup for token/session/activity tables.
+ * and cleanup for token/session/activity/seen_by tables.
  *
  * Tables affected:
  * - sessions: partitioned by expires_at (weekly, 30-day retention)
  * - tokens: partitioned by expires_at (weekly, 30-day retention)
  * - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
  * - activities: partitioned by created_at (weekly, 90-day retention)
+ * - seen_by: partitioned by created_at (weekly, 90-day retention)
  *
- * The activities table uses PostgreSQL's LIKE clause to clone whatever structure
- * Drizzle created, making it robust to schema changes and fork customizations.
+ * The activities and seen_by tables use PostgreSQL's LIKE clause to clone whatever
+ * structure Drizzle created, making them robust to schema changes and fork customizations.
  *
  * The generated migration is idempotent and gracefully skips if pg_partman
  * is not available (e.g., local PGlite development).
@@ -120,6 +121,15 @@ const partitionConfigs: PartitionConfig[] = [
   // Activities uses LIKE clause to clone Drizzle's schema (supports dynamic context columns)
   {
     name: 'activities',
+    partitionColumn: 'created_at',
+    interval: '1 week',
+    retention: '90 days',
+    createTableSql: null, // Use LIKE clause instead
+    indexesSql: [], // Indexes are cloned from original table
+  },
+  // seen_by uses LIKE clause — high-write table with 90-day rolling window
+  {
+    name: 'seen_by',
     partitionColumn: 'created_at',
     interval: '1 week',
     retention: '90 days',
@@ -235,10 +245,10 @@ async function run() {
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
   const migrationSql = `-- =============================================================================
--- Migration: pg_partman Setup for Token/Session/Activity Tables
+-- Migration: pg_partman Setup for Token/Session/Activity/SeenBy Tables
 -- =============================================================================
--- This migration converts sessions, tokens, unsubscribe_tokens, and activities
--- to partitioned tables managed by pg_partman for automatic cleanup.
+-- This migration converts sessions, tokens, unsubscribe_tokens, activities,
+-- and seen_by to partitioned tables managed by pg_partman for automatic cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -252,6 +262,7 @@ async function run() {
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
 -- - activities: partitioned by created_at (weekly, 90-day retention)
+-- - seen_by: partitioned by created_at (weekly, 90-day retention)
 --
 -- For environments without pg_partman (PGlite, etc.): migration is skipped,
 -- manual cleanup via db-maintenance.ts handles expired records.

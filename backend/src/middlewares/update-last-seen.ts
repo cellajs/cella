@@ -1,5 +1,5 @@
 import { baseDb as db } from '#/db/db';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { getIsoDate } from '#/utils/iso-date';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -15,10 +15,10 @@ export const updateLastSeenAt = async (userId: string, currentLastSeenAt: string
   if (shouldUpdate) {
     const timestamp = getIsoDate();
     await db
-      .insert(userActivityTable)
+      .insert(userCountersTable)
       .values({ userId, lastSeenAt: timestamp })
       .onConflictDoUpdate({
-        target: userActivityTable.userId,
+        target: userCountersTable.userId,
         set: { lastSeenAt: timestamp },
       });
     return true;

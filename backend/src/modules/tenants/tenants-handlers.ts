@@ -68,7 +68,7 @@ const tenantHandlers = app
           subscriptionData: tenantsTable.subscriptionData,
           domainsCount: sql<number>`coalesce(${domainsCountSq.count}, 0)`.mapWith(Number),
           createdAt: tenantsTable.createdAt,
-          modifiedAt: tenantsTable.modifiedAt,
+          updatedAt: tenantsTable.updatedAt,
         })
         .from(tenantsTable)
         .leftJoin(domainsCountSq, eq(tenantsTable.id, domainsCountSq.tenantId))
@@ -148,7 +148,7 @@ const tenantHandlers = app
       .set({
         ...otherUpdates,
         ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
-        modifiedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       } as typeof tenantsTable.$inferInsert)
       .where(eq(tenantsTable.id, tenantId))
       .returning();

@@ -17,12 +17,12 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
-  Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
+  BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
-    total: number;
   };
 
 export const AttachmentsTableBar = ({
@@ -37,13 +37,15 @@ export const AttachmentsTableBar = ({
   clearSelection,
   isSheet = false,
   canUpload = true,
-  total,
+  queryKey,
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog(contextEntity.tenantId, contextEntity.id);
 
   const deleteButtonRef = useRef(null);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const { q } = searchVars;
 

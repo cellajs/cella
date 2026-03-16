@@ -35,7 +35,7 @@ export function handleInsert(
     type,
     entityId,
     ...contextEntityIds,
-    changedKeys: null,
+    changedFields: null,
     stx,
   };
 

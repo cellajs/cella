@@ -79,6 +79,20 @@ async function runManualCleanup(): Promise<void> {
   const unsubscribeDeleted = unsubscribeResult.rowCount ?? 0;
   console.info(`${checkMark} Deleted ${unsubscribeDeleted} old unsubscribe tokens`);
 
+  // Delete old seen_by records (90-day retention)
+  const seenByResult = await db.execute<{ count: string }>(
+    sql`DELETE FROM seen_by WHERE created_at < ${ninetyDaysAgo} RETURNING 1`,
+  );
+  const seenByDeleted = seenByResult.rowCount ?? 0;
+  console.info(`${checkMark} Deleted ${seenByDeleted} old seen_by records`);
+
+  // Delete orphaned seen_counts where no recent seen_by references exist
+  const seenCountsResult = await db.execute<{ count: string }>(
+    sql`DELETE FROM seen_counts WHERE updated_at < ${ninetyDaysAgo} RETURNING 1`,
+  );
+  const seenCountsDeleted = seenCountsResult.rowCount ?? 0;
+  console.info(`${checkMark} Deleted ${seenCountsDeleted} old seen_counts records`);
+
   console.info(`${checkMark} Manual cleanup completed`);
 }
 

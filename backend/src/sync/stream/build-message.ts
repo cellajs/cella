@@ -1,4 +1,4 @@
-import { type ContextEntityType, isProductEntity } from 'shared';
+import { appConfig, type ContextEntityType, hierarchy, isProductEntity } from 'shared';
 import type { StreamNotification } from '#/schemas';
 import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
 
@@ -7,10 +7,10 @@ import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bu
  * Notification-only format - no entity data included.
  *
  * For product entities:
- * - Includes stx, seqAt, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  *
  * For membership:
- * - stx/cacheToken/seqAt are null (memberships detected via activity scan on catchup)
+ * - stx/cacheToken/seq are null (memberships detected via activity scan on catchup)
  */
 export function buildStreamNotification(event: ActivityEventWithEntity): StreamNotification {
   const { entityType } = event;
@@ -23,6 +23,18 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
   const membership = event.resourceType === 'membership' ? getTypedEntity(event, 'membership') : null;
   const contextType: ContextEntityType | null = (membership?.contextType as ContextEntityType | undefined) ?? null;
 
+  // Resolve context ID for unseen count grouping (e.g., task → projectId)
+  let contextId: string | null = null;
+  if (isProduct && entityType) {
+    const parentType = hierarchy.getParent(entityType);
+    if (parentType) {
+      const idKey = appConfig.entityIdColumnKeys[parentType] as keyof typeof event;
+      contextId = (event[idKey] as string | null) ?? null;
+    }
+  }
+
+  const stx = (isProduct && event.stx) || null;
+
   return {
     action: event.action,
     entityType: isProduct ? entityType : null,
@@ -30,16 +42,9 @@ export function buildStreamNotification(event: ActivityEventWithEntity): StreamN
     entityId: event.entityId!,
     organizationId: event.organizationId,
     contextType,
-    seqAt: isProduct ? (event.seqAt ?? null) : null,
-    stx:
-      isProduct && event.stx
-        ? {
-            mutationId: event.stx.mutationId,
-            sourceId: event.stx.sourceId,
-            version: event.stx.version,
-            fieldVersions: event.stx.fieldVersions,
-          }
-        : null,
+    contextId,
+    seq: isProduct ? (event.seq ?? null) : null,
+    stx,
     cacheToken,
   };
 }

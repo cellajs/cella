@@ -33,7 +33,7 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
       type: `${singularName}.${verb}`,
       entityId: mockNanoid(),
       createdAt,
-      changedKeys:
+      changedFields:
         action === 'update'
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,

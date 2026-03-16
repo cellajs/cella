@@ -1,4 +1,4 @@
-import { boolean, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from 'shared/nanoid';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
@@ -21,7 +21,10 @@ export const oauthAccountsTable = pgTable(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
   },
-  (table) => [unique().on(table.provider, table.providerUserId, table.email)],
+  (table) => [
+    index('oauth_accounts_user_id_idx').on(table.userId),
+    unique().on(table.provider, table.providerUserId, table.email),
+  ],
 );
 
 export type OAuthAccountModel = typeof oauthAccountsTable.$inferSelect;

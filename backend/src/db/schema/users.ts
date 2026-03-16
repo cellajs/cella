@@ -30,15 +30,15 @@ export const usersTable = pgTable(
       .$type<UserFlags>()
       .notNull()
       .default({} as UserFlags),
-    modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar({ length: maxLength.id }),
+    updatedAt: timestampColumns.updatedAt,
+    updatedBy: varchar({ length: maxLength.id }),
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),
     index('users_email_index').on(table.email.desc()),
     index('users_created_at_index').on(table.createdAt.desc()),
     foreignKey({
-      columns: [table.modifiedBy],
+      columns: [table.updatedBy],
       foreignColumns: [table.id],
     }),
   ],

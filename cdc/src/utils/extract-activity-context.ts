@@ -29,7 +29,7 @@ export function extractActivityContext(
 
   // Try multiple columns for user ID
   const userId =
-    getRowValue(row, 'modifiedBy') ??
+    getRowValue(row, 'updatedBy') ??
     getRowValue(row, 'createdBy') ??
     getRowValue(row, 'userId') ??
     null;

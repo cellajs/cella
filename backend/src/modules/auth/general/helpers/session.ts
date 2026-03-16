@@ -6,14 +6,14 @@ import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
+import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
 import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -89,10 +89,10 @@ export const setUserSession = async (
   // Exit early if it's impersonation
   if (type === 'impersonation') return;
 
-  // Update user last signIn in user_activity table (avoids CDC noise on users table)
+  // Update user last signIn in user_counters table (avoids CDC noise on users table)
   const lastSignInAt = getIsoDate();
-  await db.insert(userActivityTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
-    target: userActivityTable.userId,
+  await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
+    target: userCountersTable.userId,
     set: { lastSignInAt },
   });
   logEvent('info', 'User signed in', { userId: user.id, strategy });
@@ -106,7 +106,7 @@ export const setUserSession = async (
  */
 export const validateSession = async (
   hashedSessionToken: string,
-): Promise<{ session: SessionModel; user: UserWithActivity }> => {
+): Promise<{ session: SessionModel; user: UserWithCounters }> => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)

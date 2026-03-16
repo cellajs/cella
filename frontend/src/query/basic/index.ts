@@ -7,6 +7,7 @@ export {
   hasEntityQueryKeys,
   registerEntityQueryKeys,
 } from './entity-query-registry';
+export { fetchSlugCacheId } from './fetch-slug-cache-id';
 export { findEntityInListCache } from './find-in-list-cache';
 export { flattenInfiniteData } from './flatten';
 export {

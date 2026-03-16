@@ -23,6 +23,8 @@ const CIRCUIT_COOLDOWN_MS = 60_000;
 const INITIAL_BACKOFF_MS = 5_000;
 const MAX_BACKOFF_MS = 30_000;
 const BACKOFF_FACTOR = 2;
+const RECONNECT_JITTER_MS = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
+const MIN_UPTIME_MS = 10_000; // Connection must stay up 10s before backoff resets
 const HEALTH_URL = `${appConfig.backendUrl}/auth/health`;
 
 interface StreamConfig {
@@ -98,6 +100,7 @@ class StreamManager {
   private circuitOpen = false;
   private circuitOpenedAt: number | null = null;
   private currentBackoff = INITIAL_BACKOFF_MS;
+  private connectedAt: number | null = null;
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
   private leaderUnsubscribe: (() => void) | null = null;
@@ -187,9 +190,8 @@ class StreamManager {
       this.catchupResolve = null;
       resolveInitialCatchupGate();
 
-      // Reset circuit breaker and backoff on success
+      // Reset failure count on catchup success (backoff resets when SSE stays up > MIN_UPTIME_MS)
       this.consecutiveFailures = 0;
-      this.currentBackoff = INITIAL_BACKOFF_MS;
 
       if (!signal.aborted) this.connectSSE();
     } catch (error) {
@@ -263,9 +265,9 @@ class StreamManager {
         this.useStore.getState().setCursor(e.data);
         if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
       }
-      // Reset failure count and backoff on successful connection
+      // Reset failure count; backoff resets only when connection stays up > MIN_UPTIME_MS (checked in onerror)
       this.consecutiveFailures = 0;
-      this.currentBackoff = INITIAL_BACKOFF_MS;
+      this.connectedAt = Date.now();
       this.useStore.getState().setState('live');
     });
 
@@ -274,6 +276,12 @@ class StreamManager {
     eventSource.onerror = () => {
       this.consecutiveFailures++;
       console.debug('[StreamStore] SSE error');
+
+      // Reset backoff if connection was stable long enough (prevents rapid reconnect loops)
+      if (this.connectedAt && Date.now() - this.connectedAt >= MIN_UPTIME_MS) {
+        this.currentBackoff = INITIAL_BACKOFF_MS;
+      }
+      this.connectedAt = null;
 
       this.useStore.getState().setState('error');
       eventSource.close();
@@ -299,10 +307,11 @@ class StreamManager {
   private scheduleReconnect() {
     if (this.reconnectTimeout || this.circuitOpen) return;
 
-    const delay = this.currentBackoff;
-    this.currentBackoff = Math.min(MAX_BACKOFF_MS, delay * BACKOFF_FACTOR);
+    const jitter = Math.random() * RECONNECT_JITTER_MS;
+    const delay = this.currentBackoff + jitter;
+    this.currentBackoff = Math.min(MAX_BACKOFF_MS, this.currentBackoff * BACKOFF_FACTOR);
 
-    console.debug('[StreamStore] Scheduling reconnect in', delay / 1000, 's');
+    console.debug('[StreamStore] Scheduling reconnect in', Math.round(delay / 1000), 's');
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
@@ -413,6 +422,7 @@ class StreamManager {
 
     this.broadcastCleanup?.();
     this.broadcastCleanup = null;
+    this.connectedAt = null;
     this.useStore.getState().setState('disconnected');
   }
 
@@ -421,6 +431,7 @@ class StreamManager {
     this.consecutiveFailures = 0;
     this.circuitOpen = false;
     this.circuitOpenedAt = null;
+    this.connectedAt = null;
     this.currentBackoff = INITIAL_BACKOFF_MS;
   }
 

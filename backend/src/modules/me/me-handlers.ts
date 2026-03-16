@@ -7,7 +7,7 @@ import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { AuthStrategy, sessionsTable } from '#/db/schema/sessions';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { usersTable } from '#/db/schema/users';
 import { setTenantRlsContext } from '#/db/tenant-context';
 import { env } from '#/env';
@@ -51,14 +51,14 @@ const meRouteHandlers = app
     const user = ctx.var.user;
     const isSystemAdmin = ctx.var.isSystemAdmin;
 
-    // Update last visit date in user_activity table (avoids CDC noise on users table)
+    // Update last visit date in user_counters table (avoids CDC noise on users table)
     const lastStartedAt = getIsoDate();
-    await db.insert(userActivityTable).values({ userId: user.id, lastStartedAt }).onConflictDoUpdate({
-      target: userActivityTable.userId,
+    await db.insert(userCountersTable).values({ userId: user.id, lastStartedAt }).onConflictDoUpdate({
+      target: userCountersTable.userId,
       set: { lastStartedAt },
     });
 
-    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_counters table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json({ user: userWithActivity, isSystemAdmin }, 200);
@@ -118,7 +118,7 @@ const meRouteHandlers = app
     // Notify user about MFA status change
     sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
-    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_counters table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json(userWithActivity, 200);
@@ -245,13 +245,13 @@ const meRouteHandlers = app
         userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb`,
       }),
       ...((firstName || lastName) && { name: [firstName, lastName].filter(Boolean).join(' ') }),
-      modifiedAt: getIsoDate(),
-      modifiedBy: user.id,
+      updatedAt: getIsoDate(),
+      updatedBy: user.id,
     };
 
     await db.update(usersTable).set(updateData).where(eq(usersTable.id, user.id));
 
-    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
+    // Re-select with userSelect to include activity timestamps (subqueries from user_counters table)
     const [userWithActivity] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, user.id)).limit(1);
 
     return ctx.json(userWithActivity, 200);

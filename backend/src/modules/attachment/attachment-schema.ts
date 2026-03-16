@@ -20,7 +20,7 @@ export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     stx: stxBaseSchema,
     viewCount: z.number().int().min(0).optional(),
   })
@@ -54,8 +54,11 @@ export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({
 /** Array schema for batch creates (1-50 attachments per request), each with own stx */
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
-/** Update body using key/data pattern for single-field updates with conflict detection */
-export const attachmentUpdateStxBodySchema = createUpdateSchema([z.literal('name'), z.literal('originalKey')]);
+/** Update body using fields pattern for single or multi-field updates with conflict detection */
+export const attachmentUpdateStxBodySchema = createUpdateSchema({
+  name: z.string().max(maxLength.field),
+  originalKey: z.string(),
+});
 
 // Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);

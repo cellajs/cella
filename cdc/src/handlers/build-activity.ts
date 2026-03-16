@@ -31,7 +31,7 @@ export function buildActivity(
     type,
     entityId: ctx.entityId,
     organizationId: ctx.organizationId,
-    changedKeys: null,
+    changedFields: null,
     stx,
     ...overrides,
   };

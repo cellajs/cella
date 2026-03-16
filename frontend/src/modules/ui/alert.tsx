@@ -25,7 +25,11 @@ export const alertVariants = cva(
       {
         variant: ['brand', 'destructive', 'success', 'warning'],
         soft: true,
+<<<<<<< HEAD
+        className: 'soft-bg text-(--intent-color) soft-border',
+=======
         className: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+>>>>>>> cella-upstream/development
       },
     ],
     defaultVariants: {

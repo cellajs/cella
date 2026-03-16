@@ -114,7 +114,7 @@ async function ensureRlsRoles() {
 async function setupTestData() {
   // Create test tenants
   await adminDb.execute(sql`
-    INSERT INTO tenants (id, name, status, created_at, modified_at)
+    INSERT INTO tenants (id, name, status, created_at, updated_at)
     VALUES
       (${TEST_TENANT_A}, 'RLS Test Tenant A', 'active', NOW(), NOW()),
       (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW())
@@ -237,7 +237,7 @@ describe('RLS Security Tests', () => {
   describe('Tenant Context Helpers', () => {
     beforeAll(async () => {
       await adminDb.execute(sql`
-        INSERT INTO tenants (id, name, status, created_at, modified_at)
+        INSERT INTO tenants (id, name, status, created_at, updated_at)
         VALUES
           (${TEST_TENANT_A}, 'RLS Test Tenant A', 'active', NOW(), NOW()),
           (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW())

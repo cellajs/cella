@@ -151,7 +151,7 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
-  /** Sequence-based delta filter — returns entities with seqAt > this value. Hierarchy-aware: seqAt is scoped per parent context. */
+  /** Sequence-based delta filter — returns entities with seq > this value. Hierarchy-aware: seq is scoped per parent context. */
   afterSeq: z
     .string()
     .optional()
