@@ -45,7 +45,7 @@ export function DropdownActionItem({
       )}
     >
       {Icon && <Icon size={16} />}
-      <span className="font-light">{children}</span>
+      <span>{children}</span>
     </button>
   );
 }

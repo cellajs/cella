@@ -53,7 +53,7 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
       </AdvancedMarker>
 
       {infowindowOpen && (
-        <InfoWindow headerDisabled={true} anchor={marker}>
+        <InfoWindow headerDisabled={true} shouldFocus={false} anchor={marker}>
           <div className="text-xs text-slate-800 min-w-36 p-1">
             <div className="flex justify-between items-center">
               <strong className="text-sm ">{appConfig.company.name}</strong>

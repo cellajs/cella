@@ -254,6 +254,41 @@ function setup(node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
       } else {
         node.style.top = `${offsetTop}px`;
       }
+      // When offsetBottom is set for a top-sticky small element, unstick
+      // before the parent's bottom edge by switching to relative positioning
+      if (!bottom && offsetBottom > 0) {
+        let isUnstuck = false;
+        let rafId = 0;
+        const checkUnstick = () => {
+          cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(() => {
+            const parentEl = getParentNode(node);
+            if (parentEl === window) return;
+            const parentRect = (parentEl as HTMLElement).getBoundingClientRect();
+            const nodeHeight = node.offsetHeight;
+            // Calculate where the node bottom WOULD be if sticky (avoids oscillation from reading actual rect)
+            const scrollPaneTop = scrollPane === window ? 0 : (scrollPane as HTMLElement).getBoundingClientRect().top;
+            const stickyBottom = scrollPaneTop + offsetTop + nodeHeight;
+            const spaceBelow = parentRect.bottom - stickyBottom;
+
+            if (spaceBelow <= offsetBottom && !isUnstuck) {
+              isUnstuck = true;
+              node.style.position = 'relative';
+              node.style.top = `${parentRect.height - nodeHeight - offsetBottom}px`;
+            } else if (spaceBelow > offsetBottom && isUnstuck) {
+              isUnstuck = false;
+              if (stickyProp) node.style.position = stickyProp;
+              node.style.top = `${offsetTop}px`;
+            }
+          });
+        };
+        const sp = scrollPane;
+        sp.addEventListener('scroll', checkUnstick, passiveArg);
+        unsubs.push(() => {
+          cancelAnimationFrame(rafId);
+          sp.removeEventListener('scroll', checkUnstick);
+        });
+      }
       return;
     }
 

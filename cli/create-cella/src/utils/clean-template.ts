@@ -2,18 +2,33 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pc from 'picocolors';
 
-import { type FileEdit, TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '#/constants';
+import {
+  generateEnvConfigs,
+  generateEnvFromExample,
+  getBackendEnvReplacements,
+  getRootEnvReplacements,
+  PLACEHOLDER_CONFIG,
+  TO_CLEAN,
+  TO_COPY,
+  TO_REMOVE,
+} from '#/constants';
 
 /**
  * Cleans the specified template by removing designated folders and files.
- * @param params - Parameters containing the target folder and optional extra edits.
+ * @param params - Parameters containing the target folder, project name, and optional extra edits.
  */
 export async function cleanTemplate({
   targetFolder,
-  extraEdits = {},
+  projectName,
+  displayName,
+  portOffset = 0,
+  adminEmail = `admin@${projectName}.example.com`,
 }: {
   targetFolder: string;
-  extraEdits?: Record<string, FileEdit[]>;
+  projectName: string;
+  displayName: string;
+  portOffset?: number;
+  adminEmail?: string;
 }): Promise<void> {
   // Change the current working directory to targetFolder if not already set
   if (process.cwd() !== targetFolder) {
@@ -29,6 +44,39 @@ export async function cleanTemplate({
         await copyFile(srcAbsolutePath, destAbsolutePath);
       }
 
+      // Replace default-config.ts with interpolated placeholder config
+      await applyPlaceholderConfig(targetFolder, projectName);
+
+      // Generate root .env from .env.example (single source of truth for ports)
+      const rootReplacements = getRootEnvReplacements(projectName, portOffset);
+      const rootEnv = await generateEnvFromExample(path.resolve(targetFolder, '.env.example'), rootReplacements);
+      await fs.writeFile(
+        path.resolve(targetFolder, '.env'),
+        rootEnv ??
+          Object.entries(rootReplacements)
+            .map(([k, v]) => `${k}=${v}`)
+            .join('\n'),
+        'utf8',
+      );
+
+      // Generate backend .env from backend/.env.example
+      const backendReplacements = getBackendEnvReplacements(adminEmail, portOffset);
+      const backendEnv = await generateEnvFromExample(
+        path.resolve(targetFolder, 'backend/.env.example'),
+        backendReplacements,
+      );
+      if (backendEnv) {
+        await fs.writeFile(path.resolve(targetFolder, 'backend/.env'), backendEnv, 'utf8');
+      }
+
+      // Generate minimal env config files with project values and ports baked in
+      const envConfigs = generateEnvConfigs(projectName, displayName, portOffset);
+      await Promise.all(
+        Object.entries(envConfigs).map(([filePath, content]) =>
+          fs.writeFile(path.resolve(targetFolder, filePath), content, 'utf8'),
+        ),
+      );
+
       // Clean specified folder contents
       await Promise.all(
         TO_CLEAN.map((folderPath) => {
@@ -42,20 +90,6 @@ export async function cleanTemplate({
         TO_REMOVE.map((filePath) => {
           const absolutePath = path.resolve(targetFolder, filePath);
           return removeFileOrFolder(absolutePath);
-        }),
-      );
-
-      // Merge static edits with extra edits (e.g., port offsets)
-      const allEdits = { ...TO_EDIT };
-      for (const [filePath, edits] of Object.entries(extraEdits)) {
-        allEdits[filePath] = [...(allEdits[filePath] || []), ...edits];
-      }
-
-      // Edit specific files
-      await Promise.all(
-        Object.entries(allEdits).map(async ([filePath, edits]) => {
-          const absolutePath = path.resolve(targetFolder, filePath);
-          await editFile(absolutePath, edits);
         }),
       );
 
@@ -125,33 +159,23 @@ export async function copyFile(src: string, dest: string): Promise<void> {
 }
 
 /**
- * Helper function edit a file by applying regex replacements.
- * @param filePath - The path of the file to edit.
- * @param edits - The list of edits to apply.
+ * Read the placeholder config template, interpolate project tokens, and
+ * write it as `shared/default-config.ts` — replacing the original.
  */
-export async function editFile(
-  filePath: string,
-  edits: Array<{ regexMatch: RegExp; replaceWith: string }>,
-): Promise<void> {
+async function applyPlaceholderConfig(targetFolder: string, projectName: string): Promise<void> {
+  const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const src = path.resolve(targetFolder, PLACEHOLDER_CONFIG);
+  const dest = path.resolve(targetFolder, './shared/default-config.ts');
+
   try {
-    await fs.access(filePath);
-
-    // Read the existing file content
-    const fileContent = await fs.readFile(filePath, 'utf8');
-    let updatedContent = fileContent;
-
-    // Apply each edit to the content
-    edits.forEach(({ regexMatch, replaceWith }) => {
-      updatedContent = updatedContent.replace(regexMatch, replaceWith);
-    });
-
-    // Write the updated content back to the file
-    if (fileContent !== updatedContent) {
-      await fs.writeFile(filePath, updatedContent, 'utf8');
-    }
+    let content = await fs.readFile(src, 'utf8');
+    content = content.replaceAll('__project_name__', displayName);
+    content = content.replaceAll('__project_slug__', projectName);
+    await fs.writeFile(dest, content, 'utf8');
   } catch (err: any) {
     if (err.code === 'ENOENT') {
-      console.info(`\n${pc.yellow('⚠')} Source file "${filePath}" does not exist > Skip edit`);
+      console.info(`\n${pc.yellow('⚠')} Placeholder config "${src}" not found > Skip`);
     } else {
       throw err;
     }

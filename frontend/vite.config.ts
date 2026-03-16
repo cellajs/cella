@@ -3,7 +3,8 @@ import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 import path from 'node:path';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, Plugin, type UserConfig } from 'vite';
@@ -15,10 +16,6 @@ import { appConfig } from '../shared';
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
 import { openApiWatch } from './vite/openapi-watch';
 import { localesHMR } from './vite/locales-hmr';
-
-const ReactCompilerConfig = {
-  /* ... */
-};
 
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
@@ -44,7 +41,9 @@ const viteConfig = {
   build: {
     rollupOptions: {
       output: {
-        experimentalMinChunkSize: 50 * 1024, // Minimum chunk size of 50 Kb
+        codeSplitting: {
+          minSize: 50 * 1024, // Minimum chunk size of 50 Kb
+        },
         manualChunks(id) {
           if (id.includes('shiki')) {
             return 'shiki'; // Ensures all shiki-related modules go into one chunk
@@ -62,11 +61,8 @@ const viteConfig = {
   clearScreen: false,
   plugins: [
     // TanStackRouterVite(),
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
-      },
-    }),
+    react(),
+    babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
     appConfig.sentSentrySourceMaps
       ? (sentryVitePlugin({

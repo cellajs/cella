@@ -135,6 +135,9 @@
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
     --success: oklch(0.5917 0.2014 142.5);
+    --success-foreground: oklch(0.9851 0 0);
+    --warning: oklch(0.68 0.16 70);
+    --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
 
@@ -170,6 +173,9 @@
     --input: oklch(0.3138 0.0102 285.63);
     --ring: oklch(0.86 0.0096 285.72);
     --success: oklch(0.5917 0.2014 142.5);
+    --success-foreground: oklch(0.9851 0 0);
+    --warning: oklch(0.68 0.16 70);
+    --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
 
@@ -204,17 +210,8 @@
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   @media (max-width: 639px) {
     html {
-      font-size: 18px;
+      font-size: 19px;
     }
-  }
-
-  /* Disable clicking scrolbar tracks to change position */
-  .scrollbar-track {
-    pointer-events: none;
-  }
-
-  .scrollbar-track .scrollbar-thumb {
-    pointer-events: auto;
   }
 
   /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */

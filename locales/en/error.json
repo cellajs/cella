@@ -32,7 +32,7 @@
   "forbidden_strategy": "Forbidden authentication method",
   "forbidden_strategy.text": "Please use another authentication method or contact support.",
   "forbidden.text": "Not allowed to perform this action.",
-  "form.invalid_form": "Form action is invalid.",
+  "form.invalid_form": "Form is not yet valid.",
   "form.custom": "Invalid input",
   "form.disabled": "Field is disabled",
   "form.invalid_arguments": "Invalid arguments",

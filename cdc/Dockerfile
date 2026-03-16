@@ -11,7 +11,7 @@
 FROM node:24-alpine AS base
 
 # Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Set working directory
 WORKDIR /app
@@ -27,9 +27,10 @@ COPY cdc/package.json ./cdc/
 COPY config/package.json ./config/
 COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
+COPY patches/ ./patches/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --filter @cella/cdc...
+# Install production dependencies only (--ignore-scripts avoids native build issues)
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @cella/cdc...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -42,9 +43,10 @@ COPY cdc/package.json ./cdc/
 COPY config/package.json ./config/
 COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
+COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --filter @cella/cdc...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter @cella/cdc...
 
 # Copy source code
 COPY cdc/ ./cdc/
@@ -63,7 +65,7 @@ RUN pnpm build
 FROM node:24-alpine AS production
 
 RUN addgroup --system --gid 1001 cella && \
-    adduser --system --uid 1001 cella
+  adduser --system --uid 1001 cella
 
 WORKDIR /app
 

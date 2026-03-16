@@ -3,7 +3,6 @@ import type { LucideProps } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CloseButton } from '~/modules/common/close-button';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useAlertStore } from '~/store/alert';
@@ -38,8 +37,7 @@ export const AlertWrap = ({
   const setAsSeen = () => setAlertSeen(id);
 
   const alertContent = (
-    <Alert variant={variant} className={cn('relative', !animate && className)}>
-      <CloseButton onClick={setAsSeen} size="md" className="absolute top-2 right-2" />
+    <Alert variant={variant} onClose={setAsSeen} className={cn('relative', !animate && className)}>
       {Icon && <Icon size={16} />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
       {children && <AlertDescription className="pr-8 font-light">{children}</AlertDescription>}

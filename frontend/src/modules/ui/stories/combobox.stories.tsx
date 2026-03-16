@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
-import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
+import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 
 /**
- * A searchable dropdown component with virtualization support for large option lists.
+ * A searchable dropdown component built on base-ui Combobox.
  */
 const meta = {
   title: 'ui/Combobox',
-  component: Combobox,
+  component: ComboboxSelect,
   tags: ['autodocs'],
   parameters: {
     layout: 'centered',
@@ -18,14 +18,12 @@ const meta = {
     value: { control: 'text' },
     disabled: { control: 'boolean' },
     renderAvatar: { control: 'boolean' },
-    contentWidthMatchInput: { control: 'boolean' },
   },
   args: {
     disabled: false,
     renderAvatar: false,
-    contentWidthMatchInput: true,
   },
-} satisfies Meta<typeof Combobox>;
+} satisfies Meta<typeof ComboboxSelect>;
 
 export default meta;
 
@@ -59,7 +57,7 @@ export const Default: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} />
       </div>
     );
   },
@@ -79,7 +77,13 @@ export const WithAvatars: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} renderAvatar={args.renderAvatar} />
+        <ComboboxSelect
+          {...args}
+          options={args.options}
+          value={value}
+          onChange={setValue}
+          renderAvatar={args.renderAvatar}
+        />
       </div>
     );
   },
@@ -98,7 +102,7 @@ export const CustomRenderOption: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox
+        <ComboboxSelect
           {...args}
           options={args.options}
           value={value}
@@ -129,46 +133,20 @@ export const Disabled: Story = {
     const [value] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={() => {}} disabled={args.disabled} />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={() => {}} disabled={args.disabled} />
       </div>
     );
   },
 };
 
-/**
- * Combobox with full width content (doesn't match input width).
- */
-export const FullWidthContent: Story = {
-  args: {
-    options: mockOptions,
-    value: '',
-    onChange: () => {},
-    contentWidthMatchInput: false,
-  },
-  render: function Render(args) {
-    const [value, setValue] = useState(args.value);
-    return (
-      <div className="w-80">
-        <Combobox
-          {...args}
-          options={args.options}
-          value={value}
-          onChange={setValue}
-          contentWidthMatchInput={args.contentWidthMatchInput}
-        />
-      </div>
-    );
-  },
-};
-
-const placeholders: ComboboxProps['placeholders'] = {
+const placeholders: ComboboxSelectProps['placeholders'] = {
   trigger: 'common:select_resource' as TKey,
   search: 'common:search' as TKey,
   notFound: 'common:no_resource_found' as TKey,
 };
 
 /**
- * Combobox with large number of options to demonstrate virtualization.
+ * Combobox with large number of options.
  */
 export const LargeOptions: Story = {
   args: {
@@ -180,7 +158,13 @@ export const LargeOptions: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} placeholders={placeholders} />
+        <ComboboxSelect
+          {...args}
+          options={args.options}
+          value={value}
+          onChange={setValue}
+          placeholders={placeholders}
+        />
       </div>
     );
   },
@@ -199,7 +183,7 @@ export const CustomPlaceholders: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox
+        <ComboboxSelect
           {...args}
           options={args.options}
           value={value}
@@ -228,7 +212,7 @@ export const WithPreselectedValue: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <Combobox {...args} options={args.options} value={value} onChange={setValue} />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} />
       </div>
     );
   },
@@ -246,13 +230,11 @@ export const Multiple: Story = {
   render: function Render(args) {
     const [value1, setValue1] = useState('');
     const [value2, setValue2] = useState('');
-    const [value3, setValue3] = useState('');
 
     return (
       <div className="space-y-4 w-80">
-        <Combobox {...args} options={args.options} value={value1} onChange={setValue1} />
-        <Combobox {...args} options={args.options} value={value2} onChange={setValue2} renderAvatar={true} />
-        <Combobox {...args} options={args.options} value={value3} onChange={setValue3} contentWidthMatchInput={false} />
+        <ComboboxSelect {...args} options={args.options} value={value1} onChange={setValue1} />
+        <ComboboxSelect {...args} options={args.options} value={value2} onChange={setValue2} renderAvatar={true} />
       </div>
     );
   },

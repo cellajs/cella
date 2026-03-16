@@ -20,7 +20,9 @@ export interface CreateOptions {
   packageManager: string;
   templateUrl?: string;
   /** Port offset to avoid collisions with sibling forks (0 = default ports) */
-  portOffset?: number;
+  portOffset: number;
+  /** Admin email for initial seed user (defaults to admin@{slug}.example.com) */
+  adminEmail?: string;
   /** Suppress all output (for testing) */
   silent?: boolean;
 }

@@ -1,10 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gt, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
-import { html } from 'hono/html';
 import { appConfig } from 'shared';
-import { unsafeInternalAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { organizationsTable } from '#/db/schema/organizations';
 import { seenCountsTable } from '#/db/schema/seen-counts';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
@@ -270,68 +267,6 @@ const attachmentRouteHandlers = app
     logEvent('info', 'Attachments deleted', allowedIds);
 
     return ctx.json({ data: [] as never[], rejectedItemIds }, 200);
-  })
-  /**
-   * Get attachment link — serves OG meta for bots, direct download for users.
-   */
-  .openapi(attachmentRoutes.getAttachmentLink, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    // Use adminDb to bypass RLS since this is a public endpoint without auth context.
-    // Organizations table requires isAuthenticated=true in its RLS policy, which isn't
-    // set for public endpoints. Falls back to ctx.var.db for PGlite mode (no RLS).
-    const db = unsafeInternalAdminDb ?? ctx.var.db;
-    const [attachment] = await db
-      .select()
-      .from(attachmentsTable)
-      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.public, true)));
-    if (!attachment) throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
-
-    // Detect bots/crawlers by User-Agent to serve OG meta page for link previews
-    const ua = ctx.req.header('user-agent') ?? '';
-    const isBot =
-      /bot|crawl|spider|slurp|facebookexternalhit|linkedinbot|twitterbot|whatsapp|telegram|discord|preview|fetch|embed/i.test(
-        ua,
-      );
-
-    if (!isBot) {
-      // Regular user — redirect to a presigned download URL
-      const key = attachment.convertedKey || attachment.originalKey;
-      const fileUrl = await getSignedUrlFromKey(key, { bucketName: attachment.bucketName, isPublic: false });
-      return ctx.redirect(fileUrl, 302);
-    }
-
-    // Bot — serve OG meta HTML for rich link previews
-    const [organization] = await db
-      .select()
-      .from(organizationsTable)
-      .where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
-
-    const linkUrl = `${appConfig.backendUrl}/${attachment.tenantId}/${organization.slug}/attachments/${attachment.id}/link`;
-
-    return ctx.html(html`
-      <!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8" />
-
-          <title>${attachment.filename}</title>
-          <meta property="og:title" content="${attachment.filename}" />
-          <meta property="og:description" content="View an attachment in ${organization.name}." />
-          <meta name="description" content="View an attachment in ${organization.name}." />
-          <meta property="og:url" content="${linkUrl}" />
-
-          <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="${appConfig.name}" />
-          <meta property="og:locale" content="${appConfig.defaultLanguage}" />
-          <link rel="logo" type="image/png" href="/static/logo/logo.png" />
-          <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
-          <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />
-          <meta name="robots" content="noindex" />
-        </head>
-      </html>
-    `);
   });
 
 export default attachmentRouteHandlers;

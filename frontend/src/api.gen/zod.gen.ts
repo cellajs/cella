@@ -309,6 +309,20 @@ export const zTenant = z.object({
 });
 
 /**
+ * A domain with its verification token for DNS setup.
+ */
+export const zDomainWithToken = z.object({
+  id: z.string().max(50),
+  tenantId: z.string().max(24),
+  domain: z.string().max(255),
+  verified: z.boolean(),
+  verificationToken: z.string().max(50).nullable(),
+  verifiedAt: z.string().nullable(),
+  lastCheckedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+/**
  * A domain claimed by a tenant for email matching and verification.
  */
 export const zDomain = z.object({
@@ -319,6 +333,20 @@ export const zDomain = z.object({
   verifiedAt: z.string().nullable(),
   lastCheckedAt: z.string().nullable(),
   createdAt: z.string(),
+});
+
+/**
+ * Result of a DNS TXT domain verification attempt.
+ */
+export const zVerifyDomainResponse = z.object({
+  success: z.boolean(),
+  domain: zDomainWithToken,
+  diagnostics: z
+    .object({
+      recordsFound: z.array(z.string()),
+      expectedToken: z.string(),
+    })
+    .optional(),
 });
 
 /**
@@ -427,7 +455,6 @@ export const zAttachment = z.object({
   modifiedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   seqAt: z.int().gte(-9007199254740991).lte(9007199254740991),
   public: z.boolean(),
-  publicAccess: z.boolean(),
   bucketName: z.string().max(255),
   groupId: z.string().max(50).nullable(),
   filename: z.string().max(255),
@@ -1282,7 +1309,7 @@ export const zGetDomainsData = z.object({
 /**
  * List of domains
  */
-export const zGetDomainsResponse = z.array(zDomain);
+export const zGetDomainsResponse = z.array(zDomainWithToken);
 
 export const zCreateDomainData = z.object({
   body: z.object({
@@ -1316,6 +1343,34 @@ export const zDeleteDomainData = z.object({
  * Domain removed
  */
 export const zDeleteDomainResponse = zDomain;
+
+export const zGetDomainData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    tenantId: z.string().max(50),
+    id: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Domain with verification token
+ */
+export const zGetDomainResponse = zDomainWithToken;
+
+export const zVerifyDomainData = z.object({
+  body: z.never().optional(),
+  path: z.object({
+    tenantId: z.string().max(50),
+    id: z.string().max(50),
+  }),
+  query: z.never().optional(),
+});
+
+/**
+ * Verification result
+ */
+export const zVerifyDomainResponse2 = zVerifyDomainResponse;
 
 export const zDeleteRequestsData = z.object({
   body: z.object({
@@ -1976,7 +2031,7 @@ export const zGetAttachmentResponse = zAttachment;
 
 export const zUpdateAttachmentData = z.object({
   body: z.object({
-    key: z.union([z.enum(['name']), z.enum(['originalKey']), z.enum(['public'])]),
+    key: z.union([z.enum(['name']), z.enum(['originalKey'])]),
     data: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).nullable(),
     stx: zStxRequestBase,
   }),
@@ -1992,14 +2047,6 @@ export const zUpdateAttachmentData = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = zAttachment;
-
-export const zGetAttachmentLinkData = z.object({
-  body: z.never().optional(),
-  path: z.object({
-    id: z.string().max(50),
-  }),
-  query: z.never().optional(),
-});
 
 export const zDeleteMembershipsData = z.object({
   body: z.object({

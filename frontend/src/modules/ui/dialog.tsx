@@ -42,13 +42,11 @@ function DialogContent({
   className,
   children,
   container,
-  showCloseButton = true,
   initialFocus,
   finalFocus,
   ...props
 }: DialogPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
-    showCloseButton?: boolean;
     container?: HTMLElement | null;
     initialFocus?: DialogPrimitive.Popup.Props['initialFocus'];
     finalFocus?: DialogPrimitive.Popup.Props['finalFocus'];
@@ -73,32 +71,32 @@ function DialogContent({
           {...props}
         >
           {children}
-          {showCloseButton && (
-            <DialogPrimitive.Close
-              data-slot="dialog-close"
-              className="data-open:bg-accent data-open:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-effect disabled:pointer-events-none"
-            >
-              <XIcon className="size-5" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          )}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Viewport>
     </DialogPortal>
   );
 }
 
-function DialogHeader({ className, sticky, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
+function DialogHeader({ className, sticky, children, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="dialog-header"
       className={cn(
-        'flex flex-col gap-2 text-center sm:text-left',
-        sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
+        'group/header relative flex flex-col gap-2 text-left',
+        sticky && 'sm:sticky sm:top-0 z-10 sm:bg-background/70 sm:backdrop-blur-xs',
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      <DialogPrimitive.Close
+        data-slot="dialog-close"
+        className="hidden group-[.with-close-btn]/header:block absolute right-0 top-0 p-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+      >
+        <XIcon className="size-5" strokeWidth={1.5} />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </div>
   );
 }
 

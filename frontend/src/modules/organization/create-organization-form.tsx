@@ -19,7 +19,7 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { useOrganizationAutoCreateMutation, useOrganizationCreateMutation } from '~/modules/organization/query';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { Form, type LabelDirectionType } from '~/modules/ui/field';
 
 interface Props {
   dialog?: boolean;

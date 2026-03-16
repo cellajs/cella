@@ -37,70 +37,131 @@ export const TO_CLEAN: string[] = ['./backend/drizzle'];
 
 // Files to copy/paste after downloading
 export const TO_COPY: Record<string, string> = {
-  './backend/.env.example': './backend/.env',
   './frontend/.env.example': './frontend/.env',
   './info/QUICKSTART.md': 'README.md',
 };
 
-/** Type for file edit operations */
-export type FileEdit = { regexMatch: RegExp; replaceWith: string };
-
-// Files to be edited after downloading
-export const TO_EDIT: Record<string, FileEdit[]> = {
-  './shared/default-config.ts': [
-    {
-      regexMatch: /enabledAuthStrategies:\s*\[[^\]]+\]\s*as\s*const,/g,
-      replaceWith: "enabledAuthStrategies: ['password', 'passkey', 'totp'] as const,",
-    },
-    {
-      regexMatch: /uploadEnabled:\s*(true|false),/g,
-      replaceWith: 'uploadEnabled: false,',
-    },
-    {
-      regexMatch: /enabledOAuthProviders:\s*\[[^\]]+\]\s*as\s*const,/g,
-      replaceWith: 'enabledOAuthProviders: [] as const,',
-    },
-  ],
-};
+/**
+ * Placeholder config template that replaces `shared/default-config.ts` in new forks.
+ * Contains `__project_name__` and `__project_slug__` tokens interpolated at create time.
+ */
+export const PLACEHOLDER_CONFIG = './cli/create-cella/configs/default-config.ts.template';
 
 /**
- * Generate file edits to apply a port offset to a new fork.
- * All dev ports are shifted by the given offset to avoid collisions with sibling forks.
- *
- * Only 3 files need editing — all other services derive ports from these:
- * - development-config.ts → frontend/backend URLs (read by Vite, backend, CDC, studio, tests)
- * - .env → backend PORT + database connection strings
- * - compose.yaml → Docker container names + host port mappings
- *
- * Default ports: frontend=3000, backend=4000, db=5432, dbTest=5434
+ * Read a `.env.example` file and apply key=value replacements.
+ * Comments and unmatched keys are preserved as-is.
+ * Returns null if the file doesn't exist (caller should generate from scratch).
  */
-export function getPortEdits(projectName: string, offset: number): Record<string, FileEdit[]> {
-  if (offset === 0) return {};
+export async function generateEnvFromExample(
+  examplePath: string,
+  replacements: Record<string, string>,
+): Promise<string | null> {
+  const { readFile } = await import('node:fs/promises');
+  let content: string;
+  try {
+    content = await readFile(examplePath, 'utf8');
+  } catch {
+    return null;
+  }
 
-  const fe = 3000 + offset;
-  const be = 4000 + offset;
-  const db = 5432 + offset;
-  const dbTest = 5434 + offset;
+  return content.replace(/^([A-Z_][A-Z0-9_]*)=(.*)$/gm, (match, key, _value) => {
+    if (key in replacements) return `${key}=${replacements[key]}`;
+    return match;
+  });
+}
 
+/** Replacement map for root `.env` */
+export function getRootEnvReplacements(slug: string, portOffset: number): Record<string, string> {
   return {
-    './shared/development-config.ts': [
-      { regexMatch: /frontendUrl:\s*'http:\/\/localhost:\d+'/g, replaceWith: `frontendUrl: 'http://localhost:${fe}'` },
-      { regexMatch: /backendUrl:\s*'http:\/\/localhost:\d+'/g, replaceWith: `backendUrl: 'http://localhost:${be}'` },
-      {
-        regexMatch: /backendAuthUrl:\s*'http:\/\/localhost:\d+\/auth'/g,
-        replaceWith: `backendAuthUrl: 'http://localhost:${be}/auth'`,
-      },
-    ],
-    './backend/.env': [
-      { regexMatch: /PORT=\d+/g, replaceWith: `PORT=${be}` },
-      { regexMatch: /@0\.0\.0\.0:5432\//g, replaceWith: `@0.0.0.0:${db}/` },
-    ],
-    './compose.yaml': [
-      { regexMatch: /name: cella/g, replaceWith: `name: ${projectName}` },
-      { regexMatch: /container_name: cella_db\b/g, replaceWith: `container_name: ${projectName}_db` },
-      { regexMatch: /container_name: cella_db_test/g, replaceWith: `container_name: ${projectName}_db_test` },
-      { regexMatch: /- 5432:5432/g, replaceWith: `- ${db}:5432` },
-      { regexMatch: /- 5434:5432/g, replaceWith: `- ${dbTest}:5432` },
-    ],
+    PROJECT_SLUG: slug,
+    DB_PORT: String(5432 + portOffset),
+    DB_TEST_PORT: String(5434 + portOffset),
   };
+}
+
+/** Replacement map for `backend/.env` */
+export function getBackendEnvReplacements(adminEmail: string, portOffset: number): Record<string, string> {
+  const db = 5432 + portOffset;
+  return {
+    DATABASE_URL: `postgres://runtime_role:dev_password@0.0.0.0:${db}/postgres`,
+    DATABASE_ADMIN_URL: `postgres://postgres:postgres@0.0.0.0:${db}/postgres`,
+    DATABASE_CDC_URL: `postgres://cdc_role:dev_password@0.0.0.0:${db}/postgres`,
+    ADMIN_EMAIL: adminEmail,
+    PORT: String(4000 + portOffset),
+  };
+}
+
+/**
+ * Generate env config files with project-specific values.
+ * All configs go through the same data-driven loop.
+ * Values prefixed with '=' are emitted as raw TS expressions (not quoted).
+ */
+export function generateEnvConfigs(slug: string, name: string, portOffset: number): Record<string, string> {
+  const fe = 3000 + portOffset;
+  const be = 4000 + portOffset;
+
+  const header =
+    "import type { DeepPartial } from './src/builder/types';\nimport type _default from './default-config';\n";
+
+  // Per-environment specs: optional imports + object props (= prefix → raw TS expression)
+  const envs: Record<string, { imports?: string; props: Record<string, string | boolean> }> = {
+    development: {
+      props: {
+        slug: `${slug}-development`,
+        debug: false,
+        domain: '',
+        frontendUrl: `http://localhost:${fe}`,
+        backendUrl: `http://localhost:${be}`,
+        backendAuthUrl: `http://localhost:${be}/auth`,
+      },
+    },
+    staging: {
+      props: {
+        slug: `${slug}-staging`,
+        debug: false,
+        domain: `${slug}.example.com`,
+        frontendUrl: `https://staging.${slug}.example.com`,
+        backendUrl: `https://api-staging.${slug}.example.com`,
+        backendAuthUrl: `https://api-staging.${slug}.example.com/auth`,
+      },
+    },
+    tunnel: {
+      props: {
+        frontendUrl: `https://localhost:${fe}`,
+        backendUrl: `https://${slug}.ngrok.dev`,
+        backendAuthUrl: `https://${slug}.ngrok.dev/auth`,
+      },
+    },
+    test: {
+      imports: "import development from './development-config';\n",
+      props: {
+        debug: false,
+        domain: '',
+        frontendUrl: '=development.frontendUrl',
+        backendUrl: '=development.backendUrl',
+        backendAuthUrl: '=development.backendAuthUrl',
+      },
+    },
+    production: { props: { maintenance: false } },
+  };
+
+  // Serialize value: '=' prefix → raw TS expression, boolean → literal, string → quoted
+  const lit = (v: string | boolean) => {
+    if (typeof v === 'boolean') return String(v);
+    if (v.startsWith('=')) return v.slice(1);
+    return `'${v}'`;
+  };
+
+  const result: Record<string, string> = {};
+
+  for (const [mode, { imports = '', props }] of Object.entries(envs)) {
+    const nameEntry = mode !== 'production' ? `  name: '${name} ${mode.toUpperCase()}',\n` : '';
+    const body = Object.entries(props)
+      .map(([k, v]) => `  ${k}: ${lit(v)},`)
+      .join('\n');
+    result[`./shared/${mode}-config.ts`] =
+      `${imports}${header}\nexport default {\n  mode: '${mode}',\n${nameEntry}${body}\n} satisfies DeepPartial<typeof _default>;\n`;
+  }
+
+  return result;
 }

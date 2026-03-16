@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryContext, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import {
   Drawer,
@@ -54,7 +54,8 @@ export const Default: Story = {};
 export const ShouldOpenCloseWithSubmit: Story = {
   name: 'when clicking Submit button, should close the drawer',
   tags: ['!dev', '!autodocs'],
-  play: async ({ args, canvasElement, step }) => {
+  play: async (context: StoryContext) => {
+    const { args, canvasElement, step } = context;
     const canvasBody = within(canvasElement.ownerDocument.body);
 
     await step('Open the drawer', async () => {
@@ -76,7 +77,8 @@ export const ShouldOpenCloseWithSubmit: Story = {
 export const ShouldOpenCloseWithCancel: Story = {
   name: 'when clicking Cancel button, should close the drawer',
   tags: ['!dev', '!autodocs'],
-  play: async ({ args, canvasElement, step }) => {
+  play: async (context: StoryContext) => {
+    const { args, canvasElement, step } = context;
     const canvasBody = within(canvasElement.ownerDocument.body);
 
     await step('Open the drawer', async () => {

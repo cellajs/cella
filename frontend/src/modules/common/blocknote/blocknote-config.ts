@@ -2,6 +2,10 @@ import { codeBlockOptions } from '@blocknote/code-block';
 import { BlockNoteSchema, CodeBlockOptions, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
 import { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import {
+  checklistItemBlock,
+  getChecklistSlashItem,
+} from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
@@ -14,7 +18,7 @@ import type {
 } from '~/modules/common/blocknote/types';
 
 /**
- *  Basic configuration
+ *  Basic Configuration
  */
 
 // Config for supported languages for BlockNote code blocks
@@ -52,6 +56,7 @@ export const supportedLanguages = {
 // Base custom schema
 export const customSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
+    checklistItem: checklistItemBlock(),
     notify: notifyBlock(), // Adds Notify block
     codeBlock: createCodeBlockSpec({
       indentLineWithTab: true,
@@ -60,25 +65,25 @@ export const customSchema = BlockNoteSchema.create().extend({
       createHighlighter: codeBlockOptions.createHighlighter,
     }),
   },
-  inlineContentSpecs: { mention: MentionSchema }, // Adds Mention tag
+  inlineContentSpecs: { mention: MentionSchema },
 });
 
-// Blocks to witch can be switched by sidemenu btn or in formatting toolbar
+// Blocks to which can be switched by sidemenu btn or in formatting toolbar
 export const customBlockTypeSwitchItems: CustomBlockTypes[] = [
   'heading',
   'paragraph',
   'bulletListItem',
   'numberedListItem',
-  'checkListItem',
+  'checklistItem',
 ];
 
 /**
- *  Side menu configuration
+ *  Side Menu Configuration
  */
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 /**
- *  Slash menu configuration
+ *  Slash Menu Configuration
  */
 
 // Indexed items (max 9 for quick number-based selection)
@@ -88,7 +93,7 @@ export const customSlashIndexedItems: SlashIndexedItems = [
   'file',
   'bulletListItem',
   'numberedListItem',
-  'checkListItem',
+  'checklistItem',
   'notify',
 ];
 
@@ -98,7 +103,11 @@ export const getSlashMenuItems = (
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
 ): DefaultReactSuggestionItem[] => {
-  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+  const baseItems = [
+    ...getDefaultReactSlashMenuItems(editor),
+    getSlashNotifySlashItem(editor),
+    getChecklistSlashItem(editor),
+  ];
 
   // Filter heading keys based on allowed headingLevels
   const { heading, ...restTypeToKeys } = { ...baseBlocknoteTypeToKeys };
@@ -139,7 +148,7 @@ export const getSlashMenuItems = (
 };
 
 /**
- *  Formatting toolbar configuration
+ *  Formatting toolbar Configuration
  */
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockTypeSelect: false,

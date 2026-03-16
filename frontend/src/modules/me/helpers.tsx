@@ -17,18 +17,12 @@ export const getAndSetMe = async () => {
 };
 
 /**
- * Retrieves the current user's authentication information and updates the user store.
+ * Retrieves the current user's authentication information.
  *
  * @returns The data object.
  */
 export const getAndSetMeAuthData = async () => {
   const authInfo = await getMyAuth();
-  const authData = {
-    hasPasskey: !!authInfo.passkeys.length,
-    hasTotp: authInfo.hasTotp,
-    enabledOAuth: authInfo.enabledOAuth,
-  };
-  useUserStore.getState().setMeAuthData(authData);
   return authInfo;
 };
 

@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import type z from 'zod';
 import { zCreateTotpData } from '~/api.gen/zod.gen';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 

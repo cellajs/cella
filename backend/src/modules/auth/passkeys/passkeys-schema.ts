@@ -1,5 +1,4 @@
 import { z } from '@hono/zod-openapi';
-import { t } from 'i18next';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { maxLength } from '#/schemas';
@@ -15,12 +14,10 @@ export const passkeyCreateBodySchema = z.object({
   nameOnDevice: z.string().max(maxLength.field),
 });
 
-export const passkeyChallengeBodySchema = z
-  .object({
-    type: challengeTypeSchema,
-    email: z.string().max(maxLength.field).optional(),
-  })
-  .refine((data) => (data.type === 'authentication' ? !!data.email : true), { message: t('mfa_schema_requirement') });
+export const passkeyChallengeBodySchema = z.object({
+  type: challengeTypeSchema,
+  email: z.string().max(maxLength.field).optional(),
+});
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 

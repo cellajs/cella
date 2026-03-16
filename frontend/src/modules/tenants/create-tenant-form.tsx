@@ -12,7 +12,7 @@ import { InputFormField } from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantCreateMutation } from '~/modules/tenants/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { Form, type LabelDirectionType } from '~/modules/ui/field';
 
 interface Props {
   dialog?: boolean;

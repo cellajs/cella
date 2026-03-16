@@ -35,9 +35,8 @@ export const useColumns = () => {
     {
       key: 'email',
       name: t('common:email'),
-      sortable: false,
       resizable: true,
-      minWidth: 120,
+      minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
         return (
           <a
@@ -54,7 +53,6 @@ export const useColumns = () => {
       key: 'message',
       name: t('common:message'),
       minBreakpoint: 'md',
-      sortable: false,
       resizable: true,
       minWidth: 200,
       placeholderValue: '-',
@@ -64,10 +62,8 @@ export const useColumns = () => {
     {
       key: 'createdAt',
       name: t('common:created_at'),
-      sortable: true,
       minBreakpoint: 'md',
-      resizable: true,
-      width: 180,
+      minWidth: 120,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),
     },

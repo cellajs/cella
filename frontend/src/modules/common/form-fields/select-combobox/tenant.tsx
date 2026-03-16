@@ -5,13 +5,13 @@ import { appConfig } from 'shared';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
-import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 
 type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
-  options?: ComboboxProps['options'];
+  options?: ComboboxSelectProps['options'];
   /** When true, auto-selects and hides the field if only one tenant is available */
   autoHide?: boolean;
 };
@@ -89,20 +89,18 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
 
-          <FormControl>
-            <Combobox
-              options={options}
-              value={value}
-              onChange={onChange}
-              disabled={disabled}
-              placeholders={{
-                trigger: 'common:select_resource',
-                search: 'common:placeholder.search',
-                notFound: 'common:no_resource_found',
-                resource: 'common:tenant',
-              }}
-            />
-          </FormControl>
+          <ComboboxSelect
+            options={options}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            placeholders={{
+              trigger: 'common:select_resource',
+              search: 'common:placeholder.search',
+              notFound: 'common:no_resource_found',
+              resource: 'common:tenant',
+            }}
+          />
 
           <FormMessage />
         </FormItem>

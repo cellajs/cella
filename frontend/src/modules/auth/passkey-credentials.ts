@@ -5,6 +5,64 @@ import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
 import { useUserStore } from '~/store/user';
 
+/**
+ * Check if the browser supports conditional mediation (passkey autofill).
+ * Returns true if the browser can show passkey suggestions in autofill UI.
+ */
+export const isConditionalMediationAvailable = async (): Promise<boolean> => {
+  if (typeof window === 'undefined' || !window.PublicKeyCredential) return false;
+  try {
+    return (await PublicKeyCredential.isConditionalMediationAvailable?.()) ?? false;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Starts a conditional mediation (passkey autofill) flow.
+ * Returns an AbortController so the caller can cancel it (e.g. on unmount or navigation).
+ * When a user selects a passkey from autofill, `onCredential` is called with the assertion data.
+ */
+export const startConditionalMediation = async (
+  onCredential: (data: ConditionalMediationResult) => void,
+  signal: AbortSignal,
+) => {
+  const { challenge } = await getChallenge({ type: 'authentication' });
+
+  const credential = await navigator.credentials.get({
+    mediation: 'conditional',
+    signal,
+    publicKey: {
+      challenge,
+      rpId: appConfig.mode === 'development' ? 'localhost' : appConfig.domain,
+      userVerification: 'required',
+      allowCredentials: [], // Empty = discoverable credentials only
+    },
+  });
+
+  const { response, rawId } = validateCredentials(credential);
+  if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
+
+  onCredential({
+    credentialId: encodeBase64(new Uint8Array(rawId)),
+    clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
+    authenticatorObject: encodeBase64(new Uint8Array(response.authenticatorData)),
+    signature: encodeBase64(new Uint8Array(response.signature)),
+    type: 'authentication',
+  });
+};
+
+export type ConditionalMediationResult = {
+  credentialId: string;
+  clientDataJSON: string;
+  authenticatorObject: string;
+  signature: string;
+  type: 'authentication';
+};
+
+/**
+ * Initiates the WebAuthn registration flow to create a new passkey credential. It fetches a challenge from the backend, generates a unique user ID, and prompts the user to create a passkey. The resulting attestation object and client data are encoded in Base64 and returned for submission to the backend.
+ */
 export const getPasskeyRegistrationCredential = async () => {
   const { challenge } = await getChallenge({ type: 'registration' });
 

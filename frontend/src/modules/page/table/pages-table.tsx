@@ -141,7 +141,7 @@ function PagesTable() {
   );
 
   return (
-    <FocusViewContainer data-is-compact={isCompact}>
+    <FocusViewContainer>
       <PagesTableBar
         searchVars={{ ...search, limit }}
         setSearch={setSearch}

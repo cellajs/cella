@@ -1,4 +1,3 @@
-import type { PartialBlock } from '@blocknote/core';
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
 import * as Sentry from '@sentry/react';
@@ -115,7 +114,7 @@ export function UppyFilePanel({
             // Map all attachments to promises of getting presigned URLs
             for (let index = 0; index < attachments.length; index++) {
               const attachment = attachments[index];
-              const updateData: PartialBlock = { props: { name: attachment.filename, url: attachment.originalKey } };
+              const updateData = { props: { name: attachment.filename, url: attachment.originalKey } };
               editor.updateBlock(block, updateData);
             }
 
@@ -164,7 +163,7 @@ export function UppyFilePanel({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="md:max-w-xl">
-        <DialogHeader>
+        <DialogHeader className="with-close-btn">
           <DialogTitle className="h-6">
             {t('common:upload_item', { item: t(`common:${blockType}`).toLowerCase() })}
           </DialogTitle>

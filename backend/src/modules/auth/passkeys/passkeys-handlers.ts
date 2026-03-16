@@ -179,6 +179,24 @@ const authPasskeysRouteHandlers = app
       user = userFromToken;
     }
 
+    // If no user found by email, try to find by credentialId (supports conditional mediation / discoverable credentials)
+    if (!user) {
+      const [passkeyRecord] = await db
+        .select({ userId: passkeysTable.userId })
+        .from(passkeysTable)
+        .where(eq(passkeysTable.credentialId, passkeyData.credentialId))
+        .limit(1);
+
+      if (passkeyRecord) {
+        const [tableUser] = await db
+          .select(userSelect)
+          .from(usersTable)
+          .where(eq(usersTable.id, passkeyRecord.userId))
+          .limit(1);
+        user = tableUser;
+      }
+    }
+
     // Fail early if user not found
     if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta });
 

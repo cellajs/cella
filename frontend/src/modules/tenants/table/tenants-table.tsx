@@ -9,7 +9,6 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
@@ -68,7 +67,7 @@ function TenantsTable() {
   const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
-    <FocusViewContainer>
+    <>
       <TenantsTableBar
         queryKey={queryOptions.queryKey}
         columns={columns}
@@ -102,7 +101,7 @@ function TenantsTable() {
           ),
         }}
       />
-    </FocusViewContainer>
+    </>
   );
 }
 

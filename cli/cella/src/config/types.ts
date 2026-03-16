@@ -17,7 +17,8 @@ export type PackageJsonSyncKey =
   | 'scripts'
   | 'engines'
   | 'packageManager'
-  | 'overrides';
+  | 'overrides'
+  | 'pnpm';
 
 /** Merge strategy for syncing upstream changes */
 type MergeStrategy = 'merge' | 'squash';

@@ -10,7 +10,7 @@ import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -81,6 +81,7 @@ export function CheckEmailStep() {
                     className="h-12"
                     type="email"
                     autoFocus={!isMobile}
+                    autoComplete="username webauthn"
                     placeholder={t('common:email')}
                   />
                 </FormControl>

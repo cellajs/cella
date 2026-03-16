@@ -11,7 +11,7 @@
 FROM node:24-alpine AS base
 
 # Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Set working directory
 WORKDIR /app
@@ -27,9 +27,10 @@ COPY backend/package.json ./backend/
 COPY config/package.json ./config/
 COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
+COPY patches/ ./patches/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --filter @cella/backend...
+# Install production dependencies only (--ignore-scripts avoids native build issues)
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @cella/backend...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -42,9 +43,10 @@ COPY backend/package.json ./backend/
 COPY config/package.json ./config/
 COPY shared/package.json ./shared/
 COPY packages/tracing/package.json ./packages/tracing/
+COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --filter @cella/backend...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter @cella/backend...
 
 # Copy source code
 COPY backend/ ./backend/
@@ -65,7 +67,7 @@ FROM node:24-alpine AS production
 
 # Add non-root user for security
 RUN addgroup --system --gid 1001 cella && \
-    adduser --system --uid 1001 cella
+  adduser --system --uid 1001 cella
 
 WORKDIR /app
 

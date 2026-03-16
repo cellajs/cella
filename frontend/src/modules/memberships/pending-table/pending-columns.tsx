@@ -48,14 +48,14 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),
-      minWidth: 80,
+      minWidth: 120,
     },
     {
       key: 'createdBy',
       name: t('common:invited_by'),
       sortable: false,
       minBreakpoint: 'md',
-      minWidth: 80,
+      minWidth: 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,

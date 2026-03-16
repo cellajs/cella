@@ -59,7 +59,7 @@ export const FocusViewContainer = ({ children, className = '', disabled }: Focus
       className={cn(
         'focus-view-container container min-h-screen flex flex-col pt-3 gap-2',
         className,
-        isActive ? 'w-full max-w-none min-w-full min-h-full' : '',
+        isActive ? 'focused w-full max-w-none min-w-full min-h-full' : '',
       )}
     >
       {children}

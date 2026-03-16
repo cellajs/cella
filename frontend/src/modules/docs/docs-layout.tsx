@@ -75,7 +75,6 @@ function DocsLayout() {
         side: 'left',
         triggerRef,
         className: 'w-72 p-0',
-        showCloseButton: false,
         closeSheetOnRouteChange: false,
       });
     }
@@ -135,7 +134,7 @@ function DocsLayout() {
               />
             </>
           )}
-          <ResizablePanel id="docs-main" minWidth={480}>
+          <ResizablePanel id="docs-main" className="has-[.focus-view-container.focused]:w-screen!" minWidth={480}>
             <main ref={mainRef} className="h-screen overflow-auto pb-[70vh]">
               <Outlet />
             </main>

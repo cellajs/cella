@@ -1,6 +1,9 @@
-import subprocessors from '#json/subprocessors.json';
+import { subprocessors } from '~/modules/marketing/legal/legal-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
+/**
+ * Component to display a list of subprocessors in a table format.
+ */
 export function Subprocessors() {
   return (
     <Table title="Subprocessors" className="mt-2">

@@ -5,6 +5,7 @@ import { fallbackContentRef } from '~/utils/fallback-content-ref';
 type DialogContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;
   overlay?: boolean;
+  overlayRef?: RefObject<HTMLDivElement | null>;
 };
 
 export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
@@ -16,7 +17,6 @@ export type DialogData = {
   drawerOnMobile?: boolean;
   className?: string;
   headerClassName?: string;
-  showCloseButton?: boolean;
   container?: DialogContainerOptions;
   title?: string | ReactNode;
   titleContent?: string | ReactNode;
@@ -58,7 +58,13 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     }
 
     // Add defaults and a key for reactivity
-    const defaults = { drawerOnMobile: true, showCloseButton: true, open: true, modal: true, key: Date.now() };
+    const defaults = {
+      drawerOnMobile: true,
+      headerClassName: 'with-close-btn',
+      open: true,
+      modal: true,
+      key: Date.now(),
+    };
 
     set((state) => ({
       dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],

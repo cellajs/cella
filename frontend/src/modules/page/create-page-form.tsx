@@ -8,7 +8,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { usePageCreateMutation } from '~/modules/page/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
+import { Form } from '~/modules/ui/field';
 
 interface Props {
   callback?: () => void;

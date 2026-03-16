@@ -12,6 +12,11 @@ const currentYear = new Date().getFullYear();
 const companyName = appConfig.company.name;
 const productName = appConfig.name;
 
+/**
+ * Footer component for the marketing site, including navigation links, newsletter subscription, and credits.
+ * - Displays different sections of links based on the configuration.
+ * - Shows legal links and company credits.
+ */
 function FooterLinks() {
   const { t } = useTranslation();
 

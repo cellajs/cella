@@ -20,7 +20,7 @@ import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { TokenData } from '~/modules/auth/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import type { MutationData } from '~/query/types';
 import { useAuthStore } from '~/store/auth';
@@ -138,8 +138,8 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
                 render={({ field }) => (
                   // Custom css due to html injection by browser extensions
                   <FormItem className="gap-0">
-                    <FormControl>
-                      <div className="relative">
+                    <div className="relative">
+                      <FormControl>
                         <Input
                           type="password"
                           className="h-12"
@@ -148,11 +148,11 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
                           autoComplete="new-password"
                           {...field}
                         />
-                        <Suspense>
-                          <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                        </Suspense>
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                      <Suspense>
+                        <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                      </Suspense>
+                    </div>
                     <FormMessage className="mt-2" />
                   </FormItem>
                 )}

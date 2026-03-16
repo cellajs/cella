@@ -3,15 +3,15 @@ import type { FieldValues } from 'react-hook-form';
 import type { ContextEntityType } from 'shared';
 import { ContextEntityBase } from '~/api.gen';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { Combobox, type ComboboxProps } from '~/modules/ui/combobox';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
 import { useUserStore } from '~/store/user';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ContextEntityType;
-  options?: ComboboxProps['options'];
+  options?: ComboboxSelectProps['options'];
 };
 
 /**
@@ -54,21 +54,19 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
 
-          <FormControl>
-            <Combobox
-              options={options}
-              value={value}
-              onChange={onChange}
-              disabled={disabled}
-              renderAvatar
-              placeholders={{
-                trigger: 'common:select_resource',
-                search: 'common:placeholder.search',
-                notFound: 'common:no_resource_found',
-                resource: `common:${parentType}`,
-              }}
-            />
-          </FormControl>
+          <ComboboxSelect
+            options={options}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            renderAvatar
+            placeholders={{
+              trigger: 'common:select_resource',
+              search: 'common:placeholder.search',
+              notFound: 'common:no_resource_found',
+              resource: `common:${parentType}`,
+            }}
+          />
 
           <FormMessage />
         </FormItem>

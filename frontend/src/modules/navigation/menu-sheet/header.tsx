@@ -55,7 +55,6 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
       id: 'nav-sheet',
       triggerRef: accountButtonRef,
       side: 'left',
-      showCloseButton: false,
       modal: false,
       disablePointerDismissal: true,
       className: navSheetClassName,
@@ -70,8 +69,8 @@ export const MenuSheetHeader = ({ searchTerm, setSearchTerm, isSearchActive, set
       <div id="return-nav" className="in-[.floating-nav]:flex hidden gap-2">
         <Button variant="ghost" className="justify-start h-10 grow" asChild>
           <Link to="/home">
-            <ArrowLeftIcon className="size-4" />
-            <span className="ml-2">Home</span>
+            <ArrowLeftIcon className="size-5" />
+            <span className="ml-2 font-semibold text-lg">Home</span>
           </Link>
         </Button>
         <Button

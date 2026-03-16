@@ -6,7 +6,6 @@ import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { forceOnline } from '~/lib/connectivity';
 import { healthCheck } from '~/lib/health-check';
-import { CloseButton } from '~/modules/common/close-button';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';
@@ -29,8 +28,12 @@ const downAlertConfig = {
           className="max-sm:hidden"
           i18nKey={i18nKey}
           components={{
-            site_anchor: <button type="button" className="underline" onClick={dismissAlert} />,
-            retry_anchor: <button type="button" className="underline" onClick={retry} />,
+            site_anchor: (
+              <button type="button" className="underline font-semibold underline-offset-2" onClick={dismissAlert} />
+            ),
+            retry_anchor: (
+              <button type="button" className="underline font-semibold underline-offset-2" onClick={retry} />
+            ),
           }}
         />
       );
@@ -117,8 +120,7 @@ export const DownAlert = () => {
 
   return (
     <div className="fixed z-2000 pointer-events-auto bottom-4 in-[#appLayout]:max-sm:bottom-20 left-4 right-4 justify-center">
-      <Alert variant={variant} className="w-auto">
-        <CloseButton onClick={dismissAlert} size="lg" className="absolute top-1.5 right-1.5" />
+      <Alert variant={variant} onClose={dismissAlert} className="w-auto">
         <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
           {getTitle()}

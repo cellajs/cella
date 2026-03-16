@@ -13,27 +13,29 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
-        brand: 'bg-brand text-brand-foreground hover:bg-brand/80',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        success: 'bg-success text-primary-foreground hover:bg-success/80',
-        secondary: 'bg-secondary border border-transparent text-secondary-foreground hover:bg-secondary/80',
+        default: '[--intent-color:var(--primary)] bg-primary text-primary-foreground hover:bg-primary/80',
+        brand: '[--intent-color:var(--brand)] bg-brand text-brand-foreground hover:bg-brand/80',
+        destructive:
+          '[--intent-color:var(--destructive)] bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        success: '[--intent-color:var(--success)] bg-success text-success-foreground hover:bg-success/80',
+        secondary:
+          '[--intent-color:var(--secondary)] bg-secondary border border-transparent text-secondary-foreground hover:bg-secondary/80',
         outline:
           'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 shadow-none',
         outlineGhost:
           'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground shadow-none',
-        outlinePrimary:
-          'text-primary border border-primary/30 bg-background/20 hover:bg-primary/5 hover:border-primary/50',
-        outlineBrand: 'text-brand border border-brand/30 bg-background/20 hover:bg-brand/5 hover:border-brand/50',
         link: 'text-primary underline-offset-4 hover:underline shadow-none',
-        // Add more variants here
-        darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
         cell: 'group text-regular underline-offset-4 focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none w-full flex gap-2 font-normal justify-start',
-        plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
+        plain: 'text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:border-primary/30',
         input:
           'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+        warning: '[--intent-color:var(--warning)] bg-warning text-warning-foreground hover:bg-warning/80',
         none: 'bg-transparent border-none shadow-none',
+      },
+      soft: {
+        true: 'bg-(--intent-color)/10 text-(--intent-color) border border-(--intent-color)/20 hover:bg-(--intent-color)/15 shadow-none',
+        false: '',
       },
       size: {
         default: 'h-10 px-3 py-2',
@@ -49,6 +51,7 @@ export const buttonVariants = cva(
     },
     defaultVariants: {
       variant: 'default',
+      soft: false,
       size: 'default',
     },
   },
@@ -64,13 +67,14 @@ export interface ButtonProps
 export function Button({
   className,
   variant,
+  soft,
   size,
   asChild = false,
   loading: _loading,
   ...props
 }: React.ComponentProps<'button'> & ButtonProps) {
   const Comp = asChild ? Slot : 'button';
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  return <Comp data-slot="button" className={cn(buttonVariants({ variant, soft, size, className }))} {...props} />;
 }
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & {

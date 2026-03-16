@@ -34,7 +34,14 @@ export default {
         ring: 'var(--ring)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
-        success: 'var(--success)',
+        success: {
+          DEFAULT: 'var(--success)',
+          foreground: 'var(--success-foreground)',
+        },
+        warning: {
+          DEFAULT: 'var(--warning)',
+          foreground: 'var(--warning-foreground)',
+        },
         brand: {
           DEFAULT: 'var(--brand)',
           foreground: 'var(--brand-foreground)',

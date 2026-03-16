@@ -1,6 +1,9 @@
-import sharedDataTypes from '#json/shared-data-types.json';
+import { sharedDataTypes } from '~/modules/marketing/legal/legal-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
+/**
+ * Component to display a list of shared data types in a table format.
+ */
 export function SharedDataTypes() {
   return (
     <Table title="Shared Data Types" className="mt-2">

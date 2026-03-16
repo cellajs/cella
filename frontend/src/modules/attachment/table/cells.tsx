@@ -1,29 +1,15 @@
 import { useNavigate } from '@tanstack/react-router';
 import i18n from 'i18next';
-import {
-  AlertCircleIcon,
-  CloudOffIcon,
-  CopyCheckIcon,
-  CopyIcon,
-  DownloadIcon,
-  LoaderIcon,
-  LockKeyholeIcon,
-  LockKeyholeOpenIcon,
-  TrashIcon,
-  UploadCloudIcon,
-} from 'lucide-react';
+import { AlertCircleIcon, CloudOffIcon, DownloadIcon, LoaderIcon, TrashIcon, UploadCloudIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
-import { appConfig } from 'shared';
 import type { Attachment } from '~/api.gen';
-import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { AttachmentPreview } from '~/modules/attachment/attachment-preview';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
-import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -113,86 +99,6 @@ const SyncStatusBadge = ({ attachmentId }: { attachmentId: string }) => {
   );
 };
 
-interface PublicAccessCellProps {
-  row: Attachment;
-  tabIndex: number;
-  canUpdate: boolean;
-}
-
-export const PublicAccessCell = ({ row, tabIndex, canUpdate }: PublicAccessCellProps) => {
-  const { t } = useTranslation();
-  const updateAttachment = useAttachmentUpdateMutation(row.tenantId, row.organizationId);
-
-  const isPublic = row.public;
-
-  if (!canUpdate) {
-    return (
-      <div
-        className="flex justify-center items-center h-full w-full"
-        data-tooltip="true"
-        data-tooltip-content={isPublic ? t('common:public') : t('common:private')}
-      >
-        {isPublic ? (
-          <LockKeyholeOpenIcon className="text-success" size={16} />
-        ) : (
-          <LockKeyholeIcon className="text-muted-foreground" size={16} />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <Button
-      variant="cell"
-      size="cell"
-      tabIndex={tabIndex}
-      className="justify-center"
-      aria-label={isPublic ? t('common:private') : t('common:public')}
-      data-tooltip="true"
-      data-tooltip-content={isPublic ? t('common:public') : t('common:private')}
-      onClick={() => updateAttachment.mutate({ id: row.id, key: 'public', data: !isPublic })}
-    >
-      {isPublic ? (
-        <LockKeyholeOpenIcon className="text-success" size={16} />
-      ) : (
-        <LockKeyholeIcon className="text-muted-foreground" size={16} />
-      )}
-    </Button>
-  );
-};
-
-interface CopyUrlCellProps {
-  row: Attachment;
-  tabIndex: number;
-}
-
-export const CopyUrlCell = ({ row, tabIndex }: CopyUrlCellProps) => {
-  const { t } = useTranslation();
-  const { copyToClipboard, copied } = useCopyToClipboard();
-
-  // Check if blob is uploaded to cloud
-  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
-  const canCopy = !hasLocalBlob || isUploaded;
-
-  if (!canCopy) return <div className="text-muted text-center w-full">-</div>;
-
-  const shareLink = `${appConfig.backendUrl}/${row.tenantId}/${row.organizationId}/attachments/${row.id}/link`;
-  return (
-    <Button
-      variant="cell"
-      size="cell"
-      tabIndex={tabIndex}
-      className="justify-center"
-      aria-label="Copy"
-      data-tooltip="true"
-      data-tooltip-content={copied ? t('common:copied') : t('common:copy')}
-      onClick={() => copyToClipboard(shareLink)}
-    >
-      {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
-    </Button>
-  );
-};
-
 interface DownloadCellProps {
   row: Attachment;
   tabIndex: number;
@@ -235,14 +141,6 @@ interface EllipsisCellProps {
 }
 
 export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
-  const { t } = useTranslation();
-  const { copyToClipboard } = useCopyToClipboard();
-
-  // Check if blob is uploaded to cloud
-  const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
-  const canShare = !hasLocalBlob || isUploaded;
-
-  // Build options - delete is always available, copy URL only if synced
   const ellipsisOptions: EllipsisOption<Attachment>[] = [
     {
       label: i18n.t('common:delete'),
@@ -260,20 +158,6 @@ export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
       },
     },
   ];
-
-  if (canShare) {
-    const shareLink = `${appConfig.backendUrl}/${row.tenantId}/${row.organizationId}/attachments/${row.id}/link`;
-
-    ellipsisOptions.push({
-      label: i18n.t('common:copy_url'),
-      icon: CopyIcon,
-      onSelect: () => {
-        copyToClipboard(shareLink);
-        toaster(t('common:success.resource_copied', { resource: t('common:url') }), 'success');
-        useDropdowner.getState().remove();
-      },
-    });
-  }
 
   return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
 };

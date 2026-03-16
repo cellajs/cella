@@ -8,7 +8,6 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { FocusViewContainer } from '~/modules/common/focus-view';
 import { requestsListQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
@@ -62,7 +61,7 @@ function RequestsTable() {
   const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
 
   return (
-    <FocusViewContainer>
+    <>
       <RequestsTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
@@ -99,7 +98,7 @@ function RequestsTable() {
           ),
         }}
       />
-    </FocusViewContainer>
+    </>
   );
 }
 

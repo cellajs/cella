@@ -16,6 +16,7 @@ interface BaseProps {
   className?: string;
 }
 
+// TODO review compactable
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */

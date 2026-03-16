@@ -30,7 +30,6 @@ CREATE TABLE "attachments" (
 	"modified_by" varchar(50),
 	"seq_at" bigint DEFAULT 0 NOT NULL,
 	"public" boolean DEFAULT false NOT NULL,
-	"public_access" boolean DEFAULT false NOT NULL,
 	"bucket_name" varchar(255) NOT NULL,
 	"group_id" varchar(50),
 	"filename" varchar(255) NOT NULL,
@@ -407,11 +406,12 @@ ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_user
 ALTER TABLE "user_activity" ADD CONSTRAINT "user_activity_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fkey" FOREIGN KEY ("modified_by") REFERENCES "users"("id");--> statement-breakpoint
 CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SELECT TO public USING (
-        
+  
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
 
-        AND (
+  AND current_setting('app.is_authenticated', true)::boolean = true
+  AND 
   COALESCE(current_setting('app.user_id', true), '') != ''
   AND EXISTS (
     SELECT 1 FROM memberships m
@@ -419,8 +419,8 @@ CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SEL
     AND m.user_id = current_setting('app.user_id', true)::text
     AND m.tenant_id = "attachments"."tenant_id"
   )
- OR "attachments"."public_access" = true)
-      );--> statement-breakpoint
+
+);--> statement-breakpoint
 CREATE POLICY "attachments_insert_policy" ON "attachments" AS PERMISSIVE FOR INSERT TO public WITH CHECK (
   
   COALESCE(current_setting('app.tenant_id', true), '') != ''

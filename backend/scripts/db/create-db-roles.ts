@@ -58,8 +58,9 @@ END IF;
     ELSE
       ALTER ROLE cdc_role WITH REPLICATION PASSWORD '${escSql(cdcPassword)}';
     END IF;
-  EXCEPTION WHEN insufficient_privilege THEN
-    -- Some managed providers (e.g., Neon) don't allow REPLICATION on custom roles.
+  EXCEPTION WHEN OTHERS THEN
+    -- Some managed providers (e.g., Neon, Scaleway) don't allow REPLICATION on custom roles
+    -- or return non-standard error codes (Scaleway returns XX000 instead of 42501).
     -- Fall back to creating without REPLICATION; the CDC URL must then use a role that has it.
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
       CREATE ROLE cdc_role WITH LOGIN PASSWORD '${escSql(cdcPassword)}';
@@ -69,18 +70,38 @@ END IF;
     END IF;
   END;
 
--- admin_role: Migrations, seeds, system admin, BYPASSRLS
-IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-  CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
-  RAISE NOTICE 'Created role admin_role';
-ELSE
-  ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
-END IF;
+-- admin_role: Migrations, seeds, system admin
+-- Try BYPASSRLS first, fall back without it (Scaleway doesn't allow BYPASSRLS on custom roles)
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+    RAISE NOTICE 'Created role admin_role with BYPASSRLS';
+  ELSE
+    ALTER ROLE admin_role WITH BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+    CREATE ROLE admin_role WITH LOGIN PASSWORD '${escSql(adminPassword)}';
+    RAISE NOTICE 'Created role admin_role without BYPASSRLS (managed provider)';
+  ELSE
+    ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
+  END IF;
+END;
 
 -- Grant schema access
 GRANT USAGE ON SCHEMA public TO runtime_role;
 GRANT USAGE ON SCHEMA public TO cdc_role;
 GRANT ALL ON SCHEMA public TO admin_role;
+
+-- Grant role membership to current user so migrations can ALTER TABLE ... OWNER TO admin_role
+BEGIN
+  GRANT runtime_role TO CURRENT_USER;
+  GRANT cdc_role TO CURRENT_USER;
+  GRANT admin_role TO CURRENT_USER;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Could not grant roles to current user (may already be granted or not supported)';
+END;
+
 END $$;
 `;
 }

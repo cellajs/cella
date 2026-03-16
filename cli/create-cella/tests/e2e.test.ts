@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,6 +21,7 @@ describe('create-cella e2e', () => {
       targetFolder,
       newBranchName: 'development',
       packageManager: 'pnpm',
+      portOffset: 0,
       silent: true,
     });
   }, 120000); // 2 minute timeout for full install
@@ -35,7 +37,7 @@ describe('create-cella e2e', () => {
     it('should create essential directories', () => {
       expect(existsSync(join(targetFolder, 'backend'))).toBe(true);
       expect(existsSync(join(targetFolder, 'frontend'))).toBe(true);
-      expect(existsSync(join(targetFolder, 'config'))).toBe(true);
+      expect(existsSync(join(targetFolder, 'shared'))).toBe(true);
       expect(existsSync(join(targetFolder, 'locales'))).toBe(true);
     });
 
@@ -60,9 +62,27 @@ describe('create-cella e2e', () => {
   });
 
   describe('.env files', () => {
-    it('should have backend .env file', () => {
+    it('should have root .env with project slug and ports', () => {
+      const envPath = join(targetFolder, '.env');
+      expect(existsSync(envPath)).toBe(true);
+
+      const content = readFileSync(envPath, 'utf-8');
+      expect(content).toContain(`PROJECT_SLUG=${projectName}`);
+      expect(content).not.toContain('ADMIN_EMAIL');
+      expect(content).not.toContain('FRONTEND_PORT');
+      expect(content).not.toContain('BACKEND_PORT');
+      expect(content).toContain('DB_PORT=5432');
+      expect(content).toContain('DB_TEST_PORT=5434');
+    });
+
+    it('should have backend .env with correct admin email and ports', () => {
       const envPath = join(targetFolder, 'backend', '.env');
       expect(existsSync(envPath)).toBe(true);
+
+      const content = readFileSync(envPath, 'utf-8');
+      expect(content).toContain(`ADMIN_EMAIL=admin@${projectName}.example.com`);
+      expect(content).toContain('PORT=4000');
+      expect(content).toContain('@0.0.0.0:5432/');
     });
 
     it('should have frontend .env file', () => {
@@ -76,15 +96,24 @@ describe('create-cella e2e', () => {
       const drizzlePath = join(targetFolder, 'backend', 'drizzle');
       expect(existsSync(drizzlePath)).toBe(true);
 
-      // Check that migration files exist (at least one .sql file)
-      const files = readdirSync(drizzlePath);
-      const sqlFiles = files.filter((f) => f.endsWith('.sql'));
-      expect(sqlFiles.length).toBeGreaterThan(0);
+      // Migrations live in timestamped subdirectories containing migration.sql
+      const dirs = readdirSync(drizzlePath, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+      expect(dirs.length).toBeGreaterThan(0);
+
+      const hasMigrationSql = dirs.some((dir) => existsSync(join(drizzlePath, dir, 'migration.sql')));
+      expect(hasMigrationSql).toBe(true);
     });
 
-    it('should have drizzle meta folder', () => {
-      const metaPath = join(targetFolder, 'backend', 'drizzle', 'meta');
-      expect(existsSync(metaPath)).toBe(true);
+    it('should have snapshot files in migration directories', () => {
+      const drizzlePath = join(targetFolder, 'backend', 'drizzle');
+      const dirs = readdirSync(drizzlePath, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+
+      const hasSnapshot = dirs.some((dir) => existsSync(join(drizzlePath, dir, 'snapshot.json')));
+      expect(hasSnapshot).toBe(true);
     });
   });
 
@@ -103,6 +132,50 @@ describe('create-cella e2e', () => {
       const config = readFileSync(configPath, 'utf-8');
       expect(config).toContain('[remote "upstream"]');
       expect(config).toContain('cellajs/cella');
+    });
+  });
+
+  describe('placeholder config', () => {
+    it('should have interpolated default-config.ts without __tokens__', () => {
+      const configPath = join(targetFolder, 'shared', 'default-config.ts');
+      const content = readFileSync(configPath, 'utf-8');
+      expect(content).not.toContain('__project_name__');
+      expect(content).not.toContain('__project_slug__');
+    });
+
+    it('should produce no TypeScript errors in shared/default-config.ts', () => {
+      // Run tsc via the backend tsconfig which includes ../shared/*
+      execSync('npx tsc --noEmit', { cwd: join(targetFolder, 'backend'), stdio: 'pipe' });
+    });
+  });
+
+  describe('generated env configs', () => {
+    it('should have generated all env config files', () => {
+      for (const mode of ['development', 'staging', 'tunnel', 'test', 'production']) {
+        expect(existsSync(join(targetFolder, 'shared', `${mode}-config.ts`))).toBe(true);
+      }
+    });
+
+    it('should contain correct mode and project name', () => {
+      const content = readFileSync(join(targetFolder, 'shared', 'production-config.ts'), 'utf-8');
+      expect(content).toContain("mode: 'production'");
+      expect(content).toContain('satisfies DeepPartial<typeof _default>');
+      expect(content).not.toContain('Cella');
+    });
+
+    it('should have project-specific values in development config', () => {
+      const content = readFileSync(join(targetFolder, 'shared', 'development-config.ts'), 'utf-8');
+      expect(content).toContain("mode: 'development'");
+      expect(content).toContain("'http://localhost:3000'");
+      expect(content).toContain("'http://localhost:4000'");
+      expect(content).not.toContain("name: 'Cella DEVELOPMENT'");
+    });
+
+    it('should have test config deriving from development', () => {
+      const content = readFileSync(join(targetFolder, 'shared', 'test-config.ts'), 'utf-8');
+      expect(content).toContain("mode: 'test'");
+      expect(content).toContain('development.frontendUrl');
+      expect(content).toContain('development.backendUrl');
     });
   });
 });

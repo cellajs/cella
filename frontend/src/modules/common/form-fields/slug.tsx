@@ -1,3 +1,4 @@
+import { Field } from '@base-ui/react/field';
 import { useMutation } from '@tanstack/react-query';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -10,7 +11,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
@@ -21,6 +22,11 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   previousSlug?: string;
   prefix?: string;
 };
+
+/** Inner input that uses Field.Control for automatic label/aria association */
+function SlugInput(props: React.ComponentProps<typeof InputGroupInput>) {
+  return <Field.Control render={<InputGroupInput {...props} />} />;
+}
 
 /**
  * Form field for entering a URL slug with auto-generation from a name and availability checking.
@@ -110,37 +116,30 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
           {description && <FormDescription>{description}</FormDescription>}
-          <FormControl>
-            <InputGroup className={cn('', inputClassName)}>
-              <InputGroupInput
-                type={entityType}
-                onFocus={() => setDeviating(true)}
-                value={formFieldValue || ''}
-                {...rest}
-              />
-              {prefix && (
-                <InputGroupAddon>
-                  <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
-                    {prefix}
-                  </InputGroupText>
-                </InputGroupAddon>
-              )}
+          <InputGroup className={cn('', inputClassName)}>
+            <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
+            {prefix && (
+              <InputGroupAddon>
+                <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
+                  {prefix}
+                </InputGroupText>
+              </InputGroupAddon>
+            )}
 
-              {previousSlug && previousSlug !== slug && (
-                <InputGroupAddon align="inline-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label={t('common:revert_handle')}
-                    onClick={revertSlug}
-                    className="h-full"
-                  >
-                    <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
-                  </Button>
-                </InputGroupAddon>
-              )}
-            </InputGroup>
-          </FormControl>
+            {previousSlug && previousSlug !== slug && (
+              <InputGroupAddon align="inline-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={t('common:revert_handle')}
+                  onClick={revertSlug}
+                  className="h-full"
+                >
+                  <UndoIcon size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
+                </Button>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
           <FormMessage />
         </FormItem>
       )}

@@ -16,7 +16,7 @@ export type SheetData = {
   titleContent?: string | ReactNode;
   description?: ReactNode;
   className?: string;
-  showCloseButton?: boolean;
+  headerClassName?: string;
   closeSheetOnEsc?: boolean;
   modal?: boolean;
   disablePointerDismissal?: boolean;
@@ -69,7 +69,6 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     // Add defaults and a key for reactivity
     const defaults = {
       drawerOnMobile: true,
-      showCloseButton: false,
       open: true,
       modal: true,
       key: Date.now(),

@@ -1,12 +1,17 @@
 /**
  * Packages service for sync CLI v2.
  *
- * Syncs package.json dependencies between fork and upstream.
+ * Syncs package.json keys between fork and upstream using safe merge logic:
+ * - Add-only: new entries from upstream are added
+ * - Bump-only: versions are only upgraded, never downgraded
+ * - Never remove: fork entries not in upstream are preserved
+ * - Supports nested `pnpm` key (overrides, patchedDependencies, packageExtensions)
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pc from 'picocolors';
+import * as semver from 'semver';
 import type { PackageJsonSyncKey, RuntimeConfig } from '../config/types';
 import { createSpinner, spinnerSuccess, spinnerText } from '../utils/display';
 
@@ -22,11 +27,143 @@ interface PackageJson {
   engines?: Record<string, string>;
   packageManager?: string;
   overrides?: Record<string, string>;
+  pnpm?: {
+    overrides?: Record<string, string>;
+    patchedDependencies?: Record<string, string>;
+    packageExtensions?: Record<string, Record<string, unknown>>;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
-/** Package locations in the monorepo */
-const packageLocations = ['', 'frontend', 'backend', 'config', 'cdc'];
+/**
+ * Check if upstream version is higher than fork version.
+ * Returns true only if upstream is strictly higher — never downgrades.
+ * For non-parseable values (workspace:*, etc.), returns false (keep fork's).
+ */
+function isHigherVersion(upstreamVersion: string, forkVersion: string): boolean {
+  if (upstreamVersion === forkVersion) return false;
+
+  // Extract the version part, stripping range prefixes
+  const upCoerced = semver.coerce(upstreamVersion);
+  const forkCoerced = semver.coerce(forkVersion);
+
+  if (!upCoerced || !forkCoerced) return false;
+
+  return semver.gt(upCoerced, forkCoerced);
+}
+
+/**
+ * Safe merge for Record<string, string> — add new entries, bump versions, never remove or downgrade.
+ * Returns the merged record sorted alphabetically, or undefined if no changes.
+ */
+function safeMergeRecord(
+  forkRecord: Record<string, string> | undefined,
+  upstreamRecord: Record<string, string> | undefined,
+): { merged: Record<string, string>; changed: boolean } | undefined {
+  if (!upstreamRecord) return undefined;
+
+  const merged = { ...(forkRecord || {}) };
+  let changed = false;
+
+  for (const [name, upstreamValue] of Object.entries(upstreamRecord)) {
+    const forkValue = merged[name];
+
+    if (forkValue === undefined) {
+      // New entry from upstream — add it
+      merged[name] = upstreamValue;
+      changed = true;
+    } else if (forkValue !== upstreamValue && isHigherVersion(upstreamValue, forkValue)) {
+      // Upstream has a higher version — bump (preserve upstream's range prefix)
+      merged[name] = upstreamValue;
+      changed = true;
+    }
+    // Otherwise: fork has equal or higher version, or non-parseable — keep fork's
+  }
+
+  // Sort alphabetically
+  const sorted = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
+  return { merged: sorted, changed };
+}
+
+/**
+ * Safe merge for the `pnpm` key — recurse into sub-objects with add/bump-only logic.
+ */
+function safeMergePnpm(
+  forkPnpm: PackageJson['pnpm'],
+  upstreamPnpm: PackageJson['pnpm'],
+): { merged: PackageJson['pnpm']; changed: boolean } | undefined {
+  if (!upstreamPnpm) return undefined;
+
+  const merged: NonNullable<PackageJson['pnpm']> = { ...(forkPnpm || {}) };
+  let changed = false;
+
+  // pnpm.overrides — same as dependency overrides: add new, bump versions
+  if (upstreamPnpm.overrides) {
+    const result = safeMergeRecord(
+      merged.overrides as Record<string, string> | undefined,
+      upstreamPnpm.overrides as Record<string, string>,
+    );
+    if (result?.changed) {
+      merged.overrides = result.merged;
+      changed = true;
+    }
+  }
+
+  // pnpm.patchedDependencies — add-only (version comparison doesn't apply to patch paths)
+  if (upstreamPnpm.patchedDependencies) {
+    const forkPatched = (merged.patchedDependencies || {}) as Record<string, string>;
+    const upstreamPatched = upstreamPnpm.patchedDependencies as Record<string, string>;
+
+    for (const [name, value] of Object.entries(upstreamPatched)) {
+      if (!(name in forkPatched)) {
+        forkPatched[name] = value;
+        changed = true;
+      }
+    }
+
+    if (changed || !merged.patchedDependencies) {
+      merged.patchedDependencies = Object.fromEntries(
+        Object.entries(forkPatched).sort(([a], [b]) => a.localeCompare(b)),
+      );
+    }
+  }
+
+  // pnpm.packageExtensions — add new packages and add new sub-keys, never remove
+  if (upstreamPnpm.packageExtensions) {
+    const forkExts = (merged.packageExtensions || {}) as Record<string, Record<string, unknown>>;
+    const upstreamExts = upstreamPnpm.packageExtensions as Record<string, Record<string, unknown>>;
+
+    for (const [pkg, upstreamExt] of Object.entries(upstreamExts)) {
+      if (!(pkg in forkExts)) {
+        // New package extension — add entirely
+        forkExts[pkg] = upstreamExt;
+        changed = true;
+      } else {
+        // Existing package — add new sub-keys only
+        for (const [subKey, subValue] of Object.entries(upstreamExt)) {
+          if (!(subKey in forkExts[pkg])) {
+            forkExts[pkg][subKey] = subValue;
+            changed = true;
+          }
+        }
+      }
+    }
+
+    merged.packageExtensions = forkExts;
+  }
+
+  // Other pnpm sub-keys — add if missing in fork
+  for (const [key, value] of Object.entries(upstreamPnpm)) {
+    if (['overrides', 'patchedDependencies', 'packageExtensions'].includes(key)) continue;
+    if (!(key in merged)) {
+      merged[key] = value;
+      changed = true;
+    }
+  }
+
+  return { merged, changed };
+}
 
 /**
  * Read a package.json file.
@@ -72,28 +209,36 @@ async function getUpstreamPackageJson(
 }
 
 /**
- * Merge a dependency section from upstream to fork.
+ * Discover all package.json locations that exist in both fork and upstream.
  */
-function mergeDeps(
-  forkDeps: Record<string, string> | undefined,
-  upstreamDeps: Record<string, string> | undefined,
-): Record<string, string> | undefined {
-  if (!upstreamDeps) return forkDeps;
-  if (!forkDeps) return { ...upstreamDeps };
+async function discoverPackageLocations(forkPath: string, upstreamRef: string): Promise<string[]> {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const execFileAsync = promisify(execFile);
 
-  const merged = { ...forkDeps };
-
-  for (const [name, version] of Object.entries(upstreamDeps)) {
-    // Add new deps, update existing deps to upstream version
-    merged[name] = version;
+  // Get all package.json paths from upstream
+  let upstreamPaths: string[];
+  try {
+    const { stdout } = await execFileAsync('git', ['ls-tree', '-r', '--name-only', upstreamRef], {
+      cwd: forkPath,
+    });
+    upstreamPaths = stdout
+      .split('\n')
+      .filter((p) => p.endsWith('/package.json') || p === 'package.json')
+      .map((p) => (p === 'package.json' ? '' : p.replace('/package.json', '')));
+  } catch {
+    return [];
   }
 
-  // Sort alphabetically
-  return Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
+  // Filter to locations that also exist in fork
+  return upstreamPaths.filter((loc) => {
+    const forkPkgPath = join(forkPath, loc, 'package.json');
+    return existsSync(forkPkgPath);
+  });
 }
 
 /**
- * Sync a single package.json file.
+ * Sync a single package.json file with safe merge logic.
  */
 async function syncPackageJson(
   forkPath: string,
@@ -114,43 +259,69 @@ async function syncPackageJson(
   let updated = false;
 
   for (const key of keysToSync) {
-    const forkValue = forkPkg[key];
-    const upstreamValue = upstreamPkg[key];
-
-    if (!upstreamValue) continue;
-
-    if (key.includes('ependencies')) {
-      // Dependency sections - merge
-      const merged = mergeDeps(
-        forkValue as Record<string, string> | undefined,
-        upstreamValue as Record<string, string>,
-      );
-
-      if (JSON.stringify(forkValue) !== JSON.stringify(merged)) {
-        (forkPkg as Record<string, unknown>)[key] = merged;
+    if (key === 'pnpm') {
+      // Handle nested pnpm key
+      const result = safeMergePnpm(forkPkg.pnpm, upstreamPkg.pnpm);
+      if (result?.changed) {
+        forkPkg.pnpm = result.merged;
         updated = true;
-        changes.push(`${key}: merged`);
+        changes.push('pnpm: merged');
       }
-    } else if (key === 'scripts') {
-      // Scripts - merge (add new, update existing)
-      const forkScripts = (forkValue || {}) as Record<string, string>;
-      const upstreamScripts = upstreamValue as Record<string, string>;
+      continue;
+    }
 
-      for (const [name, script] of Object.entries(upstreamScripts)) {
-        if (forkScripts[name] !== script) {
-          forkScripts[name] = script;
+    if (key === 'packageManager') {
+      // String key — only bump, never downgrade
+      const upstreamValue = upstreamPkg[key] as string | undefined;
+      const forkValue = forkPkg[key] as string | undefined;
+
+      if (upstreamValue && !forkValue) {
+        forkPkg[key] = upstreamValue;
+        updated = true;
+        changes.push(`${key}: added`);
+      } else if (
+        upstreamValue &&
+        forkValue &&
+        upstreamValue !== forkValue &&
+        isHigherVersion(upstreamValue, forkValue)
+      ) {
+        forkPkg[key] = upstreamValue;
+        updated = true;
+        changes.push(`${key}: bumped`);
+      }
+      continue;
+    }
+
+    // All Record<string, string> keys — safe merge (add + bump only)
+    const forkValue = forkPkg[key] as Record<string, string> | undefined;
+    const upstreamValue = upstreamPkg[key] as Record<string, string> | undefined;
+
+    if (key === 'scripts') {
+      // Scripts: add-only — don't overwrite existing fork scripts
+      if (upstreamValue) {
+        const forkScripts = { ...(forkValue || {}) };
+        let scriptChanged = false;
+
+        for (const [name, script] of Object.entries(upstreamValue)) {
+          if (!(name in forkScripts)) {
+            forkScripts[name] = script;
+            scriptChanged = true;
+            changes.push(`scripts.${name}: added`);
+          }
+        }
+
+        if (scriptChanged) {
+          (forkPkg as Record<string, unknown>)[key] = forkScripts;
           updated = true;
-          changes.push(`scripts.${name}: updated`);
         }
       }
-
-      forkPkg.scripts = forkScripts;
     } else {
-      // Other keys - direct copy
-      if (JSON.stringify(forkValue) !== JSON.stringify(upstreamValue)) {
-        (forkPkg as Record<string, unknown>)[key] = upstreamValue;
+      // Dependency-like keys — add + bump, never remove or downgrade
+      const result = safeMergeRecord(forkValue, upstreamValue);
+      if (result?.changed) {
+        (forkPkg as Record<string, unknown>)[key] = result.merged;
         updated = true;
-        changes.push(`${key}: updated`);
+        changes.push(`${key}: merged`);
       }
     }
   }
@@ -165,15 +336,19 @@ async function syncPackageJson(
 /**
  * Run the packages sync service.
  *
- * Syncs package.json dependencies from upstream to fork.
+ * Dynamically discovers all package.json locations in both fork and upstream,
+ * then syncs configured keys using safe merge logic (add-only, bump-only).
  */
 export async function runPackages(config: RuntimeConfig): Promise<void> {
   createSpinner('syncing package.json files...');
 
   const keysToSync = config.settings.packageJsonSync || ['dependencies', 'devDependencies'];
+
+  // Dynamically discover package locations
+  const locations = await discoverPackageLocations(config.forkPath, config.upstreamRef);
   const results: { location: string; changes: string[] }[] = [];
 
-  for (const location of packageLocations) {
+  for (const location of locations) {
     spinnerText(`syncing ${location || 'root'}/package.json...`);
 
     const { updated, changes } = await syncPackageJson(config.forkPath, config.upstreamRef, location, keysToSync);

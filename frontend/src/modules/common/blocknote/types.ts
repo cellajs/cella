@@ -1,4 +1,4 @@
-import type { HeadingOptions } from '@blocknote/core';
+import type { ExtensionFactoryInstance, HeadingOptions } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
@@ -8,7 +8,7 @@ import type { Member } from '~/modules/memberships/types';
 
 // Extendable Blocknote types interface
 export interface ExtendableBlocknoteTypes {
-  SlashKeys: DefaultSuggestionItem['key'] | 'notify';
+  SlashKeys: DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 }
 
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
@@ -76,6 +76,7 @@ export type CommonBlockNoteProps = {
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
+  extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
   /** Whether embedded files are public (no auth needed). Affects URL resolution in all modes. */
   publicFiles?: boolean;

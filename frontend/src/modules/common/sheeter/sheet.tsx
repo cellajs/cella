@@ -19,7 +19,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     description,
     title,
     titleContent = title,
-    showCloseButton = true,
+    headerClassName,
     className,
     content,
     closeSheetOnEsc = true,
@@ -77,8 +77,8 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     } else closeSheet();
   };
 
-  // Create a ref for finalFocus to focus trigger on close
-  const triggerFocusRef = useLatestRef(triggerRef?.current ?? null);
+  // Create a ref for finalFocus to return focus to trigger on close
+  const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal} disablePointerDismissal={disablePointerDismissal}>
@@ -86,16 +86,15 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
         id={String(id)}
         ref={sheetRef}
         side={side}
-        showCloseButton={showCloseButton}
         overlay={modal !== false}
         aria-describedby={undefined}
         container={containerElement}
         className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
         initialFocus={isMobile ? false : undefined}
-        finalFocus={triggerRef?.current ? triggerFocusRef : undefined}
+        finalFocus={triggerRef?.current ? finalFocusRef : undefined}
         autoScrollOnDrag={autoScrollOnDrag}
       >
-        <SheetHeader sticky className={`${title || description ? '' : 'hidden'}`}>
+        <SheetHeader sticky className={cn(headerClassName, !(title || description) && 'hidden')}>
           <SheetTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>

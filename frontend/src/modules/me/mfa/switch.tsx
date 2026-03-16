@@ -1,14 +1,19 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { CircleAlertIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
+import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
-import { userStore } from '~/store/user';
+import { useUserStore } from '~/store/user';
 
 export const MfaSwitch = () => {
   const { t } = useTranslation();
-  const { user, hasPasskey, hasTotp } = userStore.getState();
+  const { user } = useUserStore();
+  const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
+  const hasPasskey = authData.passkeys.length > 0;
+  const hasTotp = authData.hasTotp;
 
   const { create: createDialog } = useDialoger();
 

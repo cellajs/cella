@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appConfig } from 'shared';
-import type { Domain, Tenant } from '~/api.gen';
+import type { Domain, Tenant, VerifyDomainResponse } from '~/api.gen';
 import {
   type CreateDomainData,
   type CreateTenantData,
@@ -9,10 +9,13 @@ import {
   type DeleteDomainData,
   deleteDomain,
   type GetTenantsData,
+  getDomain,
   getDomains,
   getTenants,
   type UpdateTenantData,
   updateTenant,
+  type VerifyDomainData,
+  verifyDomain,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { baseInfiniteQueryOptions } from '~/query/basic';
@@ -100,6 +103,7 @@ export const useTenantUpdateMutation = () => {
  */
 const domainQueryKeys = {
   list: (tenantId: string) => ['domain', 'list', tenantId] as const,
+  detail: (tenantId: string, id: string) => ['domain', 'detail', tenantId, id] as const,
 };
 
 /**
@@ -109,6 +113,15 @@ export const domainsQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: domainQueryKeys.list(tenantId),
     queryFn: () => getDomains({ path: { tenantId } }),
+  });
+
+/**
+ * Query options for fetching a single domain with its verification token.
+ */
+export const domainDetailQueryOptions = (tenantId: string, id: string) =>
+  queryOptions({
+    queryKey: domainQueryKeys.detail(tenantId, id),
+    queryFn: () => getDomain({ path: { tenantId, id } }),
   });
 
 /**
@@ -137,6 +150,21 @@ export const useDomainDeleteMutation = () => {
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
+    },
+  });
+};
+
+/**
+ * Mutation hook for verifying a domain via DNS TXT record lookup.
+ */
+export const useDomainVerifyMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<VerifyDomainResponse, ApiError, MutationData<VerifyDomainData>>({
+    mutationFn: ({ path }) => verifyDomain({ path }),
+    onSuccess: (_, { path }) => {
+      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
+      queryClient.invalidateQueries({ queryKey: domainQueryKeys.detail(path.tenantId, path.id) });
     },
   });
 };

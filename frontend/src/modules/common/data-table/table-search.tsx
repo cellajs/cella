@@ -1,6 +1,6 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { XCircleIcon } from 'lucide-react';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
@@ -17,6 +17,9 @@ interface TableSearchProps {
   setQuery: (value: string) => void;
 }
 
+/**
+ * Search input component for data tables.
+ */
 export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
@@ -29,19 +32,15 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
   const isSearching = tableFetchingCount > 0 && !!inputValue.length;
   const debouncedQuery = useDebounce(inputValue, 250);
 
-  // Track previous debounced query to detect changes
-  const prevDebouncedQuery = useRef(debouncedQuery);
-  if (prevDebouncedQuery.current !== debouncedQuery) {
-    prevDebouncedQuery.current = debouncedQuery;
+  // Sync debounced query to parent
+  useEffect(() => {
     if (debouncedQuery !== value) setQuery(debouncedQuery);
-  }
+  }, [debouncedQuery]);
 
-  // Track previous external value to detect resets
-  const prevValue = useRef(value);
-  if (prevValue.current !== value) {
-    prevValue.current = value;
+  // Sync external value changes to input (e.g. resets)
+  useEffect(() => {
     if (!inputRef.current || document.activeElement !== inputRef.current) setInputValue(value);
-  }
+  }, [value]);
 
   return (
     <InputGroup className="w-full border-0 shadow-none focus-visible:ring-offset-0">

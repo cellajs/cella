@@ -525,11 +525,11 @@
         "schema": {
           "type": "array",
           "itemType": "object",
-          "ref": "#/components/schemas/Domain",
+          "ref": "#/components/schemas/DomainWithToken",
           "items": {
             "type": "object",
             "required": true,
-            "description": "A domain claimed by a tenant for email matching and verification.",
+            "description": "A domain with its verification token for DNS setup.",
             "properties": {
               "id": {
                 "type": "string",
@@ -547,6 +547,11 @@
                 "maxLength": 255
               },
               "verified": { "type": "boolean", "required": true },
+              "verificationToken": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 50
+              },
               "verifiedAt": {
                 "type": ["string", "null"],
                 "required": true
@@ -557,7 +562,7 @@
               },
               "createdAt": { "type": "string", "required": true }
             },
-            "ref": "#/components/schemas/Domain"
+            "ref": "#/components/schemas/DomainWithToken"
           },
           "contentType": "application/json"
         }
@@ -754,6 +759,229 @@
             "createdAt": { "type": "string", "required": true }
           },
           "ref": "#/components/schemas/Domain",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain with verification token",
+        "name": "DomainWithToken",
+        "ref": "#/components/schemas/DomainWithToken",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A domain with its verification token for DNS setup.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "required": true,
+              "maxLength": 50
+            },
+            "tenantId": {
+              "type": "string",
+              "required": true,
+              "maxLength": 24
+            },
+            "domain": {
+              "type": "string",
+              "required": true,
+              "maxLength": 255
+            },
+            "verified": { "type": "boolean", "required": true },
+            "verificationToken": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "ref": "#/components/schemas/DomainWithToken",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          },
+          "id": {
+            "type": "string",
+            "required": true,
+            "maxLength": 50
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "verifyDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Verification result",
+        "name": "VerifyDomainResponse",
+        "ref": "#/components/schemas/VerifyDomainResponse",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "Result of a DNS TXT domain verification attempt.",
+          "properties": {
+            "success": { "type": "boolean", "required": true },
+            "domain": {
+              "type": "object",
+              "required": true,
+              "description": "A domain with its verification token for DNS setup.",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 50
+                },
+                "tenantId": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 24
+                },
+                "domain": {
+                  "type": "string",
+                  "required": true,
+                  "maxLength": 255
+                },
+                "verified": { "type": "boolean", "required": true },
+                "verificationToken": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 50
+                },
+                "verifiedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "lastCheckedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "createdAt": { "type": "string", "required": true }
+              },
+              "ref": "#/components/schemas/DomainWithToken"
+            },
+            "diagnostics": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "recordsFound": {
+                  "type": "array",
+                  "required": true,
+                  "itemType": "string"
+                },
+                "expectedToken": { "type": "string", "required": true }
+              }
+            }
+          },
+          "ref": "#/components/schemas/VerifyDomainResponse",
           "contentType": "application/json"
         }
       },

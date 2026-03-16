@@ -126,7 +126,6 @@
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -200,7 +199,6 @@
               "description": null,
               "keywords": "vesco audentia angustus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "elegantly.vss",
@@ -231,7 +229,6 @@
               "description": null,
               "keywords": "auxilium non sui",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "woefully_bah.vsw",
@@ -460,7 +457,6 @@
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -549,7 +545,6 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -580,7 +575,6 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -731,7 +725,6 @@
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "publicAccess": { "type": "boolean", "required": true },
                   "bucketName": {
                     "type": "string",
                     "required": true,
@@ -820,7 +813,6 @@
               "description": null,
               "keywords": "nam curatio xiphias",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "excluding_ugh_besides.svgz",
@@ -851,7 +843,6 @@
               "description": null,
               "keywords": "denique tum candidus",
               "public": false,
-              "publicAccess": false,
               "bucketName": "attachments",
               "groupId": null,
               "filename": "gown.txt",
@@ -1325,7 +1316,6 @@
               "maximum": 9007199254740991
             },
             "public": { "type": "boolean", "required": true },
-            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1393,7 +1383,6 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
-          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1596,7 +1585,6 @@
               "maximum": 9007199254740991
             },
             "public": { "type": "boolean", "required": true },
-            "publicAccess": { "type": "boolean", "required": true },
             "bucketName": {
               "type": "string",
               "required": true,
@@ -1664,7 +1652,6 @@
           "description": null,
           "keywords": "damno tenax arx",
           "public": false,
-          "publicAccess": false,
           "bucketName": "attachments",
           "groupId": null,
           "filename": "yet_rightfully_lest.ogx",
@@ -1759,11 +1746,6 @@
                 "type": "string",
                 "required": false,
                 "enum": ["originalKey"]
-              },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["public"]
               }
             ]
           },
@@ -1810,58 +1792,6 @@
         },
         "required": true,
         "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "getAttachmentLink",
-    "responses": [
-      { "status": 200, "description": "Success" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
-        }
       }
     }
   }

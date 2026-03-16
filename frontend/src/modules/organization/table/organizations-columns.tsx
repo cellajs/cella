@@ -54,7 +54,6 @@ export const useColumns = (isCompact: boolean) => {
       key: 'edit',
       name: '',
       minBreakpoint: 'md',
-      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         if ((row.included.counts?.membership.admin ?? 0) > 0 || (row.included.counts?.membership.member ?? 0) > 0)
@@ -64,7 +63,6 @@ export const useColumns = (isCompact: boolean) => {
     {
       key: 'ellipsis',
       name: '',
-      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const ellipsisOptions: EllipsisOption<EnrichedOrganization>[] = [
@@ -103,7 +101,7 @@ export const useColumns = (isCompact: boolean) => {
       sortable: false,
       minBreakpoint: 'md',
       resizable: true,
-      width: 120,
+      width: 100,
       renderCell: ({ row }) =>
         row.membership?.role ? (
           t(`${row.membership.role}`, { ns: ['app', 'common'] })
@@ -123,18 +121,15 @@ export const useColumns = (isCompact: boolean) => {
       name: t('common:created_at'),
       sortable: true,
       minBreakpoint: 'md',
-      resizable: true,
-      minWidth: 160,
+      minWidth: 120,
       placeholderValue: '-',
       renderCell: ({ row }) => dateShort(row.createdAt),
     },
     {
       key: 'createdBy',
       name: t('common:created_by'),
-      sortable: false,
       hidden: true,
-      resizable: true,
-      minWidth: isCompact ? null : 120,
+      minWidth: isCompact ? null : 160,
       width: isCompact ? 50 : null,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
@@ -144,7 +139,6 @@ export const useColumns = (isCompact: boolean) => {
     ...roles.all.map((role) => ({
       key: `${role}Count`,
       name: t(`common:${role}s`),
-      sortable: false,
       minBreakpoint: 'md' as const,
       minWidth: 60,
       maxWidth: 140,
@@ -170,10 +164,9 @@ export const useColumns = (isCompact: boolean) => {
       .map((type) => ({
         key: `${type}Count`,
         name: t(`common:${type}`, { count: 2 }),
-        sortable: false,
         minBreakpoint: 'md' as const,
         minWidth: 60,
-        maxWidth: 140,
+        maxWidth: 120,
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
             <BoxIcon className="mr-2 opacity-50" size={16} />

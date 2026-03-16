@@ -142,7 +142,6 @@ export const useCreatePasskeyMutation = () => {
           passkeys: [newPasskey, ...oldData.passkeys],
         };
       });
-      useUserStore.getState().setMeAuthData({ hasPasskey: true });
       toaster(t('common:success.passkey_added'), 'success');
     },
     onError(error) {
@@ -190,7 +189,10 @@ export const useDeleteTotpMutation = () => {
     mutationFn: () => deleteTotp(),
     onSuccess: () => {
       toaster(t('common:success.totp_removed'), 'success');
-      useUserStore.getState().setMeAuthData({ hasTotp: false });
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, hasTotp: false };
+      });
     },
     onError(error) {
       console.error('Error removing totp:', error);

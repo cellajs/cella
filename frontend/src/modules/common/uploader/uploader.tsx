@@ -25,9 +25,9 @@ export const Uploader = () => {
         if (!open) remove();
       }}
     >
-      <DialogContent className="w-[70vw] h-[40vh] min-h-fit md:max-w-xl">
-        <DialogHeader className={`${uploaderData.title || uploaderData.description ? '' : 'hidden'}`}>
-          <DialogTitle className={`${uploaderData.title || uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>
+      <DialogContent className="w-[90vw] xs:w-[80vw] max-w-xl h-[40vh] min-h-fit md:max-w-2xl">
+        <DialogHeader className="with-close-btn">
+          <DialogTitle className={`${uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>
             {uploaderData.title}
           </DialogTitle>
           <DialogDescription className={`${uploaderData.description ? '' : 'hidden'}`}>
@@ -36,7 +36,7 @@ export const Uploader = () => {
         </DialogHeader>
 
         {/* For accessibility */}
-        {!uploaderData.description && !uploaderData.title && <DialogTitle className="hidden" />}
+        {!uploaderData.title && <DialogTitle className="hidden" />}
         <Dashboard
           uppy={uppy}
           autoOpen={['cover', 'avatar'].includes(uploaderData.templateId) ? 'imageEditor' : null}

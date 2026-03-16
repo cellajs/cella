@@ -1,16 +1,18 @@
 import { useEffect, useRef } from 'react';
 
-// Selector for focusable elements, excluding aria-hidden elements (e.g. Base UI's
-// hidden checkbox <input>) which must never enter the tab order.
-const notHidden = ':not([aria-hidden="true"])';
-const focusableSelector = [
-  `a[href]${notHidden}`,
-  `button${notHidden}`,
-  `textarea${notHidden}`,
-  `input${notHidden}`,
-  `select${notHidden}`,
-  `[tabindex]${notHidden}:not([tabindex="-1"]):not([data-exclude-from-focus-trap="true"])`,
-].join(', ');
+// Broad selector to find candidate focusable elements
+const candidateSelector = 'a[href], button, textarea, input, select, [tabindex], [contenteditable="true"]';
+
+/** Get all focusable elements within a container using the DOM tabIndex property as ground truth */
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  const candidates = container.querySelectorAll<HTMLElement>(candidateSelector);
+  return Array.from(candidates).filter(
+    (el) =>
+      el.tabIndex >= 0 &&
+      !el.closest('[aria-hidden="true"]') &&
+      el.getAttribute('data-exclude-from-focus-trap') !== 'true',
+  );
+}
 
 export function FocusTrap({
   children,
@@ -22,60 +24,51 @@ export function FocusTrap({
   active?: boolean;
 }) {
   const focusTrapRef = useRef<HTMLDivElement | null>(null);
-
-  const handleTabKey = (e: KeyboardEvent) => {
-    if (!focusTrapRef || !focusTrapRef.current) return;
-    // Get all focusable elements
-    const focusableElements = focusTrapRef.current.querySelectorAll(focusableSelector);
-    const firstElement = focusableElements[0] as HTMLElement | undefined;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement | undefined;
-
-    // Shift + Tab
-    if (e.shiftKey && document.activeElement === firstElement) {
-      lastElement?.focus();
-      e.preventDefault();
-    }
-    // Tab
-    if (!e.shiftKey && document.activeElement === lastElement) {
-      firstElement?.focus();
-      e.preventDefault();
-    }
-  };
-
-  const handleEscKey = (id: string) => {
-    const mainElement = document.getElementById(id);
-    if (!mainElement || document.activeElement === mainElement) return;
-    mainElement.focus();
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab' && e.key !== 'Escape') return;
-    switch (e.key) {
-      case 'Tab':
-        handleTabKey(e);
-        break;
-      case 'Escape':
-        if (mainElementId) handleEscKey(mainElementId);
-        break;
-      default:
-        break;
-    }
-  };
+  // Track elements we disabled so we can restore exactly those on re-activation
+  const disabledRef = useRef<Set<HTMLElement>>(new Set());
 
   useEffect(() => {
     const trap = focusTrapRef.current;
     if (!trap) return;
 
-    // Get all focusable elements
-    const focusableElements = trap.querySelectorAll(focusableSelector);
-    // Update tabindex based on the active state
-    for (const element of focusableElements) element.setAttribute('tabindex', active ? '0' : '-1');
-
     if (active) {
+      // Restore elements we previously disabled
+      for (const el of disabledRef.current) el.setAttribute('tabindex', '0');
+      disabledRef.current.clear();
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Tab') {
+          // Query focusable elements at press time so dynamically added elements are included
+          const focusable = getFocusableElements(trap);
+          if (!focusable.length) return;
+
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+
+          if (e.shiftKey && document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        } else if (e.key === 'Escape' && mainElementId) {
+          const main = document.getElementById(mainElementId);
+          if (main && document.activeElement !== main) main.focus();
+        }
+      };
+
       trap.addEventListener('keydown', handleKeyDown);
       return () => trap.removeEventListener('keydown', handleKeyDown);
     }
-  }, [active]);
+
+    // Inactive: remove focusable children from the tab order
+    const focusable = getFocusableElements(trap);
+    for (const el of focusable) {
+      el.setAttribute('tabindex', '-1');
+      disabledRef.current.add(el);
+    }
+  }, [active, mainElementId]);
 
   return (
     <div ref={focusTrapRef} tabIndex={-1}>

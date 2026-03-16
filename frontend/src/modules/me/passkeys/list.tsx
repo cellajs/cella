@@ -6,20 +6,20 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { userStore } from '~/store/user';
+import { useUserStore } from '~/store/user';
 
 export function PasskeysList() {
   const { t } = useTranslation();
 
-  const { user, hasPasskey } = userStore.getState();
+  const { user } = useUserStore();
 
   const { mutate: createPasskey } = useCreatePasskeyMutation();
   const { mutate: deletePasskey, isPending } = useDeletePasskeyMutation();
 
-  const queryOptions = meAuthQueryOptions();
   const {
     data: { passkeys },
-  } = useSuspenseQuery(queryOptions);
+  } = useSuspenseQuery(meAuthQueryOptions());
+  const hasPasskey = passkeys.length > 0;
 
   const handleUnlinkPasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');

@@ -179,7 +179,7 @@ const meRoutes = {
     operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
-    xGuard: authGuard,
+    xGuard: [authGuard, crossTenantGuard],
     xRateLimiter: singlePointsLimiter,
     tags: ['me'],
     summary: 'Leave entity',

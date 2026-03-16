@@ -13,7 +13,7 @@ function LeaveOrgButton(props: LeaveEntityButtonProps) {
   return (
     <div className="flex items-center p-2">
       <Popover open={openPopover} onOpenChange={setOpenPopover}>
-        <PopoverTrigger render={<Button size="sm" variant="darkSuccess" aria-label="Leave" />}>
+        <PopoverTrigger render={<Button size="sm" variant="success" aria-label="Leave" />}>
           <CheckIcon size={16} />
           <span className="max-xs:hidden ml-1">{t('common:joined')}</span>
         </PopoverTrigger>
