@@ -95,6 +95,19 @@
   }
 }
 
+/* Opaque soft intent colors using color-mix (no transparency) */
+@utility soft-bg {
+  background-color: color-mix(in oklch, var(--intent-color) 10%, var(--background));
+}
+
+@utility soft-bg-hover {
+  background-color: color-mix(in oklch, var(--intent-color) 15%, var(--background));
+}
+
+@utility soft-border {
+  border-color: color-mix(in oklch, var(--intent-color) 20%, var(--background));
+}
+
 @layer components {
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;

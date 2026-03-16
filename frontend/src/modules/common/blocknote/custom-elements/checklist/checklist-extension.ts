@@ -1,17 +1,11 @@
 import { createExtension, createStore, type ExtensionOptions } from '@blocknote/core';
 
-export type CheckboxEntry = {
-  id: string;
-  checked: boolean;
-};
+type CheckedExtensionOptions = { persisted?: boolean };
 
-type CheckboxExtensionOptions = { checkboxes?: CheckboxEntry[]; persisted?: boolean };
-
-export const checkboxesExtension = createExtension(
-  ({ options }: ExtensionOptions<CheckboxExtensionOptions | undefined>) => ({
+export const checkedExtension = createExtension(
+  ({ options }: ExtensionOptions<CheckedExtensionOptions | undefined>) => ({
     key: 'checkboxes-state' as const,
-    store: createStore<{ checkboxes: CheckboxEntry[]; persisted: boolean }>({
-      checkboxes: options?.checkboxes ?? [],
+    store: createStore<{ persisted: boolean }>({
       persisted: options?.persisted ?? false,
     }),
   }),

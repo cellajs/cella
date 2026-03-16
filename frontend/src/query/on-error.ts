@@ -2,7 +2,6 @@ import { default as i18n, default as i18next } from 'i18next';
 import { ApiError } from '~/lib/api';
 import { checkConnectivity } from '~/lib/connectivity';
 import { toaster } from '~/modules/common/toaster/toaster';
-import router from '~/routes/router';
 import { useAlertStore } from '~/store/alert';
 import { flushStores } from '~/utils/flush-stores';
 
@@ -98,7 +97,8 @@ export const onError = (error: Error | ApiError) => {
 
       // Flush sensitive stores and navigate to the sign-in page
       flushStores();
-      router.navigate(redirectOptions);
+      // Dynamic import breaks circular dep: query-client → on-error → router → route-tree → base-routes → query-client
+      import('~/routes/router').then(({ default: r }) => r.navigate(redirectOptions));
     }
   }
 };

@@ -30,6 +30,7 @@ import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
+  coalescePendingCreate,
   createStxForCreate,
   createStxForDelete,
   createStxForUpdate,
@@ -42,8 +43,8 @@ import { createResourceError } from '~/utils/resource-error';
 type CreatePageItem = CreatePagesData['body'][number];
 type CreatePageInput = Omit<CreatePageItem, 'stx'>;
 type UpdatePageItem = UpdatePageData['body'];
-type UpdatePageInput = Omit<UpdatePageItem, 'stx'>;
-type UpdatePageVars = { id: string; key: UpdatePageInput['key']; data: UpdatePageInput['data'] };
+type UpdatePageFields = UpdatePageItem['ops'];
+type UpdatePageVars = { id: string; ops: UpdatePageFields };
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
@@ -152,20 +153,24 @@ export const usePageUpdateMutation = () => {
 
   return useMutation({
     mutationKey: keys.update,
-    scope: { id: 'page' },
-    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
-      const cachedEntity = findPageInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdatePageVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updatePage({ path: { tenantId: 'public', id }, body: { ops, stx } });
     },
-    onMutate: async ({ id, key, data }: UpdatePageVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, key);
+    onMutate: async ({ id, ops }: UpdatePageVars) => {
+      // If there's a pending create for this entity, fold update ops into it
+      if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+        return { coalesced: true };
+      }
+
+      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       const previousPage = findPageInListCache(id);
       if (previousPage) {
-        const optimisticPage = { ...previousPage, [key]: data, modifiedAt: new Date().toISOString() };
+        const optimisticPage = { ...previousPage, ...mergedOps, updatedAt: new Date().toISOString() };
         mutateCache.update([optimisticPage]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
       }
@@ -181,14 +186,19 @@ export const usePageUpdateMutation = () => {
     onSuccess: (updatedPage, variables) => {
       const detailKey = keys.detail.byId(updatedPage.id);
       const cached = findPageInListCache(updatedPage.id);
-      // Merge only the mutated field + stx from server, preserving other optimistic values
+      const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
+      // Merge only mutated fields + stx from server, preserving other optimistic values
+      const serverUpdates: Record<string, unknown> = {};
+      for (const key of mutatedKeys) {
+        serverUpdates[key] = (updatedPage as Record<string, unknown>)[key];
+      }
       const merged = cached
         ? {
             ...cached,
-            [variables.key]: updatedPage[variables.key],
+            ...serverUpdates,
             stx: updatedPage.stx,
-            modifiedAt: updatedPage.modifiedAt,
-            ...('modifiedBy' in updatedPage ? { modifiedBy: updatedPage.modifiedBy } : {}),
+            updatedAt: updatedPage.updatedAt,
+            ...('updatedBy' in updatedPage ? { updatedBy: updatedPage.updatedBy } : {}),
           }
         : updatedPage;
       syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
@@ -248,10 +258,10 @@ addMutationRegistrar((queryClient: QueryClient) => {
   });
 
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
-      const cachedEntity = findPageInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdatePageVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updatePage({ path: { tenantId: 'public', id }, body: { ops, stx } });
     },
   });
 

@@ -150,8 +150,10 @@ const updateArrayItems = <T extends ItemData>(
     }
 
     case 'update':
-      // update existing items in dataItems
-      return items.map((item) => dataItems.find((i) => i.id === item.id) ?? item);
+      return items.map((item) => {
+        const match = dataItems.find((i) => i.id === item.id);
+        return match ?? item;
+      });
 
     case 'remove': {
       // Exclude items matching IDs in dataItems

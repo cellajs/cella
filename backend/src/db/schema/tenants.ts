@@ -22,7 +22,7 @@ export const tenantsTable = pgTable(
     subscriptionPlan: varchar({ length: maxLength.field }),
     subscriptionData: json(),
     createdAt: timestampColumns.createdAt,
-    modifiedAt: timestampColumns.modifiedAt,
+    updatedAt: timestampColumns.updatedAt,
   },
   (table) => [
     index('tenants_status_index').on(table.status),

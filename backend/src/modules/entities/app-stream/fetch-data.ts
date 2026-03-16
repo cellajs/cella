@@ -9,7 +9,7 @@ import type { AppCatchupResponse } from '#/schemas';
  * Fetch catchup summary for a user.
  *
  * Uses contextCountersTable for O(1) entitySeqs lookup per org.
- * contextEntity-scoped seqs (from stamp_entity_seq_at trigger) are the primary
+ * contextEntity-scoped seqs (from stamp_entity_seq trigger) are the primary
  * mechanism for detecting creates/updates. Deletes and membership changes
  * are always scanned from the activities table (cursor-bounded, watertight).
  *

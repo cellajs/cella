@@ -2,12 +2,24 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
 export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
   // Drawers on mobile are always modal (overlay + outside click to close)
-  const { id, side, description, title, titleContent = title, className, content, contentKey, open = true } = sheet;
+  const {
+    id,
+    side,
+    description,
+    title,
+    titleContent = title,
+    headerClassName,
+    className,
+    content,
+    contentKey,
+    open = true,
+  } = sheet;
 
   const updateSheet = sheeter.getState().update;
 
@@ -32,7 +44,7 @@ export const SheeterDrawer = ({ sheet }: { sheet: InternalSheet }) => {
       onOpenChange={onOpenChange}
     >
       <DrawerContent id={String(id)} className={className}>
-        <DrawerHeader sticky className={`${description || title ? '' : 'hidden'}`}>
+        <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
           <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>
             {description}

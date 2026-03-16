@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { appConfig, hierarchy, isProductEntity } from 'shared';
 import { contextCountersTable } from '#/db/schema/context-counters';
+import { jsonbIncFragment } from '#/db/utils/jsonb-counters';
 import { cdcDb } from '../db';
 import type { TableRegistryEntry } from '../types';
 
@@ -75,13 +76,7 @@ export async function updateContextCounts(delta: CountDelta): Promise<void> {
   }
 
   // Build the SET expression for ON CONFLICT: chain jsonb || for each key
-  // Each key: jsonb_build_object('key', GREATEST(0, COALESCE((counts->>'key')::int, 0) + delta))
-  // Note: We use sql.raw() for literal key strings and explicit ::int cast for the delta
-  // because PGlite cannot infer parameter types inside jsonb_build_object / GREATEST / COALESCE.
-  const setClauses = entries.map(([key, value]) => {
-    const safeKey = key.replace(/'/g, "''");
-    return sql`jsonb_build_object(${sql.raw(`'${safeKey}'`)}, GREATEST(0, COALESCE((${contextCountersTable.counts}->>${sql.raw(`'${safeKey}'`)})::int, 0) + ${value}::int))`;
-  });
+  const setClauses = entries.map(([key, value]) => jsonbIncFragment(contextCountersTable.counts, key, value));
 
   // Chain with || operator: counts || obj1 || obj2 || ...
   let countsExpr = sql`${contextCountersTable.counts}`;

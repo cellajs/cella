@@ -220,15 +220,15 @@ const systemRouteHandlers = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
+        updatedAt: getIsoDate(),
+        updatedBy: user.id,
       })
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
     logEvent('info', 'User updated', { userId: updatedUser.id });
 
-    // Re-select with userSelect to include activity timestamps (subqueries from user_activity table)
+    // Re-select with userSelect to include timestamps (subqueries from user_counters table)
     const [userWithActivity] = await db
       .select(userSelect)
       .from(usersTable)
@@ -282,7 +282,7 @@ const systemRouteHandlers = app
                     (data.status as 'active' | 'canceled' | 'past_due' | 'paused' | 'trialing') ?? 'none',
                   subscriptionPlan,
                   subscriptionData: data,
-                  modifiedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 })
                 .where(eq(tenantsTable.id, tenantId));
 

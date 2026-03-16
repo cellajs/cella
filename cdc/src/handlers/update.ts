@@ -3,7 +3,7 @@ import type { InsertActivityModel } from '#/db/schema/activities';
 import { getTableName } from 'drizzle-orm';
 import type { ProcessMessageResult } from '../process-message';
 import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData, getChangedKeys } from '../utils';
+import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData, getChangedFields } from '../utils';
 
 /**
  * Handle an UPDATE message and create an activity with entity data.
@@ -16,10 +16,14 @@ export function handleUpdate(
   const newRow = convertRowKeys(extractRowData(message.new));
 
   // If no old row data, REPLICA IDENTITY might not be FULL
-  const changedKeys = Object.keys(oldRow).length > 0 ? getChangedKeys(oldRow, newRow) : null;
+  const changedFields = Object.keys(oldRow).length > 0 ? getChangedFields(oldRow, newRow) : null;
 
   // Skip if nothing meaningful changed
-  if (changedKeys && changedKeys.length === 0) return null;
+  if (changedFields && changedFields.length === 0) return null;
+
+  // Strip sync-state fields from changedFields — they always change but aren't user mutations
+  const syncStateKeys = new Set(['stx', 'seq']);
+  const userChangedFields = changedFields?.filter((k) => !syncStateKeys.has(k)) ?? null;
 
   const action = 'update';
   const ctx = extractActivityContext(entry, newRow);
@@ -43,7 +47,7 @@ export function handleUpdate(
     type,
     entityId,
     ...contextEntityIds,
-    changedKeys,
+    changedFields: userChangedFields,
     stx,
   };
 

@@ -157,6 +157,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
+  arrayRefCounters: readonly { readonly targetEntity: string; readonly sourceEntity: string; readonly sourceColumn: string }[];
   menuStructure: readonly MenuStructureItem[];
   defaultRestrictions: {
     quotas: Record<string, number>;
@@ -189,6 +190,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   frontendUrl: string;
   backendUrl: string;
   backendAuthUrl: string;
+  yjsUrl: string;
   aboutUrl: string;
   statusUrl: string;
   productionUrl: string;

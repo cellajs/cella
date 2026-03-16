@@ -11,7 +11,7 @@ import {
   organizationQueryKeys,
   organizationQueryOptions,
 } from '~/modules/organization/query';
-import { fetchSlugCacheId } from '~/query/fetch-slug-cache-id';
+import { fetchSlugCacheId } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
 import { useToastStore } from '~/store/toast';

@@ -38,7 +38,7 @@ export const mockContextEntityBase = (key = 'context-entity:default') =>
 
 /**
  * Generates a mock ProductEntityBase response.
- * Product entities are content-related with createdBy/modifiedBy.
+ * Product entities are content-related with createdBy/updatedBy.
  */
 export const mockProductEntityBase = (key = 'product-entity:default') =>
   withFakerSeed(key, () => ({
@@ -46,14 +46,14 @@ export const mockProductEntityBase = (key = 'product-entity:default') =>
     name: faker.lorem.sentence({ min: 2, max: 5 }),
     description: faker.lorem.paragraph(),
     createdBy: mockUserMinimalBase(`${key}:createdBy`),
-    modifiedBy: mockUserMinimalBase(`${key}:modifiedBy`),
+    updatedBy: mockUserMinimalBase(`${key}:updatedBy`),
     entityType: 'page' as const,
     keywords: faker.lorem.words(3),
   }));
 
 /**
  * Generates a mock UserMinimalBase response.
- * Minimal user data for references (e.g. createdBy, modifiedBy).
+ * Minimal user data for references (e.g. createdBy, updatedBy).
  */
 export const mockUserMinimalBase = (key = 'user-minimal:default') =>
   withFakerSeed(key, () => {
@@ -113,7 +113,7 @@ export const mockStxRequest = (key = 'stx-request:default') =>
   withFakerSeed(key, () => ({
     mutationId: mockNanoid(),
     sourceId: mockNanoid(),
-    lastReadVersion: 0,
+    fieldTimestamps: {},
   }));
 
 /**
@@ -123,7 +123,7 @@ export const mockStxRequest = (key = 'stx-request:default') =>
 export const mockStxResponse = (key = 'stx-response:default') =>
   withFakerSeed(key, () => ({
     mutationId: mockNanoid(),
-    version: faker.number.int({ min: 1, max: 10 }),
+    droppedFields: [],
   }));
 
 /**
@@ -134,8 +134,7 @@ export const mockStxBase = (key = 'stx-base:default') =>
   withFakerSeed(key, () => ({
     mutationId: mockNanoid(),
     sourceId: mockNanoid(),
-    version: faker.number.int({ min: 1, max: 5 }),
-    fieldVersions: { name: 1 },
+    fieldTimestamps: {},
   }));
 
 /**
@@ -155,7 +154,8 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     entityId: mockNanoid(),
     organizationId: mockNanoid(),
     contextType: null,
-    seqAt: faker.number.int({ min: 1, max: 500 }),
+    contextId: mockNanoid(),
+    seq: faker.number.int({ min: 1, max: 500 }),
     // Generate cacheToken BEFORE stx to ensure deterministic output
     // (stx uses nested withFakerSeed which resets the seed after)
     cacheToken: faker.string.alphanumeric(32),

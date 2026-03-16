@@ -1,30 +1,19 @@
 import { BlockNoteEditor } from '@blocknote/core';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import {
-  type CheckboxEntry,
-  checkboxesExtension,
-} from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton — avoids expensive BlockNoteEditor.create() on every call
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
-const headlessCheckboxExt = checkboxesExtension({ checkboxes: [] });
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
     headlessEditor = BlockNoteEditor.create({
       schema: customSchema,
       _headless: true,
-      extensions: [headlessCheckboxExt],
+      extensions: [checkedExtension()],
     });
   }
   return headlessEditor;
-};
-
-/** Update the headless editor's checkbox store before rendering full HTML */
-export const setHeadlessCheckboxes = (checkboxes: CheckboxEntry[]) => {
-  const editor = getHeadlessEditor();
-  const ext = editor.getExtension(checkboxesExtension);
-  ext.store.setState({ checkboxes, persisted: true });
 };
 
 export const compareIsContentSame = (currentStringifiedBlocks: string, initialStringifiedBlocks: string) =>

@@ -21,7 +21,7 @@ export function handleDelete(
   const type = `${entityOrResourceType}.${actionToVerb(action)}`;
   const tableName = getTableName(entry.table);
 
-  // For user deletes, the userId would reference the deleted user (from modifiedBy/createdBy/userId),
+  // For user deletes, the userId would reference the deleted user (from updatedBy/createdBy/userId),
   // which no longer exists. Set to null to avoid foreign key violation.
   const userId = tableName === 'users' ? null : ctx.userId;
 
@@ -41,7 +41,7 @@ export function handleDelete(
     type,
     entityId,
     ...contextEntityIds,
-    changedKeys: null,
+    changedFields: null,
     stx,
   };
 

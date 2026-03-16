@@ -18,5 +18,5 @@ export const tenantEntityColumns = <T extends string>(entityType: T) => ({
     .notNull()
     .references(() => tenantsTable.id),
   name: varchar({ length: maxLength.field }).notNull(),
-  modifiedAt: timestampColumns.modifiedAt,
+  updatedAt: timestampColumns.updatedAt,
 });

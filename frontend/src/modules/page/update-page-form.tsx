@@ -60,7 +60,7 @@ export function UpdatePageForm({ page }: Props) {
     (key: 'name' | 'description', value: string) => {
       setSaveStatus('saving');
       updatePage.mutate(
-        { id: page.id, key, data: value },
+        { id: page.id, ops: { [key]: value } },
         {
           onSuccess: () => {
             setSaveStatus('saved');
@@ -111,7 +111,7 @@ export function UpdatePageForm({ page }: Props) {
                 queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), {
                   ...page,
                   ...currentData,
-                  modifiedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 });
                 navigate({ to: '/docs/page/$id', params: { id: page.id } });
               }}

@@ -8,9 +8,9 @@ import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 
 export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;
 
-// Aliases for audit user joins (createdBy / modifiedBy)
+// Aliases for audit user joins (createdBy / updatedBy)
 export const createdByUser = alias(usersTable, 'created_by_user');
-export const modifiedByUser = alias(usersTable, 'modified_by_user');
+export const updatedByUser = alias(usersTable, 'updated_by_user');
 
 // Derive select keys from the Zod schema, excluding entityType (added as SQL literal)
 type SelectKeys = Exclude<keyof typeof userMinimalBaseSchema.shape, 'entityType'>;
@@ -22,7 +22,7 @@ const selectKeys = (Object.keys(userMinimalBaseSchema.shape) as (keyof typeof us
  * Build minimal user select columns from an aliased users table.
  * entityType is a SQL literal 'user' to preserve the literal type.
  */
-const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof modifiedByUser) => ({
+const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof updatedByUser) => ({
   ...pickColumns(getColumns(aliasedTable), selectKeys),
   entityType: sql<'user'>`'user'`,
 });
@@ -32,17 +32,17 @@ const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof modifi
  *
  * Usage in list queries:
  * ```
- * const { createdBy: _cb, modifiedBy: _mb, ...cols } = getColumns(table);
+ * const { createdBy: _cb, updatedBy: _mb, ...cols } = getColumns(table);
  * const items = db.select({ ...cols, ...auditUserSelect })
  *   .from(table)
  *   .leftJoin(createdByUser, eq(createdByUser.id, table.createdBy))
- *   .leftJoin(modifiedByUser, eq(modifiedByUser.id, table.modifiedBy));
+ *   .leftJoin(updatedByUser, eq(updatedByUser.id, table.updatedBy));
  * return coalesceAuditUsers(items);
  * ```
  */
 export const auditUserSelect = {
   createdBy: buildAuditUserSelect(createdByUser),
-  modifiedBy: buildAuditUserSelect(modifiedByUser),
+  updatedBy: buildAuditUserSelect(updatedByUser),
 };
 
 /**
@@ -65,15 +65,15 @@ type NullableUser = {
  * We accept both shapes to avoid `as any` at every call-site.
  */
 type CompatibleNullableUser = { [K in keyof NullableUser]: NullableUser[K] | NonNullable<NullableUser[K]> };
-type RawAuditRow = { createdBy: CompatibleNullableUser; modifiedBy: CompatibleNullableUser };
+type RawAuditRow = { createdBy: CompatibleNullableUser; updatedBy: CompatibleNullableUser };
 
 export function coalesceAuditUsers<T extends RawAuditRow>(
   rows: T[],
-): (Omit<T, 'createdBy' | 'modifiedBy'> & { createdBy: UserMinimalBase | null; modifiedBy: UserMinimalBase | null })[] {
-  return rows.map(({ createdBy, modifiedBy, ...rest }) => ({
-    ...(rest as Omit<T, 'createdBy' | 'modifiedBy'>),
+): (Omit<T, 'createdBy' | 'updatedBy'> & { createdBy: UserMinimalBase | null; updatedBy: UserMinimalBase | null })[] {
+  return rows.map(({ createdBy, updatedBy, ...rest }) => ({
+    ...(rest as Omit<T, 'createdBy' | 'updatedBy'>),
     createdBy: createdBy?.id ? (createdBy as UserMinimalBase) : null,
-    modifiedBy: modifiedBy?.id ? (modifiedBy as UserMinimalBase) : null,
+    updatedBy: updatedBy?.id ? (updatedBy as UserMinimalBase) : null,
   }));
 }
 
@@ -102,7 +102,7 @@ type KnownUsersInput =
   | { id: string; name: string; slug: string; thumbnailUrl: string | null; email: string };
 
 /**
- * Populate createdBy/modifiedBy string IDs with UserMinimalBase objects.
+ * Populate createdBy/updatedBy string IDs with UserMinimalBase objects.
  * Pass a user object (or Map) to avoid unnecessary DB lookups for the current user.
  *
  * Usage in CUD handlers:
@@ -110,12 +110,12 @@ type KnownUsersInput =
  * const items = await withAuditUsers(rawItems, tenantDb, user);
  * ```
  */
-export async function withAuditUsers<T extends { createdBy: string | null; modifiedBy?: string | null }>(
+export async function withAuditUsers<T extends { createdBy: string | null; updatedBy?: string | null }>(
   entities: T[],
   db: DbOrTx,
   knownUsersInput: KnownUsersInput = new Map(),
 ): Promise<
-  (Omit<T, 'createdBy' | 'modifiedBy'> & { createdBy: UserMinimalBase | null; modifiedBy: UserMinimalBase | null })[]
+  (Omit<T, 'createdBy' | 'updatedBy'> & { createdBy: UserMinimalBase | null; updatedBy: UserMinimalBase | null })[]
 > {
   // Normalize input: accept a user object or a pre-built Map
   const knownUsers =
@@ -127,7 +127,7 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
   const unknownIds = new Set<string>();
   for (const entity of entities) {
     if (entity.createdBy && !knownUsers.has(entity.createdBy)) unknownIds.add(entity.createdBy);
-    if (entity.modifiedBy && !knownUsers.has(entity.modifiedBy)) unknownIds.add(entity.modifiedBy);
+    if (entity.updatedBy && !knownUsers.has(entity.updatedBy)) unknownIds.add(entity.updatedBy);
   }
 
   // Fetch unknown users in one query
@@ -148,10 +148,10 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
     }
   }
 
-  return entities.map(({ createdBy, modifiedBy = null, ...rest }) => ({
-    ...(rest as Omit<T, 'createdBy' | 'modifiedBy'>),
+  return entities.map(({ createdBy, updatedBy = null, ...rest }) => ({
+    ...(rest as Omit<T, 'createdBy' | 'updatedBy'>),
     createdBy: createdBy ? (knownUsers.get(createdBy) ?? null) : null,
-    modifiedBy: modifiedBy ? (knownUsers.get(modifiedBy) ?? null) : null,
+    updatedBy: updatedBy ? (knownUsers.get(updatedBy) ?? null) : null,
   }));
 }
 
@@ -159,7 +159,7 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
  * Single-entity convenience wrapper around withAuditUsers.
  * Avoids the `[entity]` / destructure-`[0]` boilerplate.
  */
-export async function withAuditUser<T extends { createdBy: string | null; modifiedBy?: string | null }>(
+export async function withAuditUser<T extends { createdBy: string | null; updatedBy?: string | null }>(
   entity: T,
   db: DbOrTx,
   knownUsersInput?: KnownUsersInput,

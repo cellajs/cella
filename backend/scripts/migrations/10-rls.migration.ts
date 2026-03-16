@@ -3,6 +3,7 @@ import pc from 'picocolors';
 import { entityTables } from '#/table-config';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { yjsDocumentsTable } from '#/db/schema/yjs-documents';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
@@ -20,13 +21,14 @@ async function run() {
     .map(([, table]) => getTableName(table));
 
   const membershipTables = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
-  const rlsTables = [...entityTableNames, ...membershipTables];
+  const additionalRlsTables = [getTableName(yjsDocumentsTable)];
+  const rlsTables = [...entityTableNames, ...membershipTables, ...additionalRlsTables];
 
   // Tables without RLS but needing grants (auth, system, etc.)
   const fullCrudTables = [
     'users',
     'sessions',
-    'user_activity',
+    'user_counters',
     'tokens',
     'passkeys',
     'oauth_accounts',
@@ -38,7 +40,7 @@ async function run() {
     'rate_limits',
     'context_counters',
     'seen_by',
-    'seen_counts',
+    'product_counters',
     'domains',
     'tenants',
   ];

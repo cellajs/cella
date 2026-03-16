@@ -20,7 +20,7 @@ export const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 // Re-export for convenience
 export { activityErrorSchema } from '#/db/utils/activity-error-schema';
 
-/** Full activity schema derived from table, with proper stx and changedKeys typing */
+/** Full activity schema derived from table, with proper stx and changedFields typing */
 export const activitySchema = z
   .object({
     ...createSelectSchema(activitiesTable).shape,
@@ -29,7 +29,7 @@ export const activitySchema = z
     resourceType: resourceTypeSchema.nullable(),
     action: activityActionSchema,
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
-    changedKeys: z.array(z.string()).nullable(),
+    changedFields: z.array(z.string()).nullable(),
     // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
     stx: z.union([stxBaseSchema, z.null()]),
     error: z.union([activityErrorSchema, z.null()]),

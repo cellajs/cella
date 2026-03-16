@@ -23,7 +23,7 @@ import {
   auditUserSelect,
   coalesceAuditUsers,
   createdByUser,
-  modifiedByUser,
+  updatedByUser,
   withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
@@ -299,7 +299,7 @@ const organizationRouteHandlers = app
     // They use LEFT JOIN since they may not have a membership row for every org.
     // Regular users use INNER JOIN on memberships (only see orgs they're members of).
     const countData = includeCounts ? getEntityCountsSelect(entityType) : null;
-    const { createdBy: _cb, modifiedBy: _mb, ...orgCols } = getColumns(organizationsTable);
+    const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
     const selectShape = {
       ...orgCols,
       ...auditUserSelect,
@@ -321,7 +321,7 @@ const organizationRouteHandlers = app
 
     query = query
       .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
-      .leftJoin(modifiedByUser, eq(modifiedByUser.id, organizationsTable.modifiedBy)) as unknown as typeof query;
+      .leftJoin(updatedByUser, eq(updatedByUser.id, organizationsTable.updatedBy)) as unknown as typeof query;
 
     const organizations = await query
       .where(and(...orgWhere))
@@ -448,8 +448,8 @@ const organizationRouteHandlers = app
       .update(organizationsTable)
       .set({
         ...updatedFields,
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
+        updatedAt: getIsoDate(),
+        updatedBy: user.id,
       })
       .where(eq(organizationsTable.id, organization.id))
       .returning();

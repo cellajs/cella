@@ -128,21 +128,21 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
     {
-      key: 'modifiedAt',
+      key: 'updatedAt',
       name: t('common:modified'),
       hidden: true,
       minWidth: 120,
       placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.modifiedAt),
+      renderCell: ({ row }) => dateShort(row.updatedAt),
     },
     {
-      key: 'modifiedBy',
-      name: t('common:modified_by'),
+      key: 'updatedBy',
+      name: t('common:updated_by'),
       hidden: true,
       width: isCompact ? 80 : 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
-        row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
+        row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
     },
   ];
 

@@ -27,7 +27,7 @@ export const userSchema = createSelectSchema(usersTable, {
   userFlags: userFlagsSchema,
 })
   .extend({
-    // Activity timestamps from user_activity table (populated via subqueries in userSelect)
+    // Timestamps from user_counters table (populated via subqueries in userSelect)
     lastSeenAt: z.string().nullable(),
     lastStartedAt: z.string().nullable(),
     lastSignInAt: z.string().nullable(),

@@ -8,13 +8,13 @@ import type { GenerateScript } from '../types';
 /**
  * Seq Triggers Migration
  *
- * Creates the `stamp_entity_seq_at()` trigger function and applies it to all
+ * Creates the `stamp_entity_seq()` trigger function and applies it to all
  * product entity tables. The trigger atomically:
  *   1. Increments `context_counters.counts['s:<entityType>']` via upsert
- *   2. Stamps the new value as `seq_at` on the entity row
+ *   2. Stamps the new value as `seq` on the entity row
  *
  * This is the single source of truth for per-(context, entityType) sequences:
- *   - Entity row `seq_at` enables efficient delta queries (`WHERE seq_at > ?`)
+ *   - Entity row `seq` enables efficient delta queries (`WHERE seq > ?`)
  *   - `context_counters` high watermark enables O(1) catchup gap detection
  *
  * Hierarchy-aware: uses the entity's direct parent column as the context key.
@@ -48,19 +48,19 @@ async function run() {
   const triggersSql = tableConfigs.map(({ tableName, parentColumn }) => {
     // Pass the parent column name as trigger argument, or 'public' for parentless entities
     const triggerArg = parentColumn ?? 'public';
-    return `    EXECUTE 'DROP TRIGGER IF EXISTS trg_stamp_seq_at ON ${tableName}';
-    EXECUTE 'CREATE TRIGGER trg_stamp_seq_at BEFORE INSERT OR UPDATE ON ${tableName} FOR EACH ROW EXECUTE FUNCTION stamp_entity_seq_at(''${triggerArg}'')';`;
+    return `    EXECUTE 'DROP TRIGGER IF EXISTS trg_stamp_seq ON ${tableName}';
+    EXECUTE 'CREATE TRIGGER trg_stamp_seq BEFORE INSERT OR UPDATE ON ${tableName} FOR EACH ROW EXECUTE FUNCTION stamp_entity_seq(''${triggerArg}'')';`;
   }).join('\n');
 
   const migrationSql = `-- Entity Seq Triggers Setup
--- Stamps seq_at on product entity rows and updates context_counters atomically.
--- Used for delta sync: clients query entities with seq_at > lastKnownSeq.
+-- Stamps seq on product entity rows and updates context_counters atomically.
+-- Used for delta sync: clients query entities with seq > lastKnownSeq.
 -- Hierarchy-aware: uses the entity's direct parent column as context key.
 
 -- Trigger function: shared by all product entity tables
 -- TG_ARGV[0] is the parent column name (e.g., 'organization_id', 'project_id')
 -- or 'public' for parentless entities.
-CREATE OR REPLACE FUNCTION stamp_entity_seq_at()
+CREATE OR REPLACE FUNCTION stamp_entity_seq()
 RETURNS trigger AS $$
 DECLARE
   ctx_key TEXT;
@@ -95,7 +95,7 @@ BEGIN
   updated_at = now()
   RETURNING (counts->>seq_key)::bigint INTO new_seq;
 
-  NEW.seq_at := new_seq;
+  NEW.seq := new_seq;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

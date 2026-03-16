@@ -67,9 +67,9 @@ export const mockPage = (): InsertPageModel => {
     displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
     createdAt,
     createdBy: null,
-    modifiedAt: createdAt,
-    modifiedBy: null,
-    seqAt: faker.number.int({ min: 1, max: 500 }),
+    updatedAt: createdAt,
+    updatedBy: null,
+    seq: faker.number.int({ min: 1, max: 500 }),
     stx: mockStx(),
   };
 };
@@ -97,9 +97,9 @@ export const mockPageResponse = (key = 'page:default'): PageModel =>
       displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       createdAt,
       createdBy: userId,
-      modifiedAt: createdAt,
-      modifiedBy: userId,
-      seqAt: faker.number.int({ min: 1, max: 500 }),
+      updatedAt: createdAt,
+      updatedBy: userId,
+      seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
     };
   });

@@ -1,106 +1,67 @@
 /**
- * Field-level conflict detection utilities for sync engine.
- * Uses fieldVersions to track per-field versions and detect conflicts.
+ * HLC-based field conflict resolution for sync engine.
+ * Replaces version-based conflict detection with per-field HLC timestamps.
+ * Newer HLC wins, older silently dropped — no 409, no retry.
  */
 
-import type { EntityType } from 'shared';
-import { AppError } from '#/lib/error';
-import type { StxBase } from '#/schemas/sync-transaction-schemas';
+import { compareHLC } from './hlc';
 
-interface FieldConflict {
-  field: string;
-  clientVersion: number;
-  serverVersion: number;
-}
-
-interface ConflictCheckResult {
-  /** Fields that have conflicts (server version > client lastReadVersion) */
-  conflicts: FieldConflict[];
-  /** Fields that are safe to update */
-  safeFields: string[];
+function isPrimitive(value: unknown): value is string | number | boolean | null {
+  return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 }
 
 /**
- * Check for field-level conflicts between client and server versions.
- * Returns conflicts for fields where server version is newer than client's lastReadVersion.
- *
- * @param changedFields - Array of field names being updated
- * @param entityStx - Current entity's stx metadata (from DB)
- * @param lastReadVersion - Client's version when entity was last read
+ * Filter out primitive fields where the incoming value is identical to the current entity value.
+ * Non-primitive fields (arrays, objects) are always kept — no deep equality.
+ * Returns a new object with only the effectively changed fields.
  */
-export function checkFieldConflicts(
-  changedFields: string[],
-  entityStx: StxBase | null | undefined,
-  lastReadVersion: number,
-): ConflictCheckResult {
-  const conflicts: ConflictCheckResult['conflicts'] = [];
-  const safeFields: string[] = [];
+export function filterNoOpFields<T extends Record<string, unknown>>(
+  entityData: Record<string, unknown>,
+  incomingFields: T,
+): T {
+  const result = {} as Record<string, unknown>;
+  for (const [key, value] of Object.entries(incomingFields)) {
+    if (isPrimitive(value) && entityData[key] === value) continue;
+    result[key] = value;
+  }
+  return result as T;
+}
 
-  for (const field of changedFields) {
-    const serverVersion = entityStx?.fieldVersions?.[field] ?? 0;
-    if (serverVersion > lastReadVersion) {
-      conflicts.push({ field, clientVersion: lastReadVersion, serverVersion });
+interface ResolveResult {
+  /** Field names that won the HLC comparison (newer timestamp) */
+  accepted: string[];
+  /** Field names that lost the HLC comparison (older timestamp) */
+  dropped: string[];
+}
+
+/**
+ * Resolve field-level conflicts using HLC timestamps.
+ * For each scalar field: incoming HLC > stored HLC → accept, otherwise drop.
+ *
+ * @param incomingFields - Scalar field values from the request
+ * @param incomingTimestamps - Per-field HLC timestamps from the request
+ * @param storedTimestamps - Per-field HLC timestamps from the entity's stx
+ */
+export function resolveFieldConflicts(
+  incomingFields: Record<string, unknown>,
+  incomingTimestamps: Record<string, string>,
+  storedTimestamps: Record<string, string>,
+): ResolveResult {
+  const accepted: string[] = [];
+  const dropped: string[] = [];
+
+  for (const field of Object.keys(incomingFields)) {
+    const incomingHLC = incomingTimestamps[field];
+    const storedHLC = storedTimestamps[field];
+
+    // No stored HLC → first write, always accept
+    // No incoming HLC → not tracked (set fields), always accept
+    if (!storedHLC || !incomingHLC || compareHLC(incomingHLC, storedHLC) > 0) {
+      accepted.push(field);
     } else {
-      safeFields.push(field);
+      dropped.push(field);
     }
   }
 
-  return { conflicts, safeFields };
-}
-
-/**
- * Throw a field conflict error if any conflicts exist.
- *
- * @param entityType - The entity type for error reporting
- * @param conflicts - Array of field conflicts from checkFieldConflicts
- * @throws AppError with 409 status if conflicts exist
- */
-export function throwIfConflicts(entityType: EntityType, conflicts: ConflictCheckResult['conflicts']): void {
-  if (conflicts.length === 0) return;
-
-  // Report the first conflict with all conflicting field names
-  const first = conflicts[0];
-  throw new AppError(409, 'field_conflict', 'warn', {
-    entityType,
-    meta: {
-      field: first.field,
-      clientVersion: first.clientVersion,
-      serverVersion: first.serverVersion,
-      // Include all conflicting field names for multi-field case
-      conflictingFields: conflicts.map((c) => c.field),
-    },
-  });
-}
-
-/**
- * Build updated fieldVersions map for changed fields.
- * Sets each changed field's version to the new entity version.
- *
- * @param existingFieldVersions - Current fieldVersions from entity stx
- * @param changedFields - Array of field names being updated
- * @param newVersion - New entity version
- */
-export function buildFieldVersions(
-  existingFieldVersions: Record<string, number> | undefined,
-  changedFields: string[],
-  newVersion: number,
-): Record<string, number> {
-  const updated: Record<string, number> = { ...existingFieldVersions };
-  for (const field of changedFields) {
-    updated[field] = newVersion;
-  }
-  return updated;
-}
-
-/**
- * Get tracked fields that are present in the update payload.
- *
- * @param payload - The update payload object
- * @param trackedFields - Array of field names to track for conflicts
- */
-export function getChangedTrackedFields<T extends Record<string, unknown>>(
-  payload: T,
-  trackedFields: readonly string[],
-): string[] {
-  return trackedFields.filter((field) => field in payload);
+  return { accepted, dropped };
 }

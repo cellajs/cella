@@ -39,7 +39,7 @@ export const authGuard = xMiddleware(
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
 
-      // Update user last seen date (throttled to 5 min intervals, stored in user_activity table)
+      // Update user last seen date (throttled to 5 min intervals, stored in user_counters table)
       if (ctx.req.method === 'GET') {
         await updateLastSeenAt(user.id, user.lastSeenAt);
       }

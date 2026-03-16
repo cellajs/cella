@@ -71,7 +71,7 @@ export interface ActivityEventWithEntity extends ActivityEvent {
   /** Cache token for server-side entity cache (realtime entities only). */
   cacheToken?: string | null;
   /** Per-entity sequence number stamped by trigger (for delta fetching). */
-  seqAt?: number | null;
+  seq?: number | null;
   /** Trace context for end-to-end correlation. */
   _trace?: SyncTraceContext;
 }

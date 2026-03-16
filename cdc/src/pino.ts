@@ -40,4 +40,9 @@ export const logEvent = (severity: CdcSeverity, msg: string, meta?: object): voi
   cdcLogger[severity]({ ...(meta ?? {}), msg });
 };
 
+export const logError = (msg: string, error: Error | unknown): void => {
+  if (!isProduction && error instanceof Error) cdcLogger.error(error, msg);
+  else cdcLogger.error({ error: error instanceof Error ? error.message : String(error), msg });
+};
+
 

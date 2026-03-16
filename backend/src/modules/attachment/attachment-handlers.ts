@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getColumns, gt, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { seenCountsTable } from '#/db/schema/seen-counts';
+import { productCountersTable } from '#/db/schema/product-counters';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { getSignedUrlFromKey } from '#/lib/signed-url';
@@ -11,7 +11,7 @@ import {
   auditUserSelect,
   coalesceAuditUsers,
   createdByUser,
-  modifiedByUser,
+  updatedByUser,
   withAuditUser,
   withAuditUsers,
 } from '#/modules/user/helpers/audit-user';
@@ -19,7 +19,7 @@ import { canAccessEntity, canCreateEntity, checkPermission } from '#/permissions
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { buildStx, isTransactionProcessed } from '#/sync';
-import { checkFieldConflicts, throwIfConflicts } from '#/sync/field-versions';
+import { filterNoOpFields, resolveFieldConflicts } from '#/sync/field-versions';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -43,7 +43,7 @@ const attachmentRouteHandlers = app
 
     // Sequence-based delta sync filter
     if (afterSeq !== undefined) {
-      filters.push(gt(attachmentsTable.seqAt, afterSeq));
+      filters.push(gt(attachmentsTable.seq, afterSeq));
     }
 
     if (q?.trim()) {
@@ -64,25 +64,28 @@ const attachmentRouteHandlers = app
     });
 
     const tenantDb = ctx.var.db;
-    const { createdBy: _cb, modifiedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
+    const { createdBy: _cb, updatedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
+
     const attachmentsQuery = tenantDb
       .select({
         ...attachmentCols,
         ...auditUserSelect,
-        viewCount: sql<number>`coalesce(${seenCountsTable.viewCount}, 0)`.as('view_count'),
+        viewCount: sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count'),
       })
       .from(attachmentsTable)
-      .leftJoin(seenCountsTable, eq(seenCountsTable.entityId, attachmentsTable.id))
+      .leftJoin(productCountersTable, eq(productCountersTable.entityId, attachmentsTable.id))
       .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
-      .leftJoin(modifiedByUser, eq(modifiedByUser.id, attachmentsTable.modifiedBy))
+      .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
       .where(and(...filters));
 
-    const [items, [{ total }]] = await Promise.all([
+    const [rawItems, [{ total }]] = await Promise.all([
       attachmentsQuery.orderBy(orderColumn).limit(limit).offset(offset),
       tenantDb.select({ total: count() }).from(attachmentsQuery.as('attachments')),
     ]);
 
-    return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
+    const items = coalesceAuditUsers(rawItems);
+
+    return ctx.json({ items, total }, 200);
   })
   /**
    * Get presigned URL for private attachment.
@@ -138,9 +141,15 @@ const attachmentRouteHandlers = app
     const tenantDb = ctx.var.db;
     const attachmentResponse = await withAuditUser(attachment, tenantDb);
 
-    ctx.set('entityCacheData', attachmentResponse as Record<string, unknown>);
+    const [counters] = await tenantDb
+      .select({ viewCount: productCountersTable.viewCount })
+      .from(productCountersTable)
+      .where(eq(productCountersTable.entityId, id))
+      .limit(1);
 
-    return ctx.json(attachmentResponse, 200);
+    const response = { ...attachmentResponse, viewCount: counters?.viewCount ?? 0 };
+    ctx.set('entityCacheData', response as Record<string, unknown>);
+    return ctx.json(response, 200);
   })
   /**
    * Create one or more attachments
@@ -210,26 +219,27 @@ const attachmentRouteHandlers = app
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const { key, data: updateData, stx } = ctx.req.valid('json');
+    const { ops: rawOps, stx } = ctx.req.valid('json');
 
     const { entity } = await getValidProductEntity(ctx, id, 'attachment', 'update');
 
     const user = ctx.var.user;
 
-    // Field-level conflict detection
-    const changedFields = key ? [key] : [];
-    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
-    throwIfConflicts('attachment', conflicts);
+    const fields = filterNoOpFields(entity, rawOps);
+    const { accepted } = resolveFieldConflicts(fields, stx.fieldTimestamps ?? {}, entity.stx?.fieldTimestamps ?? {});
+
+    const acceptedFields: Record<string, unknown> = {};
+    for (const name of accepted) acceptedFields[name] = (fields as Record<string, unknown>)[name];
 
     const tenantDb = ctx.var.db;
 
     const [updatedAttachmentRecord] = await tenantDb
       .update(attachmentsTable)
       .set({
-        [key]: updateData,
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
-        stx: buildStx(stx, entity, changedFields),
+        ...acceptedFields,
+        updatedAt: getIsoDate(),
+        updatedBy: user.id,
+        stx: buildStx(stx, entity, accepted),
       })
       .where(eq(attachmentsTable.id, id))
       .returning();

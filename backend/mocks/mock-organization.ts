@@ -62,8 +62,8 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     chatSupport: faker.datatype.boolean(),
     createdAt,
     createdBy: null,
-    modifiedAt: createdAt,
-    modifiedBy: null,
+    updatedAt: createdAt,
+    updatedBy: null,
   };
 };
 

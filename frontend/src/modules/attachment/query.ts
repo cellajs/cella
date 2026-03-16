@@ -30,6 +30,7 @@ import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
+  coalescePendingCreate,
   createStxForCreate,
   createStxForDelete,
   createStxForUpdate,
@@ -45,8 +46,8 @@ import { createResourceError } from '~/utils/resource-error';
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 type CreateAttachmentInput = Omit<CreateAttachmentItem, 'stx'>[];
 type UpdateAttachmentItem = UpdateAttachmentData['body'];
-type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'stx'>;
-type UpdateAttachmentVars = { id: string; key: UpdateAttachmentInput['key']; data: UpdateAttachmentInput['data'] };
+type UpdateAttachmentFields = UpdateAttachmentItem['ops'];
+type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
 const attachmentsLimit = appConfig.requestLimits.attachments;
 
@@ -188,20 +189,24 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
 
   return useMutation({
     mutationKey: keys.update,
-    scope: { id: 'attachment' },
-    mutationFn: async ({ id, key, data }: UpdateAttachmentVars) => {
-      const cachedEntity = findAttachmentInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdateAttachmentVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updateAttachment({ path: { tenantId, orgId, id }, body: { ops, stx } });
     },
-    onMutate: async ({ id, key, data }: UpdateAttachmentVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, key);
+    onMutate: async ({ id, ops }: UpdateAttachmentVars) => {
+      // If there's a pending create for this entity, fold update ops into it
+      if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+        return { coalesced: true };
+      }
+
+      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
       await queryClient.cancelQueries({ queryKey: keys.list.base });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
       const previousAttachment = findAttachmentInListCache(id);
       if (previousAttachment) {
-        const optimisticAttachment = { ...previousAttachment, [key]: data, modifiedAt: new Date().toISOString() };
+        const optimisticAttachment = { ...previousAttachment, ...mergedOps, updatedAt: new Date().toISOString() };
         mutateCache.update([optimisticAttachment]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
@@ -217,14 +222,18 @@ export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => 
     onSuccess: (updatedAttachment, variables) => {
       const detailKey = keys.detail.byId(updatedAttachment.id);
       const cached = findAttachmentInListCache(updatedAttachment.id);
-      // Merge only the mutated field + stx from server, preserving other optimistic values
+      const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
+      const serverUpdates: Record<string, unknown> = {};
+      for (const key of mutatedKeys) {
+        serverUpdates[key] = (updatedAttachment as Record<string, unknown>)[key];
+      }
       const merged = cached
         ? {
             ...cached,
-            [variables.key]: updatedAttachment[variables.key],
+            ...serverUpdates,
             stx: updatedAttachment.stx,
-            modifiedAt: updatedAttachment.modifiedAt,
-            ...('modifiedBy' in updatedAttachment ? { modifiedBy: updatedAttachment.modifiedBy } : {}),
+            updatedAt: updatedAttachment.updatedAt,
+            ...('updatedBy' in updatedAttachment ? { updatedBy: updatedAttachment.updatedBy } : {}),
           }
         : updatedAttachment;
       syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
@@ -297,10 +306,10 @@ addMutationRegistrar((queryClient: QueryClient) => {
   });
 
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ tenantId, orgId, id, key, data }: UpdateAttachmentVars & QueryOrgContext) => {
-      const cachedEntity = findAttachmentInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
+    mutationFn: async ({ tenantId, orgId, id, ops }: UpdateAttachmentVars & QueryOrgContext) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updateAttachment({ path: { tenantId, orgId, id }, body: { ops, stx } });
     },
   });
 

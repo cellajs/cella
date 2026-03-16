@@ -9,7 +9,7 @@ The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastruct
 | Mode | Entity type | Features | Example |
 |------|-------------|----------|---------|
 | basic | `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
-| realtime | `ProductEntityType` | + Transaction tracking, offline queue, conflict detection, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
+| realtime | `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
 
 ---
 
@@ -67,16 +67,17 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
 ### Realtime mechanics
-- **Gap detection** - Entity-type sequence numbers (`seqAt`) detect missed entity changes; deletes always scanned
+- **Gap detection** - Entity-type sequence numbers (`seq`) detect missed entity changes; deletes always scanned
 - **Single-writer multi-tab** - One leader tab owns SSE connection and mutations, broadcast for follower
 - **TTL entity cache** - Server-side cache with request coalescing for efficient notification-triggered fetches
 - **Fetch prioritizer** - Client schedules fetches based on user's current view (high/medium/low priority)
 
 ### Sync mechanics
 - **Upstream-first sync** - Pull before push prevents most conflicts
-- **Version-based conflict detection** - Integer version counters per entity and per field
+- **Per-field merge strategies** - Scalars use HLC-based LWW (latest timestamp wins); sets use commutative AWSet deltas (`{ add, remove }`); descriptions use Yjs CRDT via dedicated worker
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect
-- **Conflict strategy** - Reject on version (field) mismatch (409), client retries with fresh data
+- **Conflict strategy** - Scalars: latest HLC wins silently (no 409). Sets: commutative, conflict-free. Descriptions: character-level Yjs CRDT merge
+- **Yjs collaborative editing** - Standalone WebSocket relay worker for real-time description co-editing; client-side materialization of derived fields
 - **Smart mutations** The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
 
 ## Architecture
@@ -129,7 +130,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  │ (org-123)    │ (org-123)    │ (org-456)    │        │        │        │
 │  │  └──────┬───────┴──────────────┴──────────────┴────────┘        │        │
 │  │         │  event: change                                        │        │
-│  │         │  data: { action, entityType, entityId, seqAt, stx }    │        │
+│  │         │  data: { action, entityType, entityId, seq, stx }    │        │
 │  │         ▼                                                       │        │
 │  └─────────────────────────────────────────────────────────────────┘        │
 │                                                                             │
@@ -151,12 +152,11 @@ interface StreamNotification {
   entityType: string;              // 'page' | 'attachment'
   entityId: string;
   organizationId: string | null;
-  seqAt: number | null;            // Entity-type sequence stamped by trigger (for sync)
+  seq: number | null;              // Entity-type sequence stamped by trigger (for sync)
   stx: {
     id: string;                    // Mutation ID
     sourceId: string;              // Tab/instance ID for echo prevention
-    version: number;               // Entity version after mutation
-    fieldVersions: Record<string, number>;
+    fieldTimestamps: Record<string, string>;  // Per-field HLC timestamps (scalars only)
   };
 }
 ```
@@ -238,13 +238,20 @@ Fallback chain if Phase B doesn't run (SSE fails):
 
 **When offline:** Mutations queue locally, split/squashed by field. On reconnect, catch-up first, THEN replay pending mutations. Client detects conflicts before pushing, enabling side-by-side comparison and per-field resolution.
 
-#### 2. Field-level tracking
-Conflicts are scoped to individual fields via `stx.fieldVersions`. Two users editing different fields = no conflict. Multi-field mutations check each changed field independently.
+#### 2. Per-field merge strategies
+Each field type has its own merge strategy — no single conflict model for all fields:
+- **Scalars** (name, status, points, etc.): HLC-based LWW via `stx.fieldTimestamps`. Latest timestamp wins, older silently dropped. Two users editing different fields = no conflict.
+- **Sets** (labels, assignedTo): AWSet delta operations (`{ add, remove }`). Commutative and conflict-free — no timestamps needed.
+- **Descriptions**: Yjs CRDT via dedicated WebSocket worker. Character-level merge, no REST conflict path.
 
-#### 3. Conflict strategy
-Server rejects conflicting mutations with 409 status. Client must refetch, rebase changes onto fresh data, and retry. No silent overwrites.
+The merge strategy is implicit from the value shape in the `ops` key — bare value → LWW scalar, `{ add, remove }` object → AWSet delta.
 
-### Conflict flow
+#### 3. Conflict resolution
+No 409 rejections. Scalars: latest HLC timestamp wins silently — the server compares `incoming > stored` per field and accepts or drops. Sets: commutative operations always succeed. Descriptions: Yjs handles merge at character level.
+
+The server returns `droppedFields` in the response so the frontend can optionally notify the user when a scalar edit was silently superseded.
+
+### Mutation flow
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -261,19 +268,22 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 │     ├── YES ──► 3. mutationFn: Send API request                           │
 │     │               │                                                     │
 │     │               ├── OK ──► onSuccess: finalize cache                  │
-│     │               └── CONFLICT (409) ──► Show resolution UI             │
+│     │               │   (scalars: HLC wins; sets: delta applied;          │
+│     │               │    droppedFields optionally shown to user)           │
+│     │               └── FAIL ──► Server/network error → Error toast        │
 │     │                                                                     │
 │     └── NO ──► 3. Request auto-pauses (React Query networkMode)           │
 │                    │                                                      │
 │                    └── On reconnect: catch-up stream first, then          │
-│                        resumePausedMutations(), resolve any conflicts     │
+│                        resumePausedMutations()                            │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Scenario | Behavior | Result |
 |----------|----------|--------|
 | User types rapidly (online) | Debounced, only final sent | No server flood |
-| User edits same field 5x (offline) | Squashed to 1 entry | 1 request on reconnect |
+| User edits same scalar 5x (offline) | Squashed to 1 entry (LWW) | 1 request on reconnect |
+| User adds/removes labels (offline) | AWSet deltas merged | 1 request with combined delta |
 | User edits 3 different fields (offline) | 3 separate entries | 3 requests on reconnect |
 
 ### Idempotency
@@ -287,22 +297,22 @@ Replaying the same mutation (same `stx.mutationId`) produces the same result wit
 
 ## Offline sync
 
-### Gap detection (seqAt + always-scan deletes)
+### Gap detection (seq + always-scan deletes)
 
-Uses entity-type sequence numbers (`seqAt`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
+Uses entity-type sequence numbers (`seq`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
 
 **Sequence architecture:**
-- **`seqAt`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq_at`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seqAt`. This is the **sole source of truth** for detecting creates/updates.
+- **`seq`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seq`. This is the **sole source of truth** for detecting creates/updates.
 - **Hierarchy-aware scoping** — The trigger reads the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
 - **Membership detection** — Membership changes are detected via cursor-bounded activity scan (same scan used for deletes). No counter needed — the client unconditionally refreshes membership queries on every catchup.
-- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The `seqAt` trigger only fires on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
-- **`afterSeq`** — Query parameter on list endpoints. Returns entities with `seqAt > afterSeq`, enabling delta fetches instead of full list refetches.
+- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The `seq` trigger only fires on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
+- **`afterSeq`** — Query parameter on list endpoints. Returns entities with `seq > afterSeq`, enabling delta fetches instead of full list refetches.
 
 **Two modes of gap detection:**
 
 1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from trigger-managed `context_counters.counts['s:{type}']`). The delta tells whether creates/updates happened. Deletes are always included via activities scan.
 
-2. **Live (SSE):** Each product entity notification includes `seqAt` (entity-type). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
+2. **Live (SSE):** Each product entity notification includes `seq` (entity-type). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
 **How it works:**
 ```typescript
@@ -335,18 +345,18 @@ for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
 }
 
 // During live SSE — tracks entity-type seq only:
-if (seqAt !== null) {
+if (seq !== null) {
   const key = `${organizationId}:s:${entityType}`;
-  if (seqAt > (seqs[key] ?? 0)) seqs[key] = seqAt;
+  if (seq > (seqs[key] ?? 0)) seqs[key] = seq;
 }
 ```
 
 **Key features:**
 - Single-level entity-type seq tracking (`orgId:s:attachment`, `orgId:s:page`) — no org-level seq needed
-- `seqAt` on entity rows is stamped atomically by PostgreSQL trigger (`stamp_entity_seq_at`) — same trigger also updates `context_counters.counts['s:{entityType}']`
+- `seq` on entity rows is stamped atomically by PostgreSQL trigger (`stamp_entity_seq`) — same trigger also updates `context_counters.counts['s:{entityType}']`
 - Product entity seqs are fully trigger-managed; membership changes detected via activity scan
 - Deletes and membership changes are always scanned from activities table (cursor-bounded) — watertight, no counter tricks
-- List endpoints support `afterSeq` query param for delta fetches (`WHERE seq_at > afterSeq`)
+- List endpoints support `afterSeq` query param for delta fetches (`WHERE seq > afterSeq`)
 - Persisted across tabs/reloads via localStorage (sync store)
 - Catchup summary provides entitySeqs + deletedByType per org — enables entity-type processing
 - Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
@@ -388,45 +398,90 @@ for (const [entityType, serverCount] of Object.entries(entityCounts)) {
 
 **Cost:** Zero extra DB queries — `entityCounts` comes from the same `counts` JSONB column already fetched for `entitySeqs`. On the client, it's a single integer comparison per entity type per org.
 
-### Conflict detection (version)
+### Merge resolution (HLC + AWSet)
 
-Uses entity-level version numbers (`stx.version`) and field-level versions (`stx.fieldVersions`) for **mutation conflict detection**.
+Uses per-field merge strategies instead of version-based conflict detection. The merge strategy is implicit from the value shape in the `ops` key.
 
-**Client-side (mutation creation):**
+#### Wire format
+
+All updatable fields — both scalars and sets — go in a single `ops` key. The merge strategy is detected at runtime:
+- Bare value (`string | number | boolean | null`) → scalar → LWW with HLC
+- Object with `{ add, remove }` → set → AWSet delta
+
 ```typescript
-// Extract baseVersion from cached entity when creating update mutation
-function createStxForUpdate(cachedEntity?: EntityWithStx | null): StxMetadata {
-  return {
-    id: nanoid(),
-    sourceId,
-    baseVersion: extractVersion(cachedEntity?.stx),  // From cached stx.version
+// Update request body
+{
+  ops: {
+    name?: string;                                      // scalar → LWW
+    status?: number;                                     // scalar → LWW
+    labels?: { add?: string[]; remove?: string[] };      // set → AWSet
+    assignedTo?: { add?: string[]; remove?: string[] };  // set → AWSet
   };
+  stx: StxRequest;
 }
 ```
 
-**Server-side (conflict check in handlers):**
-```typescript
-import { checkFieldConflicts, throwIfConflicts, buildFieldVersions, getChangedTrackedFields } from '#/sync/field-versions';
+#### HLC (Hybrid Logical Clock)
 
-// Get all tracked fields that are being updated
-const trackedFields = ['name', 'content', 'status'] as const;
-const changedFields = getChangedTrackedFields(payload, trackedFields);
+Combines physical time + logical counter + client ID for causal ordering even with clock drift:
 
-// Field-level conflict detection - check ALL changed fields
-const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
-throwIfConflicts('entity', conflicts);
-
-// Build updated fieldVersions for ALL changed fields
-const fieldVersions = buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion);
+```
+Format: "1710500000123:0001:abcde" (unix millis + zero-padded counter + sourceId hash)
+Compare: lexicographic string comparison gives correct ordering
 ```
 
-**Key features:**
-- `stx.version` increments on every mutation (entity-level)
-- `stx.fieldVersions` tracks per-field last-modified version
-- Client sends `baseVersion` (version when entity was read)
-- Server rejects if ANY field's `fieldVersions[field] > baseVersion`
-- Multi-field mutations check ALL changed fields for conflicts
-- Enables offline edits with eventual conflict resolution
+The `sourceId` suffix (5-char hash) ensures deterministic tie-breaking when two clients generate timestamps at the same logical time. Properties: always advances, breaks ties deterministically, causal ordering guaranteed.
+
+**Client-side (mutation creation):**
+```typescript
+// Generate HLC timestamps only for scalar fields in ops (skip AWSet deltas)
+function createStxForUpdate(ops: Record<string, unknown>): StxRequest {
+  const fieldTimestamps: Record<string, string> = {};
+  for (const [key, value] of Object.entries(ops)) {
+    if (!isSetOp(value)) fieldTimestamps[key] = generateHLC();
+  }
+  return { mutationId: nanoid(), sourceId, fieldTimestamps };
+}
+```
+
+**Server-side (merge resolution in handlers):**
+```typescript
+import { resolveFieldConflicts } from '#/sync/field-versions';
+import { applyArrayDelta } from '#/sync/array-delta';
+
+// 1. Separate scalars from set ops
+// 2. For scalars: HLC-based accept/drop
+const { accepted, dropped } = resolveFieldConflicts(
+  scalarFields, incomingTimestamps, entity.stx?.fieldTimestamps ?? {}
+);
+
+// 3. For sets: apply AWSet deltas (commutative, no conflict check)
+for (const [field, delta] of Object.entries(setOps)) {
+  accepted[field] = applyArrayDelta(entity[field], delta);
+}
+
+// 4. Atomic SQL write resolves HLC conflicts directly:
+// UPDATE tasks SET
+//   name = CASE WHEN :hlc > (stx->'fieldTimestamps'->>'name') THEN :name ELSE name END,
+//   stx = jsonb_set(stx, '{fieldTimestamps}', merged_timestamps)
+// WHERE id = :id RETURNING *;
+```
+
+#### AWSet properties
+
+Set fields (`labels`, `assignedTo`) use Add-Wins Set delta operations:
+- **Idempotent** — add existing = no-op, remove missing = no-op
+- **Commutative** — order doesn't matter, result is the same
+- **No conflict check** — set fields are not tracked in `fieldTimestamps`
+
+#### Key features
+- `stx.fieldTimestamps` tracks per-scalar-field HLC timestamps (replaces `recordVersion` + `fieldVersions`)
+- Client generates HLC for each scalar field being changed (not for set fields)
+- Server compares HLC: newer wins, older silently dropped — no 409 rejections
+- Set fields use commutative AWSet deltas — always succeed
+- `droppedFields` returned in response for optional client notification
+- Atomic SQL approach eliminates read-write race conditions
+- Server advances its HLC clock from incoming timestamps for causal ordering
 
 ### Echo prevention (sourceId)
 
@@ -443,16 +498,24 @@ Each browser tab generates a unique `sourceId` on load, sent with every mutation
 
 ### Mutation queue
 
-Uses React Query's mutation cache with `squashPendingMutation()`.
+Uses React Query's mutation cache with `squashPendingMutation()` and `coalescePendingCreate()`.
+
+**Scope strategy:**
+- **Create/delete** mutations use `scope: { id: entityType }` — serializes all create/delete operations per entity type to preserve ordering (create-before-update, no orphaned updates)
+- **Update** mutations have **no scope** — fire concurrently for different entities, enabling parallel edits without blocking
 
 **Squashing behavior:**
-- Same-entity mutations squash (cancel pending, keep latest)
-- Version-based conflict detection via `stx.baseVersion`
-- On reconnect: pull upstream first, check for conflicts, then flush
+- Same-entity update mutations squash (cancel pending, keep latest `ops`)
+- Delta-aware merge: scalar fields use LWW (last write wins); set fields merge AWSet deltas (`{ add, remove }`)
+- On reconnect: pull upstream first, then flush
+
+**Why no scope on updates?** With scope, ALL updates for an entity type (e.g., all task updates) serialize behind each other. If a user rapidly edits task A then task B, task B waits for task A’s response. Without scope, both fire concurrently.
 
 ### Create + edit coalescing
 
-When a user creates an entity offline and edits it before reconnecting, mutations are coalesced into a single create request.
+When a user creates an entity offline and edits it before reconnecting, `coalescePendingCreate()` merges update `ops` into the pending create mutation.
+
+This runs at the top of every update mutation’s `onMutate` — before squash or optimistic updates. If a pending create is found for the same entity, the update ops are folded into the create variables (set deltas applied against the create’s full arrays, scalars overwritten) and the update mutation returns early (no separate request needed).
 
 | Scenario | Result |
 |----------|--------|
@@ -716,6 +779,75 @@ The `offlineAccess` toggle controls two things:
 | `frontend/src/offline-config.tsx` | Pure mapping: entity type → sync query options |
 | `frontend/src/query/provider.tsx` | Wires sync service to stream 'live' state transitions |
 | `frontend/src/store/sync.ts` | Persisted seqs, cursor, lastSyncAt |
+| `frontend/src/query/offline/squash-utils.ts` | Delta-aware mutation squashing + create-edit coalescing |
+| `frontend/src/query/offline/stx-utils.ts` | Client-side stx metadata creation (mutationId, sourceId, HLC fieldTimestamps) |
+| `frontend/src/query/offline/hlc.ts` | Per-tab HLC clock (generateHLC, advanceClock) |
+| `frontend/src/query/offline/array-delta.ts` | AWSet delta computation + application for set fields |
+| `frontend/src/modules/common/blocknote/use-derived-fields-sender.ts` | Debounced client-side materialization → REST |
+| `backend/src/sync/field-versions.ts` | HLC-based scalar merge resolution (accept/drop) |
+| `backend/src/sync/array-delta.ts` | AWSet delta schema + server-side application |
+| `backend/src/sync/hlc.ts` | HLC create/compare/serialize utilities |
+| `backend/src/sync/build-stx.ts` | Build stx with fieldTimestamps for entity writes |
+
+---
+
+## Yjs collaborative editing
+
+Descriptions on product entities (`task`, `page`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
+
+### Architecture
+
+The Yjs worker is a standalone `yjs/` workspace package (like `cdc/`). It is a **pure binary relay** — the server never instantiates a `Y.Doc`. It stores and relays raw `Uint8Array` updates with zero document memory.
+
+```
+Online editing:
+  Browser → y-websocket provider → Yjs worker (standalone service, own port)
+  Client (debounced 3s):
+    → Compute derived fields from local Y.Doc (summary, keywords, checkboxCount, etc.)
+    → PATCH /:entityType/:entityId/derived → backend validates + writes to entity table
+    → CDC detects row change → SSE → non-editing clients update
+
+Offline editing:
+  Browser → BlockNote → JSON save on blur → REST mutation → entity.description
+  On reconnect: y-websocket connects, client initializes Y.Doc from entity.description
+
+Other users (non-editing, online):
+  CDC detects materialized row change → SSE → TanStack Query cache update
+  Non-editing users never connect to Yjs worker
+```
+
+### Key design decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|----------|
+| Transport | Standalone service on own port | Isolates CPU/memory from API; independent scaling |
+| Server Y.Doc | **None — pure binary relay** | Zero memory per active document; horizontally trivial |
+| Storage | **Ephemeral** — `yjs_documents` row exists only during active editing sessions | Entity table is the single source of truth; no drift between two sources |
+| Materialization | **Client-side** — debounced REST call sends derived fields | Client already has the hydrated Y.Doc; no server re-hydration needed |
+| Auth | HMAC-signed token (same pattern as `cache-token-signer.ts`) | API signs token, worker verifies with shared secret |
+| Frontend provider | `y-websocket` (official, 3KB) | Battle-tested; auto-reconnect; BlockNote supports natively |
+| Server BlockNote dep | **None** | All block/description processing is client-side |
+
+### Ephemeral lifecycle
+
+1. First WS connect → relay creates `yjs_documents` row (empty state). Client pushes Y.Doc (initialized from `entity.description` JSON via `initialContent`).
+2. During editing → relay stores raw binary state (debounced 3s). Subsequent clients sync from stored state.
+3. Last WS disconnect → 5 min grace timer. If no reconnect → deletes `yjs_documents` row.
+4. On editor close → flush derived fields via REST (cancel debounce, fire with `keepalive: true`), seed TanStack Query cache from editor state.
+
+### SSE suppression while editing
+
+While a Yjs editor is active, the SSE handler skips description-derived fields for that entity (to avoid overwriting the fresher local Y.Doc state). Non-description fields (`labels`, `status`, etc.) still flow through normally. On editor close, the query cache is seeded from the editor state and normal SSE flow resumes.
+
+### Client-side derived fields
+
+Per-entity materialization (derived fields like `summary`, `checkboxCount`, `keywords`) is computed entirely on the client. After a debounce (3s), the client sends computed fields via `PATCH /:entityType/:entityId/derived`. HLC timestamps guard against stale overwrites (same Phase B infrastructure). This eliminates `@blocknote/server-util` from the server entirely.
+
+### Checked state
+
+Checkbox checked state lives in BlockNote block props (`checklistItem.props.checked: boolean`), not in a separate column. Checkbox toggles are Y.Doc updates synced via Yjs in real-time. Two materialized counters (`checkboxCount`, `checkedCount`) on the task entity support list rendering performance.
+
+For full implementation details, see [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md) Phase C.
 
 ---
 
@@ -767,4 +899,8 @@ Then in the app:
 **Influences:**
 - [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
 - [LiveStore](https://livestore.io/) - SQLite-based sync with event sourcing
-- [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support
+- [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support, HLC design influence
+- [y-protocols](https://github.com/yjs/y-protocols) - Yjs sync/awareness protocol primitives
+
+**Design documents:**
+- [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md) - Per-field merge strategy implementation plan (LWW, AWSet, Yjs)

@@ -32,7 +32,7 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
       userId: mockNanoid(),
       role: 'admin' as const,
       createdAt,
-      modifiedAt: createdAt,
+      updatedAt: createdAt,
     };
   });
 

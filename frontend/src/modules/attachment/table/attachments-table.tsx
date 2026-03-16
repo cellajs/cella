@@ -94,7 +94,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
-      updateAttachment.mutate({ id: attachment.id, key: 'name', data: attachment.name });
+      updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });
     }
   };
 
@@ -135,7 +135,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
         canUpload={canUpload}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
+        queryKey={queryOptions.queryKey}
       />
       <DataTable<Attachment>
         {...{

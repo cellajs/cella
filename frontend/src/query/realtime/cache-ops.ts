@@ -3,6 +3,7 @@
  * Used by both live handler and catchup processor.
  */
 
+import type { ProductEntityType } from 'shared';
 import {
   type EntityQueryKeys,
   getEntityDeltaFetch,
@@ -11,8 +12,9 @@ import {
 } from '~/query/basic/entity-query-registry';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { ItemData } from '~/query/basic/types';
+import type { EntityQueryData, InfiniteEntityQueryData, ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
+import { useYjsEditorStore } from '~/store/yjs-editor';
 import { removeCacheToken, storeCacheToken } from './cache-token-store';
 
 /**
@@ -38,6 +40,60 @@ export function hasPendingMutationForEntity(entityType: string, entityId: string
     }
   }
   return false;
+}
+
+/**
+ * Patch only the stx metadata on a cached entity (detail + list caches).
+ * Used by echo-prevented SSE notifications to keep HLC timestamp metadata fresh
+ * without overwriting optimistic field values or triggering refetches.
+ */
+export function patchEntityStxInCache(
+  entityType: string,
+  entityId: string,
+  stx: { fieldTimestamps?: Record<string, string> },
+): void {
+  if (!hasEntityQueryKeys(entityType)) return;
+
+  const keys = getEntityQueryKeys(entityType);
+
+  type StxEntity = ItemData & { stx?: Record<string, unknown> };
+
+  const patchStx = (item: StxEntity): StxEntity => {
+    if (!item.stx) return item;
+    return { ...item, stx: { ...item.stx, fieldTimestamps: stx.fieldTimestamps } };
+  };
+
+  // Patch detail cache
+  queryClient.setQueryData(keys.detail.byId(entityId), (old: Record<string, unknown> | undefined) => {
+    if (!old || typeof old !== 'object' || !('stx' in old)) return old;
+    return {
+      ...old,
+      stx: {
+        ...(old.stx as Record<string, unknown>),
+        fieldTimestamps: stx.fieldTimestamps,
+      },
+    };
+  });
+
+  // Patch list caches (both regular and infinite)
+  for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
+    if (isInfiniteQueryData(queryData)) {
+      const typed = queryData as InfiniteEntityQueryData;
+      queryClient.setQueryData(queryKey, {
+        ...typed,
+        pages: typed.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => (item.id === entityId ? patchStx(item as StxEntity) : item)),
+        })),
+      });
+    } else if (isQueryData(queryData)) {
+      const typed = queryData as EntityQueryData;
+      queryClient.setQueryData(queryKey, {
+        ...typed,
+        items: typed.items.map((item) => (item.id === entityId ? patchStx(item as StxEntity) : item)),
+      });
+    }
+  }
 }
 
 /** Store cache token for entity (live notifications only) */
@@ -151,11 +207,37 @@ export async function fetchEntityAndUpdateList(
       meta: organizationId ? { organizationId } : undefined,
     });
     if (entity) {
+      // If a Yjs editor is active for this entity, strip Yjs-owned fields to avoid
+      // overwriting the local Y.Doc state with a slightly stale server snapshot
+      let filtered = entity;
+      if (entityType) {
+        const yjsStore = useYjsEditorStore.getState();
+        if (yjsStore.isActive(entityType as ProductEntityType, entityId)) {
+          const ownedFields = yjsStore.getOwnedFields(entityType as ProductEntityType);
+          const existing = queryClient.getQueryData<ItemData>(keys.detail.byId(entityId));
+          if (existing) {
+            filtered = { ...entity };
+            for (const field of ownedFields) {
+              if (field in existing)
+                (filtered as unknown as Record<string, unknown>)[field] = (
+                  existing as unknown as Record<string, unknown>
+                )[field];
+            }
+          }
+        }
+      }
+
+      // Update detail cache
+      queryClient.setQueryData(keys.detail.byId(entityId), (old: ItemData | undefined) => {
+        if (!old) return filtered;
+        return { ...old, ...filtered };
+      });
+
       for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
         if (isInfiniteQueryData(queryData)) {
-          changeInfiniteQueryData(queryKey, [entity], action);
+          changeInfiniteQueryData(queryKey, [filtered], action);
         } else if (isQueryData(queryData)) {
-          changeQueryData(queryKey, [entity], action);
+          changeQueryData(queryKey, [filtered], action);
         }
       }
     }
@@ -210,7 +292,10 @@ export async function deltaFetchAndPatchList(
       }
 
       // Update detail cache
-      queryClient.setQueryData(keys.detail.byId(entity.id), entity);
+      queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
+        if (!old) return entity;
+        return { ...old, ...entity };
+      });
 
       // Upsert into all matching list caches
       for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {

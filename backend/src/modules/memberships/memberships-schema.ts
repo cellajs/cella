@@ -43,8 +43,8 @@ export const membershipBaseSchema = membershipSchema
   .omit({
     createdAt: true,
     createdBy: true,
-    modifiedAt: true,
-    modifiedBy: true,
+    updatedAt: true,
+    updatedBy: true,
   })
   .openapi('MembershipBase', {
     description: 'Core membership fields shared across active and inactive memberships.',

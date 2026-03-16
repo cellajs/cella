@@ -10,7 +10,6 @@ export function createServerStx(): StxBase {
   return {
     mutationId: nanoid(),
     sourceId: 'server',
-    version: 1,
-    fieldVersions: {},
+    fieldTimestamps: {},
   };
 }

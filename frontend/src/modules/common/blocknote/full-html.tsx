@@ -3,25 +3,18 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import type { CarouselItemData } from '~/modules/attachment/carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import { getFileUrl } from '~/modules/attachment/helpers';
 import { findAttachmentInListCache } from '~/modules/attachment/query';
-import type { CheckboxEntry } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import {
-  getHeadlessEditor,
-  getParsedContent,
-  setHeadlessCheckboxes,
-} from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
 
 interface BlockNoteFullHtmlProps {
   id: string;
   defaultValue: string;
-  checkboxes?: CheckboxEntry[];
   className?: string;
   dense?: boolean;
   clickOpensPreview?: boolean;
@@ -74,7 +67,6 @@ async function processBlocks(
 function BlockNoteFullHtml({
   id,
   defaultValue,
-  checkboxes,
   className = '',
   dense = false,
   clickOpensPreview = false,
@@ -120,8 +112,6 @@ function BlockNoteFullHtml({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      // Sync checkbox state into the headless editor's extension store before rendering
-      setHeadlessCheckboxes(checkboxes ?? []);
       setRenderState({ html: getHeadlessEditor().blocksToFullHTML(resolved), mediaItems: media });
     }
 
@@ -129,22 +119,10 @@ function BlockNoteFullHtml({
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, publicFiles, checkboxes]);
+  }, [defaultValue, publicFiles]);
 
   const handleClick: MouseEventHandler = (event) => {
     const target = event.target as HTMLElement;
-
-    // Handle checkbox click via event delegation
-    const checkbox = target.closest('input[data-checkbox-id]') as HTMLInputElement | null;
-    if (checkbox) {
-      const checkboxId = checkbox.dataset.checkboxId;
-      if (checkboxId) {
-        // Browser already toggled the checkbox before the click bubbles here,
-        // so checkbox.checked is the new desired value
-        dispatchCustomEvent('toggleCheckbox', { checkboxId, checked: checkbox.checked });
-      }
-      return;
-    }
 
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 

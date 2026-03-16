@@ -18,24 +18,26 @@ import * as cacheOps from './cache-ops';
  * also refetch when they become active again.
  */
 export function handlePublicStreamNotification(message: StreamNotification): void {
-  const { entityType, entityId, action, seqAt, stx } = message;
+  const { entityType, entityId, action, seq, stx } = message;
 
   // Only handle configured public entity types
   if (!entityType || !isPublicProductEntity(entityType)) {
     return;
   }
 
-  // Echo prevention: skip if this is our own mutation (same as app-stream-handler)
+  // Echo prevention: skip data fetch/invalidation for own mutations,
+  // but still patch stx metadata so subsequent mutations read fresh versions
   if (stx?.sourceId === sourceId) {
-    console.debug('[handlePublicStreamNotification] Echo prevention - skipping own mutation:', stx.mutationId);
+    if (entityType) cacheOps.patchEntityStxInCache(entityType, entityId, stx);
+    console.debug('[handlePublicStreamNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
     return;
   }
 
-  // Track unscoped seq watermark (from stamp_entity_seq_at trigger)
-  if (seqAt !== null && seqAt !== undefined) {
+  // Track unscoped seq watermark (from stamp_entity_seq trigger)
+  if (seq !== null && seq !== undefined) {
     const store = useSyncStore.getState();
     const current = store.getSeq(entityType);
-    if (seqAt > current) store.setSeq(entityType, seqAt);
+    if (seq > current) store.setSeq(entityType, seq);
   }
 
   // Use registry for dynamic lookup (keys registered at module load time by entity modules)

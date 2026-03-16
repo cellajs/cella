@@ -8,6 +8,5 @@ import { mockNanoid } from './mock-nanoid';
 export const mockStx = (): StxBase => ({
   mutationId: mockNanoid(),
   sourceId: `src_${mockNanoid()}`,
-  version: 1,
-  fieldVersions: {},
+  fieldTimestamps: {},
 });

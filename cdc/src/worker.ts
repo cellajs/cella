@@ -7,12 +7,12 @@ import { activitiesTable } from '#/db/schema/activities';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME, RESOURCE_LIMITS } from './constants';
 import { cdcDb } from './db';
 import { env } from './env';
-import { logEvent } from './pino';
+import { logError, logEvent } from './pino';
 
 import { generateActivityId, recordDeadLetter, sendMessageToApi } from './lib/activity-service';
 import { getErrorMessage } from './lib/get-error-message';
 import { replicationState } from './lib/replication-state';
-import { getErrorCode, withRetry } from './lib/retry';
+import { withRetry } from './lib/retry';
 
 import type { ProcessMessageResult } from './process-message';
 import { processMessage } from './process-message';
@@ -64,8 +64,8 @@ async function persistAndSendActivity(
   const activityWithId = { ...processResult.activity, id: activityId };
 
   await withSpan(cdcSpanNames.createActivity, activityAttrs(activityWithId), async () => {
-    // For product entities, read seqAt stamped by the trigger (available in WAL data)
-    const seqAt = typeof processResult.entityData.seqAt === 'number' ? processResult.entityData.seqAt : undefined;
+    // For product entities, read seq stamped by the trigger (available in WAL data)
+    const seq = typeof processResult.entityData.seq === 'number' ? processResult.entityData.seq : undefined;
 
     // Update entity/membership counts in contextCountersTable.counts JSONB
     const countDeltas = getCountDeltas(
@@ -100,10 +100,10 @@ async function persistAndSendActivity(
       entityId: processResult.activity.entityId,
       activityId,
       lsn,
-      ...(processResult.activity.changedKeys && { changedKeys: processResult.activity.changedKeys }),
+      ...(processResult.activity.changedFields && { changedFields: processResult.activity.changedFields }),
     });
 
-    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seqAt);
+    sendMessageToApi(activityWithId, processResult.entityData, traceCtx, seq);
   });
 }
 
@@ -149,15 +149,7 @@ async function handleDataMessage(lsn: string, message: unknown): Promise<void> {
       await acknowledgeLsn(lsn);
     });
   } catch (error) {
-    logEvent('error', `${LOG_PREFIX} Error processing CDC message - LSN NOT acknowledged`, {
-      error: getErrorMessage(error),
-      errorCode: getErrorCode(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      lsn,
-      tag,
-      tableName,
-      activityId,
-    });
+    logError(`${LOG_PREFIX} Error processing CDC message - LSN NOT acknowledged`, error);
     recordCdcMetric('errors');
   }
 }
@@ -197,7 +189,7 @@ function createReplicationService(connectionUrl: URL): LogicalReplicationService
   });
 
   service.on('error', (error: Error) => {
-    logEvent('error', `${LOG_PREFIX} CDC replication error`, { error: error.message });
+    logError(`${LOG_PREFIX} CDC replication error`, error);
   });
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {

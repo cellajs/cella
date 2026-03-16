@@ -79,8 +79,7 @@ function PagesTable() {
         if (column.key === 'status' && page.status !== originalPage.status) {
           updateMutation.mutate({
             id: page.id,
-            key: 'status',
-            data: page.status,
+            ops: { status: page.status },
           });
         }
       }
@@ -129,8 +128,7 @@ function PagesTable() {
         if (newOrder !== draggedPage.displayOrder) {
           updateMutation.mutate({
             id: draggedPage.id,
-            key: 'displayOrder',
-            data: newOrder,
+            ops: { displayOrder: newOrder },
           });
         }
       }
@@ -151,7 +149,7 @@ function PagesTable() {
         clearSelection={clearSelection}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
+        queryKey={queryOptions.queryKey}
       />
       <DataTable
         rows={rows}

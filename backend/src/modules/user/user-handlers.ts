@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike, or, sql } from 'drizzle-orm';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
@@ -47,7 +47,7 @@ const userRouteHandlers = app
       name: usersTable.name,
       email: usersTable.email,
       createdAt: usersTable.createdAt,
-      lastSeenAt: sql`(SELECT ${userActivityTable.lastSeenAt} FROM ${userActivityTable} WHERE ${userActivityTable.userId} = ${usersTable.id})`,
+      lastSeenAt: sql`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
       role: systemRolesTable.role,
     });
 

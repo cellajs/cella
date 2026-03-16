@@ -10,11 +10,11 @@ import { stxBaseSchema } from './sync-transaction-schemas';
  * Lightweight payload - client fetches entity data via API if needed.
  *
  * For product entities (page, attachment):
- * - Includes stx, seqAt, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  *
  * For membership — app stream only:
  * - seq is null (membership changes detected via activity scan on catchup)
- * - stx/seqAt/cacheToken are null
+ * - stx/seq/cacheToken are null
  */
 export const streamNotificationSchema = z
   .object({
@@ -28,7 +28,9 @@ export const streamNotificationSchema = z
     /** Context entity type for membership events (organization, project, etc.) */
     contextType: z.enum(appConfig.contextEntityTypes).nullable(),
     /** Per-entityType sequence number stamped by trigger (for product entity sync) */
-    seqAt: z.number().int().nullable(),
+    seq: z.number().int().nullable(),
+    /** Context entity ID for unseen count grouping (e.g., projectId for tasks) */
+    contextId: z.string().nullable(),
     /** Sync transaction metadata for conflict detection (entities only) */
     stx: stxBaseSchema.nullable(),
     /** HMAC-signed token for LRU cache access (entities only) */
@@ -64,7 +66,7 @@ export const streamCatchupBodySchema = z.object({
  * Used in catchup responses to give client minimal info to sync efficiently.
  *
  * - entitySeqs: contextEntity-scoped sequence numbers from context_counters JSONB (s:{type} keys)
- *   - Source of truth for create/update detection (managed by stamp_entity_seq_at trigger)
+ *   - Source of truth for create/update detection (managed by stamp_entity_seq trigger)
  * - deletedIds: exact IDs to remove from cache (always scanned, watertight)
  * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal
  * - membershipChanged: true if membership activities detected in cursor range (activity scan)

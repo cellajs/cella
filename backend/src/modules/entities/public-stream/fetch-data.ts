@@ -17,7 +17,7 @@ const PUBLIC_SEQ_PREFIX = 'public';
  * Fetch catchup summary for the public stream.
  *
  * Uses unscoped seqs from context_counters.counts['s:{entityType}']
- * (managed by stamp_entity_seq_at trigger) for change detection.
+ * (managed by stamp_entity_seq trigger) for change detection.
  * Deletes are always scanned from activities (cursor-bounded, watertight).
  *
  * When clientSeqs are provided and all match, returns immediately

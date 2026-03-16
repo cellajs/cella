@@ -25,6 +25,7 @@ This document describes the high-level architecture of Cella.
 - [zod](https://github.com/colinhacks/zod)
 - [openapi](https://www.openapis.org)
 - [jsx-email](https://jsx.email/)
+- [yjs](https://yjs.dev) / [y-protocols](https://github.com/yjs/y-protocols)
 
 ### Frontend
 - [react](https://reactjs.org)
@@ -82,7 +83,8 @@ Cella is a flat-root monorepo.
 ├── infra                     Terraform IaC (Scaleway)
 ├── info                      Documentation, changelog, migration plans
 ├── locales                   Translations
-└── shared                    Shared config, types and utils
+├── shared                    Shared config, types and utils
+└── yjs                       Yjs collaborative editing worker (WebSocket binary relay)
 ```
 
 ## Data modeling & modularity
@@ -116,7 +118,19 @@ The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus 
 - **App stream** (`/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
 - **Public stream** (`/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
 
-Sequence numbers are hierarchy-aware: a PostgreSQL trigger (`stamp_entity_seq_at`) atomically stamps `seqAt` on all product entity rows. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. List endpoints support `afterSeq` for efficient delta fetches during catchup.
+Sequence numbers are hierarchy-aware: a PostgreSQL trigger (`stamp_entity_seq`) atomically stamps `seq` on all product entity rows. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. List endpoints support `afterSeq` for efficient delta fetches during catchup.
+
+### Per-field merge strategies
+
+Product entity mutations use per-field merge strategies instead of a single conflict model. The strategy is implicit from the value shape in the `ops` key:
+
+| Strategy | CRDT type | Example fields | Merge rule |
+|----------|-----------|----------------|------------|
+| **LWW** | LWW-Register (HLC) | `name`, `status`, `points` | Latest HLC timestamp wins silently |
+| **AWSet** | Add-Wins Set | `labels`, `assignedTo` | Commutative `{ add, remove }` deltas |
+| **YATA** | Yjs CRDT | `description` | Character-level merge via standalone Yjs worker |
+
+This replaces the previous version-based conflict detection (409 reject + retry). Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md) for full implementation details.
 
 ### Client sync cycle
 
@@ -137,9 +151,9 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
    - High priority (current org): fetch single entity + patch into list caches
    - Low priority (other orgs): mark stale, refetch on next access
 
-Offline mutations are queued with stx metadata and squashed per entity until connectivity returns.
+Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.
 
-For full details on CDC, the realtime pipeline, stx transactions, offline mutations, and context counters, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
+For full details on CDC, the realtime pipeline, stx transactions, offline mutations, and context counters, see [SYNC_ENGINE.md](./SYNC_ENGINE.md). For per-field merge strategy implementation details, see [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md).
 
 ## Query layer
 
