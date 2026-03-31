@@ -32,219 +32,222 @@ if (!env.MICROSOFT_TENANT_ID) {
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const authOAuthRouteHandlers = app
+/**
+ * Initiates GitHub OAuth authentication flow
+ */
+app.openapi(authOAuthRoutes.github, async (ctx) => {
+  // Check if Github OAuth is enabled
+  const strategy = 'github' as EnabledOAuthProvider;
 
-  /**
-   * Initiates GitHub OAuth authentication flow
+  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+    throw new AppError(400, 'unsupported_oauth', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
+
+  // Generate a `state` to prevent CSRF, and build URL with scope.
+  const state = generateState();
+  const url = githubAuth.createAuthorizationURL(state, githubScopes);
+
+  // Start the OAuth session & flow (Persist `state`)
+  return await handleOAuthInitiation(ctx, 'github', url, state);
+});
+
+/**
+ * Initiates Google OAuth authentication flow
+ */
+app.openapi(authOAuthRoutes.google, async (ctx) => {
+  // Check if Google OAuth is enabled
+  const strategy = 'google' as EnabledOAuthProvider;
+  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+    throw new AppError(400, 'unsupported_oauth', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
+
+  // Generate a `state`, PKCE, and scoped URL.
+  const state = generateState();
+  const codeVerifier = generateCodeVerifier();
+  const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
+
+  // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
+  return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier);
+});
+
+/**
+ * Initiates Microsoft OAuth authentication flow
+ */
+app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
+  // Check if Microsoft OAuth is enabled
+  const strategy = 'microsoft' as EnabledOAuthProvider;
+  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
+    throw new AppError(400, 'unsupported_oauth', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
+
+  // Generate a `state`, PKCE, and scoped URL.
+  const state = generateState();
+  const codeVerifier = generateCodeVerifier();
+  const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
+
+  // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
+  return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
+});
+
+/**
+ * GitHub callback
+ */
+app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
+  const { code, state, error } = ctx.req.valid('query');
+
+  /*
+   * Handle custom redirect flow (e.g., for external apps or tools):
+   * If `state` includes a `redirectUrl`, redirect there with OAuth params.
+   * Falls back silently if `state` is not a JSON-encoded object.
    */
-  .openapi(authOAuthRoutes.github, async (ctx) => {
-    // Check if Github OAuth is enabled
-    const strategy = 'github' as EnabledOAuthProvider;
+  try {
+    const parsedState = JSON.parse(atob(state));
+    if (parsedState.redirectUrl)
+      return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
+  } catch (_) {
+    // Ignore parsing errors; continue with standard OAuth handling
+  }
+  const strategy = 'github' as EnabledOAuthProvider;
 
-    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+  // When something went wrong during Github OAuth, fail early.
+  if (error || !code) {
+    throw new AppError(400, 'oauth_failed', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
 
-    // Generate a `state` to prevent CSRF, and build URL with scope.
-    const state = generateState();
-    const url = githubAuth.createAuthorizationURL(state, githubScopes);
+  // Verify cookie by `state` (CSRF protection)
+  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
+  const cookiePayload = parseOAuthCookie(oauthCookie);
 
-    // Start the OAuth session & flow (Persist `state`)
-    return await handleOAuthInitiation(ctx, 'github', url, state);
-  })
-  /**
-   * Initiates Google OAuth authentication flow
-   */
-  .openapi(authOAuthRoutes.google, async (ctx) => {
-    // Check if Google OAuth is enabled
-    const strategy = 'google' as EnabledOAuthProvider;
-    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+  if (!state || !cookiePayload) {
+    throw new AppError(401, 'invalid_state', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
 
-    // Generate a `state`, PKCE, and scoped URL.
-    const state = generateState();
-    const codeVerifier = generateCodeVerifier();
-    const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
+  try {
+    // Exchange authorization code for access token and fetch Github user info
+    const githubValidation = await githubAuth.validateAuthorizationCode(code);
+    const accessToken = githubValidation.accessToken();
 
-    // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier);
-  })
-  /**
-   * Initiates Microsoft OAuth authentication flow
-   */
-  .openapi(authOAuthRoutes.microsoft, async (ctx) => {
-    // Check if Microsoft OAuth is enabled
-    const strategy = 'microsoft' as EnabledOAuthProvider;
-    if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-      throw new AppError(400, 'unsupported_oauth', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const [githubUserResponse, githubUserEmailsResponse] = await Promise.all([
+      fetch('https://api.github.com/user', { headers }),
+      fetch('https://api.github.com/user/emails', { headers }),
+    ]);
 
-    // Generate a `state`, PKCE, and scoped URL.
-    const state = generateState();
-    const codeVerifier = generateCodeVerifier();
-    const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
+    const githubUser = (await githubUserResponse.json()) as GithubUserProps;
+    const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
+    const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-    // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
-  })
-  /**
-   * GitHub callback
-   */
-  .openapi(authOAuthRoutes.githubCallback, async (ctx) => {
-    const { code, state, error } = ctx.req.valid('query');
+    return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
 
-    /*
-     * Handle custom redirect flow (e.g., for external apps or tools):
-     * If `state` includes a `redirectUrl`, redirect there with OAuth params.
-     * Falls back silently if `state` is not a JSON-encoded object.
-     */
-    try {
-      const parsedState = JSON.parse(atob(state));
-      if (parsedState.redirectUrl)
-        return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
-    } catch (_) {
-      // Ignore parsing errors; continue with standard OAuth handling
-    }
-    const strategy = 'github' as EnabledOAuthProvider;
+    // Handle known OAuth validation errors (e.g. bad token, revoked code)
+    const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+    throw new AppError(401, type, 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+      ...(error instanceof Error ? { originalError: error } : {}),
+    });
+  }
+});
 
-    // When something went wrong during Github OAuth, fail early.
-    if (error || !code) {
-      throw new AppError(400, 'oauth_failed', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+/**
+ * Google callback
+ */
+app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
+  const { state, code } = ctx.req.valid('query');
+  const strategy = 'google' as EnabledOAuthProvider;
 
-    // Verify cookie by `state` (CSRF protection)
-    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload = parseOAuthCookie(oauthCookie);
+  // Verify cookie by `state` (CSRF protection) & PKCE validation
+  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
+  const cookiePayload = parseOAuthCookie(oauthCookie);
 
-    if (!state || !cookiePayload) {
-      throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+  if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
+    throw new AppError(401, 'invalid_state', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
 
-    try {
-      // Exchange authorization code for access token and fetch Github user info
-      const githubValidation = await githubAuth.validateAuthorizationCode(code);
-      const accessToken = githubValidation.accessToken();
+  try {
+    // Exchange authorization code for access token and fetch Google user info
+    const googleValidation = await googleAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
+    const accessToken = googleValidation.accessToken();
 
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const [githubUserResponse, githubUserEmailsResponse] = await Promise.all([
-        fetch('https://api.github.com/user', { headers }),
-        fetch('https://api.github.com/user/emails', { headers }),
-      ]);
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
+    const googleUser = (await response.json()) as GoogleUserProps;
+    const providerUser = transformSocialUserData(googleUser);
 
-      const githubUser = (await githubUserResponse.json()) as GithubUserProps;
-      const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
-      const providerUser = transformGithubUserData(githubUser, githubUserEmails);
+    return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
 
-      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
+    // Handle known OAuth validation errors (e.g. bad token, revoked code)
+    const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+    throw new AppError(401, type, 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+      ...(error instanceof Error ? { originalError: error } : {}),
+    });
+  }
+});
 
-      // Handle known OAuth validation errors (e.g. bad token, revoked code)
-      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError(401, type, 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-  })
+/**
+ * Microsoft callback
+ */
+app.openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
+  const { state, code } = ctx.req.valid('query');
+  const strategy = 'microsoft' as EnabledOAuthProvider;
 
-  /**
-   * Google callback
-   */
-  .openapi(authOAuthRoutes.googleCallback, async (ctx) => {
-    const { state, code } = ctx.req.valid('query');
-    const strategy = 'google' as EnabledOAuthProvider;
+  // Verify cookie by `state` (CSRF protection) & PKCE validation
+  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
+  const cookiePayload = parseOAuthCookie(oauthCookie);
 
-    // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload = parseOAuthCookie(oauthCookie);
+  if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
+    throw new AppError(401, 'invalid_state', 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+    });
+  }
 
-    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
+  try {
+    // Exchange authorization code for access token and fetch Microsoft user info
+    const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
+    const accessToken = microsoftValidation.accessToken();
 
-    try {
-      // Exchange authorization code for access token and fetch Google user info
-      const googleValidation = await googleAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
-      const accessToken = googleValidation.accessToken();
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
+    const microsoftUser = (await response.json()) as MicrosoftUserProps;
+    const providerUser = transformSocialUserData(microsoftUser);
 
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
-      const googleUser = (await response.json()) as GoogleUserProps;
-      const providerUser = transformSocialUserData(googleUser);
+    return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
 
-      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
+    // Handle known OAuth validation errors (e.g. bad token, revoked code)
+    const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+    throw new AppError(401, type, 'error', {
+      willRedirect: appConfig.mode !== 'test',
+      meta: { errorPagePath: '/auth/error', strategy },
+      ...(error instanceof Error ? { originalError: error } : {}),
+    });
+  }
+});
 
-      // Handle known OAuth validation errors (e.g. bad token, revoked code)
-      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError(401, type, 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-  })
-  /**
-   * Microsoft callback
-   */
-  .openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
-    const { state, code } = ctx.req.valid('query');
-    const strategy = 'microsoft' as EnabledOAuthProvider;
-
-    // Verify cookie by `state` (CSRF protection) & PKCE validation
-    const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-    const cookiePayload = parseOAuthCookie(oauthCookie);
-
-    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
-      throw new AppError(401, 'invalid_state', 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-      });
-    }
-
-    try {
-      // Exchange authorization code for access token and fetch Microsoft user info
-      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
-      const accessToken = microsoftValidation.accessToken();
-
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
-      const microsoftUser = (await response.json()) as MicrosoftUserProps;
-      const providerUser = transformSocialUserData(microsoftUser);
-
-      return await handleOAuthCallback(ctx, cookiePayload, providerUser, strategy);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      // Handle known OAuth validation errors (e.g. bad token, revoked code)
-      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new AppError(401, type, 'error', {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { errorPagePath: '/auth/error', strategy },
-        ...(error instanceof Error ? { originalError: error } : {}),
-      });
-    }
-  });
-export default authOAuthRouteHandlers;
+export const authOAuthHandlers = app;

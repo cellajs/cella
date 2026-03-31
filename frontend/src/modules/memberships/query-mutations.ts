@@ -1,6 +1,5 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { appConfig, type ContextEntityType } from 'shared';
 import {
   deleteMemberships,
   type Membership,
@@ -9,7 +8,8 @@ import {
   membershipInvite,
   type Organization,
   updateMembership,
-} from '~/api.gen';
+} from 'sdk';
+import { appConfig, type ContextEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
@@ -25,6 +25,7 @@ import type {
   MemberQueryData,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
+import { useUserStore } from '~/modules/user/user-store';
 import {
   changeInfiniteQueryData,
   changeQueryData,
@@ -37,7 +38,6 @@ import {
   isQueryData,
 } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 
 const limit = appConfig.requestLimits.members;
 
@@ -59,7 +59,7 @@ const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { 
  * Add a new membership to the myMemberships cache.
  * Used when the current user is invited to a new entity.
  */
-const addMyMembershipCache = (newMembership: MembershipBase) => {
+export const addMyMembershipCache = (newMembership: MembershipBase) => {
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
     if (!oldData) return { items: [newMembership] };
     return { ...oldData, items: [...oldData.items, newMembership] };
@@ -136,7 +136,7 @@ export const useMemberUpdateMutation = () =>
     },
     onMutate: async (variables) => {
       const { entityId, entityType, path, body } = variables;
-      const { tenantId, orgId, id } = path;
+      const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
       // Store previous query data for rollback if an Apierror occurs
@@ -164,7 +164,7 @@ export const useMemberUpdateMutation = () =>
       updateMyMembershipCache(membershipInfo);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
       // Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
@@ -187,12 +187,16 @@ export const useMemberUpdateMutation = () =>
 
       return context;
     },
-    onSuccess: async (updatedMembership, { entityId, entityType, path: { tenantId, orgId } }, { toastMessage }) => {
+    onSuccess: async (
+      updatedMembership,
+      { entityId, entityType, path: { tenantId, organizationId } },
+      { toastMessage },
+    ) => {
       // Update myMemberships cache — global subscriber enriches entity lists automatically
       updateMyMembershipCache(updatedMembership);
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
       //Cancel all affected queries
       const queries = getSimilarQueries<Member>(similarKey);
 
@@ -216,7 +220,7 @@ export const useMemberUpdateMutation = () =>
       }
 
       // Invalidate entity queries to ensure counts and data are fresh
-      invalidateOnMembershipChange(queryClient, entityType, entityId, orgId);
+      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
 
       toaster(toastMessage, 'success');
     },
@@ -237,14 +241,14 @@ export const useMembershipsDeleteMutation = () =>
       const {
         members,
         query: { entityId, entityType },
-        path: { tenantId, orgId },
+        path: { tenantId, organizationId },
       } = variables;
       const ids = members.map(({ id }) => id);
 
       const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
 
       // Get affected queries
-      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, orgId });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
@@ -267,9 +271,9 @@ export const useMembershipsDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: (_, { query: { entityId, entityType }, path: { orgId } }) => {
+    onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
       // Invalidate entity queries to ensure counts are fresh
-      invalidateOnMembershipChange(queryClient, entityType, entityId, orgId);
+      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       toaster(t('common:success.delete_members'), 'success');
     },
     onError,
@@ -341,15 +345,15 @@ export const useChangeEntityRoleMutation = () =>
       }
 
       const { id: entityId, entityType, tenantId, membership } = entity;
-      // For organization entities, orgId is the entity itself; for children it comes from the entity data
-      const orgId = entityType === 'organization' ? entityId : entity.organizationId;
-      if (!orgId) throw new Error(`Missing organizationId for ${entityType} entity`);
+      // For organization entities, organizationId is the entity itself; for children it comes from the entity data
+      const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
+      if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
       if (membership?.id) {
         // Existing membership — update role
         const updated = await updateMembership({
           body: { role },
-          path: { id: membership.id, tenantId, orgId },
+          path: { id: membership.id, tenantId, organizationId },
         });
         return { entity, membership: updated, wasNew: false };
       }
@@ -358,7 +362,7 @@ export const useChangeEntityRoleMutation = () =>
       const { email } = useUserStore.getState().user;
       const result = await membershipInvite({
         query: { entityId, entityType },
-        path: { tenantId, orgId },
+        path: { tenantId, organizationId },
         body: { emails: [email], role },
       });
 

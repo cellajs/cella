@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
-import { setupSeenBeaconFlush, useSeenStore } from '~/store/seen';
+import { setupSeenBeaconFlush, useSeenStore } from '~/modules/seen/seen-store';
 import { useTotalUnseenCount } from './use-unseen-count';
 
 /**

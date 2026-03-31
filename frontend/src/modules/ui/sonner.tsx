@@ -1,5 +1,5 @@
 import { Toaster as Sonner } from 'sonner';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 

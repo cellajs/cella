@@ -1,4 +1,4 @@
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

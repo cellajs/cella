@@ -8,7 +8,7 @@ import type { Member } from '~/modules/memberships/types';
 interface Props {
   entityId: string;
   tenantId: string;
-  orgId: string;
+  organizationId: string;
   members: Member[];
   entityType: ContextEntityType;
   dialog?: boolean;
@@ -20,7 +20,7 @@ export function DeleteMemberships({
   entityId,
   entityType,
   tenantId,
-  orgId,
+  organizationId,
   callback,
   dialog: isDialog,
 }: Props) {
@@ -29,7 +29,7 @@ export function DeleteMemberships({
 
   const onDeleteMembers = () => {
     deleteMemberships({
-      path: { tenantId, orgId },
+      path: { tenantId, organizationId },
       body: { ids: members.map(({ id }) => id) },
       query: { entityId, entityType },
       members,

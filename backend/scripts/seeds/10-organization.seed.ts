@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
-import { migrationDb } from '#/db/db';
+import { seedDb } from '#/db/db';
 import { domainsTable } from '#/db/schema/domains';
 import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
@@ -22,8 +22,8 @@ import { defaultAdminUser } from '../fixtures';
 // Set mock context for seed script - IDs will get 'gen-' prefix (CDC worker skips these)
 setMockContext('script');
 
-// Seed scripts use admin connection (migrationDb) for privileged operations
-const db = migrationDb;
+// Seed scripts use admin connection for privileged operations
+const db = seedDb;
 
 const TENANTS_COUNT = 10;
 const ORGANIZATIONS_PER_TENANT = 10;
@@ -32,7 +32,6 @@ const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 const PLAIN_USER_PASSWORD = '12345678';
 
 const isOrganizationSeeded = async () => {
-  if (!db) return true; // Skip if no admin connection
   const organizationsInTable = await db
     .select()
     .from(organizationsTable)
@@ -43,9 +42,6 @@ const isOrganizationSeeded = async () => {
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
-  // Admin connection required
-  if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
-
   const spinner = startSpinner('Seeding organizations...');
 
   // Records already exist → skip seeding
@@ -119,7 +115,7 @@ export const organizationsSeed = async () => {
 
 
     // Make unsubscribeToken record for each user → Insert into the database
-    const unsubscribeTokenRecords = users.map(user => mockUnsubscribeToken(user));
+    const unsubscribeTokenRecords = await Promise.all(users.map(user => mockUnsubscribeToken(user)));
     await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecords).onConflictDoNothing();
 
 

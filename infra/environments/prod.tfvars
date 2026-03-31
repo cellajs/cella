@@ -5,6 +5,7 @@
 dns_zone   = "cellajs.com"
 api_domain = "api.cellajs.com"
 app_domain = "cellajs.com"
+yjs_domain = "yjs.cellajs.com"
 
 # Database (production-grade instance)
 db_node_type      = "DB-GP-S"
@@ -15,6 +16,7 @@ backend_min_scale = 1
 backend_max_scale = 10
 backend_memory    = 512
 cdc_memory        = 256
+yjs_memory        = 256
 
 # Features
 enable_waf = true

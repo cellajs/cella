@@ -7,14 +7,15 @@ export {
   hasEntityQueryKeys,
   registerEntityQueryKeys,
 } from './entity-query-registry';
-export { findEntityInListCache } from './find-in-list-cache';
+export { fetchSlugCacheId } from './fetch-slug-cache-id';
+export { createCacheFinder, findInCache } from './find-in-list-cache';
 export { flattenInfiniteData } from './flatten';
 export {
   changeInfiniteQueryData,
   changeQueryData,
 } from './helpers';
 export { baseInfiniteQueryOptions } from './infinite-query-options';
-export { invalidateIfLastMutation, invalidateOnMembershipChange } from './invalidation-helpers';
+export { invalidateIfLastMutation, invalidateOnMembershipChange, removePendingMutations } from './invalidation-helpers';
 export {
   formatUpdatedCacheData,
   getQueryItems,

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailButton, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import { greetingStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
@@ -30,8 +30,8 @@ export const OAuthVerificationEmail = ({
       <EmailHeader headerText={i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName })} />
 
       <EmailBody>
-        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
-        <Text>
+        {name && <EmailText style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</EmailText>}
+        <EmailText>
           <span
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.oauth_verification.text', {
@@ -44,7 +44,7 @@ export const OAuthVerificationEmail = ({
               }),
             }}
           />
-        </Text>
+        </EmailText>
         <EmailButton
           ButtonText={i18n.t('backend:email.oauth_verification.verify', { lng, providerName })}
           href={verificationLink}
@@ -52,7 +52,7 @@ export const OAuthVerificationEmail = ({
       </EmailBody>
 
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

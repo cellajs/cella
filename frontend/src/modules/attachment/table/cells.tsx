@@ -4,10 +4,10 @@ import { AlertCircleIcon, CloudOffIcon, DownloadIcon, LoaderIcon, TrashIcon, Upl
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
 import { AttachmentPreview } from '~/modules/attachment/attachment-preview';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
-import { getFileUrl } from '~/modules/attachment/helpers';
+import { getFileUrl } from '~/modules/attachment/file-url';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';

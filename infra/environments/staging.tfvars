@@ -5,6 +5,7 @@
 dns_zone   = "cellajs.com"
 api_domain = "api.staging.cellajs.com"
 app_domain = "staging.cellajs.com"
+yjs_domain = "yjs.staging.cellajs.com"
 
 # Database (small instance for staging)
 db_node_type      = "DB-GP-XS"
@@ -15,6 +16,7 @@ backend_min_scale = 1
 backend_max_scale = 5
 backend_memory    = 512
 cdc_memory        = 256
+yjs_memory        = 256
 
 # Features
 enable_waf = true

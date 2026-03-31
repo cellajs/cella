@@ -10,7 +10,7 @@ const entityCoreShape = {
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
 };
 
 /**
@@ -18,7 +18,7 @@ const entityCoreShape = {
  */
 const auditShape = {
   createdBy: userMinimalBaseSchema.nullable(),
-  modifiedBy: userMinimalBaseSchema.nullable(),
+  updatedBy: userMinimalBaseSchema.nullable(),
 };
 
 /**

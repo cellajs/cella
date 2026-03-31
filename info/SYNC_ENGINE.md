@@ -1,15 +1,31 @@
-# Cella hybrid sync engine
+# Cella sync engine
 
-> **Architecture context**: Cella has a dynamic entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+> **Architecture context**: Cella has a dynamic, hierarchical entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Overview
+## OpenAPI & React Query
 
-The **hybrid sync engine** extends Cella's **OpenAPI + React Query** infrastructure with sync and offline capabilities. It is "hybrid" because standard REST/OpenAPI endpoints remain the default, while entity modules *can* be 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-pull_ sync: A worker notifies the client, which then fetches the new data.
+OpenAPI + React Query are the foundational layers throughout the codebase. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-pull_ sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
 
-| Mode | Entity type | Features | Example |
-|------|-------------|----------|---------|
-| basic | `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
-| realtime | `ProductEntityType` | + Transaction tracking, offline queue, conflict detection, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
+| Entity type | Features | Example |
+|------|--------------|---------|
+| `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
+| `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
+
+---
+
+## Why a built-in sync engine?
+
+External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. 
+
+Lastly, internalizing the sync engine means you can make unique combos: think audit trail , API event bus, centralized counters and unified tracing.
+
+| Concern | External services | Built-in approach |
+|---------|-------------------|-------------------|
+| **OpenAPI contract** | Bypassed | Extends existing endpoints with `stx` object in entity |
+| **Authorization** | Requires re-implementing | Reuses `checkPermission()` and existing guards |
+| **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
+| **Opt-in complexity** | All-or-nothing-or-double | Progressive: REST → Tracked → Offline → Realtime |
+| **React Query** | New reactive layer | Builds on existing TanStack Query cache & hooks |
 
 ---
 
@@ -34,22 +50,6 @@ Postgres → CDC Worker → API Server → SSE → Client
 
 ---
 
-## Why a built-in sync engine?
-
-External sync solutions bypass REST endpoints, authorization, and caching patterns, forcing all-or-nothing adoption and resulting in poor DX. 
-
-By internalizing the sync engine, cella can make unique combos: audit trail functionality, internal event bus functionality and a unified tracing strategy.
-
-| Concern | External services | Built-in approach |
-|---------|-------------------|-------------------|
-| **OpenAPI contract** | Bypassed | Extends existing endpoints with `stx` object in entity |
-| **Authorization** | Requires re-implementing | Reuses `checkPermission()` and existing guards |
-| **Schema ownership** | Sync layer dictates patterns | Drizzle/Zod schemas remain authoritative |
-| **Opt-in complexity** | All-or-nothing | Progressive: REST → Tracked → Offline → Realtime |
-| **React Query** | New reactive layer | Builds on existing TanStack Query cache & hooks |
-
----
-
 ## Core concepts
 
 ### Philosophy
@@ -60,23 +60,23 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 ### Architecture overview
 - **Logical replication** - CDC Worker receives WAL changes, persists activities to `activitiesTable`, sends messages to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
-- **Live stream** - SSE sends lightweight notifications to clients (no entity data)
-- **Catchup is now handled by standard list fetches** - Clients use normal REST list queries (e.g., `/pages`, `/attachments`) to catch up, not the `/stream` endpoint.
-- **Stream endpoints are for live notifications only** - SSE endpoints provide real-time updates.
+- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, seqs }` to the stream endpoint; server compares per-scope seqs, returns gap summary (server seqs, deleted IDs). Client then calls REST list endpoints with `?seqCursor=min,max` to fetch only changed entities in the known seq range.
+- **Live stream** - SSE sends lightweight notifications - with cache token - to clients
 - **Notify + fetch pattern** - SSE notifications trigger priority-based entity fetches; TTL cache enables efficient fan-out
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
 ### Realtime mechanics
-- **Gap detection** - Entity-type sequence numbers (`seqAt`) detect missed entity changes; deletes always scanned
+- **Gap detection** - Entity-type sequence numbers (`seq`) detect missed entity changes; deletes always scanned
 - **Single-writer multi-tab** - One leader tab owns SSE connection and mutations, broadcast for follower
 - **TTL entity cache** - Server-side cache with request coalescing for efficient notification-triggered fetches
 - **Fetch prioritizer** - Client schedules fetches based on user's current view (high/medium/low priority)
 
 ### Sync mechanics
 - **Upstream-first sync** - Pull before push prevents most conflicts
-- **Version-based conflict detection** - Integer version counters per entity and per field
+- **Per-field merge strategies** - Scalars use HLC-based LWW (latest timestamp wins); sets use commutative AWSet deltas (`{ add, remove }`); descriptions use Yjs CRDT via dedicated worker
 - **Offline mutation queue** - Persist pending mutations to IndexedDB, replay on reconnect
-- **Conflict strategy** - Reject on version (field) mismatch (409), client retries with fresh data
+- **Conflict strategy** - Scalars: latest HLC wins silently (no 409). Sets: commutative, conflict-free. Descriptions: character-level Yjs CRDT merge
+- **Yjs collaborative editing** - Standalone WebSocket relay worker for real-time description co-editing; client-side materialization of derived fields
 - **Smart mutations** The mutation layer (`query.ts`) encapsulates all sync logic so forms remain simple:
 
 ## Architecture
@@ -84,6 +84,8 @@ By internalizing the sync engine, cella can make unique combos: audit trail func
 > **SERVER:** CDC Worker → WebSocket → API → SSE fan-out
 
 This architecture uses a persistent WebSocket connection from CDC Worker to API server, provides instant delivery with no poll delay, scales with orgs not with subscribers (multi-tenant security through existing middleware), and reduces round-trips through the database since the CDC Worker already has most of the data.
+
+**CDC transaction batching:** The CDC Worker's `TransactionBuffer` groups WAL events by database transaction and emits batch notifications for same-type, same-context events — reducing N individual messages to 1 per (entityType, action, contextId). A single-context constraint ensures each batch targets one parent context (e.g., one project), so `contextId` and `seqCursor` ranges are correct for all entities in the batch. 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -113,7 +115,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  └──────────┬──────────┘                                        │        │
 │  │             ▼                                                   │        │
 │  │  ┌─────────────────────┐                                        │        │
-│  │  │ ActivityBus         │ ───> Emits events for internal handlers │        │
+│  │  │ ActivityBus         │ ───> Emits events for internal use     │        │
 │  │  │ (message → event)   │                                        │        │
 │  │  └──────────┬──────────┘                                        │        │
 │  │             ▼                                                   │        │
@@ -129,7 +131,7 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 │  │  │ (org-123)    │ (org-123)    │ (org-456)    │        │        │        │
 │  │  └──────┬───────┴──────────────┴──────────────┴────────┘        │        │
 │  │         │  event: change                                        │        │
-│  │         │  data: { action, entityType, entityId, seqAt, stx }    │        │
+│  │         │  data: { action, entityType, entityId, seq, stx }     │        │
 │  │         ▼                                                       │        │
 │  └─────────────────────────────────────────────────────────────────┘        │
 │                                                                             │
@@ -137,6 +139,18 @@ This architecture uses a persistent WebSocket connection from CDC Worker to API 
 ```
 
 > **CLIENT**: Two-phase sync cycle → SSE/live → priority-based fetch updates
+
+### Notification shapes
+
+Clients handle three notification shapes from the live SSE stream:
+
+| Shape | Detection | Client behavior |
+|-------|-----------|----------------|
+| **Single entity** | `seq` set, `batchUntilSeq` null | Fetch single entity by ID, upsert into caches |
+| **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`, upsert all into caches |
+| **Delete batch** | `deletedIds` set | Remove each ID from detail + list caches directly (no fetch) |
+
+Batch notifications carry a `cacheToken` that maps to all entities in the batch, enabling the server's TTL entity cache to serve all subscribers from a single DB query.
 
 
 ## Stream notification format
@@ -147,19 +161,38 @@ Synced entity tables have a single transient JSONB column for transaction metada
 
 ```typescript
 interface StreamNotification {
-  action: ActivityAction;          // 'create' | 'update' | 'delete'
-  entityType: string;              // 'page' | 'attachment'
+  action: 'create' | 'update' | 'delete';
+  entityType: string | null;                    // Product entity type (null for membership events)
+  resourceType: string | null;                  // 'membership' | 'request' | ... (null for entity events)
   entityId: string;
   organizationId: string | null;
-  seqAt: number | null;            // Entity-type sequence stamped by trigger (for sync)
-  stx: {
-    id: string;                    // Mutation ID
-    sourceId: string;              // Tab/instance ID for echo prevention
-    version: number;               // Entity version after mutation
-    fieldVersions: Record<string, number>;
-  };
+  tenantId: string | null;
+  contextType: string | null;                   // Context entity type for membership (e.g., 'project')
+  contextId: string | null;                     // Parent entity ID for unseen count grouping
+  seq: number | null;                           // Per-entityType sequence stamped by CDC worker (entities only)
+  stx: StxBase | null;                          // Sync transaction metadata (entities only)
+  cacheToken: string | null;                    // HMAC-signed token for LRU cache access (entities only)
+  batchUntilSeq: number | null;                 // Last seq in batch (null = single entity notification)
+  deletedIds: string[] | null;                  // Deleted entity IDs for delete batches (null = not a delete batch)
+  propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
+}
+
+interface PropagationHint {
+  sourceType: string;                           // Source entity type (e.g., 'label')
+  targetType: string;                           // Target entity type that embeds the source (e.g., 'task')
+  field: string;                                // Field name in target (e.g., 'labels')
+  update: string[];                             // Source IDs that were created/updated
+  remove: string[];                             // Source IDs that were deleted
+}
+
+interface StxBase {
+  mutationId: string;                           // Unique mutation ID (nanoid)
+  sourceId: string;                             // Tab/instance ID for echo prevention
+  fieldTimestamps: Record<string, string>;      // Per-field HLC timestamps (scalars only)
 }
 ```
+
+SSE transport wraps this as `event: change`, `id: activityId`, `data: JSON(StreamNotification)`. Other SSE events: `offset` (catchup-complete marker with cursor) and `ping` (keep-alive).
 
 ---
 
@@ -175,9 +208,7 @@ Authenticated stream for all user-scoped entities and memberships.
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | Requires authentication (session cookie) |
-| **Scope** | All orgs user belongs to + memberships |
-| **Catch-up** | Handled by standard REST list fetches (not /stream) |
-| **Processing** | Standard list fetches update cache; SSE triggers fetches |
+| **Scope** | All contexts user belongs to + memberships |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
 ### Public stream (`/entities/public/stream`)
@@ -188,20 +219,17 @@ Unauthenticated stream for public entities (e.g., pages).
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | No authentication required |
-| **Scope** | All public entity types (from `hierarchy.publicActionsTypes`) |
-| **Catch-up** | Handled by standard REST list fetches (not /stream) |
-| **Processing** | Standard list fetches update cache; SSE triggers fetches |
+| **Scope** | All public entity types (from `hierarchy.publicReadTypes`) |
 | **Cursor storage** | In-memory only (module-level variable) |
 
 **How catchup works:**
 
-The backend returns a summary per scope (orgId for app stream, entityType for public stream):
+The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId (app) or entityType (public). Each value is a shared summary shape:
 ```typescript
 interface CatchupChangeSummary {
-  deletedIds: string[];   // Entity IDs deleted since cursor (always scanned, watertight)
-  entitySeqs?: Record<string, number>;    // Entity-type seqs from context_counters counts JSONB (trigger-managed)
-  deletedByType?: Record<string, string[]>; // Deleted IDs grouped by entityType
-  entityCounts?: Record<string, number>;  // Entity-type total counts (e:{type} keys) for cache integrity
+  deletedByType: Record<string, string[]>; // Deleted IDs grouped by entityType (always scanned, watertight)
+  entitySeqs?: Record<string, number>;     // Entity-type seqs from context_counters counts JSONB (managed by CDC worker)
+  entityCounts?: Record<string, number>;   // Entity-type total counts (e:{type} keys) for cache integrity
 }
 ```
 
@@ -209,7 +237,7 @@ The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup — fast, in connect flow before SSE opens):**
 - Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
-- Compares entity-type `serverEntitySeq` (from trigger-managed `context_counters.counts['s:{type}']`) with stored `clientEntitySeq`
+- Compares entity-type `serverEntitySeq` (from `context_counters.counts['s:{type}']`, managed by CDC worker) with stored `clientEntitySeq`
 - If creates/updates detected for an entity type → invalidates active list queries (`invalidateEntityList(keys, 'active')`) so mounted queries refetch immediately
 - **Cache integrity check**: Compares server `entityCounts` (from `context_counters.counts['e:{type}']`) with cached list totals — if counts diverge despite matching seqs, invalidates the affected list queries
 - Updates stored entity-type seqs
@@ -238,13 +266,20 @@ Fallback chain if Phase B doesn't run (SSE fails):
 
 **When offline:** Mutations queue locally, split/squashed by field. On reconnect, catch-up first, THEN replay pending mutations. Client detects conflicts before pushing, enabling side-by-side comparison and per-field resolution.
 
-#### 2. Field-level tracking
-Conflicts are scoped to individual fields via `stx.fieldVersions`. Two users editing different fields = no conflict. Multi-field mutations check each changed field independently.
+#### 2. Per-field merge strategies
+Each field type has its own merge strategy — no single conflict model for all fields:
+- **Scalars** (name, status, points, etc.): HLC-based LWW via `stx.fieldTimestamps`. Latest timestamp wins, older silently dropped. Two users editing different fields = no conflict.
+- **Sets** (labels, assignedTo): AWSet delta operations (`{ add, remove }`). Commutative and conflict-free — no timestamps needed.
+- **Descriptions**: Yjs CRDT via dedicated WebSocket worker. Character-level merge, no REST conflict path.
 
-#### 3. Conflict strategy
-Server rejects conflicting mutations with 409 status. Client must refetch, rebase changes onto fresh data, and retry. No silent overwrites.
+The merge strategy is implicit from the value shape in the `ops` key — bare value → LWW scalar, `{ add, remove }` object → AWSet delta.
 
-### Conflict flow
+#### 3. Conflict resolution
+No 409 rejections. Scalars: latest HLC timestamp wins silently — the server compares `incoming > stored` per field and accepts or drops. Sets: commutative operations always succeed. Descriptions: Yjs handles merge at character level.
+
+The server returns `droppedFields` in the response so the frontend can optionally notify the user when a scalar edit was silently superseded.
+
+### Mutation flow
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -261,19 +296,22 @@ Server rejects conflicting mutations with 409 status. Client must refetch, rebas
 │     ├── YES ──► 3. mutationFn: Send API request                           │
 │     │               │                                                     │
 │     │               ├── OK ──► onSuccess: finalize cache                  │
-│     │               └── CONFLICT (409) ──► Show resolution UI             │
+│     │               │   (scalars: HLC wins; sets: delta applied;          │
+│     │               │    droppedFields optionally shown to user)          │
+│     │               └── FAIL ──► Server/network error → Error toast       │
 │     │                                                                     │
 │     └── NO ──► 3. Request auto-pauses (React Query networkMode)           │
 │                    │                                                      │
 │                    └── On reconnect: catch-up stream first, then          │
-│                        resumePausedMutations(), resolve any conflicts     │
+│                        resumePausedMutations()                            │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Scenario | Behavior | Result |
 |----------|----------|--------|
 | User types rapidly (online) | Debounced, only final sent | No server flood |
-| User edits same field 5x (offline) | Squashed to 1 entry | 1 request on reconnect |
+| User edits same scalar 5x (offline) | Squashed to 1 entry (LWW) | 1 request on reconnect |
+| User adds/removes labels (offline) | AWSet deltas merged | 1 request with combined delta |
 | User edits 3 different fields (offline) | 3 separate entries | 3 requests on reconnect |
 
 ### Idempotency
@@ -287,73 +325,60 @@ Replaying the same mutation (same `stx.mutationId`) produces the same result wit
 
 ## Offline sync
 
-### Gap detection (seqAt + always-scan deletes)
+### Gap detection (seq + always-scan deletes)
 
-Uses entity-type sequence numbers (`seqAt`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
+Uses entity-type sequence numbers (`seq`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
 
 **Sequence architecture:**
-- **`seqAt`** — Per-entity row sequence stamped by a PostgreSQL BEFORE INSERT/UPDATE trigger (`stamp_entity_seq_at`). The trigger atomically increments `context_counters.counts['s:{entityType}']` and writes the new value into `entity.seqAt`. This is the **sole source of truth** for detecting creates/updates.
-- **Hierarchy-aware scoping** — The trigger reads the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
+- **`seq`** — Per-entity row sequence stamped by the CDC worker after processing each WAL event. The worker atomically increments `context_counters.counts['s:{entityType}']` and writes the new value back to `entity.seq`. This is the **sole source of truth** for detecting creates/updates. New entities start with `seq = 0` until CDC stamps them (typically within ~50-200ms).
+- **Hierarchy-aware scoping** — The CDC worker resolves the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
 - **Membership detection** — Membership changes are detected via cursor-bounded activity scan (same scan used for deletes). No counter needed — the client unconditionally refreshes membership queries on every catchup.
-- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The `seqAt` trigger only fires on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
-- **`afterSeq`** — Query parameter on list endpoints. Returns entities with `seqAt > afterSeq`, enabling delta fetches instead of full list refetches.
+- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The CDC worker only stamps seq on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
+- **`seqCursor`** — Query parameter on list endpoints. Always a bounded range: `seqCursor=min,max` (both inclusive, e.g. `seqCursor=4,6` → `seq >= 4 AND seq <= 6`). The catchup response provides `serverEntitySeq` as the upper bound; batch notifications provide `batchUntilSeq`. Open-ended fetches are not supported — every caller must know its exact seq range.
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from trigger-managed `context_counters.counts['s:{type}']`). The delta tells whether creates/updates happened. Deletes are always included via activities scan.
+1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether creates/updates happened. Deletes are always included via activities scan.
 
-2. **Live (SSE):** Each product entity notification includes `seqAt` (entity-type). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
+2. **Live (SSE):** Each product entity notification includes `seq`, scoped to its entity type + context (e.g., tasks within a project). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
-**How it works:**
-```typescript
-// Per-scope sequence tracking (persisted in sync store)
-// App stream: orgId:s:entityType → contextEntity-scoped seq
-// Public stream: entityType → seq
-const seqs: Record<string, number> = {};
+**How it works — scenario:**
 
-// During catchup (Phase A) — entity-type granularity:
-// Step 1: Apply deletes (always provided by backend, watertight)
-for (const [entityType, ids] of Object.entries(deletedByType)) {
-  for (const entityId of ids) {
-    removeEntityFromCache(entityType, entityId);
-    removeEntityFromListCache(entityId, keys);
-  }
-}
+A project has tasks. `seq` is stamped by the CDC worker on INSERT/UPDATE only — deletes don't bump seq.
 
-// Step 2: Detect creates/updates via entitySeqs delta
-for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
-  const clientEntitySeq = seqs[`${orgId}:s:${entityType}`] ?? 0;
-  const deletedForType = deletedByType?.[entityType] ?? [];
-  const entityDelta = serverEntitySeq - clientEntitySeq;
-
-  // Only mark stale if creates/updates happened (delta > deletes)
-  if (entityDelta > deletedForType.length) {
-    invalidateEntityList(keys, 'active'); // Refetch mounted queries immediately
-  }
-
-  seqs[`${orgId}:s:${entityType}`] = serverEntitySeq;
-}
-
-// During live SSE — tracks entity-type seq only:
-if (seqAt !== null) {
-  const key = `${organizationId}:s:${entityType}`;
-  if (seqAt > (seqs[key] ?? 0)) seqs[key] = seqAt;
-}
+```
+Server timeline (project-123, tasks):        seq
+  Task A created                              1
+  Task B created                              2
+  Task C created                              3
+  ── client goes offline (clientSeq = 3) ──
+  Task D created                              4
+  Task B deleted                              ✗ (no seq bump)
+  Task A updated                              5
+  Task E created                              6
+  ── client reconnects ──
 ```
 
-**Key features:**
-- Single-level entity-type seq tracking (`orgId:s:attachment`, `orgId:s:page`) — no org-level seq needed
-- `seqAt` on entity rows is stamped atomically by PostgreSQL trigger (`stamp_entity_seq_at`) — same trigger also updates `context_counters.counts['s:{entityType}']`
-- Product entity seqs are fully trigger-managed; membership changes detected via activity scan
-- Deletes and membership changes are always scanned from activities table (cursor-bounded) — watertight, no counter tricks
-- List endpoints support `afterSeq` query param for delta fetches (`WHERE seq_at > afterSeq`)
-- Persisted across tabs/reloads via localStorage (sync store)
-- Catchup summary provides entitySeqs + deletedByType per org — enables entity-type processing
-- Catchup marks staleness only; the sync service and React Query hooks handle actual refetching
+Catchup POST returns for this scope:
+```
+serverSeq: 6, deletedByType: { task: ["B"] }
+```
+
+Client logic:
+```
+delta       = serverSeq - clientSeq = 6 - 3 = 3  (3 seq bumps while away)
+deletes     = 1                                    (task B)
+delta > deletes → true → creates/updates happened → delta fetch with seqCursor=4,6
+```
+
+The delta fetch (`GET /tasks?seqCursor=4,6`) returns tasks D, A, E (seq 4, 5, 6). Task B is removed from cache via `deletedByType`. Client stores `clientSeq = 6`.
+
+**Why deletes don't bump seq:** A delete removes the row — there's nothing to stamp. Instead, deletes are tracked via `activitiesTable` scan.
+
 
 ### Cache freshness strategy (staleTime)
 
-Product entity queries use a sync-aware `staleTime` function (`syncStaleTime`) that returns **Infinity** when the sync stream is live, and **5 minutes** as fallback when the stream is disconnected. This prevents redundant refetches on app restart — freshness is controlled by catchup-based seq invalidation and count-based integrity checks, not time-based staleness.
+Product entity queries use a sync-aware `staleTime` function (`syncStaleTime`) that returns **Infinity** when the sync stream is live, and **5 minutes** as fallback when the stream is somehow disconnected. This prevents redundant refetches on app restart — freshness is controlled by catchup-based seq invalidation and count-based integrity checks, not time-based staleness.
 
 | staleTime | When | Effect |
 |-----------|------|--------|
@@ -366,7 +391,7 @@ Only product entity queries opt in to `syncStaleTime` — they are the only enti
 
 ### Cache integrity check (entityCounts)
 
-After seq-based processing, catchup performs a **count integrity check** to detect cache/server drift that seq comparison alone might miss. The backend includes `entityCounts` in the catchup response — entity-type totals from `context_counters.counts['e:{type}']` (pre-computed by database triggers).
+After seq-based processing, catchup performs a **count integrity check** to detect cache/server drift that seq comparison alone might miss. The backend includes `entityCounts` in the catchup response (maintained by the CDC worker in `context_counters`).
 
 The client compares these server-reported counts against the `total` field from the first page of cached infinite query data. If counts diverge (e.g., cache says 15 items, server says 20), the affected list query is invalidated regardless of seq state.
 
@@ -379,54 +404,99 @@ The client compares these server-reported counts against the `total` field from 
 ```typescript
 // After seq-based processing in catchup:
 for (const [entityType, serverCount] of Object.entries(entityCounts)) {
-  const cachedTotal = getCachedListTotal(keys, orgId);
+  const cachedTotal = getCachedListTotal(keys, organizationId);
   if (cachedTotal !== null && cachedTotal !== serverCount) {
-    invalidateEntityListForOrg(keys, orgId, 'active');
+    invalidateEntityListForOrg(keys, organizationId, 'active');
   }
 }
 ```
 
 **Cost:** Zero extra DB queries — `entityCounts` comes from the same `counts` JSONB column already fetched for `entitySeqs`. On the client, it's a single integer comparison per entity type per org.
 
-### Conflict detection (version)
+### Merge resolution (HLC + AWSet)
 
-Uses entity-level version numbers (`stx.version`) and field-level versions (`stx.fieldVersions`) for **mutation conflict detection**.
+Uses per-field merge strategies instead of version-based conflict detection. The merge strategy is implicit from the value shape in the `ops` key.
 
-**Client-side (mutation creation):**
+#### Wire format
+
+All updatable fields — both scalars and sets — go in a single `ops` key. The merge strategy is detected at runtime:
+- Bare value (`string | number | boolean | null`) → scalar → LWW with HLC
+- Object with `{ add, remove }` → set → AWSet delta
+
 ```typescript
-// Extract baseVersion from cached entity when creating update mutation
-function createStxForUpdate(cachedEntity?: EntityWithStx | null): StxMetadata {
-  return {
-    id: nanoid(),
-    sourceId,
-    baseVersion: extractVersion(cachedEntity?.stx),  // From cached stx.version
+// Update request body
+{
+  ops: {
+    name?: string;                                      // scalar → LWW
+    status?: number;                                     // scalar → LWW
+    labels?: { add?: string[]; remove?: string[] };      // set → AWSet
+    assignedTo?: { add?: string[]; remove?: string[] };  // set → AWSet
   };
+  stx: StxBase;
 }
 ```
 
-**Server-side (conflict check in handlers):**
-```typescript
-import { checkFieldConflicts, throwIfConflicts, buildFieldVersions, getChangedTrackedFields } from '#/sync/field-versions';
+#### HLC (Hybrid Logical Clock)
 
-// Get all tracked fields that are being updated
-const trackedFields = ['name', 'content', 'status'] as const;
-const changedFields = getChangedTrackedFields(payload, trackedFields);
+Combines physical time + logical counter + client ID for causal ordering even with clock drift:
 
-// Field-level conflict detection - check ALL changed fields
-const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
-throwIfConflicts('entity', conflicts);
-
-// Build updated fieldVersions for ALL changed fields
-const fieldVersions = buildFieldVersions(entity.stx?.fieldVersions, changedFields, newVersion);
+```
+Format: "1710500000123:0001:abcde" (unix millis + zero-padded counter + sourceId hash)
+Compare: lexicographic string comparison gives correct ordering
 ```
 
-**Key features:**
-- `stx.version` increments on every mutation (entity-level)
-- `stx.fieldVersions` tracks per-field last-modified version
-- Client sends `baseVersion` (version when entity was read)
-- Server rejects if ANY field's `fieldVersions[field] > baseVersion`
-- Multi-field mutations check ALL changed fields for conflicts
-- Enables offline edits with eventual conflict resolution
+The `sourceId` suffix (5-char hash) ensures deterministic tie-breaking when two clients generate timestamps at the same logical time. Properties: always advances, breaks ties deterministically, causal ordering guaranteed.
+
+**Client-side (mutation creation):**
+```typescript
+// Generate HLC timestamps only for scalar fields in ops (skip AWSet deltas)
+function createStxForUpdate(ops: Record<string, unknown>): StxBase {
+  const fieldTimestamps: Record<string, string> = {};
+  for (const [key, value] of Object.entries(ops)) {
+    if (!isSetOp(value)) fieldTimestamps[key] = generateHLC();
+  }
+  return { mutationId: nanoid(), sourceId, fieldTimestamps };
+}
+```
+
+**Server-side (merge resolution in handlers):**
+```typescript
+import { resolveFieldConflicts } from '#/sync/field-versions';
+import { applyArrayDelta } from '#/sync/array-delta';
+
+// 1. Separate scalars from set ops
+// 2. For scalars: HLC-based accept/drop
+const { acceptedFields, dropped } = resolveFieldConflicts(
+  scalarFields, incomingTimestamps, entity.stx.fieldTimestamps
+);
+
+// 3. For sets: apply AWSet deltas (commutative, no conflict check)
+for (const [field, delta] of Object.entries(setOps)) {
+  acceptedFields[field] = applyArrayDelta(entity[field], delta);
+}
+
+// 4. Atomic SQL write resolves HLC conflicts directly:
+// UPDATE tasks SET
+//   name = CASE WHEN :hlc > (stx->'fieldTimestamps'->>'name') THEN :name ELSE name END,
+//   stx = jsonb_set(stx, '{fieldTimestamps}', merged_timestamps)
+// WHERE id = :id RETURNING *;
+```
+
+#### AWSet properties
+
+Set fields (`labels`, `assignedTo`) use Add-Wins Set delta operations:
+- **Idempotent** — add existing = no-op, remove missing = no-op
+- **Commutative** — order doesn't matter, result is the same
+- **No conflict check** — set fields are not tracked in `fieldTimestamps`
+
+#### Key features
+- `stx.fieldTimestamps` tracks per-scalar-field HLC timestamps (replaces `recordVersion` + `fieldVersions`)
+- Client generates HLC for each scalar field being changed (not for set fields)
+- Server compares HLC: newer wins, older silently dropped — no 409 rejections
+- Set fields use commutative AWSet deltas — always succeed
+- `droppedFields` returned in response for optional client notification
+- Atomic SQL approach eliminates read-write race conditions
+- Server advances its HLC clock from incoming timestamps for causal ordering
 
 ### Echo prevention (sourceId)
 
@@ -443,16 +513,24 @@ Each browser tab generates a unique `sourceId` on load, sent with every mutation
 
 ### Mutation queue
 
-Uses React Query's mutation cache with `squashPendingMutation()`.
+Uses React Query's mutation cache with `squashPendingMutation()` and `coalescePendingCreate()`.
+
+**Scope strategy:**
+- **Create/delete** mutations use `scope: { id: entityType }` — serializes all create/delete operations per entity type to preserve ordering (create-before-update, no orphaned updates)
+- **Update** mutations have **no scope** — fire concurrently for different entities, enabling parallel edits without blocking
 
 **Squashing behavior:**
-- Same-entity mutations squash (cancel pending, keep latest)
-- Version-based conflict detection via `stx.baseVersion`
-- On reconnect: pull upstream first, check for conflicts, then flush
+- Same-entity update mutations squash (cancel pending, keep latest `ops`)
+- Delta-aware merge: scalar fields use LWW (last write wins); set fields merge AWSet deltas (`{ add, remove }`)
+- On reconnect: pull upstream first, then flush
+
+**Why no scope on updates?** With scope, ALL updates for an entity type (e.g., all task updates) serialize behind each other. If a user rapidly edits task A then task B, task B waits for task A’s response. Without scope, both fire concurrently.
 
 ### Create + edit coalescing
 
-When a user creates an entity offline and edits it before reconnecting, mutations are coalesced into a single create request.
+When a user creates an entity offline and edits it before reconnecting, `coalescePendingCreate()` merges update `ops` into the pending create mutation.
+
+This runs at the top of every update mutation’s `onMutate` — before squash or optimistic updates. If a pending create is found for the same entity, the update ops are folded into the create variables (set deltas applied against the create’s full arrays, scalars overwritten) and the update mutation returns early (no separate request needed).
 
 | Scenario | Result |
 |----------|--------|
@@ -487,7 +565,7 @@ When a user creates an entity offline and edits it before reconnecting, mutation
 - First tab to acquire Web Lock becomes leader
 - Automatic failover: when leader closes, a waiting follower is promoted
 
-**Why leader-only mutation persistence?** // TODO-015 review this
+**Why leader-only mutation persistence?**
 
 All tabs share a single IndexedDB record for the React Query cache. Each persist operation overwrites the entire record. Without leader-only persistence:
 
@@ -519,23 +597,24 @@ The TTL-based entity cache is **essential for the sync engine to scale**. This c
 
 ### Two-tier design
 
-| Tier | Key format | TTL | Use case |
-|------|-----------|-----|----------|
-| **Public** | `{entityType}:{entityId}` (LRU) | 10 min | Public pages (simple LRU, no tokens) |
-| **Token-gated** | `token:{prefix}:{entityType}:{entityId}:{version}` | 10 min | Attachments requiring membership |
+Both tiers are **entity-keyed** (`entityType:entityId` → data). Tokens are a lightweight index for access control, not cache keys.
 
-**Note**: Public entities (like pages) use a simple LRU cache without tokens since no authentication is required. The token-gated cache is only for authenticated entities accessed via app stream.
+| Tier | Cache key | Token role | TTL | Use case |
+|------|-----------|------------|-----|----------|
+| **Public** | `{entityType}:{entityId}` (LRU) | None | 60 min | Public pages (no auth required) |
+| **App** | `{entityType}:{entityId}` (TTL) | Access control (forward-only) | 10 min | Authenticated entities (tasks, attachments) |
+
+**Forward-only token design (app cache):** Multiple tokens can point to the same entity key. When an entity changes, the old cache entry is invalidated but old tokens still resolve to the same entity key. This means stale clients with an old token get a cache hit (latest data) instead of a DB round-trip. No duplicate cache entries per entity.
 
 ### Token flow (app stream only)
 
 When a realtime entity changes, the SSE stream notification includes a `cacheToken`:
 
 ```
-1. User subscribes to SSE stream (/me/stream)
-   └── Server verifies membership → connection established
+1. CDC sends message → ActivityBus emits event
+   └── reserve(token, entityType, entityId): maps token → entity key, invalidates stale data
 
-2. CDC sends message → ActivityBus emits event → SSE sends notification
-   └── Stream builds notification with cacheToken for each subscriber
+2. SSE broadcasts notification with cacheToken to subscribers
    └── Notification: { action, entityType, entityId, stx, cacheToken }
 
 3. Client receives notification
@@ -543,15 +622,13 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
    └── Invalidates React Query cache to trigger refetch
 
 4. React Query fetches entity data
-   └── GET /page/{id} with X-Cache-Token header
-   └── First client to fetch populates server cache
-   └── Subsequent clients get cache hit (X-Cache: HIT)
+   └── GET /attachment/{id} with X-Cache-Token header
+   └── Middleware: validate signature → resolve token → entity key → cache lookup
+   └── First client to fetch populates entity cache (X-Cache: MISS)
+   └── Subsequent clients (any token for same entity) get cache hit (X-Cache: HIT)
 ```
 
-**Token generation:**
-- HMAC-signed with `ARGON_SECRET`
-- Contains: userId, organizationIds, entityType, entityId, version, expiresAt
-- TTL: 10 minutes (matches cache TTL)
+**Token signing:** Session-signed HMAC — CDC provides base token (nanoid), SSE signs per-subscriber with session token. Server validates signature and extracts base token for resolution.
 
 **Frontend flow:**
 - Stream handler stores tokens on notification receive
@@ -560,34 +637,16 @@ When a realtime entity changes, the SSE stream notification includes a `cacheTok
 
 ### Request coalescing (singleflight)
 
-N concurrent cache misses for the same entity → 1 DB query → N responses:
+N concurrent cache misses for the same entity → 1 DB query → N responses. Coalesces by **entity key** (not token), so different tokens for the same entity share one in-flight fetch:
 
-```typescript
-const inFlight = new Map<string, Promise<unknown>>();
-
-export async function coalesce<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const existing = inFlight.get(key);
-  if (existing) return existing as Promise<T>;
-  
-  const promise = fetcher().finally(() => inFlight.delete(key));
-  inFlight.set(key, promise);
-  return promise;
-}
-```
 
 ### Cache invalidation via ActivityBus
 
-ActivityBus events invalidate cache; next request re-fetches with enriched data:
+ActivityBus events manage cache lifecycle:
+- **Create/update:** `reserve(token, entityType, entityId)` — maps token to entity key, invalidates stale data
+- **Delete:** `invalidateByEntity(entityType, entityId)` — removes entity from cache. No tombstone needed — DB returns 404 if client missed SSE.
 
-```typescript
-activityBus.onAny((event) => {
-  if (event.entityType && (event.action === 'update' || event.action === 'delete')) {
-    entityCache.invalidateEntity(event.entityType, event.entityId);
-  }
-});
-```
-
-**On delete:** Just invalidate. No tombstone needed — let DB return 404 if client missed SSE.
+**Edit propagation to other clients:** Mutation → DB write → CDC detects change → ActivityBus reserves new token (maps to entity key, invalidates stale data) → SSE broadcasts notification with `cacheToken` → other clients fetch with `X-Cache-Token` → token resolves to entity key → first fetch populates cache → subsequent fetches (any token) hit cache. The editing client patches its own cache optimistically (no refetch needed).
 
 ### Endpoint-first caching
 
@@ -602,10 +661,9 @@ Subsequent requests → Cache hit → Return cached enriched data
 
 | Race condition | Mitigation |
 |----------------|------------|
-| Thundering herd | Request coalescing (singleflight) |
-| Invalidation during fetch | Version in key prevents serving wrong version |
-| Token expiry mid-request | Different key, wasted entry naturally expires |
-| Concurrent updates | Each ActivityBus event invalidates, final state correct |
+| Thundering herd | Request coalescing by entity key (singleflight) |
+| Stale tokens after rapid edits | Forward-only: old tokens resolve to same entity key → cache hit with latest data |
+| Concurrent updates | Each ActivityBus event invalidates entity entry, final state correct |
 | Read-your-writes | Cache miss falls through to DB |
 
 ### Configuration
@@ -613,10 +671,11 @@ Subsequent requests → Cache hit → Return cached enriched data
 | Setting | Value | Notes |
 |---------|-------|-------|
 | Public cache max size | 1000 entries | ~5-10MB RAM |
-| Token cache max size | 5000 entries | ~25-50MB RAM |
-| Public TTL | 5 min | Balance freshness vs. load |
-| Token TTL | 10 min | Matches token expiry |
-| Token secret | `env.ARGON_SECRET` | HMAC-SHA256 signing |
+| App entity cache max size | 5000 entries | ~25-50MB RAM |
+| Token index max size | 10000 entries | Lightweight string→string mappings |
+| Public TTL | 60 min | LRU eviction is primary; TTL is safety net |
+| App cache TTL | 10 min | Entity data + token index auto-expire |
+| Token signing | Session-signed HMAC | Base token from CDC, signed per subscriber |
 
 ---
 
@@ -632,63 +691,7 @@ Priority routing determines how aggressively the client fetches data, based on t
 | **high** | User is viewing the org that scopes this entity | Fetch entity + patch list cache | Process immediately, no delay |
 | **low** | User is elsewhere (different org, not in org route) | Mark stale only | Only process if `offlineAccess` (500ms delay) |
 
-**How it works:**
-1. Extract current org from TanStack Router's matched route context (`getRouteOrgId()`)
-2. Match notification's `organizationId` against route org
-3. Same org → high priority; else → low priority
-
-**Examples with `attachment: { ancestors: ['organization'] }`:**
-- User on `/$org-abc/attachments` → attachment in org-abc → **high** (fetch + patch)
-- User on `/$org-abc/members` → attachment in org-abc → **high** (fetch + patch)
-- User on `/$org-xyz/...` → attachment in org-abc → **low** (invalidate only)
-
-**Benefits:**
-- No route annotations required — uses existing entity hierarchy
-- Automatically adapts when new entities are added
-- Works across different apps (cella, raak) with different entity hierarchies
-
 ---
-
-## Client sync cycle
-
-The client sync cycle is a two-phase process that runs on every stream connect (including reconnects, leader promotion, and circuit breaker recovery). It replaces a separate catchup + prefetch system with a unified flow that works *with* React Query rather than around it.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          Client sync cycle                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Stream connect()                                                           │
-│     │                                                                       │
-│     ▼                                                                       │
-│  Phase A: Catchup (synchronous, before SSE opens)                           │
-│     │  1. Fetch catchup summary from backend (entitySeqs + deletes)          │
-│     │  2. Patch deletes into detail + list caches (no invalidation)          │
-│     │  3. Compare entity-type seqs, mark changed types stale                │
-│     │  4. Update stored entity-type seqs                                    │
-│     │  5. Always refresh memberships (unconditional invalidation)           │
-│     │  6. Cache integrity: compare entityCounts vs cached totals            │
-│     ▼                                                                       │
-│  SSE opens → offset event → state = 'live'                                  │
-│     │                                                                       │
-│     ▼                                                                       │
-│  Phase B: Sync service (background, triggered by 'live' state)              │
-│     │  1. Wait 1s (avoid server overload)                                   │
-│     │  2. Build menu from cache (context entities + memberships)             │
-│     │  3. High priority: ensureQueryData for current org                     │
-│     │     → Stale queries (from Phase A) refetch; fresh ones are no-ops     │
-│     │  4. Low priority (offlineAccess only): ensureQueryData for other orgs  │
-│     │     → 500ms stagger between orgs                                      │
-│     ▼                                                                       │
-│  Live SSE handles individual notifications going forward                    │
-│                                                                             │
-│  Fallback (if SSE fails):                                                   │
-│     • refetchOnMount: true → data refreshes on navigation                   │
-│     • refetchOnReconnect: true → stale queries refetch on network return    │
-│     • Pull-to-refresh → invalidates all active queries                      │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
 
 ### offlineAccess role
 
@@ -703,33 +706,82 @@ The `offlineAccess` toggle controls two things:
 | Product entity sync (other orgs) | Yes (offline cache fill) | No (refetch on navigation) |
 | Member sync (eager) | Yes | No |
 
-### Key files
+---
 
-| File | Role |
-|------|------|
-| `frontend/src/query/realtime/stream-store.ts` | Stream lifecycle (connect → catchup → SSE) |
-| `frontend/src/query/realtime/catchup-processor.ts` | Phase A: delete patching + staleness marking |
-| `frontend/src/query/realtime/sync-service.ts` | Phase B: priority-based ensureQueryData |
-| `frontend/src/query/realtime/app-stream-handler.ts` | Live SSE: fetch + patch (high) or invalidate (low) |
-| `frontend/src/query/realtime/cache-ops.ts` | Shared cache primitives (remove, invalidate, fetch+patch) |
-| `frontend/src/query/basic/sync-stale-config.ts` | Sync-aware staleTime for product entity queries |
-| `frontend/src/offline-config.tsx` | Pure mapping: entity type → sync query options |
-| `frontend/src/query/provider.tsx` | Wires sync service to stream 'live' state transitions |
-| `frontend/src/store/sync.ts` | Persisted seqs, cursor, lastSyncAt |
+## Embedded entity propagation
+
+Product entities can embed references to other entities (e.g., tasks embed label objects in their `labels` array). When a source entity changes, these embedded copies go stale. The propagation system keeps them fresh without extra backend queries.
+
+### How it works
+
+A shared config (`propagationTargets` in `shared/src/propagation-targets.ts`) declares embedding relationships:
+
+```typescript
+// source entity type → targets that embed it
+const propagationTargets = {
+  label: [{ targetType: 'task', field: 'labels' }],
+};
+```
+
+The server attaches a `propagation` hint to SSE notifications and catchup responses for source entity types. The hint contains only source entity IDs that changed, split into `update` (created/updated) and `remove` (deleted) — no target entity queries needed.
+
+The client scans its own React Query cache using `Set` lookups to find and patch stale embeddings. This is sub-millisecond for typical cache sizes (2K entities with 5 embeddings each = ~10K `Set.has()` calls).
+
+### Integration points
+
+| Flow | When propagation runs | Ordering guarantee |
+|------|----------------------|--------------------|
+| **Live SSE** | After the source entity's own cache write completes | Fresh source data available in cache |
+| **Catchup** | After all delta-fetches for the org complete | Delta-fetched targets already have correct embeddings; only TTL-cached stale copies need patching |
+
+An `updatedAt` guard prevents replacing a fresher embedding with an older one (race protection).
+
+
+## Yjs collaborative editing
+
+Descriptions on product entities (`task`, `page`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
+
+### Architecture
+
+The Yjs worker is a standalone `yjs/` workspace package (like `cdc/`). It is a **pure binary relay** — the server never instantiates a `Y.Doc`. It stores and relays raw `Uint8Array` updates with zero document memory.
+
+```
+Online editing:
+  Browser → y-websocket provider → Yjs worker (standalone service, own port)
+  Client (debounced 3s):
+    → Compute derived fields from local Y.Doc (summary, keywords, checkboxCount, etc.)
+    → PATCH /:entityType/:entityId/derived → backend validates + writes to entity table
+    → CDC detects row change → SSE → non-editing clients update
+
+Offline editing:
+  Browser → BlockNote → JSON save on blur → REST mutation → entity.description
+  On reconnect: y-websocket connects, client initializes Y.Doc from entity.description
+
+Other users (non-editing, online):
+  CDC detects materialized row change → SSE → TanStack Query cache update
+  Non-editing users never connect to Yjs worker
+```
+
+### Ephemeral lifecycle
+
+1. First WS connect → relay creates `yjs_documents` row (empty state). Client pushes Y.Doc (initialized from `entity.description` JSON via `initialContent`).
+2. During editing → relay stores raw binary state (debounced 3s). Subsequent clients sync from stored state.
+3. Last WS disconnect → 5 min grace timer. If no reconnect → deletes `yjs_documents` row.
+4. On editor close → flush derived fields via REST (cancel debounce, fire with `keepalive: true`), seed TanStack Query cache from editor state.
+
+### SSE suppression while editing
+
+While a Yjs editor is active, the SSE handler skips description-derived fields for that entity (to avoid overwriting the fresher local Y.Doc state). Non-description fields (`labels`, `status`, etc.) still flow through normally. On editor close, the query cache is seeded from the editor state and normal SSE flow resumes.
+
+### Derived fields
+
+Derived fields (`summary`, `checkboxCount`, `keywords`, etc.) are computed server-side on every create/update (authoritative). During collaborative editing, the client pre-computes them for optimistic UI (3s debounce) and sends them via the standard PUT mutation; the server re-derives before persisting.
 
 ---
 
 ## Local offline testing
 
-Testing PWA and offline capabilities locally requires a production-style build with a real Workbox service worker. The `offline` scripts provide a one-command workflow for this.
-
-### Commands
-
-| Command | What it does | Best for |
-|---------|-------------|----------|
-| `pnpm offline` | Starts backend+CDC, builds frontend, serves via preview server | One-off validation before PR |
-| `pnpm offline:watch` | Same, but frontend rebuilds automatically on file changes | Active offline feature development |
-| `pnpm dev` + DevTools Offline | Standard dev server, toggle Network → Offline in DevTools | Mutation queue/sync logic (no SW) |
+Testing PWA and offline capabilities locally requires abuild with a Workbox service worker. 
 
 ### How it works
 
@@ -748,14 +800,6 @@ pnpm offline
 pnpm offline:watch
 ```
 
-Then in the app:
-1. Open preferences and toggle **Offline access** on
-2. Wait for sync to complete (check console for `[Sync]` logs)
-3. Open DevTools → Network → check **Offline**
-4. Refresh the page — app loads from SW cache
-5. Create/edit entities — mutations queue locally
-6. Uncheck Offline — mutations replay and sync
-
 ---
 
 ## References
@@ -767,4 +811,6 @@ Then in the app:
 **Influences:**
 - [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
 - [LiveStore](https://livestore.io/) - SQLite-based sync with event sourcing
-- [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support
+- [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support, HLC design influence
+- [y-protocols](https://github.com/yjs/y-protocols) - Yjs sync/awareness protocol primitives
+- [Teleportal](https://teleportal.tools/) - Local-first sync engine with CRDTs and end-to-end encryption

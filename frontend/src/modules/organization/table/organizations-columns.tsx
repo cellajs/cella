@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, roles } from 'shared';
+import { appConfig, hierarchy, roles } from 'shared';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { RenderSelect } from '~/modules/common/data-table/select-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
@@ -14,7 +14,7 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import { openUpdateSheet, UpdateRow } from '~/modules/organization/table/update-row';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -30,12 +30,17 @@ export const useColumns = (isCompact: boolean) => {
       minWidth: 200,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
-        <Link
-          className={buttonVariants({ variant: 'cell', size: 'cell' })}
-          to="/$tenantId/$orgSlug/organization/members"
-          draggable="false"
-          tabIndex={tabIndex}
-          params={{ tenantId: row.tenantId, orgSlug: row.slug }}
+        <Button
+          variant="cell"
+          size="cell"
+          render={
+            <Link
+              to="/$tenantId/$organizationSlug/organization/members"
+              draggable="false"
+              tabIndex={tabIndex}
+              params={{ tenantId: row.tenantId, organizationSlug: row.slug }}
+            />
+          }
         >
           <EntityAvatar
             type="organization"
@@ -47,7 +52,7 @@ export const useColumns = (isCompact: boolean) => {
           <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
             {row.name || '-'}
           </span>
-        </Link>
+        </Button>
       ),
     },
     {
@@ -98,7 +103,7 @@ export const useColumns = (isCompact: boolean) => {
     {
       key: 'role',
       name: t('common:your_role'),
-      sortable: false,
+
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
@@ -156,10 +161,7 @@ export const useColumns = (isCompact: boolean) => {
     // Dynamic entity count columns for org-scoped product entities
     ...appConfig.productEntityTypes
       .filter(
-        (type) =>
-          !appConfig.parentlessProductEntityTypes.includes(
-            type as (typeof appConfig.parentlessProductEntityTypes)[number],
-          ),
+        (type) => !hierarchy.parentlessProductTypes.includes(type as (typeof hierarchy.parentlessProductTypes)[number]),
       )
       .map((type) => ({
         key: `${type}Count`,
@@ -170,7 +172,7 @@ export const useColumns = (isCompact: boolean) => {
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
             <BoxIcon className="mr-2 opacity-50" size={16} />
-            {row.included.counts?.entities[type] ?? '-'}
+            {(row.included.counts?.entities as Record<string, number>)?.[type] ?? '-'}
           </>
         ),
       })),

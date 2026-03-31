@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Request } from '~/api.gen';
+import type { Request } from 'sdk';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';

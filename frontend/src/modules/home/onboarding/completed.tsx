@@ -2,15 +2,15 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Organization } from 'sdk';
 import { appConfig } from 'shared';
-import { Organization } from '~/api.gen';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();

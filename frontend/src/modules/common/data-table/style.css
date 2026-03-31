@@ -45,7 +45,7 @@
 }
 
 .rdg-cell[role="columnheader"] {
-  background: none !important;
+  background: var(--rdg-header-background-color) !important;
 }
 
 @media (max-width: 480px) {

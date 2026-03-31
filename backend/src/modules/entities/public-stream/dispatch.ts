@@ -1,4 +1,4 @@
-import { isPublicProductEntity } from 'shared';
+import { isPublicStreamEntity } from 'shared';
 import { createStreamDispatcher } from '#/sync/stream';
 import { type PublicStreamSubscriber, publicChannel } from './types';
 
@@ -10,7 +10,7 @@ export const dispatchToPublicSubscribers = createStreamDispatcher<PublicStreamSu
   getChannel: (event) => {
     // Only route events for public product entity types
     if (!event.entityType) return null;
-    if (!isPublicProductEntity(event.entityType)) {
+    if (!isPublicStreamEntity(event.entityType)) {
       return null;
     }
     return publicChannel(event.entityType);
@@ -18,7 +18,7 @@ export const dispatchToPublicSubscribers = createStreamDispatcher<PublicStreamSu
   shouldReceive: (_subscriber, event) => {
     // Subscriber should receive if entity type is public and has entity ID
     if (!event.entityType || !event.entityId) return false;
-    return isPublicProductEntity(event.entityType);
+    return isPublicStreamEntity(event.entityType);
   },
   logContext: 'public entity',
 });

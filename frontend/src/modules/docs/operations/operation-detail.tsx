@@ -13,6 +13,13 @@ import { Spinner } from '../../common/spinner';
 import { getMethodColor } from '../helpers/get-method-color';
 import { tagDetailsQueryOptions } from '../query';
 
+function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperationDetail) {
+  const tagName = operation.tags[0] ?? '';
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  if (detail) return detail;
+  return tagDetails?.find((d) => d.operationId === operation.id);
+}
+
 interface OperationDetailProps {
   operation: GenOperationSummary;
   detail?: GenOperationDetail;
@@ -23,8 +30,9 @@ interface OperationDetailProps {
  * Single operation detail with collapsible request and responses sections.
  * Displays method, path, description, request parameters, and responses.
  */
-export const OperationDetail = ({ operation, detail, className }: OperationDetailProps) => {
+export const OperationDetail = ({ operation, detail: detailProp, className }: OperationDetailProps) => {
   const { t } = useTranslation();
+  const detail = useResolvedDetail(operation, detailProp);
 
   return (
     <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>

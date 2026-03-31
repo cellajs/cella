@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
 import { ApiError } from '~/lib/api';
 import { useAttachmentDeleteMutation } from '~/modules/attachment/query';
 import type { CallbackArgs } from '~/modules/common/data-table/types';

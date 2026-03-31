@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**

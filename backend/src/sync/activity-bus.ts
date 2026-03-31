@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
-import { appConfig, type EntityType, type ResourceType } from 'shared';
+import { SpanStatusCode } from '@opentelemetry/api';
+import { appConfig, type EntityType, type PropagationHint, type ResourceType } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { type TrackedModel, type TrackedType } from '#/table-config';
 import { logEvent } from '#/utils/logger';
@@ -58,7 +59,6 @@ export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType'
   action: ActivityAction;
   entityType: EntityType | null;
   resourceType: ResourceType | null;
-  createdAt: string; // ISO string from JSON serialization
 };
 
 /**
@@ -66,12 +66,18 @@ export type ActivityEvent = Omit<ActivityModel, 'type' | 'action' | 'entityType'
  * This is the in-memory event format emitted by ActivityBus.
  */
 export interface ActivityEventWithEntity extends ActivityEvent {
-  /** Full entity data from CDC Worker replication row. */
-  entity?: unknown;
+  /** Full row data from CDC Worker replication. */
+  rowData?: unknown;
   /** Cache token for server-side entity cache (realtime entities only). */
   cacheToken?: string | null;
-  /** Per-entity sequence number stamped by trigger (for delta fetching). */
-  seqAt?: number | null;
+  /** Per-entity sequence number stamped by CDC worker (for delta fetching). */
+  seq?: number | null;
+  /** Last seq in a batch (null/undefined = single entity notification). */
+  batchUntilSeq?: number | null;
+  /** Deleted entity IDs for delete batches. */
+  deletedIds?: string[] | null;
+  /** Embedded entity propagation hint. */
+  propagation?: PropagationHint | null;
   /** Trace context for end-to-end correlation. */
   _trace?: SyncTraceContext;
 }
@@ -83,17 +89,17 @@ export interface ActivityEventWithEntity extends ActivityEvent {
  * @example
  * ```typescript
  * if (event.resourceType === 'membership') {
- *   const membership = getTypedEntity(event, 'membership');
+ *   const membership = getTypedRowData(event, 'membership');
  *   console.info(membership?.userId); // Properly typed as string
  * }
  * ```
  */
-export function getTypedEntity<T extends TrackedType>(
+export function getTypedRowData<T extends TrackedType>(
   event: ActivityEventWithEntity,
   trackedType: T,
 ): TrackedModel<T> | undefined {
   const matches = event.entityType === trackedType || event.resourceType === trackedType;
-  return matches ? (event.entity as TrackedModel<T>) : undefined;
+  return matches ? (event.rowData as TrackedModel<T>) : undefined;
 }
 
 /**
@@ -120,8 +126,8 @@ type EventHandler = (event: ActivityEventWithEntity) => void | Promise<void>;
  * // Subscribe to membership creation events
  * activityBus.on('membership.created', async (event) => {
  *   console.info('New membership:', event.entityId);
- *   if (event.entity) {
- *     console.info('Entity data:', event.entity);
+ *   if (event.rowData) {
+ *     console.info('Row data:', event.rowData);
  *   }
  * });
  * ```
@@ -195,7 +201,7 @@ class ActivityBus {
    */
   emit(event: ActivityEventWithEntity): void {
     if (!isValidEventType(event.type)) {
-      logEvent('warn', 'Unknown activity event type from CDC message', { type: event.type });
+      logEvent(null, 'warn', 'Unknown activity event type from CDC message', { type: event.type });
       return;
     }
 
@@ -206,9 +212,9 @@ class ActivityBus {
     recordMessageReceived(event.entityType || 'unknown');
 
     this.emitter.emit(event.type, event);
-    logEvent('debug', 'ActivityBus emitted event', { type: event.type, entityId: event.entityId });
+    logEvent(null, 'trace', 'ActivityBus emitted event', { type: event.type, entityId: event.entityId });
 
-    span.setStatus('ok');
+    span.setStatus({ code: SpanStatusCode.OK });
     span.end();
   }
 }

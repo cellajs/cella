@@ -6,7 +6,7 @@ import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;

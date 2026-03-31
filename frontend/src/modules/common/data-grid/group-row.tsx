@@ -80,4 +80,5 @@ function GroupedRow<R, SR>({
 }
 
 const GroupedRowMemo = memo(GroupedRow) as <R, SR>(props: GroupRowRendererProps<R, SR>) => React.JSX.Element;
+
 export { GroupedRowMemo as GroupedRow };

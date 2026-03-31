@@ -1,4 +1,4 @@
-# Serverless Containers Module - Backend API + CDC Worker
+# Serverless Containers Module - Backend API + CDC Worker + Yjs Relay
 
 variable "name_prefix" {
   type = string
@@ -28,6 +28,10 @@ variable "cdc_image_tag" {
   type = string
 }
 
+variable "yjs_image_tag" {
+  type = string
+}
+
 variable "secret_ids" {
   type = map(string)
 }
@@ -48,6 +52,11 @@ variable "backend_memory" {
 }
 
 variable "cdc_memory" {
+  type    = number
+  default = 256
+}
+
+variable "yjs_memory" {
   type    = number
   default = 256
 }
@@ -106,10 +115,11 @@ resource "scaleway_container" "backend" {
   # Reference secrets from Secret Manager
   secret_environment_variables = {
     DATABASE_URL             = var.secret_ids.database_url_pooled
+    DATABASE_ADMIN_URL       = var.secret_ids.database_url_admin
     ARGON_SECRET             = var.secret_ids.argon_secret
     COOKIE_SECRET            = var.secret_ids.cookie_secret
-    UNSUBSCRIBE_TOKEN_SECRET = var.secret_ids.unsubscribe_token_secret
-    CDC_WS_SECRET            = var.secret_ids.cdc_ws_secret
+    UNSUBSCRIBE_SECRET = var.secret_ids.unsubscribe_secret
+    CDC_SECRET               = var.secret_ids.cdc_secret
   }
 }
 
@@ -136,16 +146,48 @@ resource "scaleway_container" "cdc" {
   environment_variables = {
     NODE_ENV       = var.env == "prod" ? "production" : var.env
     TZ             = "UTC"
-    CDC_HEALTH_PORT = "4001"
     # Backend WebSocket URL for CDC to connect to
-    CDC_BACKEND_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/cdc"
+    API_WS_URL = "wss://${replace(var.backend_url, "https://", "")}/internal/cdc"
   }
 
   # Reference secrets from Secret Manager
   # CDC uses direct database URL (not pooled) for logical replication
   secret_environment_variables = {
-    DATABASE_URL  = var.secret_ids.database_url_direct
-    CDC_WS_SECRET = var.secret_ids.cdc_ws_secret
+    DATABASE_CDC_URL = var.secret_ids.database_url_direct
+    CDC_SECRET       = var.secret_ids.cdc_secret
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Yjs Relay Container
+# -----------------------------------------------------------------------------
+
+resource "scaleway_container" "yjs" {
+  name            = "${var.name_prefix}-yjs"
+  namespace_id    = scaleway_container_namespace.main.id
+  region          = var.region
+  registry_image  = "${var.registry_endpoint}/yjs:${var.yjs_image_tag}"
+  port            = 4002
+  cpu_limit       = 500 # 0.5 vCPU
+  memory_limit    = var.yjs_memory
+  min_scale       = 1   # Always on - WebSocket connections need persistence
+  max_scale       = 3
+  timeout         = 900 # 15 minutes (long-running WebSocket connections)
+  max_concurrency = 50
+  privacy         = "private"
+  protocol        = "http1"
+  deploy          = true
+
+  environment_variables = {
+    NODE_ENV = var.env == "prod" ? "production" : var.env
+    TZ       = "UTC"
+  }
+
+  # Reference secrets from Secret Manager
+  # Yjs uses direct database URL for document storage
+  secret_environment_variables = {
+    DATABASE_URL = var.secret_ids.database_url_direct
+    YJS_SECRET   = var.secret_ids.yjs_secret
   }
 }
 
@@ -167,6 +209,14 @@ output "cdc_endpoint" {
 
 output "cdc_id" {
   value = scaleway_container.cdc.id
+}
+
+output "yjs_endpoint" {
+  value = scaleway_container.yjs.domain_name
+}
+
+output "yjs_id" {
+  value = scaleway_container.yjs.id
 }
 
 output "namespace_id" {

@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType } from 'shared';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
+import { type EntityModel, resolveEntity } from '#/modules/entities/helpers/resolve-entity';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 
@@ -48,7 +48,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   const db = ctx.var.db;
 
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)
-  const entity = await resolveEntity(entityType, entityId, db, bySlug);
+  const entity = await resolveEntity(db, entityType, entityId, bySlug);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

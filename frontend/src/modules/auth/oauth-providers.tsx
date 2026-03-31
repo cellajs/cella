@@ -5,7 +5,7 @@ import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },

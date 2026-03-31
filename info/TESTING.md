@@ -18,7 +18,7 @@ These align with development modes:
 
 | Dev Command | Test Command | DEV_MODE | Description |
 |-------------|--------------|----------|-------------|
-| `pnpm quick` | `pnpm test:basic` | basic | PGlite, no Docker |
+| — | `pnpm test:basic` | none | Unit tests only, no Docker |
 | `pnpm dev:core` | `pnpm test:core` | core | PostgreSQL, no CDC |
 | `pnpm dev` | `pnpm test:full` | full | PostgreSQL + CDC Worker |
 
@@ -30,7 +30,6 @@ These align with development modes:
 
 Best for:
 - Quick feedback during active development
-- Running tests without Docker installed
 - CI checks on resource-constrained environments
 - Testing pure logic that doesn't need database
 

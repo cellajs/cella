@@ -16,8 +16,8 @@
  * 4. Offline fill: ensureQueryData for remaining orgs (only when offlineAccess)
  */
 
+import { getEntitySyncQueries } from '~/list-queries-config';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getEntitySyncQueries } from '~/offline-config';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
@@ -90,18 +90,20 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
 async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise<void> {
   if (item.membership.archived) return;
 
-  const queries = getEntitySyncQueries(item.id, item.entityType, item.tenantId, offlineAccess);
+  // For organizations, the entity IS the org. For sub-contexts, organizationId comes from enrichment.
+  const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
+  const queries = getEntitySyncQueries(item.id, item.entityType, item.tenantId, organizationId, offlineAccess);
 
-  const promises = queries.map((source) => {
-    const options = { ...source, ...syncQueryConfig };
-    // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
-    // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-    if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options as any);
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic query options from getEntitySyncQueries
-    return queryClient.ensureQueryData(options as any);
-  });
-
-  await Promise.allSettled(promises);
+  await Promise.allSettled(
+    queries.map(async (source) => {
+      const options = { ...source, ...syncQueryConfig };
+      const isInfinite = 'getNextPageParam' in options;
+      // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
+      return isInfinite
+        ? await queryClient.ensureInfiniteQueryData(options as any)
+        : await queryClient.ensureQueryData(options as any);
+    }),
+  );
 }
 
 /**

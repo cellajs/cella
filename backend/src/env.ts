@@ -1,13 +1,16 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
 import { z } from 'zod';
-import { additionalEnvSchema } from '#/custom-env';
 import { severityLevels } from '#/schemas/api-error-schemas';
 
+// Resolve root relative to this file so it works regardless of cwd (e.g. vitest workers)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 dotenv({
-  root: '../..',
-  verbose: appConfig.debug,
+  root: path.resolve(__dirname, '../../..'),
   files: ['.env'],
 });
 
@@ -16,14 +19,14 @@ dotenv({
  */
 export const env = createEnv({
   server: {
-    DEV_MODE: z.enum(['none', 'basic', 'core', 'full']).default('core'),
+    DEV_MODE: z.enum(['none', 'core', 'full']).default('core'),
     DEBUG: z
       .string()
       .default('false')
       .transform((v) => v === 'true'),
     DATABASE_URL: z.url(),
-    /** Admin database URL (superuser). Used for migrations and seeds only. */
     DATABASE_ADMIN_URL: z.url(),
+    DATABASE_POOL_MAX: z.coerce.number().default(80),
     NODE_ENV: z.union([
       z.literal('development'),
       z.literal('production'),
@@ -50,9 +53,7 @@ export const env = createEnv({
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
     BREVO_API_KEY: z.string().optional(),
-
-    PADDLE_API_KEY: z.string().optional(),
-    PADDLE_WEBHOOK_KEY: z.string().optional(),
+    TEST_SEND_EMAILS: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
@@ -73,29 +74,12 @@ export const env = createEnv({
 
     MAPLE_API_KEY: z.string().optional(),
 
-    // CDC Worker WebSocket authentication (required in full/production mode)
-    CDC_INTERNAL_SECRET: z
-      .string()
-      .min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters')
-      .optional()
-      .refine(
-        (val) => {
-          // Required in full mode or production
-          const devMode = process.env.DEV_MODE ?? 'core';
-          const nodeEnv = process.env.NODE_ENV ?? 'development';
-          if (devMode === 'full' || nodeEnv === 'production') {
-            return !!val;
-          }
-          return true;
-        },
-        { message: 'CDC_INTERNAL_SECRET is required in full mode or production' },
-      ),
+    YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
+    CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
 
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
-
-    ...additionalEnvSchema.shape,
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

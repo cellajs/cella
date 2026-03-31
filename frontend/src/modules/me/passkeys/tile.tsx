@@ -6,7 +6,7 @@ import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {

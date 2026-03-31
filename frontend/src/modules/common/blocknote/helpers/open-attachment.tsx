@@ -1,4 +1,4 @@
-import type { CarouselItemData } from '~/modules/attachment/carousel';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 

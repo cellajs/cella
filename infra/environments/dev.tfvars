@@ -5,6 +5,7 @@
 dns_zone   = "cellajs.com"
 api_domain = "api.dev.cellajs.com"
 app_domain = "dev.cellajs.com"
+yjs_domain = "yjs.dev.cellajs.com"
 
 # Database (small instance for dev)
 db_node_type      = "DB-DEV-S"
@@ -15,6 +16,7 @@ backend_min_scale = 0
 backend_max_scale = 3
 backend_memory    = 512
 cdc_memory        = 256
+yjs_memory        = 256
 
 # Features
 enable_waf = false

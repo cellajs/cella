@@ -130,6 +130,9 @@ export const schemaTagsQueryOptions = queryOptions({
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
-    queryFn: () => fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`),
+    queryFn: () =>
+      tagName
+        ? fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`)
+        : ([] as GenOperationDetail[]),
     staleTime: Number.POSITIVE_INFINITY,
   });

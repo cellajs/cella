@@ -1,7 +1,5 @@
 import type { BlockNoteEditor } from '@blocknote/core';
-import { useExtensionState } from '@blocknote/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 
 interface ChecklistGroupRenderProps {
   block: {
@@ -15,11 +13,9 @@ interface ChecklistGroupRenderProps {
 }
 
 export function ChecklistGroupRender({ block, editor }: ChecklistGroupRenderProps) {
-  const { checkboxes } = useExtensionState(checkboxesExtension, { editor });
-
-  // Count checked children
+  // Count checked children directly from block props
   const childItems = block.children?.filter((c) => c.type === 'checklistItem') ?? [];
-  const checkedCount = childItems.filter((c) => checkboxes?.find((cb) => cb.id === c.props.checkboxId)?.checked).length;
+  const checkedCount = childItems.filter((c) => c.props.checked).length;
   const totalCount = childItems.length;
 
   const toggleCollapsed = () => {

@@ -3,9 +3,7 @@
  * These types narrow the generic builder types to the concrete app setup.
  */
 import { hierarchy, roles } from './default-config';
-import { appConfig } from './app-config';
-
-;
+import { appConfig } from './src/config-builder/app-config';
 
 /******************************************************************************
  * ENTITY TYPES
@@ -21,10 +19,10 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /** Parentless product entities (no organization_id) - tenant-scoped only */
-export type ParentlessProductEntityType = (typeof appConfig.parentlessProductEntityTypes)[number];
+export type ParentlessProductEntityType = (typeof hierarchy.parentlessProductTypes)[number];
 
-/** Public product entities (types with publicActions configured in hierarchy) */
-export type PublicProductEntityType = (typeof hierarchy.publicActionsTypes)[number];
+/** Public product entities (types with publicRead configured in hierarchy) */
+export type PublicProductEntityType = (typeof hierarchy.publicReadTypes)[number];
 
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
 export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
@@ -63,6 +61,10 @@ export type Theme = keyof typeof appConfig.theme.colors | 'none';
 /** Pino log severity levels */
 export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
+/** Activity actions aligned with HTTP methods (excluding 'read'). Shared between backend and CDC. */
+export const activityActions = ['create', 'update', 'delete'] as const;
+export type ActivityAction = (typeof activityActions)[number];
+
 /** All token types used in the app */
 export type TokenType = (typeof appConfig.tokenTypes)[number];
 
@@ -87,3 +89,19 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
 /** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
+
+/******************************************************************************
+ * EMBEDDING PROPAGATION TYPES
+ ******************************************************************************/
+
+/** Single entity embedding relationship derived from config */
+type EntityEmbedding = (typeof appConfig.entityEmbeddings)[number];
+
+/** Hint describing which target entities need cache updates when a source entity changes */
+export type PropagationHint = {
+  sourceType: EntityEmbedding['embeddedEntity'];
+  targetType: EntityEmbedding['hostEntity'];
+  field: EntityEmbedding['hostColumn'];
+  update: string[];
+  remove: string[];
+};

@@ -1,96 +1,61 @@
 import { sql } from 'drizzle-orm';
-import { baseDb as db, migrateConfig, migrationDb } from '#/db/db';
-import docs from '#/docs/docs';
+import { migrateConfig, migrationDb } from '#/db/db';
+import initDocs from '#/docs/init-docs';
 import '#/lib/i18n';
-import { serve } from '@hono/node-server';
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { type ServerType, serve } from '@hono/node-server';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
-import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/ascii';
+import { setupGracefulShutdown } from 'shared/worker-lifecycle';
 import app from '#/routes';
 import { registerCacheInvalidation } from '#/sync/cache-invalidation';
 import { cdcWebSocketServer } from '#/sync/cdc-websocket';
+import { timestamp } from '#/utils/console';
 import { env } from './env';
-import { maple, verifyMapleConnection } from './tracing';
+import { otel } from './tracing';
 
-// import { sdk } from './tracing';
-maple?.start();
-verifyMapleConnection();
+otel.start();
+otel.verifyConnection();
 
-// Catch unhandled errors that bypass try/catch (e.g., DB pool 'error' events)
-process.on('unhandledRejection', (reason) => {
-  process.stderr.write(`[startup] Unhandled rejection: ${reason instanceof Error ? reason.stack : reason}\n`);
-});
+// Keep a reference so graceful shutdown can close the server
+let server: ServerType | undefined;
 
-process.on('uncaughtException', (err) => {
-  process.stderr.write(`[startup] Uncaught exception: ${err.stack ?? err}\n`);
-  // Give stderr time to flush before exit
-  setTimeout(() => process.exit(1), 500);
-});
-
-process.on('SIGTERM', () => {
-  process.stderr.write('[startup] Received SIGTERM — process killed\n');
-  setTimeout(() => process.exit(1), 200);
-});
-
-const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
-
-const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => env.DEV_MODE === 'basic';
+const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).default : () => null;
 
 // Init OpenAPI docs
-await docs(app);
-
-// Init monitoring instance
-Sentry.init({
-  enabled: !!appConfig.sentryDsn,
-  dsn: appConfig.sentryDsn,
-  debug: appConfig.debug,
-  environment: appConfig.mode,
-  integrations: [nodeProfilingIntegration()],
-  // Tracing to capture 100% of transactions
-  tracesSampleRate: 1.0,
-  // Set sampling rate for profiling - this is evaluated only once per SDK.init call
-  profileSessionSampleRate: 1.0,
-  // Trace lifecycle automatically enables profiling during active traces
-  profileLifecycle: 'trace',
-});
+await initDocs(app);
 
 const main = async () => {
   const port = Number(env.PORT ?? '4000');
-  console.info(`[startup] mode=${appConfig.mode} devMode=${env.DEV_MODE} port=${port}`);
+  console.info(`${timestamp()} [startup] mode=${appConfig.mode} devMode=${env.DEV_MODE} port=${port}`);
 
   // Create db roles if needed (dev only), then migrate
-  if (isPGliteDatabase(db)) {
-    await pgliteMigrate(db, migrateConfig);
-  } else if (migrationDb) {
-    // Verify database connectivity before any DB work
-    try {
-      await migrationDb.execute(sql`SELECT 1`);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);
-    }
-
-    const { createDbRoles } = await import('../scripts/db/create-db-roles');
-    await createDbRoles();
-
-    console.info('[startup] Running migrations...');
-    await pgMigrate(migrationDb, migrateConfig);
-  } else {
+  if (!migrationDb) {
     throw new Error('DATABASE_ADMIN_URL required for migrations');
   }
 
-  console.info('[startup] Migrations complete, starting server...');
+  // Verify database connectivity before any DB work
+  try {
+    await migrationDb.execute(sql`SELECT 1`);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);
+  }
+
+  const { createDbRoles } = await import('../scripts/db/create-db-roles');
+  await createDbRoles();
+
+  console.info(`${timestamp()} [startup] Running migrations...`);
+  await pgMigrate(migrationDb, migrateConfig);
+
+  console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
 
   // Register entity cache invalidation hook
   registerCacheInvalidation();
 
   // Start server with WebSocket support for CDC Worker
-  const server = serve(
+  server = serve(
     {
       fetch: app.fetch,
       hostname: '0.0.0.0',
@@ -98,7 +63,7 @@ const main = async () => {
     },
     async (info) => {
       // Attach CDC WebSocket server to HTTP server
-      cdcWebSocketServer.attachToServer(server);
+      cdcWebSocketServer.attachToServer(server!);
 
       const tunnelUrl = await startTunnel(info);
 
@@ -109,7 +74,6 @@ const main = async () => {
 Frontend: ${pc.bold(pc.cyanBright(appConfig.frontendUrl))} 
 Backend: ${pc.bold(pc.cyanBright(appConfig.backendUrl))} 
 Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}
-Docs: ${pc.cyanBright(`${appConfig.backendUrl}/docs`)}
 Storybook: ${pc.cyanBright(`http://localhost:${Number(new URL(appConfig.frontendUrl).port) + 3006}/`)}`);
 
       console.info(' ');
@@ -117,9 +81,19 @@ Storybook: ${pc.cyanBright(`http://localhost:${Number(new URL(appConfig.frontend
   );
 };
 
-// sdk.start();
+setupGracefulShutdown({
+  name: 'api',
+  cleanup: async () => {
+    if (server) {
+      server.close();
+    }
+    cdcWebSocketServer.close();
+    await otel.shutdown();
+  },
+  log: (msg) => process.stderr.write(`[api] ${msg}\n`),
+});
+
 main().catch((e) => {
-  // Use synchronous stderr write to ensure the error is visible before exit
   process.stderr.write(`[startup] Failed to start server: ${e instanceof Error ? e.stack : e}\n`);
   setTimeout(() => process.exit(1), 500);
 });

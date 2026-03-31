@@ -56,22 +56,3 @@ export function removeCacheToken(entityType: string, entityId: string): void {
   const key = buildKey(entityType, entityId);
   tokenStore.delete(key);
 }
-
-/**
- * Clear all cache tokens.
- * Call on logout or when stream disconnects for extended period.
- */
-export function clearCacheTokens(): void {
-  tokenStore.clear();
-}
-
-/**
- * Get statistics about the token store.
- * Useful for debugging.
- */
-export function getCacheTokenStats(): { size: number; keys: string[] } {
-  return {
-    size: tokenStore.size,
-    keys: Array.from(tokenStore.keys()),
-  };
-}

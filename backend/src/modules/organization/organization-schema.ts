@@ -23,22 +23,24 @@ import { contextEntityIncludedSchema } from '#/schemas/context-entity-included';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
+const organizationIncludedSchema = contextEntityIncludedSchema('organization');
+
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
-    included: contextEntityIncludedSchema,
+    included: organizationIncludedSchema,
   })
   .openapi('Organization', {
-    description: 'An organization with membership context.',
+    description: 'The main context entity is an organization.',
     example: mockOrganizationResponse(),
   });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({
-  included: contextEntityIncludedSchema.extend({ membership: membershipBaseSchema }),
+  included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
 });
 
 const organizationCreateItemSchema = z.object({

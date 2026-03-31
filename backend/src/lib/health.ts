@@ -1,13 +1,23 @@
 import { sql } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
+import { cdcWebSocketServer } from '#/sync/cdc-websocket';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
+
+interface CdcHealthStatus {
+  cdcConnected: boolean;
+  lastMessageAt: string | null;
+  messagesReceived: number;
+  parseErrors: number;
+  status: 'healthy' | 'degraded' | 'unknown';
+}
 
 interface HealthResponse {
   status: HealthStatus;
   uptime: number;
   database: 'connected' | 'disconnected';
+  cdc: CdcHealthStatus;
   memory: {
     heapUsed: number;
     heapTotal: number;
@@ -37,13 +47,18 @@ async function checkDatabase(): Promise<boolean> {
 export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const dbConnected = await checkDatabase();
   const memoryUsage = process.memoryUsage();
+  const cdc = cdcWebSocketServer.getHealthStatus();
 
-  const status: HealthStatus = dbConnected ? 'healthy' : 'unhealthy';
+  // Degraded if CDC is degraded, unhealthy if DB is down
+  let status: HealthStatus = 'healthy';
+  if (!dbConnected) status = 'unhealthy';
+  else if (cdc.status === 'degraded') status = 'degraded';
 
   const response: HealthResponse = {
     status,
     uptime: Math.floor(process.uptime()),
     database: dbConnected ? 'connected' : 'disconnected',
+    cdc,
     memory: {
       heapUsed: memoryUsage.heapUsed,
       heapTotal: memoryUsage.heapTotal,

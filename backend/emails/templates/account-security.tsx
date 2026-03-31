@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import type { BasicTemplateType } from '../types';
 
@@ -40,12 +40,12 @@ export const AccountSecurity = ({ lng, name, type, details }: AccountSecurityPro
     <EmailContainer previewText={previewText}>
       <EmailHeader headerText={headerText} />
       <EmailBody>
-        <Text>
+        <EmailText>
           <span dangerouslySetInnerHTML={{ __html: bodyText }} />
-        </Text>
+        </EmailText>
       </EmailBody>
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

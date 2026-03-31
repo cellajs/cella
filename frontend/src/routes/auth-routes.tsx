@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { z } from 'zod';
 import { AuthErrorPage } from '~/modules/auth/auth-error-page';
 import { AuthLayout } from '~/modules/auth/auth-layout';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { AuthenticatePage } from '~/modules/auth/authenticate-page';
 import { CreatePasswordPage } from '~/modules/auth/create-password-page';
 import { EmailVerificationPage } from '~/modules/auth/email-verification-page';
@@ -11,9 +12,8 @@ import { MfaPage } from '~/modules/auth/mfa-page';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import { Unsubscribed as UnsubscribedPage } from '~/modules/auth/unsubscribed-page';
+import { useUserStore } from '~/modules/user/user-store';
 import { errorSearchSchema, PublicLayoutRoute } from '~/routes/base-routes';
-import { useAuthStore } from '~/store/auth';
-import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
 const authenticateRouteSearch = z.object({

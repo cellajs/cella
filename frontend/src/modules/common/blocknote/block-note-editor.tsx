@@ -11,24 +11,21 @@ import {
 import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
-import * as Y from 'yjs';
+import type { ProductEntityType } from 'shared';
+import type { WebsocketProvider } from 'y-websocket';
+import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/helpers';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
+import { getFileUrl } from '~/modules/attachment/file-url';
+import { findAttachmentInCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel/file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
-import {
-  compareIsContentSame,
-  getParsedContent,
-  getRandomColor,
-} from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { clearYjsUndoManagerStacks, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
@@ -39,8 +36,10 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import { useDerivedFieldsSender } from '~/modules/common/blocknote/use-derived-fields-sender';
+import { useYjsEditorStore } from '~/modules/common/blocknote/yjs-editor';
+import { useUIStore } from '~/modules/ui/ui-store';
 import router from '~/routes/router';
-import { useUIStore } from '~/store/ui';
 
 // IDE-like wrapping characters (constant, no need to recreate per keystroke)
 const wrappingChars: Record<string, string> = {
@@ -52,24 +51,35 @@ const wrappingChars: Record<string, string> = {
   "'": "'",
 };
 
+/** Pre-built collaboration config from the connection manager store. */
+interface CollaborationConfig {
+  provider: WebsocketProvider;
+  fragment: XmlFragment;
+  user: { name: string; color: string };
+  showCursorLabels?: 'activity' | 'always';
+}
+
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
       collaborative: true;
-      user: {
-        id?: string;
-        name: string;
-        color?: string;
-      };
+      collaboration: CollaborationConfig;
+      entityType: ProductEntityType;
+      entityId: string;
+      /** Callback that sends description update through a React Query mutation (fires lifecycle hooks). */
+      sendDerivedUpdate: (entityId: string, description: string) => Promise<void>;
     })
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
       collaborative?: false | undefined;
-      user?: never;
+      collaboration?: never;
+      entityType?: never;
+      entityId?: never;
+      sendDerivedUpdate?: never;
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
@@ -82,7 +92,10 @@ type BlockNoteProps =
       filePanel?: never;
       baseFilePanelProps?: never;
       collaborative?: never;
-      user?: never;
+      collaboration?: never;
+      entityType?: never;
+      entityId?: never;
+      sendDerivedUpdate?: never;
     });
 
 const EMPTY_BLOCK_TYPES: CustomBlockRegularTypes[] = [];
@@ -113,7 +126,10 @@ function BlockNote({
   baseFilePanelProps,
   // Collaboration
   collaborative = false,
-  user,
+  collaboration,
+  entityType: entityTypeProp,
+  entityId: entityIdProp,
+  sendDerivedUpdate,
   // Functions
   updateData,
   onEscapeClick,
@@ -139,30 +155,10 @@ function BlockNote({
       !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
 
-  const collaborationConfig = collaborative
-    ? (() => {
-        // Share a single Y.Doc between provider and fragment so collaboration actually works
-        const yDoc = new Y.Doc();
-        return {
-          // The Yjs Provider responsible for transporting updates:
-          provider: new WebrtcProvider(id, yDoc),
-          // Where to store BlockNote data in the Y.Doc:
-          fragment: yDoc.getXmlFragment('document-store'),
-          // Information (name and color) for this user:
-          user: {
-            name: user?.name || 'Anonymous User',
-            color: user?.color || getRandomColor(),
-          },
-          // When to show user labels on the collaboration cursor. Set by default to
-          // "activity" (show when the cursor moves), but can also be set to "always".
-          showCursorLabels: 'activity' as const,
-        };
-      })()
-    : undefined;
-
   // Parse initial content once at creation time so the undo history starts clean
   // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
-  const initialContent = getParsedContent(defaultValue);
+  // When using collaboration, skip initialContent — the Yjs provider supplies the document state.
+  const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
   const editor = useCreateBlockNote({
     schema: customSchema,
@@ -170,8 +166,9 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    collaboration: collaborationConfig,
-    extensions: [checkboxesExtension(), ...(extensions ?? [])],
+    collaboration,
+
+    extensions: [checkedExtension(), ...(extensions ?? [])],
     // Offline-first file URL resolution:
     // 1. If key looks like an attachment ID (nanoid format), check local blob storage
     // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)
@@ -195,7 +192,7 @@ function BlockNote({
       const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
 
       // Get organizationId and tenantId from cache (if key is attachment ID) or from props
-      const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
+      const cachedAttachment = isAttachmentId ? findAttachmentInCache(key) : null;
       const tenantId = cachedAttachment?.tenantId ?? baseFilePanelProps?.tenantId;
       const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
 
@@ -211,30 +208,129 @@ function BlockNote({
     },
   });
 
+  // Fix Yjs UndoManager after TipTap mount/unmount cycles.
+  // React StrictMode (dev) and editability changes trigger unmount→remount of the
+  // EditorView. The yUndoPlugin's view.destroy() calls undoManager.destroy(), which
+  // unsubscribes it from Y.Doc's afterTransaction event. On remount, the destroyed
+  // UndoManager is reused from the plugin state and can't capture new changes.
+  // This effect re-subscribes the UndoManager after each mount so CMD+Z works.
+  // TODO refactor this
+  useEffect(() => {
+    if (!collaborative) return;
+
+    const tiptap = editor._tiptapEditor;
+
+    const resubscribeUndoManager = () => {
+      try {
+        const pmState = tiptap.state;
+        if (!pmState) return;
+
+        // Find the ySyncPlugin state (contains the Y.Doc)
+        // and the yUndoPlugin state (contains the UndoManager)
+        let doc: { on: (e: string, h: unknown) => void; off: (e: string, h: unknown) => void } | undefined;
+        let undoManager: { afterTransactionHandler: unknown } | undefined;
+
+        for (const plugin of pmState.plugins) {
+          const s = plugin.getState(pmState) as Record<string, unknown> | undefined;
+          if (!s) continue;
+          if (s.doc && typeof (s.doc as Record<string, unknown>).on === 'function') doc = s.doc as typeof doc;
+          if (s.undoManager && typeof (s as Record<string, unknown>).undoManager === 'object') {
+            undoManager = s.undoManager as typeof undoManager;
+          }
+        }
+
+        if (doc && undoManager?.afterTransactionHandler) {
+          doc.off('afterTransaction', undoManager.afterTransactionHandler);
+          doc.on('afterTransaction', undoManager.afterTransactionHandler);
+        }
+      } catch {
+        // Non-critical — if this fails, undo just won't work until next mount
+      }
+    };
+
+    // Fix immediately (editor is already mounted by the time this effect runs)
+    resubscribeUndoManager();
+
+    // Also fix on future mounts (e.g. editability changes cause unmount→remount)
+    tiptap.on('mount', resubscribeUndoManager);
+
+    return () => {
+      tiptap.off('mount', resubscribeUndoManager);
+    };
+  }, [collaborative, editor]);
+
+  // Register/unregister entity with Yjs editor store for SSE suppression
+  useEffect(() => {
+    if (!collaborative || !entityTypeProp || !entityIdProp) return;
+    useYjsEditorStore.getState().register(entityTypeProp, entityIdProp);
+    return () => useYjsEditorStore.getState().unregister(entityTypeProp, entityIdProp);
+  }, [collaborative, entityTypeProp, entityIdProp]);
+
+  // Send derived fields (summary, checkbox counts, etc.) to backend in collaborative mode
+  const { markContentAsSent } = useDerivedFieldsSender(
+    collaborative && entityIdProp && sendDerivedUpdate
+      ? {
+          entityId: entityIdProp,
+          editor,
+          sendUpdate: sendDerivedUpdate,
+        }
+      : null,
+  );
+
+  // Seed Y.Doc with existing content on first sync when document is empty
+  useEffect(() => {
+    const provider = collaboration?.provider;
+    if (!provider || !defaultValue) return;
+
+    let handled = false;
+
+    const handleSync = (isSynced: boolean) => {
+      if (!isSynced || handled) return;
+      handled = true;
+      // Unsubscribe immediately — reconnects must not clear the user's undo history
+      provider.off('sync', handleSync);
+
+      // If the editor is empty after sync, seed it with existing data
+      if (editor.isEmpty) {
+        const parsed = getParsedContent(defaultValue);
+        if (parsed) {
+          editor.replaceBlocks(editor.document, parsed);
+          // Clear Yjs UndoManager stacks so the seed isn't undoable
+          clearYjsUndoManagerStacks(editor);
+        }
+      }
+      // Mark current content as baseline so the seed doesn't trigger a spurious PUT
+      markContentAsSent();
+    };
+
+    // Check if already synced
+    if (provider.synced) {
+      handleSync(true);
+    } else {
+      provider.on('sync', handleSync);
+    }
+    return () => provider.off('sync', handleSync);
+  }, []); // Run once on mount
+
   const handleKeyDown: KeyboardEventHandler = (event) => {
     const { metaKey, ctrlKey, key } = event;
     const isEscape = key === 'Escape';
     const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
 
-    // Handle character-based wrapping
+    // Handle IDE-like character wrapping around selection
     if (key in wrappingChars) {
-      const selection = editor.getSelection();
+      const pmState = editor.prosemirrorState;
+      const { from, to } = pmState.selection;
 
-      const singleBlockSelected =
-        selection &&
-        selection.blocks.length === 1 &&
-        Array.isArray(selection.blocks[0].content) &&
-        selection.blocks[0].content.length > 0;
-
-      if (singleBlockSelected) {
+      if (from !== to) {
         event.preventDefault();
 
-        const [currentBlock] = selection.blocks;
-        const selectedText = editor.getSelectedText();
-
-        editor.updateBlock(currentBlock, {
-          content: `${key}${selectedText}${wrappingChars[key]}`,
-        });
+        const closing = wrappingChars[key];
+        const tr = pmState.tr;
+        // Insert closing char first (at `to`) so `from` offset stays valid
+        tr.insertText(closing, to);
+        tr.insertText(key, from);
+        editor.prosemirrorView.dispatch(tr);
 
         return;
       }
@@ -247,6 +343,7 @@ function BlockNote({
 
     // Escape handling
     if (isEscape) {
+      if (!editor.isEmpty) handleUpdateData(editor);
       onEscapeClick?.();
       return;
     }
@@ -260,7 +357,7 @@ function BlockNote({
 
   const handleUpdateData = (editor: CustomBlockNoteEditor) => {
     const strBlocks = JSON.stringify(editor.document);
-    if (compareIsContentSame(strBlocks, defaultValue) || !updateData) return;
+    if (strBlocks === defaultValue || !updateData) return;
 
     updateData(strBlocks);
   };
@@ -291,7 +388,10 @@ function BlockNote({
     // Check if the next focused element is still inside the editor
     if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
 
-    if (type === 'edit') handleUpdateData(editor);
+    // In collaborative mode, only write to cache when editor has content (prevents
+    // writing empty content before Yjs sync completes). Derived fields sender handles
+    // backend persistence; updateData only patches the query cache in collab mode.
+    if (type === 'edit' && !editor.isEmpty) handleUpdateData(editor);
   };
 
   const handleClick: MouseEventHandler = (event) => {
@@ -319,11 +419,12 @@ function BlockNote({
   }, []);
 
   // Flush unsaved content on unmount (e.g. virtualizer drops the card while editing)
+  // Guard with !editor.isEmpty to prevent writing empty content before collab sync
   useEffect(() => {
     return () => {
-      if (!updateDataRef.current) return;
+      if (!updateDataRef.current || editor.isEmpty) return;
       const strBlocks = JSON.stringify(editor.document);
-      if (!compareIsContentSame(strBlocks, defaultValueRef.current)) {
+      if (strBlocks !== defaultValueRef.current) {
         updateDataRef.current(strBlocks);
       }
     };
@@ -342,7 +443,7 @@ function BlockNote({
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
-      formattingToolbar={!formattingToolbar}
+      formattingToolbar={false}
       emojiPicker={!emojis}
       filePanel={false} // Because in CustomFilePanel renders default UI
       onFocus={onFocus}

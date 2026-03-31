@@ -1,13 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { FieldValues } from 'react-hook-form';
+import { ContextEntityBase } from 'sdk';
 import type { ContextEntityType } from 'shared';
-import { ContextEntityBase } from '~/api.gen';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useUserStore } from '~/store/user';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ContextEntityType;

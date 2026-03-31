@@ -5,7 +5,6 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { appConfig } from 'shared';
 import {
   type CreatePagesData,
   createPages,
@@ -16,42 +15,48 @@ import {
   type Page,
   type UpdatePageData,
   updatePage,
-} from '~/api.gen';
-import { zPage } from '~/api.gen/zod.gen';
+} from 'sdk';
+import { zPage } from 'sdk/zod.gen';
+import { appConfig } from 'shared';
 import {
   baseInfiniteQueryOptions,
+  createCacheFinder,
   createEntityKeys,
   createOptimisticEntity,
-  findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
+  removePendingMutations,
 } from '~/query/basic';
+import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
+  coalescePendingCreate,
   createStxForCreate,
   createStxForDelete,
   createStxForUpdate,
+  mergeServerResponse,
   squashPendingMutation,
   syncEntityToCache,
 } from '~/query/offline';
-import { queryClient } from '~/query/query-client';
 import { createResourceError } from '~/utils/resource-error';
 
 type CreatePageItem = CreatePagesData['body'][number];
 type CreatePageInput = Omit<CreatePageItem, 'stx'>;
 type UpdatePageItem = UpdatePageData['body'];
-type UpdatePageInput = Omit<UpdatePageItem, 'stx'>;
-type UpdatePageVars = { id: string; key: UpdatePageInput['key']; data: UpdatePageInput['data'] };
+type UpdatePageFields = UpdatePageItem['ops'];
+type UpdatePageVars = { id: string; ops: UpdatePageFields };
 
 export const pagesLimit = appConfig.requestLimits.pages;
 
 type PageFilters = Omit<GetPagesData['query'], 'limit' | 'offset'>;
 
 const keys = createEntityKeys<PageFilters>('page');
-registerEntityQueryKeys('page', keys, (_orgId, afterSeq) =>
-  getPages({ query: { afterSeq: String(afterSeq), limit: '1000' } }),
+registerEntityQueryKeys('page', keys, (_organizationId, _tenantId, seqCursor, options) =>
+  getPages({
+    query: { seqCursor, limit: '1000' },
+    headers: options?.cacheToken ? { 'x-cache-token': options.cacheToken } : undefined,
+  }),
 );
 export const pageQueryKeys = keys;
 
@@ -60,13 +65,7 @@ const handleError = createResourceError('page');
 
 // --- Query options ---
 
-const findPageInListCache = (id: string) => findEntityInListCache<Page>('page', id);
-
-const findPageInCache = (id: string): Page | undefined => {
-  const detail = queryClient.getQueryData<Page>(keys.detail.byId(id));
-  if (detail) return detail;
-  return findEntityInListCache<Page>('page', id);
-};
+const findPageInCache = createCacheFinder<Page>('page');
 
 /** Uses initialData from list cache for instant loading while revalidating. */
 export const pageQueryOptions = (id: string) =>
@@ -76,7 +75,7 @@ export const pageQueryOptions = (id: string) =>
       const result = await getPage({ path: { id } });
       return result;
     },
-    initialData: () => findPageInListCache(id),
+    initialData: () => findPageInCache(id),
   });
 
 type PagesListParams = Omit<NonNullable<GetPagesData['query']>, 'limit' | 'offset'> & {
@@ -112,7 +111,7 @@ export const pagesListQueryOptions = (params: PagesListParams = {}) => {
 
 export const usePageCreateMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const listKey = keys.list.base;
 
   return useMutation({
     mutationKey: keys.create,
@@ -124,85 +123,81 @@ export const usePageCreateMutation = () => {
       return result.data[0];
     },
     onMutate: async (newData) => {
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
+      await queryClient.cancelQueries({ queryKey: listKey });
       const optimisticPage = createOptimisticEntity(zPage, newData);
-      mutateCache.create([optimisticPage]);
+      cacheCreate(listKey, [optimisticPage]);
       return { optimisticPage };
     },
-    onError: (_err, _newData, context) => {
-      handleError('create');
-      if (context?.optimisticPage) mutateCache.remove([context.optimisticPage]);
+    onError: (err, _newData, context) => {
+      handleError('create', err);
+      if (context?.optimisticPage) cacheRemove(listKey, [context.optimisticPage]);
     },
     onSuccess: (createdPage, _variables, context) => {
-      if (context?.optimisticPage) mutateCache.remove([context.optimisticPage]);
+      if (context?.optimisticPage) cacheRemove(listKey, [context.optimisticPage]);
       // Upsert to avoid duplicates from concurrent SSE + onSuccess race
-      if (findPageInCache(createdPage.id)) mutateCache.update([createdPage]);
-      else mutateCache.create([createdPage]);
+      if (findPageInCache(createdPage.id)) cacheUpdate(listKey, [createdPage]);
+      else cacheCreate(listKey, [createdPage]);
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {
-      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
+      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, listKey);
     },
   });
 };
 
 export const usePageUpdateMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const listKey = keys.list.base;
 
   return useMutation({
     mutationKey: keys.update,
-    scope: { id: 'page' },
-    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
-      const cachedEntity = findPageInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdatePageVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updatePage({ path: { tenantId: 'public', id }, body: { ops, stx } });
     },
-    onMutate: async ({ id, key, data }: UpdatePageVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, key);
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
+    onMutate: async ({ id, ops }: UpdatePageVars) => {
+      // If there's a pending create for this entity, fold update ops into it
+      if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+        return { coalesced: true };
+      }
+
+      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
+      await queryClient.cancelQueries({ queryKey: listKey });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
-      const previousPage = findPageInListCache(id);
+      const previousPage = findPageInCache(id);
       if (previousPage) {
-        const optimisticPage = { ...previousPage, [key]: data, modifiedAt: new Date().toISOString() };
-        mutateCache.update([optimisticPage]);
+        const optimisticPage = { ...previousPage, ...mergedOps, updatedAt: new Date().toISOString() };
+        cacheUpdate(listKey, [optimisticPage]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticPage);
       }
       return { previousPage };
     },
-    onError: (_err, _variables, context) => {
-      handleError('update');
+    onError: (err, _variables, context) => {
+      handleError('update', err);
       if (context?.previousPage) {
-        mutateCache.update([context.previousPage]);
+        cacheUpdate(listKey, [context.previousPage]);
         queryClient.setQueryData(keys.detail.byId(context.previousPage.id), context.previousPage);
       }
     },
     onSuccess: (updatedPage, variables) => {
       const detailKey = keys.detail.byId(updatedPage.id);
-      const cached = findPageInListCache(updatedPage.id);
-      // Merge only the mutated field + stx from server, preserving other optimistic values
-      const merged = cached
-        ? {
-            ...cached,
-            [variables.key]: updatedPage[variables.key],
-            stx: updatedPage.stx,
-            modifiedAt: updatedPage.modifiedAt,
-            ...('modifiedBy' in updatedPage ? { modifiedBy: updatedPage.modifiedBy } : {}),
-          }
-        : updatedPage;
-      syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
+      const cached = findPageInCache(updatedPage.id);
+      const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
+      const merged = mergeServerResponse({ cached, serverEntity: updatedPage, mutatedKeys });
+      syncEntityToCache({ entity: merged, listKey, detailKey, queryClient });
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {
-      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, keys.list.base);
+      if (error) invalidateIfLastMutation(queryClient, pagesMutationKeyBase, listKey);
     },
   });
 };
 
 export const usePageDeleteMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const listKey = keys.list.base;
 
   return useMutation({
     mutationKey: keys.delete,
@@ -213,16 +208,21 @@ export const usePageDeleteMutation = () => {
       await deletePages({ path: { tenantId: 'public' }, body: { ids, stx } });
     },
     onMutate: async (pagesToDelete) => {
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
-      mutateCache.remove(pagesToDelete);
+      removePendingMutations(
+        queryClient,
+        keys.update,
+        pagesToDelete.map((p) => p.id),
+      );
+      await queryClient.cancelQueries({ queryKey: listKey });
+      cacheRemove(listKey, pagesToDelete);
       for (const { id } of pagesToDelete) {
         queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
       }
       return { deletedPages: pagesToDelete };
     },
-    onError: (_err, _pages, context) => {
-      handleError('delete');
-      if (context?.deletedPages) mutateCache.create(context.deletedPages);
+    onError: (err, _pages, context) => {
+      handleError('delete', err);
+      if (context?.deletedPages) cacheCreate(listKey, context.deletedPages);
     },
     // Error-only: onMutate removed from all caches, SSE handles other users
     onSettled: (_data, error) => {
@@ -248,10 +248,10 @@ addMutationRegistrar((queryClient: QueryClient) => {
   });
 
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ id, key, data }: UpdatePageVars) => {
-      const cachedEntity = findPageInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updatePage({ path: { tenantId: 'public', id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdatePageVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updatePage({ path: { tenantId: 'public', id }, body: { ops, stx } });
     },
   });
 

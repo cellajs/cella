@@ -1,8 +1,8 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ZapOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { MeAuthData } from '~/api.gen';
-import { deleteMySessions } from '~/api.gen';
+import type { MeAuthData } from 'sdk';
+import { deleteMySessions } from 'sdk';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';

@@ -1,4 +1,7 @@
 ---
+publicHoistPattern:
+  - pdfjs-dist
+
 packages:
   - backend
   - cdc
@@ -6,7 +9,10 @@ packages:
   - cli/*
   - frontend
   - locales
+  - sdk
   - studio
+  - yjs
+  - bench
 
 overrides:
   esbuild@<=0.24.2: '>=0.25.0'

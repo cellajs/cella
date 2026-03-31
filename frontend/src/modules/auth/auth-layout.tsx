@@ -1,7 +1,7 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/app-footer';
+import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/common/logo';
 
 const authFooterLinks: FooterLinkProps[] = [
@@ -35,7 +35,7 @@ export function AuthLayout() {
             <Logo height={34} />
           </Link>
 
-          <FooterLinks className="justify-center" links={authFooterLinks} />
+          <AppFooterLinks className="justify-center" links={authFooterLinks} />
         </div>
       </div>
     </div>

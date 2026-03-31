@@ -1,20 +1,15 @@
-/**
- * Membership-specific cache operations.
- *
- * Handles query invalidation and data refresh for membership events.
- * Used by both live stream handler and catchup processor.
- */
-
+import { getMyMemberships } from 'sdk';
 import type { ContextEntityType } from 'shared';
-import { getMyMemberships } from '~/api.gen';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 
-/** Invalidate all context entity detail queries (fallback when contextType unknown) */
+/**
+ * Invalidate all context entity detail queries (fallback when contextType unknown)
+ */
 function invalidateAllContextDetails(): void {
   const registry = getContextEntityTypeToListQueries();
   for (const contextType of Object.keys(registry)) {
@@ -53,7 +48,7 @@ export function invalidateMemberQueries(organizationId: string | null): void {
   if (organizationId) {
     queryClient.invalidateQueries({
       queryKey: memberQueryKeys.list.base,
-      predicate: (query) => query.queryKey.some((k) => typeof k === 'object' && k !== null && 'orgId' in k),
+      predicate: (query) => query.queryKey.some((k) => typeof k === 'object' && k !== null && 'organizationId' in k),
       refetchType: 'active',
     });
   } else {

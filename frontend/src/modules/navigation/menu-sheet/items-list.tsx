@@ -5,8 +5,8 @@ import type { ContextEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];

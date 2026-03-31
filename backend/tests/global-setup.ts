@@ -9,13 +9,14 @@ import { env as dotenv } from '@dotenv-run/core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
+import { immutabilityTriggersSQL } from '#/db/immutability-triggers';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 
 // Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env file from project root
-dotenv({ root: '../..', files: ['.env'] });
+// Load .env file — resolve root relative to this file so it works regardless of cwd
+dotenv({ root: path.resolve(__dirname, '../../..'), files: ['.env'] });
 
 // Use dedicated test database if available (port 5434), otherwise fall back to main database
 const DATABASE_TEST_URL = 'postgres://postgres:postgres@0.0.0.0:5434/postgres';
@@ -61,7 +62,13 @@ export default async function globalSetup() {
     spinner.fail('Migration failed');
     console.error(error);
     process.exit(1);
-  } finally {
-    await pool.end();
   }
+
+  // Re-apply immutability triggers after all migrations.
+  // The immutability migration runs before the RLS migration that creates
+  // runtime_role, so its role-check guard skips trigger creation. Here we
+  // apply all functions + triggers directly from the source definition.
+  await pool.query(immutabilityTriggersSQL);
+
+  await pool.end();
 }

@@ -30,7 +30,7 @@ function DialogOverlay({
       className={cn(
         disabled
           ? ''
-          : 'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-115 in-[.sheeter-open]:z-125 bg-muted/30 backdrop-blur-xs',
+          : 'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 starting:opacity-0 data-starting-style:opacity-0 fixed inset-0 z-115 in-[.sheeter-open]:z-125 bg-muted/30 backdrop-blur-xs',
         className,
       )}
       {...props}
@@ -65,7 +65,7 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'overflow-x-clip overflow-y-clip max-sm:overflow-y-auto max-sm:max-h-[85vh] bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
+            'focus-visible:outline-none overflow-x-clip overflow-y-clip max-sm:overflow-y-auto max-sm:max-h-[85vh] bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 starting:opacity-0 starting:scale-95 data-starting-style:opacity-0 data-starting-style:scale-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
             className,
           )}
           {...props}

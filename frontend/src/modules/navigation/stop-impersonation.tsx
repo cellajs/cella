@@ -1,15 +1,15 @@
 import { useNavigate } from '@tanstack/react-router';
 import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { stopImpersonation as breakImpersonation } from 'sdk';
 import { appConfig } from 'shared';
-import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
-import { useUIStore } from '~/store/ui';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 

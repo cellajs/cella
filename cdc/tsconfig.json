@@ -6,7 +6,6 @@
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "allowImportingTsExtensions": true,
     "lib": ["es2022"],
-    "rootDir": "../",
     "sourceMap": true,
     "inlineSources": true,
     "sourceRoot": "/",
@@ -16,6 +15,6 @@
       "#json/*": ["../json/*"]
     }
   },
-  "include": ["src/**/*", "../backend/src/**/*", "../backend/mocks/**/*", "../backend/emails/**/*", "../shared/*"],
+  "include": ["src/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }

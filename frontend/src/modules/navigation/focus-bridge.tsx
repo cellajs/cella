@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
 /**

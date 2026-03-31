@@ -4,9 +4,9 @@ import { UndoIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { type CheckSlugData, CheckSlugResponse, checkSlug } from 'sdk';
 import { type ContextEntityType } from 'shared';
 import slugify from 'slugify';
-import { type CheckSlugData, CheckSlugResponse, checkSlug } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
@@ -17,6 +17,7 @@ import { cn } from '~/utils/cn';
 
 type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   entityType: ContextEntityType | 'user';
+  tenantId?: string;
   nameValue?: string;
   description?: string;
   previousSlug?: string;
@@ -38,10 +39,11 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   description,
   nameValue,
   entityType,
+  tenantId,
   prefix: customPrefix,
 }: SlugFieldProps<TFieldValues>) => {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const name = 'slug';
 
@@ -63,7 +65,8 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
   const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
     mutationFn: async (body) => {
-      return await checkSlug({ body });
+      if (!tenantId) return;
+      return await checkSlug({ path: { tenantId }, body });
     },
     onSuccess: () => {
       if (!isValidSlug(slug)) return;
@@ -88,6 +91,8 @@ export const SlugFormField = <TFieldValues extends FieldValues>({
       return setSlugAvailable('blank');
     if (isValidSlug(slug)) {
       if (!isOnline) return;
+      // Skip availability check for user slugs (globally unique, handled by update API)
+      if (entityType === 'user' || !tenantId) return;
 
       return checkAvailability({ slug, entityType });
     }

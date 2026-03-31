@@ -1,4 +1,4 @@
-import { zGetRequestsData } from '~/api.gen/zod.gen';
+import { zGetRequestsData } from 'sdk/zod.gen';
 
 /**
  * Search params schema for requests route.

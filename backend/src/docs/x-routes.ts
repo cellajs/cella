@@ -5,9 +5,9 @@ import {
   getExtensionPropIds,
   type XMiddlewareOptions,
 } from '#/docs/extensions-config';
-import { getSpecificationExtensions } from '#/docs/openapi-describer';
-import type { OpenApiTagId } from '#/docs/tags-config';
+import type { OpenApiTagId } from '#/docs/types';
 import { toMiddlewareArray } from '#/docs/utils';
+import { getSpecificationExtensions } from '#/docs/utils/x-middleware-reader';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 
 /** Route options with typed tags restricted to OpenApiTagId values. */

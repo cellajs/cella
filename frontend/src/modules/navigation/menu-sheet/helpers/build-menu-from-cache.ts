@@ -1,6 +1,6 @@
 import { appConfig, type ContextEntityType } from 'shared';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { buildMenu } from './build-menu';

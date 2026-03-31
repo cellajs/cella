@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
+import React from 'react';
 import { Separator } from '~/modules/ui/separator';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
@@ -38,22 +39,25 @@ export function ButtonGroup({
 
 export function ButtonGroupText({
   className,
-  asChild = false,
+  render,
+  children,
   ...props
 }: React.ComponentProps<'div'> & {
-  asChild?: boolean;
+  render?: React.ReactElement;
 }) {
-  const Comp = asChild ? Slot : 'div';
+  const computedProps = {
+    className: cn(
+      "bg-muted flex items-center gap-2 rounded-md border px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+      className,
+    ),
+    ...props,
+  };
 
-  return (
-    <Comp
-      className={cn(
-        "bg-muted flex items-center gap-2 rounded-md border px-4 text-sm font-medium shadow-xs [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-        className,
-      )}
-      {...props}
-    />
-  );
+  if (render) {
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+  }
+
+  return <div {...computedProps}>{children}</div>;
 }
 
 export function ButtonGroupSeparator({

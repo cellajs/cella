@@ -2,24 +2,29 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Check, EyeIcon, Loader2 } from 'lucide-react';
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import type { Control, FieldValues, UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Page } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
-import type { Page } from '~/api.gen';
 import { useAutoSave } from '~/hooks/use-auto-save';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { Spinner } from '~/modules/common/spinner';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { pageQueryKeys, usePageUpdateMutation } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { useUserStore } from '~/modules/user/user-store';
+import { getRandomColor } from '~/utils/random-color';
 
 const BlockNoteContentFormField = lazy(() => import('~/modules/common/form-fields/blocknote'));
+const BlockNote = lazy(() => import('~/modules/common/blocknote/block-note-editor'));
 
 // Form schema for name/description editing
 const formSchema = z.object({
@@ -37,9 +42,35 @@ export function UpdatePageForm({ page }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const user = useUserStore((s) => s.user);
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [renderMode, setRenderMode] = useState<Page['renderMode']>(page.renderMode ?? 'default');
   const updatePage = usePageUpdateMutation();
+
+  // Collaborative editing via Yjs relay when yjsUrl is configured
+  const yjsToken = useUserStore((s) => s.yjsToken);
+  const useCollaborative = !!appConfig.yjsUrl && !!yjsToken;
+
+  // Connection manager: ref-counted Y.Doc + WebsocketProvider
+  const yjsConn = useYjsConnection(useCollaborative ? page.id : undefined, 'page', page.tenantId);
+
+  // Stable random color for cursor labels
+  const userColorRef = useRef(getRandomColor());
+
+  const collaborationConfig = yjsConn
+    ? {
+        provider: yjsConn.provider,
+        fragment: yjsConn.fragment,
+        user: { name: user.name, color: userColorRef.current },
+        showCursorLabels: 'activity' as const,
+      }
+    : undefined;
+
+  // Collaborative derived-fields callback: fires the React Query mutation
+  const sendDerivedUpdate = async (id: string, description: string) => {
+    updatePage.mutate({ id, ops: { description } });
+  };
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -60,7 +91,7 @@ export function UpdatePageForm({ page }: Props) {
     (key: 'name' | 'description', value: string) => {
       setSaveStatus('saving');
       updatePage.mutate(
-        { id: page.id, key, data: value },
+        { id: page.id, ops: { [key]: value } },
         {
           onSuccess: () => {
             setSaveStatus('saved');
@@ -78,7 +109,8 @@ export function UpdatePageForm({ page }: Props) {
     [page.id, updatePage],
   );
 
-  // Per-field auto-save: description (time-based since users type continuously)
+  // Per-field auto-save: description — only in non-collaborative mode.
+  // In collaborative mode, useDerivedFieldsSender (inside BlockNote) handles persistence.
   const descriptionValue = watchedValues.description ?? page.description ?? '';
   const { hasUnsavedChanges: descriptionUnsaved } = useAutoSave({
     data: descriptionValue,
@@ -86,7 +118,7 @@ export function UpdatePageForm({ page }: Props) {
     onSave: (val) => saveField('description', val),
     inactivityDelay: 5000,
     maxDelay: 30000,
-    enabled: !form.loading,
+    enabled: !form.loading && !useCollaborative,
   });
 
   const nameUnsaved = (watchedValues.name ?? page.name) !== page.name;
@@ -94,6 +126,9 @@ export function UpdatePageForm({ page }: Props) {
 
   // Prevent data loss on navigation
   useBeforeUnload(hasUnsavedChanges);
+
+  const blockNoteClassName =
+    'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
   if (form.loading) return null;
 
@@ -111,7 +146,7 @@ export function UpdatePageForm({ page }: Props) {
                 queryClient.setQueryData(pageQueryKeys.detail.byId(page.id), {
                   ...page,
                   ...currentData,
-                  modifiedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 });
                 navigate({ to: '/docs/page/$id', params: { id: page.id } });
               }}
@@ -119,6 +154,23 @@ export function UpdatePageForm({ page }: Props) {
               <EyeIcon size={16} className="mr-2" />
               {t('common:view')}
             </Button>
+            <Select
+              value={renderMode}
+              onValueChange={(value: string) => {
+                const mode = value as Page['renderMode'];
+                setRenderMode(mode);
+                updatePage.mutate({ id: page.id, ops: { renderMode: mode } });
+              }}
+            >
+              <SelectTrigger className="h-8 w-auto gap-1.5 text-xs border-dashed">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">{t('common:render_mode.default')}</SelectItem>
+                <SelectItem value="overview">{t('common:render_mode.overview')}</SelectItem>
+                <SelectItem value="nodeOnly">{t('common:render_mode.node_only')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             {saveStatus === 'saving' && (
@@ -155,18 +207,39 @@ export function UpdatePageForm({ page }: Props) {
           />
 
           <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-            <BlockNoteContentFormField
-              control={form.control as unknown as Control<FieldValues>}
-              name="description"
-              autoFocus
-              baseBlockNoteProps={{
-                id: `${appConfig.name}-blocknote-page-${page.id}`,
-                trailingBlock: false,
-                className:
-                  'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                baseFilePanelProps: { isPublic: true, tenantId: 'public', organizationId: 'page' },
-              }}
-            />
+            {renderMode === 'nodeOnly' ? (
+              <p className="text-sm text-muted-foreground py-8">
+                {t('common:render_mode.node_only')}: {t('common:no_child_pages')}
+              </p>
+            ) : useCollaborative && collaborationConfig ? (
+              <BlockNote
+                id={`${appConfig.name}-blocknote-page-${page.id}`}
+                type="edit"
+                autoFocus
+                defaultValue={page.description ?? undefined}
+                className={blockNoteClassName}
+                trailingBlock={false}
+                updateData={() => {}}
+                baseFilePanelProps={{ isPublic: true, tenantId: 'public', organizationId: 'page' }}
+                collaborative
+                collaboration={collaborationConfig}
+                entityType="page"
+                entityId={page.id}
+                sendDerivedUpdate={sendDerivedUpdate}
+              />
+            ) : (
+              <BlockNoteContentFormField
+                control={form.control as unknown as Control<FieldValues>}
+                name="description"
+                autoFocus
+                baseBlockNoteProps={{
+                  id: `${appConfig.name}-blocknote-page-${page.id}`,
+                  trailingBlock: false,
+                  className: blockNoteClassName,
+                  baseFilePanelProps: { isPublic: true, tenantId: 'public', organizationId: 'page' },
+                }}
+              />
+            )}
           </Suspense>
         </form>
       </Form>

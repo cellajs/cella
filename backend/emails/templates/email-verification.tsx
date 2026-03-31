@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailButton, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import { greetingStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
@@ -20,19 +20,19 @@ export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: E
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
       <EmailHeader headerText={i18n.t('backend:email.email_verification.title', { appName, lng })} />
       <EmailBody>
-        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
-        <Text>
+        {name && <EmailText style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</EmailText>}
+        <EmailText>
           <span
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }),
             }}
           />
-        </Text>
+        </EmailText>
 
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
       </EmailBody>
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

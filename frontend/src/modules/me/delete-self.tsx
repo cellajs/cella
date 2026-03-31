@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { User } from '~/api.gen';
-import { deleteMe } from '~/api.gen';
+import type { User } from 'sdk';
+import { deleteMe } from 'sdk';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { userQueryKeys } from '~/modules/user/query';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 
 interface Props {
   dialog?: boolean;

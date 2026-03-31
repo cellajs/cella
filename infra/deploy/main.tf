@@ -249,7 +249,7 @@ resource "scaleway_container" "backend" {
     COOKIE_SECRET        = var.cookie_secret
     SESSION_SECRET       = var.session_secret
     UNSUBSCRIBE_SECRET   = var.unsubscribe_secret
-    CDC_INTERNAL_SECRET  = var.cdc_internal_secret
+    CDC_SECRET  = var.cdc_internal_secret
     BREVO_API_KEY        = var.brevo_api_key
     GITHUB_CLIENT_ID     = var.github_client_id
     GITHUB_CLIENT_SECRET = var.github_client_secret
@@ -260,7 +260,7 @@ resource "scaleway_container" "backend" {
   }
 
   # HTTP health check on /health endpoint
-  # The backend responds 200 (healthy) or 503 (unhealthy)
+  # Default depth=shallow returns 204 (lightweight liveness probe)
   health_check {
     http {
       path = "/health"
@@ -295,14 +295,13 @@ resource "scaleway_container" "cdc" {
     NODE_ENV        = "production"
     TZ              = "UTC"
     DEV_MODE        = "full"
-    CDC_HEALTH_PORT = "4001"
     API_WS_URL      = "wss://${var.api_domain}/internal/cdc"
   }
 
   # Secrets are encrypted at rest by Scaleway and hidden from API responses / console
   secret_environment_variables = {
     DATABASE_CDC_URL    = var.database_cdc_url
-    CDC_INTERNAL_SECRET = var.cdc_internal_secret
+    CDC_SECRET = var.cdc_internal_secret
   }
 }
 

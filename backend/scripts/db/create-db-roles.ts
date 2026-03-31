@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { migrationDb } from '#/db/db';
 import { env } from '#/env';
+import { timestamp } from '#/utils/console';
 import pc from 'picocolors';
 
 /**
@@ -36,9 +37,9 @@ const escSql = (s: string) => s.replace(/'/g, "''");
 return `
 DO $$
 BEGIN
--- Check if we can create roles (not available in PGlite)
+-- Check if we can create roles
 IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'pg_database_owner') THEN
-  RAISE NOTICE 'Role management not available (e.g., PGlite) - skipping.';
+  RAISE NOTICE 'Role management not available - skipping.';
   RETURN;
 END IF;
 
@@ -120,18 +121,13 @@ return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
 }
 
 export async function createDbRoles() {
-if (env.DEV_MODE === 'basic') {
-  // PGlite doesn't support roles
-  return;
-}
-
   if (!migrationDb) {
     throw new Error('DATABASE_ADMIN_URL required for role setup');
   }
 
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
   if (await rolesExist()) {
-    console.info(`${pc.green('✔')} All roles exist, skipping`);
+    console.info(`${timestamp()} ${pc.green('✔')} All roles exist, skipping`);
     return;
   }
 

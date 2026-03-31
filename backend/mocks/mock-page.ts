@@ -1,8 +1,16 @@
 import { faker } from '@faker-js/faker';
-import { nanoid } from 'shared/nanoid';
 import type { InsertPageModel, PageModel } from '#/db/schema/pages';
-import { mockBatchResponse } from './mock-common';
-import { mockNanoid, mockPaginated, mockStx, mockTenantId, pastIsoDate, withFakerSeed } from './utils';
+
+import {
+  MOCK_REF_DATE,
+  mockBatchResponse,
+  mockNanoid,
+  mockPaginated,
+  mockPastIsoDate,
+  mockStx,
+  mockTenantId,
+  withFakerSeed,
+} from './utils';
 
 /**
  * Generates a single BlockNote block.
@@ -52,24 +60,25 @@ const generateBlockNoteContent = (): string => {
  * Uses random IDs so mockMany produces distinct records.
  */
 export const mockPage = (): InsertPageModel => {
-  const createdAt = pastIsoDate();
+  const createdAt = mockPastIsoDate();
 
   return {
-    id: nanoid(),
+    id: mockNanoid(),
     tenantId: mockTenantId(),
     entityType: 'page' as const,
     name: faker.lorem.sentence({ min: 2, max: 5 }),
     description: generateBlockNoteContent(),
     keywords: faker.lorem.words(3),
     status: 'unpublished' as const,
-    publicAccess: true,
+    renderMode: 'default' as const,
+    publicAt: new Date().toISOString(),
     parentId: null,
     displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
     createdAt,
     createdBy: null,
-    modifiedAt: createdAt,
-    modifiedBy: null,
-    seqAt: faker.number.int({ min: 1, max: 500 }),
+    updatedAt: createdAt,
+    updatedBy: null,
+    seq: faker.number.int({ min: 1, max: 500 }),
     stx: mockStx(),
   };
 };
@@ -80,7 +89,7 @@ export const mockPage = (): InsertPageModel => {
  */
 export const mockPageResponse = (key = 'page:default'): PageModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
 
@@ -92,14 +101,15 @@ export const mockPageResponse = (key = 'page:default'): PageModel =>
       description: generateBlockNoteContent(),
       keywords: faker.lorem.words(3),
       status: 'unpublished' as const,
-      publicAccess: true,
+      renderMode: 'default' as const,
+      publicAt: createdAt,
       parentId: null,
       displayOrder: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       createdAt,
       createdBy: userId,
-      modifiedAt: createdAt,
-      modifiedBy: userId,
-      seqAt: faker.number.int({ min: 1, max: 500 }),
+      updatedAt: createdAt,
+      updatedBy: userId,
+      seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
     };
   });

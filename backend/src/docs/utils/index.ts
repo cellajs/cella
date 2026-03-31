@@ -1,1 +1,1 @@
-export { toMiddlewareArray } from './middleware';
+export { toMiddlewareArray } from './to-middleware-array';

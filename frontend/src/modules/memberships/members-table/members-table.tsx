@@ -41,7 +41,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   const entityId = contextEntity.id;
   const entityType = contextEntity.entityType;
   const tenantId = organization.tenantId;
-  const orgId = organization.id;
+  const organizationId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
   const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update === true;
@@ -55,7 +55,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, orgId, ...search, limit });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit });
 
   const {
     data: rows,
@@ -79,7 +79,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
         path: {
           id: changedRows[index].membership.id,
           tenantId,
-          orgId,
+          organizationId,
         },
         body: { role: changedRows[index].membership.role },
         entityId,

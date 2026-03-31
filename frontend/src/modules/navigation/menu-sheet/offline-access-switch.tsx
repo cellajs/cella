@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Switch } from '~/modules/ui/switch';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export const OfflineAccessSwitch = () => {
   const { t } = useTranslation();

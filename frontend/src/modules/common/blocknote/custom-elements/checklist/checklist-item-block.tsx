@@ -3,7 +3,6 @@ import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { CheckSquareIcon } from 'lucide-react';
 import { nanoid } from 'shared/nanoid';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 
@@ -38,7 +37,7 @@ const checklistExtensions = createExtension({
           // (render component auto-assigns a fresh checkboxId when it's empty)
           tr.split(pos, 2, [
             { type: info.bnBlock.node.type, attrs: {} },
-            { type: info.blockContent.node.type, attrs: {} },
+            { type: info.blockContent.node.type, attrs: { checkboxId: nanoid(12) } },
           ]);
         });
         return true;
@@ -66,15 +65,15 @@ export const checklistItemBlock = createReactBlockSpec(
       textAlignment: defaultProps.textAlignment,
       textColor: defaultProps.textColor,
       checkboxId: { default: '' },
+      checked: { default: false },
     },
     content: 'inline',
   },
   {
     meta: { isolating: false },
     render: (props) => <ChecklistItemRender {...props} />,
-    toExternalHTML: ({ block, contentRef, editor }) => {
-      const checkboxes = editor.getExtension(checkboxesExtension)?.store?.state?.checkboxes;
-      const isChecked = checkboxes?.find((c: { id: string }) => c.id === block.props.checkboxId)?.checked ?? false;
+    toExternalHTML: ({ block, contentRef }) => {
+      const isChecked = block.props.checked ?? false;
       return (
         <div className="checklist-item" data-checked={isChecked}>
           <div contentEditable={false} className="checklist-checkbox-wrapper">

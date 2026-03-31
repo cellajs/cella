@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { HeaderRowProps } from './header-row';
 import { useRovingTabIndex } from './hooks';
-import type { CalculatedColumn, SortColumn } from './types';
+import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import {
   clampColumnWidth,
   getCellClassname,
@@ -17,24 +16,21 @@ const resizeHandleClassname =
   'cursor-col-resize absolute inset-y-0 end-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:end-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
 const dragImageClassname = 'rounded w-fit outline-2 outline-[hsl(207,100%,50%)] -outline-offset-2';
 
-type SharedHeaderRowProps<R, SR> = Pick<
-  HeaderRowProps<R, SR, React.Key>,
-  | 'sortColumns'
-  | 'onSortColumnsChange'
-  | 'selectCell'
-  | 'onColumnResize'
-  | 'onColumnResizeEnd'
-  | 'shouldFocusGrid'
-  | 'onColumnsReorder'
->;
-
-interface HeaderCellProps<R, SR> extends SharedHeaderRowProps<R, SR> {
+interface HeaderCellProps<R, SR> {
+  sortColumns?: Maybe<readonly SortColumn[]>;
+  onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
+  selectCell: (position: Position) => void;
+  onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
+  onColumnResizeEnd: () => void;
+  shouldFocusGrid: boolean;
+  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   column: CalculatedColumn<R, SR>;
   colSpan: number | undefined;
   rowIdx: number;
   isCellSelected: boolean;
   draggedColumnKey: string | undefined;
   setDraggedColumnKey: (draggedColumnKey: string | undefined) => void;
+  scrollTop?: number;
 }
 
 export function HeaderCell<R, SR>({
@@ -51,6 +47,7 @@ export function HeaderCell<R, SR>({
   shouldFocusGrid,
   draggedColumnKey,
   setDraggedColumnKey,
+  scrollTop,
 }: HeaderCellProps<R, SR>) {
   const [isOver, setIsOver] = useState(false);
   const dragImageRef = useRef<HTMLDivElement>(null);
@@ -202,7 +199,7 @@ export function HeaderCell<R, SR>({
   }
 
   const style: React.CSSProperties = {
-    ...getHeaderCellStyle(column, rowIdx, rowSpan),
+    ...getHeaderCellStyle(column, rowIdx, rowSpan, scrollTop),
     ...getCellStyle(column, colSpan),
   };
 

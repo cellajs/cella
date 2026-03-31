@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Page } from '~/api.gen';
+import type { Page } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { CellRendererProps, RowsChangeData } from '~/modules/common/data-grid';
@@ -67,7 +67,7 @@ function PagesTable() {
   // Handle row changes for editable cells
   const onRowsChange = useCallback(
     (changedRows: Page[], { indexes, column }: RowsChangeData<Page>) => {
-      if (column.key !== 'status' && column.key !== 'displayOrder') return;
+      if (column.key !== 'status' && column.key !== 'renderMode' && column.key !== 'displayOrder') return;
 
       for (const index of indexes) {
         const page = changedRows[index];
@@ -79,8 +79,15 @@ function PagesTable() {
         if (column.key === 'status' && page.status !== originalPage.status) {
           updateMutation.mutate({
             id: page.id,
-            key: 'status',
-            data: page.status,
+            ops: { status: page.status },
+          });
+        }
+
+        // Handle renderMode changes
+        if (column.key === 'renderMode' && page.renderMode !== originalPage.renderMode) {
+          updateMutation.mutate({
+            id: page.id,
+            ops: { renderMode: page.renderMode },
           });
         }
       }
@@ -129,8 +136,7 @@ function PagesTable() {
         if (newOrder !== draggedPage.displayOrder) {
           updateMutation.mutate({
             id: draggedPage.id,
-            key: 'displayOrder',
-            data: newOrder,
+            ops: { displayOrder: newOrder },
           });
         }
       }
@@ -151,7 +157,7 @@ function PagesTable() {
         clearSelection={clearSelection}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
+        queryKey={queryOptions.queryKey}
       />
       <DataTable
         rows={rows}

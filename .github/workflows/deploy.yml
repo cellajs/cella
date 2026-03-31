@@ -5,8 +5,6 @@
 # Triggered on pushes to main (prod) or manually for other environments
 # =============================================================================
 
-export const stxRequestSchema = z
-
 permissions:
   contents: read
 
@@ -18,6 +16,7 @@ on:
     paths:
       - 'backend/**'
       - 'cdc/**'
+      - 'yjs/**'
       - 'frontend/**'
       - 'infra/**'
       - '.github/workflows/deploy.yml'
@@ -127,6 +126,36 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  build-yjs:
+    runs-on: ubuntu-latest
+    needs: setup
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: rg.${{ env.SCW_REGION }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push Yjs image
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: .
+          file: yjs/Dockerfile
+          push: true
+          tags: |
+            rg.${{ env.SCW_REGION }}.scw.cloud/${{ needs.setup.outputs.environment }}cella/yjs:${{ needs.setup.outputs.image_tag }}
+            rg.${{ env.SCW_REGION }}.scw.cloud/${{ needs.setup.outputs.environment }}cella/yjs:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   # -------------------------------------------------------------------------
   # Build and deploy frontend to Object Storage
   # -------------------------------------------------------------------------
@@ -212,7 +241,7 @@ jobs:
   # -------------------------------------------------------------------------
   terraform:
     runs-on: ubuntu-latest
-    needs: [setup, build-backend, build-cdc]
+    needs: [setup, build-backend, build-cdc, build-yjs]
     environment: ${{ needs.setup.outputs.environment }}
     defaults:
       run:
@@ -257,10 +286,12 @@ jobs:
             -var-file="environments/${{ needs.setup.outputs.environment }}.tfvars" \
             -var="backend_image_tag=${{ needs.setup.outputs.image_tag }}" \
             -var="cdc_image_tag=${{ needs.setup.outputs.image_tag }}" \
+            -var="yjs_image_tag=${{ needs.setup.outputs.image_tag }}" \
             -var="argon_secret=${{ secrets.ARGON_SECRET }}" \
             -var="cookie_secret=${{ secrets.COOKIE_SECRET }}" \
-            -var="unsubscribe_token_secret=${{ secrets.UNSUBSCRIBE_TOKEN_SECRET }}" \
-            -var="cdc_ws_secret=${{ secrets.CDC_WS_SECRET }}" \
+            '-var="unsubscribe_secret=${{ secrets.UNSUBSCRIBE_SECRET }}" \'
+            -var="cdc_secret=${{ secrets.CDC_SECRET }}" \
+            -var="yjs_secret=${{ secrets.YJS_SECRET }}" \
             -out=tfplan
 
       - name: Terraform Apply
@@ -296,7 +327,7 @@ jobs:
           
           for i in {1..10}; do
             response=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
-            if [ "$response" = "200" ]; then
+            if [ "$response" = "204" ] || [ "$response" = "200" ]; then
               echo "✅ Backend is healthy!"
               exit 0
             fi

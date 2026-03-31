@@ -50,7 +50,7 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
     isFailed: primaryBlob.uploadStatus === 'failed',
     isPending: primaryBlob.uploadStatus === 'pending',
     isLocalOnly: primaryBlob.uploadStatus === 'local-only',
-    lastError: primaryBlob.lastError,
+    lastError: primaryBlob.lastError ?? null,
   };
 }
 

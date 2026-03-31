@@ -1,6 +1,5 @@
 import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
-import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
@@ -14,7 +13,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../shared';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { i18nextHMRPlugin } from 'i18next-hmr/vite';
-import { openApiWatch } from './vite/openapi-watch';
+import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
 
 const isStorybook = process.env.STORYBOOK === 'true';
@@ -22,17 +21,13 @@ const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
-  logLevel: process.env.DEBUG_MODE ? 'info' : 'warn',
+  logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
     host: '0.0.0.0',
     port: Number(frontendUrl.port),
     strictPort: true,
     watch: {
-      ignored: [
-        '**/backend/**',
-        '**/vite/temp-*/**', // Ignore temp folders from generate-client
-        '**/.generate-client.lock', // Ignore lock file
-      ],
+      ignored: ['**/backend/**', '**/sdk/**'],
     },
   },
   preview: {
@@ -55,8 +50,9 @@ const viteConfig = {
     manifest: true,
     minify: isDev ? false : 'esbuild',
   },
+  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
   optimizeDeps: {
-    exclude: [],
+    exclude: ['sdk'],
   },
   clearScreen: false,
   plugins: [
@@ -64,24 +60,10 @@ const viteConfig = {
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
-    appConfig.sentSentrySourceMaps
-      ? (sentryVitePlugin({
-        disable: appConfig.mode === 'development',
-        org: appConfig.slug,
-        project: appConfig.slug,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      }) as unknown as Plugin)
-      : undefined,
     viteStaticCopy({
       targets: [
-        {
-          src: '../locales/**/*',
-          dest: 'locales',
-        },
-        {
-          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
-          dest: '',
-        },
+        { src: '../locales/**/*', dest: 'locales' },
+        { src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', dest: '' },
       ],
     }),
     createHtmlPlugin({
@@ -111,6 +93,7 @@ const viteConfig = {
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {
+    dedupe: ['yjs'],
     alias: {
       '#json': path.resolve(__dirname, '../json'),
       '~': path.resolve(__dirname, './src'),
@@ -191,7 +174,7 @@ if (appConfig.mode === 'development' && !isStorybook) {
       verbose: false,
     }),
     i18nextHMRPlugin({ localesDir: '../locales' }),
-    openApiWatch(),
+    sdkWatch(),
     reactScan({
       enable: false,
       scanOptions: {

@@ -1,8 +1,8 @@
 import type { RefObject } from 'react';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { navSheetClassName } from '~/modules/navigation/app-nav';
+import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { PreferencesSheet } from '~/modules/navigation/preferences-sheet';
-import { useNavigationStore } from '~/store/navigation';
 
 /** Open the preferences sheet as a nav-sheet (reusable across mobile nav surfaces) */
 export function openPreferencesSheet(triggerRef: RefObject<HTMLButtonElement | null>, modal = false) {

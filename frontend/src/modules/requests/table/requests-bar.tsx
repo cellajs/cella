@@ -1,9 +1,9 @@
 import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Request } from 'sdk';
+import { getRequests } from 'sdk';
 import { appConfig } from 'shared';
-import type { Request } from '~/api.gen';
-import { getRequests } from '~/api.gen';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -18,8 +18,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
+import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
@@ -44,7 +44,7 @@ export const RequestsTableBar = ({
   const { q, order, sort } = searchVars;
   const isFiltered = !!q;
 
-  const mutateQuery = useMutateQueryData(requestsKeys.table.base());
+  const requestsListKey = requestsKeys.table.base();
 
   const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
 
@@ -61,7 +61,7 @@ export const RequestsTableBar = ({
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<Request[]>) => {
-      mutateQuery.remove(selected);
+      cacheRemove(requestsListKey, selected);
       if (args.status === 'success') {
         const message =
           args.data.length === 1
@@ -100,7 +100,7 @@ export const RequestsTableBar = ({
       { emails },
       {
         onSuccess: () => {
-          mutateQuery.update(updatedWaitLists);
+          cacheUpdate(requestsListKey, updatedWaitLists);
           clearSelection();
         },
       },

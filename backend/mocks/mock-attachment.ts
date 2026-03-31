@@ -1,8 +1,10 @@
 import { faker } from '@faker-js/faker';
 import type { AttachmentModel } from '#/db/schema/attachments';
-import { mockBatchResponse } from './mock-common';
+
 import {
   generateMockContextEntityIdColumns,
+  MOCK_REF_DATE,
+  mockBatchResponse,
   mockNanoid,
   mockPaginated,
   mockStx,
@@ -17,7 +19,7 @@ import {
  */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
     const filename = faker.system.fileName();
@@ -41,9 +43,9 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
       thumbnailKey: null,
       createdAt,
       createdBy: userId,
-      modifiedAt: createdAt,
-      modifiedBy: userId,
-      seqAt: faker.number.int({ min: 1, max: 500 }),
+      updatedAt: createdAt,
+      updatedBy: userId,
+      seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
       ...generateMockContextEntityIdColumns('relatable'),
     };

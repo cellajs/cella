@@ -225,6 +225,14 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return Object.keys(c).length > 0 ? c : null;
     })();
 
+    // Extract additionalProperties for dictionary/map rendering (shown as synthetic [key] entry)
+    const additionalPropsSchema = (() => {
+      if (openapiMode !== 'schema' || isArray || isInsideProperties) return null;
+      if (typeof value !== 'object' || value === null) return null;
+      const ap = (value as Record<string, unknown>).additionalProperties;
+      return ap && typeof ap === 'object' ? ap : null;
+    })();
+
     // Check if this is an array schema (has type: 'array') - used to hoist items.properties
     const isArraySchema =
       openapiMode === 'schema' &&
@@ -251,7 +259,8 @@ export const JsonNode: FC<JsonNodeProps> = memo(
               key !== 'minLength' &&
               key !== 'maximum' &&
               key !== 'minimum' &&
-              (isInsideProperties || (key !== 'type' && key !== 'ref' && key !== 'contentType')) &&
+              (isInsideProperties ||
+                (key !== 'type' && key !== 'ref' && key !== 'contentType' && key !== 'additionalProperties')) &&
               !(isArraySchema && key === 'items'),
           )
         : rawEntries;
@@ -282,6 +291,11 @@ export const JsonNode: FC<JsonNodeProps> = memo(
             return aIsObject ? 1 : -1;
           })
         : filteredEntries;
+
+    // Append synthetic dictionary entry for additionalProperties (renders as [key]: <value type>)
+    if (additionalPropsSchema) {
+      entries.push(['[key]', additionalPropsSchema] as [string, unknown]);
+    }
 
     // In schema mode, compute the count of hoisted properties (what users see as children)
     const schemaPropertiesCount = (() => {
@@ -399,6 +413,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
               contentTypeValue={contentTypeValue}
               hasAnyOf={hasAnyOf}
               hasOneOf={hasOneOf}
+              constraints={constraints}
               theme={theme}
             />
             {!isExpanded && isExpandable && (

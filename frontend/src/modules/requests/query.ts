@@ -1,6 +1,5 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { appConfig } from 'shared';
 import {
   type CreateRequestData,
   type CreateRequestResponse,
@@ -12,7 +11,8 @@ import {
   type SystemInviteData,
   type SystemInviteResponse,
   systemInvite,
-} from '~/api.gen';
+} from 'sdk';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { baseInfiniteQueryOptions } from '~/query/basic';

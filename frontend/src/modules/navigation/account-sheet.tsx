@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeftIcon, LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { LogOutIcon, type LucideProps, SettingsIcon, UserRoundIcon, WrenchIcon, XIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
@@ -11,12 +11,12 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
+import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
@@ -37,20 +37,20 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
       size="lg"
       className="data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus-effect"
       data-sign-out={id === 'btn-signout'}
-      asChild
+      render={
+        <Link
+          disabled={isDisabled}
+          onClick={() => {
+            if (isDisabled) toaster(t('common:action.offline.text'), 'warning');
+          }}
+          id={id}
+          draggable="false"
+          to={action}
+        />
+      }
     >
-      <Link
-        disabled={isDisabled}
-        onClick={() => {
-          if (isDisabled) toaster(t('common:action.offline.text'), 'warning');
-        }}
-        id={id}
-        draggable="false"
-        to={action}
-      >
-        <Icon className="mr-2 size-4" aria-hidden="true" />
-        {label}
-      </Link>
+      <Icon className="mr-2 size-4" aria-hidden="true" />
+      {label}
     </Button>
   );
 }
@@ -63,7 +63,7 @@ export const AccountSheet = () => {
   const navigate = useNavigate();
   const { user, isSystemAdmin } = useUserStore();
   const isMobile = useBreakpointBelow('sm', false);
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
   const backRef = useRef<HTMLButtonElement>(null);
@@ -95,18 +95,18 @@ export const AccountSheet = () => {
   return (
     <div ref={buttonWrapper} className="p-3 bg-card w-full flex flex-col gap-4 min-h-screen">
       <FocusTarget target="sheet" />
-      <div className="flex items-center gap-2 px-1 py-1.5 -mx-1 pl-3 in-[.floating-nav]:pl-1">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold">{t('common:account')}</h2>
         <Button
           ref={backRef}
           variant="ghost"
           size="icon"
           onClick={goBackToMenu}
-          className="in-[.floating-nav]:flex hidden size-8 shrink-0"
-          aria-label={t('common:menu')}
+          className="size-10 sm:hidden opacity-50 hover:opacity-100 transition-opacity"
+          aria-label={t('common:close')}
         >
-          <ArrowLeftIcon className="size-4" />
+          <XIcon size={20} />
         </Button>
-        <h2 className="text-base font-semibold">{t('common:account')}</h2>
       </div>
       <button
         type="button"

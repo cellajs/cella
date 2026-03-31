@@ -1,5 +1,5 @@
 import { ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import * as React from 'react';
+import React from 'react';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
@@ -25,21 +25,24 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 function BreadcrumbLink({
-  asChild,
+  render,
   className,
+  children,
   ...props
 }: React.ComponentProps<'a'> & {
-  asChild?: boolean;
+  render?: React.ReactElement;
 }) {
-  const Comp = asChild ? Slot : 'a';
+  const computedProps = {
+    'data-slot': 'breadcrumb-link',
+    className: cn('hover:text-foreground transition-colors rounded-sm ring-offset-0 focus-effect', className),
+    ...props,
+  };
 
-  return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn('hover:text-foreground transition-colors rounded-sm ring-offset-0 focus-effect', className)}
-      {...props}
-    />
-  );
+  if (render) {
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+  }
+
+  return <a {...computedProps}>{children}</a>;
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {

@@ -8,7 +8,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
-import { objectEntries } from '~/utils/object';
+import { objectEntries } from '~/utils/object-entries';
 
 /**
  * Legal page showing core legal texts (privacy policy, terms of use) with sidebar navigation.
@@ -60,7 +60,7 @@ export function LegalPage() {
               isActive && (
                 <div
                   key={id}
-                  className="mx-auto max-w-full lg:max-w-4xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40 prose dark:prose-invert max-w-none text-foreground"
+                  className="lg:mx-auto max-w-full lg:max-w-4xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40 prose dark:prose-invert text-foreground"
                 >
                   <h2 className="text-2xl font-bold pt-8 pb-4">{t(legalConfig[id].label)}</h2>
                   <Component />

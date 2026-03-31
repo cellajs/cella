@@ -2,11 +2,10 @@ import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserBase, UserMinimalBase } from '~/api.gen';
+import type { UserMinimalBase } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useFindEntityInListCache } from '~/query/basic/find-in-list-cache';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';
 
@@ -71,19 +70,4 @@ export const UserCell = ({ user, tabIndex, compactable, className }: BaseProps &
       </span>
     </Button>
   );
-};
-
-/**
- * Wrapper around UserCell to get userCell by ID from query cache.
- */
-export const UserCellById = ({
-  userId,
-  cacheOnly,
-  ...baseProps
-}: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
-  const user = useFindEntityInListCache<UserBase>(['user'], userId ?? '');
-
-  if (!userId) return <span className="text-muted">-</span>;
-
-  return user ? <UserCell compactable={true} user={user} {...baseProps} /> : <span>{userId}</span>;
 };

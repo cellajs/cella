@@ -1,7 +1,7 @@
+import type { StreamNotification } from '#/schemas';
 import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
-import { buildStreamNotification } from './build-message';
-import { writeChange } from './helpers';
+import { writeChange, writeChangeRaw } from './helpers';
 import type { BaseStreamSubscriber } from './types';
 
 /**
@@ -13,23 +13,30 @@ export interface CursoredSubscriber extends BaseStreamSubscriber {
 
 /**
  * Send notification to a subscriber and update cursor.
- * Uses lightweight notification format for realtime entities.
- * Cache token is included from CDC (shared across all users).
+ * Accepts a pre-built notification to avoid redundant builds across subscribers.
+ * When preSerialized is provided, skips JSON.stringify (used when all subscribers
+ * receive identical notifications without per-subscriber transforms).
  */
 export async function sendNotificationToSubscriber<T extends CursoredSubscriber>(
   subscriber: T,
   event: ActivityEventWithEntity,
+  notification: StreamNotification,
+  transformNotification?: (notification: StreamNotification, subscriber: T) => StreamNotification,
+  preSerialized?: string,
 ): Promise<void> {
-  // Build notification (cache token comes from CDC via event)
-  const notification = buildStreamNotification(event);
+  if (preSerialized) {
+    await writeChangeRaw(subscriber.stream, event.id, preSerialized);
+  } else {
+    const final = transformNotification ? transformNotification(notification, subscriber) : notification;
+    await writeChange(subscriber.stream, event.id, final);
+  }
 
-  logEvent('debug', 'SSE notification sent to subscriber', {
+  logEvent(null, 'debug', 'SSE notification sent to subscriber', {
     subscriberId: subscriber.id,
     activityId: event.id,
     entityType: event.entityType,
     action: event.action,
   });
 
-  await writeChange(subscriber.stream, event.id, notification);
   subscriber.cursor = event.id;
 }

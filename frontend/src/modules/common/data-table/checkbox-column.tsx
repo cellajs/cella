@@ -9,5 +9,5 @@ export const CheckboxColumn: Column<any> & {
   frozen: false,
   minBreakpoint: 'sm',
   headerCellClass: 'flex items-center justify-center',
-  cellClass: 'flex items-center justify-center',
+  cellClass: 'flex items-center justify-center rdg-cell-checkbox',
 };

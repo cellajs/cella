@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import { useNavigationStore } from '~/store/navigation';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 export const MenuSheetItemsEdit = ({
   data,

@@ -1,20 +1,20 @@
 import { t } from 'i18next';
 import { SquirrelIcon } from 'lucide-react';
-import { UserBase } from '~/api.gen';
+import { UserBase } from 'sdk';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { OrganizationsGrid } from '~/modules/organization/organizations-grid';
 
 interface Props {
   user: UserBase;
-  orgId?: string;
+  organizationId?: string;
   isSheet?: boolean;
 }
 
 /**
  * This is a placeholder component for the user profile content
  **/
-function UserProfileContent({ isSheet, user, orgId }: Props) {
-  const hasOrgContext = !!orgId;
+function UserProfileContent({ isSheet, user, organizationId }: Props) {
+  const hasOrgContext = !!organizationId;
 
   if (!hasOrgContext)
     return (

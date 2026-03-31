@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getAuthHealth, type SignInWithPasskeyData, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
-import { getAuthHealth, type SignInWithPasskeyData, signInWithPasskey } from '~/api.gen';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import {
   type ConditionalMediationResult,
@@ -15,8 +16,7 @@ import type { AuthStep } from '~/modules/auth/types';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useAuthStore } from '~/store/auth';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

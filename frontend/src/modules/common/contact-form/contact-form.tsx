@@ -3,18 +3,18 @@ import { MailIcon, MessageSquareIcon, SendIcon, UserIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { zCreateRequestData } from 'sdk/zod.gen';
 import { z } from 'zod';
-import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 

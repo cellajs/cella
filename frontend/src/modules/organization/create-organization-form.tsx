@@ -4,12 +4,12 @@ import type React from 'react';
 import { useState } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
+import { zCreateOrganizationsData } from 'sdk/zod.gen';
 import { nanoid } from 'shared/nanoid';
 import { z } from 'zod';
-import type { Organization } from '~/api.gen';
-import { zCreateOrganizationsData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectTenantFormField } from '~/modules/common/form-fields/select-combobox/tenant';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -66,7 +66,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   const name = useWatch({ control: form.control, name: 'name' });
-  const tenantId = hasTenants ? useWatch({ control: form.control, name: 'tenantId' as never }) : '';
+  const tenantId = (hasTenants ? useWatch({ control: form.control, name: 'tenantId' as never }) : '') as string;
 
   const createMutation = useOrganizationCreateMutation();
   const autoCreateMutation = useOrganizationAutoCreateMutation();
@@ -118,7 +118,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {hasTenants && (
-          <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required autoHide />
+          <SelectTenantFormField control={form.control} name="tenantId" label={t('common:tenant')} required />
         )}
 
         {existingTenant && (
@@ -142,6 +142,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
         <SlugFormField
           control={form.control}
           entityType="organization"
+          tenantId={tenantId}
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           nameValue={name}

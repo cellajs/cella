@@ -102,18 +102,20 @@ module "secrets" {
   # Database URLs from database module
   database_url_direct = module.database.connection_string_direct
   database_url_pooled = module.database.connection_string_pooled
+  database_url_admin  = module.database.connection_string_direct
 
   # Application secrets (passed via tfvars or CI/CD)
   argon_secret              = var.argon_secret
   cookie_secret             = var.cookie_secret
-  unsubscribe_token_secret  = var.unsubscribe_token_secret
-  cdc_ws_secret             = var.cdc_ws_secret
+  unsubscribe_secret  = var.unsubscribe_secret
+  cdc_secret                = var.cdc_secret
+  yjs_secret                = var.yjs_secret
 
   tags = local.tags
 }
 
 # -----------------------------------------------------------------------------
-# Serverless Containers (Backend API + CDC Worker)
+# Serverless Containers (Backend API + CDC Worker + Yjs Relay)
 # -----------------------------------------------------------------------------
 
 module "containers" {
@@ -128,6 +130,7 @@ module "containers" {
   # Image tags (passed from CI/CD)
   backend_image_tag = var.backend_image_tag
   cdc_image_tag     = var.cdc_image_tag
+  yjs_image_tag     = var.yjs_image_tag
 
   # Secret references
   secret_ids = module.secrets.secret_ids
@@ -137,6 +140,7 @@ module "containers" {
   backend_max_scale = var.backend_max_scale
   backend_memory    = var.backend_memory
   cdc_memory        = var.cdc_memory
+  yjs_memory        = var.yjs_memory
 
   # URLs for container environment
   frontend_url = "https://${var.app_domain}"
@@ -172,11 +176,13 @@ module "load_balancer" {
   # Backend targets
   backend_container_endpoint = module.containers.backend_endpoint
   cdc_container_endpoint     = module.containers.cdc_endpoint
+  yjs_container_endpoint     = module.containers.yjs_endpoint
   frontend_bucket_endpoint   = module.storage.frontend_bucket_website_endpoint
 
   # Domain configuration
   api_domain = var.api_domain
   app_domain = var.app_domain
+  yjs_domain = var.yjs_domain
 
   # SSL configuration
   ssl_certificate_id = var.ssl_certificate_id
@@ -208,6 +214,7 @@ module "dns" {
   dns_zone               = var.dns_zone
   api_domain             = var.api_domain
   app_domain             = var.app_domain
+  yjs_domain             = var.yjs_domain
   load_balancer_ip       = module.load_balancer.ip_address
   edge_services_endpoint = module.edge.endpoint
 }

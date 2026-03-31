@@ -16,7 +16,7 @@ import { paginationQuerySchema, validNameSchema } from '#/schemas';
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
 /** Tenant status schema */
-export const tenantStatusSchema = z.enum(tenantStatusValues);
+const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 
 /** Restrictions: rate limits sub-schema */

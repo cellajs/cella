@@ -7,6 +7,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { NavButton } from '~/modules/navigation/nav-buttons';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
@@ -18,7 +19,6 @@ import {
   SidebarMenu,
 } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
-import { useNavigationStore } from '~/store/navigation';
 
 const DebugDropdown =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;

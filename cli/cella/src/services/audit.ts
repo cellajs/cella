@@ -93,7 +93,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
         const packageJsonPath = path.join(dep.location, 'package.json');
         try {
           const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-          dependentNameCache.set(dep.location, (pkgJson.name || path.basename(dep.location)).replace('@cella/', ''));
+          dependentNameCache.set(dep.location, pkgJson.name || path.basename(dep.location));
         } catch {
           dependentNameCache.set(dep.location, path.basename(dep.location));
         }
@@ -121,7 +121,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
             const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
             const spec = pkgJson[pkg.dependencyType]?.[name] || '';
             if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
-              pinnedIn.push(d.name.replace('@cella/', ''));
+              pinnedIn.push(d.name);
             }
           } catch {
             // skip
@@ -132,7 +132,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
           name,
           current: pkg.current,
           latest: pkg.latest,
-          dependents: pkg.dependentPackages.map((d) => d.name.replace('@cella/', '')),
+          dependents: pkg.dependentPackages.map((d) => d.name),
           dependentLocations: pkg.dependentPackages.map((d) => d.location),
           isDev: pkg.dependencyType === 'devDependencies',
           isMajorUpdate: isMajorVersionChange(pkg.current, pkg.latest),

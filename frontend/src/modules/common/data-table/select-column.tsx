@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import type { User } from 'sdk';
 import type { appConfig, roles } from 'shared';
-import type { User } from '~/api.gen';
 import type { Member } from '~/modules/memberships/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';

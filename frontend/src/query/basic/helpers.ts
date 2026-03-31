@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
+import type { ContextEntityBase } from 'sdk';
 import type { EntityType } from 'shared';
-import type { ContextEntityBase } from '~/api.gen';
 import type {
   ArbitraryEntityQueryData,
   EntityIdAndType,
@@ -43,6 +43,14 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;
 
+    // Bail out early if none of the items exist in this query — returning the
+    // same reference prevents React Query from notifying observers.
+    if (action === 'update' || action === 'remove') {
+      const updateIds = new Set(items.map((i) => i.id));
+      const hasMatch = data.pages.some((page) => page.items.some((item) => updateIds.has(item.id)));
+      if (!hasMatch) return data;
+    }
+
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
 
@@ -66,6 +74,13 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
     if (!data) return;
+
+    // Bail out early if none of the items exist in this query — returning the
+    // same reference prevents React Query from notifying observers.
+    if (action === 'update' || action === 'remove') {
+      const updateIds = new Set(items.map((i) => i.id));
+      if (!data.items.some((existing) => updateIds.has(existing.id))) return data;
+    }
 
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
@@ -143,20 +158,21 @@ const updateArrayItems = <T extends ItemData>(
   switch (action) {
     case 'create': {
       // Filter out already existing items based on their IDs
-      const existingIds = items.map(({ id }) => id);
-      const newItems = dataItems.filter((i) => !existingIds.includes(i.id));
+      const existingIds = new Set(items.map(({ id }) => id));
+      const newItems = dataItems.filter((i) => !existingIds.has(i.id));
       // Concatenate to add only new entries
       return insertOrder === 'asc' ? [...items, ...newItems] : [...newItems, ...items];
     }
 
-    case 'update':
-      // update existing items in dataItems
-      return items.map((item) => dataItems.find((i) => i.id === item.id) ?? item);
+    case 'update': {
+      const updates = new Map(dataItems.map((i) => [i.id, i]));
+      return items.map((item) => updates.get(item.id) ?? item);
+    }
 
     case 'remove': {
       // Exclude items matching IDs in dataItems
-      const deleteIds = dataItems.map(({ id }) => id);
-      return items.filter((item) => !deleteIds.includes(item.id));
+      const deleteIds = new Set(dataItems.map(({ id }) => id));
+      return items.filter((item) => !deleteIds.has(item.id));
     }
 
     default:

@@ -4,15 +4,15 @@ import { InfoIcon, SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from 'sdk';
+import { zSendNewsletterData } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
-import { zSendNewsletterData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { ApiError } from '~/lib/api';
-import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import BlockNoteContentFormField from '~/modules/common/form-fields/blocknote';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
@@ -136,9 +136,9 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" icon={InfoIcon} animate>
+          <AlertBanner id="test-email" variant="plain" icon={InfoIcon} animate>
             {t('common:test_email.text')}
-          </AlertWrap>
+          </AlertBanner>
         )}
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">

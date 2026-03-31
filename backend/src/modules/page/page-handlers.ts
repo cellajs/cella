@@ -1,212 +1,151 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, gt, ilike, inArray, or, SQL } from 'drizzle-orm';
-import { nanoid } from 'shared/nanoid';
-import { pagesTable } from '#/db/schema/pages';
-import { setPublicRlsContext } from '#/db/tenant-context';
+import { baseDb } from '#/db/db';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import pagesRoutes from '#/modules/page/page-routes';
+import { getPages } from '#/modules/page/helpers/get-pages';
 import {
-  auditUserSelect,
-  coalesceAuditUsers,
-  createdByUser,
-  modifiedByUser,
-  withAuditUser,
-  withAuditUsers,
-} from '#/modules/user/helpers/audit-user';
+  deletePagesByIds,
+  findPageById,
+  findPagesByStxEntityId,
+  insertPages,
+  updatePage,
+} from '#/modules/page/page-queries';
+import pagesRoutes from '#/modules/page/page-routes';
+import { withAuditUser, withAuditUserLite, withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
-import { buildStx, getEntityByTransaction, isTransactionProcessed } from '#/sync';
-import { checkFieldConflicts, throwIfConflicts } from '#/sync/field-versions';
+import { buildStx, checkIdempotency, getEntityByTransaction, resolveUpdateOps } from '#/sync';
 import { defaultHook } from '#/utils/default-hook';
 import { extractKeywords } from '#/utils/extract-keywords';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { getOrderColumn } from '#/utils/order-column';
-import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const pageRouteHandlers = app
-  /**
-   * Get list of pages
-   */
-  .openapi(pagesRoutes.getPages, async (ctx) => {
-    const { q, sort, order, limit, offset, afterSeq } = ctx.req.valid('query');
+/**
+ * Get list of pages
+ */
+app.openapi(pagesRoutes.getPages, async (ctx) => {
+  const { q, sort, order, limit, offset, seqCursor } = ctx.req.valid('query');
 
-    return setPublicRlsContext('public', async (tenantDb) => {
-      const matchMode = 'all';
+  const { items, total } = await getPages({ q, sort, order, limit, offset, seqCursor });
 
-      const filters: SQL[] = [];
+  return ctx.json({ items, total }, 200);
+});
 
-      // Sequence-based delta sync filter
-      if (afterSeq !== undefined) {
-        filters.push(gt(pagesTable.seqAt, afterSeq));
-      }
+/**
+ * Get single page by ID
+ */
+app.openapi(pagesRoutes.getPage, async (ctx) => {
+  const { id } = ctx.req.valid('param');
 
-      const trimmedQuery = q?.trim();
-      if (trimmedQuery) {
-        const searchTerms = trimmedQuery.split(/\s+/).filter(Boolean);
+  const db = baseDb;
+  const pageRecord = await findPageById(db, { id });
+  if (!pageRecord) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
 
-        const queryToken = prepareStringForILikeFilter(trimmedQuery);
-        const qFilters =
-          matchMode === 'all' || searchTerms.length === 1
-            ? [
-                ilike(pagesTable.name, queryToken),
-                ilike(pagesTable.keywords, queryToken),
-                ilike(pagesTable.description, queryToken),
-                ilike(createdByUser.name, queryToken),
-                ilike(createdByUser.email, queryToken),
-              ]
-            : [
-                inArray(pagesTable.name, searchTerms),
-                inArray(pagesTable.keywords, searchTerms),
-                inArray(pagesTable.description, searchTerms),
-                inArray(createdByUser.name, searchTerms),
-                inArray(createdByUser.email, searchTerms),
-              ];
+  const pageResponse = await withAuditUser(ctx, pageRecord);
 
-        filters.push(...qFilters);
-      }
+  ctx.set('entityCacheData', pageResponse);
 
-      const orderColumn = getOrderColumn(sort, pagesTable.status, order, {
-        status: pagesTable.status,
-        createdAt: pagesTable.createdAt,
-        name: pagesTable.name,
-      });
+  return ctx.json(pageResponse, 200);
+});
 
-      const { createdBy: _cb, modifiedBy: _mb, ...pageCols } = getColumns(pagesTable);
+/**
+ * Create one or more pages
+ */
+app.openapi(pagesRoutes.createPages, async (ctx) => {
+  const user = ctx.var.user;
+  const tenantId = ctx.var.tenantId;
 
-      const pagesQuery = tenantDb
-        .select({ ...pageCols, ...auditUserSelect })
-        .from(pagesTable)
-        .leftJoin(createdByUser, eq(createdByUser.id, pagesTable.createdBy))
-        .leftJoin(modifiedByUser, eq(modifiedByUser.id, pagesTable.modifiedBy))
-        .where(and(or(...filters)));
+  const newPages = ctx.req.valid('json');
 
-      const [items, total] = await Promise.all([
-        pagesQuery.orderBy(orderColumn).limit(limit).offset(offset),
-        tenantDb
-          .select({ total: count() })
-          .from(pagesQuery.as('pages'))
-          .then(([{ total }]) => total),
-      ]);
+  const db = baseDb;
 
-      return ctx.json({ items: coalesceAuditUsers(items), total }, 200);
-    });
-  })
-  /**
-   * Get single page by ID
-   */
-  .openapi(pagesRoutes.getPage, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    return setPublicRlsContext('public', async (tenantDb) => {
-      const [pageRecord] = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, id));
-      if (!pageRecord) throw new AppError(404, 'not_found', 'warn', { entityType: 'page' });
-
-      const pageResponse = await withAuditUser(pageRecord, tenantDb);
-
-      ctx.set('entityCacheData', pageResponse);
-
-      return ctx.json(pageResponse, 200);
-    });
-  })
-  /**
-   * Create one or more pages
-   */
-  .openapi(pagesRoutes.createPages, async (ctx) => {
-    const newPages = ctx.req.valid('json');
-    const tenantDb = ctx.var.db;
-
-    // Idempotency check
-    const firstStx = newPages[0].stx;
-    if (await isTransactionProcessed(firstStx.mutationId, tenantDb)) {
-      const ref = await getEntityByTransaction(firstStx.mutationId, tenantDb);
-      if (ref) {
-        const existing = await tenantDb.select().from(pagesTable).where(eq(pagesTable.id, ref.entityId));
-        if (existing.length > 0) {
-          const pageResponses = await withAuditUsers(existing, tenantDb);
-          return ctx.json({ data: pageResponses, rejectedItemIds: [] }, 200);
-        }
-      }
-    }
-
-    const user = ctx.var.user;
-    const tenantId = ctx.var.tenantId;
-
-    const pagesToInsert = newPages.map(({ stx, ...pageData }) => ({
-      ...pageData,
-      tenantId,
-      id: nanoid(),
-      createdAt: getIsoDate(),
-      createdBy: user.id,
-      // TODO not yet implemented.
-      displayOrder: 3,
-      keywords: extractKeywords(pageData.name),
-      publicAccess: true,
-      stx: buildStx(stx),
-    }));
-
-    const pageRecords = await tenantDb.insert(pagesTable).values(pagesToInsert).returning();
-
-    logEvent('info', `${pageRecords.length} pages have been created`);
-
-    const pageResponses = await withAuditUsers(pageRecords, tenantDb, user);
-
-    return ctx.json({ data: pageResponses, rejectedItemIds: [] }, 201);
-  })
-  /**
-   * Update a page by id
-   */
-  .openapi(pagesRoutes.updatePage, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
-
-    const { key, data: updateData, stx } = ctx.req.valid('json');
-    const user = ctx.var.user;
-
-    // Field-level conflict detection
-    const changedFields = key ? [key] : [];
-    const { conflicts } = checkFieldConflicts(changedFields, entity.stx, stx.lastReadVersion);
-    throwIfConflicts('page', conflicts);
-
-    const tenantDb = ctx.var.db;
-    const updatedName = key === 'name' && typeof updateData === 'string' ? updateData : entity.name;
-    const updatedDescription =
-      key === 'description' && typeof updateData === 'string' ? updateData : entity.description;
-
-    const [updatedPageRecord] = await tenantDb
-      .update(pagesTable)
-      .set({
-        [key]: updateData,
-        keywords: extractKeywords(updatedName, updatedDescription),
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
-        stx: buildStx(stx, entity, changedFields),
-      })
-      .where(eq(pagesTable.id, id))
-      .returning();
-
-    logEvent('info', 'Page updated', { pageId: updatedPageRecord.id });
-
-    const pageResponse = await withAuditUser(updatedPageRecord, tenantDb, user);
-
-    return ctx.json(pageResponse, 200);
-  })
-  /**
-   * Delete pages by ids
-   */
-  .openapi(pagesRoutes.deletePages, async (ctx) => {
-    const { ids } = ctx.req.valid('json');
-    if (!ids.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'page' });
-
-    const tenantDb = ctx.var.db;
-    await tenantDb.delete(pagesTable).where(inArray(pagesTable.id, ids));
-
-    logEvent('info', 'Page(s) deleted', ids);
-
-    return ctx.json({ data: [], rejectedItemIds: [] }, 200);
+  // Idempotency check
+  const firstStx = newPages[0].stx;
+  const existing = await checkIdempotency(firstStx.mutationId, async () => {
+    const ref = await getEntityByTransaction(firstStx.mutationId);
+    if (!ref) return [];
+    const pages = await findPagesByStxEntityId(db, { entityId: ref.entityId });
+    return withAuditUsers(ctx, pages);
   });
+  if (existing) return ctx.json({ data: existing, rejectedIds: [] }, 200);
 
-export default pageRouteHandlers;
+  const pagesToInsert = newPages.map(({ stx, id, ...pageData }) => ({
+    ...pageData,
+    tenantId,
+    id,
+    createdAt: getIsoDate(),
+    createdBy: user.id,
+    // TODO not yet implemented.
+    displayOrder: 3,
+    keywords: extractKeywords(pageData.name),
+    stx: buildStx(stx),
+  }));
+
+  const pageRecords = await insertPages(db, pagesToInsert);
+
+  logEvent(ctx, 'info', 'Pages created', { count: pageRecords.length });
+
+  const pageResponses = await withAuditUsers(ctx, pageRecords, user);
+
+  return ctx.json({ data: pageResponses, rejectedIds: [] }, 201);
+});
+
+/**
+ * Update a page by id
+ */
+app.openapi(pagesRoutes.updatePage, async (ctx) => {
+  const user = ctx.var.user;
+
+  const { id } = ctx.req.valid('param');
+  const { ops, stx } = ctx.req.valid('json');
+
+  const db = baseDb;
+  const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
+
+  const resolved = resolveUpdateOps(entity, ops, stx);
+
+  const { fullResponse } = ctx.req.valid('query');
+
+  if (!resolved.changed) {
+    const pageResponse = fullResponse ? await withAuditUser(ctx, entity, user) : withAuditUserLite(entity, user);
+    return ctx.json(pageResponse, 200);
+  }
+
+  const updatedName = resolved.values.name ?? entity.name;
+  const updatedDesc = resolved.values.description ?? entity.description;
+
+  const values = {
+    ...resolved.values,
+    keywords: extractKeywords(updatedName, updatedDesc),
+    updatedAt: getIsoDate(),
+    updatedBy: user.id,
+    stx: resolved.stx,
+  };
+  const updatedPageRecord = await updatePage(db, { id, values });
+
+  logEvent(ctx, 'info', 'Page updated', { pageId: updatedPageRecord.id });
+
+  const pageResponse = fullResponse
+    ? await withAuditUser(ctx, updatedPageRecord, user)
+    : withAuditUserLite(updatedPageRecord, user);
+
+  return ctx.json(pageResponse, 200);
+});
+
+/**
+ * Delete pages by ids
+ */
+app.openapi(pagesRoutes.deletePages, async (ctx) => {
+  const { ids } = ctx.req.valid('json');
+  if (!ids.length) throw new AppError(400, 'invalid_request', 'warn', { entityType: 'page' });
+
+  await deletePagesByIds(baseDb, { ids });
+
+  logEvent(ctx, 'info', 'Pages deleted', { ids });
+
+  return ctx.json({ data: [], rejectedIds: [] }, 200);
+});
+
+export { pageTag } from '#/modules/page/page-module';
+export const pageHandlers = app;

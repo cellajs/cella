@@ -2,7 +2,7 @@
  * Integration test setup for CDC + EventBus tests.
  *
  * These tests require:
- * - Real PostgreSQL (not PGlite) with logical replication enabled
+ * - Real PostgreSQL with logical replication enabled
  * - DATABASE_URL environment variable pointing to the test database
  *
  * The setup handles:

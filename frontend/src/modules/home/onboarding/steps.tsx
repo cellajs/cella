@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
@@ -14,8 +14,8 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import { InviteUsers } from '~/modules/user/invite-users';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';

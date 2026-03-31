@@ -3,13 +3,13 @@ import i18n from 'i18next';
 import type { UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
+import { zUpdateOrganizationData } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { z } from 'zod';
-import type { Organization } from '~/api.gen';
-import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectCountry } from '~/modules/common/form-fields/select-combobox/country';
@@ -105,6 +105,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <SlugFormField
           control={form.control}
           entityType="organization"
+          tenantId={organization.tenantId}
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}

@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
-import { getContextEntityRoute } from '~/routes-resolver';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
@@ -88,7 +88,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
               : isSubitem
                 ? 'sm:group-hover/menuItem:pt-[0.06rem]!'
                 : 'sm:group-hover/menuItem:pt-[0.3rem]!',
-            'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
+            'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-base',
           )}
         >
           {item.name}

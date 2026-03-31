@@ -37,7 +37,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
     {
       key: 'method',
       name: '',
-      sortable: false,
+
       width: 80,
       renderCell: ({ row }) => (
         <Badge
@@ -52,7 +52,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       key: 'path',
       name: '',
       minWidth: 200,
-      sortable: false,
+
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="."
@@ -77,7 +77,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       key: 'id',
       name: '',
       minBreakpoint: 'md',
-      sortable: false,
+
       width: 200,
       renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
     },

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isTransientError, getErrorCode, withRetry } from '../lib/retry';
+
+// Mock pino to avoid env.ts parsing at import time
+vi.mock('../lib/pino', () => ({
+  logEvent: vi.fn(),
+}));
+
+import { isTransientError, getErrorCode, withRetry } from '../services/retry';
 
 describe('retry utility', () => {
   beforeEach(() => {

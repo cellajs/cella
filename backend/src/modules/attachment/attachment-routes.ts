@@ -15,6 +15,7 @@ import {
 import {
   batchResponseSchema,
   errorResponseRefs,
+  fullResponseQuerySchema,
   idInTenantOrgParamSchema,
   idsWithStxBodySchema,
   paginationSchema,
@@ -128,6 +129,7 @@ const attachmentRoutes = {
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
     request: {
       params: idInTenantOrgParamSchema,
+      query: fullResponseQuerySchema,
       body: {
         required: true,
         content: { 'application/json': { schema: attachmentUpdateStxBodySchema } },

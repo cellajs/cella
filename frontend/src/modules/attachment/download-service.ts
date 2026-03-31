@@ -10,16 +10,18 @@
  * Integration with react-query:
  * - Attachments are fetched via normal queries and cached
  * - This service queues them for blob download in background
- * - Uses findEntityInListCache to lookup attachment metadata from react-query cache
+ * - Uses findAttachmentInCache to lookup attachment metadata from react-query cache
  * - Blobs are stored in IndexedDB for offline access
  */
+
 import { onlineManager } from '@tanstack/react-query';
+import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import type { Attachment } from '~/api.gen';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
+import { downloadQueue } from '~/modules/attachment/dexie/download-queue';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/helpers';
-import { findEntityInListCache } from '~/query/basic';
+import { getFileUrl } from '~/modules/attachment/file-url';
+import { findAttachmentInCache } from '~/modules/attachment/query';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
@@ -129,7 +131,7 @@ class AttachmentDownloadService {
     const organizationId = attachments[0]?.organizationId;
     if (!organizationId) return;
 
-    await attachmentStorage.queueForDownload(attachments, organizationId);
+    await downloadQueue.enqueue(attachments, organizationId);
 
     // Trigger processing if online
     if (onlineManager.isOnline()) {
@@ -148,11 +150,19 @@ class AttachmentDownloadService {
     this.processing = true;
 
     try {
-      // Get pending downloads with concurrency limit
       const concurrency = this.config.downloadConcurrency ?? 2;
+      const maxAttempts = 3;
 
-      // Get all organizations with pending downloads
-      const pendingAll = await attachmentsDb.downloadQueue.where('status').equals('pending').toArray();
+      // Reset failed entries for retry (up to maxAttempts)
+      const allEntries = await attachmentsDb.downloadQueue
+        .filter((e) => e.status === 'failed' && e.attempts < maxAttempts)
+        .toArray();
+      for (const entry of allEntries) {
+        await downloadQueue.transition(entry.id, 'pending');
+      }
+
+      // Get all pending downloads (table scan is fine — small table)
+      const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
 
       if (pendingAll.length === 0) return;
 
@@ -180,6 +190,9 @@ class AttachmentDownloadService {
 
         // Download in parallel
         await Promise.all(sorted.map((entry) => this.downloadAttachment(entry.id, organizationId)));
+
+        // Clean up completed/skipped entries
+        await downloadQueue.gc(organizationId);
       }
     } catch (error) {
       console.error('[DownloadService] Queue processing failed:', error);
@@ -190,29 +203,26 @@ class AttachmentDownloadService {
 
   /**
    * Download a single attachment by looking up metadata from react-query cache.
-   */
-  /**
-   * Download a single attachment by looking up metadata from react-query cache.
    * Downloads variants in priority order: thumbnail → converted → original.
    * Evicts raw blob after original is downloaded.
    */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     try {
-      // Mark as downloading
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'downloading');
+      // Transition: pending → downloading
+      await downloadQueue.transition(attachmentId, 'downloading');
 
       // Lookup attachment in react-query cache
-      const attachment = findEntityInListCache<Attachment>('attachment', attachmentId);
+      const attachment = findAttachmentInCache(attachmentId);
 
       if (!attachment) {
         console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, will retry later`);
-        // Leave in 'pending' state for retry - don't mark as skipped
-        await attachmentStorage.updateDownloadStatus(attachmentId, 'pending', 'Waiting for cache');
+        // Transition back: downloading → pending (retry)
+        await downloadQueue.transition(attachmentId, 'pending');
         return;
       }
 
       if (!attachment.originalKey) {
-        await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'No originalKey');
+        await downloadQueue.transition(attachmentId, 'skipped', 'No originalKey');
         return;
       }
 
@@ -272,12 +282,12 @@ class AttachmentDownloadService {
         await attachmentStorage.evictRawBlob(attachmentId);
       }
 
-      // Mark as downloaded in queue
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'downloaded');
+      // Transition: downloading → downloaded
+      await downloadQueue.transition(attachmentId, 'downloaded');
       console.debug(`[DownloadService] Completed downloading attachment ${attachmentId}`);
     } catch (error) {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'failed');
+      await downloadQueue.transition(attachmentId, 'failed');
     }
   }
 
@@ -295,110 +305,6 @@ class AttachmentDownloadService {
       default:
         return null;
     }
-  }
-
-  /**
-   * Download an attachment immediately (not queued).
-   * Downloads original variant and evicts raw if present.
-   */
-  async downloadNow(attachment: Attachment): Promise<boolean> {
-    if (!this.config?.enabled) return false;
-    if (!onlineManager.isOnline()) return false;
-
-    try {
-      // Check if original already cached
-      const existingVariant = await attachmentStorage.hasAnyVariant(attachment.id);
-      if (existingVariant === 'original') return true;
-
-      // Get URL for original
-      const url = await getFileUrl(
-        attachment.originalKey,
-        attachment.public,
-        attachment.tenantId,
-        attachment.organizationId,
-      );
-
-      // Download with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-
-      // Store as original variant
-      await attachmentStorage.storeDownloadBlobWithVariant(
-        attachment.id,
-        'original',
-        attachment.organizationId,
-        blob,
-        attachment.contentType || blob.type,
-      );
-
-      // Evict raw blob if present
-      await attachmentStorage.evictRawBlob(attachment.id);
-
-      console.debug(`[DownloadService] Downloaded attachment ${attachment.id}`);
-      return true;
-    } catch (error) {
-      console.error(`[DownloadService] Failed to download ${attachment.id}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Get download statistics.
-   */
-  async getStats(organizationId?: string): Promise<{
-    pending: number;
-    downloading: number;
-    downloaded: number;
-    failed: number;
-    skipped: number;
-    storageUsed: number;
-  }> {
-    const baseQuery = organizationId
-      ? attachmentsDb.downloadQueue.where('organizationId').equals(organizationId)
-      : attachmentsDb.downloadQueue;
-
-    const allEntries = await baseQuery.toArray();
-
-    const stats = {
-      pending: 0,
-      downloading: 0,
-      downloaded: 0,
-      failed: 0,
-      skipped: 0,
-    };
-
-    for (const entry of allEntries) {
-      switch (entry.status) {
-        case 'pending':
-          stats.pending++;
-          break;
-        case 'downloading':
-          stats.downloading++;
-          break;
-        case 'downloaded':
-          stats.downloaded++;
-          break;
-        case 'failed':
-          stats.failed++;
-          break;
-        case 'skipped':
-          stats.skipped++;
-          break;
-      }
-    }
-
-    const storageUsed = organizationId ? await attachmentStorage.getStorageUsed(organizationId) : 0;
-
-    return { ...stats, storageUsed };
   }
 }
 

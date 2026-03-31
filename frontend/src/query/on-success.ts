@@ -1,4 +1,4 @@
-import { useAlertStore } from '~/store/alert';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 
 /**
  * onSuccess handler for queryClient.

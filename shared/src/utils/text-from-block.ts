@@ -1,5 +1,7 @@
 import type { Block } from '@blocknote/core';
 
+export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
+
 /**
  * Recursively extracts plain text from a BlockNote block,
  * including inline content, table content, file-based blocks, and children.
@@ -29,7 +31,7 @@ export const getTextFromBlock = (block: Block): string => {
       .trim();
   } else if (
     // Handle file-based blocks: audio, image, video, file
-    ['audio', 'video', 'image', 'file'].includes(block.type) &&
+    mediaBlockTypes.has(block.type) &&
     'name' in block.props &&
     typeof block.props.name === 'string'
   ) {

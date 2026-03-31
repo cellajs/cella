@@ -34,7 +34,7 @@ export const buttonVariants = cva(
         none: 'bg-transparent border-none shadow-none',
       },
       soft: {
-        true: 'bg-(--intent-color)/10 text-(--intent-color) border border-(--intent-color)/20 hover:bg-(--intent-color)/15 shadow-none',
+        true: 'soft-bg text-(--intent-color) border soft-border hover:soft-bg-hover shadow-none',
         false: '',
       },
       size: {
@@ -61,7 +61,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
-  asChild?: boolean;
+  render?: React.ReactElement;
 }
 
 export function Button({
@@ -69,12 +69,22 @@ export function Button({
   variant,
   soft,
   size,
-  asChild = false,
+  render,
   loading: _loading,
+  children,
   ...props
 }: React.ComponentProps<'button'> & ButtonProps) {
-  const Comp = asChild ? Slot : 'button';
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, soft, size, className }))} {...props} />;
+  const computedProps = {
+    'data-slot': 'button',
+    className: cn(buttonVariants({ variant, soft, size, className })),
+    ...props,
+  };
+
+  if (render) {
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+  }
+
+  return <button {...computedProps}>{children}</button>;
 }
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
@@ -92,7 +102,7 @@ export function SubmitButton({
   disabled,
   ...props
 }: SubmitButtonProps) {
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const isDisabled = disabled || loading;
 

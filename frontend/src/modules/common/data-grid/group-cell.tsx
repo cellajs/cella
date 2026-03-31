@@ -72,4 +72,5 @@ function GroupCell<R, SR>({
 }
 
 const GroupCellMemo = memo(GroupCell) as <R, SR>(props: GroupCellProps<R, SR>) => React.JSX.Element;
+
 export { GroupCellMemo as GroupCell };

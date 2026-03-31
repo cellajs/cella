@@ -25,7 +25,7 @@ export const systemRoleSchema = z.object(createSelectSchema(systemRolesTable).sh
 export const systemRoleBaseSchema = systemRoleSchema
   .omit({
     createdAt: true,
-    modifiedAt: true,
+    updatedAt: true,
   })
   .openapi('SystemRoleBase', {
     description: 'Core fields for a system role assignment.',

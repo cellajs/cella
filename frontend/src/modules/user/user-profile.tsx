@@ -2,26 +2,26 @@ import { Link } from '@tanstack/react-router';
 import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserBase } from '~/api.gen';
+import { UserBase } from 'sdk';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUserUpdateMutation } from '~/modules/user/query';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const ProfilePageContent = lazy(() => import('~/modules/user/user-profile-content'));
 
 interface Props {
   user: UserBase;
-  orgId?: string;
+  organizationId?: string;
   isSheet?: boolean;
 }
 
 /**
  * Profile page for a user
  */
-export function UserProfilePage({ user, orgId, isSheet }: Props) {
+export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -72,7 +72,7 @@ export function UserProfilePage({ user, orgId, isSheet }: Props) {
       />
       <Suspense>
         <div className="container">
-          <ProfilePageContent user={user} orgId={orgId} isSheet={isSheet} />
+          <ProfilePageContent user={user} organizationId={organizationId} isSheet={isSheet} />
         </div>
       </Suspense>
     </>

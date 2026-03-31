@@ -1,10 +1,11 @@
+// import { Subscription } from '~/modules/tenants/subscription';
+
 import { useNavigate } from '@tanstack/react-router';
 import { TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
-// import { Subscription } from '~/modules/tenants/subscription';
-import type { Organization } from '~/api.gen';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -62,8 +63,8 @@ function OrganizationSettings({ organization }: { organization: Organization }) 
   const callback = (args: CallbackArgs<Organization>) => {
     if (args.status === 'success' && organization.slug !== args.data.slug) {
       navigate({
-        to: '/$tenantId/$orgSlug/organization/settings',
-        params: { tenantId, orgSlug: args.data.slug },
+        to: '/$tenantId/$organizationSlug/organization/settings',
+        params: { tenantId, organizationSlug: args.data.slug },
         replace: true,
       });
     }

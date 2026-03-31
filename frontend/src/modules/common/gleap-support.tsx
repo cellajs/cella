@@ -1,10 +1,10 @@
 import Gleap from 'gleap';
 import { useEffect } from 'react';
+import type { User } from 'sdk';
 import { appConfig } from 'shared';
-import type { User } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap-style.css';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 declare global {
   interface Window {
@@ -52,7 +52,7 @@ export function openGleapSupport() {
 
 export function GleapSupport() {
   const { user } = useUserStore();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   useEffect(() => {
     if (isOnline) {

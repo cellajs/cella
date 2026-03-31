@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DomainWithToken, Tenant, VerifyDomainResponse } from '~/api.gen';
+import type { GetDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -33,7 +33,7 @@ import { dateShort } from '~/utils/date-short';
 const sheetId = 'manage-domains';
 
 interface DomainTileProps {
-  domain: DomainWithToken;
+  domain: GetDomainResponse;
   tenantId: string;
 }
 

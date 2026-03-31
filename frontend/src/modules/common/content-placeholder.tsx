@@ -24,7 +24,7 @@ export function ContentPlaceholder({
 }: Props) {
   const { t } = useTranslation();
 
-  const titleText = t(title, { ...titleProps, returnObjects: false });
+  const titleText = t(title, titleProps as Record<string, unknown>);
 
   return (
     <div className={cn('flex flex-col items-center w-full text-center p-8 h-full justify-center relative', className)}>

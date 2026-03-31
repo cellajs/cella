@@ -1,6 +1,15 @@
 import { Column, Row } from 'jsx-email';
 import { appConfig, type EntityRole } from 'shared';
-import { Avatar, EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import {
+  EmailAvatar,
+  EmailBody,
+  EmailButton,
+  EmailContainer,
+  EmailFooter,
+  EmailHeader,
+  EmailLogo,
+  EmailText,
+} from '../components';
 import i18n from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
@@ -24,7 +33,7 @@ export const MemberAddedEmail = ({ name, lng, senderName, role, entityName, enti
       {senderName && (
         <Row style={avatarRowStyle}>
           <Column align="center">
-            <Avatar name={senderName} type="user" />
+            <EmailAvatar name={senderName} type="user" />
           </Column>
         </Row>
       )}
@@ -35,20 +44,20 @@ export const MemberAddedEmail = ({ name, lng, senderName, role, entityName, enti
         }
       />
       <EmailBody>
-        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
-        <Text>
+        {name && <EmailText style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</EmailText>}
+        <EmailText>
           <span
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.member_added.text', { lng, entityName, appName, senderName, role }),
             }}
           />
-        </Text>
+        </EmailText>
 
         <EmailButton ButtonText={i18n.t('common:view', { lng })} href={entityLink} />
       </EmailBody>
 
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

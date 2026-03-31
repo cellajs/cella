@@ -5,13 +5,17 @@ import { useEffect, useRef } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import { ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels';
+import {
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizableSeparator,
+} from '~/modules/common/resizable-panels/resizable-panels';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 function DocsLayout() {
   const navigate = useNavigate();

@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { UserIcon } from 'lucide-react';
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 

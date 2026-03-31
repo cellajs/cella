@@ -13,11 +13,6 @@
     border-color: var(--color-gray-200, currentColor);
   }
 
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
-
   @font-face {
     font-family: "Open Sans";
     src:
@@ -95,18 +90,22 @@
   }
 }
 
+/* Opaque soft intent colors using color-mix (no transparency) */
+@utility soft-bg {
+  background-color: color-mix(in oklch, var(--intent-color) 10%, var(--background));
+}
+
+@utility soft-bg-hover {
+  background-color: color-mix(in oklch, var(--intent-color) 15%, var(--background));
+}
+
+@utility soft-border {
+  border-color: color-mix(in oklch, var(--intent-color) 20%, var(--background));
+}
+
 @layer components {
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  }
-
-  /* Disable focus outline on overlay content panels */
-  /* TODO review this */
-  [data-slot="drawer-content"],
-  [data-slot="dialog-content"],
-  [data-slot="sheet-content"],
-  [data-slot="alert-dialog-content"] {
-    @apply focus-visible:outline-none;
   }
 }
 
@@ -191,8 +190,9 @@
 }
 
 @layer base {
+  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   html {
-    @apply font-sans overscroll-none;
+    @apply font-sans overscroll-none max-sm:text-[19px];
   }
 
   * {
@@ -207,13 +207,6 @@
     @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
   }
 
-  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
-  @media (max-width: 639px) {
-    html {
-      font-size: 19px;
-    }
-  }
-
   /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */
   .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
     display: none !important;
@@ -225,13 +218,8 @@
     display: none !important;
   }
 
-  /* Read-only mode styles */
-  .read-only-mode .read-only-restrict-hide {
-    display: none !important;
-  }
-
-  .read-only-mode .read-only-restrict-disabled {
-    opacity: 0.6 !important;
-    pointer-events: none !important;
+  /* Hide create-task button when board is empty (no projects) */
+  body:has([data-board-empty]) #create-task {
+    display: none;
   }
 }

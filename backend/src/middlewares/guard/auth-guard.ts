@@ -1,29 +1,30 @@
-import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { setUserRlsContext } from '#/db/tenant-context';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { updateLastSeenAt } from '../update-last-seen';
+import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.
  * It also sets `user` and `memberships` in the context for further use.
  * If no valid session is found, it responds with a 401 error.
  *
+ * Uses two in-memory TTL caches:
+ * - Session cache (30s TTL, keyed by sessionId): user + isSystemAdmin
+ * - Membership cache (5 min TTL, keyed by userId): memberships array
+ *   (actively invalidated on membership changes, long TTL is a safety net)
+ *
  * Fetches memberships/system role in a short-lived RLS transaction that completes
  * before calling next(). This avoids holding a transaction open for long-lived
  * requests (SSE streams, etc.). Sets baseDb on context — downstream guards
- * (tenantGuard, crossTenantGuard) replace it with their own RLS-scoped transaction.
- *
- * @param ctx - Request/response context.
- * @param next - The next middleware or route handler to call if authentication succeeds.
- * @returns Error response or undefined if the user is allowed to proceed.
+ * (tenantGuard, crossTenantGuard) also set baseDb; product entity handlers
+ * create their own RLS read transactions via tenantRead().
  */
 export const authGuard = xMiddleware(
   {
@@ -33,29 +34,54 @@ export const authGuard = xMiddleware(
     description: 'Requires valid session and sets auth context (user, memberships, baseDb)',
   },
   async (ctx, next) => {
-    // Validate session
     try {
-      // Get session id from cookie
-      const { sessionToken } = await getParsedSessionCookie(ctx);
-      const { user } = await validateSession(sessionToken);
+      // Parse session cookie (lightweight, no DB)
+      const { sessionToken, sessionId } = await getParsedSessionCookie(ctx);
 
-      // Update user last seen date (throttled to 5 min intervals, stored in user_activity table)
-      if (ctx.req.method === 'GET') {
-        await updateLastSeenAt(user.id, user.lastSeenAt);
+      // Check session cache by session row ID
+      const cachedSession = getSessionCache(sessionId);
+      if (cachedSession) {
+        ctx.set('user', cachedSession.user);
+        ctx.set('userId', cachedSession.user.id);
+        ctx.set('sessionToken', sessionToken);
+        ctx.set('isSystemAdmin', cachedSession.isSystemAdmin);
+        ctx.set('db', baseDb);
+
+        // Memberships cached separately with longer TTL (keyed by userId)
+        let memberships = getMembershipCache(cachedSession.user.id);
+        if (!memberships) {
+          memberships = await baseDb
+            .select()
+            .from(membershipsTable)
+            .where(eq(membershipsTable.userId, cachedSession.user.id));
+          setMembershipCache(cachedSession.user.id, memberships);
+        }
+        ctx.set('memberships', memberships);
+
+        // Update last seen (in-memory throttle — no DB hit in practice)
+        if (ctx.req.method === 'GET') {
+          updateLastSeenAt(cachedSession.user.id);
+        }
+
+        return next();
       }
 
-      // Set user in context and add to monitoring
+      // Cache miss — full validation flow
+      const { session, user } = await validateSession(sessionToken);
+
+      // Update user last seen date (throttled to 5 min intervals)
+      if (ctx.req.method === 'GET') {
+        updateLastSeenAt(user.id);
+      }
+
+      // Set user in context
       ctx.set('user', user);
+      ctx.set('userId', user.id);
       ctx.set('sessionToken', sessionToken);
-      Sentry.setUser({
-        id: user.id,
-        email: user.email,
-        username: user.slug,
-      });
 
       const systemAccessAllowed = isSystemAccessAllowed(ctx);
 
-      const { memberships, isSystemAdmin } = await setUserRlsContext({ userId: user.id }, async (tx) => {
+      const { memberships, isSystemAdmin } = await baseDb.transaction(async (tx) => {
         const [memberships, [systemRoleRecord]] = await Promise.all([
           tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
           // Only query system roles when system access is allowed for this request
@@ -80,6 +106,10 @@ export const authGuard = xMiddleware(
       ctx.set('memberships', memberships);
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
+
+      // Populate caches for subsequent requests
+      setSessionCache(session.id, user.id, { user, isSystemAdmin });
+      setMembershipCache(user.id, memberships);
 
       await next();
     } catch (err) {

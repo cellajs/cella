@@ -14,7 +14,7 @@ import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { filterMenuItems, getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
 export const MenuSheet = () => {
@@ -52,7 +52,7 @@ export const MenuSheet = () => {
             sourceItem.entityType,
             sourceItem.membership.archived,
             sourceItem.id,
-            targetData.order,
+            targetData.displayOrder,
             edge,
           );
 
@@ -63,7 +63,7 @@ export const MenuSheet = () => {
             path: {
               id: sourceItem.membership.id,
               tenantId: sourceItem.tenantId,
-              orgId: sourceItem.membership.organizationId || sourceItem.id,
+              organizationId: sourceItem.membership.organizationId || sourceItem.id,
             },
             body: { displayOrder: newOrder },
             entityId: sourceItem.id,

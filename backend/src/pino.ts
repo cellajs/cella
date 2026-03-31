@@ -1,5 +1,6 @@
 import pino from 'pino';
 import { appConfig } from 'shared';
+import { createLogger } from 'shared/pino';
 import { env } from './env';
 
 // Sensitive fields to redact from logs (auth tokens, credentials, hashes)
@@ -20,7 +21,7 @@ const isTest = appConfig.mode === 'test';
  */
 export const requestLogger = pino(
   {
-    level: isTest ? 'silent' : isProduction ? 'info' : 'debug',
+    level: isTest ? 'silent' : env.PINO_LOG_LEVEL,
     redact: {
       paths: [...redactedFields, 'req.headers.authorization', 'req.headers.cookie'],
       censor: '[REDACTED]',
@@ -33,8 +34,8 @@ export const requestLogger = pino(
         options: {
           colorize: false,
           singleLine: false,
-          ignore: 'pid,hostname,level,time',
-          messageFormat: '{requestId} {method} {status} {url} ({responseTime}ms) @{userId}',
+          ignore: 'pid,hostname,level',
+          messageFormat: '{method} {status} {url} ({responseTime}ms) @{userId}',
           hideObject: true,
         },
       }),
@@ -43,26 +44,13 @@ export const requestLogger = pino(
 /**
  * Logger for manually logging events in the application.
  */
-export const eventLogger = pino(
-  {
-    level: env.PINO_LOG_LEVEL,
-    formatters: {
-      level: (label) => ({ level: label.toUpperCase() }),
-    },
-    redact: {
-      paths: redactedFields,
-      censor: '[REDACTED]',
-    },
+export const eventLogger = createLogger({
+  level: env.PINO_LOG_LEVEL,
+  isProduction,
+  isTest,
+  enableOtelTransport: true,
+  redact: {
+    paths: redactedFields,
+    censor: '[REDACTED]',
   },
-  isProduction
-    ? undefined
-    : pino.transport({
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          singleLine: true,
-          levelFirst: true,
-          ignore: 'pid,hostname,time',
-        },
-      }),
-);
+});

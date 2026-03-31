@@ -30,7 +30,7 @@ interface HandleCreateUserProps {
  */
 export const handleCreateUser = async ({ newUser, emailVerified, db }: HandleCreateUserProps): Promise<UserModel> => {
   // Check if slug is available
-  const slugAvailable = await checkSlugAvailable(newUser.slug, db);
+  const slugAvailable = await checkSlugAvailable(db, newUser.slug, 'user');
 
   // Insert new user into database
   try {

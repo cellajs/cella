@@ -12,11 +12,12 @@
 import type { MiddlewareHandler } from 'hono';
 import type { ProductEntityType } from 'shared';
 import { xMiddleware } from '#/docs/x-middleware';
-import { validateSignedCacheToken } from '#/lib/cache-token-signer';
 import type { Env } from '#/lib/context';
+import { coalesce, isInFlight } from '#/sync/request-coalescing';
 import { logEvent } from '#/utils/logger';
 import { entityCache } from './app-entity-cache';
 import { publicEntityCache } from './public-entity-cache';
+import { validateSignedCacheToken } from './token-signer';
 
 /**
  * Public entity cache middleware - LRU cache keyed by entityType:entityId.
@@ -74,15 +75,16 @@ export const publicCache = (entityType: ProductEntityType, idParam = 'id'): Midd
   );
 
 /**
- * App entity cache middleware - TTL cache with CDC token reservation pattern.
- * Uses X-Cache-Token header for cache key, validates session-signed tokens.
+ * App entity cache middleware - entity-keyed TTL cache with forward-only token resolution.
+ * Uses X-Cache-Token header for access, validates session-signed tokens,
+ * resolves token to entity key for cache lookup.
  *
- * Flow:
- * 1. CDC reserves token with null value (uses base token)
+ * Forward-only flow:
+ * 1. CDC reserves token → maps token to entity key, invalidates stale data
  * 2. SSE signs token per-subscriber with their session
- * 3. Client sends signed token, we validate and extract base token
- * 4. First user fetch enriches: handler sets actual data
- * 5. Subsequent users get cache hit (all share same base token key)
+ * 3. Client sends signed token, we validate and resolve to entity key
+ * 4. First user fetch enriches: handler sets actual data under entity key
+ * 5. Subsequent users (any token, old or new) get cache hit on same entity key
  */
 export const appCache = (): MiddlewareHandler<Env> =>
   xMiddleware(
@@ -90,7 +92,7 @@ export const appCache = (): MiddlewareHandler<Env> =>
       functionName: 'appCache',
       type: 'x-cache',
       name: 'app',
-      description: 'TTL cache with session-signed token validation',
+      description: 'Entity-keyed TTL cache with forward-only token resolution',
     },
     async (ctx, next) => {
       const signedToken = ctx.req.header('X-Cache-Token');
@@ -109,25 +111,37 @@ export const appCache = (): MiddlewareHandler<Env> =>
       if (sessionToken) {
         baseToken = validateSignedCacheToken(signedToken, sessionToken);
         if (!baseToken) {
-          logEvent('debug', 'Cache token signature validation failed', {
+          logEvent(ctx, 'debug', 'Cache token signature validation failed', {
             signedTokenPrefix: signedToken.slice(0, 8),
           });
         }
       }
 
-      // Store base token in context for handler access
-      ctx.set('entityCacheToken', baseToken);
-
       // If signature invalid, skip cache and proceed to handler
       if (!baseToken) {
+        ctx.set('entityCacheToken', null);
         ctx.set('entityCacheHit', false);
         ctx.header('X-Cache', 'INVALID');
         await next();
         return;
       }
 
-      // Check cache using base token - returns enriched data, null (reserved), or undefined (miss)
-      const cached = entityCache.get(baseToken);
+      // Resolve token to entity key (forward-only: old tokens still resolve)
+      const resolvedKey = entityCache.resolveToken(baseToken);
+
+      // Store resolved entity key in context for handler access
+      ctx.set('entityCacheToken', resolvedKey ?? null);
+
+      // If token can't be resolved (expired/unknown), skip cache
+      if (!resolvedKey) {
+        ctx.set('entityCacheHit', false);
+        ctx.header('X-Cache', 'MISS');
+        await next();
+        return;
+      }
+
+      // Check cache using entity key
+      const cached = entityCache.get(resolvedKey);
 
       // If we have enriched data (not null/undefined and has 'id'), return it
       if (cached !== undefined && cached !== null && 'id' in cached) {
@@ -136,17 +150,31 @@ export const appCache = (): MiddlewareHandler<Env> =>
         return ctx.json(cached);
       }
 
-      // Cache miss or reserved - proceed to handler
+      // Cache miss or reserved — check if another request is already fetching
       ctx.set('entityCacheHit', false);
+
+      if (isInFlight(resolvedKey)) {
+        // Another request is fetching this entity — wait for it, then serve from cache
+        await coalesce(resolvedKey, () => Promise.resolve());
+
+        const coalesced = entityCache.get(resolvedKey);
+        if (coalesced !== undefined && coalesced !== null && 'id' in coalesced) {
+          ctx.set('entityCacheHit', true);
+          ctx.header('X-Cache', 'COALESCED');
+          return ctx.json(coalesced);
+        }
+      }
+
+      // First request (or coalesced miss) — fetch via handler
       ctx.header('X-Cache', cached === null ? 'RESERVED' : 'MISS');
 
-      await next();
+      await coalesce(resolvedKey, async () => {
+        await next();
 
-      // After handler: cache the response using base token
-      const entityData = ctx.get('entityCacheData');
-
-      if (entityData && baseToken) {
-        entityCache.set(baseToken, entityData);
-      }
+        const entityData = ctx.get('entityCacheData');
+        if (entityData) {
+          entityCache.set(resolvedKey, entityData);
+        }
+      });
     },
   );

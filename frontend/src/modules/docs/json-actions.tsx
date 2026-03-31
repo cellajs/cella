@@ -56,25 +56,30 @@ export const JsonActions = ({
   };
 
   const iconSize = 16;
-  const size = smallMode ? 'sm' : 'default';
+  const size = smallMode ? 'xs' : 'default';
 
   return (
     <ButtonGroup className={className}>
       {/* View */}
       {viewerUrl && (
         <TooltipButton toolTipContent={t('common:view')}>
-          <Button variant="outline" size={size} className="gap-2 flex-none" asChild>
-            <Link
-              resetScroll
-              to={viewerUrl}
-              onClick={() => {
-                isMobile && useSheeter.getState().remove();
-                // Scroll the docs main content area to top (resetScroll only handles window scroll)
-                requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
-              }}
-            >
-              <span className={smallMode ? 'text-xs' : undefined}>json</span>
-            </Link>
+          <Button
+            variant="outline"
+            size={size}
+            className="gap-2 flex-none"
+            render={
+              <Link
+                resetScroll
+                to={viewerUrl}
+                onClick={() => {
+                  isMobile && useSheeter.getState().remove();
+                  // Scroll the docs main content area to top (resetScroll only handles window scroll)
+                  requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
+                }}
+              />
+            }
+          >
+            <span className={smallMode ? 'text-xs' : undefined}>{filename}</span>
           </Button>
         </TooltipButton>
       )}

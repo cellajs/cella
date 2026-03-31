@@ -2,8 +2,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import type { Attachment } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -67,7 +67,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
 
   const queryOptions = attachmentsListQueryOptions({
     tenantId: contextEntity.tenantId,
-    orgId: contextEntity.id,
+    organizationId: contextEntity.id,
     q,
     sort,
     order,
@@ -94,7 +94,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
-      updateAttachment.mutate({ id: attachment.id, key: 'name', data: attachment.name });
+      updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });
     }
   };
 
@@ -135,7 +135,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
         canUpload={canUpload}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
+        queryKey={queryOptions.queryKey}
       />
       <DataTable<Attachment>
         {...{

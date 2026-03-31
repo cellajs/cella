@@ -1,29 +1,47 @@
 import { appConfig, type Severity } from 'shared';
+import type { Env } from '#/lib/context';
 import { eventLogger } from '#/pino';
 
 const isProduction = appConfig.mode === 'production';
 
-/**
- * Logs significant events with optional additional data to console and an external logging service.
- *
- * @param severity - `'fatal' | 'trace' | 'debug' | 'log' | 'info' | 'warn' | 'error'`.
- * @param msg - Main message or description of the event.
- * @param meta - Optional additional data to log along with the event message.
- */
-export const logEvent = (severity: Severity, msg: string, meta?: object): void => {
-  eventLogger[severity]({ ...(meta ?? {}), msg });
+const BENCH_TENANT_ID = 'xbench';
+
+/** Check if traffic originates from bench/load testing */
+export const isBenchTraffic = (url?: string, userId?: string) => {
+  if (isProduction) return false;
+  return url?.includes(`/${BENCH_TENANT_ID}/`) || userId?.startsWith('xbench-');
 };
 
-/**
- * Logs an unhandled error with its message and optional additional data.
- *
- * @param error - The error object to log.
- */
-export const logError = (msg: string, error: Error | unknown, meta?: object): void => {
+/** Narrow context type for logging — accepts full Hono ctx or any object with matching .var shape. */
+export type LogContext = {
+  var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId'>>;
+} | null;
+
+const extractBase = (ctx: LogContext) => {
+  if (!ctx?.var) return {};
+  const { tenantId, userId, organizationId, requestId } = ctx.var;
+  return {
+    ...(tenantId && { tenantId }),
+    ...(userId && { userId }),
+    ...(organizationId && { organizationId }),
+    ...(requestId && { requestId }),
+  };
+};
+
+export const logEvent = (ctx: LogContext, severity: Severity, msg: string, meta?: object): void => {
+  // Suppress bench traffic logs (except errors)
+  if (severity !== 'error' && severity !== 'fatal' && ctx?.var && isBenchTraffic(undefined, ctx.var.userId)) return;
+
+  eventLogger[severity]({ ...extractBase(ctx), ...(meta ?? {}), msg });
+};
+
+export const logError = (ctx: LogContext, msg: string, error: Error | unknown, meta?: object): void => {
+  const base = extractBase(ctx);
+
   // If not an instance of Error, log as unknown
   if (!(error instanceof Error)) {
     if (!isProduction) eventLogger.error(error);
-    else eventLogger.error({ ...(meta ?? {}), msg, error });
+    else eventLogger.error({ ...base, ...(meta ?? {}), msg, error });
     return;
   }
 
@@ -34,7 +52,7 @@ export const logError = (msg: string, error: Error | unknown, meta?: object): vo
   };
 
   if (!isProduction) eventLogger.error(error);
-  else eventLogger.error({ ...(meta ?? {}), errorDetails, msg });
+  else eventLogger.error({ ...base, ...(meta ?? {}), errorDetails, msg });
 };
 
 export const getNodeLoggerLevel = (severity: Severity): 'error' | 'warn' | 'info' | 'debug' => {

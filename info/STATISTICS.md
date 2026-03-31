@@ -17,5 +17,5 @@ Check the full guide before starting: [One Dollar Stats Docs](https://docs.onedo
 
 - The tracking script is already set up for automatic data collection.
 - To track locally or in a development environment:
-  1. Set `appConfig.debug: true`.
+  1. Ensure `trackLocalhostAs` is set to your domain in `root.tsx`.
   2. Make sure `appConfig.domain` matches the domain you registered in One Dollar Stats.

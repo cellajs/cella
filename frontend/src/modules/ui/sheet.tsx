@@ -60,7 +60,7 @@ export function SheetContent({
       initialFocus={initialFocus}
       finalFocus={finalFocus}
       className={cn(
-        'bg-background flex flex-col shadow-lg',
+        'focus-visible:outline-none bg-background flex flex-col shadow-lg',
         // Only apply animations and fixed positioning when not in container
         !container &&
           'data-[open]:animate-in data-[closed]:animate-out fixed z-114 transition data-[closed]:duration-300 data-[open]:duration-300',

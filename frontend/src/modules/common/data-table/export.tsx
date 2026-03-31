@@ -7,8 +7,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { uiStore } from '~/modules/ui/ui-store';
 import router from '~/routes/router';
-import { uiStore } from '~/store/ui';
 
 interface Props<TData> {
   filename: string;
@@ -27,7 +27,7 @@ export const Export = <R extends Record<string, any>>({
   className = '',
 }: Props<R>) => {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
   const mode = uiStore.getState().mode;
 
   const exportDefault = async (type: 'csv' | 'pdf') => {

@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { getMembers } from '~/api.gen';
+import { getMembers } from 'sdk';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -78,7 +78,7 @@ export const MembersTableBar = ({
     createDialog(
       <DeleteMemberships
         tenantId={contextEntity.tenantId}
-        orgId={contextEntity.organizationId || contextEntity.id}
+        organizationId={contextEntity.organizationId || contextEntity.id}
         entityId={contextEntity.id}
         entityType={contextEntity.entityType}
         dialog
@@ -131,7 +131,7 @@ export const MembersTableBar = ({
         entityId: contextEntity.id,
         entityType: contextEntity.entityType,
       },
-      path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+      path: { tenantId: contextEntity.tenantId, organizationId: contextEntity.organizationId || contextEntity.id },
     });
     return items;
   };

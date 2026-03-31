@@ -1,66 +1,28 @@
-# CDC (Change Data Capture) Workspace
+# CDC (Change Data Capture)
 
-This workspace provides automatic activity logging via PostgreSQL logical replication. It subscribes to database changes and creates activity records without modifying application code.
+Automatic activity logging via PostgreSQL logical replication. Subscribes to WAL changes (INSERT/UPDATE/DELETE) via the `pgoutput` plugin, transforms them into activity records, and writes them to the `activities` table. Runs as part of `pnpm dev` or standalone with `pnpm --filter cdc dev`.
 
-## How It Works
+## Internal service only
 
-1. PostgreSQL streams WAL (Write-Ahead Log) changes via logical replication
-2. The CDC worker subscribes to these changes using the `pgoutput` plugin
-3. INSERT/UPDATE/DELETE operations are transformed into activity records
-4. Activities are written to the `activities` table
+The CDC worker is a **server-to-server** component co-located with the API server (same host/pod/network). The WebSocket channel carries full entity row data for the real-time sync pipeline. Never expose `/internal/cdc` to external networks or browser clients.
 
-## Prerequisites: WAL Configuration
+Security layers: path isolation (`/internal/cdc` only), shared secret (`CDC_SECRET`, min 16 chars), loopback enforcement in production (127.0.0.1/::1), single-connection limit, 90s idle timeout.
 
-CDC requires `wal_level=logical` on your PostgreSQL instance. This must be configured manually.
+## WAL configuration
 
-### Local development (Docker Compose)
-
-Already configured in `compose.yaml`:
-
-```yaml
-command:
-  - -c
-  - wal_level=logical
-  - -c
-  - max_wal_senders=10
-  - -c
-  - max_replication_slots=10
-```
-
-### Production
+Requires `wal_level=logical`. Already set in `compose.yaml` for local dev. For production:
 
 ```sql
 ALTER SYSTEM SET wal_level = 'logical';
 ALTER SYSTEM SET max_wal_senders = 10;
 ALTER SYSTEM SET max_replication_slots = 10;
-SELECT pg_reload_conf();
-
--- To prevent unbounded WAL growth:
 ALTER SYSTEM SET max_slot_wal_keep_size = '10GB';
 SELECT pg_reload_conf();
 ```
 
-### CI
+For CI, run equivalent `ALTER SYSTEM` commands before migrations.
 
-Add to your CI workflow before running migrations:
+## Related docs
 
-```yaml
-- name: Configure Postgres for logical replication
-  run: |
-    PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET wal_level = 'logical';"
-    PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET max_wal_senders = 10;"
-    PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "ALTER SYSTEM SET max_replication_slots = 10;"
-    PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "SELECT pg_reload_conf();"
-```
-
-## Usage
-
-The CDC worker runs automatically as part of `pnpm dev` (alongside backend and frontend).
-
-```bash
-# Run everything together
-pnpm dev
-
-# Or run CDC worker standalone
-pnpm --filter @cella/cdc dev
-```
+- [Architecture overview](../info/ARCHITECTURE.md)
+- [Sync engine](../info/SYNC_ENGINE.md)

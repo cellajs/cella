@@ -1,12 +1,22 @@
 import { z } from '@hono/zod-openapi';
+import { type ContextEntityType, hierarchy, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { fullCountsSchema } from '#/schemas/count-schemas';
+import { membershipCountSchema } from '#/schemas/count-schemas';
 
 /**
- * Schema for optional included data on context entities (requested via include query param).
- * Provides a consistent shape for all context entity API responses.
+ * Factory for context entity included schemas.
+ * Builds a strictly-typed included schema scoped to the entity's hierarchy children.
  */
-export const contextEntityIncludedSchema = z.object({
-  membership: membershipBaseSchema.optional(),
-  counts: fullCountsSchema.optional(),
-});
+export const contextEntityIncludedSchema = (entityType: ContextEntityType) => {
+  const entityCountSchema = z.object(recordFromKeys(hierarchy.getChildren(entityType), () => z.number()));
+
+  const countsSchema = z.object({
+    membership: membershipCountSchema,
+    entities: entityCountSchema,
+  });
+
+  return z.object({
+    membership: membershipBaseSchema.optional(),
+    counts: countsSchema.optional(),
+  });
+};

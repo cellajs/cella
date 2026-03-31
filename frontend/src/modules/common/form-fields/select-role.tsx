@@ -16,7 +16,7 @@ interface SelectRoleProps {
  */
 export function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const roleOptions = entity ? roles.all : appConfig.systemRoles;
 

@@ -1,7 +1,5 @@
-import { sql } from 'drizzle-orm';
-import { boolean, index, json, pgPolicy, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, json, pgTable, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type Language } from 'shared';
-import { isAuthenticated, tenantMatch, userContextSet } from '#/db/rls-helpers';
 import type { AuthStrategy } from '#/db/schema/sessions';
 import { maxLength } from '#/db/utils/constraints';
 import { contextEntityColumns } from '#/db/utils/context-entity-columns';
@@ -35,60 +33,6 @@ export const organizationsTable = pgTable(
     index('organizations_tenant_id_index').on(table.tenantId),
     // Compound unique for composite FK targets (memberships, products reference this)
     unique('organizations_tenant_id_unique').on(table.tenantId, table.id),
-    // SELECT includes createdBy match for RETURNING after INSERT
-    pgPolicy('organizations_select_policy', {
-      for: 'select',
-      using: sql`
-        ${isAuthenticated}
-        AND ${userContextSet}
-        AND (
-          ${table.createdBy} = current_setting('app.user_id', true)::text
-          OR EXISTS (
-            SELECT 1 FROM memberships m
-            WHERE m.organization_id = ${table.id}
-            AND m.user_id = current_setting('app.user_id', true)::text
-            AND m.tenant_id = ${table.tenantId}
-          )
-          OR EXISTS (
-            SELECT 1 FROM inactive_memberships im
-            WHERE im.organization_id = ${table.id}
-            AND im.user_id = current_setting('app.user_id', true)::text
-            AND im.rejected_at IS NULL
-          )
-        )
-      `,
-    }),
-    pgPolicy('organizations_insert_policy', {
-      for: 'insert',
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
-    }),
-    pgPolicy('organizations_update_policy', {
-      for: 'update',
-      using: sql`
-        ${isAuthenticated}
-        AND ${userContextSet}
-        AND EXISTS (
-          SELECT 1 FROM memberships m
-          WHERE m.organization_id = ${table.id}
-          AND m.user_id = current_setting('app.user_id', true)::text
-          AND m.tenant_id = ${table.tenantId}
-        )
-      `,
-      withCheck: sql`${tenantMatch(table)} AND ${isAuthenticated}`,
-    }),
-    pgPolicy('organizations_delete_policy', {
-      for: 'delete',
-      using: sql`
-        ${isAuthenticated}
-        AND ${userContextSet}
-        AND EXISTS (
-          SELECT 1 FROM memberships m
-          WHERE m.organization_id = ${table.id}
-          AND m.user_id = current_setting('app.user_id', true)::text
-          AND m.tenant_id = ${table.tenantId}
-        )
-      `,
-    }),
   ],
 );
 

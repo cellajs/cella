@@ -59,13 +59,3 @@ docker buildx build --platform linux/amd64 -t rg.nl-ams.scw.cloud/devcella/cdc:l
 scw container container deploy <backend-id> region=nl-ams
 scw container container deploy <cdc-id> region=nl-ams
 ```
-
-## Full documentation
-
-See [info/SCALEWAY_DEPLOYMENT.md](../info/SCALEWAY_DEPLOYMENT.md) for:
-
-- Architecture diagram
-- Environment variable reference
-- Secret management practices
-- Gotchas (SSL, BYPASSRLS, migrations)
-- Troubleshooting

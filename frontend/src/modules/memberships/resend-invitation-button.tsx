@@ -7,7 +7,7 @@ import {
   type ResendInvitationWithTokenData,
   type ResendInvitationWithTokenResponse,
   resendInvitationWithToken,
-} from '~/api.gen';
+} from 'sdk';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';

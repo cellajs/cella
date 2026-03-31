@@ -1,9 +1,9 @@
+import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { getMyMemberships } from '~/api.gen';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { meKeys } from '~/modules/me/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 import { buildMenuFromCache } from './build-menu-from-cache';
 
 /**

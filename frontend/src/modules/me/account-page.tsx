@@ -1,16 +1,9 @@
-import * as Sentry from '@sentry/react';
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword, User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
-import {
-  type ApiError,
-  type RequestPasswordData,
-  type RequestPasswordResponse,
-  requestPassword,
-  User,
-} from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { CallbackArgs } from '~/modules/common/data-table/types';
@@ -30,9 +23,9 @@ import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -111,7 +104,7 @@ function UserAccountPage() {
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
     } catch (error) {
-      Sentry.captureException(error);
+      console.error('Failed to build OAuth URL:', error);
       toaster(t('common:url_malformed'), 'error');
       setLoadingProvider(null);
     }

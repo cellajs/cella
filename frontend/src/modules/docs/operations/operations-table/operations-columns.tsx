@@ -106,13 +106,12 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         .replace(/-/g, ' ')
         .replace(/^\w/, (c) => c.toUpperCase()),
       minBreakpoint: 'md',
-      sortable: false,
       resizable: true,
       width: 150,
       renderCell: ({ row }: { row: GenOperationSummary }) => {
         const values = row.extensions[ext.id];
         return values?.length ? (
-          <div className="font-mono text-[11px] flex flex-wrap gap-1 truncate">
+          <div className="font-mono text-xs flex flex-wrap gap-1 truncate">
             {values.map((value: string) => {
               const meta = ext.values?.[value];
               const label = meta?.name ?? value;
@@ -144,7 +143,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         key: 'method',
         name: t('common:method'),
         sortable: true,
-        resizable: false,
         width: 80,
         renderCell: ({ row }) => (
           <Badge
@@ -166,8 +164,6 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       {
         key: 'hasExample',
         name: '',
-        resizable: false,
-        sortable: false,
         width: 50,
         renderCell: ({ row }) => <ExampleCell row={row} />,
       },
@@ -175,11 +171,10 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         key: 'id',
         name: t('common:docs.operation_id'),
         sortable: true,
+        minBreakpoint: 'md',
         resizable: true,
         width: 200,
-        renderCell: ({ row }) => (
-          <code className="font-mono text-[11px] text-muted-foreground/80 truncate">{row.id}</code>
-        ),
+        renderCell: ({ row }) => <code className="font-mono text-xs text-muted-foreground/80 truncate">{row.id}</code>,
       },
       {
         key: 'summary',

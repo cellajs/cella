@@ -1,4 +1,6 @@
+import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy, type ProductEntityType } from 'shared';
+import { queryClient } from '~/query/query-client';
 import router from '~/routes/router';
 
 type SyncPriority = 'high' | 'medium' | 'low';
@@ -29,6 +31,14 @@ export function getRouteTenantId(): string | null {
     }
   }
   return null;
+}
+
+/** Resolve tenantId for an organizationId from the cached memberships list. */
+export function getTenantIdForOrg(organizationId: string): string | null {
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
+  if (!data?.items) return null;
+  const membership = data.items.find((m) => m.organizationId === organizationId);
+  return membership?.tenantId ?? null;
 }
 
 /**

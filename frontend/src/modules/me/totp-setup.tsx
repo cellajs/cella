@@ -10,7 +10,7 @@ import {
   createTotp,
   generateTotpKey,
   type MeAuthData,
-} from '~/api.gen';
+} from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

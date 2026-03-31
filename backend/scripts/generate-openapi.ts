@@ -103,10 +103,10 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   try {
     const [{ default: app }, { default: docs }] = await Promise.all([
       import('#/routes'),
-      import('#/docs/docs'),
+      import('#/docs/init-docs'),
     ]);
 
-    await docs(app, true);
+    await docs(app);
 
     // Update manifest after successful generation
     if (hash) saveManifest(hash);

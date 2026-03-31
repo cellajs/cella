@@ -65,6 +65,11 @@ variable "cdc_image_tag" {
   type        = string
 }
 
+variable "yjs_image_tag" {
+  description = "Docker image tag for Yjs relay container (git SHA)"
+  type        = string
+}
+
 variable "backend_min_scale" {
   description = "Minimum number of backend container instances"
   type        = number
@@ -89,6 +94,12 @@ variable "cdc_memory" {
   default     = 256
 }
 
+variable "yjs_memory" {
+  description = "Memory allocation for Yjs relay container (MB)"
+  type        = number
+  default     = 256
+}
+
 # -----------------------------------------------------------------------------
 # Secrets (sensitive - pass via CI/CD or tfvars)
 # -----------------------------------------------------------------------------
@@ -105,21 +116,37 @@ variable "cookie_secret" {
   sensitive   = true
 }
 
-variable "unsubscribe_token_secret" {
+variable "unsubscribe_secret" {
   description = "Secret for email unsubscribe tokens"
   type        = string
   sensitive   = true
 }
 
-variable "cdc_ws_secret" {
-  description = "Secret for CDC WebSocket authentication (min 16 chars)"
+variable "cdc_secret" {
+  description = "Secret for CDC authentication (min 16 chars)"
   type        = string
   sensitive   = true
 
   validation {
-    condition     = length(var.cdc_ws_secret) >= 16
-    error_message = "CDC WebSocket secret must be at least 16 characters"
+    condition     = length(var.cdc_secret) >= 16
+    error_message = "CDC secret must be at least 16 characters"
   }
+}
+
+variable "yjs_secret" {
+  description = "Secret for Yjs WebSocket authentication (min 16 chars)"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.yjs_secret) >= 16
+    error_message = "Yjs secret must be at least 16 characters"
+  }
+}
+
+variable "yjs_domain" {
+  description = "Domain for the Yjs relay (e.g., yjs.cellajs.com)"
+  type        = string
 }
 
 # -----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
+import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from '~/api.gen';
 import { baseInfiniteQueryOptions } from '~/query/basic';
 
 type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
@@ -12,7 +12,7 @@ const keys = {
   list: {
     base: ['member', 'list'],
     members: (filters: GetMembersParams) => [...keys.list.base, filters],
-    similarMembers: (filters: Pick<GetMembersParams, 'tenantId' | 'orgId' | 'entityId' | 'entityType'>) => [
+    similarMembers: (filters: Pick<GetMembersParams, 'tenantId' | 'organizationId' | 'entityId' | 'entityType'>) => [
       ...keys.list.base,
       filters,
     ],
@@ -37,7 +37,7 @@ export const memberQueryKeys = keys;
  * @param param.entityId - ID or slug of entity.
  * @param param.entityType - Type of entity.
  * @param param.tenantId - Tenant ID.
- * @param param.orgId - ID or slug of organization.
+ * @param param.organizationId - ID or slug of organization.
  * @param param.q - Optional search query to filter members by (default is an empty string).
  * @param param.role - Role of the members to filter by.
  * @param param.sort - Field to sort by (default is 'createdAt').
@@ -48,7 +48,7 @@ export const memberQueryKeys = keys;
 export const membersListQueryOptions = ({
   entityId,
   tenantId,
-  orgId,
+  organizationId,
   entityType,
   q = '',
   sort = 'createdAt',
@@ -59,7 +59,7 @@ export const membersListQueryOptions = ({
 }: GetMembersParams & { limit?: number }) => {
   const limit = String(baseLimit);
 
-  const queryKey = keys.list.members({ entityId, entityType, tenantId, orgId, q, sort, order, role, userIds });
+  const queryKey = keys.list.members({ entityId, entityType, tenantId, organizationId, q, sort, order, role, userIds });
 
   return infiniteQueryOptions({
     queryKey,
@@ -68,7 +68,7 @@ export const membersListQueryOptions = ({
 
       return await getMembers({
         query: { q, sort, order, role, userIds, limit, entityId, entityType, offset },
-        path: { tenantId, orgId },
+        path: { tenantId, organizationId },
         signal,
       });
     },
@@ -85,7 +85,7 @@ export const membersListQueryOptions = ({
  * @param param.entityId - ID or slug of entity.
  * @param param.entityType - Type of entity.
  * @param param.tenantId - Tenant ID.
- * @param param.orgId - ID or slug of organization.
+ * @param param.organizationId - ID or slug of organization.
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
@@ -95,7 +95,7 @@ export const membersListQueryOptions = ({
 export const pendingMembershipsQueryOptions = ({
   entityId,
   tenantId,
-  orgId,
+  organizationId,
   entityType,
   q = '',
   sort = 'createdAt',
@@ -103,7 +103,7 @@ export const pendingMembershipsQueryOptions = ({
   limit: baseLimit = appConfig.requestLimits.pendingMemberships,
 }: GetPendingMembershipsParams & { limit?: number }) => {
   const limit = String(baseLimit);
-  const queryKey = keys.list.pending({ entityId, entityType, tenantId, orgId, q, sort, order });
+  const queryKey = keys.list.pending({ entityId, entityType, tenantId, organizationId, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
@@ -112,7 +112,7 @@ export const pendingMembershipsQueryOptions = ({
 
       return await getPendingMemberships({
         query: { q, sort, order, limit, entityId, entityType, offset },
-        path: { tenantId, orgId },
+        path: { tenantId, organizationId },
         signal,
       });
     },

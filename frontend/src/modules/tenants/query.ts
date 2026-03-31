@@ -1,6 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { appConfig } from 'shared';
-import type { Domain, Tenant, VerifyDomainResponse } from '~/api.gen';
+import type { CreateDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
 import {
   type CreateDomainData,
   type CreateTenantData,
@@ -16,7 +15,8 @@ import {
   updateTenant,
   type VerifyDomainData,
   verifyDomain,
-} from '~/api.gen';
+} from 'sdk';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { baseInfiniteQueryOptions } from '~/query/basic';
 import type { MutationData } from '~/query/types';
@@ -130,7 +130,7 @@ export const domainDetailQueryOptions = (tenantId: string, id: string) =>
 export const useDomainCreateMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Domain, ApiError, MutationData<CreateDomainData>>({
+  return useMutation<CreateDomainResponse, ApiError, MutationData<CreateDomainData>>({
     mutationFn: ({ path, body }) => createDomain({ path, body }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
@@ -145,7 +145,7 @@ export const useDomainCreateMutation = () => {
 export const useDomainDeleteMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Domain, ApiError, MutationData<DeleteDomainData>>({
+  return useMutation<CreateDomainResponse, ApiError, MutationData<DeleteDomainData>>({
     mutationFn: ({ path }) => deleteDomain({ path }),
     onSuccess: (_, { path }) => {
       queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });

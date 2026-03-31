@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailButton, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import { greetingStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
@@ -18,19 +18,19 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
     <EmailContainer previewText={i18n.t('backend:email.create_password.preview', { appName, lng })}>
       <EmailHeader headerText={i18n.t('backend:email.create_password.preview', { appName, lng })} />
       <EmailBody>
-        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
-        <Text>
+        {name && <EmailText style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</EmailText>}
+        <EmailText>
           <span dangerouslySetInnerHTML={{ __html: i18n.t('backend:email.create_password.text', { appName, lng }) }} />{' '}
           {i18n.t('backend:email.create_password.ignore', { lng })}{' '}
           {i18n.t('backend:email.create_password.expire', { lng })}
-        </Text>
+        </EmailText>
         <EmailButton
           ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })}
           href={createPasswordLink}
         />
       </EmailBody>
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

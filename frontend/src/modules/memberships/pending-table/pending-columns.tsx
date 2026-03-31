@@ -12,7 +12,7 @@ export const useColumns = () => {
     {
       key: 'email',
       name: t('common:email'),
-      sortable: false,
+
       minWidth: 140,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) => {
@@ -31,7 +31,7 @@ export const useColumns = () => {
     {
       key: 'role',
       name: t('common:role'),
-      sortable: false,
+
       width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) =>
@@ -53,7 +53,7 @@ export const useColumns = () => {
     {
       key: 'createdBy',
       name: t('common:invited_by'),
-      sortable: false,
+
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',

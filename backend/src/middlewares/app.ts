@@ -8,8 +8,6 @@ import { appConfig } from 'shared';
 import type { Env } from '#/lib/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { loggerMiddleware } from '#/middlewares/logger';
-import { monitoringMiddleware } from '#/middlewares/monitoring/monitoring-middleware';
-import { observabilityMiddleware } from '#/middlewares/observability/observability-middleware';
 
 const app = new OpenAPIHono<Env>();
 
@@ -25,12 +23,6 @@ app.use(
   }),
 );
 
-// Get metrics and trace (prom-client)
-app.use('*', observabilityMiddleware);
-
-// Error and perf monitoring (Sentry)
-app.use('*', monitoringMiddleware);
-
 // Logger (pino)
 app.use('*', loggerMiddleware);
 
@@ -38,7 +30,8 @@ const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  allowHeaders: [],
+  allowHeaders: ['content-type', 'x-cache-token', 'traceparent', 'tracestate'],
+  maxAge: 7200,
 };
 
 // CORS

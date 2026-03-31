@@ -43,6 +43,16 @@ output "cdc_image" {
   value       = "${module.registry.endpoint}/cdc:${var.cdc_image_tag}"
 }
 
+output "yjs_image" {
+  description = "Full Yjs relay image path"
+  value       = "${module.registry.endpoint}/yjs:${var.yjs_image_tag}"
+}
+
+output "yjs_url" {
+  description = "Yjs relay URL"
+  value       = "wss://${var.yjs_domain}"
+}
+
 # -----------------------------------------------------------------------------
 # Database
 # -----------------------------------------------------------------------------

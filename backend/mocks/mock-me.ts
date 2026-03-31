@@ -3,7 +3,7 @@ import type { MeAuthDataResponse, MeResponse, UploadTokenResponse } from '#/modu
 import { mockContextEntityBase } from './mock-entity-base';
 import { mockInactiveMembershipResponse } from './mock-membership';
 import { mockUserResponse } from './mock-user';
-import { mockNanoid, mockPaginated, withFakerSeed } from './utils';
+import { MOCK_REF_DATE, mockNanoid, mockPaginated, withFakerSeed } from './utils';
 
 /**
  * Generates a mock Me response (current user with system role).
@@ -21,8 +21,7 @@ export const mockMeResponse = (key = 'me:default'): MeResponse =>
  */
 export const mockMeAuthDataResponse = (key = 'me-auth:default'): MeAuthDataResponse =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
-    const sessionCreatedAt = faker.date.past({ refDate });
+    const sessionCreatedAt = faker.date.past({ refDate: MOCK_REF_DATE });
     const sessionExpiresAt = new Date(sessionCreatedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later
 
     return {
@@ -54,8 +53,7 @@ export const mockMeAuthDataResponse = (key = 'me-auth:default'): MeAuthDataRespo
  */
 export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTokenResponse =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
-    const expiresAt = faker.date.soon({ days: 1, refDate });
+    const expiresAt = faker.date.soon({ days: 1, refDate: MOCK_REF_DATE });
 
     return {
       public: false,
@@ -96,7 +94,7 @@ export const mockStreamResponse = (key = 'stream:default') =>
     return {
       changes: {
         'org-example-id': {
-          deletedIds: [],
+          deletedByType: {},
         },
       },
       cursor,

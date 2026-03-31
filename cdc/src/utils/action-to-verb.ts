@@ -1,11 +1,13 @@
-import type { ActivityAction } from '#/sync/activity-actions';
+import type { ActivityAction } from 'shared';
+
+export type ActivityVerb = 'created' | 'updated' | 'deleted';
 
 /**
  * Convert an action to past tense verb for the activity type.
  * E.g., 'create' -> 'created', 'update' -> 'updated'
  */
-export const actionToVerb = (action: ActivityAction): string => {
-  const verbMap: Record<ActivityAction, string> = {
+export const actionToVerb = (action: ActivityAction): ActivityVerb => {
+  const verbMap: Record<ActivityAction, ActivityVerb> = {
     create: 'created',
     update: 'updated',
     delete: 'deleted',

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export interface AboutCard {
   name: string;

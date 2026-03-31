@@ -1,14 +1,14 @@
-import type { GroupedColumnHeaderRowProps } from './grouped-column-header-row';
 import { useRovingTabIndex } from './hooks';
 import { cellClassname } from './style/cell';
-import type { CalculatedColumnParent } from './types';
+import type { CalculatedColumnParent, Position } from './types';
 import { cn, getHeaderCellRowSpan, getHeaderCellStyle } from './utils/grid-utils';
 
-type SharedGroupedColumnHeaderRowProps<R, SR> = Pick<GroupedColumnHeaderRowProps<R, SR>, 'rowIdx' | 'selectCell'>;
-
-interface GroupedColumnHeaderCellProps<R, SR> extends SharedGroupedColumnHeaderRowProps<R, SR> {
+interface GroupedColumnHeaderCellProps<R, SR> {
+  rowIdx: number;
+  selectCell: (position: Position) => void;
   column: CalculatedColumnParent<R, SR>;
   isCellSelected: boolean;
+  scrollTop?: number;
 }
 
 export function GroupedColumnHeaderCell<R, SR>({
@@ -16,6 +16,7 @@ export function GroupedColumnHeaderCell<R, SR>({
   rowIdx,
   isCellSelected,
   selectCell,
+  scrollTop,
 }: GroupedColumnHeaderCellProps<R, SR>) {
   const { tabIndex, onFocus } = useRovingTabIndex(isCellSelected);
   const { colSpan } = column;
@@ -36,7 +37,7 @@ export function GroupedColumnHeaderCell<R, SR>({
       tabIndex={tabIndex}
       className={cn(cellClassname, column.headerCellClass)}
       style={{
-        ...getHeaderCellStyle(column, rowIdx, rowSpan),
+        ...getHeaderCellStyle(column, rowIdx, rowSpan, scrollTop),
         gridColumnStart: index,
         gridColumnEnd: index + colSpan,
       }}

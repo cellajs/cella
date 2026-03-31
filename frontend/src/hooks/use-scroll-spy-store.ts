@@ -1,6 +1,10 @@
 /**
  * Scroll spy store - tracks section visibility and updates URL hash.
  * DOM elements use 'spy-' prefix (e.g., id="spy-intro") to prevent browser auto-scroll.
+ *
+ * During scroll, visual updates are applied directly to the DOM via data-spy-active
+ * attributes on elements with data-spy-link. React subscribers are notified only after
+ * scrolling settles (150ms idle) or on explicit actions (clicks, initial hash).
  */
 
 const SPY_PREFIX = 'spy-';
@@ -9,14 +13,30 @@ const SPY_PREFIX = 'spy-';
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
 let currentSection = '';
-let hashWriteBlockedUntil = 0; // Timestamp until which hash writes are blocked
+let hashWriteBlockedUntil = 0;
 let initTime = 0;
-let pendingScrollTarget: string | null = null; // Queued scroll target awaiting DOM element
+let pendingScrollTarget: string | null = null;
+let scrollSettleTimer = 0;
 
 // Subscribers for useSyncExternalStore
 const listeners = new Set<() => void>();
 const notify = () => {
   for (const fn of listeners) fn();
+};
+
+/**
+ * Toggle data-spy-active on DOM elements with matching data-spy-link.
+ * Called from IO callback — bypasses React for jank-free scroll updates.
+ */
+const syncActiveDOM = () => {
+  for (const el of document.querySelectorAll('[data-spy-active]')) {
+    delete (el as HTMLElement).dataset.spyActive;
+  }
+  if (currentSection) {
+    for (const el of document.querySelectorAll(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
+      (el as HTMLElement).dataset.spyActive = '';
+    }
+  }
 };
 
 /** Subscribe to currentSection changes (useSyncExternalStore contract). */
@@ -81,12 +101,16 @@ const rebuild = () => {
       const best = getBestSection();
       if (best && best !== currentSection) {
         currentSection = best;
-        notify();
+        syncActiveDOM();
 
         // Write hash (skip during initial load delay)
         if (canWriteHash() && location.hash !== `#${best}`) {
           history.replaceState(null, '', `#${best}`);
         }
+
+        // Notify React subscribers after scroll settles (no re-render during active scroll)
+        clearTimeout(scrollSettleTimer);
+        scrollSettleTimer = window.setTimeout(notify, 150);
       }
     },
     { threshold: [0, 0.25, 0.5, 0.75, 1] },
@@ -122,11 +146,20 @@ export const registerSections = (ids: string[]) => {
   const hash = location.hash.slice(1);
   if (hash && sections.has(hash) && !currentSection) {
     currentSection = hash;
+    syncActiveDOM();
     notify();
     blockHashWrites(1000); // Block writes during initial scroll
     requestAnimationFrame(() => {
       document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
+    return;
+  }
+
+  // Default to first section if nothing active yet
+  if (!currentSection && ids.length) {
+    currentSection = ids[0];
+    syncActiveDOM();
+    notify();
   }
 };
 
@@ -139,6 +172,7 @@ export const unregisterSections = (ids: string[]) => {
     observer = null;
     if (currentSection !== '') {
       currentSection = '';
+      syncActiveDOM();
       notify();
     }
     initTime = 0;
@@ -155,6 +189,7 @@ const performScroll = (el: HTMLElement, id: string) => {
   blockHashWrites(smooth ? 3000 : 500);
   if (currentSection !== id) {
     currentSection = id;
+    syncActiveDOM();
     notify();
   }
 

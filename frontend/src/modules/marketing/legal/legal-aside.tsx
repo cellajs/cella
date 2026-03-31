@@ -9,7 +9,7 @@ import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
 import type { LegalSection } from '~/modules/marketing/legal/legal-types';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
@@ -83,7 +83,7 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                     resetScroll={true}
                     draggable="false"
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'default' }),
+                      buttonVariants({ variant: 'ghost' }),
                       'w-full text-left pl-5 h-8 font-normal group opacity-80',
                       'group-data-[expanded=true]/subject:opacity-100 group-data-[active=true]/subject:bg-accent',
                     )}
@@ -94,7 +94,7 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                 <span className="truncate">{t(label)}</span>
                 <ChevronDownIcon className="size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>
-              <CollapsibleContent keepMounted className="overflow-hidden data-[closed]:hidden">
+              <CollapsibleContent keepMounted className="overflow-hidden data-closed:hidden">
                 <div className="relative flex flex-col py-1 px-0">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
                     const isSectionActive = isActive && currentSection === sectionId;
@@ -107,24 +107,29 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                             className="w-[0.20rem] bg-primary rounded-full absolute left-2 ml-px top-2 bottom-2"
                           />
                         )}
-                        <Link
-                          to="."
-                          hash={sectionId}
-                          replace
-                          draggable="false"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className={cn(
-                            buttonVariants({ variant: 'ghost', size: 'sm' }),
                             'hover:bg-accent/50 w-full justify-start text-left group font-normal opacity-75 text-sm h-8 gap-2 pl-5',
                             'group-data-[active=true]/section:opacity-100',
                           )}
-                          onClick={(e) => {
-                            if (e.metaKey || e.ctrlKey) return;
-                            e.preventDefault();
-                            scrollToSectionById(sectionId);
-                          }}
+                          render={
+                            <Link
+                              to="."
+                              hash={sectionId}
+                              replace
+                              draggable="false"
+                              onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey) return;
+                                e.preventDefault();
+                                scrollToSectionById(sectionId);
+                              }}
+                            />
+                          }
                         >
-                          <span className="truncate text-[13px]">{sectionLabel}</span>
-                        </Link>
+                          <span className="truncate text-sm">{sectionLabel}</span>
+                        </Button>
                       </div>
                     );
                   })}

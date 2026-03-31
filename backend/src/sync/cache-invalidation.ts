@@ -1,9 +1,10 @@
 /**
- * CDC cache hook for entity cache.
- * Listens to ActivityBus events and manages cache entries.
+ * CDC cache hook for entity cache deletion.
+ * Listens to ActivityBus events and invalidates cache on delete.
  *
- * - On create/update: reserves cache slot with token from CDC (private entities only)
- * - On delete: invalidates cache entry by entity type/id (private entities only)
+ * Create/update reservations are handled exclusively by cdc-websocket.ts
+ * (which calls entityCache.reserve() before emitting to ActivityBus).
+ * This hook only handles deletions.
  *
  * Public entities (with parent: null) are excluded - they use their own LRU cache
  * managed in entities-handlers.ts via publicEntityCache.
@@ -11,7 +12,7 @@
  * Import this module during server startup to enable automatic cache management.
  */
 
-import { isProductEntity, isPublicProductEntity } from 'shared';
+import { isProductEntity, isPublicStreamEntity } from 'shared';
 import { entityCache } from '#/middlewares/entity-cache';
 import { type ActivityEventWithEntity, activityBus } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
@@ -20,44 +21,30 @@ let isRegistered = false;
 
 /**
  * Handle activity event for cache management.
- * Only processes private product entities (those with a parent context).
+ * Only handles delete events for private product entities.
+ * Create/update reservations are done in cdc-websocket.ts.
  */
 function handleActivityEvent(event: ActivityEventWithEntity): void {
-  const { action, entityType, entityId, cacheToken } = event;
+  const { action, entityType, entityId } = event;
 
-  // Only handle product entities with valid entityType and entityId
-  if (!entityType || !entityId || !isProductEntity(entityType)) {
+  // Only handle delete for product entities with valid entityType and entityId
+  if (action !== 'delete' || !entityType || !entityId || !isProductEntity(entityType)) {
     return;
   }
 
   // Skip public entities - they use their own cache (publicEntityCache)
-  if (isPublicProductEntity(entityType)) {
+  if (isPublicStreamEntity(entityType)) {
     return;
   }
 
-  if (action === 'create' || action === 'update') {
-    // Reserve cache slot with token from CDC
-    if (cacheToken) {
-      entityCache.reserve(cacheToken, entityType, entityId);
+  const invalidated = entityCache.invalidateByEntity(entityType, entityId);
 
-      logEvent('debug', 'Entity cache slot reserved', {
-        entityType,
-        entityId,
-        action,
-        token: cacheToken.slice(0, 8),
-      });
-    }
-  } else if (action === 'delete') {
-    // Invalidate cache on delete
-    const invalidated = entityCache.invalidateByEntity(entityType, entityId);
-
-    if (invalidated) {
-      logEvent('debug', 'Entity cache invalidated', {
-        entityType,
-        entityId,
-        action,
-      });
-    }
+  if (invalidated) {
+    logEvent(null, 'debug', 'Entity cache invalidated', {
+      entityType,
+      entityId,
+      action,
+    });
   }
 }
 
@@ -75,14 +62,14 @@ function handleActivityEvent(event: ActivityEventWithEntity): void {
  */
 export function registerCacheInvalidation(): void {
   if (isRegistered) {
-    logEvent('warn', 'Cache hook already registered');
+    logEvent(null, 'warn', 'Cache hook already registered');
     return;
   }
 
   activityBus.onAny(handleActivityEvent);
   isRegistered = true;
 
-  logEvent('info', 'Entity cache hook registered');
+  logEvent(null, 'info', 'Entity cache hook registered');
 }
 
 /**
@@ -95,5 +82,5 @@ export function unregisterCacheInvalidation(): void {
   activityBus.offAny(handleActivityEvent);
   isRegistered = false;
 
-  logEvent('info', 'Entity cache hook unregistered');
+  logEvent(null, 'info', 'Entity cache hook unregistered');
 }

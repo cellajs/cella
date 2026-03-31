@@ -4,7 +4,7 @@ import { useRovingTabIndex } from './hooks';
 import type { CellMouseEventHandler, CellRendererProps } from './types';
 import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
-const cellInRangeClassname = 'bg-primary/10';
+const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10';
 const cellRangeTopClassname = 'rdg-cell-range-top';
 const cellRangeBottomClassname = 'rdg-cell-range-bottom';
 const cellRangeLeftClassname = 'rdg-cell-range-left';

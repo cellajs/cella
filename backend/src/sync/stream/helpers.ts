@@ -12,6 +12,17 @@ export async function writeChange(stream: SSEStreamingApi, id: string, data: unk
 }
 
 /**
+ * Write a change event with pre-serialized data (avoids redundant JSON.stringify).
+ */
+export async function writeChangeRaw(stream: SSEStreamingApi, id: string, serializedData: string): Promise<void> {
+  await stream.writeSSE({
+    event: 'change',
+    id,
+    data: serializedData,
+  });
+}
+
+/**
  * Write offset event (catch-up complete marker).
  */
 export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {

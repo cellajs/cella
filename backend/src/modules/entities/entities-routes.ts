@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, publicGuard } from '#/middlewares/guard';
+import { authGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import {
@@ -8,6 +8,7 @@ import {
   errorResponseRefs,
   publicCatchupResponseSchema,
   streamCatchupBodySchema,
+  tenantOnlyParamSchema,
 } from '#/schemas';
 import { mockStreamResponse } from '../../../mocks/mock-me';
 
@@ -18,14 +19,15 @@ const entityRoutes = {
   checkSlug: createXRoute({
     operationId: 'checkSlug',
     method: 'post',
-    path: '/check-slug',
-    xGuard: authGuard,
+    path: '/{tenantId}/check-slug',
+    xGuard: [authGuard, tenantGuard],
     xRateLimiter: singlePointsLimiter,
     tags: ['entities'],
     summary: 'Check slug availability',
-    description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
+    description: `Checks whether a given slug is available within a tenant for the specified entity type.
       Primarily used to prevent slug collisions before creating or updating an entity.`,
     request: {
+      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: checkSlugBodySchema } },

@@ -9,20 +9,19 @@ import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
 export function Root() {
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   // Lazy load
   const GleapSupport = useLazyComponent(
     () =>
-      appConfig.gleapToken && isOnline
+      appConfig.has.chatSupport && isOnline
         ? import('~/modules/common/gleap-support')
         : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
     5000,
   ); // 5 seconds delay
 
   useEffect(() => {
-    const trackLocalhostAs = appConfig.mode === 'development' && appConfig.debug ? appConfig.domain : null;
-    configure({ trackLocalhostAs });
+    configure({ trackLocalhostAs: null });
   }, []);
 
   return (

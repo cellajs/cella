@@ -46,11 +46,15 @@ export const DocsLayoutRoute = createRoute({
   notFoundComponent: () => <ErrorNotice boundary="public" error={new Error('Page not found')} homePath="/docs" />,
   loader: async () => {
     // Prefetch tags, schemas (used for error response deduplication), and pages
-    await Promise.all([
+    const [tags] = await Promise.all([
       queryClient.ensureQueryData(tagsQueryOptions),
       queryClient.ensureQueryData(schemasQueryOptions),
       queryClient.prefetchInfiniteQuery(pagesListQueryOptions({})),
     ]);
+    // Eagerly prefetch tag details so child routes don't waterfall (skip empty tags)
+    for (const tag of tags) {
+      if (tag.count > 0) queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
+    }
   },
   component: () => (
     <Suspense>
@@ -72,12 +76,7 @@ export const DocsOperationsRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Operations') }] }),
   getParentRoute: () => DocsLayoutRoute,
   loader: async () => {
-    // Prefetch operations and tags, then prefetch all tag details
-    const [, tags] = await Promise.all([
-      queryClient.ensureQueryData(operationsQueryOptions),
-      queryClient.ensureQueryData(tagsQueryOptions),
-    ]);
-    await Promise.all(tags.map((tag) => queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name))));
+    await queryClient.ensureQueryData(operationsQueryOptions);
   },
   component: () => (
     <Suspense>

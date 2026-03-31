@@ -1,7 +1,7 @@
 import './css-properties.d';
 import './style/data-grid.css';
 
-export * from './cellRenderers';
+export * from './cell-renderers';
 export * from './columns';
 export {
   DataGrid,

@@ -1,10 +1,8 @@
-import * as Sentry from '@sentry/react';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { appConfig } from 'shared';
+import { zApiError } from 'sdk/zod.gen';
 import { z } from 'zod';
-import { zApiError } from '~/api.gen/zod.gen';
 import { ApiError } from '~/lib/api';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
@@ -13,11 +11,10 @@ import { Spinner } from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
+import { useUserStore } from '~/modules/user/user-store';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
-import { cleanupOnBoundaryChange } from '~/routes/boundary-cleanup';
-import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
 const AppLayout = lazy(() => import('~/modules/common/app/app-layout'));
@@ -78,14 +75,6 @@ export const PublicLayoutRoute = createRoute({
   getParentRoute: () => RootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
-    if (cause === 'enter') {
-      // Clean up sheets/dialogs when entering public layout from different boundary
-      if (cleanupOnBoundaryChange('public')) {
-        // Disconnect app stream when navigating away from app boundary
-        appStreamManager.disconnect();
-      }
-    }
-
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
@@ -98,7 +87,7 @@ export const PublicLayoutRoute = createRoute({
       if (error instanceof ApiError && error.status === 401) return;
 
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        console.error(error);
         onError(error);
       }
     }
@@ -110,6 +99,7 @@ export const PublicLayoutRoute = createRoute({
  */
 export const AppLayoutRoute = createRoute({
   id: 'appLayout',
+  // isAuth is false here because RootRoute checks the leaf route's isAuth, not the layout's
   staticData: { isAuth: false, boundary: 'app' },
   getParentRoute: () => RootRoute,
   component: () => (
@@ -118,11 +108,6 @@ export const AppLayoutRoute = createRoute({
     </Suspense>
   ),
   beforeLoad: async ({ location, cause }) => {
-    if (cause === 'enter') {
-      // Clean up sheets/dialogs when entering app layout from different boundary
-      cleanupOnBoundaryChange('app');
-    }
-
     if (cause !== 'enter') return;
 
     try {
@@ -134,7 +119,11 @@ export const AppLayoutRoute = createRoute({
         console.info('Continuing user with session');
         // Start stream early so catchup runs in parallel with route loaders
         appStreamManager.connect();
-        return;
+        // Validate session in parallel — disconnect stream if stale
+        queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {
+          appStreamManager.disconnect();
+        });
+        return { user: storedUser };
       }
 
       // Fetch and set user
@@ -144,7 +133,7 @@ export const AppLayoutRoute = createRoute({
       return { user };
     } catch (error) {
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        console.error(error);
         onError(error);
       }
 
@@ -157,9 +146,6 @@ export const AppLayoutRoute = createRoute({
       const redirectPath = url.pathname + url.search;
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
     }
-
-    // If location is root and has user, redirect to home
-    if (location.pathname === '/') throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
 
   loader: async ({ cause, context }) => {
@@ -175,10 +161,10 @@ export const AppLayoutRoute = createRoute({
       queryClient.prefetchQuery(unseenCountsQueryOptions());
 
       // Get menu too but defer it so no need to hang while its being retrieved
-      return await defer(getMenuData());
+      return defer(getMenuData());
     } catch (error) {
       if (error instanceof Error) {
-        Sentry.captureException(error);
+        console.error(error);
         onError(error);
       }
     }

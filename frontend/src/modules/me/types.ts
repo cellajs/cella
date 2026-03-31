@@ -1,5 +1,5 @@
+import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, User } from 'sdk';
 import { appConfig } from 'shared';
-import type { GetMyInvitationsResponse, GetUploadTokenData, MeAuthData, User } from '~/api.gen';
 import type { EnrichedContextEntity, WithRequired } from '~/modules/entities/types';
 
 export type Session = MeAuthData['sessions'][number];

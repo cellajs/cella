@@ -1,7 +1,7 @@
 import { UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { UserBase } from 'sdk';
 import { appConfig, ContextEntityType } from 'shared';
-import type { UserBase } from '~/api.gen';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 
 import type { EnrichedContextEntity } from '~/modules/entities/types';

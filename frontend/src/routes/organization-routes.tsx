@@ -1,22 +1,22 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { createRoute, Outlet, redirect } from '@tanstack/react-router';
-import i18n from 'i18next';
+import { createRoute, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { getOrganization, type Organization } from '~/api.gen';
+import { getOrganization, type Organization } from 'sdk';
 import { attachmentsRouteSearchParamsSchema } from '~/modules/attachment/search-params-schemas';
 import { ErrorNotice } from '~/modules/common/error-notice';
+import { Spinner } from '~/modules/common/spinner';
 import { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import {
-  findOrganizationInListCache,
+  findOrganizationByIdOrSlug,
   organizationQueryKeys,
   organizationQueryOptions,
 } from '~/modules/organization/query';
-import { fetchSlugCacheId } from '~/query/fetch-slug-cache-id';
+import { fetchSlugCacheId } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { redirectOnMissing } from '~/utils/redirect-on-missing';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
 const OrganizationPage = lazy(() => import('~/modules/organization/organization-page'));
@@ -26,30 +26,30 @@ const OrganizationSettings = lazy(() => import('~/modules/organization/organizat
 
 /**
  * Layout route for tenant and organization-scoped pages.
- * Captures $tenantId and $orgSlug params, validates tenant access,
+ * Captures $tenantId and $organizationSlug params, validates tenant access,
  * fetches org, and provides context for all nested routes.
  * Forks can nest additional routes (workspace, project, etc.) under this layout.
  */
 export const OrganizationLayoutRoute = createRoute({
-  path: '/$tenantId/$orgSlug',
+  path: '/$tenantId/$organizationSlug',
   staticData: { isAuth: true },
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: async ({ params, cause }) => {
     // TODO not working Only revalidate on initial entry — search param changes are handled by child useSuspenseQuery
     const shouldRevalidate = cause === 'enter';
 
-    const { tenantId, orgSlug } = params;
+    const { tenantId, organizationSlug } = params;
     const isOnline = onlineManager.isOnline();
 
     // Resolve slug to ID via list cache (from menu), or fetch if not cached
-    const cached = findOrganizationInListCache(orgSlug);
-    const orgId = cached?.id;
+    const cached = findOrganizationByIdOrSlug(organizationSlug, tenantId);
+    const organizationId = cached?.id;
 
     // If we have the ID from cache, use ID-based query; otherwise fetch by slug first
     let organization: Organization | undefined;
 
-    if (orgId) {
-      const orgOptions = organizationQueryOptions(orgId, tenantId);
+    if (organizationId) {
+      const orgOptions = organizationQueryOptions(organizationId, tenantId);
 
       // Seed detail cache from list cache so ensureQueryData returns immediately
       // instead of blocking on a fetch. It will still revalidate in background if stale.
@@ -57,21 +57,20 @@ export const OrganizationLayoutRoute = createRoute({
         queryClient.setQueryData(orgOptions.queryKey, cached);
       }
 
-      organization = await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate });
+      organization =
+        queryClient.getQueryData(orgOptions.queryKey) ??
+        (await queryClient.ensureQueryData({ ...orgOptions, revalidateIfStale: shouldRevalidate }));
     } else if (isOnline) {
       organization = await fetchSlugCacheId(
-        () => getOrganization({ path: { tenantId, id: orgSlug }, query: { slug: true, include: 'counts' } }),
+        () => getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
         organizationQueryKeys.detail.byId,
       );
     }
 
-    if (!organization) {
-      if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');
-      throw redirect({ to: '/home', replace: true });
-    }
+    redirectOnMissing(organization);
 
     // Rewrite URL to use slug if user navigated with ID
-    rewriteUrlToSlug(params, { tenantId, orgSlug: organization.slug }, OrganizationLayoutRoute.to);
+    rewriteUrlToSlug(params, { tenantId, organizationSlug: organization.slug }, OrganizationLayoutRoute.to);
 
     return { organization, tenantId };
   },
@@ -94,7 +93,7 @@ export const OrganizationRoute = createRoute({
     const { organization, tenantId } = OrganizationRoute.useRouteContext();
     const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
     return (
-      <Suspense>
+      <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
         <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
       </Suspense>
     );
@@ -108,6 +107,7 @@ export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersRouteSearchParamsSchema,
   staticData: { isAuth: true, navTab: { id: 'members', label: 'common:members' } },
+  head: ({ match }) => ({ meta: [{ title: appTitle(`Members · ${match.context.organization?.name}`) }] }),
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { organization, tenantId } = OrganizationMembersRoute.useRouteContext();
@@ -127,6 +127,7 @@ export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsRouteSearchParamsSchema,
   staticData: { isAuth: true, navTab: { id: 'attachments', label: 'common:attachments' } },
+  head: ({ match }) => ({ meta: [{ title: appTitle(`Attachments · ${match.context.organization?.name}`) }] }),
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { organization, tenantId } = OrganizationAttachmentsRoute.useRouteContext();
@@ -145,6 +146,7 @@ export const OrganizationAttachmentsRoute = createRoute({
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { isAuth: true, navTab: { id: 'settings', label: 'common:settings' } },
+  head: ({ match }) => ({ meta: [{ title: appTitle(`Settings · ${match.context.organization?.name}`) }] }),
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { organization, tenantId } = OrganizationSettingsRoute.useRouteContext();

@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import { RequestResponseEmailProps } from './request-was-sent';
 
@@ -19,10 +19,10 @@ export const RequestInfoEmail = ({ lng, type, subject, message }: RequestRespons
           />
         }
       />
-      <EmailBody>{message && <Text>{message}</Text>}</EmailBody>
+      <EmailBody>{message && <EmailText>{message}</EmailText>}</EmailBody>
 
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

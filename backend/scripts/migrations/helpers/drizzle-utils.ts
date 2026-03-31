@@ -8,6 +8,11 @@
  *
  * Custom migrations are generated with 1-second delays between them to ensure
  * unique timestamps and correct ordering after Drizzle's schema migrations.
+ *
+ * When a scripted migration's SQL content changes, a new folder is created with
+ * a fresh timestamp while the old folder is preserved. This ensures production
+ * migrations already applied are never modified. This requires all scripted
+ * migrations to be idempotent (CREATE OR REPLACE, IF NOT EXISTS, etc.).
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -31,7 +36,8 @@ interface MigrationResult {
   folderName: string;
   path: string;
   tag: string;
-  updated: boolean;
+  /** 'created' = new migration, 'evolved' = content changed so new folder created (old preserved), 'unchanged' = SQL identical, no-op */
+  action: 'created' | 'evolved' | 'unchanged';
 }
 
 /**
@@ -54,11 +60,13 @@ export function getMigrationFolders(): string[] {
 }
 
 /**
- * Find a migration folder by tag suffix.
+ * Find the latest migration folder by tag suffix.
+ * Since migrations can evolve (multiple folders with the same tag), returns the most recent one.
  * @param tagSuffix - The tag suffix to search for (e.g., 'cdc_setup')
  */
 export function findMigrationByTag(tagSuffix: string): string | undefined {
-  return getMigrationFolders().find((folder) => folder.endsWith(`_${tagSuffix}`));
+  const matches = getMigrationFolders().filter((folder) => folder.endsWith(`_${tagSuffix}`));
+  return matches.length > 0 ? matches[matches.length - 1] : undefined;
 }
 
 /**
@@ -90,9 +98,16 @@ export function resolveSqlContent(sqlOrPath: string): string {
 /**
  * Add or update a SQL migration in the Drizzle migrations folder (v1 format).
  *
+ * When a migration with the given tag already exists:
+ * - If the SQL content is identical → no-op (action: 'unchanged')
+ * - If the SQL content changed → preserves the old folder and creates a new
+ *   folder with a fresh timestamp (action: 'evolved'). This ensures production
+ *   migrations that were already applied are never modified, while new changes
+ *   get their own migration entry. Requires migrations to be idempotent.
+ *
  * @param tag - Unique identifier for the migration (e.g., 'cdc_setup')
  * @param sql - SQL content (not a file path - use resolveSqlContent first if needed)
- * @returns Object containing the folder name, path, tag, and whether it was an update
+ * @returns Object containing the folder name, path, tag, and action taken
  */
 export function upsertMigration(tag: string, sql: string): MigrationResult {
   // Normalize tag (remove leading timestamps/underscores if present)
@@ -105,11 +120,33 @@ export function upsertMigration(tag: string, sql: string): MigrationResult {
   const existingFolder = findMigrationByTag(normalizedTag);
 
   if (existingFolder) {
-    // Update existing migration file
     const folderPath = join(drizzleDir, existingFolder);
     const migrationPath = join(folderPath, 'migration.sql');
-    writeFileSync(migrationPath, finalSql);
-    return { folderName: existingFolder, path: folderPath, tag: normalizedTag, updated: true };
+
+    // Compare content — if unchanged, skip entirely
+    if (existsSync(migrationPath)) {
+      const existingSql = readFileSync(migrationPath, 'utf-8');
+      if (existingSql === finalSql) {
+        return { folderName: existingFolder, path: folderPath, tag: normalizedTag, action: 'unchanged' };
+      }
+    }
+
+    // SQL changed — preserve old migration and create a new one with fresh timestamp
+    // This ensures already-applied production migrations are never modified
+    const timestamp = generateTimestamp();
+    const newFolderName = `${timestamp}_${normalizedTag}`;
+    const newFolderPath = join(drizzleDir, newFolderName);
+
+    mkdirSync(newFolderPath, { recursive: true });
+    writeFileSync(join(newFolderPath, 'migration.sql'), finalSql);
+
+    // Copy snapshot from latest migration
+    const latestSnapshot = getLatestSnapshot();
+    if (latestSnapshot) {
+      writeFileSync(join(newFolderPath, 'snapshot.json'), JSON.stringify(latestSnapshot, null, 2));
+    }
+
+    return { folderName: newFolderName, path: newFolderPath, tag: normalizedTag, action: 'evolved' };
   }
 
   // Create new migration folder with Drizzle v1 naming convention
@@ -127,7 +164,7 @@ export function upsertMigration(tag: string, sql: string): MigrationResult {
     writeFileSync(join(folderPath, 'snapshot.json'), JSON.stringify(latestSnapshot, null, 2));
   }
 
-  return { folderName, path: folderPath, tag: normalizedTag, updated: false };
+  return { folderName, path: folderPath, tag: normalizedTag, action: 'created' };
 }
 
 /**
@@ -135,7 +172,17 @@ export function upsertMigration(tag: string, sql: string): MigrationResult {
  */
 export function logMigrationResult(result: MigrationResult, context?: string): void {
   console.info('');
-  const action = result.updated ? 'updated' : 'created';
   const contextStr = context ? ` (${context})` : '';
-  console.info(`${checkMark} Migration ${action}${contextStr}: drizzle/${result.folderName}/migration.sql`);
+
+  switch (result.action) {
+    case 'created':
+      console.info(`${checkMark} Migration created${contextStr}: drizzle/${result.folderName}/migration.sql`);
+      break;
+    case 'evolved':
+      console.info(`${checkMark} Migration evolved${contextStr}: drizzle/${result.folderName}/migration.sql (old version preserved)`);
+      break;
+    case 'unchanged':
+      console.info(`${checkMark} Migration unchanged${contextStr}: drizzle/${result.folderName}/migration.sql`);
+      break;
+  }
 }

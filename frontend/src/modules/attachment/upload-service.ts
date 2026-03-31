@@ -10,10 +10,11 @@
  * - Lazy token fetching per upload (never expires mid-upload)
  * - Assembly completion waiting with internal polling
  */
+
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import { getUploadToken } from '~/api.gen';
+import { getUploadToken } from 'sdk';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 

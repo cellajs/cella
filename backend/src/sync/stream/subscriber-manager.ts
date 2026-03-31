@@ -15,7 +15,7 @@ class StreamSubscriberManager {
    *
    * @example
    * // App stream subscribes to user channel + all org channels
-   * const orgChannels = [...orgIds].map(id => `org:${id}`);
+   * const orgChannels = [...organizationIds].map(id => `org:${id}`);
    * manager.register(subscriber, orgChannels);
    */
   register<T extends BaseStreamSubscriber>(subscriber: T, additionalChannels: string[] = []): void {

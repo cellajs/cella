@@ -23,10 +23,16 @@ Global middleware chain (`backend/src/middlewares/app.ts`): secureHeaders → Op
 
 Route-level guards in `backend/src/middlewares/guard/` control auth and tenant isolation:
 - `authGuard`: Validates session, sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.db` (baseDb).
-- `tenantGuard`: Verifies tenant membership, wraps handler in an RLS-enabled transaction — sets `ctx.var.db` to a transaction with `SET LOCAL` RLS session variables (`tenant_id`, `user_id`, `role`). This is how RLS policies are enforced: all handler DB access goes through `ctx.var.db`.
-- `orgGuard`: Resolves organization and verifies membership within the tenant transaction.
-- `publicGuard`: For unauthenticated routes, sets `ctx.var.db` to baseDb (no RLS transaction).
-- Also: `sysAdminGuard`, `crossTenantGuard`, `relatableGuard`.
+- `tenantGuard`: Verifies tenant membership, loads tenant row, sets `ctx.var.db = baseDb` and `ctx.var.tenantId`. Product entity handlers use `tenantRead()` for RLS-scoped reads and `tenantWrite()` for plain write transactions. Context entity handlers use `ctx.var.db` (baseDb) directly — no RLS.
+- `orgGuard`: Resolves organization and verifies membership.
+- `publicGuard`: For unauthenticated routes, sets `ctx.var.db` to baseDb. Public product entity handlers use `publicRead()` for RLS-scoped reads.
+- `crossTenantGuard`: Validates authentication for cross-tenant routes, sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for cross-tenant product entity queries.
+- Also: `sysAdminGuard`, `relatableGuard`.
+
+### Database access patterns
+- **Product entity handlers** wrap reads in `tenantRead(ctx, fn)` (RLS-scoped SELECT) and writes in `tenantWrite(fn)` (plain transaction — no RLS write policies) from `backend/src/db/tenant-context.ts`.
+- **Context entity handlers** use `ctx.var.db` (baseDb) directly — no RLS.
+- **Public product entity routes** use `publicRead(tenantId, fn)` for unauthenticated access.
 
 ## Error handling
 `AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`. PostgreSQL error codes are mapped automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409). The global handler `appErrorHandler` is registered in `backend/src/server.ts`.
@@ -35,7 +41,7 @@ Route-level guards in `backend/src/middlewares/guard/` control auth and tenant i
 Auth is split into five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, verification emails), `passwords/`, `oauth/`, `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Session management lives in `general/helpers/session.ts`; cookie handling in `general/helpers/cookie.ts`.
 
 ## Permissions
-The permission system (in `backend/src/permissions/`) provides: `checkPermission` (membership + role checks with hierarchy traversal), `canAccessEntity`, `canCreateEntity`, `getValidContextEntity`, `getValidProductEntity` (fetch + permission check), `splitByPermission` (batch filtering). Access policies are defined using `configureAccessPolicies()` in `shared/permissions-config.ts` with three values: `1` (allowed), `0` (denied), `'own'` (allowed only for the entity's creator — implicit owner relation). The engine checks `entity.createdBy === userId` for `'own'` policies. On the frontend, `computeCan()` produces a three-state map (`true | false | 'own'`); use `resolvePermission()` from `shared` to resolve `'own'` per-entity. Guards invoke these functions; see ARCHITECTURE.md for defense-in-depth layers (Permission Manager → RLS → composite FKs).
+The permission system (in `backend/src/permissions/`) provides: `checkPermission` (membership + role checks with hierarchy traversal), `canAccessEntityType`, `canCreateEntity`, `getValidContextEntity`, `getValidProductEntity` (fetch + permission check), `splitByPermission` (batch filtering). Access policies are defined using `configureAccessPolicies()` in `shared/permissions-config.ts` with three values: `1` (allowed), `0` (denied), `'own'` (allowed only for the entity's creator — implicit owner relation). The engine checks `entity.createdBy === userId` for `'own'` policies. On the frontend, `computeCan()` produces a three-state map (`true | false | 'own'`); use `resolvePermission()` from `shared` to resolve `'own'` per-entity. Guards invoke these functions; see ARCHITECTURE.md for defense-in-depth layers (Permission Manager → RLS → composite FKs).
 
 ## State management & API
 - **Server state**: TanStack Query (`offlineFirst` network mode, IndexedDB persistence via `PersistQueryClientProvider`). Query options/keys/mutations in `frontend/src/modules/<module>/query.ts`. Paused mutations resume after reload via mutation registry (`frontend/src/query/mutation-registry.ts`). See ARCHITECTURE.md "Query layer" section for full architecture.
@@ -48,7 +54,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 
 ### Query infrastructure patterns
 - **Query keys**: Use `createEntityKeys<Filters>('myEntity')` and register with `registerEntityQueryKeys('myEntity', keys)` in the module's `query.ts`. Keys follow `[entityType, 'list'|'detail', ...]` convention.
-- **Optimistic updates**: Use `useMutateQueryData(queryKey)` for cache mutations. Generate placeholder entities with `createOptimisticEntity(zodSchema, overrides)` — it auto-fills IDs, timestamps, and Zod defaults.
+- **Optimistic updates**: Use `mutateQueryData(queryKey)` for cache mutations. Generate placeholder entities with `createOptimisticEntity(zodSchema, overrides)` — it auto-fills IDs, timestamps, and Zod defaults.
 - **Invalidation**: Use `invalidateIfLastMutation(queryClient, mutationKey, queryKey)` in `onSettled` to prevent over-invalidation when multiple mutations are in flight.
 - **Mutation registry**: In each entity's `query.ts`, call `addMutationRegistrar((qc) => { qc.setMutationDefaults(keys.create, { mutationFn: ... }) })` so paused offline mutations can resume after reload.
 - **Enrichment**: Context entity list items are auto-enriched with `item.membership`, `item.can` (permission map), and `item.ancestorSlugs` via a QueryCache subscriber in `frontend/src/query/enrichment/`. No manual wiring needed — just ensure query keys are registered.
@@ -68,14 +74,14 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - OpenAPI examples: pass `mockXResponse()` to `.openapi('Name', { example })` and route `example:`.
 - Seeding (`backend/scripts/seeds/`): call `setMockContext('script')` + `mockMany(mockEntity, count)`.
 - Tests (`backend/tests/`): use insert mocks via `backend/tests/helpers.ts`. Call `resetXMockEnforcers()` in cleanup.
-- Key utils: `mockMany()`, `mockPaginated()`, `mockTimestamps()`, `pastIsoDate()`, `mockContextEntityIdColumns()`.
+- Key utils: `mockMany()`, `mockPaginated()`, `mockTimestamps()`, `mockPastIsoDate()`, `mockContextEntityIdColumns()`.
 
 ## Sync engine details
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from cached entity version.
 - **Conflict detection**: `checkFieldConflicts()` compares per-field versions; `isTransactionProcessed()` checks idempotency via `activities` table.
 - **Realtime backend** (`backend/src/sync/`): `activityBus` → `createStreamDispatcher()` → `streamSubscriberManager` for SSE fan-out. `CdcWebSocketServer` accepts the CDC worker connection on `/internal/cdc`.
 - **Realtime frontend** (`frontend/src/query/realtime/`): Two streams — `AppStream` (authenticated, leader-tab via Web Locks + BroadcastChannel, echo prevention via `stx.sourceId`, catchup via `seq` delta) and `PublicStream` (unauthenticated, per-tab connection, catches up deletes on connect then live-only).
-- **Seen-by tracking**: Frontend marks entities seen via `IntersectionObserver`, batches IDs in a Zustand store, flushes on timer + `sendBeacon` on unload. Flushed IDs persist in localStorage. Unseen badges are optimistically decremented in React Query cache. Backend: `seen_by` table (one row per user+entity), `seen_counts` (denormalized view count).
+- **Seen-by tracking**: Frontend marks entities seen via `IntersectionObserver`, batches IDs in a Zustand store, flushes on timer + `sendBeacon` on unload. Flushed IDs persist in localStorage. Unseen badges are optimistically decremented in React Query cache. Backend: `seen_by` table (one row per user+entity), `product_counters` (denormalized view/usage counts).
 - **Entity cache**: CDC-invalidated in-memory cache in `backend/src/middlewares/entity-cache/`. `coalesce()` deduplicates concurrent fetches.
 
 ## Coding patterns
@@ -84,7 +90,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - **Debug mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env`.
 - **Stores, no Providers**: Favour Zustand stores over React Provider pattern.
 - **OpenAPI nullable**: Use `z.union([schema, z.null()])` instead of `schema.nullable()` for named schemas.
-- **OpenAPI schema naming**: Only register schemas as named components (`.openapi('Name')`) for core entity responses or shared base types. Inline enums and request body schemas. Share a single schema when shape is identical across contexts.
+- **OpenAPI schema naming**: Only register schemas as named components (`.openapi('Name')`) for whole entity responses or crucial shared base types. Inline enums and request body schemas. Share a single schema when shape is identical across contexts.
 
 ## Coding style & naming conventions
 - Formatter/Linter: Biome (`biome.json`). Run `pnpm lint:fix`.
@@ -98,7 +104,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - Console: `console.log` for temp debugging (remove before commit), `console.info` for logging, `console.debug` for dev (stripped in prod).
 - Links as buttons: Use `<Link>` with `buttonVariants()` for linkable actions. Allow new-tab opening for URL-targetable sheet content.
 - React-compiler: `useMemo`/`useCallback` can be avoided in most cases.
-- Translations: All UI text via `useTranslation()` and `t('namespace:key')`. Never hardcode. Files in `locales/en/`.
+- Translations: All UI text via `useTranslation()` and `t('common:key')`. Never hardcode. Files in `locales/en/`. General translations go in `common.json`, app-specific ones in `app.json`. Both are merged into the `common` namespace at runtime, so always use `t('common:key')` — never `t('app:key')`.
 
 ## Testing
 - Framework: Vitest. Name tests `*.test.ts`; place near source or under `tests/`.
@@ -109,8 +115,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - PRs: concise description, linked issues, passing checks. Keep changes scoped.
 
 ## Commands
-- `pnpm quick`: Dev with PGlite (fast, no Docker).
-- `pnpm dev:core`: Dev with PostgreSQL (no CDC).
+- `pnpm dev:core`: Dev with PostgreSQL (no CDC, requires Docker).
 - `pnpm dev`: Dev with PostgreSQL + CDC Worker.
 - `pnpm check`: Runs `generate:openapi` + typecheck + `lint:fix`.
 - `pnpm generate`: Create Drizzle migrations from schema changes.

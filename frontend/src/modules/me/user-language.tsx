@@ -3,12 +3,12 @@ import i18n from 'i18next';
 import { CheckIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateMe } from 'sdk';
 import { appConfig, type Language } from 'shared';
-import { updateMe } from '~/api.gen';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 interface Props {
   triggerClassName?: string;

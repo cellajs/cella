@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';

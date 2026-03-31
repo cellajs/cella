@@ -1,11 +1,16 @@
 import { eq } from 'drizzle-orm';
-import { testClient } from 'hono/testing';
+import { checkEmail, signUp } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createPasswordUser } from '../helpers';
+import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+
+vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+}));
 
 setTestConfig({
   enabledAuthStrategies: ['password'],
@@ -14,12 +19,6 @@ setTestConfig({
 
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
-  // Later we should only mock the email sending part, not the whole function.
-  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-  }));
 });
 
 afterEach(async () => {
@@ -27,15 +26,14 @@ afterEach(async () => {
 });
 
 describe('sign-up', async () => {
-  const { default: app } = await import('#/routes');
-  const client = testClient(app);
+  const call = await createAppClient();
 
   it('should sign up a user', async () => {
-    // Make simple sing-up request
-    const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });
+    // Make simple sign-up request
+    const { response } = await call(signUp, { body: signUpUser, headers: defaultHeaders });
 
     // Check the response status
-    expect(res.status).toBe(201);
+    expect(response.status).toBe(201);
 
     // Check if the user was created in the database
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, signUpUser.email));
@@ -43,18 +41,18 @@ describe('sign-up', async () => {
   });
 
   it('should fail the email check for unregistered email', async () => {
-    const res = await client['auth']['check-email'].$post({ json: signUpUser }, { headers: defaultHeaders });
+    const { response } = await call(checkEmail, { body: signUpUser, headers: defaultHeaders });
 
-    expect(res.status).toBe(404);
+    expect(response.status).toBe(404);
   });
 
   it('should pass email check for an already registered email', async () => {
     // Create a user with the same email
     await createPasswordUser(signUpUser.email, signUpUser.password);
 
-    const res = await client['auth']['check-email'].$post({ json: signUpUser }, { headers: defaultHeaders });
+    const { response } = await call(checkEmail, { body: signUpUser, headers: defaultHeaders });
 
-    expect(res.status).toBe(204);
+    expect(response.status).toBe(204);
   });
 
   it('should not allow duplicate emails', async () => {
@@ -62,9 +60,9 @@ describe('sign-up', async () => {
     await createPasswordUser(signUpUser.email, signUpUser.password);
 
     // Try to sign up again with the same email
-    const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });
+    const { response } = await call(signUp, { body: signUpUser, headers: defaultHeaders });
 
     // Check the response status
-    expect(res.status).toBe(409);
+    expect(response.status).toBe(409);
   });
 });

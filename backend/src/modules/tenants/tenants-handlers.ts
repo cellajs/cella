@@ -8,13 +8,14 @@
  */
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, asc, count, desc, eq, ilike, ne, sql } from 'drizzle-orm';
+import { eq, ilike, ne } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { domainsTable } from '#/db/schema/domains';
 import { tenantsTable } from '#/db/schema/tenants';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
+import { countDomainsByTenant, findTenantById, getTenantsList, updateTenant } from '#/modules/tenants/tenants-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { logEvent } from '#/utils/logger';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -22,144 +23,99 @@ import tenantRoutes from './tenants-routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const tenantHandlers = app
-  /**
-   * Get paginated list of tenants.
-   */
-  .openapi(tenantRoutes.getTenants, async (ctx) => {
-    const db = ctx.var.db;
-    const { q, status, limit, offset, sort, order } = ctx.req.valid('query');
+/**
+ * Get paginated list of tenants.
+ */
+app.openapi(tenantRoutes.getTenants, async (ctx) => {
+  const db = ctx.var.db;
+  const { q, status, limit, offset, sort, order } = ctx.req.valid('query');
 
-    // Build where conditions — always exclude the public tenant from listing
-    const conditions = [ne(tenantsTable.id, appConfig.publicTenant.id)];
-    if (q) {
-      const searchQuery = prepareStringForILikeFilter(q);
-      conditions.push(ilike(tenantsTable.name, searchQuery));
-    }
-    if (status) {
-      conditions.push(eq(tenantsTable.status, status));
-    }
+  // Build where conditions — always exclude the public tenant from listing
+  const conditions = [ne(tenantsTable.id, appConfig.publicTenant.id)];
+  if (q) {
+    const searchQuery = prepareStringForILikeFilter(q);
+    conditions.push(ilike(tenantsTable.name, searchQuery));
+  }
+  if (status) {
+    conditions.push(eq(tenantsTable.status, status));
+  }
 
-    const whereClause = and(...conditions);
+  const { items, total } = await getTenantsList(db, { filters: conditions, sort, order, limit, offset });
 
-    // Get order column
-    const orderColumn = sort === 'name' ? tenantsTable.name : tenantsTable.createdAt;
-    const orderDirection = order === 'asc' ? asc : desc;
+  return ctx.json({ items, total });
+});
 
-    // Domains count subquery
-    const domainsCountSq = db
-      .select({ tenantId: domainsTable.tenantId, count: count().as('domains_count') })
-      .from(domainsTable)
-      .groupBy(domainsTable.tenantId)
-      .as('domains_count_sq');
+/**
+ * Create a new tenant.
+ */
+app.openapi(tenantRoutes.createTenant, async (ctx) => {
+  const db = ctx.var.db;
+  const user = ctx.var.user;
 
-    // Execute queries in parallel
-    const [tenants, [{ total }]] = await Promise.all([
-      db
-        .select({
-          id: tenantsTable.id,
-          name: tenantsTable.name,
-          status: tenantsTable.status,
-          restrictions: tenantsTable.restrictions,
-          createdBy: tenantsTable.createdBy,
-          subscriptionId: tenantsTable.subscriptionId,
-          subscriptionStatus: tenantsTable.subscriptionStatus,
-          subscriptionPlan: tenantsTable.subscriptionPlan,
-          subscriptionData: tenantsTable.subscriptionData,
-          domainsCount: sql<number>`coalesce(${domainsCountSq.count}, 0)`.mapWith(Number),
-          createdAt: tenantsTable.createdAt,
-          modifiedAt: tenantsTable.modifiedAt,
-        })
-        .from(tenantsTable)
-        .leftJoin(domainsCountSq, eq(tenantsTable.id, domainsCountSq.tenantId))
-        .where(whereClause)
-        .orderBy(orderDirection(orderColumn))
-        .limit(limit)
-        .offset(offset),
-      db.select({ total: count() }).from(tenantsTable).where(whereClause),
-    ]);
+  const { name, status } = ctx.req.valid('json');
 
-    return ctx.json({ items: tenants, total });
-  })
-
-  /**
-   * Create a new tenant.
-   */
-  .openapi(tenantRoutes.createTenant, async (ctx) => {
-    const db = ctx.var.db;
-    const { name, status } = ctx.req.valid('json');
-    const user = ctx.var.user;
-
-    const tenant = await createTenantForUser(db, {
+  const tenant = await createTenantForUser(
+    db,
+    {
       name,
       createdBy: user.id,
       userEmail: user.email,
+    },
+    ctx,
+  );
+
+  // Apply status override if provided (createTenantForUser defaults to 'active')
+  if (status && status !== 'active') {
+    const updated = await updateTenant(db, {
+      tenantId: tenant.id,
+      values: { status: status as typeof tenantsTable.$inferInsert.status },
     });
+    invalidateCache.tenant(tenant.id);
+    const domainsCount = await countDomainsByTenant(db, { tenantId: tenant.id });
+    return ctx.json({ ...updated, domainsCount });
+  }
 
-    // Apply status override if provided (createTenantForUser defaults to 'active')
-    if (status && status !== 'active') {
-      const [updated] = await db
-        .update(tenantsTable)
-        .set({ status: status as typeof tenantsTable.$inferInsert.status })
-        .where(eq(tenantsTable.id, tenant.id))
-        .returning();
-      const [{ domainsCount }] = await db
-        .select({ domainsCount: count() })
-        .from(domainsTable)
-        .where(eq(domainsTable.tenantId, tenant.id));
-      return ctx.json({ ...updated, domainsCount });
-    }
+  const domainsCount = await countDomainsByTenant(db, { tenantId: tenant.id });
+  return ctx.json({ ...tenant, domainsCount });
+});
 
-    const [{ domainsCount }] = await db
-      .select({ domainsCount: count() })
-      .from(domainsTable)
-      .where(eq(domainsTable.tenantId, tenant.id));
-    return ctx.json({ ...tenant, domainsCount });
-  })
+/**
+ * Update a tenant.
+ */
+app.openapi(tenantRoutes.updateTenant, async (ctx) => {
+  const db = ctx.var.db;
 
-  /**
-   * Update a tenant.
-   */
-  .openapi(tenantRoutes.updateTenant, async (ctx) => {
-    const db = ctx.var.db;
-    const { tenantId } = ctx.req.valid('param');
-    const updates = ctx.req.valid('json');
-    const user = ctx.var.user;
+  const { tenantId } = ctx.req.valid('param');
+  const updates = ctx.req.valid('json');
 
-    // Check tenant exists
-    const [existing] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
+  // Check tenant exists
+  const existing = await findTenantById(db, { tenantId });
+  if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
 
-    if (!existing) {
-      throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
-    }
+  const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
 
-    const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
+  // Deep-merge restrictions so partial updates don't clobber existing values
+  const mergedRestrictions = restrictionsUpdate
+    ? {
+        quotas: { ...existing.restrictions.quotas, ...restrictionsUpdate.quotas },
+        rateLimits: { ...existing.restrictions.rateLimits, ...restrictionsUpdate.rateLimits },
+      }
+    : undefined;
 
-    // Deep-merge restrictions so partial updates don't clobber existing values
-    const mergedRestrictions = restrictionsUpdate
-      ? {
-          quotas: { ...existing.restrictions.quotas, ...restrictionsUpdate.quotas },
-          rateLimits: { ...existing.restrictions.rateLimits, ...restrictionsUpdate.rateLimits },
-        }
-      : undefined;
+  const values = {
+    ...otherUpdates,
+    ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  const tenant = await updateTenant(db, { tenantId, values });
 
-    const [tenant] = await db
-      .update(tenantsTable)
-      .set({
-        ...otherUpdates,
-        ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
-        modifiedAt: new Date().toISOString(),
-      } as typeof tenantsTable.$inferInsert)
-      .where(eq(tenantsTable.id, tenantId))
-      .returning();
+  invalidateCache.tenant(tenantId);
 
-    logEvent('info', 'Tenant updated', { tenantId, updates, updatedBy: user.id });
+  logEvent(ctx, 'info', 'Tenant updated', { tenantId, updates });
 
-    const [{ domainsCount }] = await db
-      .select({ domainsCount: count() })
-      .from(domainsTable)
-      .where(eq(domainsTable.tenantId, tenantId));
-    return ctx.json({ ...tenant, domainsCount });
-  });
+  const domainsCount = await countDomainsByTenant(db, { tenantId });
+  return ctx.json({ ...tenant, domainsCount });
+});
 
-export default tenantHandlers;
+export { tenantTag } from '#/modules/tenants/tenants-module';
+export const tenantHandlers = app;

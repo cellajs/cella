@@ -3,24 +3,35 @@ import { useNavigate } from '@tanstack/react-router';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { UserBase } from 'sdk';
 import { appConfig } from 'shared';
-import type { UserBase } from '~/api.gen';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { getContextEntityRoute } from '~/routes-resolver';
-import { useNavigationStore } from '~/store/navigation';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
 
+const SearchResultsSkeleton = () => (
+  <div className="flex flex-col gap-4 p-4">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-3 py-1.5">
+        <Skeleton className="size-10 rounded-full shrink-0" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+    ))}
+  </div>
+);
 /**
  * Application search component.
  */
@@ -82,9 +93,6 @@ export const AppSearch = () => {
     ]),
   );
 
-  const ready =
-    (userQ.isSuccess || userQ.isError) && Object.values(contextEntityResults).every((q) => q.isSuccess || q.isError);
-
   const users = searchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
   const contextEntityData = Object.fromEntries(
     Object.entries(contextEntityResults).map(([entityType, query]) => [
@@ -97,6 +105,8 @@ export const AppSearch = () => {
   const data: Record<string, (EnrichedContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
   const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
   const isFetching = userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
+  const isLoading =
+    searchValue.length > 0 && (userQ.isLoading || Object.values(contextEntityResults).some((q) => q.isLoading));
 
   const onSelectItem = (item: EnrichedContextEntity | UserBase) => {
     // Update recent searches with the search value
@@ -137,13 +147,15 @@ export const AppSearch = () => {
       />
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         <CommandList className="h-full">
-          <CommandEmpty className="h-full sm:h-[36vh]" isLoading={isFetching}>
-            <ContentPlaceholder
-              icon={SearchIcon}
-              title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}
-              titleProps={{ resource: t('common:results').toLowerCase(), appName: appConfig.name }}
-            />
-          </CommandEmpty>
+          {!isLoading && (
+            <CommandEmpty className="h-full sm:h-[36vh]" isLoading={isFetching}>
+              <ContentPlaceholder
+                icon={SearchIcon}
+                title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}
+                titleProps={{ resource: t('common:results').toLowerCase(), appName: appConfig.name }}
+              />
+            </CommandEmpty>
+          )}
           {notFound && !searchValue.length && !!recentSearches.length && (
             <CommandGroup>
               <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
@@ -173,7 +185,9 @@ export const AppSearch = () => {
               ))}
             </CommandGroup>
           )}
-          {ready &&
+          {isLoading ? (
+            <SearchResultsSkeleton />
+          ) : (
             searchableEntityTypes.map((entityType) => (
               <SearchResultBlock
                 key={entityType}
@@ -181,7 +195,8 @@ export const AppSearch = () => {
                 entityType={entityType}
                 onSelect={onSelectItem}
               />
-            ))}
+            ))
+          )}
         </CommandList>
       </ScrollArea>
     </Command>

@@ -1,6 +1,6 @@
 /**
  * Data fetching utilities for public stream catch-up.
- * Entity-agnostic: uses hierarchy.publicActionsTypes dynamically.
+ * Entity-agnostic: uses hierarchy.publicReadTypes dynamically.
  */
 
 import { and, desc, gt, inArray, sql } from 'drizzle-orm';
@@ -17,7 +17,7 @@ const PUBLIC_SEQ_PREFIX = 'public';
  * Fetch catchup summary for the public stream.
  *
  * Uses unscoped seqs from context_counters.counts['s:{entityType}']
- * (managed by stamp_entity_seq_at trigger) for change detection.
+ * (managed by CDC worker) for change detection.
  * Deletes are always scanned from activities (cursor-bounded, watertight).
  *
  * When clientSeqs are provided and all match, returns immediately
@@ -27,7 +27,7 @@ export async function fetchPublicCatchupSummary(
   cursor: string | null,
   clientSeqs?: Record<string, number>,
 ): Promise<PublicCatchupResponse> {
-  const publicTypes = [...hierarchy.publicActionsTypes];
+  const publicTypes = [...hierarchy.publicReadTypes];
 
   if (publicTypes.length === 0) return { changes: {}, cursor };
 
@@ -59,7 +59,7 @@ export async function fetchPublicCatchupSummary(
 
     if (!clientSeqs || serverSeq !== clientSeq) {
       changes[entityType] = {
-        deletedIds: [],
+        deletedByType: {},
         entitySeqs: { [entityType]: serverSeq },
       };
     }
@@ -89,17 +89,20 @@ export async function fetchPublicCatchupSummary(
       if (!changes[row.entityType]) {
         const serverSeq = serverSeqs.get(row.entityType) ?? 0;
         changes[row.entityType] = {
-          deletedIds: [],
+          deletedByType: {},
           entitySeqs: { [row.entityType]: serverSeq },
         };
       }
 
-      changes[row.entityType].deletedIds.push(row.entityId);
+      if (!changes[row.entityType].deletedByType[row.entityType])
+        changes[row.entityType].deletedByType[row.entityType] = [];
+      changes[row.entityType].deletedByType[row.entityType].push(row.entityId);
     }
   }
 
   // Fast path: nothing changed at all → return empty
-  if (!hasSeqChanges && Object.values(changes).every((c) => c.deletedIds.length === 0)) {
+  const allDeletesEmpty = Object.values(changes).every((c) => Object.keys(c.deletedByType).length === 0);
+  if (!hasSeqChanges && allDeletesEmpty) {
     if (clientSeqs && cursor) return { changes: {}, cursor };
   }
 
@@ -116,7 +119,7 @@ export async function fetchPublicCatchupSummary(
  * Get latest public entity activity ID (for 'now' offset and as cursor).
  */
 export async function getLatestPublicActivityId(): Promise<string | null> {
-  const publicTypes = [...hierarchy.publicActionsTypes];
+  const publicTypes = [...hierarchy.publicReadTypes];
 
   if (publicTypes.length === 0) return null;
 

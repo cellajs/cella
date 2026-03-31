@@ -1,7 +1,5 @@
 import type { Key, ReactElement, ReactNode } from 'react';
 
-import type { DataGridProps } from './data-grid';
-
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Maybe<T> = T | undefined | null;
@@ -217,12 +215,11 @@ export interface RenderHeaderCellProps<TRow, TSummaryRow = unknown> {
   tabIndex: number;
 }
 
-interface BaseCellRendererProps<TRow, TSummaryRow = unknown>
-  extends Omit<React.ComponentProps<'div'>, 'children'>,
-    Pick<
-      DataGridProps<TRow, TSummaryRow>,
-      'onCellMouseDown' | 'onCellClick' | 'onCellDoubleClick' | 'onCellContextMenu'
-    > {
+interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.ComponentProps<'div'>, 'children'> {
+  onCellMouseDown?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellClick?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellDoubleClick?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellContextMenu?: CellMouseEventHandler<TRow, TSummaryRow>;
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
 }
@@ -422,3 +419,8 @@ export type SelectionMode = 'none' | 'cell' | 'cell-range' | 'row' | 'row-multi'
 export type TouchModeConfig = boolean | { max: BreakpointKey } | { min: BreakpointKey };
 
 export type ResizedWidth = number | 'max-content';
+
+export type DefaultColumnOptions<R, SR> = Pick<
+  Column<R, SR>,
+  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable' | 'draggable'
+>;

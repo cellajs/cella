@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { CloudIcon, CloudOffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Page } from '~/api.gen';
-import { zPage } from '~/api.gen/zod.gen';
+import { Page } from 'sdk';
+import { zPage } from 'sdk/zod.gen';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -11,6 +11,7 @@ import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 const pageStatuses = zPage.shape.status.options;
+const pageRenderModes = zPage.shape.renderMode.options;
 
 /** Check if a page is local-only (not yet synced to server) */
 function isLocalPage(page: Page) {
@@ -29,7 +30,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       key: 'name',
       name: t('common:title'),
       minWidth: 180,
-      sortable: false,
+
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
         <Link
@@ -47,7 +48,7 @@ export function usePagesTableColumns(isCompact: boolean) {
     {
       key: 'syncStatus',
       name: '',
-      sortable: false,
+
       width: 32,
       renderCell: ({ row }) => {
         const isLocal = isLocalPage(row);
@@ -71,7 +72,7 @@ export function usePagesTableColumns(isCompact: boolean) {
       name: t('common:status'),
       editable: true,
       minBreakpoint: 'md',
-      sortable: false,
+
       resizable: true,
       width: 160,
       renderCell: ({ row }) => {
@@ -101,9 +102,47 @@ export function usePagesTableColumns(isCompact: boolean) {
       },
     },
     {
+      key: 'renderMode',
+      name: t('common:render_mode'),
+      editable: true,
+      minBreakpoint: 'md',
+
+      resizable: true,
+      width: 140,
+      renderCell: ({ row }) => {
+        return (
+          <span className="font-light">
+            {t(`common:render_mode.${row.renderMode === 'nodeOnly' ? 'node_only' : row.renderMode}`)}
+          </span>
+        );
+      },
+      renderEditCell: function RenderModeEditCell({ row, onRowChange }) {
+        const { t } = useTranslation();
+
+        const onChooseValue = (value: string) => {
+          setTimeout(() => onRowChange({ ...row, renderMode: value as Page['renderMode'] }, true));
+        };
+
+        return (
+          <Select open={true} value={row.renderMode} onValueChange={onChooseValue}>
+            <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">
+              <SelectValue placeholder={row.renderMode} />
+            </SelectTrigger>
+            <SelectContent sideOffset={-41} alignOffset={-5} className="duration-0!">
+              {pageRenderModes.map((mode) => (
+                <SelectItem key={mode} value={mode}>
+                  {t(`common:render_mode.${mode === 'nodeOnly' ? 'node_only' : mode}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      },
+    },
+    {
       key: 'createdBy',
       name: t('common:created_by'),
-      sortable: false,
+
       resizable: true,
       minWidth: isCompact ? null : 160,
       width: isCompact ? 50 : null,
@@ -114,7 +153,7 @@ export function usePagesTableColumns(isCompact: boolean) {
     {
       key: 'createdAt',
       name: t('common:created_at'),
-      sortable: false,
+
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 120,

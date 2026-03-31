@@ -1,29 +1,30 @@
 import { eq } from 'drizzle-orm';
-import { testClient } from 'hono/testing';
+import { signIn, signOut } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { usersTable } from '#/db/schema/users';
 import { mockEmail, mockPassword, mockUser } from '../../mocks/mock-user';
-import { pastIsoDate } from '../../mocks/utils';
+import { mockPastIsoDate } from '../../mocks/utils';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createPasswordUser, ErrorResponse, enableMFAForUser, parseResponse, verifyUserEmail } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { createPasswordUser, type ErrorResponse, enableMFAForUser, verifyUserEmail } from '../helpers';
+import { createAppClient } from '../test-client';
+import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+
+vi.mock('#/middlewares/rate-limiter/core', async () => (await import('../test-utils')).rateLimiterCoreMock());
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
+  (await import('../test-utils')).rateLimiterHelpersMock(importOriginal),
+);
+vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
+  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
+}));
 
 setTestConfig({ enabledAuthStrategies: ['password'] });
 
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock the sendVerificationEmail function to avoid background running tasks
-  vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-  }));
-
-  // Mock rate limiter to avoid 429 errors in tests
-  mockRateLimiter();
 });
 
 afterEach(async () => {
@@ -31,8 +32,7 @@ afterEach(async () => {
 });
 
 describe('Password Authentication', async () => {
-  const { default: app } = await import('#/routes');
-  const client = testClient(app);
+  const call = await createAppClient();
 
   describe('Successful Authentication', () => {
     it('should sign in with valid credentials and verified email', async () => {
@@ -40,11 +40,10 @@ describe('Password Authentication', async () => {
       await createPasswordUser(signUpUser.email, signUpUser.password);
       await verifyUserEmail(signUpUser.email);
 
-      const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: res, data } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<{ emailVerified: boolean }>(res);
-      expect(response.emailVerified).toBe(true);
+      expect((data as { emailVerified: boolean }).emailVerified).toBe(true);
 
       // Check session cookie is set
       const setCookieHeader = res.headers.get('set-cookie');
@@ -56,11 +55,10 @@ describe('Password Authentication', async () => {
       // Create user without verifying email
       await createPasswordUser(signUpUser.email, signUpUser.password, false);
 
-      const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: res, data } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<{ emailVerified: boolean }>(res);
-      expect(response.emailVerified).toBe(false);
+      expect((data as { emailVerified: boolean }).emailVerified).toBe(false);
     });
 
     it('should redirect to MFA when user has MFA enabled', async () => {
@@ -69,12 +67,11 @@ describe('Password Authentication', async () => {
       await verifyUserEmail(signUpUser.email);
       await enableMFAForUser(user.id);
 
-      const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: res, data } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<{ emailVerified: boolean; mfa: boolean }>(res);
-      expect(response.emailVerified).toBe(true);
-      expect(response.mfa).toBe(true);
+      expect((data as { emailVerified: boolean; mfa: boolean }).emailVerified).toBe(true);
+      expect((data as { emailVerified: boolean; mfa: boolean }).mfa).toBe(true);
     });
 
     it('should handle case-insensitive email signin', async () => {
@@ -88,11 +85,10 @@ describe('Password Authentication', async () => {
         password: signUpUser.password,
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: uppercaseEmail }, { headers: defaultHeaders });
+      const { response: res, data } = await call(signIn, { body: uppercaseEmail, headers: defaultHeaders });
 
       expect(res.status).toBe(200);
-      const response = await parseResponse<{ emailVerified: boolean }>(res);
-      expect(response.emailVerified).toBe(true);
+      expect((data as { emailVerified: boolean }).emailVerified).toBe(true);
     });
   });
 
@@ -106,24 +102,22 @@ describe('Password Authentication', async () => {
         password: 'wrongPassword123!',
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: wrongPassword }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: wrongPassword, headers: defaultHeaders });
 
       expect(res.status).toBe(403);
-      const error = await parseResponse<ErrorResponse>(res);
-      expect(error.type).toBe('invalid_password');
+      expect((error as ErrorResponse).type).toBe('invalid_password');
     });
 
     it('should reject signin for non-existent user', async () => {
       const nonExistentUser = {
-        email: 'nonexistent@cella.com',
+        email: 'nonexistent@example.com',
         password: 'somePassword123!',
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: nonExistentUser }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: nonExistentUser, headers: defaultHeaders });
 
       expect(res.status).toBe(404);
-      const error = (await res.json()) as { type: string };
-      expect(error.type).toBe('not_found');
+      expect((error as ErrorResponse).type).toBe('not_found');
     });
 
     it('should reject signin for user without password', async () => {
@@ -133,11 +127,10 @@ describe('Password Authentication', async () => {
 
       await db.insert(emailsTable).values(mockEmail(user));
 
-      const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(res.status).toBe(403);
-      const error = (await res.json()) as { type: string };
-      expect(error.type).toBe('no_password_found');
+      expect((error as ErrorResponse).type).toBe('no_password_found');
     });
 
     it('should reject signin with malformed email', async () => {
@@ -146,11 +139,10 @@ describe('Password Authentication', async () => {
         password: signUpUser.password,
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: malformedEmail }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: malformedEmail, headers: defaultHeaders });
 
       expect(res.status).toBe(403); // Zod validation errors return 403
-      const error = await parseResponse<ErrorResponse>(res);
-      expect(error.type).toBe('form.invalid_format');
+      expect((error as ErrorResponse).type).toBe('form.invalid_format');
     });
 
     it('should reject signin with missing fields', async () => {
@@ -159,11 +151,10 @@ describe('Password Authentication', async () => {
         password: '', // Empty password
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: missingPassword }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: missingPassword, headers: defaultHeaders });
 
       expect(res.status).toBe(403); // Zod validation errors return 403
-      const error = await parseResponse<ErrorResponse>(res);
-      expect(error.type).toBe('form.too_small');
+      expect((error as ErrorResponse).type).toBe('form.too_small');
     });
 
     it('should reject signin with empty fields', async () => {
@@ -172,7 +163,7 @@ describe('Password Authentication', async () => {
         password: '',
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: emptyFields }, { headers: defaultHeaders });
+      const { response: res } = await call(signIn, { body: emptyFields, headers: defaultHeaders });
 
       expect(res.status).toBe(403); // Zod validation errors return 403
     });
@@ -181,11 +172,11 @@ describe('Password Authentication', async () => {
   describe('Input Validation', () => {
     it('should handle very long email address', async () => {
       const longEmail = {
-        email: 'a'.repeat(300) + '@cella.com',
+        email: 'a'.repeat(300) + '@example.com',
         password: signUpUser.password,
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: longEmail }, { headers: defaultHeaders });
+      const { response: res } = await call(signIn, { body: longEmail, headers: defaultHeaders });
 
       expect(res.status).toBe(404); // User not found (email passes validation but user doesn't exist)
     });
@@ -196,30 +187,25 @@ describe('Password Authentication', async () => {
         password: 'a'.repeat(1000),
       };
 
-      const res = await client['auth']['sign-in'].$post({ json: longPassword }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: longPassword, headers: defaultHeaders });
 
       expect(res.status).toBe(403); // Zod validation error for password too long
-      const error = (await res.json()) as { type: string };
-      expect(error.type).toBe('form.too_big');
+      expect((error as ErrorResponse).type).toBe('form.too_big');
     });
   });
 
   describe('Configuration & Feature Flags', () => {
     it('should reject signin when password strategy is disabled', async () => {
-      // Temporarily disable password strategy
       setTestConfig({ enabledAuthStrategies: [] });
+      onTestFinished(() => setTestConfig({ enabledAuthStrategies: ['password'] }));
 
-      const res = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: res, error } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       // When strategy is disabled, it might return 400 or 404 depending on implementation
       expect([400, 404]).toContain(res.status);
       if (res.status === 400) {
-        const error = (await res.json()) as { type: string };
-        expect(error.type).toBe('forbidden_strategy');
+        expect((error as ErrorResponse).type).toBe('forbidden_strategy');
       }
-
-      // Re-enable for other tests
-      setTestConfig({ enabledAuthStrategies: ['password'] });
     });
   });
 
@@ -241,28 +227,29 @@ describe('Password Authentication', async () => {
         userId: user.id,
         verified: false,
         verifiedAt: null,
-        createdAt: pastIsoDate(),
+        createdAt: mockPastIsoDate(),
       });
 
       // First signin should redirect to verification
-      const firstRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: firstRes, data: firstData } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(firstRes.status).toBe(200);
-      const firstResponse = await parseResponse<{ emailVerified: boolean }>(firstRes);
-      expect(firstResponse.emailVerified).toBe(false);
+      expect((firstData as { emailVerified: boolean }).emailVerified).toBe(false);
 
       // Verify the email
       await db
         .update(emailsTable)
-        .set({ verified: true, verifiedAt: pastIsoDate() })
+        .set({ verified: true, verifiedAt: mockPastIsoDate() })
         .where(eq(emailsTable.email, signUpUser.email.toLowerCase()));
 
       // Second signin should succeed
-      const secondRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: secondRes, data: secondData } = await call(signIn, {
+        body: signUpUser,
+        headers: defaultHeaders,
+      });
 
       expect(secondRes.status).toBe(200);
-      const secondResponse = await parseResponse<{ emailVerified: boolean }>(secondRes);
-      expect(secondResponse.emailVerified).toBe(true);
+      expect((secondData as { emailVerified: boolean }).emailVerified).toBe(true);
     });
 
     it('should maintain session integrity across multiple requests', async () => {
@@ -271,7 +258,7 @@ describe('Password Authentication', async () => {
       await verifyUserEmail(signUpUser.email);
 
       // Sign in
-      const signinRes = await client['auth']['sign-in'].$post({ json: signUpUser }, { headers: defaultHeaders });
+      const { response: signinRes } = await call(signIn, { body: signUpUser, headers: defaultHeaders });
 
       expect(signinRes.status).toBe(200);
 
@@ -280,15 +267,12 @@ describe('Password Authentication', async () => {
       expect(setCookieHeader).toBeDefined();
 
       // Make authenticated request (sign-out to test session)
-      const protectedRes = await client['auth']['sign-out'].$post(
-        {},
-        {
-          headers: {
-            ...defaultHeaders,
-            Cookie: setCookieHeader || '',
-          },
+      const { response: protectedRes } = await call(signOut, {
+        headers: {
+          ...defaultHeaders,
+          Cookie: setCookieHeader || '',
         },
-      );
+      });
 
       // Should succeed if session is valid (sign-out returns 204)
       expect(protectedRes.status).toBe(204);

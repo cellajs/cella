@@ -4,9 +4,9 @@ import { baseDb as db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { defaultRestrictions } from '#/db/utils/tenant-restrictions';
 import type { Env } from '#/lib/context';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { defaultOptions, rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 
 /** Extract email from rate limit key like "email:user@example.com" or "email:user@example.comip:1.2.3.4" */
 const emailFromKey = (key: string) => {
@@ -27,7 +27,10 @@ const sendLockoutEmail = (rateLimitKey: string, type: 'wrong-password-lockout' |
     .limit(1)
     .then(([user]) => {
       if (user)
-        sendAccountSecurityEmail(user, type, { attempts: String(defaultOptions.points), duration: String(duration) });
+        sendAccountSecurityEmail(null, user, type, {
+          attempts: String(defaultOptions.points),
+          duration: String(duration),
+        });
     })
     .catch(() => {});
 };
@@ -83,11 +86,13 @@ export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerificati
 });
 
 /**
- * Passkey challenge rate limiter to prevent challenge generation abuse
+ * Passkey challenge rate limiter to prevent challenge generation abuse.
+ * Higher limit because conditional mediation (passkey autofill) generates
+ * a challenge on every sign-in form mount.
  */
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
-  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 15 },
-  description: 'Max 5 passkey challenges/hour per IP',
+  limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 5 },
+  description: 'Max 30 passkey challenges/hour per IP',
 });
 
 /**

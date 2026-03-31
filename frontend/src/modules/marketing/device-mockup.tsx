@@ -1,8 +1,8 @@
 import { useInView } from 'react-intersection-observer';
 
-import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
+import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { DeviceFrame } from '~/modules/marketing/device-mockup-frame';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';

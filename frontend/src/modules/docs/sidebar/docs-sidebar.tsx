@@ -6,13 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
 import { pagesListQueryOptions } from '~/modules/page/query';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
   SidebarContent,
@@ -22,8 +23,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '~/modules/ui/sidebar';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { UserTheme } from '../../me/user-theme';
@@ -118,6 +119,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       <div className="px-4 my-2 flex justify-center">
         <Link
           to="/about"
+          draggable={false}
           className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
           aria-label="Go to homepage"
           onClick={closeSheet}
@@ -128,11 +130,21 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
 
       {/* API spec action buttons and user theme */}
       <SidebarGroup>
-        <div className="flex justify-center items-center gap-2 pb-3">
+        <div className="flex justify-center items-center gap-2">
           <Suspense fallback={<div className="h-7 w-60 rounded-md border border-input bg-background/50" />}>
             <OpenApiJsonActions />
-            <UserTheme />
           </Suspense>
+        </div>
+      </SidebarGroup>
+
+      {/* Theme & sign in */}
+      <SidebarGroup>
+        <div className="flex justify-center items-center gap-4">
+          <Button size="xs" variant="ghost" className="h-8" render={<Link to="/auth/authenticate" preload={false} />}>
+            {t('common:sign_in')}
+          </Button>
+
+          <UserTheme buttonClassName="size-8" />
         </div>
       </SidebarGroup>
 
@@ -189,7 +201,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+              <CollapsibleContent className="overflow-hidden data-open:animate-collapsible-down data-closed:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
@@ -238,7 +250,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+              <CollapsibleContent className="overflow-hidden data-open:animate-collapsible-down data-closed:animate-collapsible-up">
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>
@@ -257,14 +269,16 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:pages')}</SidebarGroupLabel>
           {/* Edit pages */}
           {isSystemAdmin && (
-            <Link
-              to="/docs/pages"
-              onClick={closeSheet}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'xs' }), 'h-7 w-8 p-0')}
-              aria-label="Manage pages"
-            >
-              <PencilIcon size={14} />
-            </Link>
+            <TooltipButton toolTipContent={t('common:manage_pages')} side="right">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-7 w-8 p-0"
+                render={<Link to="/docs/pages" onClick={closeSheet} aria-label={t('common:manage_pages')} />}
+              >
+                <PencilIcon size={14} />
+              </Button>
+            </TooltipButton>
           )}
         </div>
         {/* List of pages */}
@@ -273,17 +287,13 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
             {pages && pages.length > 0 ? (
               pages.map((page) => (
                 <SidebarMenuItem key={page.id}>
-                  <Link
-                    to="/docs/page/$id"
-                    params={{ id: page.id }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start font-normal group px-3 lowercase',
-                    )}
-                    onClick={closeSheet}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start font-normal group px-3 lowercase"
+                    render={<Link to="/docs/page/$id" params={{ id: page.id }} onClick={closeSheet} />}
                   >
                     <span className="truncate">{page.name}</span>
-                  </Link>
+                  </Button>
                 </SidebarMenuItem>
               ))
             ) : (

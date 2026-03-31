@@ -12,7 +12,7 @@ import {
 } from '../../../mocks/mock-membership';
 
 /** Schema for entity roles enum - uses literal types from appConfig */
-export const entityRoleSchema = z.enum(roles.all);
+const entityRoleSchema = z.enum(roles.all);
 
 export const membershipSchema = z
   .object({
@@ -43,8 +43,8 @@ export const membershipBaseSchema = membershipSchema
   .omit({
     createdAt: true,
     createdBy: true,
-    modifiedAt: true,
-    modifiedBy: true,
+    updatedAt: true,
+    updatedBy: true,
   })
   .openapi('MembershipBase', {
     description: 'Core membership fields shared across active and inactive memberships.',

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type { RequestModel } from '#/db/schema/requests';
-import { mockNanoid, mockPaginated, withFakerSeed } from './utils';
+import { MOCK_REF_DATE, mockNanoid, mockPaginated, withFakerSeed } from './utils';
 
 /** Response type for request schema (excludes tokenId, adds wasInvited) */
 export interface RequestResponse extends Omit<RequestModel, 'tokenId'> {
@@ -18,7 +18,7 @@ export const mockRequest = (key = 'request:default'): RequestModel =>
     email: faker.internet.email().toLowerCase(),
     type: 'contact' as const,
     message: faker.lorem.sentence(),
-    createdAt: faker.date.past({ refDate: new Date('2025-01-01T00:00:00.000Z') }).toISOString(),
+    createdAt: faker.date.past({ refDate: MOCK_REF_DATE }).toISOString(),
     tokenId: null,
   }));
 

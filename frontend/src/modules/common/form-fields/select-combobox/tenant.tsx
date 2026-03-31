@@ -7,13 +7,11 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useUserStore } from '~/store/user';
 
 type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   options?: ComboboxSelectProps['options'];
-  /** When true, auto-selects and hides the field if only one tenant is available */
-  autoHide?: boolean;
 };
 
 /**
@@ -28,7 +26,6 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   options: opts,
   required,
   disabled,
-  autoHide,
 }: SelectTenantProps<TFieldValues>) => {
   const isSystemAdmin = useUserStore((s) => s.isSystemAdmin);
 
@@ -73,12 +70,7 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
     }
   }, [hasSingleOption, options, field.value]);
 
-  // When autoHide is enabled, render nothing until data loads (prevents flash),
-  // then nothing if ≤1 option, or an animated expand if multiple options
-  const isLoading = isSystemAdmin ? tenantsQuery.isLoading : membershipsQuery.isLoading;
-  if (autoHide && (isLoading || options.length <= 1)) return null;
-
-  const fieldElement = (
+  return (
     <FormField
       control={control}
       name={name}
@@ -107,10 +99,4 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
-
-  if (autoHide) {
-    return <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">{fieldElement}</div>;
-  }
-
-  return fieldElement;
 };

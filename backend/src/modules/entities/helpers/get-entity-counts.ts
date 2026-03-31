@@ -3,6 +3,7 @@ import { type ContextEntityType, hierarchy, roles } from 'shared';
 import type z from 'zod';
 import type { DbOrTx } from '#/db/db';
 import { contextCountersTable } from '#/db/schema/context-counters';
+import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import type { membershipCountSchema } from '#/schemas';
 
 /**
@@ -17,28 +18,24 @@ import type { membershipCountSchema } from '#/schemas';
  *
  * @param entityType - Type of the context entity
  * @returns Object containing:
- *   - contextCountersJoinOn: SQL for LEFT JOIN condition
  *   - countsSelect: SQL columns for counts.membership and counts.entities
  */
 export const getEntityCountsSelect = (entityType: ContextEntityType) => {
   const children = hierarchy.getChildren(entityType);
+  const col = '"context_counters"."counts"';
 
   // Build membership JSON: { admin: N, member: N, ..., pending: N, total: N }
-  const roleJsonPairs = roles.all
-    .map((role) => `'${role}', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:${role}')::int, 0))`)
-    .join(', ');
+  const roleJsonPairs = roles.all.map((role) => `'${role}', ${jsonbIntRaw(col, `m:${role}`)}`).join(', ');
 
   // Build entity JSON: { attachment: N, ... }
-  const entityJsonPairs = children
-    .map((entity) => `'${entity}', GREATEST(0, COALESCE(("context_counters"."counts"->>'e:${entity}')::int, 0))`)
-    .join(', ');
+  const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:${entity}`)}`).join(', ');
 
   const countsSelect = {
     membership: sql<z.infer<typeof membershipCountSchema>>`
       json_build_object(
         ${sql.raw(roleJsonPairs)},
-        'pending', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:pending')::int, 0)),
-        'total', GREATEST(0, COALESCE(("context_counters"."counts"->>'m:total')::int, 0))
+        'pending', ${sql.raw(jsonbIntRaw(col, 'm:pending'))},
+        'total', ${sql.raw(jsonbIntRaw(col, 'm:total'))}
       )`,
     entities: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entityJsonPairs)})`,
   };

@@ -3,9 +3,11 @@ import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Onboarding } from '~/modules/home/onboarding/steps';
 import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
-import { useUserStore } from '~/store/user';
-import { isElementInteractive } from '~/utils/is-el-interactive';
+import { useUserStore } from '~/modules/user/user-store';
 
+/**
+ * Welcome page shown to new users. Contains onboarding flow and welcome message. Only shown if user has not completed onboarding.
+ */
 function WelcomePage() {
   const { user } = useUserStore();
 
@@ -15,11 +17,8 @@ function WelcomePage() {
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
-      // Close onboarding on escape key if not focused on form
-      const activeElement = document.activeElement;
-      if (isElementInteractive(activeElement)) return;
-      setOnboardingState('completed');
-      return;
+      // Don't close onboarding on escape when focused on a form field
+      if (document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
     }
     if (!nextOpen) setOnboardingState('completed');
   };

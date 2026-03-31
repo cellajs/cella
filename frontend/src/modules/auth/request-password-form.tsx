@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { type RequestPasswordResponse, requestPassword } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';

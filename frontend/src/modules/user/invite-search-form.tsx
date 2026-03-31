@@ -31,19 +31,19 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
     invite(
       {
         body: values,
-        path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+        path: { tenantId: contextEntity.tenantId, organizationId: contextEntity.organizationId || contextEntity.id },
         query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
         contextEntity,
       },
       {
-        onSuccess: ({ invitesSentCount, rejectedItemIds }, { body: { emails } }) => {
+        onSuccess: ({ invitesSentCount, rejectedIds }, { body: { emails } }) => {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
             const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
             toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
           }
-          if (rejectedItemIds.length)
-            toaster(t('common:still_not_accepted', { count: rejectedItemIds.length, total: emails.length }), 'info');
+          if (rejectedIds.length)
+            toaster(t('common:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
 
           if (isDialog) useDialoger.getState().remove();
         },

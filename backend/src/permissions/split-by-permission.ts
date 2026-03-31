@@ -1,24 +1,23 @@
 import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType, ProductEntityType } from 'shared';
+import { baseDb } from '#/db/db';
+import { tenantRead } from '#/db/tenant-context';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
-import { resolveEntities } from '#/lib/resolve-entity';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { resolveEntities } from '#/modules/entities/helpers/resolve-entity';
 import { checkPermission } from '#/permissions';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
  *
  * Resolves the entities and checks whether the user can perform the specified action.
- * The result is split into `allowedIds` and `disallowedIds`.
+ * The result is split into `allowedIds` and `rejectedIds`.
  * Throws 403 if none of the requested IDs are allowed.
- * Note: Only context and product entities are supported - user access uses separate logic.
  *
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
  * @param entityType - The type of entity (context or product, not user).
  * @param ids - The entity IDs to check.
- * @param memberships - The user's memberships.
- * @returns An object with `allowedIds` and `disallowedIds` arrays.
+ * @returns An object with `allowedIds` and `rejectedIds` arrays.
  * @throws {AppError} 403 if no entities are allowed.
  */
 export const splitByPermission = async (
@@ -26,14 +25,17 @@ export const splitByPermission = async (
   action: EntityActionType,
   entityType: ContextEntityType | ProductEntityType,
   ids: string[],
-  memberships: MembershipBaseModel[],
 ) => {
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const userId = ctx.var.user.id;
-  const db = ctx.var.db;
+  const memberships = ctx.var.memberships;
 
   // Resolve entities (includes createdBy for implicit owner relation)
-  const entities = await resolveEntities(entityType, ids, db);
+  // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
+  const entities =
+    ctx.var.db === baseDb
+      ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx.var.db, entityType, ids))
+      : await resolveEntities(ctx.var.db, entityType, ids);
 
   // Check permissions for all entities in a single batch operation.
   // userId enables 'own' policy evaluation per entity.
@@ -41,19 +43,19 @@ export const splitByPermission = async (
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];
-  const disallowedIds: string[] = [];
+  const rejectedIds: string[] = [];
 
   for (const entity of entities) {
     const result = results.get(entity.id);
     if (result?.isAllowed) {
       allowedIds.push(entity.id);
     } else {
-      disallowedIds.push(entity.id);
+      rejectedIds.push(entity.id);
     }
   }
 
   // Throw if user has no permission for any of the requested entities
   if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
-  return { allowedIds, disallowedIds };
+  return { allowedIds, rejectedIds };
 };

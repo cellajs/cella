@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { GlobeIcon, PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Tenant } from '~/api.gen';
+import type { Tenant } from 'sdk';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -24,7 +24,7 @@ export const useColumns = () => {
     {
       key: 'id',
       name: t('common:id'),
-      sortable: false,
+
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
@@ -33,7 +33,7 @@ export const useColumns = () => {
     {
       key: 'status',
       name: t('common:status'),
-      sortable: false,
+
       resizable: true,
       width: 100,
       renderCell: ({ row }) => {
@@ -71,7 +71,7 @@ export const useColumns = () => {
     {
       key: 'subscriptionStatus',
       name: t('common:subscription'),
-      sortable: false,
+
       minBreakpoint: 'md',
       width: 140,
       renderCell: ({ row }) => {
@@ -91,7 +91,7 @@ export const useColumns = () => {
     {
       key: 'domainsCount',
       name: t('common:domains'),
-      sortable: false,
+
       minBreakpoint: 'md',
       width: 100,
       renderCell: ({ row }) => (
@@ -104,7 +104,7 @@ export const useColumns = () => {
     {
       key: 'edit',
       name: '',
-      sortable: false,
+
       minBreakpoint: 'md',
       width: 32,
       renderCell: ({ row, tabIndex }) => <UpdateRow tenant={row} tabIndex={tabIndex} />,
@@ -112,7 +112,7 @@ export const useColumns = () => {
     {
       key: 'ellipsis',
       name: '',
-      sortable: false,
+
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const isMobile = window.innerWidth < 640;

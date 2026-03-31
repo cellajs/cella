@@ -14,10 +14,11 @@ import { printWarnings, validateOverrides } from './utils/overrides';
 /** Service descriptions for inquirer prompt */
 const serviceDescriptions: Record<SyncService, string> = {
   analyze: 'dry run to see what would change',
-  inspect: 'review drifted files, view diffs, contribute upstream',
+  inspect: 'review drifted files, view diffs',
   sync: 'merge upstream changes',
   packages: 'sync package.json keys with upstream',
   audit: 'check for outdated packages & vulnerabilities',
+  contribute: 'create a PR with fork changes for upstream',
   forks: 'sync downstream to local fork repositories',
   contributions: 'review and accept file contributions from forks',
 };
@@ -25,7 +26,7 @@ const serviceDescriptions: Record<SyncService, string> = {
 /**
  * Build service menu choices, conditionally including optional services.
  */
-function buildServiceChoices(hasForks: boolean, syncWithPackages: boolean) {
+function buildServiceChoices(hasForks: boolean, hasUpstreamLocal: boolean, syncWithPackages: boolean) {
   const baseChoices = [
     { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
     { value: 'inspect' as SyncService, name: `inspect    ${pc.dim(serviceDescriptions.inspect)}` },
@@ -41,6 +42,14 @@ function buildServiceChoices(hasForks: boolean, syncWithPackages: boolean) {
   }
 
   baseChoices.push({ value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` });
+
+  // Add contribute option for forks with upstreamLocalPath
+  if (hasUpstreamLocal) {
+    baseChoices.push({
+      value: 'contribute' as SyncService,
+      name: `contribute ${pc.dim(serviceDescriptions.contribute)}`,
+    });
+  }
 
   // Add forks option if configured
   if (hasForks) {
@@ -73,11 +82,13 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .helpOption('-h, --help', 'display this help message')
     .option(
       '--service <name>',
-      'service to run: analyze, inspect, sync, packages, audit, forks, contributions',
+      'service to run: analyze, inspect, sync, packages, audit, contribute, forks, contributions',
       (value) => {
-        if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks', 'contributions'].includes(value)) {
+        if (
+          !['analyze', 'inspect', 'sync', 'packages', 'audit', 'contribute', 'forks', 'contributions'].includes(value)
+        ) {
           console.error(
-            `invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, forks, contributions`,
+            `invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, contribute, forks, contributions`,
           );
           process.exit(1);
         }
@@ -94,7 +105,6 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
       verbose = true;
     })
     .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)')
-    .option('--contribute', 'push drifted files to contrib branch in upstream (non-interactive)')
     .option('--hard', 'overwrite drifted files with upstream version (aggressive realignment)')
     .option('--force', 'bypass pnpm metadata cache for fresh registry data (audit)');
 
@@ -110,14 +120,15 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     console.info();
   }
 
-  // If no service provided (and not --contribute), prompt for it
+  // If no service provided, prompt for it
   const opts = program.opts();
-  if (!service && !opts.contribute) {
+  if (!service) {
     const hasForks = (userConfig.forks?.length ?? 0) > 0;
+    const hasUpstreamLocal = !!userConfig.settings.upstreamLocalPath;
     const syncWithPackages = userConfig.settings.syncWithPackages !== false;
     const selected = await select<SyncService | 'exit'>({
       message: 'choose a service:',
-      choices: buildServiceChoices(hasForks, syncWithPackages),
+      choices: buildServiceChoices(hasForks, hasUpstreamLocal, syncWithPackages),
       loop: false,
     });
 
@@ -144,7 +155,6 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     list,
     verbose,
     fork: opts.fork,
-    contribute: opts.contribute,
     hard: opts.hard,
     force: opts.force,
   };

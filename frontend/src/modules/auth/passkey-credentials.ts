@@ -1,9 +1,9 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
+import { generatePasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
-import { generatePasskeyChallenge } from '~/api.gen';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 /**
  * Check if the browser supports conditional mediation (passkey autofill).

@@ -1,4 +1,4 @@
-import type { Request } from '~/api.gen';
+import type { Request } from 'sdk';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

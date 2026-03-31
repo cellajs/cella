@@ -6,7 +6,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export function PasskeysList() {
   const { t } = useTranslation();

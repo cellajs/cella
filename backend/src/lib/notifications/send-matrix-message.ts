@@ -21,7 +21,7 @@ export const sendMatrixMessage = async ({
   html?: string;
 }) => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
-    logEvent('info', 'Missing required Element env values (roomId and/or  botAccessToken).');
+    logEvent(null, 'info', 'Missing required Element env values (roomId and/or  botAccessToken).');
     return;
   }
   // Construct payload
@@ -46,10 +46,10 @@ export const sendMatrixMessage = async ({
   });
 
   if (matrixResponse.ok) {
-    logEvent('info', 'Matrix message sent successfully to specified room');
+    logEvent(null, 'info', 'Matrix message sent successfully to specified room');
   } else {
     const errorBody = await matrixResponse.json();
-    logError('Failed to send Matrix message', errorBody);
+    logError(null, 'Failed to send Matrix message', errorBody);
   }
   return matrixResponse;
 };

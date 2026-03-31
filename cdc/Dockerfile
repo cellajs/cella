@@ -1,5 +1,5 @@
 # =============================================================================
-# Cella CDC Worker - Production Dockerfile
+# CDC Worker - Production Dockerfile
 # =============================================================================
 # Lightweight Node.js 24 container for CDC (Change Data Capture) worker
 # Connects to PostgreSQL logical replication and forwards to backend WebSocket
@@ -30,7 +30,7 @@ COPY packages/tracing/package.json ./packages/tracing/
 COPY patches/ ./patches/
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @cella/cdc...
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter cdc...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -46,7 +46,7 @@ COPY packages/tracing/package.json ./packages/tracing/
 COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter @cella/cdc...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter cdc...
 
 # Copy source code
 COPY cdc/ ./cdc/
@@ -64,8 +64,8 @@ RUN pnpm build
 # -----------------------------------------------------------------------------
 FROM node:24-alpine AS production
 
-RUN addgroup --system --gid 1001 cella && \
-  adduser --system --uid 1001 cella
+RUN addgroup --system --gid 1001 app && \
+  adduser --system --uid 1001 app
 
 WORKDIR /app
 
@@ -78,21 +78,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/cdc/node_modules ./cdc/node_modules
 
 # Set ownership
-RUN chown -R cella:cella /app
+RUN chown -R app:app /app
 
 # Switch to non-root user
-USER cella
+USER app
 
 # Environment variables
 ENV NODE_ENV=production
-ENV CDC_HEALTH_PORT=4001
-
-# Expose health port
-EXPOSE 4001
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4001/health || exit 1
 
 # Start the CDC worker
 WORKDIR /app/cdc

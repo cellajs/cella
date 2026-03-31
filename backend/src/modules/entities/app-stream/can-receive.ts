@@ -1,6 +1,6 @@
 import { isProductEntity, type ProductEntityType } from 'shared';
 import { checkPermission } from '#/permissions';
-import { type ActivityEventWithEntity, getTypedEntity } from '#/sync/activity-bus';
+import { type ActivityEventWithEntity, getTypedRowData } from '#/sync/activity-bus';
 import { logEvent } from '#/utils/logger';
 import type { AppStreamSubscriber } from './types';
 
@@ -16,7 +16,7 @@ import type { AppStreamSubscriber } from './types';
 export function canReceiveUserEvent(subscriber: AppStreamSubscriber, event: ActivityEventWithEntity): boolean {
   // For membership events, check if user is the subject
   if (event.resourceType === 'membership') {
-    const membership = getTypedEntity(event, 'membership');
+    const membership = getTypedRowData(event, 'membership');
     return membership?.userId === subscriber.userId;
   }
 
@@ -43,7 +43,7 @@ function canReceiveProductEntityEvent(
   if (!event.entityId || !event.organizationId) return false;
 
   // Defense in depth: user must be member of the organization
-  if (!subscriber.orgIds.has(event.organizationId)) return false;
+  if (!subscriber.organizationIds.has(event.organizationId)) return false;
 
   const eventEntity = {
     id: event.entityId,
@@ -57,7 +57,7 @@ function canReceiveProductEntityEvent(
   });
 
   if (!isAllowed) {
-    logEvent('debug', 'App stream notification filtered by permission', {
+    logEvent(null, 'debug', 'App stream notification filtered by permission', {
       userId: subscriber.userId,
       entityType,
       entityId: event.entityId,

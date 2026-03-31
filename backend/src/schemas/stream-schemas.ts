@@ -4,35 +4,55 @@ import { activityActions } from '#/sync/activity-actions';
 import { mockStreamNotification } from '../../mocks/mock-entity-base';
 import { stxBaseSchema } from './sync-transaction-schemas';
 
+/** Reusable schema for embedded entity propagation hints */
+const propagationHintSchema = z.object({
+  sourceType: z.string().describe('Entity type that triggered the propagation (e.g. label)'),
+  targetType: z.string().describe('Entity type whose cache should be invalidated (e.g. task)'),
+  field: z.string().describe('Field on the target entity that references the source (e.g. labels)'),
+  update: z.array(z.string()).describe('Target entity IDs that need cache refresh'),
+  remove: z.array(z.string()).describe('Target entity IDs that need the source reference removed'),
+});
+
 /**
  * Stream notification schema for SSE streams.
  * Shared by both app and public streams — identical payload shape.
  * Lightweight payload - client fetches entity data via API if needed.
  *
  * For product entities (page, attachment):
- * - Includes stx, seqAt, cacheToken for sync engine
+ * - Includes stx, seq, cacheToken for sync engine
  *
  * For membership — app stream only:
  * - seq is null (membership changes detected via activity scan on catchup)
- * - stx/seqAt/cacheToken are null
+ * - stx/seq/cacheToken are null
  */
 export const streamNotificationSchema = z
   .object({
     action: z.enum(activityActions),
-    /** Entity type for product entity events */
     entityType: z.enum(appConfig.productEntityTypes).nullable(),
-    /** Resource type for non-entity events (membership) */
     resourceType: z.enum(appConfig.resourceTypes).nullable(),
     entityId: z.string(),
     organizationId: z.string().nullable(),
-    /** Context entity type for membership events (organization, project, etc.) */
-    contextType: z.enum(appConfig.contextEntityTypes).nullable(),
-    /** Per-entityType sequence number stamped by trigger (for product entity sync) */
-    seqAt: z.number().int().nullable(),
-    /** Sync transaction metadata for conflict detection (entities only) */
-    stx: stxBaseSchema.nullable(),
-    /** HMAC-signed token for LRU cache access (entities only) */
-    cacheToken: z.string().nullable(),
+    tenantId: z.string().nullable(),
+    contextType: z
+      .enum(appConfig.contextEntityTypes)
+      .nullable()
+      .describe('Context entity type for membership events (e.g. organization, project)'),
+    seq: z.number().int().nullable().describe('Per-entityType sequence number used for gap detection in sync'),
+    contextId: z
+      .string()
+      .nullable()
+      .describe('Context entity ID for grouping (e.g. projectId for tasks in unseen counts)'),
+    stx: stxBaseSchema.nullable().describe('Sync transaction metadata for HLC conflict resolution'),
+    cacheToken: z.string().nullable().describe('HMAC-signed token for single-entity LRU cache access'),
+    batchUntilSeq: z
+      .number()
+      .int()
+      .nullable()
+      .describe('Last seq for a batched notification — client should fetch range'),
+    deletedIds: z.array(z.string()).nullable().describe('Entity IDs in a delete batch'),
+    propagation: propagationHintSchema
+      .nullable()
+      .describe('Embedded entity propagation hint for cross-entity cache invalidation'),
   })
   .openapi('StreamNotification', {
     description: 'Realtime notification delivered via SSE for entity and membership changes.',
@@ -54,44 +74,55 @@ export const streamCatchupBodySchema = z.object({
     .record(z.string(), z.number().int())
     .optional()
     .openapi({
-      description: 'Client-side sequence numbers per scope: { "orgId:s:page": 42 }',
+      description: 'Client-side sequence numbers per scope: { "organizationId:s:page": 42 }',
       example: { 'abc123:s:page': 10 },
     }),
+});
+
+/** Per-project change summary for project-level seq drill-down. */
+const projectChangeSummarySchema = z.object({
+  entitySeqs: z.record(z.string(), z.number().int()).optional(),
+  entityCounts: z.record(z.string(), z.number().int()).optional(),
 });
 
 /**
  * Per-scope catchup change summary.
  * Used in catchup responses to give client minimal info to sync efficiently.
  *
- * - entitySeqs: contextEntity-scoped sequence numbers from context_counters JSONB (s:{type} keys)
- *   - Source of truth for create/update detection (managed by stamp_entity_seq_at trigger)
- * - deletedIds: exact IDs to remove from cache (always scanned, watertight)
- * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal
- * - membershipChanged: true if membership activities detected in cursor range (activity scan)
+ * Dual-level design:
+ * - entitySeqs (org-level): quick screening — "did anything change for this entity type in this org?"
+ * - projectChanges (project-level): precision drill-down — per-project entitySeqs for delta fetch
  *
- * Client logic (per entityType):
- * - entityDelta = serverEntitySeq - clientEntitySeq
- * - if entityDelta > deletedForType.length → creates/updates happened → invalidate entity lists
- * - deletedIds are always applied directly (cache patching)
+ * - deletedByType: deleted entity IDs grouped by entityType for targeted cache removal (watertight via activities scan)
+ *
+ * Client logic:
+ * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)
+ * 2. For changed orgs, iterate projectChanges to find which projects changed
+ * 3. Delta fetch only for changed (project, entityType) pairs
+ * - deletedByType entries are always applied directly (cache patching)
  * - On catchup: always invalidate membership queries (lightweight, deduplicated by React Query)
  */
 export const catchupChangeSummarySchema = z.object({
-  deletedIds: z.array(z.string()),
+  deletedByType: z.record(z.string(), z.array(z.string())),
+  /** Org-level entity seqs (change signal for quick screening). Managed by CDC worker. */
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
-  deletedByType: z.record(z.string(), z.array(z.string())).optional(),
-  /** Per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */
+  /** Org-level per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */
   entityCounts: z.record(z.string(), z.number().int()).optional(),
+  /** Per-project entity seqs and counts for project-level delta fetch precision. */
+  projectChanges: z.record(z.string(), projectChangeSummarySchema).optional(),
+  /** Embedded entity propagation hints (source entity changes that require target cache patching) */
+  propagation: z.array(propagationHintSchema).optional(),
 });
 
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 
 /**
  * Catchup response schema for app stream.
- * Changes keyed by orgId. Client uses org context for priority routing.
+ * Changes keyed by organizationId. Client uses org context for priority routing.
  */
 export const appCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
-    description: 'Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }',
+    description: 'Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }',
   }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
 });
@@ -104,7 +135,7 @@ export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;
  */
 export const publicCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
-    description: 'Per-entityType change summary: { [entityType]: { seq, deletedIds } }',
+    description: 'Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }',
   }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
 });

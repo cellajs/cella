@@ -13,9 +13,10 @@
       "cli/create-cella/src/**",
       "cli/create-cella/tests/**",
       "packages/data-grid/src/**",
-      "src/**",
+      "sdk/gen/**",
+      "sdk/src/**",
       "locales",
-      "frontend/openapi-ts.config.ts"
+      "sdk/openapi-ts.config.ts"
     ]
   },
   "css": {

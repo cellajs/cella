@@ -1,3 +1,4 @@
+import type { AnyRoute } from '@tanstack/react-router';
 import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
@@ -5,10 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { useNavTabs } from '~/hooks/use-nav-tabs';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { StickyBox } from '~/modules/common/sticky-box';
+import router from '~/routes/router';
 import { cn } from '~/utils/cn';
 import { truncateMiddle } from '~/utils/truncate-middle';
 
@@ -20,6 +21,49 @@ export type PageTab = {
   search?: LinkComponentProps['search'];
   activeOptions?: LinkComponentProps['activeOptions'];
 };
+
+function hasRoute<TRoutes extends Record<string, AnyRoute>>(
+  routes: TRoutes,
+  routeId: string,
+): routeId is Extract<keyof TRoutes, string> {
+  return routeId in routes;
+}
+
+function getChildRoutes(route: AnyRoute): AnyRoute[] {
+  return Array.isArray(route.children) ? route.children : [];
+}
+
+/**
+ * Extract navigation tabs from child routes based on their staticData.navTab configuration.
+ * Only routes with navTab defined in staticData will be included.
+ */
+function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
+  if (!parentRouteId) return [];
+
+  const routesById = router.routesById;
+  if (!hasRoute(routesById, parentRouteId)) return [];
+
+  const parentRoute = routesById[parentRouteId];
+  const children = getChildRoutes(parentRoute);
+
+  const tabs: PageTab[] = children
+    .map((route) => {
+      const navTab = route.options?.staticData?.navTab;
+      if (!navTab) return null;
+      return {
+        id: navTab.id,
+        label: navTab.label,
+        path: route.fullPath as PageTab['path'],
+      };
+    })
+    .filter((tab): tab is PageTab => tab !== null);
+
+  if (filterTabIds) {
+    return tabs.filter((tab) => filterTabIds.includes(tab.id));
+  }
+
+  return tabs;
+}
 
 interface Props {
   /** Explicit tabs array - if provided, takes precedence over parentRouteId */

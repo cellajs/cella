@@ -491,7 +491,7 @@ export function StickyBox(props: StickyBoxCompProps) {
   }, [setRef]);
 
   useEffect(() => {
-    if (!hideWhenOutOfView || !ref.current) return;
+    if (!hideWhenOutOfView || !enabled || !ref.current) return;
 
     const scrollParent = getScrollParent(ref.current);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
@@ -523,14 +523,14 @@ export function StickyBox(props: StickyBoxCompProps) {
     return () => {
       scrollParent.removeEventListener('scroll', onScroll);
     };
-  }, [hideWhenOutOfView]);
+  }, [hideWhenOutOfView, enabled]);
 
   // When element returns to its natural (non-sticky) position, ensure it's visible
   useEffect(() => {
     if (hideWhenOutOfView && !isSticky) setVisible(true);
   }, [hideWhenOutOfView, isSticky]);
 
-  if (!hideWhenOutOfView) {
+  if (!hideWhenOutOfView || !enabled) {
     return (
       <div className={className} data-sticky={isSticky} style={style} ref={ref} {...rest}>
         {children}

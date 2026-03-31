@@ -21,7 +21,7 @@ export const badgeVariants = cva(
         warning: '[--intent-color:var(--warning)] border-transparent bg-warning text-warning-foreground',
       },
       soft: {
-        true: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20 shadow-none',
+        true: 'soft-bg text-(--intent-color) soft-border shadow-none',
         false: '',
       },
       size: {
@@ -52,12 +52,19 @@ export function Badge({
   soft,
   context,
   size,
-  asChild = false,
+  render,
+  children,
   ...props
-}: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : 'span';
+}: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { render?: React.ReactElement }) {
+  const computedProps = {
+    'data-slot': 'badge',
+    className: cn(badgeVariants({ variant, soft, size, context }), className),
+    ...props,
+  };
 
-  return (
-    <Comp data-slot="badge" className={cn(badgeVariants({ variant, soft, size, context }), className)} {...props} />
-  );
+  if (render) {
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+  }
+
+  return <span {...computedProps}>{children}</span>;
 }

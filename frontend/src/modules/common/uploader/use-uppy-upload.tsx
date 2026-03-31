@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
@@ -85,7 +84,6 @@ export function useUploadUppy() {
               statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>),
             ).catch((err) => {
               console.error('onComplete handler failed:', err);
-              Sentry.captureException(err);
               toaster(t('error:create_resource', { resource: t('common:attachment').toLowerCase() }), 'error');
             });
           });
@@ -115,7 +113,7 @@ export function useUploadUppy() {
         }
         setUppy(localUppy);
       } catch (err) {
-        Sentry.captureException(err);
+        console.error('Failed to initialize upload:', err);
         const message = err instanceof Error ? err.message : 'Failed to initialize upload';
         setError(message);
       }

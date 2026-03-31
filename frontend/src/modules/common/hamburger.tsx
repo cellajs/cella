@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface HamburgerButtonProps {

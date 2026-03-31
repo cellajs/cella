@@ -12,7 +12,7 @@
  *   that survives refresh but is cleaned up on tab close via `beforeunload`.
  *   Orphaned sessions (e.g. tab crash) are cleaned up on next app startup.
  */
-import * as Sentry from '@sentry/react';
+
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
@@ -56,25 +56,46 @@ function getTabSessionId(): string {
 }
 
 /**
+ * Throttle interval for IDB writes. PersistQueryClientProvider fires on every
+ * cache event (added/removed/updated) with no built-in throttle, which causes
+ * excessive dehydrate + IDB write cycles during high-frequency updates like
+ * virtual scroll re-renders. This batches writes to at most one per interval.
+ */
+const PERSIST_THROTTLE_MS = 1000;
+
+/**
  * Creates an IndexedDB persister for React Query using Dexie.
  * Used for both session-scoped and persistent (offline) cache storage.
  */
 function createIDBPersister(idbValidKey: string = 'reactQuery') {
+  let pendingClient: PersistedClient | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  async function flush() {
+    const client = pendingClient;
+    pendingClient = null;
+    timeoutId = null;
+    if (!client) return;
+    try {
+      await queryDb.persist.put(
+        {
+          key: idbValidKey,
+          timestamp: client.timestamp,
+          clientState: client.clientState,
+          buster: client.buster,
+        },
+        idbValidKey,
+      );
+    } catch (error) {
+      console.error('[QueryPersister] Failed to persist client:', error);
+    }
+  }
+
   return {
     persistClient: async (client: PersistedClient) => {
-      try {
-        await queryDb.persist.put(
-          {
-            key: idbValidKey,
-            timestamp: client.timestamp,
-            clientState: client.clientState,
-            buster: client.buster,
-          },
-          idbValidKey,
-        );
-      } catch (error) {
-        Sentry.captureException(error);
-        console.error('[QueryPersister] Failed to persist client:', error);
+      pendingClient = client;
+      if (!timeoutId) {
+        timeoutId = setTimeout(flush, PERSIST_THROTTLE_MS);
       }
     },
     restoreClient: async () => {
@@ -89,7 +110,6 @@ function createIDBPersister(idbValidKey: string = 'reactQuery') {
         }
         return undefined;
       } catch (error) {
-        Sentry.captureException(error);
         console.error('[QueryPersister] Failed to restore client:', error);
         return undefined;
       }
@@ -98,7 +118,6 @@ function createIDBPersister(idbValidKey: string = 'reactQuery') {
       try {
         await queryDb.persist.delete(idbValidKey);
       } catch (error) {
-        Sentry.captureException(error);
         console.error('[QueryPersister] Failed to remove client:', error);
       }
     },

@@ -1,9 +1,9 @@
 import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { getPublicCounts } from 'sdk';
 import { appConfig, type EntityType } from 'shared';
 import { CountUp } from 'use-count-up';
-import { getPublicCounts } from '~/api.gen';
 import { counts } from '~/modules/marketing/marketing-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 

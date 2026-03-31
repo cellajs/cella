@@ -8,8 +8,8 @@ import {
   type EntityType,
   hierarchy,
 } from 'shared';
+import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableEntity } from '~/query/enrichment/types';
-import { useUserStore } from '~/store/user';
 
 /** Deep-compare two EntityCanMap objects (supports three-state: true/false/'own') */
 function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined): boolean {

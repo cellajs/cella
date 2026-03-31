@@ -1,4 +1,4 @@
-import { zGetOrganizationsData } from '~/api.gen/zod.gen';
+import { zGetOrganizationsData } from 'sdk/zod.gen';
 
 /**
  * Search params schema for organizations route.

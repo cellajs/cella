@@ -43,6 +43,31 @@ export const RESOURCE_LIMITS = {
     /** Delay between takeover attempts (ms) */
     retryDelayMs: 5000,
   },
+
+  // Catchup mode thresholds
+  catchup: {
+    /** WAL lag threshold to enter catchup mode (ms) */
+    enterLagMs: 10_000,
+    /** WAL lag threshold to exit catchup mode (ms) */
+    exitLagMs: 2_000,
+    /** Consecutive live transactions before exiting catchup */
+    exitConsecutiveLive: 3,
+    /** Log progress every N events during catchup */
+    progressLogInterval: 1000,
+  },
+
+  // Buffer safety caps
+  buffers: {
+    /** Micro-batching window (ms). Fallback deadline for low-traffic periods.
+     *  0 = immediate (no batching), 50 = default */
+    flushWindowMs: 50,
+    /** Flush as soon as this many events accumulate (primary trigger under load) */
+    flushBatchSize: 100,
+    /** Force-flush if accumulated events exceed this count */
+    maxBufferedEvents: 20_000,
+    /** Flush events individually if no commit arrives within this window (ms) */
+    transactionTimeoutMs: 30_000,
+  },
 } as const;
 
 /**

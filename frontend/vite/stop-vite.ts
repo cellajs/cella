@@ -1,6 +1,8 @@
 import { exec } from 'node:child_process';
 import os from 'node:os';
-import { checkMark } from './console';
+import pc from 'picocolors';
+
+const checkMark = pc.bold(pc.greenBright('✔'));
 
 const isWindows = os.platform() === 'win32';
 

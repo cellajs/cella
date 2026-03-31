@@ -23,7 +23,6 @@ import {
 import pc from 'picocolors';
 import type { AnalyzedFile, RuntimeConfig } from '../config/types';
 import { createSpinner, DIVIDER, showDiffInPager, spinnerSuccess, spinnerText } from '../utils/display';
-import { pushContribBranch } from './contribute';
 import { runMergeEngine } from './merge-engine';
 
 /** Track temp directories for cleanup on process exit */
@@ -347,10 +346,8 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
     pageSize: 20,
   });
 
-  // Push selected files to contrib branch
   if (selectedPaths.length > 0) {
-    const selectedFiles = driftedFiles.filter((f) => selectedPaths.includes(f.path));
-    await pushContribBranch(selectedFiles, config);
+    console.info(pc.dim(`  ${selectedPaths.length} file(s) selected — use the contribute service to create a PR`));
   }
 
   console.info();

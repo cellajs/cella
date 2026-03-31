@@ -9,7 +9,7 @@ import type {
   MeAuthData,
   ToggleMfaData,
   User,
-} from '~/api.gen';
+} from 'sdk';
 import {
   createPasskey,
   deletePasskey,
@@ -20,16 +20,16 @@ import {
   toggleMfa,
   type UpdateMeData,
   updateMe,
-} from '~/api.gen';
+} from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
-import { useUserStore } from '~/store/user';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.

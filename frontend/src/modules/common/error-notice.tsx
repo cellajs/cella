@@ -1,19 +1,17 @@
-import { SearchParamError, useRouterState } from '@tanstack/react-router';
-import i18n from 'i18next';
+import { useRouterState } from '@tanstack/react-router';
 import { ChevronUpIcon, HomeIcon, MessageCircleQuestionIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app/app-footer';
-import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
+import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import router from '~/routes/router';
 import type { BoundaryType } from '~/routes/types';
 
-export type ErrorNoticeError = ApiError | Error | null;
+export type { ErrorNoticeError } from '~/modules/common/error-helpers';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
@@ -22,54 +20,6 @@ interface ErrorNoticeProps {
   resetErrorBoundary?: () => void;
   homePath?: string;
 }
-
-export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
-  if (!window.Gleap) return contactFormHandler(ref);
-  window.Gleap.openConversations();
-};
-
-/**
- * Returns a locale key string based on the error type or query.
- */
-function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): string {
-  if (errorFromQuery) return errorFromQuery;
-  if (!error) return 'error';
-
-  if (error instanceof SearchParamError) return 'invalid_param';
-
-  if (error instanceof ApiError)
-    return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
-
-  return error.name;
-}
-
-/**
- * Returns localized error info (title and message) for a given error.
- */
-export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeError; errorFromQuery?: string }) => {
-  const localeKey = getErrorLocaleKey(error, errorFromQuery);
-
-  const translationOptions = {
-    ns: ['appError', 'error'],
-    ...(error instanceof ApiError && error.entityType
-      ? { resource: i18n.t(error.entityType), resourceLowerCase: i18n.t(error.entityType).toLowerCase() }
-      : {}),
-  };
-
-  const defaultTitle = error?.name || i18n.t('error:error');
-  const defaultMessage = error?.message || '';
-
-  // Title translation
-  const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
-
-  // Message translation with severity check (type-safe)
-  const message =
-    error && 'severity' in error && error.severity === 'info'
-      ? error.message
-      : i18n.t(`${localeKey}.text`, { ...translationOptions, defaultValue: defaultMessage });
-
-  return { title, message };
-};
 
 /**
  * Error can be shown in multiple levels

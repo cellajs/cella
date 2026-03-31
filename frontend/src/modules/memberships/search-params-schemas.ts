@@ -1,5 +1,5 @@
+import { zGetMembersData } from 'sdk/zod.gen';
 import z from 'zod';
-import { zGetMembersData } from '~/api.gen/zod.gen';
 
 /**
  * Search params schema for members route.

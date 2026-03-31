@@ -126,7 +126,7 @@ jobs:
         run: cd frontend && pnpm exec playwright install
 
       - name: Generate OpenAPI spec
-        run: pnpm --filter backend generate-openapi
+        run: pnpm --filter backend generate:openapi
 
       - name: Run database migrations
         run: pnpm --filter backend push

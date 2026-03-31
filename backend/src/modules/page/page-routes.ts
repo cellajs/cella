@@ -6,6 +6,7 @@ import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limit
 import {
   batchResponseSchema,
   errorResponseRefs,
+  fullResponseQuerySchema,
   idsWithStxBodySchema,
   paginationSchema,
   tenantIdParamSchema,
@@ -125,6 +126,7 @@ const pagesRoutes = {
     description: 'Update a single *page* by ID.',
     request: {
       params: tenantIdParamSchema,
+      query: fullResponseQuerySchema,
       body: {
         required: true,
         content: { 'application/json': { schema: pageUpdateStxBodySchema } },

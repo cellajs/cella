@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 import '@blocknote/shadcn/style.css';

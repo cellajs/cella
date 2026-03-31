@@ -57,3 +57,12 @@ export interface AccessPolicyConfiguration {
  * Callback function for configuring access policies.
  */
 export type AccessPolicyCallback = (config: AccessPolicyConfiguration) => void;
+
+/**
+ * Per-action permission state resolved for a specific entity type.
+ *
+ * - `true` = unconditionally allowed
+ * - `false` = denied
+ * - `'own'` = allowed only when the actor owns the entity
+ */
+export type ActionPermissionState = boolean | 'own';

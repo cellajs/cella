@@ -35,7 +35,6 @@ import {
   OrganizationSettingsRoute,
 } from '~/routes/organization-routes';
 import {
-  MetricsRoute,
   OrganizationsTableRoute,
   RequestsTableRoute,
   SystemRoute,
@@ -47,20 +46,20 @@ import { BoundaryType } from './types';
 
 // Re-export layout routes and individual routes for fork extensions
 export {
-  // Layouts
-  RootRoute,
-  PublicLayoutRoute,
   AppLayoutRoute,
   AuthLayoutRoute,
-  OrganizationLayoutRoute,
-  OrganizationRoute,
-  SystemRoute,
   DocsLayoutRoute,
+  HomeAliasRoute,
   // Individual routes forks might need
   HomeRoute,
-  HomeAliasRoute,
-  WelcomeRoute,
+  OrganizationLayoutRoute,
+  OrganizationRoute,
+  PublicLayoutRoute,
+  // Layouts
+  RootRoute,
+  SystemRoute,
   UserAccountRoute,
+  WelcomeRoute,
 };
 
 /** Base public children (marketing pages, without auth/docs layouts) */
@@ -108,7 +107,6 @@ export const baseSystemChildren = [
   UsersTableRoute,
   OrganizationsTableRoute,
   RequestsTableRoute,
-  MetricsRoute,
   TenantsTableRoute,
 ] as const;
 

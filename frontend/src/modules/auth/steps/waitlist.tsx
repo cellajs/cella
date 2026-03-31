@@ -1,9 +1,9 @@
 import { ChevronDownIcon, LockIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
 
 /**
  * Renders the waitlist request step, including:

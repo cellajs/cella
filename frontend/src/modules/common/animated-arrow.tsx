@@ -9,6 +9,6 @@ export const AnimatedArrow = () => (
     aria-hidden="true"
   >
     <path className="opacity-0 transition group-hover:opacity-100" d="M0 5h7" />
-    <path className="transition group-hover:translate-x-[3px]" d="M1 1l4 4-4 4" />
+    <path className="transition group-hover:translate-x-0.75" d="M1 1l4 4-4 4" />
   </svg>
 );

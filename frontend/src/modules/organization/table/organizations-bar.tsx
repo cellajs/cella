@@ -1,8 +1,8 @@
 import { MailboxIcon, PlusIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getOrganizations } from 'sdk';
 import { appConfig } from 'shared';
-import { getOrganizations } from '~/api.gen';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';

@@ -27,7 +27,6 @@ export interface Subprocessor {
   servicesProvided: string[];
   processingActivities: string[];
   categoriesOfPersonalData: string[];
-  dataSubjects: string[];
   purposes: string[];
   country: string;
   dpa: {
@@ -35,7 +34,6 @@ export interface Subprocessor {
     effectiveDate: string;
     url: string;
   };
-  riskRating: 'low' | 'medium' | 'high';
   optional?: boolean;
 }
 

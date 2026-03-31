@@ -1,9 +1,12 @@
 import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Alerter } from '~/modules/common/alerter';
+import { Alerter } from '~/modules/common/alerter/alerter';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { FocusTarget } from '~/modules/navigation/focus-bridge';
 
+/**
+ * Main content area for the app layout, includes error boundary and alerter.
+ */
 export const AppContent = () => {
   return (
     <ErrorBoundary

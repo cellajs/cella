@@ -1,16 +1,15 @@
-import * as Sentry from '@sentry/react';
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { signOut } from '~/api.gen';
+import { signOut } from 'sdk';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 /**
  * Handles multifactor authentication in the authentication flows.
@@ -29,7 +28,6 @@ export function MfaPage() {
       await signOut();
       toaster(t('common:success.cancel_mfa'), 'success');
     } catch (error) {
-      Sentry.captureException(error);
       console.error('Failed to retrieve data:', error);
     } finally {
       clearUserStore();

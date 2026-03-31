@@ -12,6 +12,10 @@ variable "app_domain" {
   type = string
 }
 
+variable "yjs_domain" {
+  type = string
+}
+
 variable "load_balancer_ip" {
   type = string
 }
@@ -37,11 +41,24 @@ locals {
   # Extract subdomain from api_domain (e.g., "api" from "api.cellajs.com")
   api_subdomain = replace(var.api_domain, ".${var.dns_zone}", "")
   app_subdomain = replace(var.app_domain, ".${var.dns_zone}", "")
+  yjs_subdomain = replace(var.yjs_domain, ".${var.dns_zone}", "")
 }
 
 resource "scaleway_domain_record" "api" {
   dns_zone = data.scaleway_domain_zone.main.id
   name     = local.api_subdomain
+  type     = "A"
+  data     = var.load_balancer_ip
+  ttl      = 300
+}
+
+# -----------------------------------------------------------------------------
+# Yjs Domain -> Load Balancer
+# -----------------------------------------------------------------------------
+
+resource "scaleway_domain_record" "yjs" {
+  dns_zone = data.scaleway_domain_zone.main.id
+  name     = local.yjs_subdomain
   type     = "A"
   data     = var.load_balancer_ip
   ttl      = 300

@@ -5,8 +5,6 @@ import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
-import type { z } from 'zod';
 import {
   type SignUpData,
   type SignUpResponses,
@@ -14,16 +12,18 @@ import {
   type SignUpWithTokenResponse,
   signUp,
   signUpWithToken,
-} from '~/api.gen';
-import { zSignUpData } from '~/api.gen/zod.gen';
+} from 'sdk';
+import { zSignUpData } from 'sdk/zod.gen';
+import { appConfig } from 'shared';
+import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { TokenData } from '~/modules/auth/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import type { MutationData } from '~/query/types';
-import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));

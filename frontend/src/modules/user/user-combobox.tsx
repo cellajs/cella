@@ -3,8 +3,8 @@ import { CheckIcon, ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon 
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextEntityBase } from 'sdk';
 import { appConfig } from 'shared';
-import type { ContextEntityBase } from '~/api.gen';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
@@ -73,7 +73,7 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
       entityId: contextEntity.id,
       entityType: contextEntity.entityType,
       tenantId: contextEntity.tenantId,
-      orgId: contextEntity.organizationId || contextEntity.id,
+      organizationId: contextEntity.organizationId || contextEntity.id,
       userIds,
     }),
     enabled: items.length > 0,

@@ -5,8 +5,8 @@ import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
-import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
 export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
@@ -103,9 +103,9 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
             <motion.div
               key={contentKey}
               className="flex flex-col flex-1"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.15 }}
             >
               {content}

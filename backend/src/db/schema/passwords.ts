@@ -12,7 +12,7 @@ export const passwordsTable = pgTable('passwords', {
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestampColumns.createdAt,
-  modifiedAt: timestampColumns.modifiedAt,
+  updatedAt: timestampColumns.updatedAt,
 });
 
 export type PasswordModel = typeof passwordsTable.$inferSelect;

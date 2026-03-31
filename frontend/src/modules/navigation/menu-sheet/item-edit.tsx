@@ -30,7 +30,7 @@ export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
       path: {
         id: item.membership.id,
         tenantId: item.tenantId,
-        orgId: item.membership.organizationId,
+        organizationId: item.membership.organizationId,
       },
       entityId: item.id,
       entityType: item.entityType,

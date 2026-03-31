@@ -1,26 +1,30 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import { baseDb } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
-import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
+import {
+  deleteOldPasswordResetTokens,
+  findAuthUserById,
+  findSignInInfo,
+  findUserByEmail,
+  insertPasswordResetToken,
+  upsertPassword,
+  verifyEmail,
+} from '#/modules/auth/auth-queries';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { sendVerificationEmail } from '#/modules/auth/general/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/passwords/helpers/argon2id';
 import authPasswordsRoutes from '#/modules/auth/passwords/passwords-routes';
-import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -31,248 +35,235 @@ import { CreatePasswordEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const authPasswordsRouteHandlers = app
-  /**
-   * Sign up with email & password.
-   * Attention: sign up is also used for new users that received (system or membership) invitations.
-   * Only when invited to a new organization (context), user will proceed to accept this first after signing up.
-   */
-  .openapi(authPasswordsRoutes.signUp, async (ctx) => {
-    const { email, password } = ctx.req.valid('json');
+/**
+ * Sign up with email & password.
+ * Attention: sign up is also used for new users that received (system or membership) invitations.
+ * Only when invited to a new organization (context), user will proceed to accept this first after signing up.
+ */
+app.openapi(authPasswordsRoutes.signUp, async (ctx) => {
+  const { email, password } = ctx.req.valid('json');
 
-    // Verify if strategy allowed
-    const strategy = 'password';
-    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-    }
+  // Verify if strategy allowed
+  const strategy = 'password';
+  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+  }
 
-    // Stop if sign up is disabled and no invitation
-    if (!appConfig.has.registrationEnabled) throw new AppError(403, 'sign_up_restricted', 'info');
+  // Stop if sign up is disabled and no invitation
+  if (!appConfig.has.registrationEnabled) throw new AppError(403, 'sign_up_restricted', 'info');
 
-    // Check if IP is rate-limited for email enumeration (restricted mode)
-    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+  // Check if IP is rate-limited for email enumeration (restricted mode)
+  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
-    const slug = slugFromEmail(email);
+  const slug = slugFromEmail(email);
 
-    // Create user & send verification email
-    const newUser = { slug, name: slug, email };
+  // Create user & send verification email
+  const newUser = { slug, name: slug, email };
 
-    try {
-      const user = await baseDb.transaction(async (tx) => {
-        const user = await handleCreateUser({ newUser, db: tx });
-        const hashedPassword = await hashPassword(password);
-        await tx.insert(passwordsTable).values({ userId: user.id, hashedPassword });
-        return user;
-      });
-
-      sendVerificationEmail({ userId: user.id });
-    } catch (error) {
-      // In restricted mode, return idempotent 201 to prevent email enumeration
-      if (restrictedMode && error instanceof AppError && error.type === 'email_exists') {
-        return ctx.body(null, 201);
-      }
-      throw error;
-    }
-
-    return ctx.body(null, 201);
-  })
-  /**
-   * Sign up with email & password to accept (system or membership) invitations.
-   * Token is in single use session cookie.
-   * Only for organization membership invitations, user will proceed to accept after signing up.
-   */
-  .openapi(authPasswordsRoutes.signUpWithToken, async (ctx) => {
-    const { password } = ctx.req.valid('json');
-
-    const validToken = ctx.var.token;
-    if (!validToken) throw new AppError(400, 'invalid_request', 'error');
-
-    // Verify if strategy allowed
-    const strategy = 'password';
-    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-    }
-
-    const slug = slugFromEmail(validToken.email);
-
-    // Create user + password atomically
-    const newUser = { slug, name: slug, email: validToken.email };
+  try {
     const user = await baseDb.transaction(async (tx) => {
-      const user = await handleCreateUser({ newUser, emailVerified: true, db: tx });
+      const user = await handleCreateUser({ newUser, db: tx });
       const hashedPassword = await hashPassword(password);
       await tx.insert(passwordsTable).values({ userId: user.id, hashedPassword });
       return user;
     });
 
-    // Sign in user
-    await setUserSession(ctx, user, strategy);
-
-    const membershipInvite = !!(validToken.type === 'invitation' && validToken.inactiveMembershipId);
-
-    return ctx.json({ membershipInvite }, 201);
-  })
-  /**
-   * Request reset password email
-   */
-  .openapi(authPasswordsRoutes.requestPassword, async (ctx) => {
-    const db = ctx.var.db;
-    const { email } = ctx.req.valid('json');
-
-    const strategy = 'password';
-    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+    sendVerificationEmail({ userId: user.id }, ctx);
+  } catch (error) {
+    // In restricted mode, return idempotent 201 to prevent email enumeration
+    if (restrictedMode && error instanceof AppError && error.type === 'email_exists') {
+      return ctx.body(null, 201);
     }
+    throw error;
+  }
 
-    // Check if IP is rate-limited for email enumeration (restricted mode)
-    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+  return ctx.body(null, 201);
+});
 
-    const normalizedEmail = email.toLowerCase().trim();
+/**
+ * Sign up with email & password to accept (system or membership) invitations.
+ * Token is in single use session cookie.
+ * Only for organization membership invitations, user will proceed to accept after signing up.
+ */
+app.openapi(authPasswordsRoutes.signUpWithToken, async (ctx) => {
+  const validToken = ctx.var.token;
+  if (!validToken) throw new AppError(400, 'invalid_request', 'error');
 
-    const [user] = await db
-      .select(userSelect)
-      .from(usersTable)
-      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-      .where(eq(emailsTable.email, normalizedEmail))
-      .limit(1);
+  const { password } = ctx.req.valid('json');
 
-    // In restricted mode, return idempotent 204 to prevent email enumeration
-    if (!user) {
-      if (restrictedMode) return ctx.body(null, 204);
-      throw new AppError(404, 'invalid_email', 'warn', { entityType: 'user' });
-    }
+  // Verify if strategy allowed
+  const strategy = 'password';
+  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+  }
 
-    // Delete old token if exists
-    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password-reset')));
+  const slug = slugFromEmail(validToken.email);
 
-    // Generate token and store hashed
-    const newToken = nanoid(40);
-    const hashedToken = encodeLowerCased(newToken);
-
-    const [tokenRecord] = await db
-      .insert(tokensTable)
-      .values({
-        secret: hashedToken,
-        type: 'password-reset',
-        userId: user.id,
-        email,
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(2, 'h')),
-      })
-      .returning();
-
-    // Send email
-    const lng = user.language;
-    const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`;
-    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
-    const staticProps = { createPasswordLink, subject, lng };
-    const recipients = [{ email: user.email }];
-
-    mailer.prepareEmails(CreatePasswordEmail, staticProps, recipients);
-
-    logEvent('info', 'Create password link sent', { userId: user.id });
-
-    return ctx.body(null, 204);
-  })
-  /**
-   * Create password with single use session token in cookie
-   */
-  .openapi(authPasswordsRoutes.createPasswordWithToken, async (ctx) => {
-    const db = ctx.var.db;
-    const { password } = ctx.req.valid('json');
-    const token = ctx.var.token;
-
-    // Verify if strategy allowed
-    const strategy = 'password';
-    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-    }
-
-    // If the token is not found or expired
-    if (!token || !token.userId) throw new AppError(401, 'invalid_token', 'warn');
-
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
-
-    // If the user is not found
-    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { userId: token.userId } });
-
-    // Hash password
+  // Create user + password atomically
+  const newUser = { slug, name: slug, email: validToken.email };
+  const user = await baseDb.transaction(async (tx) => {
+    const user = await handleCreateUser({ newUser, emailVerified: true, db: tx });
     const hashedPassword = await hashPassword(password);
-
-    // update user password and set email verified
-    await Promise.all([
-      db.insert(passwordsTable).values({ userId: user.id, hashedPassword }).onConflictDoUpdate({
-        target: passwordsTable.userId,
-        set: { hashedPassword },
-      }),
-      db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
-    ]);
-
-    // Notify user about password change
-    sendAccountSecurityEmail(user, 'password-changed');
-
-    const mfaInitiated = await initiateMfa(ctx, user);
-
-    await setUserSession(ctx, user, strategy);
-    return ctx.json({ mfa: !!mfaInitiated }, 201);
-  })
-  /**
-   * Sign in with email and password
-   * Attention: sign in is also used as a preparation to accept organization invitations (when signed out & user exists),
-   * after signing in, we proceed to accept the invitation.
-   */
-  .openapi(authPasswordsRoutes.signIn, async (ctx) => {
-    const db = ctx.var.db;
-    const { email, password } = ctx.req.valid('json');
-
-    // Verify if strategy allowed
-    const strategy = 'password';
-    if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-      throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-    }
-
-    // Check if IP is rate-limited for email enumeration (restricted mode)
-    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const [info] = await db
-      .select({ user: usersTable, hashedPassword: passwordsTable.hashedPassword, emailVerified: emailsTable.verified })
-      .from(usersTable)
-      .innerJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-      .leftJoin(passwordsTable, eq(usersTable.id, passwordsTable.userId))
-      .where(eq(emailsTable.email, normalizedEmail))
-      .limit(1);
-
-    // If user is not found or doesn't have password - in restricted mode, return unified error
-    if (!info) {
-      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
-      throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
-    }
-
-    const { user, hashedPassword, emailVerified } = info;
-
-    if (!hashedPassword) {
-      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
-      throw new AppError(403, 'no_password_found', 'warn');
-    }
-
-    // Verify password - in restricted mode, return unified error for invalid password
-    const validPassword = await verifyPasswordHash(hashedPassword, password);
-    if (!validPassword) {
-      if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
-      throw new AppError(403, 'invalid_password', 'warn');
-    }
-
-    // If email is not verified, send verification email
-    if (!emailVerified) {
-      sendVerificationEmail({ userId: user.id });
-      return ctx.json({ emailVerified: false }, 200);
-    }
-
-    const mfaInitiated = await initiateMfa(ctx, user);
-    if (mfaInitiated) return ctx.json({ mfa: true, emailVerified: true }, 200);
-
-    await setUserSession(ctx, user, 'password');
-    return ctx.json({ emailVerified: true }, 200);
+    await tx.insert(passwordsTable).values({ userId: user.id, hashedPassword });
+    return user;
   });
-export default authPasswordsRouteHandlers;
+
+  // Sign in user
+  await setUserSession(ctx, user, strategy);
+
+  const membershipInvite = !!(validToken.type === 'invitation' && validToken.inactiveMembershipId);
+
+  return ctx.json({ membershipInvite }, 201);
+});
+
+/**
+ * Request reset password email
+ */
+app.openapi(authPasswordsRoutes.requestPassword, async (ctx) => {
+  const db = ctx.var.db;
+  const { email } = ctx.req.valid('json');
+
+  const strategy = 'password';
+  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+  }
+
+  // Check if IP is rate-limited for email enumeration (restricted mode)
+  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await findUserByEmail(db, { email: normalizedEmail });
+
+  // In restricted mode, return idempotent 204 to prevent email enumeration
+  if (!user) {
+    if (restrictedMode) return ctx.body(null, 204);
+    throw new AppError(404, 'invalid_email', 'warn', { entityType: 'user' });
+  }
+
+  // Delete old token if exists
+  await deleteOldPasswordResetTokens(db, { userId: user.id });
+
+  // Generate token and store hashed
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
+
+  const tokenRecord = await insertPasswordResetToken(db, {
+    secret: hashedToken,
+    userId: user.id,
+    email,
+    createdBy: user.id,
+    expiresAt: createDate(new TimeSpan(2, 'h')),
+  });
+
+  // Send email
+  const lng = user.language;
+  const createPasswordLink = `${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`;
+  const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
+  const staticProps = { createPasswordLink, subject, lng };
+  const recipients = [{ email: user.email }];
+
+  mailer.prepareEmails(CreatePasswordEmail, staticProps, recipients);
+
+  logEvent(ctx, 'info', 'Create password link sent', { userId: user.id });
+
+  return ctx.body(null, 204);
+});
+
+/**
+ * Create password with single use session token in cookie
+ */
+app.openapi(authPasswordsRoutes.createPasswordWithToken, async (ctx) => {
+  const db = ctx.var.db;
+  const token = ctx.var.token;
+
+  const { password } = ctx.req.valid('json');
+
+  // Verify if strategy allowed
+  const strategy = 'password';
+  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+  }
+
+  // If the token is not found or expired
+  if (!token || !token.userId) throw new AppError(401, 'invalid_token', 'warn');
+
+  const user = await findAuthUserById(db, { userId: token.userId });
+
+  // If the user is not found
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { userId: token.userId } });
+
+  // Hash password
+  const hashedPassword = await hashPassword(password);
+
+  // update user password and set email verified
+  await Promise.all([
+    upsertPassword(db, { userId: user.id, hashedPassword }),
+    verifyEmail(db, { email: user.email, verifiedAt: getIsoDate() }),
+  ]);
+
+  // Notify user about password change
+  sendAccountSecurityEmail(ctx, user, 'password-changed');
+
+  const mfaInitiated = await initiateMfa(ctx, user);
+
+  await setUserSession(ctx, user, strategy);
+  return ctx.json({ mfa: !!mfaInitiated }, 201);
+});
+
+/**
+ * Sign in with email and password
+ * Attention: sign in is also used as a preparation to accept organization invitations (when signed out & user exists),
+ * after signing in, we proceed to accept the invitation.
+ */
+app.openapi(authPasswordsRoutes.signIn, async (ctx) => {
+  const db = ctx.var.db;
+  const { email, password } = ctx.req.valid('json');
+
+  // Verify if strategy allowed
+  const strategy = 'password';
+  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
+    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
+  }
+
+  // Check if IP is rate-limited for email enumeration (restricted mode)
+  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const info = await findSignInInfo(db, { email: normalizedEmail });
+
+  // If user is not found or doesn't have password - in restricted mode, return unified error
+  if (!info) {
+    if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+    throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+  }
+
+  const { user, hashedPassword, emailVerified } = info;
+
+  if (!hashedPassword) {
+    if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+    throw new AppError(403, 'no_password_found', 'warn');
+  }
+
+  // Verify password - in restricted mode, return unified error for invalid password
+  const validPassword = await verifyPasswordHash(hashedPassword, password);
+  if (!validPassword) {
+    if (restrictedMode) throw new AppError(401, 'invalid_credentials', 'warn');
+    throw new AppError(403, 'invalid_password', 'warn');
+  }
+
+  // If email is not verified, send verification email
+  if (!emailVerified) {
+    sendVerificationEmail({ userId: user.id }, ctx);
+    return ctx.json({ emailVerified: false }, 200);
+  }
+
+  const mfaInitiated = await initiateMfa(ctx, user);
+  if (mfaInitiated) return ctx.json({ mfa: true, emailVerified: true }, 200);
+
+  await setUserSession(ctx, user, 'password');
+  return ctx.json({ emailVerified: true }, 200);
+});
+
+export const authPasswordsHandlers = app;

@@ -25,7 +25,7 @@ export const alertVariants = cva(
       {
         variant: ['brand', 'destructive', 'success', 'warning'],
         soft: true,
-        className: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+        className: 'soft-bg text-(--intent-color) soft-border',
       },
     ],
     defaultVariants: {
@@ -72,6 +72,10 @@ export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>)
 
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div data-slot="alert-description" className={cn('justify-items-start gap-1 text-sm', className)} {...props} />
+    <div
+      data-slot="alert-description"
+      className={cn('justify-items-start w-full gap-1 text-sm', className)}
+      {...props}
+    />
   );
 }

@@ -1,6 +1,6 @@
-import { getMe, getMyAuth } from '~/api.gen';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
+import { getMe, getMyAuth } from 'sdk';
+import { useUIStore } from '~/modules/ui/ui-store';
+import { useUserStore } from '~/modules/user/user-store';
 
 /**
  * Retrieves the current user's information and updates the user store.

@@ -2,7 +2,15 @@ import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/ht
 import type { EntityType, Severity } from 'shared';
 
 export const clientConfig = {
-  fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, credentials: 'include' }),
+  // hey-api passes a Request object as the sole argument to fetch.
+  // OTel FetchInstrumentation drops the second arg when the first is a Request,
+  // so credentials must be on the Request itself, not as an init override.
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+    if (input instanceof Request) {
+      return fetch(new Request(input, { ...init, credentials: 'include' }));
+    }
+    return fetch(input, { ...init, credentials: 'include' });
+  },
 };
 
 // Custom error class to handle API errors
@@ -19,6 +27,8 @@ export class ApiError extends Error {
   userId?: string;
   organizationId?: string;
   meta?: { readonly [key: string]: number | string | boolean | null };
+  /** When true, the global error handler skips its toast (a local handler already showed one). */
+  toastHandled?: boolean;
 
   constructor(error: ApiError) {
     super(error.message);

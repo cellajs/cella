@@ -1,7 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/modules/ui/badge';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface HeroProps {
   title: string;

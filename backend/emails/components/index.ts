@@ -1,8 +1,8 @@
-export { Avatar } from './email-avatar';
+export { EmailAvatar } from './email-avatar';
 export { EmailBody } from './email-body';
 export { EmailButton } from './email-button';
 export { EmailContainer } from './email-container';
+export { EmailFooter } from './email-footer';
 export { EmailHeader } from './email-header';
 export { EmailLogo } from './email-logo';
-export { Text } from './email-text';
-export { Footer } from './footer';
+export { EmailText } from './email-text';

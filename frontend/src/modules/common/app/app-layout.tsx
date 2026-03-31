@@ -1,17 +1,19 @@
 import { ErrorBoundary } from 'react-error-boundary';
+import { AttachmentDialogHandler } from '~/modules/attachment/dialog/handler';
+import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { AppContent } from '~/modules/common/app/app-content';
-import { AppSheets } from '~/modules/common/app/app-sheets';
+import { YjsTokenFetcher } from '~/modules/common/blocknote/yjs-token-fetcher';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { TabCoordinator } from '~/modules/common/tab-coordinator';
 import { Uploader } from '~/modules/common/uploader/uploader';
 import { AppNav } from '~/modules/navigation/app-nav';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
+import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
 import { AppStream } from '~/query/realtime';
+import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 
 /**
  * Main application layout component.
@@ -33,10 +35,12 @@ function AppLayout() {
         </SidebarWrapper>
         <TabCoordinator />
         <AppStream />
+        <YjsTokenFetcher />
         <SeenTracker />
         <Uploader />
         <Dialoger />
-        <AppSheets />
+        <UserSheetHandler />
+        <AttachmentDialogHandler />
         <Sheeter />
         <DownAlert />
         <Dropdowner />

@@ -5,7 +5,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { SystemRoleModel } from '#/db/schema/system-roles';
-import { mockNanoid, withFakerSeed } from './utils';
+import { MOCK_REF_DATE, mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock system role base response (without timestamps).
@@ -24,7 +24,7 @@ export const mockSystemRoleBase = (key = 'system-role:base') =>
  */
 export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
 
     return {
@@ -32,7 +32,7 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
       userId: mockNanoid(),
       role: 'admin' as const,
       createdAt,
-      modifiedAt: createdAt,
+      updatedAt: createdAt,
     };
   });
 
@@ -43,6 +43,6 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
 export const mockSystemInviteResponse = (key = 'system-invite:default') =>
   withFakerSeed(key, () => ({
     data: [] as never[],
-    rejectedItemIds: [] as string[],
+    rejectedIds: [] as string[],
     invitesSentCount: 2,
   }));

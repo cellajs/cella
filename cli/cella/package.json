@@ -33,8 +33,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@inquirer/core": "^11.1.5",
-    "@inquirer/prompts": "^8.3.0",
+    "@inquirer/core": "^11.1.7",
+    "@inquirer/prompts": "^8.3.2",
     "commander": "^14.0.3",
     "ora": "^9.3.0",
     "picocolors": "^1.1.1",

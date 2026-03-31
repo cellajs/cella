@@ -61,12 +61,10 @@ export interface SyncSettings {
   syncWithPackages?: boolean;
 
   /**
-   * Automatically push drifted files to a `contrib/<fork-name>` branch in upstream
-   * after sync or analyze. Upstream can then review and cherry-pick changes.
-   * Requires upstreamLocalPath to be set.
-   * @default false
+   * GitHub repo identifier for the upstream repository (e.g., 'cellajs/cella').
+   * Used by the contribute service to create PRs via `gh pr create --repo`.
    */
-  autoContribute?: boolean;
+  upstreamRepo?: string;
 
   /**
    * How to link files in CLI output.
@@ -141,7 +139,15 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions';
+export type SyncService =
+  | 'analyze'
+  | 'inspect'
+  | 'sync'
+  | 'packages'
+  | 'audit'
+  | 'contribute'
+  | 'forks'
+  | 'contributions';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -165,9 +171,6 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Pre-selected fork name (skips fork selection prompt) */
   fork?: string;
-
-  /** Quick-push drifted files to contrib branch without interactive menu */
-  contribute?: boolean;
 
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;

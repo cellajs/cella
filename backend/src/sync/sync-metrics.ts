@@ -1,7 +1,7 @@
 /**
  * Backend sync metrics and tracing.
  *
- * Uses config/tracing for spans and adds OTel metrics integration.
+ * Uses real OTel tracer + metrics via the shared OTel factory.
  * Tracks CDC messages, ActivityBus events, and SSE notifications.
  *
  * Terminology:
@@ -10,29 +10,22 @@
  * - Notifications: SSE payloads sent to clients
  */
 
-import {
-  backendSpanNames,
-  createSpanStore,
-  createTracer,
-  eventAttrs,
-  type LightweightSpan,
-  type SpanAttributes,
-  type SpanData,
-  withSpan as sharedWithSpan,
-  type TraceContext,
-} from 'shared/tracing';
-import { meterProvider } from '#/tracing';
+import { type Span, SpanStatusCode, trace } from '@opentelemetry/api';
+import { backendSpanNames, eventAttrs, type TraceContext } from 'shared/tracing';
+import { otel } from '#/tracing';
 
+const meterProvider = otel.meterProvider;
+
+export type { Span };
 // Re-export span names and attribute helpers
 export { backendSpanNames as syncSpanNames, eventAttrs };
-export type { SpanData, LightweightSpan };
 export type SyncTraceContext = TraceContext;
 
 // ================================
 // OTel Metrics
 // ================================
 
-const meter = meterProvider.getMeter('cella-sync');
+const meter = meterProvider.getMeter('app-sync');
 
 export const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
   description: 'Messages received from CDC Worker via WebSocket',
@@ -55,25 +48,46 @@ export const pgNotifyFallback = meter.createCounter('sync.pg_notify.fallback', {
 });
 
 // ================================
-// Span Store
+// OTel Tracer
 // ================================
 
-const spanStore = createSpanStore({ maxSpans: 200 });
-const tracer = createTracer(spanStore);
+const tracer = trace.getTracer('app-sync');
 
 // ================================
-// withSpan (uses local tracer)
+// withSpan + startSyncSpan
 // ================================
+
+interface SpanAttrs {
+  [key: string]: string | number | boolean | null | undefined;
+}
 
 /**
  * Execute an async function within a traced sync span.
  */
-export async function withSpan<T>(
-  name: string,
-  attrs: SpanAttributes,
-  fn: (ctx: TraceContext) => Promise<T>,
-): Promise<T> {
-  return sharedWithSpan(name, attrs, fn, tracer);
+export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
+  return tracer.startActiveSpan(name, async (span) => {
+    for (const [key, value] of Object.entries(attrs)) {
+      if (value !== undefined && value !== null) {
+        span.setAttribute(key, value);
+      }
+    }
+    try {
+      const ctx: TraceContext = {
+        traceId: span.spanContext().traceId,
+        spanId: span.spanContext().spanId,
+        cdcTimestamp: Date.now(),
+      };
+      const result = await fn(ctx);
+      span.setStatus({ code: SpanStatusCode.OK });
+      return result;
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: error instanceof Error ? error.message : String(error) });
+      span.recordException(error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    } finally {
+      span.end();
+    }
+  });
 }
 
 /**
@@ -82,102 +96,27 @@ export async function withSpan<T>(
 export function startSyncSpan(
   name: string,
   attributes?: Record<string, string | number | boolean | null>,
-  parentTraceId?: string,
-): LightweightSpan {
-  return tracer.startSpan(name, { attributes, parentSpanId: parentTraceId });
+  _parentTraceId?: string,
+): Span {
+  const span = tracer.startSpan(name);
+  if (attributes) {
+    for (const [key, value] of Object.entries(attributes)) {
+      if (value !== null && value !== undefined) {
+        span.setAttribute(key, value);
+      }
+    }
+  }
+  if (_parentTraceId) {
+    span.setAttribute('parent_trace_id', _parentTraceId);
+  }
+  return span;
 }
 
 // ================================
 // Metric Recording
 // ================================
 
-let messagesReceivedCount = 0;
-let notificationsSentCount = 0;
-let activeConnectionsCount = 0;
-let pgNotifyFallbackCount = 0;
-
 /** Record a CDC message received from CDC Worker. */
 export function recordMessageReceived(entityType: string): void {
-  messagesReceivedCount++;
   cdcMessagesReceived.add(1, { entityType });
-}
-
-/** Record a notification sent to client via SSE. */
-export function recordNotificationSent(entityType: string): void {
-  notificationsSentCount++;
-  sseNotificationsSent.add(1, { entityType });
-}
-
-export function recordConnectionChange(delta: 1 | -1, streamType: string): void {
-  activeConnectionsCount += delta;
-  sseActiveConnections.add(delta, { streamType });
-}
-
-export function recordPgNotifyFallback(): void {
-  pgNotifyFallbackCount++;
-  pgNotifyFallback.add(1);
-}
-
-export function recordCatchUpDuration(durationMs: number, streamType: string): void {
-  sseCatchUpDuration.record(durationMs, { streamType });
-}
-
-// ================================
-// Metrics Snapshot
-// ================================
-
-interface SyncMetricsSnapshot {
-  messagesReceived: number;
-  notificationsSent: number;
-  activeConnections: number;
-  pgNotifyFallbacks: number;
-  recentSpanCount: number;
-  spansByName: Record<string, number>;
-  avgDurationByName: Record<string, number>;
-  errorCount: number;
-}
-
-export function getSyncMetrics(): SyncMetricsSnapshot {
-  const stats = spanStore.getStats();
-  const spans = spanStore.getSpans();
-
-  const spansByName: Record<string, number> = {};
-  const durationSums: Record<string, number> = {};
-  const durationCounts: Record<string, number> = {};
-
-  for (const span of spans) {
-    spansByName[span.name] = (spansByName[span.name] || 0) + 1;
-    if (span.duration != null) {
-      durationSums[span.name] = (durationSums[span.name] || 0) + span.duration;
-      durationCounts[span.name] = (durationCounts[span.name] || 0) + 1;
-    }
-  }
-
-  const avgDurationByName: Record<string, number> = {};
-  for (const name of Object.keys(durationSums)) {
-    avgDurationByName[name] = Math.round(durationSums[name] / durationCounts[name]);
-  }
-
-  return {
-    messagesReceived: messagesReceivedCount,
-    notificationsSent: notificationsSentCount,
-    activeConnections: activeConnectionsCount,
-    pgNotifyFallbacks: pgNotifyFallbackCount,
-    recentSpanCount: spanStore.length,
-    spansByName,
-    avgDurationByName,
-    errorCount: stats.errorCount,
-  };
-}
-
-export function getRecentSyncSpans(): SpanData[] {
-  return spanStore.getSpans();
-}
-
-export function resetSyncMetrics(): void {
-  spanStore.clear();
-  messagesReceivedCount = 0;
-  notificationsSentCount = 0;
-  activeConnectionsCount = 0;
-  pgNotifyFallbackCount = 0;
 }

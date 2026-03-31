@@ -3,9 +3,9 @@ import type { LucideProps } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useCurrentSection, useScrollSpy } from '~/hooks/use-scroll-spy';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface PageTab {
@@ -34,10 +34,6 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
   const sectionIds = tabs.map((tab) => tab.id);
   useScrollSpy(sectionIds);
 
-  // Get current section from scroll spy store
-  const spySection = useCurrentSection();
-  const currentSection = spySection || sectionIds[0];
-
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   // Focus the first tab on mount
@@ -51,25 +47,28 @@ export const PageAside = <T extends PageTab>({ tabs, className, setFocus }: Page
         const btnClass = `${id.includes('delete') && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
         const Icon = icon;
         return (
-          <Link
+          <Button
             key={id}
-            ref={index === 0 ? firstTabRef : undefined}
-            to="."
-            className={cn(
-              buttonVariants({ variant: 'ghost', size: 'lg' }),
-              btnClass,
-              currentSection === id && 'bg-secondary',
-            )}
-            hash={id}
-            draggable="false"
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSectionById(id);
-            }}
-            replace
+            variant="ghost"
+            size="lg"
+            data-spy-link={id}
+            className={cn(btnClass, 'data-spy-active:bg-secondary')}
+            render={
+              <Link
+                ref={index === 0 ? firstTabRef : undefined}
+                to="."
+                hash={id}
+                draggable="false"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSectionById(id);
+                }}
+                replace
+              />
+            }
           >
             {Icon && <Icon className="mr-2 size-5" />} {t(label, { resource: t(resource || '').toLowerCase() })}
-          </Link>
+          </Button>
         );
       })}
     </div>

@@ -13,8 +13,6 @@ export function Subprocessors() {
           <TableHead>Country</TableHead>
           <TableHead>Services</TableHead>
           <TableHead>Categories</TableHead>
-          <TableHead>Affected</TableHead>
-          <TableHead>Risk</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -28,8 +26,6 @@ export function Subprocessors() {
             <TableCell>{subprocessor.country}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.servicesProvided}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.categoriesOfPersonalData.join(', ')}</TableCell>
-            <TableCell className="whitespace-normal">{subprocessor.dataSubjects.join(', ')}</TableCell>
-            <TableCell>{subprocessor.riskRating}</TableCell>
           </TableRow>
         ))}
       </TableBody>

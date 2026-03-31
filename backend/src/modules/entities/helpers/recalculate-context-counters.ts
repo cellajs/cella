@@ -163,6 +163,7 @@ export const recalculateContextCounters = async (db: DbOrTx): Promise<number> =>
       // Determine the FK column from the parent type (e.g. organization_id, project_id)
       const parentFkColumn = `${parentType.replace(/([A-Z])/g, '_$1').toLowerCase()}_id`;
 
+      // Parent-level seq counters (e.g. per-project)
       await db.execute(
         sql.raw(`
         INSERT INTO context_counters (context_key, counts, updated_at)
@@ -178,6 +179,31 @@ export const recalculateContextCounters = async (db: DbOrTx): Promise<number> =>
           updated_at = NOW()
       `),
       );
+
+      // Org-level seq aggregates (change signal for catchup screening)
+      // Sum of all parent-level seq high-water marks per organization
+      // Only needed when parent is NOT organization (e.g. project-scoped entities)
+      if (parentType !== 'organization') {
+        await db.execute(
+          sql.raw(`
+          INSERT INTO context_counters (context_key, counts, updated_at)
+          SELECT
+            t.organization_id,
+            jsonb_build_object('${seqKey}', COALESCE(SUM(max_seq), 0)),
+            NOW()
+          FROM (
+            SELECT organization_id, ${parentFkColumn}, MAX(seq_at) as max_seq
+            FROM ${tableName}
+            WHERE ${parentFkColumn} IS NOT NULL
+            GROUP BY organization_id, ${parentFkColumn}
+          ) t
+          GROUP BY t.organization_id
+          ON CONFLICT (context_key) DO UPDATE SET
+            counts = context_counters.counts || EXCLUDED.counts,
+            updated_at = NOW()
+        `),
+        );
+      }
     }
   }
 

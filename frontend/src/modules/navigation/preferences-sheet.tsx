@@ -1,20 +1,20 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowLeftIcon, BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
+import { BookOpenIcon, InfoIcon, LifeBuoyIcon, MailIcon, XIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
-import { handleAskForHelp } from '~/modules/common/error-notice';
+import { handleAskForHelp } from '~/modules/common/error-helpers';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { navSheetClassName } from '~/modules/navigation/app-nav';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
+import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
@@ -60,18 +60,18 @@ export const PreferencesSheet = () => {
   return (
     <div className="w-full bg-card py-3 px-3 min-h-screen flex flex-col">
       <FocusTarget target="sheet" />
-      <div className="flex items-center gap-2 mb-4 px-1 py-1">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold px-2">{t('common:preferences')}</h2>
         <Button
           ref={backRef}
           variant="ghost"
           size="icon"
           onClick={goBackToMenu}
-          className="size-9 shrink-0"
-          aria-label={t('common:menu')}
+          className="size-10 opacity-50 hover:opacity-100 transition-opacity"
+          aria-label={t('common:close')}
         >
-          <ArrowLeftIcon className="size-5" />
+          <XIcon size={20} />
         </Button>
-        <h2 className="text-lg font-semibold">{t('common:preferences')}</h2>
       </div>
 
       {/* Appearance */}
@@ -124,9 +124,9 @@ export const PreferencesSheet = () => {
           <div className="flex flex-col gap-4 mx-2">
             <h3 className="text-sm font-medium text-muted-foreground/70 lowercase px-4">{t('common:offline')}</h3>
             <OfflineAccessSwitch />
-            <AlertWrap id="offline_access" animate variant="plain" icon={InfoIcon}>
+            <AlertBanner id="offline_access" animate variant="plain" icon={InfoIcon}>
               {t('common:offline_access.text')}
-            </AlertWrap>
+            </AlertBanner>
           </div>
         </>
       )}
@@ -134,13 +134,16 @@ export const PreferencesSheet = () => {
       {/* Support options */}
       <div className="flex flex-col gap-1 mt-auto mx-2 pt-6">
         <h3 className="text-sm font-medium text-muted-foreground/70 lowercase mb-2 px-4">{t('common:support')}</h3>
-        <Button variant="ghost" size="lg" className="w-full justify-start text-left" asChild>
-          <Link to="/docs" draggable="false">
-            <BookOpenIcon className="mr-2 size-4" aria-hidden="true" />
-            {t('common:api_docs')}
-          </Link>
+        <Button
+          variant="ghost"
+          size="lg"
+          className="w-full justify-start text-left"
+          render={<Link to="/docs" draggable="false" />}
+        >
+          <BookOpenIcon className="mr-2 size-4" aria-hidden="true" />
+          {t('common:api_docs')}
         </Button>
-        {appConfig.gleapToken && (
+        {appConfig.has.chatSupport && (
           <Button
             ref={supportRef}
             variant="ghost"

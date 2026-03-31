@@ -9,7 +9,7 @@ import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { userSelect } from '#/modules/user/helpers/select';
-import { logEvent } from '#/utils/logger';
+import { type LogContext, logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail } from '../../../../../emails';
@@ -22,7 +22,7 @@ interface Props {
 /**
  * Send a verification email to user.
  */
-export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
+export const sendVerificationEmail = async ({ userId, redirectPath }: Props, logCtx: LogContext = null) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
@@ -90,7 +90,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
 
   mailer.prepareEmails(EmailVerificationEmail, staticProps, recipients);
 
-  logEvent('info', 'Verification email sent', { userId: user.id });
+  logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };
 
 export const deleteVerificationTokens = async (

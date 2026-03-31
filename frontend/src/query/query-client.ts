@@ -1,13 +1,17 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { resetConnectivityCache } from '~/lib/connectivity';
-import { onError } from '~/query/on-error';
-import { onSuccess } from '~/query/on-success';
+import { resetConnectivityCache } from '~/query/offline/connectivity';
 
-const queryClientConfig = { onError, onSuccess };
+// Lazy import to break circular dependency: query-client → on-error → flush-stores → query-client
+// Without this, HMR re-evaluation hits a TDZ error on `onError`.
+const queryClientConfig = {
+  onError: (error: Error) => import('~/query/on-error').then((m) => m.onError(error)),
+  onSuccess: () => import('~/query/on-success').then((m) => m.onSuccess()),
+};
 
 // Stale time constants
 const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
+const defaultGcTime = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 /**
  * Handle online status — guarded to avoid duplicate listeners on HMR.
@@ -36,7 +40,7 @@ export const queryClient: QueryClient =
     defaultOptions: {
       queries: {
         networkMode: 'offlineFirst',
-        gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+        gcTime: defaultGcTime,
         staleTime: defaultStaleTime,
 
         refetchOnMount: false,

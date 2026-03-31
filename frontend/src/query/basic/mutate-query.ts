@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
-import type { BaseQueryItem, BaseQueryResponce, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
+import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
 /**
  * Extracts the items from a query, handling both paginated (infinite) and non-paginated query data.
@@ -86,18 +86,6 @@ export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQuery
 };
 
 /**
- * Retrieves query data for a given query key.
- *
- * @param passedQueryKey - Query key to search for similar queries.
- * @returns An array with query key and its corresponding data.
- */
-export const getExactQuery = <TItem, TPageParam = PageParams>(
-  passedQueryKey: QueryKey,
-): BaseQueryResponce<TItem, TPageParam> => {
-  return [passedQueryKey, queryClient.getQueryData<BaseQueryItem<TItem, TPageParam>>(passedQueryKey)];
-};
-
-/**
  * Retrieves queries similar to the given query key.
  *
  * @param passedQueryKey - Query key to search for similar queries.
@@ -105,6 +93,6 @@ export const getExactQuery = <TItem, TPageParam = PageParams>(
  */
 export const getSimilarQueries = <TItem, TPageParam = PageParams>(
   passedQueryKey: QueryKey,
-): BaseQueryResponce<TItem, TPageParam>[] => {
+): BaseQueryResponse<TItem, TPageParam>[] => {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
 };

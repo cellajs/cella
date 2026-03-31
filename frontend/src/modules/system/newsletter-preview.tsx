@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { appConfig } from 'shared';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { Spinner } from '~/modules/common/spinner';
 
 export function NewsletterPreview() {

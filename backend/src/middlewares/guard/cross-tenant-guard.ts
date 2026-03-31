@@ -1,20 +1,20 @@
 /**
  * Middleware for cross-tenant authenticated routes.
  *
- * This middleware wraps the request in a user RLS context (no tenant context),
- * allowing queries that span multiple tenants based on user memberships.
+ * This middleware validates authentication for cross-tenant routes.
+ * Sets ctx.var.db = baseDb; handlers use tenantRead() for cross-tenant product entity queries.
  * Used for routes like GET /organizations that list entities across tenants.
  *
  * @see info/ARCHITECTURE.md for architecture documentation
  */
 
-import { setUserRlsContext } from '#/db/tenant-context';
+import { baseDb } from '#/db/db';
 import { xMiddleware } from '#/docs/x-middleware';
 import { AppError } from '#/lib/error';
 
 /**
  * Guard middleware for authenticated cross-tenant routes.
- * Wraps handler in user RLS context for cross-tenant membership-based access.
+ * Sets baseDb context for cross-tenant queries; handlers use tenantRead() for RLS when needed.
  *
  * @param ctx - Request/response context
  * @param next - The next middleware or route handler
@@ -25,7 +25,7 @@ export const crossTenantGuard = xMiddleware(
     functionName: 'crossTenantGuard',
     type: 'x-guard',
     name: 'crossTenant',
-    description: 'Requires authGuard and sets user-scoped RLS db context for cross-tenant access',
+    description: 'Requires authGuard and sets baseDb for cross-tenant access',
   },
   async (ctx, next) => {
     const user = ctx.var.user;
@@ -38,10 +38,8 @@ export const crossTenantGuard = xMiddleware(
       });
     }
 
-    // Wrap remaining middleware chain in user RLS context
-    return setUserRlsContext({ userId: user.id }, async (tx) => {
-      ctx.set('db', tx);
-      await next();
-    });
+    // Set baseDb — handlers use tenantRead for product entity RLS reads
+    ctx.set('db', baseDb);
+    await next();
   },
 );

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, withFakerSeed } from './utils';
+import { MOCK_REF_DATE, mockNanoid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock passkey challenge response.
@@ -17,7 +17,7 @@ export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') 
  */
 export const mockPasskeyResponse = (key = 'passkey:default') =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate });
 
     return {
@@ -63,7 +63,7 @@ export const mockCreatePasswordResponse = (key = 'create-password:default') =>
  */
 export const mockTotpKeyResponse = (key = 'totp-key:default') =>
   withFakerSeed(key, () => ({
-    totpUri: `otpauth://totp/Cella:user@example.com?secret=${faker.string.alphanumeric(32).toUpperCase()}&issuer=Cella`,
+    totpUri: `otpauth://totp/App:user@example.com?secret=${faker.string.alphanumeric(32).toUpperCase()}&issuer=App`,
     manualKey: faker.string.alphanumeric(32).toUpperCase(),
   }));
 

@@ -2,13 +2,15 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { type ContextEntityBase, deleteMyMembership } from 'sdk';
 import { appConfig } from 'shared';
-import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
 import { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { cacheRemove } from '~/query/basic/cache-mutations';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
-import { invalidateContextList, invalidateMemberships } from '~/query/realtime/membership-ops';
+import { invalidateMemberships } from '~/query/realtime/membership-ops';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = {
@@ -36,16 +38,13 @@ export const LeaveEntityButton = ({
       toaster(t('common:success.you_left_entity', { entity: contextEntity.entityType }), 'success');
       navigate({ to: redirectPath, replace: true });
 
-      // Clear related cache entries for this specific entity
-      queryClient.removeQueries({
-        predicate: ({ queryKey }) =>
-          queryKey.includes(contextEntity.entityType) &&
-          queryKey.some((k) => k === contextEntity.id || k === contextEntity.slug),
-      });
+      // Directly remove entity from list cache so menu updates immediately
+      const keys = getEntityQueryKeys(contextEntity.entityType);
+      cacheRemove(keys.list.base, [contextEntity]);
+      queryClient.invalidateQueries({ queryKey: keys.detail.base });
 
-      // Invalidate memberships and entity list so enrichment subscriber rebuilds menu
+      // Invalidate memberships so enrichment subscriber rebuilds menu
       invalidateMemberships();
-      invalidateContextList(contextEntity.entityType);
 
       callback?.({ status: 'success' });
     },

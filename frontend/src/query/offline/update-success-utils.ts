@@ -1,51 +1,61 @@
 /**
- * Small composable helpers for mutation onSuccess handlers.
+ * Helpers for mutation onSuccess handlers.
  *
- * - patchStxFields: merge stx/modifiedAt/modifiedBy from server onto cached entity
+ * - mergeServerResponse: merge only mutated fields from server onto cached entity
  * - syncEntityToCache: write entity to both list + detail cache
  */
 
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import type { ItemData, UseMutateQueryDataReturn } from '~/query/basic/types';
-
-/** Minimal entity shape with stx tracking fields. */
-type StxEntity = ItemData & {
-  stx: unknown;
-  modifiedAt: unknown;
-  modifiedBy?: unknown;
-};
+import { cacheUpdate } from '~/query/basic/cache-mutations';
+import type { ItemData } from '~/query/basic/types';
 
 /**
- * Patch only stx/modifiedAt/modifiedBy from the server entity onto a cached entity.
- * Returns the patched entity, or undefined if cached is undefined.
+ * Merge only the mutated fields from the server response onto the cached entity.
+ * Preserves optimistic values for fields that weren't part of this mutation,
+ * while always syncing stx, updatedAt, and updatedBy from the server.
  *
- * Use when another mutation is pending for the same entity — preserves
- * optimistic field values while keeping version metadata in sync.
+ * Returns the server entity directly when no cached version exists.
  */
-export function patchStxFields<T extends StxEntity>(cached: T | undefined, server: T): T | undefined {
-  if (!cached) return undefined;
+export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(opts: {
+  cached: T | undefined;
+  serverEntity: T;
+  mutatedKeys: string[];
+  skipKeys?: string[];
+}): T {
+  const { cached, serverEntity, mutatedKeys, skipKeys } = opts;
+  if (!cached) return serverEntity;
+
+  const serverUpdates: Record<string, unknown> = {};
+  for (const key of mutatedKeys) {
+    if (skipKeys?.includes(key)) continue;
+    serverUpdates[key] = (serverEntity as Record<string, unknown>)[key];
+  }
+
   return {
     ...cached,
-    stx: server.stx,
-    modifiedAt: server.modifiedAt,
-    ...('modifiedBy' in server ? { modifiedBy: server.modifiedBy } : {}),
-  };
+    ...serverUpdates,
+    stx: serverEntity.stx,
+    updatedAt: serverEntity.updatedAt,
+    ...('updatedBy' in serverEntity ? { updatedBy: (serverEntity as Record<string, unknown>).updatedBy } : {}),
+  } as T;
 }
 
 /**
- * Write an entity to both the list cache (via mutateCache) and the detail cache.
- * When `patch` is provided, writes the patch; otherwise writes the full entity.
+ * Write an entity to both the list cache and the detail cache.
  *
- * - List cache: mutateCache.update([entity])
+ * - List cache: cacheUpdate with the provided listKey
  * - Detail cache: setQueryData with guard to avoid creating entries that were never fetched
  */
 export function syncEntityToCache<T extends ItemData>(opts: {
   entity: T;
+  listKey: QueryKey;
   detailKey: QueryKey;
-  mutateCache: UseMutateQueryDataReturn;
   queryClient: QueryClient;
 }) {
-  const { entity, detailKey, mutateCache, queryClient } = opts;
-  mutateCache.update([entity]);
-  queryClient.setQueryData<T>(detailKey, (old) => (old ? { ...old, ...entity } : old));
+  const { entity, listKey, detailKey, queryClient } = opts;
+  cacheUpdate(listKey, [entity]);
+  queryClient.setQueryData<T>(detailKey, (old) => {
+    if (!old) return old;
+    return { ...old, ...entity };
+  });
 }

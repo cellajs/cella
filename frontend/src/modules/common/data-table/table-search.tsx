@@ -22,7 +22,7 @@ interface TableSearchProps {
  */
 export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
   const tableFetchingCount = useIsFetching();
 

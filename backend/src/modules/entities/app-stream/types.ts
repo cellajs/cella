@@ -11,7 +11,7 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   /** User's hashed session token (for signing cache tokens) */
   sessionToken: string;
   /** Set of org IDs user belongs to (for filtering org events) */
-  orgIds: Set<string>;
+  organizationIds: Set<string>;
   /** Whether the user is a system admin (bypasses permission checks) */
   isSystemAdmin: boolean;
   /** User's memberships for permission checks on product entities */
@@ -22,6 +22,6 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
  * Channel key for org-scoped events.
  * All events (memberships, product entities, org updates) flow through org channels.
  */
-export function orgChannel(orgId: string): string {
-  return `org:${orgId}`;
+export function orgChannel(organizationId: string): string {
+  return `org:${organizationId}`;
 }

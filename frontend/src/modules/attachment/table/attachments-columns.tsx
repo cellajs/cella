@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
 import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/cells';
 import { formatBytes } from '~/modules/attachment/table/helpers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -26,7 +26,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
     {
       key: 'thumbnail',
       name: '',
-      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => <ThumbnailCell row={row} tabIndex={tabIndex} />,
     },
@@ -42,7 +41,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
           <SeenMark
             entityId={row.id}
             tenantId={contextEntity.tenantId}
-            orgId={contextEntity.id}
+            organizationId={contextEntity.id}
             entityType="attachment"
           />
           <span className="font-medium">{row.name || '-'}</span>
@@ -60,7 +59,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       key: 'download',
       name: '',
       minBreakpoint: 'md',
-      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => <DownloadCell row={row} tabIndex={tabIndex} />,
     },
@@ -68,7 +66,6 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       key: 'ellipsis',
       name: '',
       maxBreakpoint: 'sm',
-      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => <EllipsisCell row={row} tabIndex={tabIndex} />,
     },
@@ -128,21 +125,21 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
     {
-      key: 'modifiedAt',
+      key: 'updatedAt',
       name: t('common:modified'),
       hidden: true,
       minWidth: 120,
       placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.modifiedAt),
+      renderCell: ({ row }) => dateShort(row.updatedAt),
     },
     {
-      key: 'modifiedBy',
-      name: t('common:modified_by'),
+      key: 'updatedBy',
+      name: t('common:updated_by'),
       hidden: true,
       width: isCompact ? 80 : 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
-        row.modifiedBy && <UserCell compactable user={row.modifiedBy} tabIndex={tabIndex} />,
+        row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
     },
   ];
 

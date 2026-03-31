@@ -81,7 +81,7 @@ function CollapsibleTagItemBase<T>({
               resetScroll={false}
               draggable="false"
               className={cn(
-                buttonVariants({ variant: 'ghost', size: 'default' }),
+                buttonVariants({ variant: 'ghost' }),
                 'w-full pl-5 h-8 font-normal group opacity-80',
                 'group-data-[expanded=true]/tag:opacity-100 group-data-[active=true]/tag:bg-accent',
                 triggerClassName,
@@ -101,7 +101,7 @@ function CollapsibleTagItemBase<T>({
           </span>
           <ChevronDownIcon className="size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto group-data-[expanded=true]/tag:rotate-180" />
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+        <CollapsibleContent className="overflow-hidden data-open:animate-collapsible-down data-closed:animate-collapsible-up">
           <div className="relative flex flex-col py-1 px-0">
             {activeItemIndex >= 0 && (
               <motion.span

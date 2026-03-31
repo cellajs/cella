@@ -33,9 +33,9 @@ import type {
   CellPasteArgs,
   CellRange,
   CellSelectArgs,
-  Column,
   ColumnOrColumnGroup,
   ColumnWidths,
+  DefaultColumnOptions,
   Maybe,
   Position,
   Renderers,
@@ -63,8 +63,11 @@ import {
   isCtrlKeyHeldDown,
   isDefaultCellInput,
   isSelectedCellEditable,
+  normalizeCellRange,
   renderMeasuringCells,
   scrollIntoView,
+  serializeCellsToHTML,
+  serializeCellsToTSV,
   sign,
 } from './utils/grid-utils';
 
@@ -87,11 +90,6 @@ export interface RowsEndApproachingArgs {
   /** Number of rows remaining until the end */
   rowsRemaining: number;
 }
-
-export type DefaultColumnOptions<R, SR> = Pick<
-  Column<R, SR>,
-  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable' | 'draggable'
->;
 
 export interface DataGridHandle {
   element: HTMLDivElement | null;
@@ -346,8 +344,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
-  // Disable row selection on mobile breakpoints (xs, sm)
-  const isMobileBreakpoint = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
+  // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
+  const isMobileBreakpoint = currentBreakpoint === 'xs';
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
 
@@ -842,11 +840,31 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   function handleCellCopy(event: CellClipboardEvent) {
     if (!selectedCellIsWithinViewportBounds) return;
+
+    // Multi-cell range copy
+    if (selectedCellRange) {
+      const normalized = normalizeCellRange(selectedCellRange);
+      const textValue = serializeCellsToTSV(normalized, rows, columns);
+      const htmlValue = serializeCellsToHTML(normalized, rows, columns);
+      event.clipboardData.setData('text/plain', textValue);
+      event.clipboardData.setData('text/html', htmlValue);
+      event.preventDefault();
+      return;
+    }
+
+    // Single cell copy
     const { idx, rowIdx } = selectedPosition;
     const column = columns[idx];
     const row = rows[rowIdx];
     const value = row[column.key as keyof R];
     onCellCopy?.({ row, column, rowIdx, value }, event);
+
+    // Write cell value to clipboard if the callback didn't already handle it
+    if (!event.defaultPrevented) {
+      const textValue = value != null ? String(value) : '';
+      event.clipboardData.setData('text/plain', textValue);
+      event.preventDefault();
+    }
   }
 
   function handleCellPaste(event: CellClipboardEvent) {
@@ -1218,6 +1236,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
               columns={columns}
               selectedCellIdx={selectedPosition.rowIdx === minRowIdx + index ? selectedPosition.idx : undefined}
               selectCell={selectHeaderCellLatest}
+              scrollTop={scrollTop}
             />
           ))}
           <HeaderRow
@@ -1233,6 +1252,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
             selectedCellIdx={selectedPosition.rowIdx === mainHeaderRowIdx ? selectedPosition.idx : undefined}
             selectCell={selectHeaderCellLatest}
             shouldFocusGrid={isCellSelectionEnabled && !selectedCellIsWithinSelectionBounds}
+            scrollTop={scrollTop}
           />
         </HeaderRowSelectionContext>
       </HeaderRowSelectionChangeContext>

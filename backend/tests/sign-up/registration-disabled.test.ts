@@ -1,6 +1,7 @@
-import { testClient } from 'hono/testing';
+import { signUp } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
+import { createTestClient, sdk } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
 setTestConfig({
@@ -17,11 +18,11 @@ afterEach(async () => {
 
 describe('sign-up when "registrationEnabled" disabled', async () => {
   const { default: app } = await import('#/routes');
-  const client = testClient(app);
+  const call = sdk(createTestClient(app));
 
   it('should not allow sign-up when "registrationEnabled" is disabled in config', async () => {
-    const res = await client['auth']['sign-up'].$post({ json: signUpUser }, { headers: defaultHeaders });
+    const { response } = await call(signUp, { body: signUpUser, headers: defaultHeaders });
 
-    expect(res.status).toBe(403);
+    expect(response.status).toBe(403);
   });
 });

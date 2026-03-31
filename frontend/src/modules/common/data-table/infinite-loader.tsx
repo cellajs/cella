@@ -21,7 +21,7 @@ type InfiniteLoaderProps = {
  */
 export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetchMore }: InfiniteLoaderProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   // Intersection observer for non-DataGrid usage (e.g., entity grids)
   const { ref: measureRef } = useInView({

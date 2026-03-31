@@ -1,9 +1,9 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import z from 'zod';
+import { z } from 'zod';
 import { HomePage } from '~/modules/home/home-page';
+import { useUserStore } from '~/modules/user/user-store';
 import { AppLayoutRoute } from '~/routes/base-routes';
-import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
 const Welcome = lazy(() => import('~/modules/home/welcome-page'));
@@ -19,6 +19,7 @@ export const HomeRoute = createRoute({
   onEnter: ({ cause }) => {
     if (cause !== 'enter') return;
     const { user } = useUserStore.getState();
+    if (!user) return;
     if (!user.userFlags.finishedOnboarding) throw redirect({ to: '/welcome' });
   },
   component: () => (
@@ -40,10 +41,10 @@ export const HomeAliasRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppLayoutRoute,
   onEnter: ({ search, cause }) => {
-    // this might cause a race condition (hence onEnter is used)
+    // onEnter used instead of beforeLoad: user store may not be populated yet during beforeLoad
     if (cause !== 'enter' || search.skipWelcome) return;
     const { user } = useUserStore.getState();
-    if (user.userFlags.finishedOnboarding) return;
+    if (!user || user.userFlags.finishedOnboarding) return;
     throw redirect({ to: '/welcome' });
   },
   component: () => (
@@ -62,8 +63,9 @@ export const WelcomeRoute = createRoute({
   head: () => ({ meta: [{ title: appTitle('Welcome') }] }),
   getParentRoute: () => AppLayoutRoute,
   onEnter: () => {
-    // REMARK this might cause a race condition (hence onEnter is used)
+    // onEnter used instead of beforeLoad: user store may not be populated yet during beforeLoad
     const { user } = useUserStore.getState();
+    if (!user) return;
     if (user.userFlags.finishedOnboarding) throw redirect({ to: '/home' });
   },
   component: () => (

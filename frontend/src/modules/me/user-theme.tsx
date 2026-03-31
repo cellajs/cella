@@ -1,16 +1,47 @@
-import { BanIcon, CheckIcon, CircleIcon, type LucideProps, MoonIcon, SunIcon } from 'lucide-react';
+import { BanIcon, CheckIcon, CircleIcon, type LucideIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
-import { Switch } from '~/modules/ui/switch';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
-import { objectEntries } from '~/utils/object';
+import { objectEntries } from '~/utils/object-entries';
 
-function Icon({ icon: IconEl, size = 20 }: { icon: React.ElementType<LucideProps>; size?: number }) {
+function Icon({ icon: IconEl, size = 20 }: { icon: LucideIcon; size?: number }) {
   return <IconEl size={size} strokeWidth={appConfig.theme.strokeWidth} />;
+}
+
+interface ThemeItem {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  iconStyle?: React.CSSProperties;
+  iconClass?: string;
+  checked: boolean;
+  onSelect: () => void;
+  separator?: boolean;
+}
+
+function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
+  return (
+    <div className="flex flex-col">
+      {items.map((item) => (
+        <div key={item.key}>
+          {item.separator && <div className="border-t my-1" />}
+          <Button variant="ghost" className="w-full justify-between gap-4" onClick={item.onSelect}>
+            <span className="flex items-center gap-2">
+              <span className={item.iconClass} style={item.iconStyle}>
+                <Icon size={16} icon={item.icon} />
+              </span>
+              {item.label}
+            </span>
+            <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface UserThemeProps {
@@ -34,39 +65,25 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
-  // if just one theme, use switch
+  // if just one theme, use toggle button
   if (!themes.length) {
     return (
-      <Switch
-        id="changeTheme"
-        className={cn(mode === 'light' && 'bg-border/50!', 'scale-125', buttonClassName)}
-        checked={mode === 'light'}
-        onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
-        aria-label={'changeTheme'}
-        thumb={
-          mode === 'light' ? (
-            <SunIcon size={16} strokeWidth={appConfig.theme.strokeWidth} />
-          ) : (
-            <MoonIcon size={16} strokeWidth={appConfig.theme.strokeWidth} />
-          )
-        }
-      />
+      <Button
+        variant="ghost"
+        size="icon"
+        className={buttonClassName}
+        aria-label="changeTheme"
+        onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
+      >
+        <Icon icon={mode === 'light' ? SunIcon : MoonIcon} />
+      </Button>
     );
   }
 
   const openDropdown = () => {
     const { mode: currentMode, theme: currentTheme } = useUIStore.getState();
 
-    const items: {
-      key: string;
-      label: string;
-      icon: React.ElementType<LucideProps>;
-      iconStyle?: React.CSSProperties;
-      iconClass?: string;
-      checked: boolean;
-      onSelect: () => void;
-      separator?: boolean;
-    }[] = [
+    const items: ThemeItem[] = [
       ...modes.map((m) => ({
         key: m.id,
         label: m.label,
@@ -102,29 +119,11 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
       })),
     ];
 
-    useDropdowner.getState().create(
-      <div className="flex flex-col">
-        {items.map((item) => (
-          <div key={item.key}>
-            {item.separator && <div className="border-t my-1" />}
-            <Button variant="ghost" className="w-full justify-between gap-4" onClick={item.onSelect}>
-              <span className="flex items-center gap-2">
-                <span className={item.iconClass} style={item.iconStyle}>
-                  <Icon size={16} icon={item.icon} />
-                </span>
-                {item.label}
-              </span>
-              <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
-            </Button>
-          </div>
-        ))}
-      </div>,
-      {
-        id: 'user-theme',
-        triggerId: 'user-theme-trigger',
-        triggerRef,
-      },
-    );
+    useDropdowner.getState().create(<ThemeDropdownContent items={items} />, {
+      id: 'user-theme',
+      triggerId: 'user-theme-trigger',
+      triggerRef,
+    });
   };
 
   // Else use dropdowner (dropdown on desktop, drawer on mobile)

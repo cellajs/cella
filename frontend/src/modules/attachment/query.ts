@@ -1,11 +1,11 @@
 import {
   infiniteQueryOptions,
   type QueryClient,
-  useInfiniteQuery,
+  queryOptions,
   useMutation,
+  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { appConfig } from 'shared';
 import {
   type Attachment,
   type CreateAttachmentsData,
@@ -16,27 +16,30 @@ import {
   getAttachments,
   type UpdateAttachmentData,
   updateAttachment,
-} from '~/api.gen';
-import { zAttachment } from '~/api.gen/zod.gen';
+} from 'sdk';
+import { zAttachment } from 'sdk/zod.gen';
+import { appConfig } from 'shared';
 import {
   baseInfiniteQueryOptions,
+  createCacheFinder,
   createEntityKeys,
   createOptimisticEntity,
-  findEntityInListCache,
   invalidateIfLastMutation,
   registerEntityQueryKeys,
+  removePendingMutations,
 } from '~/query/basic';
+import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import {
+  coalescePendingCreate,
   createStxForCreate,
   createStxForDelete,
   createStxForUpdate,
+  mergeServerResponse,
   squashPendingMutation,
   syncEntityToCache,
 } from '~/query/offline';
-import { queryClient } from '~/query/query-client';
 import { getCacheToken } from '~/query/realtime';
 import { getRouteOrgId, getRouteTenantId } from '~/query/realtime/sync-priority';
 import type { QueryOrgContext } from '~/query/types';
@@ -45,23 +48,30 @@ import { createResourceError } from '~/utils/resource-error';
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 type CreateAttachmentInput = Omit<CreateAttachmentItem, 'stx'>[];
 type UpdateAttachmentItem = UpdateAttachmentData['body'];
-type UpdateAttachmentInput = Omit<UpdateAttachmentItem, 'stx'>;
-type UpdateAttachmentVars = { id: string; key: UpdateAttachmentInput['key']; data: UpdateAttachmentInput['data'] };
+type UpdateAttachmentFields = UpdateAttachmentItem['ops'];
+type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
 const attachmentsLimit = appConfig.requestLimits.attachments;
 
-type AttachmentFilters = Omit<GetAttachmentsData['query'], 'limit' | 'offset'> & {
-  tenantId: string;
-  orgId: string;
-};
+type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 
-const keys = createEntityKeys<AttachmentFilters>('attachment');
-registerEntityQueryKeys('attachment', keys, (orgId, afterSeq) =>
-  getAttachments({
-    path: { tenantId: getRouteTenantId()!, orgId: orgId! },
-    query: { afterSeq: String(afterSeq), limit: '1000' },
-  }),
-);
+const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
+const keys = {
+  ...baseKeys,
+  list: {
+    ...baseKeys.list,
+    filtered: (organizationId: string, filters: AttachmentFilters) =>
+      ['attachment', 'list', organizationId, filters] as const,
+  },
+};
+registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, options) => {
+  if (!tenantId) throw new Error('No tenantId available for attachment delta fetch');
+  return getAttachments({
+    path: { tenantId, organizationId: organizationId! },
+    query: { seqCursor, limit: '1000' },
+    headers: options?.cacheToken ? { 'x-cache-token': options.cacheToken } : undefined,
+  });
+});
 export const attachmentQueryKeys = keys;
 
 const attachmentsMutationKeyBase = ['attachment'] as const;
@@ -69,16 +79,23 @@ const handleError = createResourceError('attachment');
 
 type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
   tenantId: string;
-  orgId: string;
+  organizationId: string;
   limit?: number;
 };
 
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
-  const { tenantId, orgId, q = '', sort = 'createdAt', order = 'desc', limit: baseLimit = attachmentsLimit } = params;
+  const {
+    tenantId,
+    organizationId,
+    q = '',
+    sort = 'createdAt',
+    order = 'desc',
+    limit: baseLimit = attachmentsLimit,
+  } = params;
 
   const limit = String(baseLimit);
-  const keyFilters = { tenantId, orgId, q, sort, order };
-  const queryKey = keys.list.filtered(keyFilters);
+  const keyFilters = { q, sort, order };
+  const queryKey = keys.list.filtered(organizationId, keyFilters);
   const baseQuery = { q, sort, order, limit };
 
   return infiniteQueryOptions({
@@ -87,7 +104,7 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
       const result = await getAttachments({
-        path: { tenantId, orgId },
+        path: { tenantId, organizationId },
         query: { ...baseQuery, offset },
         signal,
       });
@@ -95,46 +112,62 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
       return result;
     },
     ...baseInfiniteQueryOptions,
+    meta: { persist: false },
     staleTime: syncStaleTime,
   });
 };
 
-export const attachmentQueryOptions = (tenantId: string, orgId: string, id: string) => ({
+/**
+ * Canonical attachment query — one flat query per organization scope.
+ * Fetches all attachments for the org, stored at keys.list.org(organizationId).
+ * Consumers derive views via select() for groupId filtering.
+ * Sync (SSE + delta fetch) keeps this fresh; staleTime follows sync liveness.
+ */
+export const attachmentsCanonicalOptions = ({
+  organizationId,
+  tenantId,
+}: {
+  organizationId: string;
+  tenantId: string;
+}) => {
+  return queryOptions({
+    queryKey: keys.list.org(organizationId),
+    queryFn: async () => {
+      return getAttachments({
+        path: { tenantId, organizationId },
+        query: { limit: '1000', offset: '0' },
+      });
+    },
+    staleTime: syncStaleTime,
+  });
+};
+
+export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) => ({
   queryKey: keys.detail.byId(id),
   queryFn: async () => {
     const cacheToken = getCacheToken('attachment', id);
     return getAttachment({
-      path: { tenantId, orgId, id },
+      path: { tenantId, organizationId, id },
       headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
     });
   },
-  initialData: () => findAttachmentInListCache(id),
+  initialData: () => findAttachmentInCache(id),
 });
 
-export const findAttachmentInListCache = (id: string) => findEntityInListCache<Attachment>('attachment', id);
+export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
 
-export const findAttachmentInCache = (id: string): Attachment | undefined => {
-  const detail = queryClient.getQueryData<Attachment>(keys.detail.byId(id));
-  if (detail) return detail;
-  return findEntityInListCache<Attachment>('attachment', id);
-};
-
-/** Get all attachments matching a groupId, subscribes to list query. */
+/** Get all attachments matching a groupId, subscribes to canonical query. */
 export function useGroupAttachments(
   tenantId: string | undefined,
-  orgId: string | undefined,
+  organizationId: string | undefined,
   groupId: string | undefined,
 ) {
-  const queryOptions =
-    tenantId && orgId ? attachmentsListQueryOptions({ tenantId, orgId, sort: 'createdAt', order: 'desc' }) : null;
-
-  const { data } = useInfiniteQuery({
-    ...queryOptions!,
-    enabled: !!tenantId && !!orgId && !!groupId,
+  const { data } = useQuery({
+    ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
+    enabled: !!tenantId && !!organizationId && !!groupId,
     select: (data) => {
       if (!groupId) return null;
-      const allItems = data.pages.flatMap((page) => page.items);
-      const filtered = allItems.filter((item) => item.groupId === groupId);
+      const filtered = data.items.filter((item) => item.groupId === groupId);
       return filtered.length > 0 ? filtered : null;
     },
   });
@@ -144,9 +177,9 @@ export function useGroupAttachments(
 
 // --- Mutations ---
 
-export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => {
+export const useAttachmentCreateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const orgKey = keys.list.org(organizationId);
 
   return useMutation({
     mutationKey: keys.create,
@@ -154,91 +187,87 @@ export const useAttachmentCreateMutation = (tenantId: string, orgId: string) => 
     mutationFn: async (data: CreateAttachmentInput) => {
       const stx = createStxForCreate();
       const body = data.map((item) => ({ ...item, stx }));
-      return createAttachments({ path: { tenantId, orgId }, body });
+      return createAttachments({ path: { tenantId, organizationId }, body });
     },
     onMutate: async (newAttachments) => {
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
+      await queryClient.cancelQueries({ queryKey: orgKey });
       // Attachments already have IDs from Transloadit — preserved in optimistic entity
       const optimisticAttachments = newAttachments.map((att) => createOptimisticEntity(zAttachment, att));
-      mutateCache.create(optimisticAttachments);
+      cacheCreate(orgKey, optimisticAttachments);
       return { optimisticAttachments };
     },
-    onError: (_err, _newData, context) => {
-      handleError('create');
-      if (context?.optimisticAttachments) mutateCache.remove(context.optimisticAttachments);
+    onError: (err, _newData, context) => {
+      handleError('create', err);
+      if (context?.optimisticAttachments) cacheRemove(orgKey, context.optimisticAttachments);
     },
     onSuccess: (result, _variables, context) => {
-      if (context?.optimisticAttachments) mutateCache.remove(context.optimisticAttachments);
+      if (context?.optimisticAttachments) cacheRemove(orgKey, context.optimisticAttachments);
       // Upsert to avoid duplicates from concurrent SSE + onSuccess race
       for (const attachment of result.data) {
-        if (findAttachmentInCache(attachment.id)) mutateCache.update([attachment]);
-        else mutateCache.create([attachment]);
+        if (findAttachmentInCache(attachment.id)) cacheUpdate(orgKey, [attachment]);
+        else cacheCreate(orgKey, [attachment]);
       }
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {
-      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
 };
 
-export const useAttachmentUpdateMutation = (tenantId: string, orgId: string) => {
+export const useAttachmentUpdateMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const orgKey = keys.list.org(organizationId);
 
   return useMutation({
     mutationKey: keys.update,
-    scope: { id: 'attachment' },
-    mutationFn: async ({ id, key, data }: UpdateAttachmentVars) => {
-      const cachedEntity = findAttachmentInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
+    mutationFn: async ({ id, ops }: UpdateAttachmentVars) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx } });
     },
-    onMutate: async ({ id, key, data }: UpdateAttachmentVars) => {
-      await squashPendingMutation(queryClient, keys.update, id, key);
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
+    onMutate: async ({ id, ops }: UpdateAttachmentVars) => {
+      // If there's a pending create for this entity, fold update ops into it
+      if (coalescePendingCreate(queryClient, keys.create, id, ops as Record<string, unknown>)) {
+        return { coalesced: true };
+      }
+
+      const mergedOps = squashPendingMutation(queryClient, keys.update, id, ops as Record<string, unknown>);
+      await queryClient.cancelQueries({ queryKey: orgKey });
       await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
-      const previousAttachment = findAttachmentInListCache(id);
+      const previousAttachment = findAttachmentInCache(id);
       if (previousAttachment) {
-        const optimisticAttachment = { ...previousAttachment, [key]: data, modifiedAt: new Date().toISOString() };
-        mutateCache.update([optimisticAttachment]);
+        const optimisticAttachment = { ...previousAttachment, ...mergedOps, updatedAt: new Date().toISOString() };
+        cacheUpdate(orgKey, [optimisticAttachment]);
         queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
       }
       return { previousAttachment };
     },
-    onError: (_err, _variables, context) => {
-      handleError('update');
+    onError: (err, _variables, context) => {
+      handleError('update', err);
       if (context?.previousAttachment) {
-        mutateCache.update([context.previousAttachment]);
+        cacheUpdate(orgKey, [context.previousAttachment]);
         queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
       }
     },
     onSuccess: (updatedAttachment, variables) => {
       const detailKey = keys.detail.byId(updatedAttachment.id);
-      const cached = findAttachmentInListCache(updatedAttachment.id);
-      // Merge only the mutated field + stx from server, preserving other optimistic values
-      const merged = cached
-        ? {
-            ...cached,
-            [variables.key]: updatedAttachment[variables.key],
-            stx: updatedAttachment.stx,
-            modifiedAt: updatedAttachment.modifiedAt,
-            ...('modifiedBy' in updatedAttachment ? { modifiedBy: updatedAttachment.modifiedBy } : {}),
-          }
-        : updatedAttachment;
-      syncEntityToCache({ entity: merged, detailKey, mutateCache, queryClient });
+      const cached = findAttachmentInCache(updatedAttachment.id);
+      const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
+      const merged = mergeServerResponse({ cached, serverEntity: updatedAttachment, mutatedKeys });
+      syncEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
     },
     // Error-only: onSuccess patches cache, SSE handles other users
     onSettled: (_data, error) => {
-      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
 };
 
-export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => {
+export const useAttachmentDeleteMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const orgKey = keys.list.org(organizationId);
 
   return useMutation({
     mutationKey: keys.delete,
@@ -246,23 +275,28 @@ export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => 
     mutationFn: async (attachments: Attachment[]) => {
       const ids = attachments.map((a) => a.id);
       const stx = createStxForDelete();
-      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, stx } });
+      await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx } });
     },
     onMutate: async (attachmentsToDelete) => {
-      await queryClient.cancelQueries({ queryKey: keys.list.base });
-      mutateCache.remove(attachmentsToDelete);
+      removePendingMutations(
+        queryClient,
+        keys.update,
+        attachmentsToDelete.map((a) => a.id),
+      );
+      await queryClient.cancelQueries({ queryKey: orgKey });
+      cacheRemove(orgKey, attachmentsToDelete);
       for (const { id } of attachmentsToDelete) {
         queryClient.removeQueries({ queryKey: keys.detail.byId(id) });
       }
       return { deletedAttachments: attachmentsToDelete };
     },
-    onError: (_err, _attachments, context) => {
-      handleError('delete');
-      if (context?.deletedAttachments) mutateCache.create(context.deletedAttachments);
+    onError: (err, _attachments, context) => {
+      handleError('delete', err);
+      if (context?.deletedAttachments) cacheCreate(orgKey, context.deletedAttachments);
     },
     // Error-only: onMutate removed from all caches, SSE handles other users
     onSettled: (_data, error) => {
-      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.base);
+      if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, orgKey);
     },
   });
 };
@@ -270,45 +304,44 @@ export const useAttachmentDeleteMutation = (tenantId: string, orgId: string) => 
 // --- Mutation defaults (offline persistence) ---
 
 addMutationRegistrar((queryClient: QueryClient) => {
-  // Detail query defaults for SSE stream handlers — resolves orgId/tenantId from:
-  // 1. meta.organizationId (SSE handler), 2. cached entity, 3. router context
-  // TODO can we consider a way that tenantId and orgID are already available here?
+  // Detail query defaults for SSE stream handlers — resolves organizationId/tenantId from:
+  // 1. meta (SSE handler), 2. cached entity, 3. router context
   queryClient.setQueryDefaults(keys.detail.base, {
     queryFn: ({ queryKey, meta }) => {
       const id = queryKey[2] as string;
       const cacheToken = getCacheToken('attachment', id);
       const cached = findAttachmentInCache(id);
-      const orgId = (meta?.organizationId as string) ?? cached?.organizationId ?? getRouteOrgId();
-      const tenantId = cached?.tenantId ?? getRouteTenantId();
-      if (!orgId || !tenantId) throw new Error('Cannot resolve orgId/tenantId for attachment fetch');
+      const organizationId = (meta?.organizationId as string) ?? cached?.organizationId ?? getRouteOrgId();
+      const tenantId = (meta?.tenantId as string) ?? cached?.tenantId ?? getRouteTenantId();
+      if (!organizationId || !tenantId) throw new Error('Cannot resolve organizationId/tenantId for attachment fetch');
       return getAttachment({
-        path: { id, orgId, tenantId },
+        path: { id, organizationId, tenantId },
         headers: cacheToken ? { 'X-Cache-Token': cacheToken } : undefined,
       });
     },
   });
 
   queryClient.setMutationDefaults(keys.create, {
-    mutationFn: async ({ tenantId, orgId, data }: QueryOrgContext & { data: CreateAttachmentInput }) => {
+    mutationFn: async ({ tenantId, organizationId, data }: QueryOrgContext & { data: CreateAttachmentInput }) => {
       const stx = createStxForCreate();
       const body = data.map((item) => ({ ...item, stx }));
-      return createAttachments({ path: { tenantId, orgId }, body });
+      return createAttachments({ path: { tenantId, organizationId }, body });
     },
   });
 
   queryClient.setMutationDefaults(keys.update, {
-    mutationFn: async ({ tenantId, orgId, id, key, data }: UpdateAttachmentVars & QueryOrgContext) => {
-      const cachedEntity = findAttachmentInListCache(id);
-      const stx = createStxForUpdate(cachedEntity);
-      return updateAttachment({ path: { tenantId, orgId, id }, body: { key, data, stx } });
+    mutationFn: async ({ tenantId, organizationId, id, ops }: UpdateAttachmentVars & QueryOrgContext) => {
+      const scalarFieldNames = ops ? Object.keys(ops) : [];
+      const stx = createStxForUpdate(scalarFieldNames);
+      return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx } });
     },
   });
 
   queryClient.setMutationDefaults(keys.delete, {
-    mutationFn: async ({ tenantId, orgId, attachments }: QueryOrgContext & { attachments: Attachment[] }) => {
+    mutationFn: async ({ tenantId, organizationId, attachments }: QueryOrgContext & { attachments: Attachment[] }) => {
       const ids = attachments.map((a) => a.id);
       const stx = createStxForDelete();
-      await deleteAttachments({ path: { tenantId, orgId }, body: { ids, stx } });
+      await deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx } });
     },
   });
 });

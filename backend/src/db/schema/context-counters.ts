@@ -8,9 +8,9 @@ import { maxLength } from '#/db/utils/constraints';
  * plus 'public:{entityType}' rows for parentless product entities.
  *
  * - counts: extensible JSONB for entity counts, membership role breakdown,
- *   and entity-type seqs (s:{type} keys, managed by stamp_entity_seq_at trigger)
+ *   and entity-type seqs (s:{type} keys, managed by the CDC worker)
  *
- * The stamp_entity_seq_at trigger increments counts['s:{entityType}'] and stamps entity.seqAt.
+ * The CDC worker increments counts['s:{entityType}'] and stamps entity.seq after processing WAL events.
  * Backend reads counts for catchup gap detection and entity count display.
  */
 export const contextCountersTable = pgTable('context_counters', {

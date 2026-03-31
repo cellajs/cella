@@ -6,7 +6,7 @@ import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export const ConfirmDisableMfa = () => {
   const { t } = useTranslation();

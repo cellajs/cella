@@ -2,15 +2,15 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
-import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface PasskeyStrategyProps extends Omit<PasskeyCredentialProps, 'type'> {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;

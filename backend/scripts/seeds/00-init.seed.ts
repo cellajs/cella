@@ -1,5 +1,5 @@
 import type { SeedScript } from '../types';
-import { migrationDb } from '#/db/db';
+import { seedDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { passwordsTable } from '#/db/schema/passwords';
 import { tenantsTable } from '#/db/schema/tenants';
@@ -19,11 +19,10 @@ setMockContext('script');
 
 const isProduction = appConfig.mode === 'production';
 
-// Seed scripts use admin connection (migrationDb) for privileged operations
-const db = migrationDb;
+// Seed scripts use admin connection for privileged operations
+const db = seedDb;
 
 const isUserSeeded = async () => {
-  if (!db) return true; // Skip if no admin connection
   const usersInTable = await db
     .select()
     .from(usersTable)
@@ -46,9 +45,6 @@ export const initSeed = async () => {
   if (isProduction && !env.ADMIN_EMAIL) {
     return console.error('ADMIN_EMAIL environment variable is required for production seeding.');
   }
-
-  // Admin connection required
-  if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
 
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
@@ -78,7 +74,7 @@ export const initSeed = async () => {
   }
 
   // Make unsubscribeToken record → Insert into the database
-  const unsubscribeTokenRecord = mockUnsubscribeToken(adminUser);
+  const unsubscribeTokenRecord = await mockUnsubscribeToken(adminUser);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
   // Make email record → Insert into the database

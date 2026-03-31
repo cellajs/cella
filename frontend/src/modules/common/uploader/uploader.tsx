@@ -3,7 +3,7 @@ import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restr
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 import '~/modules/common/uploader/uppy-styles';
 

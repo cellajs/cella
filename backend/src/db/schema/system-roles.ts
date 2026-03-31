@@ -15,7 +15,7 @@ export const systemRolesTable = pgTable('system_roles', {
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull(),
   createdAt: timestampColumns.createdAt,
-  modifiedAt: timestampColumns.modifiedAt,
+  updatedAt: timestampColumns.updatedAt,
 });
 
 export type SystemRoleModel = typeof systemRolesTable.$inferSelect;

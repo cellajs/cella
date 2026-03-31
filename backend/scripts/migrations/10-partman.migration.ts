@@ -2,19 +2,20 @@
  * Generate pg_partman Migration Script
  *
  * This script generates SQL for setting up pg_partman automatic partitioning
- * and cleanup for token/session/activity tables.
+ * and cleanup for token/session/activity/seen_by tables.
  *
  * Tables affected:
  * - sessions: partitioned by expires_at (weekly, 30-day retention)
  * - tokens: partitioned by expires_at (weekly, 30-day retention)
  * - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
  * - activities: partitioned by created_at (weekly, 90-day retention)
+ * - seen_by: partitioned by created_at (weekly, 90-day retention)
  *
- * The activities table uses PostgreSQL's LIKE clause to clone whatever structure
- * Drizzle created, making it robust to schema changes and fork customizations.
+ * The activities and seen_by tables use PostgreSQL's LIKE clause to clone whatever
+ * structure Drizzle created, making them robust to schema changes and fork customizations.
  *
  * The generated migration is idempotent and gracefully skips if pg_partman
- * is not available (e.g., local PGlite development).
+ * is not available.
  */
 
 import pc from 'picocolors';
@@ -126,23 +127,54 @@ const partitionConfigs: PartitionConfig[] = [
     createTableSql: null, // Use LIKE clause instead
     indexesSql: [], // Indexes are cloned from original table
   },
+  // seen_by uses LIKE clause — high-write table with 90-day rolling window
+  {
+    name: 'seen_by',
+    partitionColumn: 'created_at',
+    interval: '1 week',
+    retention: '90 days',
+    createTableSql: null, // Use LIKE clause instead
+    indexesSql: [], // Indexes are cloned from original table
+  },
 ];
 
 /**
  * Generate SQL for a single table partition setup using dynamic SQL.
  * Uses EXECUTE to avoid parser errors in environments that don't support PARTITION BY.
  *
+ * Each table conversion is idempotent: checks if already partitioned before converting.
+ *
  * For tables with createTableSql = null (like activities), uses PostgreSQL's LIKE clause
  * to clone the existing table structure. This makes it robust to dynamic columns.
  */
 function generateTablePartitionSql(config: PartitionConfig): string {
+  // Shared idempotency guard: skip if table is already partitioned
+  const idempotencyCheck = `  -- Skip if already partitioned
+  IF EXISTS (
+    SELECT 1 FROM pg_partitioned_table pt
+    JOIN pg_class c ON c.oid = pt.partrelid
+    WHERE c.relname = '${config.name}' AND c.relnamespace = 'public'::regnamespace
+  ) THEN
+    -- Update retention config in case it changed
+    UPDATE partman.part_config SET
+      retention = ${config.retention ? `'${config.retention}'` : 'NULL'},
+      retention_keep_table = ${config.retention ? 'false' : 'true'},
+      infinite_time_partitions = true
+    WHERE parent_table = 'public.${config.name}';
+    RAISE NOTICE '${config.name} already partitioned — config updated, skipping conversion';
+  ELSE`;
+
+  const endGuard = `  END IF;
+`;
+
   // Handle tables that use LIKE clause (dynamic schema)
   if (config.createTableSql === null) {
     return `  -- ==========================================================================
   -- ${config.name.toUpperCase()} TABLE: Convert to partitioned (using LIKE clause)
   -- ==========================================================================
   -- Uses LIKE to clone existing table structure, making it robust to schema changes
-  
+
+${idempotencyCheck}
   -- 1. Create partitioned table cloning structure from Drizzle-created table
   -- Note: We create the partitioned version first, then swap
   EXECUTE 'CREATE TABLE ${config.name}_partitioned (LIKE ${config.name} INCLUDING DEFAULTS INCLUDING CONSTRAINTS) PARTITION BY RANGE (${config.partitionColumn})';
@@ -186,6 +218,7 @@ function generateTablePartitionSql(config: PartitionConfig): string {
   DROP TABLE ${config.name}_old;
   
   RAISE NOTICE '${config.name} table converted to partitioned (via LIKE clause)';
+${endGuard}
 `;
   }
 
@@ -196,7 +229,8 @@ function generateTablePartitionSql(config: PartitionConfig): string {
   return `  -- ==========================================================================
   -- ${config.name.toUpperCase()} TABLE: Convert to partitioned
   -- ==========================================================================
-  
+
+${idempotencyCheck}
   -- 1. Rename existing table
   ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
   
@@ -227,6 +261,7 @@ ${escapedIndexesSql.map((sql) => `  EXECUTE '${sql}';`).join('\n')}
   DROP TABLE ${config.name}_old;
   
   RAISE NOTICE '${config.name} table converted to partitioned';
+${endGuard}
 `;
 }
 
@@ -235,10 +270,10 @@ async function run() {
   const tableSetupSql = partitionConfigs.map(generateTablePartitionSql).join('\n');
 
   const migrationSql = `-- =============================================================================
--- Migration: pg_partman Setup for Token/Session/Activity Tables
+-- Migration: pg_partman Setup for Token/Session/Activity/SeenBy Tables
 -- =============================================================================
--- This migration converts sessions, tokens, unsubscribe_tokens, and activities
--- to partitioned tables managed by pg_partman for automatic cleanup.
+-- This migration converts sessions, tokens, unsubscribe_tokens, activities,
+-- and seen_by to partitioned tables managed by pg_partman for automatic cleanup.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -252,16 +287,15 @@ async function run() {
 -- - tokens: partitioned by expires_at (weekly, 30-day retention)
 -- - unsubscribe_tokens: partitioned by created_at (monthly, 90-day retention)
 -- - activities: partitioned by created_at (weekly, 90-day retention)
+-- - seen_by: partitioned by created_at (weekly, 90-day retention)
 --
--- For environments without pg_partman (PGlite, etc.): migration is skipped,
+-- For environments without pg_partman: migration is skipped,
 -- manual cleanup via db-maintenance.ts handles expired records.
 -- =============================================================================
 
--- First check: Skip entirely if extensions are not supported (e.g., PGlite)
+-- First check: Skip entirely if extensions are not supported
 DO $$
 BEGIN
-  -- This check uses pg_extension catalog which exists in PostgreSQL but behavior
-  -- differs in PGlite. We use a simple extension check that will fail in PGlite.
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'plpgsql') THEN
     RAISE NOTICE 'Extensions not available - skipping partman setup.';
     RETURN;
@@ -327,7 +361,7 @@ END $$;
 }
 
 export const generateConfig: GenerateScript = {
-  name: 'Partman setup migration',
+  name: 'Partman',
   type: 'migration',
   run,
 };

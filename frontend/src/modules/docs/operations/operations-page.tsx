@@ -27,9 +27,10 @@ function OperationsPage() {
   // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('operations');
 
-  // Fetch operations grouped by tag, and tags list
+  // Fetch operations grouped by tag, and tags list (exclude empty tags)
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
+  const tags = allTags.filter((t) => t.count > 0);
 
   // Total operation count derived from tags
   const operationCount = tags.reduce((sum, t) => sum + t.count, 0);

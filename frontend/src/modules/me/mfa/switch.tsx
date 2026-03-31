@@ -6,7 +6,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export const MfaSwitch = () => {
   const { t } = useTranslation();

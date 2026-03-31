@@ -25,5 +25,8 @@ export const useScrollSpy = (sectionIds?: string[]) => {
   return { scrollToSection: scrollToSectionById };
 };
 
-/** Subscribe to the current scroll-spy section. Rerenders only when the active section changes. */
-export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection, getSection);
+/**
+ * Subscribe to the current scroll-spy section.
+ * Updates after scrolling settles (150ms idle) or immediately on explicit actions.
+ */
+export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection);

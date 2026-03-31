@@ -13,7 +13,6 @@ import { noDirectAccess } from '~/utils/no-direct-access';
 const OrganizationsTable = lazy(() => import('~/modules/organization/table/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table'));
-const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 const TenantsTable = lazy(() => import('~/modules/tenants/table/tenants-table'));
 
 /**
@@ -74,21 +73,6 @@ export const RequestsTableRoute = createRoute({
   component: () => (
     <Suspense>
       <RequestsTable />
-    </Suspense>
-  ),
-});
-
-/**
- * System metrics dashboard for monitoring platform performance.
- */
-export const MetricsRoute = createRoute({
-  path: '/metrics',
-  staticData: { isAuth: true, navTab: { id: 'metrics', label: 'common:metrics' } },
-  head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
-  getParentRoute: () => SystemRoute,
-  component: () => (
-    <Suspense>
-      <RequestsPerMinute />
     </Suspense>
   ),
 });

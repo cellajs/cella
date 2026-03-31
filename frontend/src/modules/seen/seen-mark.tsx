@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProductEntityType } from 'shared';
-import { useSeenStore } from '~/store/seen';
+import { useSeenStore } from '~/modules/seen/seen-store';
 
 /**
  * Shared singleton IntersectionObserver for all SeenMark instances.
@@ -12,7 +12,13 @@ import { useSeenStore } from '~/store/seen';
  * DOM nodes are handled correctly.
  */
 
-type SeenMeta = { tenantId: string; orgId: string; contextId: string; entityType: ProductEntityType; entityId: string };
+type SeenMeta = {
+  tenantId: string;
+  organizationId: string;
+  contextId: string;
+  entityType: ProductEntityType;
+  entityId: string;
+};
 
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
@@ -44,7 +50,7 @@ function getSharedObserver(): IntersectionObserver {
           console.debug('[SeenMark] intersected:', meta.entityType, meta.entityId.slice(0, 8));
 
           try {
-            markEntitySeen(meta.tenantId, meta.orgId, meta.contextId, meta.entityType, meta.entityId);
+            markEntitySeen(meta.tenantId, meta.organizationId, meta.contextId, meta.entityType, meta.entityId);
           } catch (err) {
             console.error('[SeenMark] markEntitySeen threw:', err);
           }
@@ -76,8 +82,8 @@ interface SeenMarkProps {
   entityId: string;
   tenantId: string;
   /** Organization ID — used for the POST API route */
-  orgId: string;
-  /** Parent context entity ID for badge grouping (e.g., projectId for tasks). Defaults to orgId. */
+  organizationId: string;
+  /** Parent context entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
   contextId?: string;
   entityType: ProductEntityType;
 }
@@ -92,15 +98,15 @@ interface SeenMarkProps {
  *
  * @example
  * ```tsx
- * // In a column's renderCell (attachment — orgId is the badge context):
- * <SeenMark entityId={row.id} tenantId={tenantId} orgId={orgId} entityType="attachment" />
+ * // In a column's renderCell (attachment — organizationId is the badge context):
+ * <SeenMark entityId={row.id} tenantId={tenantId} organizationId={organizationId} entityType="attachment" />
  *
  * // Task — badge groups by project, so pass contextId:
- * <SeenMark entityId={task.id} tenantId={task.tenantId} orgId={task.organizationId} contextId={task.projectId} entityType="task" />
+ * <SeenMark entityId={task.id} tenantId={task.tenantId} organizationId={task.organizationId} contextId={task.projectId} entityType="task" />
  * ```
  */
-export function SeenMark({ entityId, tenantId, orgId, contextId, entityType }: SeenMarkProps) {
-  const resolvedContextId = contextId ?? orgId;
+export function SeenMark({ entityId, tenantId, organizationId, contextId, entityType }: SeenMarkProps) {
+  const resolvedContextId = contextId ?? organizationId;
   const elementRef = useRef<HTMLSpanElement>(null);
 
   // Retain/release the shared observer with component lifecycle
@@ -121,11 +127,11 @@ export function SeenMark({ entityId, tenantId, orgId, contextId, entityType }: S
       elementRef.current = node;
 
       if (node && !markedIds.has(entityId)) {
-        elementMeta.set(node, { tenantId, orgId, contextId: resolvedContextId, entityType, entityId });
+        elementMeta.set(node, { tenantId, organizationId, contextId: resolvedContextId, entityType, entityId });
         getSharedObserver().observe(node);
       }
     },
-    [entityId, tenantId, orgId, resolvedContextId, entityType],
+    [entityId, tenantId, organizationId, resolvedContextId, entityType],
   );
 
   // Already seen this session — render nothing

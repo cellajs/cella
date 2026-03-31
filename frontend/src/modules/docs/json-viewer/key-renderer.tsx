@@ -33,6 +33,9 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
   const keyStr = String(keyName);
   const isMatch = searchText && keyStr.toLowerCase().includes(searchText.toLowerCase());
 
+  // Dictionary-style key from additionalProperties (e.g., [key])
+  const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
+
   // Show required label if node has required: true on itself
   const requiredLabel = hasSelfRequired && (
     <span className={`ml-1.5 px-1 py-0.5 text-xs font-medium rounded ${theme.required}`}>required</span>
@@ -47,10 +50,10 @@ export const KeyRenderer: FC<KeyRendererProps> = ({
   return (
     <>
       <span
-        className={`font-medium ${theme.key} ${isMatch ? theme.searchMatch : ''} ${openapiMode === 'schema' && !isObjectValue ? 'text-foreground/40!' : ''}`}
+        className={`font-medium ${theme.key} ${isMatch ? theme.searchMatch : ''} ${isDictionaryKey ? 'italic text-foreground/40!' : openapiMode === 'schema' && !isObjectValue ? 'text-foreground/40!' : ''}`}
         data-search-match={isMatch ? 'true' : undefined}
       >
-        {showKeyQuotes ? `"${keyName}"` : keyName}
+        {showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName}
       </span>
       {requiredLabel}
     </>

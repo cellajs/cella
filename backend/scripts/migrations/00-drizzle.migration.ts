@@ -23,7 +23,7 @@ function runDrizzleKit(): Promise<void> {
 }
 
 export const generateConfig: GenerateScript = {
-  name: 'Drizzle migrations',
+  name: 'Drizzle',
   type: 'drizzle',
   run: runDrizzleKit,
 };

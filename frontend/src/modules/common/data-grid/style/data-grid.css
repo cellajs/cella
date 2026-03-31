@@ -87,6 +87,25 @@
   .rdg-row[aria-selected="true"]:hover {
     background-color: var(--rdg-row-selected-hover-background-color);
   }
+
+  /* Row selection outline: draw border on cells to simulate row-level ring */
+  .rdg-row[aria-selected="true"] > .rdg-cell {
+    border-block-start: var(--rdg-selection-width) solid var(--rdg-selection-color);
+    border-block-end: var(--rdg-selection-width) solid var(--rdg-selection-color);
+  }
+
+  .rdg-row[aria-selected="true"] > .rdg-cell:first-child {
+    border-inline-start: var(--rdg-selection-width) solid var(--rdg-selection-color);
+  }
+
+  .rdg-row[aria-selected="true"] > .rdg-cell:last-child {
+    border-inline-end: var(--rdg-selection-width) solid var(--rdg-selection-color);
+  }
+
+  /* Suppress individual cell outline when row is selected */
+  .rdg-row[aria-selected="true"] > .rdg-cell[aria-selected="true"] {
+    outline: none;
+  }
 }
 
 /* ==========================================================================
@@ -113,6 +132,23 @@
   .rdg-cell[aria-selected="true"] {
     outline: var(--rdg-selection-width) solid var(--rdg-selection-color);
     outline-offset: calc(var(--rdg-selection-width) * -1);
+  }
+
+  /* Suppress individual cell outline when cell is part of a range selection */
+  .rdg-cell-in-range[aria-selected="true"] {
+    outline: none;
+  }
+
+  /* Checkbox cells: suppress cell outline, show ring on the checkbox instead */
+  .rdg-cell.rdg-cell-checkbox[aria-selected="true"] {
+    outline: none;
+  }
+
+  .rdg-cell.rdg-cell-checkbox[aria-selected="true"] [data-slot="checkbox"] {
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px var(--color-ring);
+    border-radius: 4px;
   }
 
   /* Frozen cells */
@@ -187,6 +223,11 @@
 
 .rdg-header-row > .rdg-cell {
   background-color: var(--rdg-header-background-color);
+}
+
+/* Frozen header cells stack above both frozen data cells (z:1) and regular header cells (z:2) */
+.rdg-header-row > .rdg-cell-frozen {
+  z-index: 3;
 }
 
 /* ==========================================================================

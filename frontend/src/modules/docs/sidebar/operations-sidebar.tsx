@@ -25,7 +25,8 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
+  const tags = allTags.filter((t) => t.count > 0);
   const hash = useCurrentSection();
 
   return (

@@ -1,7 +1,7 @@
 import { t } from 'i18next';
+import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
-import { createAttachments } from '~/api.gen';
-import { parseUploadedAttachments } from '~/modules/attachment/helpers';
+import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
@@ -21,7 +21,7 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
         // Create attachments via API with transaction metadata (stx embedded in each item)
         const stx = createStxForCreate();
         const body = attachments.map((att) => ({ ...att, stx }));
-        await createAttachments({ path: { tenantId, orgId: organizationId }, body });
+        await createAttachments({ path: { tenantId, organizationId: organizationId }, body });
 
         // Invalidate the cache to refresh the table
         queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });

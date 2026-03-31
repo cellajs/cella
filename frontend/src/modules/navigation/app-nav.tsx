@@ -5,15 +5,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { navItems } from '~/nav-config';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
-
-// Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepNavOpen
-export const navSheetClassName =
-  'sm:left-16 sm:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-nav-open]/body:shadow-none sm:group-[.keep-nav-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
  * - Renders floating, sidebar, or bottom bar nav.

@@ -11,15 +11,16 @@ import { usersTable } from '#/db/schema/users';
 import { type Env } from '#/lib/context';
 import { AppError, type ErrorKey } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
-import { resolveEntity } from '#/lib/resolve-entity';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import authGeneralRoutes from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { handleEmailVerification } from '#/modules/auth/passwords/helpers/handle-email-verification';
+import { resolveEntity } from '#/modules/entities/helpers/resolve-entity';
 import { userSelect } from '#/modules/user/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
@@ -33,308 +34,312 @@ import { MemberInviteWithTokenEmail, SystemInviteEmail } from '../../../../email
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const authGeneralRouteHandlers = app
-  /**
-   * Auth health check with rate limit status
-   */
-  .openapi(authGeneralRoutes.health, async (ctx) => {
-    // Check emailEnum rate limit status without consuming points
-    const { isLimited, retryAfter } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+/**
+ * Auth health check with rate limit status
+ */
+app.openapi(authGeneralRoutes.health, async (ctx) => {
+  // Check emailEnum rate limit status without consuming points
+  const { isLimited, retryAfter } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
-    return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
-  })
-  /**
-   * Check if email exists
-   */
-  .openapi(authGeneralRoutes.checkEmail, async (ctx) => {
-    const db = ctx.var.db;
-    const { email } = ctx.req.valid('json');
+  return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
+});
 
-    // Check if IP is rate-limited for email enumeration (restricted mode)
-    const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+/**
+ * Check if email exists
+ */
+app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
+  const db = ctx.var.db;
+  const { email } = ctx.req.valid('json');
 
-    // In restricted mode, always return 204 to prevent email enumeration
-    if (restrictedMode) return ctx.body(null, 204);
+  // Check if IP is rate-limited for email enumeration (restricted mode)
+  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
-    const normalizedEmail = email.toLowerCase().trim();
+  // In restricted mode, always return 204 to prevent email enumeration
+  if (restrictedMode) return ctx.body(null, 204);
 
-    // User not found, go to sign up if registration is enabled
-    const [user] = await db
-      .select(userSelect)
-      .from(usersTable)
-      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-      .where(eq(emailsTable.email, normalizedEmail))
-      .limit(1);
+  const normalizedEmail = email.toLowerCase().trim();
 
-    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
+  // User not found, go to sign up if registration is enabled
+  const [user] = await db
+    .select(userSelect)
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(eq(emailsTable.email, normalizedEmail))
+    .limit(1);
 
-    return ctx.body(null, 204);
-  })
-  /**
-   * Validate and invoke token by creating a single use session token in cookie
-   */
-  .openapi(authGeneralRoutes.invokeToken, async (ctx) => {
-    const { token, type: tokenType } = ctx.req.valid('param');
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
-    try {
-      // Check if token exists and create a new single use token session
-      const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-      if (!tokenRecord.singleUseToken)
-        throw new AppError(500, 'invalid_token', 'error', {
-          willRedirect: appConfig.mode !== 'test',
-          meta: { errorPagePath: '/auth/error' },
-        });
+  return ctx.body(null, 204);
+});
 
-      // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
-      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+/**
+ * Validate and invoke token by creating a single use session token in cookie
+ */
+app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
+  const { token, type: tokenType } = ctx.req.valid('param');
 
-      // If verification email, we process it immediately and redirect to app
-      if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
-
-      // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
-      if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
-
-      // Determine redirect URL based on token type
-      let redirectUrl = appConfig.defaultRedirectPath;
-
-      // If invitation, redirect to auth page with tokenId param
-      if (tokenRecord.type === 'invitation')
-        redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
-
-      // If password reset, redirect to create password page with tokenId param
-      if (tokenRecord.type === 'password-reset')
-        redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
-
-      logEvent('info', 'Token invoked, redirecting with single use token in cookie', {
-        tokenId: tokenRecord.id,
-        userId: tokenRecord.userId,
+  try {
+    // Check if token exists and create a new single use token session
+    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
+    if (!tokenRecord.singleUseToken)
+      throw new AppError(500, 'invalid_token', 'error', {
+        willRedirect: appConfig.mode !== 'test',
+        meta: { errorPagePath: '/auth/error' },
       });
 
-      return ctx.redirect(redirectUrl, 302);
-    } catch (err) {
-      if (err instanceof AppError) {
-        throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-          willRedirect: appConfig.mode !== 'test',
-          meta: { ...err.meta, errorPagePath: '/auth/error' },
-        });
-      }
-      throw err;
-    }
-  })
-  /**
-   * Get token data by single use token in cookie
-   */
-  .openapi(authGeneralRoutes.getTokenData, async (ctx) => {
-    const db = ctx.var.db;
-    const { type: tokenType, id: tokenId } = ctx.req.valid('param');
+    // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
+    await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
 
-    // Check if token session is valid
-    const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+    // If verification email, we process it immediately and redirect to app
+    if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
-    // Check if tokenId matches the one being requested
-    if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
+    // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
+    if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
 
-    const tokenResponse = {
-      email: tokenRecord.email,
-      userId: tokenRecord.userId || '',
-      inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
-    };
+    // Determine redirect URL based on token type
+    let redirectUrl = appConfig.defaultRedirectPath;
 
-    // If its NOT an membership invitation, return base data
-    if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
+    // If invitation, redirect to auth page with tokenId param
+    if (tokenRecord.type === 'invitation')
+      redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
-    // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
-    if (!tokenRecord.userId && existingUser) {
-      await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
-      tokenResponse.userId = existingUser.id;
-    }
+    // If password reset, redirect to create password page with tokenId param
+    if (tokenRecord.type === 'password-reset')
+      redirectUrl = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.id}`;
 
-    return ctx.json(tokenResponse, 200);
-  })
-  /**
-   * Start impersonation
-   */
-  .openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
-    const db = ctx.var.db;
-    const { targetUserId } = ctx.req.valid('query');
-
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
-
-    if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
-
-    const adminUser = ctx.var.user;
-    await setUserSession(ctx, user, 'password', 'impersonation');
-
-    logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
-    sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
-
-    return ctx.body(null, 204);
-  })
-  /**
-   * Stop impersonation
-   */
-  .openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
-    const db = ctx.var.db;
-    const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
-    const { session } = await validateSession(sessionToken);
-
-    // Only continue if session is impersonation
-    if (!adminUserId) throw new AppError(400, 'invalid_request', 'error');
-
-    const [adminsLastSession] = await db
-      .select()
-      .from(sessionsTable)
-      .where(eq(sessionsTable.userId, adminUserId))
-      .orderBy(desc(sessionsTable.expiresAt))
-      .limit(1);
-
-    if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
-
-    const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
-    const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
-
-    await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
-
-    logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
-
-    return ctx.body(null, 204);
-  })
-  /**
-   * Resend invitation email with token for entity invites and system invites.
-   */
-  .openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
-    const db = ctx.var.db;
-    const { email, tokenId } = ctx.req.valid('json');
-
-    const normalizedEmail = email?.toLowerCase().trim();
-
-    const filters = [eq(tokensTable.type, 'invitation')];
-
-    if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
-    else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-    else throw new AppError(400, 'invalid_request', 'error');
-
-    // Retrieve token
-    const [oldToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(...filters))
-      .orderBy(desc(tokensTable.createdAt))
-      .limit(1);
-
-    if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
-
-    const { email: userEmail } = oldToken;
-
-    // Generate token and store hashed
-    const newToken = nanoid(40);
-    const hashedToken = encodeLowerCased(newToken);
-
-    // Insert token first
-    await db.insert(tokensTable).values({
-      ...oldToken,
-      secret: hashedToken,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      invokedAt: null,
-      singleUseToken: null,
+    logEvent(ctx, 'info', 'Token invoked, redirecting with single use token in cookie', {
+      tokenId: tokenRecord.id,
+      userId: tokenRecord.userId,
     });
 
-    // Prepare and send invitation email
-    const recipient = {
-      email: userEmail,
-      name: slugFromEmail(userEmail),
-      inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
-    };
-
-    // Prepare email props, default is system invite
-    const defaultEmailProps = {
-      senderName: 'System',
-      senderThumbnailUrl: null as string | null,
-      subject: i18n.t('backend:email.system_invite.subject', {
-        lng: appConfig.defaultLanguage,
-      }),
-      lng: appConfig.defaultLanguage,
-    };
-
-    // Get original sender
-    if (oldToken.createdBy) {
-      const [sender] = await db
-        .select(userSelect)
-        .from(usersTable)
-        .where(eq(usersTable.id, oldToken.createdBy))
-        .limit(1);
-      defaultEmailProps.senderName = sender.name;
-      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
-    }
-
-    // Get entity info
-    if (oldToken.inactiveMembershipId) {
-      const [inactiveMembership] = await db
-        .select()
-        .from(inactiveMembershipsTable)
-        .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
-
-      const entityIdColumnKey = appConfig.entityIdColumnKeys[
-        inactiveMembership.contextType
-      ] as keyof typeof inactiveMembership;
-      if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
-      // Internal resolve: getting entity info for email template (no permission check needed)
-      const entity = await resolveEntity(
-        inactiveMembership.contextType,
-        inactiveMembership[entityIdColumnKey] as string,
-        db,
-      );
-
-      if (!entity) throw new AppError(400, 'invalid_request', 'error');
-
-      defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', {
-        entityName: entity.name,
-        lng: appConfig.defaultLanguage,
+    return ctx.redirect(redirectUrl, 302);
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw new AppError(err.status, err.type as ErrorKey, err.severity, {
+        willRedirect: appConfig.mode !== 'test',
+        meta: { ...err.meta, errorPagePath: '/auth/error' },
       });
-      const emailProps = {
-        ...defaultEmailProps,
-        entityName: entity.name,
-        role: inactiveMembership.role,
-        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
-      };
-
-      await mailer.prepareEmails(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
-      logEvent('info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
-    } else {
-      await mailer.prepareEmails(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
-      logEvent('info', 'System invitation has been resent');
     }
+    throw err;
+  }
+});
 
-    return ctx.body(null, 204);
-  })
-  /**
-   * Sign out
-   */
-  .openapi(authGeneralRoutes.signOut, async (ctx) => {
-    const db = ctx.var.db;
-    const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
+/**
+ * Get token data by single use token in cookie
+ */
+app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
+  const db = ctx.var.db;
+  const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-    if (confirmMfa) {
-      // Delete mfa cookie
-      deleteAuthCookie(ctx, 'confirm-mfa');
+  // Check if token session is valid
+  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
-      logEvent('info', 'User mfa canceled');
+  // Check if tokenId matches the one being requested
+  if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
-      return ctx.body(null, 204);
-    }
+  const tokenResponse = {
+    email: tokenRecord.email,
+    userId: tokenRecord.userId || '',
+    inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
+  };
 
-    // Find session & invalidate
-    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
-    const { session: currentSession } = await validateSession(sessionToken);
+  // If its NOT an membership invitation, return base data
+  if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
 
-    await db
-      .delete(sessionsTable)
-      .where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
+  // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
+  const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+  if (!tokenRecord.userId && existingUser) {
+    await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
+    tokenResponse.userId = existingUser.id;
+  }
 
-    logEvent('info', 'User signed out', { userId: currentSession.userId });
+  return ctx.json(tokenResponse, 200);
+});
 
-    return ctx.body(null, 204);
+/**
+ * Start impersonation
+ */
+app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
+  const db = ctx.var.db;
+  const { targetUserId } = ctx.req.valid('query');
+
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, targetUserId)).limit(1);
+
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
+
+  const adminUser = ctx.var.user;
+  await setUserSession(ctx, user, 'password', 'impersonation');
+
+  logEvent(ctx, 'info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
+  sendAccountSecurityEmail(ctx, user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
+
+  return ctx.body(null, 204);
+});
+
+/**
+ * Stop impersonation
+ */
+app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
+  const db = ctx.var.db;
+  const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
+  const { session } = await validateSession(sessionToken);
+
+  // Only continue if session is impersonation
+  if (!adminUserId) throw new AppError(400, 'invalid_request', 'error');
+
+  const [adminsLastSession] = await db
+    .select()
+    .from(sessionsTable)
+    .where(eq(sessionsTable.userId, adminUserId))
+    .orderBy(desc(sessionsTable.expiresAt))
+    .limit(1);
+
+  if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
+
+  const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
+  const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
+
+  await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
+
+  logEvent(ctx, 'info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
+
+  return ctx.body(null, 204);
+});
+
+/**
+ * Resend invitation email with token for entity invites and system invites.
+ */
+app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
+  const db = ctx.var.db;
+  const { email, tokenId } = ctx.req.valid('json');
+
+  const normalizedEmail = email?.toLowerCase().trim();
+
+  const filters = [eq(tokensTable.type, 'invitation')];
+
+  if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
+  else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+  else throw new AppError(400, 'invalid_request', 'error');
+
+  // Retrieve token
+  const [oldToken] = await db
+    .select()
+    .from(tokensTable)
+    .where(and(...filters))
+    .orderBy(desc(tokensTable.createdAt))
+    .limit(1);
+
+  if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
+
+  const { email: userEmail } = oldToken;
+
+  // Generate token and store hashed
+  const newToken = nanoid(40);
+  const hashedToken = encodeLowerCased(newToken);
+
+  // Insert token first
+  await db.insert(tokensTable).values({
+    ...oldToken,
+    secret: hashedToken,
+    expiresAt: createDate(new TimeSpan(7, 'd')),
+    invokedAt: null,
+    singleUseToken: null,
   });
 
-export default authGeneralRouteHandlers;
+  // Prepare and send invitation email
+  const recipient = {
+    email: userEmail,
+    name: slugFromEmail(userEmail),
+    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+  };
+
+  // Prepare email props, default is system invite
+  const defaultEmailProps = {
+    senderName: 'System',
+    senderThumbnailUrl: null as string | null,
+    subject: i18n.t('backend:email.system_invite.subject', {
+      lng: appConfig.defaultLanguage,
+    }),
+    lng: appConfig.defaultLanguage,
+  };
+
+  // Get original sender
+  if (oldToken.createdBy) {
+    const [sender] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oldToken.createdBy)).limit(1);
+    defaultEmailProps.senderName = sender.name;
+    defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
+  }
+
+  // Get entity info
+  if (oldToken.inactiveMembershipId) {
+    const [inactiveMembership] = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.id, oldToken.inactiveMembershipId));
+
+    const entityIdColumnKey = appConfig.entityIdColumnKeys[
+      inactiveMembership.contextType
+    ] as keyof typeof inactiveMembership;
+    if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
+    // Internal resolve: getting entity info for email template (no permission check needed)
+    const entity = await resolveEntity(
+      db,
+      inactiveMembership.contextType,
+      inactiveMembership[entityIdColumnKey] as string,
+    );
+
+    if (!entity) throw new AppError(400, 'invalid_request', 'error');
+
+    defaultEmailProps.subject = i18n.t('backend:email.member_invite.subject', {
+      entityName: entity.name,
+      lng: appConfig.defaultLanguage,
+    });
+    const emailProps = {
+      ...defaultEmailProps,
+      entityName: entity.name,
+      role: inactiveMembership.role,
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
+    };
+
+    await mailer.prepareEmails(MemberInviteWithTokenEmail, emailProps, [recipient], userEmail);
+    logEvent(ctx, 'info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
+  } else {
+    await mailer.prepareEmails(SystemInviteEmail, defaultEmailProps, [recipient], userEmail);
+    logEvent(ctx, 'info', 'System invitation has been resent');
+  }
+
+  return ctx.body(null, 204);
+});
+
+/**
+ * Sign out
+ */
+app.openapi(authGeneralRoutes.signOut, async (ctx) => {
+  const db = ctx.var.db;
+  const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
+
+  if (confirmMfa) {
+    // Delete mfa cookie
+    deleteAuthCookie(ctx, 'confirm-mfa');
+
+    logEvent(ctx, 'info', 'User mfa canceled');
+
+    return ctx.body(null, 204);
+  }
+
+  // Find session & invalidate
+  const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
+  const { session: currentSession } = await validateSession(sessionToken);
+
+  await db
+    .delete(sessionsTable)
+    .where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
+
+  invalidateCache.user(currentSession.userId);
+  logEvent(ctx, 'info', 'User signed out', { userId: currentSession.userId });
+
+  return ctx.body(null, 204);
+});
+
+export { authTag } from '#/modules/auth/auth-module';
+export const authGeneralHandlers = app;

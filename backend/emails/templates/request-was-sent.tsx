@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { requestTypeEnum } from '#/db/schema/requests';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import type { BasicTemplateType } from '../types';
 
@@ -21,17 +21,17 @@ export const RequestResponseEmail = ({ lng, type, subject }: RequestResponseEmai
         }
       />
       <EmailBody>
-        <Text>
+        <EmailText>
           <span
             dangerouslySetInnerHTML={{
               __html: i18n.t(`backend:email.${type}_request.text`, { lng, appName: appConfig.name }),
             }}
           />
-        </Text>
+        </EmailText>
       </EmailBody>
 
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

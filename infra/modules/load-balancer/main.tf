@@ -24,6 +24,14 @@ variable "cdc_container_endpoint" {
   type = string
 }
 
+variable "yjs_container_endpoint" {
+  type = string
+}
+
+variable "yjs_domain" {
+  type = string
+}
+
 variable "frontend_bucket_endpoint" {
   type = string
 }
@@ -75,7 +83,7 @@ resource "scaleway_lb_certificate" "main" {
 
   letsencrypt {
     common_name = var.api_domain
-    subject_alternative_name = [var.app_domain]
+    subject_alternative_name = [var.app_domain, var.yjs_domain]
   }
 }
 
@@ -100,7 +108,7 @@ resource "scaleway_lb_backend" "api" {
   health_check_http {
     uri    = "/health"
     method = "GET"
-    code   = 200
+    code   = 204
   }
 
   health_check_timeout    = "5s"
@@ -132,7 +140,7 @@ resource "scaleway_lb_backend" "cdc" {
   health_check_http {
     uri    = "/health"
     method = "GET"
-    code   = 200
+    code   = 204
   }
 
   health_check_timeout    = "5s"
@@ -174,8 +182,42 @@ resource "scaleway_lb_route" "cdc" {
   frontend_id = scaleway_lb_frontend.https.id
   backend_id  = scaleway_lb_backend.cdc.id
   match_host_header = var.api_domain
-  # Note: Scaleway routes match on host header, URL path routing 
+  # Note: Scaleway routes match on host header, URL path routing
   # is handled via separate subdomains or ACL rules
+}
+
+# -----------------------------------------------------------------------------
+# Backend: Yjs Relay (WebSocket)
+# -----------------------------------------------------------------------------
+
+resource "scaleway_lb_backend" "yjs" {
+  lb_id             = scaleway_lb.main.id
+  name              = "${var.name_prefix}-yjs-backend"
+  forward_protocol  = "http"
+  forward_port      = 443
+  proxy_protocol    = "none"
+
+  server_ips = []
+
+  health_check_tcp {}
+
+  health_check_timeout    = "5s"
+  health_check_delay      = "30s"
+  health_check_max_retries = 3
+
+  # Extended timeouts for WebSocket connections
+  timeout_server  = "30s"
+  timeout_connect = "5s"
+  timeout_tunnel  = "60m" # Long-lived WebSocket connections
+
+  sticky_sessions = "none"
+}
+
+# Route yjs subdomain to Yjs Relay
+resource "scaleway_lb_route" "yjs" {
+  frontend_id = scaleway_lb_frontend.https.id
+  backend_id  = scaleway_lb_backend.yjs.id
+  match_host_header = var.yjs_domain
 }
 
 # -----------------------------------------------------------------------------
@@ -232,4 +274,8 @@ output "api_backend_id" {
 
 output "cdc_backend_id" {
   value = scaleway_lb_backend.cdc.id
+}
+
+output "yjs_backend_id" {
+  value = scaleway_lb_backend.yjs.id
 }

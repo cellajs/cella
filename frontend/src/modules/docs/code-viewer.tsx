@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
   code: string;

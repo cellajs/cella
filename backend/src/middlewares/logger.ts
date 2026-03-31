@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { requestId } from 'hono/request-id';
 import { appConfig } from 'shared';
 import { requestLogger } from '#/pino';
+import { isBenchTraffic } from '#/utils/logger';
 
 /**
  * Request logging middleware.
@@ -23,6 +24,9 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const status = ctx.res.status;
   const responseTime = Date.now() - start;
   const userId = ctx.get('user')?.id || 'na';
+
+  // Suppress bench traffic logs in development (only log errors)
+  if (isBenchTraffic(cleanUrl, userId) && status < 500) return;
 
   // Log structured data - pino-pretty handles formatting in development
   const logData = { requestId: reqId, method, url: cleanUrl, status, responseTime, userId };

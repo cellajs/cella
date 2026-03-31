@@ -3,7 +3,14 @@ import { appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { activityActions } from '#/sync/activity-actions';
 import { entityTableNames } from '#/table-config';
-import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTenantId, withFakerSeed } from './utils';
+import {
+  generateMockContextEntityIdColumns,
+  MOCK_REF_DATE,
+  mockNanoid,
+  mockPaginated,
+  mockTenantId,
+  withFakerSeed,
+} from './utils';
 
 /**
  * Generates a mock activity with all fields populated. Currently hardcoded
@@ -15,7 +22,7 @@ import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTena
  */
 export const mockActivity = (key = 'activity:default'): ActivityModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const tableName = faker.helpers.arrayElement(entityTableNames);
     const action = faker.helpers.arrayElement([...activityActions]);
@@ -33,13 +40,11 @@ export const mockActivity = (key = 'activity:default'): ActivityModel =>
       type: `${singularName}.${verb}`,
       entityId: mockNanoid(),
       createdAt,
-      changedKeys:
+      changedFields:
         action === 'update'
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
       stx: null,
-      // Dead letter error info (null for successfully processed activities)
-      error: null,
       ...generateMockContextEntityIdColumns('relatable'),
     };
   });

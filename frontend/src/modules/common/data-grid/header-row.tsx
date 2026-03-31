@@ -1,16 +1,13 @@
 import { memo, useState } from 'react';
-import type { DataGridProps } from './data-grid';
 import { HeaderCell } from './header-cell';
 import { rowSelectedClassname } from './style/row';
-import type { CalculatedColumn, Maybe, Position, ResizedWidth } from './types';
+import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import { cn, getColSpan } from './utils/grid-utils';
 
-type SharedDataGridProps<R, SR, K extends React.Key> = Pick<
-  DataGridProps<R, SR, K>,
-  'sortColumns' | 'onSortColumnsChange' | 'onColumnsReorder'
->;
-
-export interface HeaderRowProps<R, SR, K extends React.Key> extends SharedDataGridProps<R, SR, K> {
+export interface HeaderRowProps<R, SR> {
+  sortColumns?: Maybe<readonly SortColumn[]>;
+  onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
+  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   rowIdx: number;
   columns: readonly CalculatedColumn<R, SR>[];
   onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
@@ -20,11 +17,12 @@ export interface HeaderRowProps<R, SR, K extends React.Key> extends SharedDataGr
   selectedCellIdx: number | undefined;
   shouldFocusGrid: boolean;
   headerRowClass: Maybe<string>;
+  scrollTop?: number;
 }
 
 export const headerRowClassname = 'rdg-header-row';
 
-function HeaderRow<R, SR, K extends React.Key>({
+function HeaderRow<R, SR>({
   headerRowClass,
   rowIdx,
   columns,
@@ -37,7 +35,8 @@ function HeaderRow<R, SR, K extends React.Key>({
   selectedCellIdx,
   selectCell,
   shouldFocusGrid,
-}: HeaderRowProps<R, SR, K>) {
+  scrollTop,
+}: HeaderRowProps<R, SR>) {
   const [draggedColumnKey, setDraggedColumnKey] = useState<string>();
 
   const cells = [];
@@ -64,6 +63,7 @@ function HeaderRow<R, SR, K extends React.Key>({
         shouldFocusGrid={shouldFocusGrid && index === 0}
         draggedColumnKey={draggedColumnKey}
         setDraggedColumnKey={setDraggedColumnKey}
+        scrollTop={scrollTop}
       />,
     );
   }
@@ -85,7 +85,6 @@ function HeaderRow<R, SR, K extends React.Key>({
   );
 }
 
-const HeaderRowMemo = memo(HeaderRow) as <R, SR, K extends React.Key>(
-  props: HeaderRowProps<R, SR, K>,
-) => React.JSX.Element;
+const HeaderRowMemo = memo(HeaderRow) as <R, SR>(props: HeaderRowProps<R, SR>) => React.JSX.Element;
+
 export { HeaderRowMemo as HeaderRow };

@@ -21,7 +21,7 @@ export const useColumns = () => {
     {
       key: 'name',
       name: '',
-      sortable: false,
+
       renderCell: ({ row }) => (
         <>
           <EntityAvatar
@@ -38,13 +38,13 @@ export const useColumns = () => {
     {
       key: 'entityType',
       name: t('common:type'),
-      sortable: false,
+
       renderCell: ({ row }) => <span>{t(`common:${row.entity.entityType}`)}</span>,
     },
     {
       key: 'role',
       name: t('common:role'),
-      sortable: false,
+
       width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) =>
@@ -57,7 +57,7 @@ export const useColumns = () => {
     {
       key: 'createdAt',
       name: t('common:invited_at'),
-      sortable: false,
+
       minBreakpoint: 'md',
       minWidth: 120,
       placeholderValue: '-',
@@ -66,7 +66,7 @@ export const useColumns = () => {
     {
       key: 'createdBy',
       name: t('common:invited_by'),
-      sortable: false,
+
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
@@ -78,7 +78,7 @@ export const useColumns = () => {
     {
       key: 'actions',
       name: '',
-      sortable: false,
+
       width: 200,
       renderCell: ({ row }) => (
         <div className="flex gap-2 w-full max-w-50">

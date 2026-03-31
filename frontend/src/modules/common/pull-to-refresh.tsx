@@ -1,6 +1,6 @@
 import { CircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 const refreshTimeout = 5000;
 

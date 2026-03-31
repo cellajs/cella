@@ -3,7 +3,7 @@ import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
-import { pastIsoDate } from '../../mocks/utils';
+import { mockPastIsoDate } from '../../mocks/utils';
 
 /**
  * Create a membership invitation token for a user to join an organization
@@ -19,11 +19,12 @@ export async function createMembershipInvitationToken(
     id: nanoid(),
     userId: user.id,
     email: user.email,
+    contextId: organizationId,
     organizationId,
     tenantId,
     contextType: 'organization' as const,
     role,
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
     createdBy: user.id,
   };
 
@@ -38,7 +39,7 @@ export async function createMembershipInvitationToken(
     userId: user.id,
     inactiveMembershipId: insertedInactiveMembership.id,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
   };
 
   await db.insert(tokensTable).values(tokenRecord);

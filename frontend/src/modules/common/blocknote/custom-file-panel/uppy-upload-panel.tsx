@@ -1,6 +1,5 @@
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { type FilePanelProps, useBlockNoteEditor, useExtension } from '@blocknote/react';
-import * as Sentry from '@sentry/react';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
@@ -13,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { parseUploadedAttachments } from '~/modules/attachment/helpers';
+import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
@@ -22,7 +21,7 @@ import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restr
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers/uppy-helpers';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 import '~/modules/common/uploader/uppy-styles';
 
@@ -54,7 +53,7 @@ export function UppyFilePanel({
 }: BaseUppyFilePanelProps & FilePanelProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const filePanel = useExtension(FilePanelExtension);
   const editor = useBlockNoteEditor(customSchema);
@@ -145,7 +144,7 @@ export function UppyFilePanel({
         }
         setUppy(localUppy);
       } catch (err) {
-        Sentry.captureException(err);
+        console.error('Failed to initialize upload:', err);
       }
     };
 

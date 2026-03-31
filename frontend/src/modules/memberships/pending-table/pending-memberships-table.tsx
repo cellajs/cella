@@ -2,9 +2,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { zGetPendingMembershipsData } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -51,7 +51,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
     entityId: contextEntity.id,
     entityType: contextEntity.entityType,
     tenantId: contextEntity.tenantId,
-    orgId: contextEntity.organizationId || contextEntity.id,
+    organizationId: contextEntity.organizationId || contextEntity.id,
     ...search,
     limit,
   });

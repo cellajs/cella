@@ -26,7 +26,7 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
 }) => {
   return (
     <>
-      <span className="opacity-50 italic mx-1 text-xs">
+      <span className="opacity-50 italic mx-1.5 text-xs whitespace-nowrap">
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </span>
       <span className={`font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`}>{closeBracket}</span>

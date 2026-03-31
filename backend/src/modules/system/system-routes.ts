@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/docs/x-routes';
-import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import {
   batchResponseSchema,
@@ -122,28 +122,6 @@ const systemRoutes = {
     responses: {
       204: {
         description: 'Newsletter sent',
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Paddle webhook (WIP)
-   */
-  paddleWebhook: createXRoute({
-    operationId: 'paddleWebhook',
-    method: 'post',
-    path: '/paddle-webhook',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('paddle'),
-    tags: ['system'],
-    summary: 'Paddle webhook (WIP)',
-    description: 'Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.',
-    request: {
-      body: { content: { 'application/json': { schema: z.unknown() } } },
-    },
-    responses: {
-      204: {
-        description: 'Paddle webhook received',
       },
       ...errorResponseRefs,
     },

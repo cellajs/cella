@@ -3,12 +3,12 @@ import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { zMembershipInviteData } from 'sdk/zod.gen';
 import type z from 'zod';
-import { zMembershipInviteData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -132,9 +132,9 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col gap-4"
           >
-            <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
+            <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
-            </AlertWrap>
+            </AlertBanner>
             {inviteMode === 'email' ? (
               <InviteEmailForm contextEntity={contextEntity} dialog={isDialog}>
                 {children}

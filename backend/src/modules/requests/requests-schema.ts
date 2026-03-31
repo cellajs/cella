@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { requestsTable } from '#/db/schema/requests';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { maxLength, paginationQuerySchema } from '#/schemas';
-import { mockRequestResponse } from '../../../mocks/mock-entity-base';
+import { mockRequestBaseResponse } from '../../../mocks/mock-entity-base';
 
 const requestSelectSchema = createSelectSchema(requestsTable);
 
@@ -11,7 +11,7 @@ export const requestSchema = requestSelectSchema
   .extend({ wasInvited: z.boolean() })
   .openapi('Request', {
     description: 'A contact or waitlist submission from an unauthenticated user.',
-    example: mockRequestResponse(),
+    example: mockRequestBaseResponse(),
   });
 
 export const requestCreateBodySchema = z.object({

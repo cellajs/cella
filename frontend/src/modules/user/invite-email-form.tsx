@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { systemInvite as baseSystemInvite } from '~/api.gen';
+import { systemInvite as baseSystemInvite } from 'sdk';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
@@ -32,7 +32,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
   const form = useInviteFormDraft(contextEntity?.id);
 
   const onSuccess = (
-    { invitesSentCount, rejectedItemIds }: { rejectedItemIds: string[]; invitesSentCount: number },
+    { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
     variables: InviteFormValues | InviteMember,
   ) => {
     const emails = 'emails' in variables ? variables.emails : variables.body.emails;
@@ -43,8 +43,8 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
       const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
       toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
     }
-    if (rejectedItemIds.length)
-      toaster(t('common:still_not_accepted', { count: rejectedItemIds.length, total: emails.length }), 'info');
+    if (rejectedIds.length)
+      toaster(t('common:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
 
     // Since this form is also used in onboarding, we need to call the next step
     // This should ideally be done through the callback, but we need to refactor stepper
@@ -62,7 +62,10 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
       ? membershipInvite(
           {
             body: values,
-            path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+            path: {
+              tenantId: contextEntity.tenantId,
+              organizationId: contextEntity.organizationId || contextEntity.id,
+            },
             query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
             contextEntity,
           },

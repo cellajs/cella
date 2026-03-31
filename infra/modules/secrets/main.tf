@@ -22,6 +22,11 @@ variable "database_url_pooled" {
   sensitive = true
 }
 
+variable "database_url_admin" {
+  type      = string
+  sensitive = true
+}
+
 variable "argon_secret" {
   type      = string
   sensitive = true
@@ -32,12 +37,17 @@ variable "cookie_secret" {
   sensitive = true
 }
 
-variable "unsubscribe_token_secret" {
+variable "unsubscribe_secret" {
   type      = string
   sensitive = true
 }
 
-variable "cdc_ws_secret" {
+variable "cdc_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "yjs_secret" {
   type      = string
   sensitive = true
 }
@@ -74,6 +84,18 @@ resource "scaleway_secret_version" "database_url_pooled" {
   data      = var.database_url_pooled
 }
 
+resource "scaleway_secret" "database_url_admin" {
+  name        = "${var.env}/cella/database-url-admin"
+  description = "PostgreSQL admin connection string (for migrations and role management)"
+  region      = var.region
+  tags        = var.tags
+}
+
+resource "scaleway_secret_version" "database_url_admin" {
+  secret_id = scaleway_secret.database_url_admin.id
+  data      = var.database_url_admin
+}
+
 resource "scaleway_secret" "argon_secret" {
   name        = "${var.env}/cella/argon-secret"
   description = "Argon2id password hashing secret"
@@ -98,28 +120,40 @@ resource "scaleway_secret_version" "cookie_secret" {
   data      = var.cookie_secret
 }
 
-resource "scaleway_secret" "unsubscribe_token_secret" {
+resource "scaleway_secret" "unsubscribe_secret" {
   name        = "${var.env}/cella/unsubscribe-token-secret"
   description = "Email unsubscribe token secret"
   region      = var.region
   tags        = var.tags
 }
 
-resource "scaleway_secret_version" "unsubscribe_token_secret" {
-  secret_id = scaleway_secret.unsubscribe_token_secret.id
-  data      = var.unsubscribe_token_secret
+resource "scaleway_secret_version" "unsubscribe_secret" {
+  secret_id = scaleway_secret.unsubscribe_secret.id
+  data      = var.unsubscribe_secret
 }
 
-resource "scaleway_secret" "cdc_ws_secret" {
-  name        = "${var.env}/cella/cdc-ws-secret"
-  description = "CDC WebSocket authentication secret"
+resource "scaleway_secret" "cdc_secret" {
+  name        = "${var.env}/cella/cdc-secret"
+  description = "CDC authentication secret"
   region      = var.region
   tags        = var.tags
 }
 
-resource "scaleway_secret_version" "cdc_ws_secret" {
-  secret_id = scaleway_secret.cdc_ws_secret.id
-  data      = var.cdc_ws_secret
+resource "scaleway_secret_version" "cdc_secret" {
+  secret_id = scaleway_secret.cdc_secret.id
+  data      = var.cdc_secret
+}
+
+resource "scaleway_secret" "yjs_secret" {
+  name        = "${var.env}/cella/yjs-secret"
+  description = "Yjs WebSocket authentication secret"
+  region      = var.region
+  tags        = var.tags
+}
+
+resource "scaleway_secret_version" "yjs_secret" {
+  secret_id = scaleway_secret.yjs_secret.id
+  data      = var.yjs_secret
 }
 
 # -----------------------------------------------------------------------------
@@ -130,10 +164,12 @@ output "secret_ids" {
   value = {
     database_url_direct      = scaleway_secret.database_url_direct.id
     database_url_pooled      = scaleway_secret.database_url_pooled.id
+    database_url_admin       = scaleway_secret.database_url_admin.id
     argon_secret             = scaleway_secret.argon_secret.id
     cookie_secret            = scaleway_secret.cookie_secret.id
-    unsubscribe_token_secret = scaleway_secret.unsubscribe_token_secret.id
-    cdc_ws_secret            = scaleway_secret.cdc_ws_secret.id
+    unsubscribe_secret = scaleway_secret.unsubscribe_secret.id
+    cdc_secret               = scaleway_secret.cdc_secret.id
+    yjs_secret               = scaleway_secret.yjs_secret.id
   }
   description = "Map of secret names to their IDs for container references"
 }

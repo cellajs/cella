@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSectionButtonProps {
   options: MenuSectionOptions;
@@ -49,34 +49,32 @@ export const MenuSectionButton = ({
             onClick={() => toggleSection(options.entityType)}
             className="flex-1 min-w-0 justify-between shadow-none"
             variant="secondary"
-            asChild
+            render={<motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }} />}
           >
-            <motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }}>
-              <div className="flex items-center">
-                <span className="flex items-center">{t(options.label)}</span>
-                {/* Unseen count badge or item count when section is collapsed */}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="inline-block group-data-[visible=true]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
-                >
-                  {sectionUnseenCount > 0 ? (
-                    <span className="inline-flex items-center justify-center min-w-4 h-4 rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
-                      {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
-                    </span>
-                  ) : (
-                    data.filter((i) => !i.membership.archived).length
-                  )}
-                </motion.span>
-              </div>
+            <div className="flex items-center">
+              <span className="flex items-center">{t(options.label)}</span>
+              {/* Unseen count badge or item count when section is collapsed */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="inline-block group-data-[visible=true]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
+              >
+                {sectionUnseenCount > 0 ? (
+                  <span className="inline-flex items-center justify-center min-w-4 h-4 rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+                    {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
+                  </span>
+                ) : (
+                  data.filter((i) => !i.membership.archived).length
+                )}
+              </motion.span>
+            </div>
 
-              <ChevronDown
-                size={16}
-                className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180"
-              />
-            </motion.button>
+            <ChevronDown
+              size={16}
+              className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180"
+            />
           </Button>
 
           {/* Settings button */}

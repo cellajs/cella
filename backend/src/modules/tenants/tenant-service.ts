@@ -3,8 +3,8 @@ import { appConfig } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import { domainsTable } from '#/db/schema/domains';
 import { type TenantModel, tenantsTable } from '#/db/schema/tenants';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
-import { logEvent } from '#/utils/logger';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { type LogContext, logEvent } from '#/utils/logger';
 
 /**
  * Shared utility for creating a tenant with associated domain.
@@ -13,6 +13,7 @@ import { logEvent } from '#/utils/logger';
 export async function createTenantForUser(
   db: DbOrTx,
   { name, createdBy, userEmail }: { name: string; createdBy: string; userEmail: string },
+  logCtx: LogContext = null,
 ): Promise<TenantModel> {
   const [tenant] = await db.insert(tenantsTable).values({ name, createdBy }).returning();
 
@@ -26,10 +27,10 @@ export async function createTenantForUser(
     }
   }
 
-  logEvent('info', 'Tenant auto-created', { tenantId: tenant.id, name, createdBy });
+  logEvent(logCtx, 'info', 'Tenant auto-created', { tenantId: tenant.id, name, createdBy });
 
   // Fire-and-forget security notification to sysadmin
-  sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'tenant-created', {
+  sendAccountSecurityEmail(logCtx, { email: appConfig.securityEmail, name: 'Security' }, 'tenant-created', {
     tenantName: name,
     userEmail,
     timestamp: new Date().toISOString(),

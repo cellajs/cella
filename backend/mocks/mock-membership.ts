@@ -1,16 +1,16 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, type ContextEntityType, type EntityRole, roles } from 'shared';
-import { nanoid } from 'shared/nanoid';
 import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import {
   generateMockContextEntityIdColumns,
+  MOCK_REF_DATE,
   type MockContextEntityIdColumns,
   mockNanoid,
   mockPaginated,
+  mockPastIsoDate,
   mockTenantId,
-  pastIsoDate,
   withFakerSeed,
 } from './utils';
 
@@ -19,6 +19,7 @@ type MembershipBase = {
   id: string;
   tenantId: string;
   contextType: ContextEntityType;
+  contextId: string;
   userId: string;
   role: EntityRole;
   displayOrder: number;
@@ -66,20 +67,18 @@ export const mockContextMembership = <T extends ContextEntityType>(
     appConfig.contextEntityTypes.map((type) => [appConfig.entityIdColumnKeys[type], null]),
   );
 
-  // Determine the correct ID column name for this context type (e.g., 'organizationId')
-  const contextIdColumnKey = appConfig.entityIdColumnKeys[contextType];
-
   return {
-    id: nanoid(),
+    id: mockNanoid(),
     userId,
     tenantId: contextEntity.tenantId, // Use context entity's tenant for RLS isolation
     contextType,
+    contextId: contextEntity.id, // Denormalized primary context entity ID
     ...contextEntityColumns,
-    [contextIdColumnKey]: contextEntity.id, // Set the correct context entity ID
+    [appConfig.entityIdColumnKeys[contextType]]: contextEntity.id, // Set the correct context entity ID
     ...overrideIds,
     role: faker.helpers.arrayElement(roles.all),
     displayOrder: getMembershipOrderOffset(contextEntity.id) * 10,
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
     createdBy: userId,
   } as InsertMembershipModel;
 };
@@ -94,6 +93,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
     id: mockNanoid(),
     tenantId: mockTenantId(),
     contextType: 'organization' as const,
+    contextId: mockNanoid(),
     userId: mockNanoid(),
     ...generateMockContextEntityIdColumns(),
     role: faker.helpers.arrayElement(roles.all),
@@ -109,7 +109,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
  */
 export const mockMembership = (key = 'membership:default'): MembershipModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
@@ -117,6 +117,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
     return {
       id: mockNanoid(),
       contextType: 'organization' as const,
+      contextId: mockNanoid(),
       userId,
       ...contextEntityColumns,
       role: faker.helpers.arrayElement(roles.all),
@@ -125,8 +126,8 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
       archived: false,
       createdAt,
       createdBy: userId,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       tenantId: 'test01', // Default test tenant
     };
   });
@@ -141,7 +142,7 @@ export const mockMembershipResponse = mockMembership;
  */
 export const mockInactiveMembership = (key = 'inactive-membership:default'): InactiveMembershipModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
     const contextEntityColumns = generateMockContextEntityIdColumns();
@@ -150,6 +151,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
     return {
       id: mockNanoid(),
       contextType: 'organization' as const,
+      contextId: mockNanoid(),
       email: faker.internet.email().toLowerCase(),
       userId,
       tokenId,
@@ -177,7 +179,7 @@ export const mockPaginatedInactiveMembershipsResponse = (count = 2) =>
  */
 export const mockMemberResponse = (key = 'member:default') =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockNanoid();
 
@@ -195,8 +197,8 @@ export const mockMemberResponse = (key = 'member:default') =>
       language: 'en' as const,
       mfaRequired: false,
       createdAt,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
       lastSeenAt: createdAt,
@@ -216,6 +218,6 @@ export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMem
 export const mockMembershipInviteResponse = (key = 'membership-invite:default') =>
   withFakerSeed(key, () => ({
     data: [mockMembershipBase()],
-    rejectedItemIds: [] as string[],
+    rejectedIds: [] as string[],
     invitesSentCount: 1,
   }));

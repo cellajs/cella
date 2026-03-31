@@ -33,15 +33,12 @@ export function OverviewTable() {
     {
       key: 'label',
       name: '',
-      sortable: false,
-      resizable: false,
       width: 160,
       renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
     },
     {
       key: 'value',
       name: '',
-      sortable: false,
       resizable: true,
       wrapText: 5,
       renderCell: ({ row }) => <div className="leading-5 text-muted-foreground">{row.value}</div>,

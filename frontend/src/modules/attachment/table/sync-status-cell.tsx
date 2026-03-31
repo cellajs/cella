@@ -1,6 +1,6 @@
 import { AlertCircleIcon, CloudIcon, CloudOffIcon, LoaderIcon, UploadCloudIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 
 interface SyncStatusCellProps {

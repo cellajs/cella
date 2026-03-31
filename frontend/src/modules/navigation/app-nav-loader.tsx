@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
 import { Logo } from '~/modules/common/logo';
 import { Spinner } from '~/modules/common/spinner';
-import { useNavigationStore } from '~/store/navigation';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { cn } from '~/utils/cn';
 
 /**

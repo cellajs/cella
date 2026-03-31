@@ -1,5 +1,5 @@
+import type { MembershipBase } from 'sdk';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import type { MembershipBase } from '~/api.gen';
 import { meKeys } from '~/modules/me/query';
 import {
   type EntityQueryKeys,
@@ -7,12 +7,6 @@ import {
   getRegisteredEntityTypes,
 } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
-
-/** Safely access a dynamic key on an object with varying shapes */
-// biome-ignore lint/suspicious/noExplicitAny: dynamic key access on objects with varying shapes
-export function getField(obj: any, key: string): unknown {
-  return obj?.[key];
-}
 
 /** Get all registered context entity types with their query keys */
 export function getRegisteredContextEntities(): { type: ContextEntityType; keys: EntityQueryKeys }[] {
@@ -35,7 +29,7 @@ export function getCachedMemberships(): MembershipBase[] | null {
 
 /** Get the entity ID a membership belongs to */
 function getMembershipEntityId(m: MembershipBase): string | null {
-  return m[appConfig.entityIdColumnKeys[m.contextType]];
+  return m.contextId;
 }
 
 /** Find the membership for a given entity ID */

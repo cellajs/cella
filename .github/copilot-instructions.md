@@ -53,9 +53,8 @@ Product entities are typically daily-use content data models that can optionally
 ## Essential Commands
 
 ```bash
-pnpm quick          # Fast dev with PGlite (DEV_MODE=basic, no Docker)
+pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC, requires Docker)
 pnpm dev            # Full dev with PostgreSQL + CDC Worker (DEV_MODE=full, requires Docker)
-pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC)
 pnpm check          # Run generate:openapi + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data

@@ -2,9 +2,11 @@ import { BrevoClient } from '@getbrevo/brevo';
 import { render } from 'jsx-email';
 import { appConfig } from 'shared';
 import { env } from '#/env';
+import { logEvent } from '#/utils/logger';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 
 const brevoClient = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : undefined;
+if (!brevoClient && appConfig.mode !== 'test') logEvent(null, 'info', 'Email sending disabled: BREVO_API_KEY missing');
 
 /* ---------------------------------- Types --------------------------------- */
 
@@ -62,10 +64,8 @@ export const mailer: Mailer = {
    * @param replyTo - Optional, email address for the "Reply-To" field.
    */
   async send(to: string, subject: string, html: string, replyTo?: string) {
-    if (!brevoClient) {
-      console.info(`Email to ${to} not sent: BREVO_API_KEY missing.`);
-      return;
-    }
+    if (!brevoClient) return;
+    if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
     try {
       await brevoClient.transactionalEmails.sendTransacEmail({
@@ -76,7 +76,7 @@ export const mailer: Mailer = {
         sender: { email: appConfig.notificationsEmail },
       });
     } catch (err) {
-      console.warn('Failed to send email:\n', err);
+      logEvent(null, 'warn', 'Failed to send email', { error: err instanceof Error ? err.message : String(err) });
     }
   },
 };

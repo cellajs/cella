@@ -14,15 +14,16 @@ export interface FooterLinkProps {
   href: string;
 }
 
-const FooterLink = ({ id, href }: FooterLinkProps) => {
+/**
+ * Component for rendering a single footer link.
+ */
+const AppFooterLink = ({ id, href }: FooterLinkProps) => {
   const { t } = useTranslation();
 
   return (
     <li>
-      <Button size="xs" variant="ghost" className="font-light" asChild>
-        <Link to={href} draggable="false">
-          {t(`common:${id}`)}
-        </Link>
+      <Button size="xs" variant="ghost" className="font-light" render={<Link to={href} draggable="false" />}>
+        {t(`common:${id}`)}
       </Button>
     </li>
   );
@@ -33,15 +34,17 @@ interface FooterLinksProps {
   className?: string;
 }
 
-// Row of footer links including a contact button
-export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: FooterLinksProps) => {
+/**
+ * Row of footer links including a contact button
+ */
+export const AppFooterLinks = ({ links = defaultFooterLinks, className = '' }: FooterLinksProps) => {
   const { t } = useTranslation();
   const contactButtonRef = useRef(null);
 
   return (
     <ul className={cn('flex flex-wrap gap-4 text-center', className)}>
       {links.map((link) => (
-        <FooterLink key={link.id} id={link.id} href={link.href} />
+        <AppFooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
         <Button
@@ -59,7 +62,9 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
   );
 };
 
-// App Footer component
+/**
+ * App Footer component
+ */
 export const AppFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
@@ -76,7 +81,7 @@ export const AppFooter = ({ className = '' }) => {
         <div className="ml-1 font-light opacity-20">|</div>
         <UserTheme />
       </div>
-      <FooterLinks />
+      <AppFooterLinks />
     </footer>
   );
 };

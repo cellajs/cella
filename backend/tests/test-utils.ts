@@ -8,10 +8,14 @@
  *
  * Database migrations are handled by global-setup.ts before tests run.
  * These functions are intended to be used in test files to keep setup DRY and consistent.
+ *
+ * IMPORTANT: vi.mock() calls must be at the top level of each test file (vitest hoists them).
+ * Use the exported mock factory functions (rateLimiterCoreMock, rateLimiterHelpersMock, arcticMock)
+ * in your top-level vi.mock() calls instead of wrapping them in helper functions.
  */
 
 import { sql } from 'drizzle-orm';
-import { Context, Next } from 'hono';
+import type { Context, Next } from 'hono';
 import { appConfig } from 'shared';
 import { vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -84,41 +88,60 @@ export async function clearDatabase() {
 }
 
 /**
- * Mock rate limiter to avoid 429 errors in tests.
+ * Mock factory for rate limiter core module.
+ * Use at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock)
  */
-export function mockRateLimiter() {
-  vi.mock('#/middlewares/rate-limiter/core', () => ({
-    rateLimiter: vi.fn().mockReturnValue(async (_: Context, next: Next) => {
-      await next();
-    }),
-    defaultOptions: {
-      tableName: 'rate_limits',
-      points: 10,
-      duration: 60 * 60,
-      blockDuration: 60 * 30,
-    },
-    slowOptions: {
-      tableName: 'rate_limits',
-      points: 100,
-      duration: 60 * 60 * 24,
-      blockDuration: 60 * 60 * 3,
-    },
-  }));
-}
+export const rateLimiterCoreMock = () => ({
+  rateLimiter: vi
+    .fn()
+    .mockImplementation(
+      (mode: string, key: string, _identifiers: string[], opts?: { limits?: { points?: number } }) => {
+        const points = opts?.limits?.points ?? 10;
+        const handler = async (_: Context, next: Next) => {
+          await next();
+        };
+        return Object.assign(handler, { keyPrefix: `${key}_${mode}`, points });
+      },
+    ),
+  defaultOptions: {
+    tableName: 'rate_limits',
+    points: 10,
+    duration: 60 * 60,
+    blockDuration: 60 * 30,
+  },
+  slowOptions: {
+    tableName: 'rate_limits',
+    points: 100,
+    duration: 60 * 60 * 24,
+    blockDuration: 60 * 60 * 3,
+  },
+});
 
 /**
- * Mock Arctic library functions
+ * Mock factory for rate limiter helpers module.
+ * Use at top level: vi.mock('#/middlewares/rate-limiter/helpers', rateLimiterHelpersMock)
  */
-export function mockArcticLibrary() {
-  vi.mock('arctic', async () => {
-    const actual = await vi.importActual('arctic');
-    return {
-      ...actual,
-      generateState: () => 'mock-state-' + Math.random().toString(36).substring(7),
-      generateCodeVerifier: () => 'mock-code-verifier-' + Math.random().toString(36).substring(7),
-    };
-  });
-}
+export const rateLimiterHelpersMock = async (importOriginal: () => Promise<Record<string, unknown>>) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    checkIpRateLimitStatus: vi.fn().mockResolvedValue({ isLimited: false }),
+    checkRateLimitStatus: vi.fn().mockResolvedValue({ isLimited: false }),
+  };
+};
+
+/**
+ * Mock factory for Arctic library.
+ * Use at top level: vi.mock('arctic', arcticMock)
+ */
+export const arcticMock = async () => {
+  const actual = await vi.importActual('arctic');
+  return {
+    ...actual,
+    generateState: () => `mock-state-${Math.random().toString(36).substring(7)}`,
+    generateCodeVerifier: () => `mock-code-verifier-${Math.random().toString(36).substring(7)}`,
+  };
+};
 
 /**
  * Modifies the app configuration for testing purposes.

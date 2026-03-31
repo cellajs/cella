@@ -11,7 +11,7 @@ import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
 import { userSelect } from '#/modules/user/helpers/select';
-import { logEvent } from '#/utils/logger';
+import { type LogContext, logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OAuthVerificationEmail } from '../../../../../emails';
@@ -26,7 +26,10 @@ interface Props {
  * OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  * This is done to be sure that the oauth account holder also owns the email address.
  */
-export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+export const sendOAuthVerificationEmail = async (
+  { userId, oauthAccountId, redirectPath }: Props,
+  logCtx: LogContext = null,
+) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
@@ -100,5 +103,5 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
   mailer.prepareEmails(OAuthVerificationEmail, staticOAuthProps, recipients);
 
-  logEvent('info', 'Verification email sent', { userId: user.id });
+  logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };

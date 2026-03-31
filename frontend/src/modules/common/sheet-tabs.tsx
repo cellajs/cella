@@ -11,6 +11,9 @@ interface Props {
   id?: string;
 }
 
+/**
+ * Component for rendering tabs inside a sheet.
+ */
 export const SheetTabs = ({ tabs }: Props) => {
   const layoutId = nanoid();
   const { t } = useTranslation();

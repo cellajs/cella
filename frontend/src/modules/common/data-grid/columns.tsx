@@ -1,4 +1,4 @@
-import { SelectCellFormatter } from './cellRenderers';
+import { SelectCellFormatter } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
 import type { Column, RenderCellProps, RenderGroupCellProps, RenderHeaderCellProps } from './types';
 
@@ -58,8 +58,6 @@ export const SelectColumn: Column<any, any> = {
   width: 35,
   minWidth: 35,
   maxWidth: 35,
-  resizable: false,
-  sortable: false,
   frozen: true,
   renderHeaderCell(props) {
     return <HeaderRenderer {...props} />;

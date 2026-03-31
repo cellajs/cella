@@ -50,6 +50,7 @@ export const cookieSchema = z.string().max(maxLength.field);
 /** Schema for session cookie */
 export const sessionCookieSchema = z.object({
   sessionToken: z.string().max(maxLength.field),
+  sessionId: z.string().max(maxLength.id),
   adminUserId: z.string().max(maxLength.id).optional(),
 });
 
@@ -88,33 +89,33 @@ export const tenantOnlyParamSchema = z.object({
   tenantId: validIdSchema,
 });
 
-/** Schema for an organization identifier orgId */
-export const inOrgParamSchema = z.object({ orgId: validIdSchema });
+/** Schema for an organization identifier organizationId */
+export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
 
-/** Schema for entity id within an organization orgId */
-export const idInOrgParamSchema = z.object({ id: validIdSchema, orgId: validIdSchema });
+/** Schema for entity id within an organization organizationId */
+export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: validIdSchema });
 
 /*************************************************************************************************
  * Tenant-scoped param schemas (for RLS-enabled routes)
  ************************************************************************************************/
 
-/** Schema for tenant-scoped routes: tenantId + orgId */
+/** Schema for tenant-scoped routes: tenantId + organizationId */
 export const tenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
 });
 
 /** Schema for entity id within tenant + org context */
 export const idInTenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
   id: validIdSchema,
 });
 
 /** Schema for user id within tenant + org context (for getUser route) */
 export const userIdInTenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
   userId: validIdSchema,
 });
 
@@ -151,15 +152,8 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
-  /** Sequence-based delta filter — returns entities with seqAt > this value. Hierarchy-aware: seqAt is scoped per parent context. */
-  afterSeq: z
-    .string()
-    .optional()
-    .transform((val) => (val ? Number.parseInt(val, 10) : undefined))
-    .refine(
-      (val) => val === undefined || (Number.isInteger(val) && val >= 0),
-      'afterSeq must be a non-negative integer',
-    ),
+  /** Seq-based delta filter. "51" for open-ended (>= 51), "51,150" for bounded range (>= 51 AND <= 150). */
+  seqCursor: z.string().optional(),
 });
 
 /** Schema for optional excludeArchived query param (transforms to boolean) */
@@ -167,6 +161,11 @@ export const excludeArchivedQuerySchema = z
   .enum(['true', 'false'])
   .optional()
   .transform((val) => val === 'true');
+
+/** Schema for optional fullResponse query param — when true, return fully hydrated relations */
+export const fullResponseQuerySchema = z.object({
+  fullResponse: booleanTransformSchema.optional(),
+});
 
 /** Valid options for include query param */
 export const includeOptions = ['counts', 'membership'] as const;

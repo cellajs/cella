@@ -1,5 +1,5 @@
 import { Link } from 'jsx-email';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText } from '../components';
 import i18n from '../i18n';
 import { newsletterContentStyles, smallTextStyle } from '../styles';
 import type { BasicTemplateType } from '../types';
@@ -32,7 +32,7 @@ export const NewsletterEmail = ({
         }
       />
       <EmailBody>
-        <Text>{testEmail && 'THIS IS A TEST'}</Text>
+        <EmailText>{testEmail && 'THIS IS A TEST'}</EmailText>
 
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: sys admin content */}
         <div className="bn-email-content" dangerouslySetInnerHTML={{ __html: content }} />
@@ -45,7 +45,7 @@ export const NewsletterEmail = ({
       </EmailBody>
 
       <EmailLogo />
-      <Footer />
+      <EmailFooter />
     </EmailContainer>
   );
 };

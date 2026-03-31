@@ -8,6 +8,9 @@ interface Props {
   gap: number;
 }
 
+/**
+ * A visual indicator for drop targets during drag-and-drop operations, positioned based on the closest edge and with a customizable gap.
+ */
 export const DropIndicator = ({ edge, className = '', gap = 0 }: Props) => {
   const dropIndicatorEdgeStyles = {
     top: {
@@ -16,8 +19,12 @@ export const DropIndicator = ({ edge, className = '', gap = 0 }: Props) => {
     bottom: {
       bottom: `${-gap / 2}rem`,
     },
-    left: () => {},
-    right: () => {},
+    left: {
+      left: `${-gap / 2}rem`,
+    },
+    right: {
+      right: `${-gap / 2}rem`,
+    },
   };
 
   return (

@@ -1,16 +1,14 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type SystemRole, type UserFlags } from 'shared';
-import { nanoid } from 'shared/nanoid';
 import slugify from 'slugify';
 import type { InsertEmailModel } from '#/db/schema/emails';
 import type { InsertPasswordModel } from '#/db/schema/passwords';
 import type { InsertUnsubscribeTokenModel } from '#/db/schema/unsubscribe-tokens';
 import type { InsertUserModel, UserModel } from '#/db/schema/users';
-import type { UserWithActivity } from '#/modules/user/helpers/select';
-import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
+import type { UserWithCounters } from '#/modules/user/helpers/select';
 import { mockMembershipBase } from './mock-membership';
-import { mockNanoid, mockPaginated, pastIsoDate, withFakerSeed } from './utils';
+import { MOCK_REF_DATE, mockNanoid, mockPaginated, mockPastIsoDate, withFakerSeed } from './utils';
 
 /** Optional overrides for mock user generation */
 type MockUserOptionalOverrides = Partial<{
@@ -41,10 +39,10 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     () => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }),
     { maxTime: 500, maxRetries: 500 },
   );
-  const createdAt = pastIsoDate();
+  const createdAt = mockPastIsoDate();
 
   return {
-    id: nanoid(),
+    id: mockNanoid(),
     entityType: 'user' as const,
     name: faker.person.fullName(firstAndLastName),
     firstName: firstAndLastName.firstName,
@@ -59,8 +57,8 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     mfaRequired: false,
     userFlags: {} as UserFlags,
     createdAt,
-    modifiedAt: createdAt,
-    modifiedBy: null,
+    updatedAt: createdAt,
+    updatedBy: null,
   };
 };
 
@@ -68,9 +66,9 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
  * Generates a mock user API response with deterministic seeding.
  * Same key produces same data across runs.
  */
-export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
+export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
     const email = faker.internet.email(firstAndLastName).toLowerCase();
@@ -92,8 +90,8 @@ export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
       mfaRequired: false,
       userFlags: {} as UserFlags,
       createdAt,
-      modifiedAt: createdAt,
-      modifiedBy: null,
+      updatedAt: createdAt,
+      updatedBy: null,
       lastStartedAt: createdAt,
       lastSignInAt: createdAt,
       lastSeenAt: createdAt,
@@ -101,7 +99,7 @@ export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
   });
 
 /** User list item type for getUsers endpoint (includes memberships array and optional role) */
-export interface UserListItem extends UserWithActivity {
+export interface UserListItem extends UserWithCounters {
   memberships: ReturnType<typeof mockMembershipBase>[];
   role?: SystemRole;
 }
@@ -137,7 +135,7 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
     language: appConfig.defaultLanguage,
     thumbnailUrl: null,
     newsletter: false,
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
   };
 };
 
@@ -148,18 +146,19 @@ export const mockPassword = (user: UserModel, hashedPassword: string): InsertPas
   return {
     hashedPassword,
     userId: user.id,
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
   };
 };
 
 /**
  * Generates an unsubscribeToken record for a given user.
  */
-export const mockUnsubscribeToken = (user: UserModel): InsertUnsubscribeTokenModel => {
+export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsubscribeTokenModel> => {
+  const { generateUnsubscribeToken } = await import('#/utils/unsubscribe-token');
   return {
     secret: generateUnsubscribeToken(user.email),
     userId: user.id,
-    createdAt: pastIsoDate(),
+    createdAt: mockPastIsoDate(),
   };
 };
 
@@ -171,6 +170,6 @@ export const mockEmail = (user: UserModel): InsertEmailModel => {
     email: user.email,
     userId: user.id,
     verified: true,
-    verifiedAt: pastIsoDate(),
+    verifiedAt: mockPastIsoDate(),
   };
 };

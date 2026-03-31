@@ -27,23 +27,32 @@ export const MarketingNav = () => {
 
   const renderNavItems = () => {
     return marketingNavConfig.map(({ url, hash, id }) => (
-      <Button key={id} variant="ghost" size="lg" asChild>
-        <Link
-          to={url}
-          hash={hash}
-          replace={location.pathname === '/about'}
-          draggable="false"
-          onClick={(e) => {
-            if (!hash) {
-              closeDrawer();
-              return;
-            }
-            e.preventDefault();
-            handleNavClick(hash);
-          }}
-        >
-          {t(id)}
-        </Link>
+      <Button
+        key={id}
+        variant="ghost"
+        size="lg"
+        render={
+          <Link
+            to={url}
+            hash={hash}
+            replace={location.pathname === '/about'}
+            draggable="false"
+            onClick={(e) => {
+              if (!hash) {
+                closeDrawer();
+                return;
+              }
+              if (location.pathname === '/about') {
+                e.preventDefault();
+                handleNavClick(hash);
+              } else {
+                closeDrawer();
+              }
+            }}
+          />
+        }
+      >
+        {t(id)}
       </Button>
     ));
   };
@@ -118,10 +127,8 @@ export const MarketingNav = () => {
               </Button>
             )}
 
-            <Button className="sm:ml-2" asChild>
-              <Link to="/auth/authenticate" preload={false}>
-                {t('common:sign_in')}
-              </Link>
+            <Button className="sm:ml-2" render={<Link to="/auth/authenticate" preload={false} />}>
+              {t('common:sign_in')}
             </Button>
           </div>
         </div>

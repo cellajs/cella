@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { appConfig } from 'shared';
-import type { MembershipBase } from '~/api.gen';
+import type { MembershipBase } from 'sdk';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 
-/** Get the context entity ID from a membership based on its contextType */
-const getMembershipContextId = (m: MembershipBase) =>
-  String(m[appConfig.entityIdColumnKeys[m.contextType] as keyof MembershipBase]);
+/** Get the context entity ID from a membership */
+const getMembershipContextId = (m: MembershipBase) => m.contextId;
 
 /** Sum all product entity type counts for a single context entity */
 const sumCounts = (counts: Record<string, number> | undefined) => {

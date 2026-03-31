@@ -1,5 +1,5 @@
 # =============================================================================
-# Cella Backend - Production Dockerfile
+# Backend - Production Dockerfile
 # =============================================================================
 # Multi-stage build for Node.js 24 Hono API server
 # Optimized for Scaleway Serverless Containers
@@ -30,7 +30,7 @@ COPY packages/tracing/package.json ./packages/tracing/
 COPY patches/ ./patches/
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @cella/backend...
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter backend...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -46,7 +46,7 @@ COPY packages/tracing/package.json ./packages/tracing/
 COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter @cella/backend...
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter backend...
 
 # Copy source code
 COPY backend/ ./backend/
@@ -66,8 +66,8 @@ RUN pnpm build
 FROM node:24-alpine AS production
 
 # Add non-root user for security
-RUN addgroup --system --gid 1001 cella && \
-  adduser --system --uid 1001 cella
+RUN addgroup --system --gid 1001 app && \
+  adduser --system --uid 1001 app
 
 WORKDIR /app
 
@@ -89,10 +89,10 @@ COPY --from=builder /app/json ./json
 COPY backend/drizzle ./backend/drizzle
 
 # Set ownership
-RUN chown -R cella:cella /app
+RUN chown -R app:app /app
 
 # Switch to non-root user
-USER cella
+USER app
 
 # Environment variables
 ENV NODE_ENV=production

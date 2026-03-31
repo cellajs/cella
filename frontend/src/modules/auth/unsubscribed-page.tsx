@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export function Unsubscribed() {
   const { t } = useTranslation();
@@ -11,10 +11,8 @@ export function Unsubscribed() {
     <div className="text-center">
       <h1 className="text-2xl">{t('common:unsubscribe_title')}</h1>
       <p className="font-light mt-4">{t('common:unsubscribe_text', { email: user.email })}</p>
-      <Button className="mt-6" asChild>
-        <Link to="/auth/authenticate" preload={false}>
-          {t('common:sign_in')}
-        </Link>
+      <Button className="mt-6" render={<Link to="/auth/authenticate" preload={false} />}>
+        {t('common:sign_in')}
       </Button>
     </div>
   );

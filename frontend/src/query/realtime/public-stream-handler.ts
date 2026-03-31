@@ -1,10 +1,10 @@
-import { isPublicProductEntity } from 'shared';
-import type { StreamNotification } from '~/api.gen';
-import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import type { StreamNotification } from 'sdk';
+import { isPublicStreamEntity } from 'shared';
+import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline';
-import { queryClient } from '~/query/query-client';
-import { useSyncStore } from '~/store/sync';
+import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
+import { propagateEmbeddings } from './propagation';
 
 /**
  * Handles incoming public stream notifications and updates the React Query cache.
@@ -18,40 +18,73 @@ import * as cacheOps from './cache-ops';
  * also refetch when they become active again.
  */
 export function handlePublicStreamNotification(message: StreamNotification): void {
-  const { entityType, entityId, action, seqAt, stx } = message;
+  const { entityType, entityId, action, seq, stx } = message;
 
   // Only handle configured public entity types
-  if (!entityType || !isPublicProductEntity(entityType)) {
+  if (!entityType || !isPublicStreamEntity(entityType)) {
     return;
   }
 
-  // Echo prevention: skip if this is our own mutation (same as app-stream-handler)
+  // Echo prevention: skip data fetch/invalidation for own mutations,
+  // but still patch stx metadata so subsequent mutations read fresh versions
   if (stx?.sourceId === sourceId) {
-    console.debug('[handlePublicStreamNotification] Echo prevention - skipping own mutation:', stx.mutationId);
+    if (entityType) cacheOps.patchEntityStxInCache(entityType, entityId, stx);
+    console.debug('[handlePublicStreamNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
     return;
   }
 
-  // Track unscoped seq watermark (from stamp_entity_seq_at trigger)
-  if (seqAt !== null && seqAt !== undefined) {
+  // Track unscoped seq watermark (from CDC worker)
+  if (seq !== null && seq !== undefined) {
     const store = useSyncStore.getState();
     const current = store.getSeq(entityType);
-    if (seqAt > current) store.setSeq(entityType, seqAt);
+    if (seq > current) store.setSeq(entityType, seq);
   }
 
-  // Use registry for dynamic lookup (keys registered at module load time by entity modules)
+  // DELETE BATCH: remove each entity from caches directly
+  if (message.deletedIds?.length) {
+    for (const id of message.deletedIds) {
+      cacheOps.removeEntity(entityType, id);
+    }
+    if (message.propagation) propagateEmbeddings(message.propagation);
+    return;
+  }
+
+  // CREATE/UPDATE BATCH: single range fetch
+  if (message.batchUntilSeq && hasEntityQueryKeys(entityType)) {
+    const keys = getEntityQueryKeys(entityType);
+    const seqCursor = `${seq},${message.batchUntilSeq}`;
+
+    cacheOps
+      .fetchRangeAndPatch(entityType, null, null, seqCursor, keys, message.cacheToken ?? undefined)
+      .then((success) => {
+        if (success && message.batchUntilSeq) {
+          useSyncStore.getState().setSeq(entityType, message.batchUntilSeq);
+        }
+        if (message.propagation) propagateEmbeddings(message.propagation);
+      })
+      .catch((err) => console.warn('[PublicStream] Batch fetch failed:', err));
+    return;
+  }
+
+  // SINGLE ENTITY: existing flow
   const keys = getEntityQueryKeys(entityType);
 
   switch (action) {
     case 'create':
     case 'update':
       // Fetch single entity and patch both detail and list caches
-      cacheOps.fetchEntityAndUpdateList(entityId, keys, action, undefined, entityType);
+      cacheOps
+        .fetchEntityAndUpdateList(entityId, keys, action, undefined, undefined, entityType)
+        .then(() => {
+          if (message.propagation) propagateEmbeddings(message.propagation);
+        })
+        .catch((err) => console.warn('[PublicStream] Entity fetch failed:', err));
       break;
 
     case 'delete':
       // Remove from detail and list caches directly (no refetch needed)
-      queryClient.removeQueries({ queryKey: keys.detail.byId(entityId) });
-      cacheOps.removeEntityFromListCache(entityId, keys);
+      cacheOps.removeEntity(entityType, entityId);
+      if (message.propagation) propagateEmbeddings(message.propagation);
       break;
   }
 }

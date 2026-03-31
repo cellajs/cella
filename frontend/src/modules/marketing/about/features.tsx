@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { features } from '~/modules/marketing/marketing-config';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export type Feature = {
   id: string;
