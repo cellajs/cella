@@ -1,4 +1,4 @@
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
@@ -13,8 +13,8 @@ const seenRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['seen'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['seen', 'cella'],
     summary: 'Mark entities as seen',
     description:
       'Records that the current user has viewed one or more product entities. ' +
@@ -41,8 +41,8 @@ const seenRoutes = {
     operationId: 'getUnseenCounts',
     method: 'get',
     path: '/counts',
-    xGuard: authGuard,
-    tags: ['seen'],
+    xGuard: [authGuard],
+    tags: ['seen', 'cella'],
     summary: 'Get unseen counts',
     description:
       'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. ' +

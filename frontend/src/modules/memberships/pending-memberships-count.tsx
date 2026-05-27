@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
@@ -25,7 +25,7 @@ export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: Enri
 
   // Open pending memberships sheet
   const openSheet = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
 
     createSheet(
       <div className="container">
@@ -38,9 +38,9 @@ export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: Enri
         triggerRef: buttonRef,
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
-        title: t('common:pending_invitations'),
-        description: t('common:pending_invitations.text', {
-          entityType: t(`common:${contextEntity.entityType}`).toLowerCase(),
+        title: t('c:pending_invitations'),
+        description: t('c:pending_invitations.text', {
+          entityType: t(`c:${contextEntity.entityType}`).toLowerCase(),
         }),
       },
     );
@@ -54,11 +54,11 @@ export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: Enri
       disabled={contextEntity.included.counts.membership.pending < 1}
       variant="ghost"
       size="xs"
-      className="font-light"
+      className=""
       onClick={openSheet}
     >
       {new Intl.NumberFormat('de-DE').format(contextEntity.included.counts.membership.pending)}{' '}
-      {t('common:pending').toLowerCase()}
+      {t('c:pending').toLowerCase()}
     </Button>
   );
 };

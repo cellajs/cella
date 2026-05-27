@@ -1,6 +1,6 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -25,7 +25,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & R
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        'data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 fixed inset-0 z-113 bg-muted/30 backdrop-blur-xs',
+        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-113 bg-muted/30 backdrop-blur-xs data-closed:animate-out data-open:animate-in',
         className,
       )}
       {...props}
@@ -60,28 +60,28 @@ export function SheetContent({
       initialFocus={initialFocus}
       finalFocus={finalFocus}
       className={cn(
-        'bg-background flex flex-col shadow-lg',
+        'flex flex-col bg-background shadow-lg focus-visible:outline-none',
         // Only apply animations and fixed positioning when not in container
         !container &&
-          'data-[open]:animate-in data-[closed]:animate-out fixed z-114 transition data-[closed]:duration-300 data-[open]:duration-300',
+          'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&
-          'data-[closed]:slide-out-to-right data-[open]:slide-in-from-right inset-y-0 right-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
+          'data-closed:slide-out-to-right data-open:slide-in-from-right inset-y-0 right-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
         !container &&
           side === 'left' &&
-          'data-[closed]:slide-out-to-left data-[open]:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
+          'data-closed:slide-out-to-left data-open:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
         !container &&
           side === 'top' &&
-          'data-[closed]:slide-out-to-top data-[open]:slide-in-from-top inset-x-0 top-0 h-auto',
+          'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
         !container &&
           side === 'bottom' &&
-          'data-[closed]:slide-out-to-bottom data-[open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
+          'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
         container && 'relative h-full w-full',
         className,
       )}
       {...props}
     >
-      <ScrollArea className="w-full h-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
+      <ScrollArea className="h-full w-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
     </SheetPrimitive.Popup>
@@ -120,7 +120,7 @@ export function SheetHeader({
       {children}
       <SheetPrimitive.Close
         data-slot="sheet-close"
-        className="hidden group-[.with-close-btn]/header:block absolute p-1 top-0 right-0 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+        className="focus-effect absolute top-0 right-0 hidden rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 group-[.with-close-btn]/header:block data-disabled:pointer-events-none"
       >
         <XIcon className="size-5" strokeWidth={1.5} />
         <span className="sr-only">Close</span>
@@ -140,7 +140,7 @@ export function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('text-foreground font-semibold', className)}
+      className={cn('font-semibold text-foreground', className)}
       {...props}
     />
   );

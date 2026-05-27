@@ -1,4 +1,4 @@
-import type { DeepPartial } from './src/builder/types';
+import type { DeepPartial } from './src/config-builder/types';
 import type _default from './default-config';
 import development from './development-config';
 
@@ -11,7 +11,6 @@ import development from './development-config';
 export default {
   mode: 'test',
   name: 'Cella TEST',
-  debug: false,
 
   domain: '',
 
@@ -20,17 +19,6 @@ export default {
   backendUrl: development.backendUrl,
   backendAuthUrl: development.backendAuthUrl,
 
-  s3: {
-    bucketPrefix: 'cella-test',
-  },
-
   // Hide chat widget in test
   gleapToken: undefined,
-
-  // Payment with Paddle
-  paddleToken: '',
-  paddlePriceIds: {
-    donate: '',
-  },
-
 } satisfies DeepPartial<typeof _default>;

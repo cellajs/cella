@@ -5,6 +5,8 @@
 
     "allowImportingTsExtensions": true,
 
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
+
     "rootDir": "../",
     "sourceMap": true,
     "inlineSources": true,
@@ -19,6 +21,6 @@
       "#json/*": ["../json/*"],
     },
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*",  "tests", "scripts", "trigger.config.ts", "../shared/*", "../cdc/src/**/*", "mocks"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*",  "tests", "scripts", "trigger.config.ts", "../shared/*", "../cdc/src/**/*", "../ai/src/**/*", "mocks"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

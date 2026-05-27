@@ -20,6 +20,13 @@ const config: StorybookConfig = {
   viteFinal: async (config) => {
     config.resolve = config.resolve || {};
     config.resolve.tsconfigPaths = true;
+    // Mirror frontend/vite.config.ts process.env define for browser context
+    config.define = {
+      ...config.define,
+      'process.env': {
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+      },
+    };
     return config;
   },
 };

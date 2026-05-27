@@ -6,7 +6,7 @@ import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export const ConfirmDisableMfa = () => {
   const { t } = useTranslation();
@@ -17,14 +17,18 @@ export const ConfirmDisableMfa = () => {
   return (
     <>
       {!openConfirmation && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton variant="destructive" onClick={() => setOpenConfirmation(true)} aria-label={'disable'}>
-            {<ShieldMinusIcon size={16} className="mr-2" />}
-            {t(`common:disable`)}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <SubmitButton
+            variant="destructive"
+            icon={<ShieldMinusIcon size={16} />}
+            onClick={() => setOpenConfirmation(true)}
+            aria-label={'disable'}
+          >
+            {t('c:disable')}
           </SubmitButton>
 
           <Button type="reset" variant="secondary" aria-label="Cancel" onClick={() => removeDialog()}>
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
         </div>
       )}
@@ -62,7 +66,7 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
           <Button type="button" onClick={() => onPasskyConfirm()} variant="plain" className="w-full gap-1.5 truncate">
             <FingerprintIcon size={16} />
             <span className="truncate">
-              {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+              {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
             </span>
           </Button>
           <Button
@@ -74,7 +78,7 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
           >
             <SmartphoneIcon size={16} />
             <span className="truncate">
-              {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
+              {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
             </span>
           </Button>
         </div>
@@ -84,7 +88,7 @@ export const ConfirmMfaOptions = ({ mfaRequired }: { mfaRequired: boolean }) => 
         <TotpConfirmationForm
           onSubmit={onTotpConfirm}
           onCancel={() => useDialoger.getState().remove('mfa-confirmation')}
-          label={t('common:totp_verify')}
+          label={t('c:totp_verify')}
         />
       )}
     </>

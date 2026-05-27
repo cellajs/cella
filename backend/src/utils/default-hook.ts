@@ -1,7 +1,7 @@
 import type { Hook } from '@hono/zod-openapi';
 import { ZodError } from 'zod';
-import type { Env } from '#/lib/context';
-import { AppError, type ErrorKey } from '#/lib/error';
+import type { Env } from '#/core/context';
+import { AppError, type ErrorKey } from '#/core/error';
 
 /**
  * Default validation hook for zod-openapi routes.

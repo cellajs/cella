@@ -3,7 +3,7 @@ import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restr
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 import '~/modules/common/uploader/uppy-styles';
 
@@ -16,7 +16,7 @@ export const Uploader = () => {
   if (!uppy || !uploaderData) return null;
 
   // Catch and display errors
-  if (error) return <div className="text-red-600 py-3">{error}</div>;
+  if (error) return <div className="py-3 text-red-600">{error}</div>;
 
   return (
     <Dialog
@@ -25,9 +25,9 @@ export const Uploader = () => {
         if (!open) remove();
       }}
     >
-      <DialogContent className="w-[90vw] xs:w-[80vw] max-w-xl h-[40vh] min-h-fit md:max-w-2xl">
+      <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
         <DialogHeader className="with-close-btn">
-          <DialogTitle className={`${uploaderData.title ? '' : 'hidden'} leading-6 h-6`}>
+          <DialogTitle className={`${uploaderData.title ? '' : 'hidden'} h-6 leading-6`}>
             {uploaderData.title}
           </DialogTitle>
           <DialogDescription className={`${uploaderData.description ? '' : 'hidden'}`}>

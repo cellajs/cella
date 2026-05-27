@@ -5,19 +5,19 @@
 
 /** Rejection state passed through the pipeline */
 export type RejectionState = {
-  rejectedItemIds: string[];
+  rejectedIds: string[];
   rejectionReasons: Record<string, string[]>;
 };
 
 /** Create empty rejection state */
 export const createRejectionState = (): RejectionState => ({
-  rejectedItemIds: [],
+  rejectedIds: [],
   rejectionReasons: {},
 });
 
 /** Add a single rejection (immutable) */
 export const reject = (rejectionState: RejectionState, id: string, reason: string): RejectionState => ({
-  rejectedItemIds: [...rejectionState.rejectedItemIds, id],
+  rejectedIds: [...rejectionState.rejectedIds, id],
   rejectionReasons: {
     ...rejectionState.rejectionReasons,
     [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), id],
@@ -26,7 +26,7 @@ export const reject = (rejectionState: RejectionState, id: string, reason: strin
 
 /** Add multiple rejections with same reason (immutable) */
 export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => ({
-  rejectedItemIds: [...rejectionState.rejectedItemIds, ...ids],
+  rejectedIds: [...rejectionState.rejectedIds, ...ids],
   rejectionReasons: {
     ...rejectionState.rejectionReasons,
     [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
@@ -40,7 +40,7 @@ export const mergeRejections = (a: RejectionState, b: RejectionState): Rejection
     merged[reason] = [...(merged[reason] ?? []), ...ids];
   }
   return {
-    rejectedItemIds: [...a.rejectedItemIds, ...b.rejectedItemIds],
+    rejectedIds: [...a.rejectedIds, ...b.rejectedIds],
     rejectionReasons: merged,
   };
 };

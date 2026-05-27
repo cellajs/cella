@@ -17,7 +17,7 @@ export const SelectTimezone = <TFieldValues extends FieldValues>({
   const seen = new Set<string>();
   const options = timezones.reduce<{ value: string; label: string }[]>((acc, { utc, text }) => {
     const value = utc[0];
-    if (!seen.has(value)) {
+    if (value && !seen.has(value)) {
       seen.add(value);
       acc.push({ value, label: text });
     }
@@ -40,11 +40,13 @@ export const SelectTimezone = <TFieldValues extends FieldValues>({
             value={value}
             onChange={onChange}
             disabled={disabled}
+            clearable
+            searchableTrigger
             placeholders={{
-              trigger: 'common:placeholder.select_timezone',
-              search: 'common:placeholder.search_timezone',
-              notFound: 'common:no_resource_found',
-              resource: 'common:timezone',
+              trigger: 'c:placeholder.select_timezone',
+              search: 'c:placeholder.search_timezone',
+              notFound: 'c:no_resource_found',
+              resource: 'c:timezone',
             }}
           />
 

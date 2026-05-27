@@ -2,7 +2,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { BaseEntityGrid, EntityGridBar, EntityGridTile } from '~/modules/entities/entity-grid';
-import type { EnrichedOrganization } from '~/modules/organization/types';
 import { organizationsListQueryOptions } from './query';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
@@ -36,22 +35,18 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
 
   const { data, isFetching, isLoading, error, hasNextPage, fetchNextPage } = useInfiniteQuery({
     ...queryOptions,
-    select: (data) => data.pages.flatMap((p) => p.items) as EnrichedOrganization[],
+    select: (data) => data.pages.flatMap((p) => p.items),
   });
 
-  // When no explicit sort is chosen, use membership displayOrder (user's personal arrangement)
-  const entities =
-    !search.sort && data
-      ? [...data].sort((a, b) => (a.membership?.displayOrder ?? 0) - (b.membership?.displayOrder ?? 0))
-      : data;
+  const entities = data;
 
   return (
-    <div className="flex flex-col pt-4 gap-2 h-full">
+    <div className="flex h-full flex-col gap-2 pt-4">
       {!limitedView && (
         <EntityGridBar
           queryKey={queryOptions.queryKey}
           searchVars={baseSearch}
-          label={'common:organization'}
+          label={'c:organization'}
           setSearch={setSearch}
           isSheet={!focusView}
           focusView={focusView}
@@ -59,7 +54,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
       )}
 
       <BaseEntityGrid
-        label="common:organization"
+        label="c:organization"
         tileComponent={tileComponent}
         entities={entities}
         isLoading={isLoading}

@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import { Context } from 'hono';
-import { TokenType } from 'shared';
+import type { Context } from 'hono';
+import type { TokenType } from 'shared';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
-import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { isExpiredDate } from '#/utils/is-expired-date';
 
@@ -15,7 +15,7 @@ type Props = {
  * Validates a single use token by its value, ensuring it matches the required type.
  *
  * @param ctx - Hono context
- * @param tokenType (optional) The required type of the token (e.g., 'password-reset', 'email-verification').
+ * @param tokenType (optional) The required type of the token (e.g., 'email-verification').
  * @returns The valid single use token record from the database.
  * @throws AppError if the token is not found or of an invalid type.
  */

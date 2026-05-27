@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { set_cell_color, start_cells, stop_cells } from '~/modules/common/bg-animation/animation.js';
-import { useUIStore } from '~/store/ui.js';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 function maximize_canvas(c: HTMLCanvasElement) {
   if (!c) return;

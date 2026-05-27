@@ -1,37 +1,27 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowRightIcon, ChevronDownIcon } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { MailIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { sendMagicLink } from 'sdk';
+import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import {
-  type SignUpData,
-  type SignUpResponses,
-  type SignUpWithTokenData,
-  type SignUpWithTokenResponse,
-  signUp,
-  signUpWithToken,
-} from '~/api.gen';
-import { zSignUpData } from '~/api.gen/zod.gen';
-import type { ApiError } from '~/lib/api';
+import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
-import { TokenData } from '~/modules/auth/types';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import type { TokenData } from '~/modules/auth/types';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
-import type { MutationData } from '~/query/types';
-import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
-
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
+const emailEnabled = enabledStrategies.includes('passkey');
+const isMagicLinkEnabled = enabledStrategies.includes('magic');
 
-const formSchema = zSignUpData.shape.body.unwrap();
+const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
 /**
@@ -39,130 +29,74 @@ type FormValues = z.infer<typeof formSchema>;
  */
 export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  const { email, resetSteps, restrictedMode } = useAuthStore();
-
-  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { email, resetSteps, restrictedMode, setStep } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
 
-  // Handle basic sign up
-  const { mutate: _signUp, isPending } = useMutation<SignUpResponses[201], ApiError, NonNullable<SignUpData['body']>>({
-    mutationFn: (body) => signUp({ body }),
-    onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
-  });
-
-  // Handle sign up with token to accept invitation
-  const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation<
-    SignUpWithTokenResponse,
-    ApiError,
-    MutationData<SignUpWithTokenData>
-  >({
-    mutationFn: ({ path, body }) => signUpWithToken({ path, body }),
-    onSuccess: ({ membershipInvite }) => {
-      const to = appConfig.defaultRedirectPath;
-      const search = membershipInvite ? { skipWelcome: true } : {};
-      return navigate({ to, search, replace: true });
-    },
-  });
-
-  // Create form
+  // Create form — sign-up is handled by OAuth/passkey providers rendered below
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email, password: '' },
+    defaultValues: { email },
   });
 
-  // Handle submit action
-  const onSubmit = (formValues: FormValues) => {
-    if (tokenId) return _signUpWithToken({ path: { tokenId }, body: formValues });
-    _signUp({ ...formValues });
-  };
+  // Send magic link for email-based sign-up
+  const { mutate: sendMagic, isPending } = useMutation({
+    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email } }),
+    onSuccess: () => setStep('magicLinkSent', form.getValues('email') || email),
+    onError: () => toaster(t('error:reported_try_later'), 'error'),
+  });
+
+  const onSubmit = () => sendMagic();
 
   // Get title based on context
   const getTitle = () => {
-    if (restrictedMode) return t('common:sign_up');
-    if (tokenData?.inactiveMembershipId) return t('common:invite_accept_proceed');
-    if (tokenData) return t('common:invite_create_account');
-    return `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`;
+    if (restrictedMode) return t('c:sign_up');
+    if (tokenData?.inactiveMembershipId) return t('c:invite_accept_proceed');
+    if (tokenData) return t('c:invite_create_account');
+    return `${t('c:create_resource', { resource: t('c:account').toLowerCase() })}?`;
   };
 
   return (
     <Form {...form}>
       {restrictedMode ? (
-        <h1 className="text-2xl text-center mt-4">{getTitle()}</h1>
+        <h1 className="mt-4 text-center text-2xl">{getTitle()}</h1>
       ) : (
-        <h1 className="text-2xl text-center">
+        <h1 className="text-center text-2xl">
           {getTitle()} <br />
-          <Button
-            variant="ghost"
-            onClick={resetSteps}
-            className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
-          >
-            <span className="truncate">{email}</span>
-            <ChevronDownIcon size={16} className="ml-1" />
-          </Button>
+          <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />
         </h1>
       )}
 
       <LegalNotice email={email || form.getValues('email')} mode="signup" />
 
-      {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4 mt-0!">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem className={restrictedMode ? 'gap-0 -mb-2' : 'hidden'}>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    className="h-12"
-                    disabled={!restrictedMode}
-                    readOnly={!restrictedMode}
-                    autoFocus={restrictedMode && !isMobile}
-                    autoComplete={restrictedMode ? 'email' : 'off'}
-                    placeholder={t('common:email')}
-                  />
-                </FormControl>
-                <FormMessage className="mt-2" />
-              </FormItem>
-            )}
-          />
-          {enabledStrategies.includes('password') && (
-            <>
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  // Custom css due to html injection by browser extensions
-                  <FormItem className="gap-0">
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type="password"
-                          className="h-12"
-                          autoFocus={!restrictedMode && !isMobile}
-                          placeholder={t('common:new_password')}
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <Suspense>
-                        <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                      </Suspense>
-                    </div>
-                    <FormMessage className="mt-2" />
-                  </FormItem>
-                )}
-              />
-              <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
-                {t('common:sign_up')}
-                <ArrowRightIcon size={16} className="ml-2" />
-              </SubmitButton>
-            </>
+      {(emailEnabled || isMagicLinkEnabled) && (
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="mt-0! flex flex-col gap-4">
+          {restrictedMode && (
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="-mb-2 gap-0">
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="email"
+                      className="h-12"
+                      autoFocus={!isMobile}
+                      autoComplete="email"
+                      placeholder={t('c:email')}
+                    />
+                  </FormControl>
+                  <FormMessage className="mt-2" />
+                </FormItem>
+              )}
+            />
           )}
+
+          <SubmitButton loading={isPending} icon={<MailIcon size={16} />} className="w-full">
+            {t('c:magic_link_send_signup')}
+          </SubmitButton>
         </form>
       )}
     </Form>

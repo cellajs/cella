@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import pc from 'picocolors';
+import pc from './colors';
 
 /*************************************************************************************************
  * Types
@@ -318,7 +318,7 @@ export function getOutdatedPackages(cwd: string): Record<string, OutdatedPackage
     // This is expected behavior, not an error
     if (error instanceof Error && 'stdout' in error) {
       const stdout = (error as { stdout: string }).stdout;
-      if (stdout && stdout.trim()) {
+      if (stdout?.trim()) {
         try {
           return JSON.parse(stdout);
         } catch {
@@ -357,7 +357,7 @@ export function runPnpmAudit(cwd: string): AuditResult | null {
     // pnpm audit exits with non-zero when vulnerabilities found
     if (error instanceof Error && 'stdout' in error) {
       const stdout = (error as { stdout: string }).stdout;
-      if (stdout && stdout.trim()) {
+      if (stdout?.trim()) {
         try {
           return JSON.parse(stdout) as AuditResult;
         } catch {
@@ -475,6 +475,7 @@ export function formatDependents(dependents: string[]): string {
  */
 export function terminalLink(text: string, url: string): string {
   // Strip control characters from URL to prevent terminal escape injection (CWE-116)
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control chars is the security purpose here.
   const safeUrl = url.replace(/[\x00-\x1f\x7f]/g, '');
   // OSC 8 hyperlink format: \e]8;;URL\e\\TEXT\e]8;;\e\\
   return `\u001B]8;;${safeUrl}\u0007${text}\u001B]8;;\u0007`;

@@ -9,7 +9,7 @@ import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
 import type { LegalSection } from '~/modules/marketing/legal/legal-types';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
@@ -59,7 +59,7 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
   const currentSection = spySection || 'overview';
 
   return (
-    <div className={cn('w-full flex flex-col gap-2 mb-6', className)}>
+    <div className={cn('mb-6 flex w-full flex-col gap-2', className)}>
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
@@ -68,9 +68,9 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
 
         return (
           <Collapsible key={id} open={isExpanded} onOpenChange={() => toggleExpanded(id)}>
-            <div className="relative group/subject" data-active={isActive} data-expanded={isExpanded}>
+            <div className="group/subject relative" data-active={isActive} data-expanded={isExpanded}>
               {/* Rail line - visible when expanded */}
-              <div className="absolute left-2.5 top-4.5 bottom-3 flex-col items-center pointer-events-none hidden group-data-[expanded=true]/subject:flex">
+              <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/subject:flex">
                 <div className="w-px flex-1 bg-muted-foreground/30" />
               </div>
               <CollapsibleTrigger
@@ -81,50 +81,60 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
                     hash={isMobile ? '' : 'overview'}
                     hashScrollIntoView={{ behavior: 'instant' }}
                     resetScroll={true}
-                    draggable="false"
+                    draggable={false}
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'default' }),
-                      'w-full text-left pl-5 h-8 font-normal group opacity-80',
-                      'group-data-[expanded=true]/subject:opacity-100 group-data-[active=true]/subject:bg-accent',
+                      buttonVariants({ variant: 'ghost' }),
+                      'group h-8 w-full pl-5 text-left font-normal opacity-80',
+                      'group-data-[active=true]/subject:bg-accent group-data-[expanded=true]/subject:opacity-100',
                     )}
                   />
                 }
               >
-                <div className="absolute left-[0.53rem] w-1 h-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/subject:bg-muted-foreground/60" />
+                <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/subject:bg-muted-foreground/60" />
                 <span className="truncate">{t(label)}</span>
-                <ChevronDownIcon className="size-4 invisible group-hover:visible transition-transform duration-200 opacity-40 ml-auto group-data-[expanded=true]/subject:rotate-180" />
+                <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>
-              <CollapsibleContent keepMounted className="overflow-hidden data-[closed]:hidden">
-                <div className="relative flex flex-col py-1 px-0">
+              <CollapsibleContent keepMounted className="overflow-hidden data-closed:hidden">
+                <div className="relative flex flex-col px-0 py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
                     const isSectionActive = isActive && currentSection === sectionId;
                     return (
-                      <div key={sectionId} className="relative group/section" data-active={isSectionActive}>
+                      <div
+                        key={sectionId}
+                        className="group/section relative"
+                        data-spy-link={sectionId}
+                        data-active={isSectionActive}
+                      >
                         {isSectionActive && (
                           <motion.span
                             layoutId={layoutId}
                             transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-                            className="w-[0.20rem] bg-primary rounded-full absolute left-2 ml-px top-2 bottom-2"
+                            className="absolute top-2 bottom-2 left-2 ml-px w-[0.20rem] rounded-full bg-primary"
                           />
                         )}
-                        <Link
-                          to="."
-                          hash={sectionId}
-                          replace
-                          draggable="false"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className={cn(
-                            buttonVariants({ variant: 'ghost', size: 'sm' }),
-                            'hover:bg-accent/50 w-full justify-start text-left group font-normal opacity-75 text-sm h-8 gap-2 pl-5',
-                            'group-data-[active=true]/section:opacity-100',
+                            'group h-8 w-full justify-start gap-2 pl-5 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
+                            'group-data-[spy-active]/section:opacity-100',
                           )}
-                          onClick={(e) => {
-                            if (e.metaKey || e.ctrlKey) return;
-                            e.preventDefault();
-                            scrollToSectionById(sectionId);
-                          }}
+                          render={
+                            <Link
+                              to="."
+                              hash={sectionId}
+                              replace
+                              draggable={false}
+                              onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey) return;
+                                e.preventDefault();
+                                scrollToSectionById(sectionId);
+                              }}
+                            />
+                          }
                         >
-                          <span className="truncate text-[13px]">{sectionLabel}</span>
-                        </Link>
+                          <span className="truncate text-sm">{sectionLabel}</span>
+                        </Button>
                       </div>
                     );
                   })}

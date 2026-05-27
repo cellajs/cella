@@ -296,9 +296,9 @@ export const WithSearch: Story = {
           placeholder="Search JSON..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="px-3 py-2 border rounded-md w-64"
+          className="w-64 rounded-md border px-3 py-2"
         />
-        <div className="border rounded-md p-4">
+        <div className="rounded-md border p-4">
           <JsonViewer {...args} searchText={searchText} />
         </div>
       </div>
@@ -428,9 +428,9 @@ export const AllFeatures: Story = {
           placeholder="Search..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="px-3 py-2 border rounded-md w-64"
+          className="w-64 rounded-md border px-3 py-2"
         />
-        <div className="border rounded-md p-4 max-h-[500px] overflow-auto">
+        <div className="max-h-[500px] overflow-auto rounded-md border p-4">
           <JsonViewer {...args} searchText={searchText} displayDataTypes enableClipboard />
         </div>
       </div>

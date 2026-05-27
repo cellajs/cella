@@ -13,7 +13,7 @@ export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
       data-slot="avatar"
       data-size={size}
       className={cn(
-        'group/avatar relative flex size-8 shrink-0 overflow-hidden select-none data-[size=lg]:size-10 data-[size=sm]:size-6',
+        'group/avatar relative flex size-8 shrink-0 select-none overflow-hidden data-[size=lg]:size-10 data-[size=sm]:size-6',
         className,
       )}
       {...props}
@@ -38,7 +38,7 @@ export function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'bg-muted flex size-full items-center justify-center text-muted-foreground group-data-[size=sm]/avatar:text-xs',
+        'flex size-full items-center justify-center bg-muted text-muted-foreground group-data-[size=sm]/avatar:text-xs',
         className,
       )}
       {...props}
@@ -82,7 +82,7 @@ export const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
   ({ children, className, limit, ...props }, ref) => {
     return (
       <AvatarGroupProvider limit={limit}>
-        <div ref={ref} className={cn('flex items-center justify-end -space-x-2 relative', className)} {...props}>
+        <div ref={ref} className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
           {children}
         </div>
       </AvatarGroupProvider>

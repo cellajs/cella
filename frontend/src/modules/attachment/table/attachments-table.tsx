@@ -2,8 +2,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import type { Attachment } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -39,11 +39,9 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  const [isCompact, setIsCompact] = useState(false);
-
   // Build columns
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const columnsFromHook = useColumns(contextEntity, isSheet, isCompact);
+  const columnsFromHook = useColumns(contextEntity, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
     () =>
@@ -67,7 +65,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
 
   const queryOptions = attachmentsListQueryOptions({
     tenantId: contextEntity.tenantId,
-    orgId: contextEntity.id,
+    organizationId: contextEntity.id,
     q,
     sort,
     order,
@@ -94,7 +92,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
     // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
-      updateAttachment.mutate({ id: attachment.id, key: 'name', data: attachment.name });
+      updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });
     }
   };
 
@@ -114,8 +112,8 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
   const NoRowsComponent = (
     <ContentPlaceholder
       icon={PaperclipIcon}
-      title="common:no_resource_yet"
-      titleProps={{ resource: t('common:attachments').toLowerCase() }}
+      title="c:no_resource_yet"
+      titleProps={{ resource: t('c:attachments').toLowerCase() }}
     />
   );
 
@@ -133,9 +131,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
         clearSelection={clearSelection}
         isSheet={isSheet}
         canUpload={canUpload}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-        total={rows?.length ?? 0}
+        queryKey={queryOptions.queryKey}
       />
       <DataTable<Attachment>
         {...{

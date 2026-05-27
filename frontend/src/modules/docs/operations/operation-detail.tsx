@@ -1,7 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
@@ -13,6 +15,33 @@ import { Spinner } from '../../common/spinner';
 import { getMethodColor } from '../helpers/get-method-color';
 import { tagDetailsQueryOptions } from '../query';
 
+/**
+ * Opens a sheet with operation detail view.
+ */
+export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
+  useSheeter.getState().create(
+    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
+      <div className="container pt-3 pb-[50vh]">
+        <OperationDetail operation={operation} />
+      </div>
+    </Suspense>,
+    {
+      id: `operation-${operation.id}`,
+      triggerRef: { current: trigger },
+      side: 'right',
+      className: 'max-w-full lg:max-w-4xl',
+      title: i18n.t('c:docs.operation_detail'),
+    },
+  );
+}
+
+function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperationDetail) {
+  const tagName = operation.tags[0] ?? '';
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  if (detail) return detail;
+  return tagDetails?.find((d) => d.operationId === operation.id);
+}
+
 interface OperationDetailProps {
   operation: GenOperationSummary;
   detail?: GenOperationDetail;
@@ -23,36 +52,37 @@ interface OperationDetailProps {
  * Single operation detail with collapsible request and responses sections.
  * Displays method, path, description, request parameters, and responses.
  */
-export const OperationDetail = ({ operation, detail, className }: OperationDetailProps) => {
+export const OperationDetail = ({ operation, detail: detailProp, className }: OperationDetailProps) => {
   const { t } = useTranslation();
+  const detail = useResolvedDetail(operation, detailProp);
 
   return (
     <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
       <CardHeader className="group">
-        <div className="flex justify-between items-center">
-          <CardTitle className="sm:text-xl leading-8 gap-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="gap-2 leading-8 sm:text-xl">
             {operation.summary}
             <HashUrlButton id={operation.hash} />
           </CardTitle>
-          <div className="max-sm:hidden text-sm font-mono px-2 py-0.5 text-muted-foreground shrink-0">
+          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
             {operation.id}
           </div>
         </div>
         {operation.description && (
-          <CardDescription className="text-base max-w-3xl whitespace-pre-line">{operation.description}</CardDescription>
+          <CardDescription className="max-w-3xl whitespace-pre-line text-base">{operation.description}</CardDescription>
         )}
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
           <Badge
-            className={`font-mono uppercase ${getMethodColor(operation.method)} bg-transparent shadow-none text-md rounded-none p-0`}
+            className={`font-mono uppercase ${getMethodColor(operation.method)} rounded-none bg-transparent p-0 text-md shadow-none`}
           >
             {operation.method.toUpperCase()}
           </Badge>
-          <code className="sm:text-lg opacity-70 font-mono break-all">{operation.path}</code>
+          <code className="break-all font-mono opacity-70 sm:text-lg">{operation.path}</code>
           {operation.deprecated && (
-            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-              {t('common:deprecated')}
+            <Badge variant="outline" className="border-yellow-600 text-yellow-600">
+              {t('c:deprecated')}
             </Badge>
           )}
         </div>
@@ -92,7 +122,7 @@ export const TagOperationsList = ({ operations }: TagOperationsListProps) => {
   if (operations.length === 0) return null;
 
   return (
-    <div className="border-t">
+    <div className="border-t border-dashed">
       {operations.map((operation) => (
         <OperationDetail
           key={operation.hash}

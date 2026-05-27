@@ -1,11 +1,15 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import z from 'zod';
-import { Env } from '#/lib/context';
-import { AppError, type ErrorKey } from '#/lib/error';
+import type z from 'zod';
+import type { Env } from '#/core/context';
+import { AppError, type ErrorKey } from '#/core/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { type OAuthCookiePayload, oauthCookiePayloadSchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import {
+  type OAuthCookiePayload,
+  oauthCookiePayloadSchema,
+  type oauthQuerySchema,
+} from '#/modules/auth/oauth/oauth-schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
@@ -42,7 +46,7 @@ export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthC
  * @returns redirect response
  */
 export const handleOAuthInitiation = async (
-  ctx: Context<Env, any, { out: { query: OAuthQueryParams } }>,
+  ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,
   provider: string,
   url: URL,
   state: string,
@@ -84,7 +88,7 @@ export const handleOAuthInitiation = async (
 
   await setAuthCookie(ctx, `oauth-state-${state}`, stringifiedContent, new TimeSpan(5, 'm'));
 
-  logEvent('info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
+  logEvent(ctx, 'info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
   return ctx.redirect(url.toString(), 302);
 };

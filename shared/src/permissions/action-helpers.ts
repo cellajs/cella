@@ -1,7 +1,7 @@
-import { appConfig } from '../../app-config';
+import { appConfig } from '../config-builder/app-config';
 import type { EntityActionType } from '../../types';
-import { recordFromKeys } from '../builder/utils';
-import type { ActionPermissionState } from './compute-can';
+import { recordFromKeys } from '../config-builder/utils';
+import type { ActionPermissionState } from './types';
 
 /**
  * Creates a typed record mapping each entity action to a value.
@@ -41,4 +41,15 @@ export const resolvePermission = (
   if (permission === true) return true;
   if (permission === 'own') return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
   return false;
+};
+
+/**
+ * Checks whether a permission is unconditionally granted (`true`),
+ * as opposed to entity-dependent (`'own'`) or denied (`false`).
+ *
+ * Use this to decide if a user qualifies for context-scoped features
+ * (e.g. collaborative editing) where per-entity ownership can't be checked upfront.
+ */
+export const isUnconditionalPermission = (permission: ActionPermissionState | undefined): boolean => {
+  return permission === true;
 };

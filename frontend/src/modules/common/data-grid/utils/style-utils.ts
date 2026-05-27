@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { cn } from '~/utils/cn';
-import { cellClassname, cellFrozenClassname, cellWrapTextClassname } from '../style/cell';
 import type { CalculatedColumn, CalculatedColumnOrColumnGroup } from '../types';
 import { resolveWrapTextLines } from './wrap-text-utils';
 
@@ -51,12 +50,18 @@ export function getCellClassname<R, SR>(
   ...extraClasses: Parameters<typeof cn>
 ): string {
   const wrapLines = resolveWrapTextLines(column.wrapText);
+  const textOverflow =
+    wrapLines > 0
+      ? 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:!py-0'
+      : 'whitespace-nowrap overflow-clip text-ellipsis';
   return cn(
-    cellClassname,
-    {
-      [cellFrozenClassname]: column.frozen,
-      [cellWrapTextClassname]: wrapLines > 0,
-    },
+    `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-none scroll-mt-32 border-t-[0.05rem] border-border ${textOverflow}`,
+    'sm:group-hover/row:bg-accent/40',
+    'aria-selected:outline-2 aria-selected:outline-primary aria-selected:outline-solid aria-selected:-outline-offset-2',
+    '[&:not([aria-readonly=true])]:aria-selected:bg-accent/60',
+    'max-xs:aria-selected:bg-transparent max-xs:aria-selected:outline-none',
+    '[.rdg-readonly_&]:aria-selected:outline-none',
+    { 'rdg-cell-frozen sticky z-1': column.frozen },
     ...extraClasses,
   );
 }

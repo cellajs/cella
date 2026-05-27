@@ -1,7 +1,8 @@
 import { t } from 'i18next';
+// biome-ignore lint/style/noRestrictedImports: colocated mutation — imperative attachment creation called from drag-drop helpers.
+import { createAttachments } from 'sdk';
 import { appConfig } from 'shared';
-import { createAttachments } from '~/api.gen';
-import { parseUploadedAttachments } from '~/modules/attachment/helpers';
+import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { attachmentQueryKeys } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
@@ -18,18 +19,24 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
       try {
         const attachments = parseUploadedAttachments(result, organizationId);
 
+        if (attachments.length === 0) {
+          toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
+          useUploader.getState().remove();
+          return;
+        }
+
         // Create attachments via API with transaction metadata (stx embedded in each item)
         const stx = createStxForCreate();
         const body = attachments.map((att) => ({ ...att, stx }));
-        await createAttachments({ path: { tenantId, orgId: organizationId }, body });
+        await createAttachments({ path: { tenantId, organizationId: organizationId }, body });
 
         // Invalidate the cache to refresh the table
         queryClient.invalidateQueries({ queryKey: attachmentQueryKeys.list.base });
 
         useUploader.getState().remove();
       } catch (error) {
-        toaster(t('error:create_resource', { resource: t('common:attachment').toLowerCase() }), 'error');
-        throw error;
+        toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
+        useUploader.getState().remove();
       }
     };
 
@@ -46,11 +53,11 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
       },
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio', 'url'],
       statusEventHandler: { onComplete },
-      title: t('common:upload_item', {
-        item: t('common:attachments').toLowerCase(),
+      title: t('c:upload_item', {
+        item: t('c:attachments').toLowerCase(),
       }),
-      description: t('common:upload_multiple.text', {
-        item: t('common:attachments').toLowerCase(),
+      description: t('c:upload_multiple.text', {
+        item: t('c:attachments').toLowerCase(),
         count: maxNumberOfFiles,
       }),
     });

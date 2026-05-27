@@ -1,7 +1,6 @@
 import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -71,9 +70,9 @@ export const UsersTableBar = ({
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
       container: { ref: inviteContainerRef, overlay: true },
-      title: t('common:invite'),
-      titleContent: <UnsavedBadge title={t('common:invite')} />,
-      description: `${t('common:invite_users.text')}`,
+      title: t('c:invite'),
+      titleContent: <UnsavedBadge title={t('c:invite')} />,
+      description: `${t('c:invite_users.text')}`,
     });
   };
 
@@ -82,10 +81,10 @@ export const UsersTableBar = ({
       if (args.status === 'success') {
         const message =
           args.data.length === 1
-            ? t('common:success.delete_resource', { resource: t('common:user') })
-            : t('common:success.delete_counted_resources', {
+            ? t('c:success.delete_resource', { resource: t('c:user') })
+            : t('c:success.delete_counted_resources', {
                 count: args.data.length,
-                resources: t('common:users').toLowerCase(),
+                resources: t('c:users').toLowerCase(),
               });
         toaster(message, 'success');
       }
@@ -96,10 +95,10 @@ export const UsersTableBar = ({
       id: 'delete-users',
       triggerRef: inviteButtonRef,
       className: 'max-w-xl',
-      title: t('common:delete'),
-      description: t('common:confirm.delete_resource', {
+      title: t('c:delete'),
+      description: t('c:confirm.delete_resource', {
         name: selected.map((u) => u.email).join(', '),
-        resource: selected.length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
+        resource: selected.length > 1 ? t('c:users').toLowerCase() : t('c:user').toLowerCase(),
       }),
     });
   };
@@ -119,23 +118,23 @@ export const UsersTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label="common:delete"
+                  label="c:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
               </>
             ) : (
               !isFiltered && (
                 <TableBarButton
                   ref={inviteButtonRef}
                   icon={MailIcon}
-                  label="common:invite"
+                  label="c:invite"
                   onClick={() => openInviteDialog()}
                 />
               )
             )}
             {selected.length === 0 && (
-              <TableCount count={total} label="common:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+              <TableCount count={total} label="c:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
 

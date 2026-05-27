@@ -1,9 +1,8 @@
 import { PartyPopperIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Request } from 'sdk';
 import { appConfig } from 'shared';
-import type { Request } from '~/api.gen';
-import { getRequests } from '~/api.gen';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -16,10 +15,10 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
-import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
+import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
+import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
@@ -44,7 +43,7 @@ export const RequestsTableBar = ({
   const { q, order, sort } = searchVars;
   const isFiltered = !!q;
 
-  const mutateQuery = useMutateQueryData(requestsKeys.table.base());
+  const requestsListKey = requestsKeys.table.base();
 
   const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
 
@@ -61,14 +60,14 @@ export const RequestsTableBar = ({
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<Request[]>) => {
-      mutateQuery.remove(selected);
+      cacheRemove(requestsListKey, selected);
       if (args.status === 'success') {
         const message =
           args.data.length === 1
-            ? t('common:success.delete_resource', { resource: t('common:request') })
-            : t('common:success.delete_counted_resources', {
+            ? t('c:success.delete_resource', { resource: t('c:request') })
+            : t('c:success.delete_counted_resources', {
                 count: args.data.length,
-                resources: t('common:requests').toLowerCase(),
+                resources: t('c:requests').toLowerCase(),
               });
         toaster(message, 'success');
       }
@@ -79,10 +78,10 @@ export const RequestsTableBar = ({
       id: 'delete-requests',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
-      title: t('common:delete'),
-      description: t('common:confirm.delete_counted_resource', {
+      title: t('c:delete'),
+      description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:requests').toLowerCase() : t('common:request').toLowerCase(),
+        resource: selected.length > 1 ? t('c:requests').toLowerCase() : t('c:request').toLowerCase(),
       }),
     });
   };
@@ -100,7 +99,7 @@ export const RequestsTableBar = ({
       { emails },
       {
         onSuccess: () => {
-          mutateQuery.update(updatedWaitLists);
+          cacheUpdate(requestsListKey, updatedWaitLists);
           clearSelection();
         },
       },
@@ -108,10 +107,7 @@ export const RequestsTableBar = ({
   };
 
   const fetchExport = async (limit: number) => {
-    const response = await getRequests({
-      query: { q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit), offset: '0' },
-    });
-    return response.items;
+    return fetchRequestsForExport({ limit, q, sort: sort || 'createdAt', order: order || 'asc' });
   };
 
   return (
@@ -126,7 +122,7 @@ export const RequestsTableBar = ({
                   badge={selectedToWaitlist.length}
                   variant="success"
                   className="relative"
-                  label="common:invite"
+                  label="c:invite"
                   icon={PartyPopperIcon}
                   onClick={approveSelectedRequests}
                 />
@@ -135,16 +131,16 @@ export const RequestsTableBar = ({
                 ref={deleteButtonRef}
                 variant="destructive"
                 icon={TrashIcon}
-                label="common:remove"
+                label="c:remove"
                 badge={selected.length}
                 className="relative"
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
             </>
           )}
           {selected.length === 0 && (
-            <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            <TableCount count={total} label="c:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
           )}
         </FilterBarActions>
 

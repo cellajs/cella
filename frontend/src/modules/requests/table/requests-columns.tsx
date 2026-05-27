@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Request } from '~/api.gen';
+import type { Request } from 'sdk';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -14,19 +14,19 @@ export const useColumns = () => {
     CheckboxColumn,
     {
       key: 'type',
-      name: t('common:request_type'),
+      name: t('c:request_type'),
       sortable: true,
       resizable: true,
       width: 160,
       renderCell: ({ row: { type, wasInvited } }) => (
-        <div className="flex flew-row gap-2 items-center">
-          {t(`common:${type}`)}
+        <div className="flew-row flex items-center gap-2">
+          {t(`c:${type}`)}
           {type === 'waitlist' && (
             <TooltipButton
-              toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)}
+              toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)}
               disabled={type !== 'waitlist'}
             >
-              <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />
+              <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400' : 'bg-gray-400'}`} />
             </TooltipButton>
           )}
         </div>
@@ -34,7 +34,7 @@ export const useColumns = () => {
     },
     {
       key: 'email',
-      name: t('common:email'),
+      name: t('c:email'),
       resizable: true,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
@@ -42,7 +42,7 @@ export const useColumns = () => {
           <a
             href={`mailto:${row.email}`}
             tabIndex={tabIndex}
-            className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            className="truncate underline-offset-4 outline-0 ring-0 hover:underline"
           >
             {row.email || <span className="text-muted">-</span>}
           </a>
@@ -51,17 +51,17 @@ export const useColumns = () => {
     },
     {
       key: 'message',
-      name: t('common:message'),
+      name: t('c:message'),
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 200,
       placeholderValue: '-',
       renderCell: ({ row }) =>
-        row.message ? <span className="font-light whitespace-pre-line leading-5">{row.message}</span> : null,
+        row.message ? <span className="whitespace-pre-line leading-5">{row.message}</span> : null,
     },
     {
       key: 'createdAt',
-      name: t('common:created_at'),
+      name: t('c:created_at'),
       minBreakpoint: 'md',
       minWidth: 120,
       placeholderValue: '-',

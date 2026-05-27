@@ -21,8 +21,8 @@ type EntityGridBarSearch = {
 };
 
 const entityGridSortOptions = [
-  { name: 'common:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
-  { name: 'common:created_at', icon: CalendarIcon, value: 'createdAt' },
+  { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
+  { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt' },
 ] as const;
 
 type Props = {

@@ -1,8 +1,7 @@
-import type { Context } from 'hono';
 import type { ContextEntityType, EntityActionType } from 'shared';
-import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
-import { type EntityModel, resolveEntity } from '#/lib/resolve-entity';
+import type { AuthContext } from '#/core/context';
+import { AppError } from '#/core/error';
+import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 
@@ -26,7 +25,7 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * Throws an error if entity cannot be found or user lacks required permissions.
  *
  *
- * @param ctx - Hono context with db set by guard middleware.
+ * @param ctx - Context with db, memberships, and isSystemAdmin set by guard middleware.
  * @param entityId - Entity's unique ID (or slug when bySlug is true).
  * @param entityType - Type of context entity (e.g., organization, project).
  * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
@@ -34,7 +33,7 @@ export interface ValidContextEntityResult<T extends ContextEntityType> {
  * @returns An object containing resolved entity, associated membership (or `null`), and can object.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
-  ctx: Context<Env>,
+  ctx: AuthContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
@@ -44,11 +43,8 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;
 
-  // Get db from context (set by tenantGuard or crossTenantGuard middleware)
-  const db = ctx.var.db;
-
   // Step 1: Resolve target entity by ID (or slug when bySlug is true)
-  const entity = await resolveEntity(entityType, entityId, db, bySlug);
+  const entity = await resolveEntity(ctx, entityType, entityId, bySlug);
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)

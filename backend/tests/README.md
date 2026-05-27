@@ -6,11 +6,6 @@ This folder contains all tests for the backend.
 
 ```bash
 tests/
-├── sign-up/
-│ ├── basic.test.ts # Core sign-up flow (happy path, validation)
-│ ├── password-disabled.test.ts # Sign-up flow when password auth is disabled
-│ └── registration-disabled.test.ts # Sign-up flow when registration is disabled
-│
 ├── fixtures.ts # Test constants (e.g. dumb data, headers, base configs)
 │
 ├── helpers.ts # Test logic helpers (e.g. inserting/fetching domain models)

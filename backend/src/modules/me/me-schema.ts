@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import { schemaTags } from '#/core/openapi-helpers';
 import { sessionsTable } from '#/db/schema/sessions';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
@@ -22,19 +23,20 @@ export const meSchema = z
   .openapi('Me', {
     description: 'The currently authenticated user with their system admin status.',
     example: mockMeResponse(),
+    'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
 export const meAuthDataSchema = z
   .object({
     enabledOAuth: z.array(enabledOAuthProvidersEnum),
     hasTotp: z.boolean(),
-    hasPassword: z.boolean(),
     sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
     passkeys: z.array(passkeySchema),
   })
   .openapi('MeAuthData', {
     description: 'Authentication metadata for the current user session.',
     example: mockMeAuthDataResponse(),
+    'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
 export const uploadTokenSchema = z
@@ -59,6 +61,7 @@ export const uploadTokenSchema = z
   .openapi('UploadToken', {
     description: 'A signed token authorizing file uploads to the configured storage provider.',
     example: mockUploadTokenResponse(),
+    'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
 // Re-export types from types.ts for convenience

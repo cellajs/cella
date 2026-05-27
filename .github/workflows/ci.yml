@@ -1,7 +1,7 @@
 name: CI
 
-permissions:
-  contents: read
+# Deny-by-default: each job opts in to the scopes it actually needs.
+permissions: {}
 
 # Controls which events and branches will trigger the workflow
 on:
@@ -19,14 +19,14 @@ jobs:
   # Install deps once and reuse for other jobs (optional optimization)
   install:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -44,7 +44,7 @@ jobs:
 
       # Save node_modules so other jobs can reuse
       - name: Cache node_modules
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: |
             **/node_modules
@@ -54,22 +54,23 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     needs: install
+    permissions:
+      contents: read
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
+          node-version: 24
           cache: "pnpm"
 
       - name: Restore node_modules
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: |
             **/node_modules
@@ -82,6 +83,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: install
+    permissions:
+      contents: read
     services:
       postgres:
         image: postgres:17
@@ -101,13 +104,12 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
+          node-version: 24
           cache: "pnpm"
 
       - name: Create .env files
@@ -116,7 +118,7 @@ jobs:
           cp ./frontend/.env.example ./frontend/.env
 
       - name: Restore node_modules
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: |
             **/node_modules
@@ -126,7 +128,7 @@ jobs:
         run: cd frontend && pnpm exec playwright install
 
       - name: Generate OpenAPI spec
-        run: pnpm --filter backend generate-openapi
+        run: pnpm sdk
 
       - name: Run database migrations
         run: pnpm --filter backend push
@@ -142,6 +144,8 @@ jobs:
   test-sync-cli:
     runs-on: ubuntu-latest
     needs: install
+    permissions:
+      contents: read
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -149,27 +153,40 @@ jobs:
           fetch-depth: 0 # Required for git operations in sync CLI
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
+          node-version: 24
           cache: "pnpm"
 
       - name: Restore node_modules
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: |
             **/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Run sync CLI unit tests
-        run: pnpm --filter @cellajs/sync test
+        run: pnpm --filter @cellajs/cli test
+
+      - name: Verify upstream is pinned (supply-chain guard)
+        # CI must fetch a reviewed, pinned upstream SHA — never a moving branch tip.
+        # Bump `settings.upstreamPinnedSha` in cella.config.ts via PR after reviewing
+        # the upstream diff. This neutralises a compromised upstream branch.
+        run: |
+          if ! grep -qE "upstreamPinnedSha:\s*'[0-9a-f]{40}'" cella.config.ts; then
+            echo "::error file=cella.config.ts::settings.upstreamPinnedSha must be set to a 40-char commit SHA in CI"
+            exit 1
+          fi
 
       - name: Run sync analysis (dry-run)
-        run: pnpm cella --sync-service analyze --yes
+        # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
+        # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          pnpm cella --service analyze
 
   # Generates draft release notes (for testing only)
   draft-release-notes:
@@ -183,12 +200,12 @@ jobs:
           fetch-depth: 0 # needed so changelog sees full commit history
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
 
       - name: Install changelog deps
         run: pnpm add -Dw conventional-changelog-cli conventional-changelog-conventionalcommits
@@ -212,7 +229,7 @@ jobs:
           fi
 
       - name: Upload draft release notes
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: draft-release-notes
           path: RELEASE_NOTES.md

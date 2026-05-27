@@ -14,8 +14,8 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
  */
 import type { MiddlewareHandler } from 'hono';
-import { xMiddleware } from '#/docs/x-middleware';
-import type { Env } from '#/lib/context';
+import type { Env } from '#/core/context';
+import { xMiddleware } from '#/core/x-middleware';
 
 interface HttpCacheOptions {
   /** Cache visibility: 'private' (browser only) or 'public' (CDN + browser) */

@@ -11,11 +11,7 @@
           "additionalProperties": {
             "type": "object",
             "required": false,
-            "additionalProperties": {
-              "type": "integer",
-              "required": false,
-              "minimum": 0
-            }
+            "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
           },
           "contentType": "application/json"
         }
@@ -46,6 +42,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -106,6 +109,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -116,16 +126,8 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {

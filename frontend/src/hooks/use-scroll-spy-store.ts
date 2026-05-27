@@ -1,22 +1,35 @@
-/**
- * Scroll spy store - tracks section visibility and updates URL hash.
- * DOM elements use 'spy-' prefix (e.g., id="spy-intro") to prevent browser auto-scroll.
- */
-
+/** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */
 const SPY_PREFIX = 'spy-';
 
 // State
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
 let currentSection = '';
-let hashWriteBlockedUntil = 0; // Timestamp until which hash writes are blocked
+let hashWriteBlockedUntil = 0;
 let initTime = 0;
-let pendingScrollTarget: string | null = null; // Queued scroll target awaiting DOM element
+let pendingScrollTarget: string | null = null;
+let scrollSettleTimer = 0;
+let savedSection = ''; // Preserved across quick re-registrations (effect re-runs)
 
 // Subscribers for useSyncExternalStore
 const listeners = new Set<() => void>();
 const notify = () => {
   for (const fn of listeners) fn();
+};
+
+/**
+ * Toggle data-spy-active on DOM elements with matching data-spy-link.
+ * Called from IO callback — bypasses React for jank-free scroll updates.
+ */
+const syncActiveDOM = () => {
+  for (const el of document.querySelectorAll('[data-spy-active]')) {
+    delete (el as HTMLElement).dataset.spyActive;
+  }
+  if (currentSection) {
+    for (const el of document.querySelectorAll(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
+      (el as HTMLElement).dataset.spyActive = '';
+    }
+  }
 };
 
 /** Subscribe to currentSection changes (useSyncExternalStore contract). */
@@ -36,29 +49,45 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 /** Check if a programmatic scroll is currently in progress */
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
-/** Block hash writes for a duration */
+let blockReEvalTimer = 0;
+
+/** Block hash writes for a duration, then re-evaluate best section */
 const blockHashWrites = (ms: number) => {
   hashWriteBlockedUntil = Date.now() + ms;
+
+  // Re-evaluate once the block expires so the spy isn't stuck if no new IO fires
+  clearTimeout(blockReEvalTimer);
+  blockReEvalTimer = window.setTimeout(() => {
+    const best = getBestSection();
+    if (best && best !== currentSection) {
+      currentSection = best;
+      syncActiveDOM();
+      notify();
+    }
+  }, ms + 50);
 };
 
-/** Find the best visible section (highest ratio, or closest to top if tied) */
+/** Find the best visible section — "pin to top" approach.
+ *  Picks the last anchor to have crossed a trigger line near the top of the viewport. */
 const getBestSection = (): string | null => {
   const visible = [...sections.entries()].filter(([, r]) => r > 0);
   if (!visible.length) return null;
 
-  // If any fully visible, pick closest to top
-  const full = visible.filter(([, r]) => r === 1);
-  if (full.length) {
-    return full
-      .map(([id]) => ({
-        id,
-        top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Infinity,
-      }))
-      .sort((a, b) => a.top - b.top)[0].id;
-  }
+  const triggerY = window.innerHeight * 0.25;
 
-  // Otherwise highest ratio
-  return visible.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+  const withPositions = visible
+    .map(([id]) => ({
+      id,
+      top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
+    }))
+    .sort((a, b) => a.top - b.top);
+
+  // Among anchors that have scrolled past the trigger line, pick the most recent (largest top ≤ trigger)
+  const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);
+  if (pastTrigger.length) return pastTrigger[pastTrigger.length - 1].id;
+
+  // No anchor past trigger yet — pick the closest one approaching it
+  return withPositions[0].id;
 };
 
 /** Rebuild observer for current sections */
@@ -81,12 +110,16 @@ const rebuild = () => {
       const best = getBestSection();
       if (best && best !== currentSection) {
         currentSection = best;
-        notify();
+        syncActiveDOM();
 
         // Write hash (skip during initial load delay)
         if (canWriteHash() && location.hash !== `#${best}`) {
           history.replaceState(null, '', `#${best}`);
         }
+
+        // Notify React subscribers after scroll settles (no re-render during active scroll)
+        clearTimeout(scrollSettleTimer);
+        scrollSettleTimer = window.setTimeout(notify, 150);
       }
     },
     { threshold: [0, 0.25, 0.5, 0.75, 1] },
@@ -109,24 +142,45 @@ export const registerSections = (ids: string[]) => {
 
   // Resolve pending scroll target if it was just registered
   if (pendingScrollTarget && sections.has(pendingScrollTarget)) {
-    const target = pendingScrollTarget;
-    pendingScrollTarget = null;
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`${SPY_PREFIX}${target}`);
-      if (el) performScroll(el, target);
-    });
+    savedSection = '';
+    pendingFrameAttempts = 0;
+    requestAnimationFrame(tryFlushPendingScroll);
     return;
   }
 
-  // Scroll to initial hash if present
+  // Re-registration (effect re-run): restore saved section without scrolling
+  if (savedSection && sections.has(savedSection)) {
+    currentSection = savedSection;
+    savedSection = '';
+    syncActiveDOM();
+    notify();
+    return;
+  }
+  savedSection = '';
+
+  // Scroll to initial hash if present.
+  // We allow this during a short init window even if some other (child) registration already
+  // set currentSection — otherwise a child component that registers first (e.g. when its
+  // suspense data is already cached) can pin the wrong section before the parent registers
+  // the section that matches the URL hash.
   const hash = location.hash.slice(1);
-  if (hash && sections.has(hash) && !currentSection) {
+  const inInitWindow = Date.now() - initTime < 500;
+  if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {
     currentSection = hash;
+    syncActiveDOM();
     notify();
     blockHashWrites(1000); // Block writes during initial scroll
     requestAnimationFrame(() => {
       document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
+    return;
+  }
+
+  // Default to first section if nothing active yet
+  if (!currentSection && ids.length) {
+    currentSection = ids[0];
+    syncActiveDOM();
+    notify();
   }
 };
 
@@ -137,8 +191,10 @@ export const unregisterSections = (ids: string[]) => {
   if (!sections.size) {
     observer?.disconnect();
     observer = null;
+    savedSection = currentSection; // Preserve for potential re-registration
     if (currentSection !== '') {
       currentSection = '';
+      syncActiveDOM();
       notify();
     }
     initTime = 0;
@@ -152,9 +208,10 @@ const performScroll = (el: HTMLElement, id: string) => {
   const distance = Math.abs(el.getBoundingClientRect().top);
   const smooth = distance < window.innerHeight * 2;
 
-  blockHashWrites(smooth ? 3000 : 500);
+  blockHashWrites(smooth ? 1200 : 500);
   if (currentSection !== id) {
     currentSection = id;
+    syncActiveDOM();
     notify();
   }
 
@@ -165,13 +222,50 @@ const performScroll = (el: HTMLElement, id: string) => {
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
 };
 
+/** Element is in the DOM AND has real layout (not display:none, content-visibility:hidden, height:0).
+ *  Prevents scrolling to a stale position when the target is mounted but inside a collapsed/prerendered
+ *  container that hasn't been laid out yet. */
+const isLaidOut = (el: HTMLElement): boolean => {
+  if (typeof el.checkVisibility === 'function') {
+    return el.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
+  }
+  if (el.offsetParent === null) return false;
+  return el.getBoundingClientRect().height > 0;
+};
+
+const MAX_PENDING_FRAMES = 60; // ~1s at 60fps
+let pendingFrameAttempts = 0;
+
+/** Poll once per frame until the queued target is laid out, then scroll. Bails after ~1s. */
+const tryFlushPendingScroll = () => {
+  if (!pendingScrollTarget) return;
+
+  const el = document.getElementById(`${SPY_PREFIX}${pendingScrollTarget}`);
+  if (el && isLaidOut(el)) {
+    const id = pendingScrollTarget;
+    pendingScrollTarget = null;
+    pendingFrameAttempts = 0;
+    performScroll(el, id);
+    return;
+  }
+
+  if (pendingFrameAttempts++ < MAX_PENDING_FRAMES) {
+    requestAnimationFrame(tryFlushPendingScroll);
+  } else {
+    pendingScrollTarget = null;
+    pendingFrameAttempts = 0;
+  }
+};
+
 /** Scroll to section and update hash. Uses smooth scroll if target is within 2 viewport heights.
- *  If element not yet in DOM, queues the scroll — resolved when section registers via useScrollSpy. */
+ *  If the target isn't in the DOM yet — or is mounted but not laid out (collapsed / prerendered with
+ *  content-visibility:hidden) — queues the scroll and retries each frame until it's ready. */
 export const scrollToSectionById = (id: string) => {
   const el = document.getElementById(`${SPY_PREFIX}${id}`);
-  if (!el) {
-    // Element not in DOM yet — queue for when it registers
+  if (!el || !isLaidOut(el)) {
     pendingScrollTarget = id;
+    pendingFrameAttempts = 0;
+    requestAnimationFrame(tryFlushPendingScroll);
     return;
   }
 

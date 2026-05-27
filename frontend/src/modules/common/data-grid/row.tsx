@@ -1,7 +1,6 @@
 import { memo, useMemo } from 'react';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
-import { rowClassname, rowSelectedClassname } from './style/row';
 import type { CalculatedColumn, RenderRowProps } from './types';
 import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils/grid-utils';
 
@@ -25,6 +24,7 @@ function Row<R, SR>({
   selectCell,
   renderCell,
   selectedCellRange,
+  isCellSelectionEnabled,
   style,
   ...props
 }: RenderRowProps<R, SR>) {
@@ -33,16 +33,16 @@ function Row<R, SR>({
   });
 
   className = cn(
-    rowClassname,
+    'rdg-row group/row contents aria-selected:bg-accent aria-selected:hover:bg-accent',
     `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
     {
-      [rowSelectedClassname]: selectedCellIdx === -1,
+      'rdg-row-selected': selectedCellIdx === -1,
     },
     rowClass?.(row, rowIdx),
     className,
   );
 
-  const cells = [];
+  const cells: React.ReactNode[] = [];
 
   for (let index = 0; index < viewportColumns.length; index++) {
     const column = viewportColumns[index];
@@ -71,6 +71,7 @@ function Row<R, SR>({
           rowIdx,
           isDraggedOver: false,
           isCellSelected,
+          isCellSelectionEnabled,
           isInSelectedRange,
           rangeBoundary,
           onCellMouseDown,

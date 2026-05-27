@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { roles } from 'shared';
+import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { RenderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
@@ -17,7 +17,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       ...(isAdmin ? [CheckboxColumn] : []),
       {
         key: 'name',
-        name: t('common:name'),
+        name: t('c:name'),
         minWidth: 200,
         sortable: true,
         resizable: true,
@@ -25,7 +25,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       },
       {
         key: 'email',
-        name: t('common:email'),
+        name: t('c:email'),
         minBreakpoint: 'md',
         resizable: true,
         minWidth: 140,
@@ -36,7 +36,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             <a
               href={`mailto:${row.email}`}
               tabIndex={tabIndex}
-              className="truncate hover:underline underline-offset-4 decoration-foreground/20 outline-0 ring-0 font-light"
+              className="truncate decoration-foreground/20 underline-offset-4 outline-0 ring-0 hover:underline"
             >
               {row.email}
             </a>
@@ -45,32 +45,32 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       },
       {
         key: 'role',
-        name: t('common:role'),
+        name: t('c:role'),
         sortable: true,
         resizable: true,
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.membership ? (
-            <div className="inline-flex items-center gap-1 relative group h-full w-full">
-              {t(row.membership.role, {
-                ns: ['app', 'common'],
-                defaultValue: row.membership.role,
-              })}
-            </div>
+            <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.membership.role)}</div>
           ) : null,
         width: 100,
         ...(isAdmin && {
-          renderEditCell: ({ row, onRowChange }) =>
-            RenderSelect({
-              row,
-              onRowChange,
-              options: roles.all,
-            }),
+          editable: true,
+          editorOptions: enumSelectEditorOptions,
+          renderEditCell: (props) => (
+            <RenderEnumSelect
+              {...props}
+              options={roles.all}
+              currentValue={props.row.membership?.role}
+              setValue={(row, role) => ({ ...row, membership: { ...row.membership, role } })}
+              renderOption={(role) => t(role)}
+            />
+          ),
         }),
       },
       {
         key: 'createdAt',
-        name: t('common:created_at'),
+        name: t('c:created_at'),
         sortable: true,
         hidden: isSheet,
         minBreakpoint: 'md',
@@ -80,7 +80,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       },
       {
         key: 'lastSeenAt',
-        name: t('common:last_seen_at'),
+        name: t('c:last_seen_at'),
         sortable: true,
         minBreakpoint: 'md',
         minWidth: 120,

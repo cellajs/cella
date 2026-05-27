@@ -2,8 +2,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Request } from 'sdk';
 import { appConfig } from 'shared';
-import type { Request } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -92,8 +92,8 @@ function RequestsTable() {
           NoRowsComponent: (
             <ContentPlaceholder
               icon={BirdIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:requests').toLowerCase() }}
+              title="c:no_resource_yet"
+              titleProps={{ resource: t('c:requests').toLowerCase() }}
             />
           ),
         }}

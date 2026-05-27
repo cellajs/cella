@@ -1,63 +1,14 @@
-import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
 import type { ErrorHandler } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import i18n from 'i18next';
 import { appConfig } from 'shared';
-import type { Env } from '#/lib/context';
-import type locales from '#/lib/i18n-locales';
-import { eventLogger } from '#/pino';
-import type { apiErrorSchema } from '#/schemas';
+import type { Env } from '#/core/context';
+import { AppError, type ErrorKey } from '#/core/error';
+import { eventLogger } from '#/lib/pino';
 import { getIsoDate } from '#/utils/iso-date';
 
 const isProduction = appConfig.mode === 'production';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
-
-type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
-type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
-export type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
-
-/** Optional parameters for AppError constructor. */
-export type AppErrorOpts = {
-  entityType?: ErrorSchemaType['entityType'];
-  meta?: ErrorMeta;
-  originalError?: Error;
-  willRedirect?: boolean;
-  name?: ErrorSchemaType['name'];
-  message?: ErrorSchemaType['message'];
-};
-
-/** Custom error class for structured API errors with i18n support. */
-export class AppError extends Error {
-  name: Error['name'];
-  status: ErrorSchemaType['status'];
-  type: ErrorSchemaType['type'];
-  severity: ErrorSchemaType['severity'];
-  willRedirect: boolean;
-  entityType?: ErrorSchemaType['entityType'];
-  meta?: ErrorMeta;
-
-  constructor(
-    status: ErrorSchemaType['status'],
-    type: ErrorKey,
-    severity: ErrorSchemaType['severity'],
-    opts?: AppErrorOpts,
-  ) {
-    const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
-    const messageFallback = opts?.message ?? i18n.t(type, i18nOpts);
-    super(i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: messageFallback }));
-
-    this.name = opts?.name ?? i18n.t(type, { ...i18nOpts, defaultValue: 'ApiError' });
-    this.status = status;
-    this.type = type;
-    this.entityType = opts?.entityType;
-    this.severity = severity;
-    this.willRedirect = opts?.willRedirect ?? false;
-    this.meta = opts?.meta;
-    this.stack = opts?.originalError?.stack ?? this.stack;
-    this.cause = opts?.originalError?.cause;
-  }
-}
 
 /** PostgreSQL error codes to user-friendly error mappings */
 const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
@@ -97,9 +48,54 @@ function extractPgError(err: unknown): PgErrorInfo | null {
 }
 
 /**
+ * Detects pool exhaustion / connection timeout from node-postgres.
+ * pg.Pool throws a plain Error with specific messages when it can't acquire a connection.
+ */
+function isPoolTimeoutError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  return msg.includes('timeout exceeded when trying to connect') || msg.includes('Cannot use a pool after calling end');
+}
+
+/**
  * Global error handler for Hono API routes.
  */
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
+  // Handle pool exhaustion as 503 Service Unavailable
+  if (isPoolTimeoutError(err)) {
+    eventLogger.error({ msg: 'Database pool exhausted', path: ctx.req.path, method: ctx.req.method });
+    return ctx.json(
+      {
+        message: 'Service temporarily unavailable, please retry',
+        status: 503,
+        type: 'server_error' as const,
+        severity: 'error' as const,
+        path: ctx.req.path,
+        method: ctx.req.method,
+        timestamp: getIsoDate(),
+      },
+      503,
+    );
+  }
+
+  // Handle Hono's built-in HTTPException (e.g. from CSRF middleware)
+  if (err instanceof HTTPException) {
+    const status = err.status as ContentfulStatusCode;
+    eventLogger.warn({ msg: `HTTPException ${status}`, path: ctx.req.path, method: ctx.req.method });
+    return ctx.json(
+      {
+        message: err.message || 'Request rejected',
+        status,
+        type: status === 403 ? 'forbidden' : 'server_error',
+        severity: 'warn',
+        path: ctx.req.path,
+        method: ctx.req.method,
+        timestamp: getIsoDate(),
+      },
+      status,
+    );
+  }
+
   const isAppError = err instanceof AppError;
 
   // Check if this is a PostgreSQL error we can map to a friendlier message (also unwraps Drizzle-wrapped errors)
@@ -143,10 +139,6 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     meta,
     ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
   };
-
-  if (detailsRequired) {
-    Sentry.captureException(serverError, { level: severity === 'warn' ? 'warning' : 'error' });
-  }
 
   // Log with full details for warn/error/fatal, minimal for info
   const logPayload = detailsRequired

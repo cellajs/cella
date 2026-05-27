@@ -1,46 +1,30 @@
-/**
- * Sync service — runs after the app stream reaches 'live' state.
- *
- * Proactively resolves staleness for the current org (high priority) using
- * ensureQueryData/ensureInfiniteQueryData. For other orgs, leaves stale
- * queries to be resolved naturally by React Query hooks on navigation
- * (refetchOnMount: true).
- *
- * When offlineAccess is enabled, also populates offline cache for all orgs
- * to ensure data is available when the user goes offline.
- *
- * Flow:
- * 1. Wait 1s to avoid overloading server on connect
- * 2. Build menu from cache (context entities + memberships)
- * 3. High priority: ensureQueryData for current org (resolves catchup-marked staleness)
- * 4. Offline fill: ensureQueryData for remaining orgs (only when offlineAccess)
- */
-
+import { getEntitySyncQueries } from '~/list-queries-config';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getEntitySyncQueries } from '~/offline-config';
+import { pagesCanonicalOptions } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
 
-/**
- * Configuration for sync queries — extended gc time for offline caching.
- * Note: staleTime is NOT set here — product entity queries use syncStaleTime
- * from their query options (Infinity when stream is live, 5 min fallback).
- * This ensures ensureQueryData skips fresh caches after catchup.
- */
+// Extended gc time for offline caching. staleTime is intentionally not set — product entity
+// queries use syncStaleTime from their own options (Infinity when stream is live, 5 min fallback)
+// so ensureQueryData skips fresh caches after catchup.
 const syncQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // 24 hours
 };
 
 /**
- * Run the sync service after the stream reaches 'live'.
- *
- * @param offlineAccess - Whether offline access is enabled (controls member inclusion + offline cache fill)
- * @param signal - AbortSignal to cancel sync (e.g., on unmount or re-trigger)
+ * Run the sync service after the app stream reaches 'live'. Proactively resolves staleness for
+ * the current org via ensureQueryData/ensureInfiniteQueryData (high priority); other orgs are
+ * left to refetch naturally on navigation. When `offlineAccess` is enabled, also fills the
+ * offline cache for remaining orgs. Honors `signal` for cancellation on unmount or re-trigger.
  */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
   // Wait briefly to avoid overloading server on connect
   await waitFor(1000);
+  if (signal.aborted) return;
+
+  // Pages are user-global (not org-scoped) — sync once before menu items
+  await queryClient.ensureQueryData({ ...pagesCanonicalOptions(), ...syncQueryConfig });
   if (signal.aborted) return;
 
   // Get menu from already-cached entity lists (dynamic import to avoid HMR coupling)
@@ -90,18 +74,21 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
 async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise<void> {
   if (item.membership.archived) return;
 
-  const queries = getEntitySyncQueries(item.id, item.entityType, item.tenantId, offlineAccess);
+  // For organizations, the entity IS the org. For sub-contexts, organizationId comes from enrichment.
+  const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
+  const queries = getEntitySyncQueries(item.id, item.entityType, item.tenantId, organizationId, offlineAccess);
 
-  const promises = queries.map((source) => {
-    const options = { ...source, ...syncQueryConfig };
-    // Use ensureInfiniteQueryData for infinite queries (have getNextPageParam)
-    // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-    if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options as any);
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic query options from getEntitySyncQueries
-    return queryClient.ensureQueryData(options as any);
-  });
-
-  await Promise.allSettled(promises);
+  await Promise.allSettled(
+    queries.map(async (source) => {
+      const options = { ...source, ...syncQueryConfig };
+      const isInfinite = 'getNextPageParam' in options;
+      return isInfinite
+        ? // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
+          await queryClient.ensureInfiniteQueryData(options as any)
+        : // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
+          await queryClient.ensureQueryData(options as any);
+    }),
+  );
 }
 
 /**

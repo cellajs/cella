@@ -5,8 +5,8 @@
  */
 import { useIsRestoring } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import type { CarouselItemData } from '~/modules/attachment/carousel';
-import { resolveAttachmentUrl } from '~/modules/attachment/helpers';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
+import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 interface ResolvedAttachmentsResult {

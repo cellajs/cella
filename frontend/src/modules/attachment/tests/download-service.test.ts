@@ -1,0 +1,273 @@
+import 'fake-indexeddb/auto';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { attachmentsDb } from '../dexie/attachments-db';
+
+// Mock external deps before imports
+vi.mock('shared', async () => ({
+  appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  onlineManager: { isOnline: () => true },
+}));
+
+vi.mock('../dexie/storage-service', () => ({
+  attachmentStorage: {
+    getStorageUsed: vi.fn().mockResolvedValue(0),
+    hasAnyVariant: vi.fn().mockResolvedValue(null),
+    hasVariant: vi.fn().mockResolvedValue(false),
+    storeDownloadBlobWithVariant: vi.fn().mockResolvedValue({}),
+    evictRawBlob: vi.fn().mockResolvedValue(false),
+    getStoredVariants: vi.fn().mockResolvedValue([]),
+    deleteBlobs: vi.fn().mockResolvedValue(undefined),
+    clearAll: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+vi.mock('../dexie/download-queue', async () => {
+  const actual = await vi.importActual('../dexie/download-queue');
+  return actual;
+});
+
+vi.mock('../file-url', () => ({
+  getFileUrl: vi.fn().mockResolvedValue('https://example.com/file.png'),
+}));
+
+vi.mock('../query', () => ({
+  findAttachmentInCache: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock('~/query/basic/flatten', () => ({
+  flattenInfiniteData: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock('~/query/query-client', () => ({
+  queryClient: {
+    clear: vi.fn(),
+    getQueryCache: () => ({ subscribe: vi.fn() }),
+    getMutationCache: () => ({ subscribe: vi.fn() }),
+  },
+}));
+
+vi.mock('~/query/persister', () => ({
+  persister: { removeClient: vi.fn() },
+  sessionPersister: { removeClient: vi.fn() },
+}));
+
+vi.mock('~/alerter/alert-store', () => ({
+  useAlertStore: { getState: () => ({ clearAlertStore: vi.fn() }) },
+}));
+
+vi.mock('~/modules/common/form-draft/draft-store', () => ({
+  useDraftStore: { getState: () => ({ clearForms: vi.fn() }) },
+}));
+
+vi.mock('~/modules/seen/seen-store', () => ({
+  useSeenStore: { getState: () => ({ clear: vi.fn() }) },
+}));
+
+vi.mock('~/modules/ui/ui-store', () => ({
+  useUIStore: { getState: () => ({ setImpersonating: vi.fn(), clearUIStore: vi.fn() }) },
+}));
+
+vi.mock('~/modules/user/user-store', () => ({
+  useUserStore: { setState: vi.fn() },
+}));
+
+vi.mock('~/modules/me/types', () => ({}));
+
+import { downloadQueue } from '../dexie/download-queue';
+import { attachmentStorage } from '../dexie/storage-service';
+import { downloadService } from '../download-service';
+import { findAttachmentInCache } from '../query';
+import { makeAttachment, makeQueueEntry } from './test-setup';
+
+describe('downloadService.processQueue — failed download retry', () => {
+  beforeEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    await attachmentsDb.blobs.clear();
+    vi.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    await attachmentsDb.blobs.clear();
+  });
+
+  it('failed entries stay terminal and are not picked up again', async () => {
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 1 }));
+
+    await downloadService.processQueue();
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('failed');
+    expect(entry?.attempts).toBe(1); // no retry attempt added
+  });
+
+  it('does NOT reset failed entries when attempts >= 3', async () => {
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 3 }));
+
+    await downloadService.processQueue();
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('failed');
+    expect(entry?.attempts).toBe(3);
+  });
+
+  it('downloaded entries persist (gc no longer runs in hot path)', async () => {
+    await attachmentsDb.downloadQueue.add(
+      makeQueueEntry({ id: 'att-done', status: 'downloaded', organizationId: 'org-1' }),
+    );
+    // Need a pending entry to trigger processing for this org
+    await attachmentsDb.downloadQueue.add(
+      makeQueueEntry({ id: 'att-pending', status: 'pending', organizationId: 'org-1' }),
+    );
+
+    await downloadService.processQueue();
+
+    // Downloaded rows now serve as the dedupe registry — they must NOT be gc'd in the hot path.
+    const downloaded = await attachmentsDb.downloadQueue.get('att-done');
+    expect(downloaded?.status).toBe('downloaded');
+  });
+});
+
+describe('downloadService.queueForDownload — optimistic filtering', () => {
+  beforeEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    vi.clearAllMocks();
+    vi.mocked(attachmentStorage.getStoredVariants).mockResolvedValue([]);
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+  });
+
+  it('does not queue optimistic (un-persisted) attachments', async () => {
+    const optimistic = { ...makeAttachment({ id: 'opt-1' }), _optimistic: true };
+
+    await downloadService.queueForDownload([optimistic]);
+
+    const entry = await attachmentsDb.downloadQueue.get('opt-1');
+    expect(entry).toBeUndefined();
+  });
+
+  it('queues persisted attachments alongside optimistic ones', async () => {
+    const optimistic = { ...makeAttachment({ id: 'opt-1' }), _optimistic: true };
+    const persisted = makeAttachment({ id: 'real-1' });
+
+    await downloadService.queueForDownload([optimistic, persisted]);
+
+    expect(await attachmentsDb.downloadQueue.get('opt-1')).toBeUndefined();
+    expect((await attachmentsDb.downloadQueue.get('real-1'))?.status).toBe('pending');
+  });
+});
+
+describe('downloadService — cache lookup before claim', () => {
+  beforeEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    vi.clearAllMocks();
+    vi.mocked(attachmentStorage.getStoredVariants).mockResolvedValue([]);
+    vi.mocked(attachmentStorage.hasVariant).mockResolvedValue(false);
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+  });
+
+  it('leaves row pending and never transitions to downloading when cache is empty', async () => {
+    vi.mocked(findAttachmentInCache).mockReturnValue(undefined);
+    const transitionSpy = vi.spyOn(downloadQueue, 'transition');
+
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'pending' }));
+
+    await downloadService.processQueue();
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('pending'); // unchanged — liveQuery will retrigger when cache fills
+    expect(entry?.attempts).toBe(0); // no attempt burned
+    // The service must not have claimed the row.
+    expect(transitionSpy).not.toHaveBeenCalledWith('att-1', 'downloading');
+
+    transitionSpy.mockRestore();
+  });
+});
+
+describe('downloadService — auth fail-fast (401/403)', () => {
+  beforeEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    vi.clearAllMocks();
+    vi.mocked(attachmentStorage.getStoredVariants).mockResolvedValue([]);
+    vi.mocked(attachmentStorage.hasVariant).mockResolvedValue(false);
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.downloadQueue.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it('marks failed and stops fetching remaining variants on 403', async () => {
+    vi.mocked(findAttachmentInCache).mockReturnValue(
+      makeAttachment({
+        thumbnailKey: 'files/thumb.png',
+        convertedKey: 'files/conv.png',
+        originalKey: 'files/orig.png',
+      }),
+    );
+
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 403 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'pending' }));
+
+    await downloadService.processQueue();
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('failed');
+    // Should bail out after the first 403 — the loop must not request the other 2 variants.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // No blobs stored for a fully-failed attachment.
+    expect(attachmentStorage.storeDownloadBlobWithVariant).not.toHaveBeenCalled();
+  });
+
+  it('marks failed and stops fetching remaining variants on 401', async () => {
+    vi.mocked(findAttachmentInCache).mockReturnValue(
+      makeAttachment({
+        thumbnailKey: 'files/thumb.png',
+        convertedKey: 'files/conv.png',
+        originalKey: 'files/orig.png',
+      }),
+    );
+
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'pending' }));
+
+    await downloadService.processQueue();
+
+    const entry = await attachmentsDb.downloadQueue.get('att-1');
+    expect(entry?.status).toBe('failed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('flushStores clears attachment IDB', () => {
+  beforeEach(async () => {
+    await attachmentsDb.blobs.clear();
+    await attachmentsDb.downloadQueue.clear();
+  });
+
+  afterEach(async () => {
+    await attachmentsDb.blobs.clear();
+    await attachmentsDb.downloadQueue.clear();
+  });
+
+  it('flushStores calls attachmentStorage.clearAll', async () => {
+    const { flushStores } = await import('~/utils/flush-stores');
+    const { attachmentStorage } = await import('../dexie/storage-service');
+
+    flushStores();
+
+    expect(attachmentStorage.clearAll).toHaveBeenCalled();
+  });
+});

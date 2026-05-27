@@ -1,4 +1,4 @@
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
@@ -14,7 +14,7 @@ const userRoutes = {
     method: 'get',
     path: '/users',
     xGuard: [authGuard, crossTenantGuard],
-    tags: ['users'],
+    tags: ['users', 'cella'],
     summary: 'Get list of users',
     description: 'Returns a list of *users*.',
     request: { query: userListQuerySchema },
@@ -43,7 +43,7 @@ const userRoutes = {
     method: 'get',
     path: '/users/{relatableUserId}',
     xGuard: [authGuard, crossTenantGuard, relatableGuard],
-    tags: ['users'],
+    tags: ['users', 'cella'],
     summary: 'Get user',
     description:
       'Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.',

@@ -5,9 +5,9 @@ export function AccessibilityPage() {
   const { t } = useTranslation();
 
   return (
-    <MarketingLayout title={t('common:accessibility')}>
-      <section className="py-16 bg-background">
-        <div className="mx-auto max-w-3xl min-h-screen px-4 md:px-8 font-light">
+    <MarketingLayout title={t('c:accessibility')}>
+      <section className="bg-background py-16">
+        <div className="mx-auto min-h-screen max-w-3xl px-4 md:px-8">
           <p>Accessibility statement here</p>
         </div>
       </section>

@@ -6,21 +6,20 @@ import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
-import { getContextEntityRoute } from '~/routes-resolver';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
   icon?: LucideIcon;
   className?: string;
-  searchResults?: boolean;
 }
 
-export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: MenuSheetItemProps) => {
+export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProps) => {
   const { t } = useTranslation();
 
   const isOnline = onlineManager.isOnline();
@@ -28,7 +27,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
-  const isSubitem = !searchResults && !item.submenu;
+  const isSubitem = !item.submenu;
 
   // Unseen count — shown on grouping contexts (direct) and their parents (aggregated from submenu).
   // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
@@ -45,11 +44,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
     <Link
       disabled={!canAccess}
       onClick={() => {
-        if (!canAccess) toaster(t('common:show_archived.offline.text'), 'warning');
+        if (!canAccess) toaster(t('c:show_archived.offline.text'), 'warning');
       }}
       data-subitem={isSubitem}
       aria-label={item.name}
-      draggable="false"
+      draggable={false}
       to={to}
       params={params}
       search={search}
@@ -57,15 +56,15 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
       className={cn(
-        'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded-sm p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
+        'group/menuItem relative flex h-12 w-full items-start justify-start space-x-1 rounded-sm p-0 ring-2 ring-transparent ring-inset focus:outline-hidden focus-visible:ring-foreground data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
         'data-[link-active=true]:ring-transparent data-[link-active=true]:focus-visible:ring-foreground',
         className,
       )}
     >
-      <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />
-      <span className="relative z-1 shrink-0 bg-card rounded-full m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 size-8 group-data-[subitem=true]/menuItem:size-6">
+      <span className="absolute top-3 left-0 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menuItem:opacity-100" />
+      <span className="relative z-1 m-2 mx-3 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:size-6">
         <EntityAvatar
-          className="items-center text-sm bg-card group-hover/menuItem:font-bold group-data-[subitem=true]/menuItem:text-xs size-8 group-data-[subitem=true]/menuItem:size-6 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100"
+          className="size-8 items-center bg-card text-sm group-hover/menuItem:font-bold group-hover/menuItem:opacity-100 group-data-[subitem=true]/menuItem:size-6 group-data-[subitem=true]/menuItem:text-xs group-data-[link-active=true]/menuItem:opacity-100 sm:opacity-80"
           type={item.entityType}
           id={item.id}
           icon={Icon}
@@ -73,46 +72,34 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
           url={item.thumbnailUrl}
         />
         {item.membership.muted && (
-          <span className="absolute bottom-0 right-0 flex items-center justify-center rounded-tl-lg rounded-br-none rounded-tr-none rounded-bl-none bg-card size-3.5 opacity-80">
+          <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg rounded-tr-none rounded-br-none rounded-bl-none bg-card opacity-80">
             <BellOffIcon size={10} strokeWidth={2} />
           </span>
         )}
       </span>
-      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0 sm:opacity-80 group-hover/menuItem:opacity-100 group-data-[link-active=true]/menuItem:opacity-100">
+      <div className="flex grow flex-col justify-center truncate pr-2 text-left group-hover/menuItem:opacity-100 group-data-[subitem=true]/menuItem:pl-0 group-data-[link-active=true]/menuItem:opacity-100 sm:opacity-80">
         <div
           className={cn(
-            'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
-            !searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
-            searchResults
-              ? ''
-              : isSubitem
-                ? 'sm:group-hover/menuItem:pt-[0.06rem]!'
-                : 'sm:group-hover/menuItem:pt-[0.3rem]!',
-            'group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
+            'truncate pt-1 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menuItem:delay-300',
+            'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
+            isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
+            'group-data-[link-active=true]/menuItem:font-medium group-data-[subitem=true]/menuItem:font-base group-data-[subitem=true]/menuItem:text-sm',
           )}
         >
           {item.name}
         </div>
-        <div className="text-muted-foreground text-xs pointer-events-none">
-          {searchResults && (
-            <span>
-              {t(item.entityType, { ns: ['app', 'common'] })}
-              <span className="transition-opacity duration-100 ease-in-out opacity-0 group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100 mx-2">
-                ·
-              </span>
-            </span>
-          )}
-          <span className="opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 absolute sm:group-hover/menuItem:opacity-100">
+        <div className="pointer-events-none text-muted-foreground text-xs">
+          <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
-              ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType, { ns: ['app', 'common'] }).toLowerCase()}`
+              ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType).toLowerCase()}`
               : item.membership.role
-                ? t(item.membership.role, { ns: ['app', 'common'] })
+                ? t(item.membership.role)
                 : ''}
           </span>
         </div>
       </div>
       {showBadge && (
-        <span className="shrink-0 self-center mr-3 min-w-4 h-4 flex items-center justify-center rounded-full bg-background text-primary text-[0.6rem] font-bold px-1 leading-none">
+        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-background px-1 font-bold text-[0.6rem] text-primary leading-none">
           {unseenCount > 99 ? '99+' : unseenCount}
         </span>
       )}

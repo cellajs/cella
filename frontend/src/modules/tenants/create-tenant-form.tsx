@@ -3,11 +3,11 @@ import type React from 'react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Tenant } from 'sdk';
+import { zCreateTenantBody } from 'sdk/zod.gen';
 import { z } from 'zod';
-import type { Tenant } from '~/api.gen';
-import { zCreateTenantData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantCreateMutation } from '~/modules/tenants/query';
@@ -21,7 +21,7 @@ interface Props {
   callback?: (args: CallbackArgs<Tenant>) => void;
 }
 
-const formSchema = zCreateTenantData.shape.body.extend({
+const formSchema = zCreateTenantBody.extend({
   name: z.string().min(1, 'error:form.required').max(255),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +48,7 @@ export function CreateTenantForm({ labelDirection = 'top', children, callback }:
     mutate(values, {
       onSuccess: (createdTenant) => {
         form.reset();
-        toaster(t('common:success.create_resource', { resource: t('common:tenant') }), 'success');
+        toaster(t('c:success.create_resource', { resource: t('c:tenant') }), 'success');
         callback?.({ data: createdTenant, status: 'success' });
       },
     });
@@ -57,11 +57,11 @@ export function CreateTenantForm({ labelDirection = 'top', children, callback }:
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="name" label={t('c:name')} required />
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
-            {t('common:create')}
+            {t('c:create')}
           </SubmitButton>
           {children}
 
@@ -73,7 +73,7 @@ export function CreateTenantForm({ labelDirection = 'top', children, callback }:
               aria-label="Cancel"
               onClick={() => form.reset()}
             >
-              {t('common:cancel')}
+              {t('c:cancel')}
             </Button>
           )}
         </div>

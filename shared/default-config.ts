@@ -1,4 +1,4 @@
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './src/builder/types';
+import type { ConfigMode, RequiredConfig } from './src/config-builder/types';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
@@ -9,22 +9,19 @@ export const config = {
    * ENTITY DATA MODEL
    ******************************************************************************/
 
-  /** All entity types in the app - must match hierarchy.allTypes. Explicit tuple for Drizzle compatibility. */
+  /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
-  /** Context entities with memberships - must match hierarchy.contextTypes. Explicit tuple for Drizzle compatibility. */
+  /** Context entities with memberships - must match hierarchy.contextTypes. */
   contextEntityTypes: ['organization'] as const,
-  
-  /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
+
+  /** Product/content entities - must match hierarchy.productTypes. */
   productEntityTypes: ['attachment', 'page'] as const,
 
   /**
-   * Parentless product entities (no organization_id) - must match hierarchy.parentlessProductTypes.
-   * Explicit tuple required for Drizzle compatibility. Compile-time validated in shared/index.ts.
+   * Product entity types tracked for seen/unseen counts.
+   * Unseen counts are grouped by the parent context entity of each tracked type.
    */
-  parentlessProductEntityTypes: ['page'] as const,
-
-  /** Product entity types tracked for seen/unseen counts. Must be org-scoped (not parentless). */
   seenTrackedEntityTypes: ['attachment'] as const,
 
   /** Maps entity types to their ID column names - must match entityTypes */
@@ -42,11 +39,17 @@ export const config = {
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
 
   /**
+   * Entity embeddings: declares which entities are embedded as ID arrays inside
+   * other entities. Forks extend when adding new embedding relationships.
+   */
+  entityEmbeddings: [] as readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[],
+
+  /**
    * User menu structure of context entities with optional nested subentities.
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
   menuStructure: [
-    { entityType: 'organization',subentityType: null} as const,
+    { entityType: 'organization', subentityType: null } as const,
   ],
 
   /** Default restrictions for tenants (entity quotas and rate limits) */
@@ -61,120 +64,76 @@ export const config = {
     },
   } as const,
 
-  /** Public tenant for platform-wide content (pages, docs, etc.) */
-  publicTenant: { id: 'public',  name: 'Public' },
-
   /******************************************************************************
    * SYSTEM ROLES
    ******************************************************************************/
-  
-  /**
-   * System-wide roles stored in DB.
-   * Must include 'admin' for system administration access.
-   */
+
   systemRoles: ['admin'] as const,
 
   /******************************************************************************
    * APP IDENTITY
    ******************************************************************************/
 
-  /** App display name shown in UI and emails */
   name: 'Cella',
-  /** URL-safe identifier used in paths and storage */
   slug: 'cella',
-  /** Primary domain for the app */
-  domain: 'cellajs.com',
-  /** App description for SEO and meta tags */
-  description: 'Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
-  /** SEO keywords for search engines */
+  domain: 'cella.dev',
+  description: 'A TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant§ updates, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
   /******************************************************************************
    * URLS & ENDPOINTS
    ******************************************************************************/
 
-  /** Frontend SPA base URL */
-  frontendUrl: 'https://cellajs.com',
-  /** Backend API base URL */
-  backendUrl: 'https://api.cellajs.com',
-  /** OAuth callback base URL */
-  backendAuthUrl: 'https://api.cellajs.com/auth',
+  frontendUrl: 'https://www.cella.dev',
+  backendUrl: 'https://api.cella.dev',
+  backendAuthUrl: 'https://api.cella.dev/auth',
+  yjsUrl: 'wss://yjs.cella.dev',
+  aiApiUrl: 'https://ai.cella.dev',
 
-  /** About page URL */
-  aboutUrl: 'https://cellajs.com/about',
-  /** Status page URL for uptime monitoring */
-  statusUrl: 'https://status.cellajs.com',
-  /** Canonical production URL */
-  productionUrl: 'https://cellajs.com',
+  aboutUrl: '/about',
+  statusUrl: 'https://status.cella.dev',
+  productionUrl: 'https://cella.dev',
 
-  /** Default redirect path after login */
   defaultRedirectPath: '/home',
-  /** Redirect path for first-time users */
   welcomeRedirectPath: '/welcome',
 
   /******************************************************************************
    * EMAIL
    ******************************************************************************/
 
-  /** Email address for user support inquiries */
   supportEmail: 'support@cellajs.com',
-
-  /** From address for system notifications */
   notificationsEmail: 'notifications@cellajs.com',
-
-    /** Receive security warnings */
   securityEmail: 'security@cellajs.com',
 
   /******************************************************************************
    * MODE & FLAGS
    ******************************************************************************/
-  
-  /** Runtime mode - overridden per environment file */
+
   mode: 'development' as ConfigMode,
-  /** Enable debug logging and dev tools */
-  debug: false,
-  /** Enable maintenance mode (blocks all requests) */
   maintenance: false,
-  /** Cookie version - increment when changing cookie structure to invalidate old cookies */
   cookieVersion: 'v1',
 
   /******************************************************************************
    * FEATURE FLAGS
    ******************************************************************************/
 
-  /**
-   * Feature toggles for app capabilities.
-   * Use to enable/disable major features without code changes.
-   */
   has: {
-    /** Progressive Web App support for preloading static assets and offline support */
-    pwa: true,
-    /** Allow users to sign up. If false, the app is by invitation only */
-    registrationEnabled: true,
-    /** Suggest a waitlist for unknown emails when sign up is disabled */
-    waitlist: true,
-    /** S3 fully configured - if false, files will be stored in local browser (IndexedDB) */
-    uploadEnabled: true,
+    pwa: true as boolean,
+    selfRegistration: true as boolean,
+    waitlist: true as boolean,
+    uploadEnabled: true as boolean,
+    chatSupport: false as boolean,
   },
 
   /******************************************************************************
    * AUTHENTICATION
    ******************************************************************************/
 
-  /**
-   * Enabled authentication strategies.
-   * TOTP can only be used as MFA fallback with passkey as primary.
-   */
-  enabledAuthStrategies: ['password', 'passkey', 'oauth', 'totp'] satisfies BaseAuthStrategies[],
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
+  enabledOAuthProviders: ['github'] as const,
+  tokenTypes: ['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
 
-  /** Enabled OAuth providers - currently supports: github, google, microsoft */
-  enabledOAuthProviders: ['github'] satisfies BaseOAuthProviders[],
-
-  /** Token types used for verification flows */
-  tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
-
-  /** TOTP configuration for MFA */
   totpConfig: {
     intervalInSeconds: 30,
     gracePeriodInSeconds: 60,
@@ -185,24 +144,14 @@ export const config = {
    * API CONFIGURATION
    ******************************************************************************/
 
-  /** API version prefix for endpoints */
   apiVersion: 'v1',
-  /** API documentation description shown in Scalar */
-  apiDescription: `⚠️ ATTENTION: PRERELEASE!  
-                  This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
-                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
-
-                  The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
-
+  apiDescription: `⚠️ ATTENTION: PRERELEASE!
+                  This API is organized into modules based on logical domains.`,
 
   /******************************************************************************
    * REQUEST LIMITS
    ******************************************************************************/
 
-  /**
-   * Default page sizes for list endpoints. Backend enforces max 1000.
-   * Must include 'default' key as fallback.
-   */
   requestLimits: {
     default: 40,
     users: 100,
@@ -210,43 +159,25 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pages: 40,
+    pages: 100,
     pendingMemberships: 20,
   },
 
-  /** Max JSON body size in bytes */
   jsonBodyLimit: 1 * 1024 * 1024,
-  /** Max file upload size in bytes */
   fileUploadLimit: 20 * 1024 * 1024,
-  /** Default body size limit in bytes */
   defaultBodyLimit: 1 * 1024 * 1024,
 
   /******************************************************************************
    * STORAGE & UPLOADS (S3)
    ******************************************************************************/
 
-  /** S3-compatible storage configuration */
   s3: {
-    /** Prefix to namespace files when sharing a bucket across apps or envs */
-    bucketPrefix: 'cella',
-    /** Public bucket name for publicly accessible files */
-    publicBucket: 'imado-dev',
-    /** Private bucket name for authenticated-only files */
-    privateBucket: 'imado-dev-priv',
-    /** S3 region identifier */
     region: 'nl-ams',
-    /** S3 host endpoint */
     host: 's3.nl-ams.scw.cloud',
-    /** CDN URL for private bucket (signed URLs) */
-    privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
-    /** CDN URL for public bucket */
-    publicCDNUrl: 'https://imado-dev.s3.nl-ams.scw.cloud',
-  } satisfies S3Config,
+  },
 
-  /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
-  /** Uppy upload widget default restrictions */
   uppy: {
     defaultRestrictions: {
       maxFileSize: 10 * 1024 * 1024,
@@ -259,49 +190,30 @@ export const config = {
     },
   },
 
-  /**
-   * Local blob storage restrictions (IndexedDB/Dexie).
-   * Controls which attachments are cached locally for offline access.
-   */
   localBlobStorage: {
-    enabled: true, // Enable local blob caching
-    maxFileSize: 10 * 1024 * 1024, // 10MB - files larger than this are not cached locally
-    maxTotalSize: 100 * 1024 * 1024, // 100MB - total cache size, LRU eviction when exceeded
-    allowedContentTypes: [] as string[], // Empty = all types allowed
-    excludedContentTypes: ['video/*'] as string[], // Excluded types (takes precedence over allowed)
-    downloadConcurrency: 2, // Max concurrent background downloads
-    uploadRetryAttempts: 3, // Max retry attempts for failed uploads
-    uploadRetryDelays: [60000, 300000, 900000] as const, // Retry delays in ms (1min, 5min, 15min)
+    enabled: true,
+    maxFileSize: 10 * 1024 * 1024,
+    maxTotalSize: 100 * 1024 * 1024,
+    allowedContentTypes: [] as string[],
+    excludedContentTypes: ['video/*'] as string[],
+    downloadConcurrency: 2,
+    uploadRetryAttempts: 3,
+    uploadRetryDelays: [60000, 300000, 900000] as const,
   },
 
   /******************************************************************************
    * THIRD-PARTY SERVICES
    ******************************************************************************/
 
-  /** Paddle client token for payments */
-  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
-  /** Paddle price IDs for subscription products */
-  paddlePriceIds: {
-    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
-  },
-  /** Sentry DSN for error tracking */
-  sentryDsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
-  /** Upload source maps to Sentry on build */
-  sentSentrySourceMaps: true,
-  /** Gleap token for customer support widget */
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
-  /** Google Maps API key */
-  googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
-  /** Matrix homeserver URL for chat integration */
+  googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',
   matrixURL: 'https://matrix-client.matrix.org',
 
   /******************************************************************************
    * THEMING & UI
    ******************************************************************************/
 
-  /** Primary theme color for PWA manifest and browser chrome */
   themeColor: '#26262b',
-  /** Theme configuration for UI components */
   theme: {
     navigation: {
       hasSidebarTextLabels: false,
@@ -310,7 +222,6 @@ export const config = {
       sheetPanelWidth: '20rem',
     },
     colors: {
-      rose: '#e11d48',
     },
     strokeWidth: 1.5,
     screenSizes: {
@@ -322,7 +233,6 @@ export const config = {
       '2xl': '1400px',
     },
   } as const,
-  /** Placeholder background colors for avatars without images */
   placeholderColors: [
     'bg-blue-300',
     'bg-lime-300',
@@ -340,12 +250,9 @@ export const config = {
    * LOCALIZATION
    ******************************************************************************/
 
-  /** Default language code */
   defaultLanguage: 'en' as const,
-  /** Available language codes - first is fallback */
   languages: ['en', 'nl'] as const,
-  /** Common reference data */
-  common: {
+  c: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
   },
@@ -354,17 +261,16 @@ export const config = {
    * COMPANY DETAILS
    ******************************************************************************/
 
-  /** Company/organization details for footer, legal pages, and contact info */
   company: {
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
     supportEmail: 'support@cellajs.com',
     tel: '+31 6 12345678',
-    streetAddress: 'Schiekade 105',
-    postcode: '3033BH',
-    city: 'Rotterdam',
-    country: 'The Netherlands',
+    streetAddress: 'Drizzle Road 42',
+    postcode: '90210 JS',
+    city: 'Hono City',
+    country: 'TypeScript Rock',
     registration: 'Chamber of Commerce (KvK): 578 25 920',
     bankAccount: 'NL07 RABO 0309 4430 24',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
@@ -384,12 +290,9 @@ export const config = {
    * USER DEFAULTS
    ******************************************************************************/
 
-  /** Default user flags applied to new users */
   defaultUserFlags: {
     finishedOnboarding: false,
   },
 } satisfies RequiredConfig;
 
 export default config;
-
-

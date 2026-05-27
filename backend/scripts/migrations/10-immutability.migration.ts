@@ -24,7 +24,7 @@ async function run() {
     productEntityImmutabilityFunctionSQL,
     membershipImmutabilityFunctionSQL,
     inactiveMembershipImmutabilityFunctionSQL,
-  ].join('\n');
+  ].join('\n--> statement-breakpoint\n');
 
   const triggersSql = allImmutabilityTables.map(({ tableName, functionName }) => {
     const triggerName = `${tableName}_immutable_keys_trigger`;
@@ -34,7 +34,7 @@ async function run() {
 
   const migrationSql = `-- Immutability Triggers Setup
 -- Prevents modification of identity columns after row creation.
--- For PGlite: migration is skipped (no role support).
+-- Gracefully skips triggers if required roles are not yet created.
 
 -- Functions are always created (harmless without triggers)
 ${functionsSql}
@@ -44,7 +44,7 @@ ${functionsSql}
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
-    RAISE NOTICE 'Roles not available - skipping immutability triggers (e.g., PGlite).';
+    RAISE NOTICE 'Roles not available - skipping immutability triggers.';
     RETURN;
   END IF;
 
@@ -70,7 +70,7 @@ END $$;
 }
 
 export const generateConfig: GenerateScript = {
-  name: 'Immutability triggers migration',
+  name: 'Immutability',
   type: 'migration',
   run,
 };

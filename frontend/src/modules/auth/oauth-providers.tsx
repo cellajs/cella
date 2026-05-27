@@ -5,7 +5,7 @@ import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
@@ -28,8 +28,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
-  const actionText =
-    authStep === 'signIn' ? t('common:sign_in') : authStep === 'signUp' ? t('common:sign_up') : t('common:continue');
+  const actionText = authStep === 'signIn' ? t('c:sign_in') : authStep === 'signUp' ? t('c:sign_up') : t('c:continue');
 
   const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
     try {
@@ -46,7 +45,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
     } catch (error) {
-      toaster(t('common:url_malformed'), 'error');
+      toaster(t('c:url_malformed'), 'error');
       setLoadingProvider(null);
     }
   };
@@ -76,11 +75,11 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
               data-provider={provider}
               src={`/static/images/${provider}-icon.svg`}
               alt={provider}
-              className="size-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
+              className="mr-1 size-4 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"
             />
             <span>
-              {actionText} {t('common:with').toLowerCase()} {t(providerData.name)}
+              {actionText} {t('c:with').toLowerCase()} {t(providerData.name)}
             </span>
           </Button>
         );

@@ -9,7 +9,7 @@ import type {
   MeAuthData,
   ToggleMfaData,
   User,
-} from '~/api.gen';
+} from 'sdk';
 import {
   createPasskey,
   deletePasskey,
@@ -20,16 +20,16 @@ import {
   toggleMfa,
   type UpdateMeData,
   updateMe,
-} from '~/api.gen';
+} from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
-import { useUserStore } from '~/store/user';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
@@ -142,7 +142,7 @@ export const useCreatePasskeyMutation = () => {
           passkeys: [newPasskey, ...oldData.passkeys],
         };
       });
-      toaster(t('common:success.passkey_added'), 'success');
+      toaster(t('c:success.passkey_added'), 'success');
     },
     onError(error) {
       // On cancel throws error NotAllowedError
@@ -169,7 +169,7 @@ export const useDeletePasskeyMutation = () => {
           passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id),
         };
       });
-      toaster(t('common:success.passkey_unlinked'), 'success');
+      toaster(t('c:success.passkey_unlinked'), 'success');
     },
     onError(error) {
       console.error('Error removing passkey:', error);
@@ -188,7 +188,7 @@ export const useDeleteTotpMutation = () => {
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {
-      toaster(t('common:success.totp_removed'), 'success');
+      toaster(t('c:success.totp_removed'), 'success');
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: false };
@@ -234,9 +234,6 @@ export const useHandleInvitationMutation = () =>
         return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
       });
 
-      toaster(
-        t('common:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }),
-        'success',
-      );
+      toaster(t('c:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }), 'success');
     },
   });

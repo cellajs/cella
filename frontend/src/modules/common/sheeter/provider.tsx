@@ -1,16 +1,12 @@
 import { useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { useUIStore } from '~/modules/ui/ui-store';
 import router from '~/routes/router';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
-
-// Static callback for boundary cleanup - no deps, call store directly
-const closeAll = () => useSheeter.getState().remove(undefined, { isCleanup: true });
 
 /**
  * Sheeter provider to render drawers on mobile, sheets on desktop.
@@ -34,8 +30,6 @@ export const Sheeter = () => {
       return () => unlockUI('sheeter');
     }
   }, [sheets.length > 0]);
-
-  useBoundaryCleanup(closeAll);
 
   // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {

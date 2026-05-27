@@ -32,6 +32,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -40,14 +47,24 @@
       }
     ],
     "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
       "body": {
         "type": "object",
         "properties": {
-          "slug": { "type": "string", "required": true },
+          "slug": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          },
           "entityType": {
             "type": "string",
             "required": true,
-            "enum": ["user", "organization"]
+            "enum": ["organization"]
           }
         },
         "required": true,
@@ -93,6 +110,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -114,34 +138,70 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-entityType change summary: { [entityType]: { seq, deletedIds } }",
+              "description": "Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "deletedIds": {
-                    "type": "array",
+                  "deletedByType": {
+                    "type": "object",
                     "required": true,
-                    "itemType": "string"
+                    "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
                   },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
                     "additionalProperties": { "type": "integer", "required": false }
                   },
-                  "deletedByType": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": {
-                      "type": "array",
-                      "required": false,
-                      "itemType": "string"
-                    }
-                  },
                   "entityCounts": {
                     "type": "object",
                     "required": false,
                     "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "childContextChanges": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "entitySeqs": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        },
+                        "entityCounts": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        }
+                      }
+                    }
+                  },
+                  "propagation": {
+                    "type": "array",
+                    "required": false,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceType": { "type": "string", "required": true, "description": "Entity type that triggered the propagation (e.g. label)" },
+                        "targetType": { "type": "string", "required": true, "description": "Entity type whose cache should be invalidated (e.g. task)" },
+                        "field": { "type": "string", "required": true, "description": "Field on the target entity that references the source (e.g. labels)" },
+                        "update": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need cache refresh",
+                          "itemType": "string"
+                        },
+                        "remove": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need the source reference removed",
+                          "itemType": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -184,6 +244,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -195,15 +262,11 @@
       "body": {
         "type": "object",
         "properties": {
-          "cursor": {
-            "type": "string",
-            "required": false,
-            "description": "Last activity cursor received by the client. Omit on first sync."
-          },
+          "cursor": { "type": "string", "required": false, "description": "Last activity cursor received by the client (LSN-based). Omit on first sync." },
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
+            "description": "Client-side sequence numbers per scope: { \"organizationId:s:page\": 42 }",
             "additionalProperties": { "type": "integer", "required": false }
           }
         },
@@ -250,6 +313,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -271,34 +341,70 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-org change summary: { [orgId]: { seq, deletedIds, membership? } }",
+              "description": "Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "deletedIds": {
-                    "type": "array",
+                  "deletedByType": {
+                    "type": "object",
                     "required": true,
-                    "itemType": "string"
+                    "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
                   },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
                     "additionalProperties": { "type": "integer", "required": false }
                   },
-                  "deletedByType": {
-                    "type": "object",
-                    "required": false,
-                    "additionalProperties": {
-                      "type": "array",
-                      "required": false,
-                      "itemType": "string"
-                    }
-                  },
                   "entityCounts": {
                     "type": "object",
                     "required": false,
                     "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "childContextChanges": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "entitySeqs": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        },
+                        "entityCounts": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        }
+                      }
+                    }
+                  },
+                  "propagation": {
+                    "type": "array",
+                    "required": false,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceType": { "type": "string", "required": true, "description": "Entity type that triggered the propagation (e.g. label)" },
+                        "targetType": { "type": "string", "required": true, "description": "Entity type whose cache should be invalidated (e.g. task)" },
+                        "field": { "type": "string", "required": true, "description": "Field on the target entity that references the source (e.g. labels)" },
+                        "update": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need cache refresh",
+                          "itemType": "string"
+                        },
+                        "remove": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need the source reference removed",
+                          "itemType": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -314,7 +420,7 @@
         "example": {
           "changes": {
             "org-example-id": {
-              "deletedIds": []
+              "deletedByType": {}
             }
           },
           "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
@@ -349,6 +455,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -360,15 +473,11 @@
       "body": {
         "type": "object",
         "properties": {
-          "cursor": {
-            "type": "string",
-            "required": false,
-            "description": "Last activity cursor received by the client. Omit on first sync."
-          },
+          "cursor": { "type": "string", "required": false, "description": "Last activity cursor received by the client (LSN-based). Omit on first sync." },
           "seqs": {
             "type": "object",
             "required": false,
-            "description": "Client-side sequence numbers per scope: { \"orgId:s:page\": 42 }",
+            "description": "Client-side sequence numbers per scope: { \"organizationId:s:page\": 42 }",
             "additionalProperties": { "type": "integer", "required": false }
           }
         },

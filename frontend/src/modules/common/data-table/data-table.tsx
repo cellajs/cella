@@ -1,22 +1,21 @@
-import { type Key, type ReactNode, useRef, useState } from 'react';
+import { type Key, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type CellMouseArgs,
   type CellMouseEvent,
   type CellRendererProps,
+  type CellSelectionMode,
   type ColumnWidths,
   DataGrid,
   type RenderRowProps,
+  type RowSelectionMode,
   type RowsChangeData,
-  type SelectionMode,
   type SortColumn,
 } from '~/modules/common/data-grid';
-import { HeaderCell } from '~/modules/common/data-table/header-cell';
 import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
-import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
@@ -45,10 +44,29 @@ interface DataTableProps<TData> {
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
   sortColumns?: SortColumn[];
   onSortColumnsChange?: (sortColumns: SortColumn[]) => void;
-  selectionMode?: SelectionMode;
+  /** Cell selection mode (focus + range). @default 'cell' */
+  cellSelectionMode?: CellSelectionMode;
+  /** Row body click selection mode. Checkboxes always work as multi-select regardless. @default 'none' */
+  rowSelectionMode?: RowSelectionMode;
   rowHeight?: number;
   hideHeader?: boolean;
   enableVirtualization?: boolean;
+  /** Pin header rows to viewport top when grid scrolls out of view. @default false */
+  enableStickyHeader?: boolean;
+  /** Enable vertical auto-scroll of the grid viewport during pragmatic-dnd drag operations. @default false */
+  enableDragAutoScroll?: boolean;
+  /** Enable row drag-and-drop reorder. Mark a column with `rowDragHandle: true` to designate the drag source. */
+  onRowReorder?: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void;
+  /** Optional: enable drop-on-row for tree reparenting (adds a center 50% drop zone). */
+  onRowReparent?: (fromIdx: number, toIdx: number) => void;
+  /**
+   * Optional per-zone drop validation. Use to enforce tree constraints
+   * (max depth, cycle prevention) without coupling the grid to row shape.
+   * Called on every drag move; must be fast.
+   */
+  canDropRow?: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean;
+  /** Optional: render content inside the native drag preview while a row is dragged. */
+  renderRowDragPreview?: (row: TData) => ReactNode;
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
   className?: string;
@@ -58,6 +76,8 @@ interface DataTableProps<TData> {
   isRowSelectionDisabled?: (row: TData) => boolean;
   /** Enable compact mode — applies column compact overrides and sets data-is-compact on the grid */
   isCompact?: boolean;
+  /** When this value changes, internal column widths are reset (re-measured from column defaults). */
+  resetWidthsKey?: string | number | boolean;
 }
 
 /**
@@ -78,10 +98,17 @@ export const DataTable = <TData,>({
   onSelectedRowsChange,
   sortColumns,
   onSortColumnsChange,
-  selectionMode,
+  cellSelectionMode,
+  rowSelectionMode,
   rowHeight = 52,
   hideHeader,
   enableVirtualization,
+  enableStickyHeader,
+  enableDragAutoScroll,
+  onRowReorder,
+  onRowReparent,
+  canDropRow,
+  renderRowDragPreview,
   onRowsChange,
   fetchMore,
   renderRow,
@@ -91,6 +118,7 @@ export const DataTable = <TData,>({
   readOnly,
   isRowSelectionDisabled,
   isCompact,
+  resetWidthsKey,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
@@ -98,6 +126,11 @@ export const DataTable = <TData,>({
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
   useTableTooltip(gridRef, !isLoading);
+
+  // Reset column widths when resetWidthsKey changes (e.g., layout-affecting toggle)
+  useEffect(() => {
+    setColumnWidths(new Map());
+  }, [resetWidthsKey]);
 
   // Handle infinite scroll - guards against multiple calls while fetching
   // Only use DataGrid's onRowsEndApproaching when virtualization is enabled;
@@ -110,29 +143,39 @@ export const DataTable = <TData,>({
       }
     : undefined;
 
-  // Wrap selection handler to enforce max selection limit
-  const handleSelectedRowsChange = (newSelectedRows: Set<string>) => {
-    if (!onSelectedRowsChange) return;
+  // Wrap selection handler to enforce max selection limit. Memoized so the
+  // identity stays stable across renders — `DataGrid` passes it through to
+  // memoized rows; a fresh function each render would defeat that memo.
+  const handleSelectedRowsChange = useCallback(
+    (newSelectedRows: Set<string>) => {
+      if (!onSelectedRowsChange) return;
 
-    const currentSize = selectedRows?.size ?? 0;
-    const newSize = newSelectedRows.size;
+      const currentSize = selectedRows?.size ?? 0;
+      const newSize = newSelectedRows.size;
 
-    // Check if trying to select more than the limit
-    if (newSize > MAX_SELECTABLE_ROWS) {
-      // If this is a "select all" attempt (large jump in selection)
-      if (newSize - currentSize > 1) {
-        toaster(t('common:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
-      } else {
-        toaster(t('common:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
+      // Check if trying to select more than the limit
+      if (newSize > MAX_SELECTABLE_ROWS) {
+        // If this is a "select all" attempt (large jump in selection)
+        if (newSize - currentSize > 1) {
+          toaster(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }), 'warning');
+        } else {
+          toaster(t('c:selection_limit', { max: MAX_SELECTABLE_ROWS }), 'warning');
+        }
+        return;
       }
-      return;
-    }
 
-    onSelectedRowsChange(newSelectedRows);
-  };
+      onSelectedRowsChange(newSelectedRows);
+    },
+    [onSelectedRowsChange, selectedRows, t],
+  );
+
+  // Stable `renderers` object: every fresh `{ renderRow, renderCell }` literal
+  // would invalidate Row's memo and re-render every visible row on each parent
+  // render. Re-create only when an actual renderer function identity changes.
+  const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
   return (
-    <div className={cn('w-full h-full mb-4 md:mb-8', className)}>
+    <div className={cn('mb-4 h-full w-full max-sm:-mx-3 max-sm:w-[calc(100%+1.5rem)] md:mb-8', className)}>
       {isLoading || !rows ? (
         // Render skeleton only on initial load
         <DataTableSkeleton
@@ -140,56 +183,52 @@ export const DataTable = <TData,>({
           cellHeight={Number(rowHeight)}
           columnCount={columns.length}
         />
+      ) : error && rows.length === 0 ? (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-background text-muted-foreground">
+          <div className="my-8 text-center text-red-600 text-sm">{error.message}</div>
+        </div>
+      ) : !rows.length ? (
+        <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
       ) : (
-        <>
-          {error && rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-              <div className="text-center my-8 text-sm text-red-600">{error.message}</div>
-            </div>
-          ) : !rows.length ? (
-            <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
-          ) : (
-            <div
-              className={`grid rdg-wrapper relative ${hideHeader ? 'rdg-hide-header' : ''} ${readOnly ? 'rdg-readonly' : ''}`}
-              ref={gridRef}
-            >
-              <DataGrid
-                rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
-                enableVirtualization={enableVirtualization}
-                rowKeyGetter={rowKeyGetter}
-                columns={columns}
-                defaultColumnOptions={{ renderHeaderCell: HeaderCell }}
-                onRowsChange={onRowsChange}
-                rows={rows}
-                onCellClick={onCellClick}
-                // Hack to rerender html/css by changing width
-                style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.05rem' }}
-                selectedRows={selectedRows}
-                onSelectedRowsChange={handleSelectedRowsChange}
-                isRowSelectionDisabled={isRowSelectionDisabled}
-                columnWidths={columnWidths}
-                onColumnWidthsChange={setColumnWidths}
-                sortColumns={sortColumns}
-                onSortColumnsChange={onSortColumnsChange}
-                onRowsEndApproaching={handleRowsEndApproaching}
-                isCompact={isCompact}
-                selectionMode={selectionMode ?? (readOnly ? 'none' : undefined)}
-                renderers={{
-                  renderRow,
-                  renderCell,
-                }}
-              />
-              {!readOnly && (
-                <InfiniteLoader
-                  hasNextPage={hasNextPage}
-                  isFetching={isFetching}
-                  isFetchMoreError={!!error}
-                  fetchMore={!enableVirtualization ? fetchMore : undefined}
-                />
-              )}
-            </div>
+        <div className="relative grid" ref={gridRef}>
+          <DataGrid
+            rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
+            enableVirtualization={enableVirtualization}
+            enableStickyHeader={enableStickyHeader}
+            enableDragAutoScroll={enableDragAutoScroll}
+            rowKeyGetter={rowKeyGetter}
+            columns={columns}
+            onRowsChange={onRowsChange}
+            rows={rows}
+            onCellClick={onCellClick}
+            selectedRows={selectedRows}
+            onSelectedRowsChange={handleSelectedRowsChange}
+            isRowSelectionDisabled={isRowSelectionDisabled}
+            columnWidths={columnWidths}
+            onColumnWidthsChange={setColumnWidths}
+            sortColumns={sortColumns}
+            onSortColumnsChange={onSortColumnsChange}
+            onRowsEndApproaching={handleRowsEndApproaching}
+            isCompact={isCompact}
+            hideHeader={hideHeader}
+            readOnly={readOnly}
+            cellSelectionMode={cellSelectionMode ?? (readOnly ? 'none' : undefined)}
+            rowSelectionMode={rowSelectionMode}
+            onRowReorder={onRowReorder}
+            onRowReparent={onRowReparent}
+            canDropRow={canDropRow}
+            renderRowDragPreview={renderRowDragPreview}
+            renderers={renderers}
+          />
+          {!readOnly && (
+            <InfiniteLoader
+              hasNextPage={hasNextPage}
+              isFetching={isFetching}
+              isFetchMoreError={!!error}
+              fetchMore={!enableVirtualization ? fetchMore : undefined}
+            />
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,5 @@
 import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
-import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
@@ -13,26 +12,45 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../shared';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
-import { i18nextHMRPlugin } from 'i18next-hmr/vite';
-import { openApiWatch } from './vite/openapi-watch';
+
+import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
 
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
 
+// Content Security Policy — emitted as <meta http-equiv> into index.html.
+// Note: frame-ancestors/X-Frame-Options/HSTS cannot be set via meta and remain a
+// platform-level gap on Edge Services + S3 (documented in infra/README.md).
+const cspOrigins = {
+  api: new URL(appConfig.backendUrl).origin,
+  yjs: new URL(appConfig.yjsUrl.replace(/^ws/, 'http')).origin.replace(/^http/, 'ws'),
+  ai: new URL(appConfig.aiApiUrl).origin,
+  s3: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
+};
+const csp = [
+  `default-src 'self'`,
+  `script-src 'self' *.gleap.io`,
+  `style-src 'self' 'unsafe-inline'`,
+  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3} *.gleap.io wss://ws.gleap.io`,
+  `img-src 'self' blob: https: data:`,
+  `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io`,
+  `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
+  `font-src 'self' data:`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+].join('; ').replace(/\s+/g, ' ').trim();
+
 const viteConfig = {
-  logLevel: process.env.DEBUG_MODE ? 'info' : 'warn',
+  logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
   server: {
     host: '0.0.0.0',
     port: Number(frontendUrl.port),
     strictPort: true,
     watch: {
-      ignored: [
-        '**/backend/**',
-        '**/vite/temp-*/**', // Ignore temp folders from generate-client
-        '**/.generate-client.lock', // Ignore lock file
-      ],
+      ignored: ['**/backend/**', '**/sdk/**'],
     },
   },
   preview: {
@@ -55,8 +73,9 @@ const viteConfig = {
     manifest: true,
     minify: isDev ? false : 'esbuild',
   },
+  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
   optimizeDeps: {
-    exclude: [],
+    exclude: ['sdk'],
   },
   clearScreen: false,
   plugins: [
@@ -64,24 +83,10 @@ const viteConfig = {
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
-    appConfig.sentSentrySourceMaps
-      ? (sentryVitePlugin({
-        disable: appConfig.mode === 'development',
-        org: appConfig.slug,
-        project: appConfig.slug,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      }) as unknown as Plugin)
-      : undefined,
     viteStaticCopy({
       targets: [
-        {
-          src: '../locales/**/*',
-          dest: 'locales',
-        },
-        {
-          src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
-          dest: '',
-        },
+        { src: '../locales/**/*', dest: 'locales' },
+        { src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', dest: '' },
       ],
     }),
     createHtmlPlugin({
@@ -95,6 +100,7 @@ const viteConfig = {
           color: appConfig.themeColor,
           url: appConfig.frontendUrl,
           apiUrl: appConfig.backendUrl,
+          csp,
         },
       },
     }),
@@ -111,6 +117,7 @@ const viteConfig = {
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {
+    dedupe: ['yjs'],
     alias: {
       '#json': path.resolve(__dirname, '../json'),
       '~': path.resolve(__dirname, './src'),
@@ -190,8 +197,7 @@ if (appConfig.mode === 'development' && !isStorybook) {
       merge: { target: 'common', sources: ['app'] },
       verbose: false,
     }),
-    i18nextHMRPlugin({ localesDir: '../locales' }),
-    openApiWatch(),
+    sdkWatch(),
     reactScan({
       enable: false,
       scanOptions: {

@@ -112,13 +112,13 @@ export interface AttachmentBlob {
   uploadStatus: UploadStatus;
 
   /** Upload retry count (source='upload' only) */
-  syncAttempts: number;
+  syncAttempts?: number;
 
-  /** Next retry timestamp for exponential backoff */
-  nextRetryAt: Date | null;
+  /** Next retry timestamp for exponential backoff (source='upload' only) */
+  nextRetryAt?: Date | null;
 
-  /** Last error message */
-  lastError: string | null;
+  /** Last error message (source='upload' only) */
+  lastError?: string | null;
 
   /** When blob was stored */
   storedAt: Date;
@@ -169,6 +169,12 @@ class AttachmentsDatabase extends Dexie {
       blobs:
         '&id, attachmentId, variant, organizationId, source, uploadStatus, contentType, [organizationId+source], [organizationId+uploadStatus], [attachmentId+variant]',
       downloadQueue: '&id, organizationId, status, priority, [organizationId+status]',
+    });
+
+    // v2: Remove unused indexes (variant, source, contentType, [attachmentId+variant], priority, status)
+    this.version(2).stores({
+      blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
+      downloadQueue: '&id, organizationId, [organizationId+status]',
     });
   }
 }

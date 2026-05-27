@@ -42,9 +42,7 @@ export const FloatingNavButton = ({
       variant="secondary"
       onClick={onClick}
       className={cn(
-        `fixed z-105 w-14 h-14 flex items-center shadow-xl bg-secondary hover:bg-secondary justify-center rounded-full bottom-4 
-        transition-all duration-300 ease-in-out transform opacity-100 active:scale-95
-        data-[direction=left]:left-4 data-[direction=right]:right-4`,
+        'fixed bottom-4 z-105 flex h-14 w-14 transform items-center justify-center rounded-full bg-secondary opacity-100 shadow-xl transition-all duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
         className,
       )}
       aria-label={ariaLabel ?? 'Navigate'}

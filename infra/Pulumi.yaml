@@ -1,0 +1,8 @@
+name: infra
+runtime:
+  name: nodejs
+  options:
+    typescript: false
+    nodeargs: "--import tsx"
+main: index.ts
+description: Scaleway infrastructure managed with Pulumi

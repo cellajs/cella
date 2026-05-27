@@ -1,45 +1,29 @@
-import type { PGlite } from '@electric-sql/pglite';
 import type { DrizzleConfig } from 'drizzle-orm';
-
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import type { PgAsyncDatabase } from 'drizzle-orm/pg-core';
-import { type PgliteDatabase, drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
-
-import { appConfig } from 'shared';
-import * as schema from '#/db/schema';
 import { env } from '../env';
 
-export type DBSchema = typeof schema;
-
 export const dbConfig = {
-  logger: appConfig.debug,
-  casing: 'snake_case',
-} satisfies DrizzleConfig<DBSchema>;
+  logger: !!env.DEBUG,
+} satisfies DrizzleConfig;
 
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-export type PgDB = NodePgDatabase<DBSchema> & { $client: NodePgClient };
-export type LiteDB = PgliteDatabase<DBSchema> & { $client: PGlite };
+export type PgDB = NodePgDatabase & { $client: NodePgClient };
+export type DB = PgDB;
 
-// biome-ignore lint/suspicious/noExplicitAny: Common base type avoids union issues with .returning() and .execute()
-export type DB = PgAsyncDatabase<any, DBSchema> & { $client: PGlite | NodePgClient };
-
-type TxOf<D extends { transaction: (...args: any[]) => any }> = Parameters<Parameters<D['transaction']>[0]>[0];
+type TxOf<D extends { transaction: (...args: never[]) => unknown }> = Parameters<Parameters<D['transaction']>[0]>[0];
 
 export type Tx = TxOf<DB>;
 export type DbOrTx = DB | Tx;
 
-const createPgConnection = (connectionString: string): PgDB =>
-  pgDrizzle({
-    connection: { connectionString, connectionTimeoutMillis: 10_000 },
-    schema,
-    ...dbConfig,
-  });
+// Scaleway private DB endpoints use self-signed certificates.
+// pg v8+ treats sslmode=require as verify-full, so we must explicitly
+// disable certificate verification when connecting over a private network.
+const sslConfig = env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined;
 
-const createPgliteConnection = (): LiteDB =>
-  pgliteDrizzle({
-    connection: { dataDir: './.db' },
-    schema,
+const createPgConnection = (connectionString: string, max: number): PgDB =>
+  pgDrizzle({
+    connection: { connectionString, connectionTimeoutMillis: 10_000, max, ssl: sslConfig },
     ...dbConfig,
   });
 
@@ -48,14 +32,10 @@ const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
     return { db: {} as unknown as DB };
   }
 
-  if (env.DEV_MODE === 'basic') {
-    return { db: createPgliteConnection() };
-  }
-
   return {
-    db: createPgConnection(env.DATABASE_URL),
-    migrationDb: createPgConnection(env.DATABASE_ADMIN_URL),
-    adminDb: createPgConnection(env.DATABASE_ADMIN_URL),
+    db: createPgConnection(env.DATABASE_URL, env.DATABASE_POOL_MAX),
+    migrationDb: createPgConnection(env.DATABASE_ADMIN_URL, 5),
+    adminDb: createPgConnection(env.DATABASE_ADMIN_URL, 5),
   };
 };
 
@@ -64,3 +44,6 @@ const connections = initConnections();
 export const baseDb: DB = connections.db;
 export const migrationDb: PgDB | undefined = connections.migrationDb;
 export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;
+
+/** Admin connection for seed scripts */
+export const seedDb: DB = (connections.adminDb ?? connections.db) as DB;

@@ -6,7 +6,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export const MfaSwitch = () => {
   const { t } = useTranslation();
@@ -29,8 +29,8 @@ export const MfaSwitch = () => {
       id: 'mfa-confirmation',
       triggerRef,
       className: 'max-w-xl',
-      title: t(`common:${action}_resource`, { resource: t('common:mfa_short') }),
-      description: t(`common:mfa_${action}_confirmation.text`),
+      title: t(`c:${action}_resource`, { resource: t('c:mfa_short') }),
+      description: t(`c:mfa_${action}_confirmation.text`),
     });
   };
 
@@ -45,15 +45,15 @@ export const MfaSwitch = () => {
           onCheckedChange={handleToggleMfa}
         />
         {user.mfaRequired && (
-          <p className="flex gap-2 items-center">
+          <p className="flex items-center gap-2">
             <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
-            <span className="text-sm text-muted-foreground font-light">{t('common:mfa_enabled.text')}</span>
+            <span className="text-muted-foreground text-sm">{t('c:mfa_enabled.text')}</span>
           </p>
         )}
         {(!hasPasskey || !hasTotp) && (
-          <p className="flex gap-2 items-center">
+          <p className="flex items-center gap-2">
             <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
-            <span className="text-sm text-muted-foreground font-light">{t('common:mfa_disabled.text')}</span>
+            <span className="text-muted-foreground text-sm">{t('c:mfa_disabled.text')}</span>
           </p>
         )}
       </div>

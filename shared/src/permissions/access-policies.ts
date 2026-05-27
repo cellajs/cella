@@ -1,5 +1,5 @@
-import { appConfig } from '../../app-config';
-import { getContextRoles } from '../../entity-guards';
+import { appConfig } from '../config-builder/app-config';
+import { getContextRoles } from '../entity-guards';
 import type { ContextEntityType, EntityRole, EntityType, ProductEntityType } from '../../types';
 import type {
   AccessPolicies,

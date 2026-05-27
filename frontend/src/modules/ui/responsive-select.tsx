@@ -71,7 +71,7 @@ export function ResponsiveSelect({
                   type="button"
                   className={cn(
                     'flex items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
-                    option.value === value ? 'bg-accent text-accent-foreground font-medium' : 'hover:bg-accent/50',
+                    option.value === value ? 'bg-accent font-medium text-accent-foreground' : 'hover:bg-accent/50',
                   )}
                   onClick={() => {
                     onChange(option.value);

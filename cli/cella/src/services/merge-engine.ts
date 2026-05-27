@@ -30,6 +30,7 @@ import {
   createWorktree,
   ensureRemote,
   fetch,
+  fetchSha,
   fileExistsAtRef,
   fileExistsInWorktree,
   getCommitInfo,
@@ -266,7 +267,6 @@ async function applyDirectMerge(
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       }
       resolved++;
-      continue;
     }
   }
 
@@ -602,6 +602,20 @@ export async function runMergeEngine(
     onProgress?.(`fetching upstream (${remoteName})...`);
     await fetch(forkPath, remoteName);
 
+    // When pinned, also fetch the exact SHA so it's guaranteed reachable even
+    // if it predates a shallow branch fetch, then verify the ref resolves to it.
+    const pinnedSha = config.settings.upstreamPinnedSha;
+    if (pinnedSha) {
+      await fetchSha(forkPath, remoteName, pinnedSha);
+      const resolved = await getCommitInfo(forkPath, upstreamRef);
+      if (resolved.hash !== pinnedSha) {
+        throw new Error(
+          `upstreamPinnedSha mismatch: config pins ${pinnedSha} but ref resolves to ${resolved.hash}. ` +
+            'Bump upstreamPinnedSha in cella.config.ts via PR after reviewing upstream commits.',
+        );
+      }
+    }
+
     // Get GitHub base URLs for commit links
     const upstreamGitHubUrl = getGitHubBaseUrl(config.settings.upstreamUrl);
     const forkOriginUrl = await getRemoteUrl(forkPath, 'origin');
@@ -672,80 +686,79 @@ export async function runMergeEngine(
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,
       };
-    } else {
-      // ANALYZE MODE: Use worktree to preview changes without affecting fork
+    }
+    // ANALYZE MODE: Use worktree to preview changes without affecting fork
 
-      // Create worktree in temp directory (invisible to VSCode)
-      onProgress?.(`creating worktree in temp directory...`);
-      await createWorktree(forkPath, worktreePath, 'HEAD');
-      onStep?.('worktree created', worktreePath);
+    // Create worktree in temp directory (invisible to VSCode)
+    onProgress?.('creating worktree in temp directory...');
+    await createWorktree(forkPath, worktreePath, 'HEAD');
+    onStep?.('worktree created', worktreePath);
 
-      // Perform merge in worktree (always real merge, never --squash, for correct 3-way)
-      onProgress?.('performing merge in worktree...');
-      await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
-      onStep?.('merge complete', 'upstream merged into worktree');
+    // Perform merge in worktree (always real merge, never --squash, for correct 3-way)
+    onProgress?.('performing merge in worktree...');
+    await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
+    onStep?.('merge complete', 'upstream merged into worktree');
 
-      // Analyze all files
-      onProgress?.('analyzing files...');
-      const analyzedFiles = await analyzeFiles(worktreePath, forkPath, upstreamRef, mergeBase, config, onProgress);
+    // Analyze all files
+    onProgress?.('analyzing files...');
+    const analyzedFiles = await analyzeFiles(worktreePath, forkPath, upstreamRef, mergeBase, config, onProgress);
 
-      // Enrich files with change dates and commit hashes (cached lookup for non-identical files)
-      const forkInfo = await getFileChangeInfo(forkPath, mergeBase, 'HEAD');
-      const upstreamInfo = await getFileChangeInfo(forkPath, mergeBase, upstreamRef);
-      for (const file of analyzedFiles) {
-        if (file.status !== 'identical') {
-          // Use fork info for ahead/drifted, upstream info for behind, most recent for diverged
-          if (file.status === 'ahead' || file.status === 'drifted') {
-            const info = forkInfo.get(file.path);
-            if (info) {
-              file.changedAt = info.date;
-              file.changedCommit = info.hash;
-            }
-          } else if (file.status === 'behind') {
-            const info = upstreamInfo.get(file.path);
-            if (info) {
-              file.changedAt = info.date;
-              file.changedCommit = info.hash;
-            }
-          } else if (file.status === 'diverged' || file.status === 'pinned') {
-            // For diverged/pinned: store both fork and upstream info
-            const forkFileInfo = forkInfo.get(file.path);
-            const upstreamFileInfo = upstreamInfo.get(file.path);
-            if (forkFileInfo) {
-              file.changedAt = forkFileInfo.date;
-              file.changedCommit = forkFileInfo.hash;
-            }
-            if (upstreamFileInfo) {
-              file.upstreamChangedAt = upstreamFileInfo.date;
-              file.upstreamCommit = upstreamFileInfo.hash;
-            }
+    // Enrich files with change dates and commit hashes (cached lookup for non-identical files)
+    const forkInfo = await getFileChangeInfo(forkPath, mergeBase, 'HEAD');
+    const upstreamInfo = await getFileChangeInfo(forkPath, mergeBase, upstreamRef);
+    for (const file of analyzedFiles) {
+      if (file.status !== 'identical') {
+        // Use fork info for ahead/drifted, upstream info for behind, most recent for diverged
+        if (file.status === 'ahead' || file.status === 'drifted') {
+          const info = forkInfo.get(file.path);
+          if (info) {
+            file.changedAt = info.date;
+            file.changedCommit = info.hash;
+          }
+        } else if (file.status === 'behind') {
+          const info = upstreamInfo.get(file.path);
+          if (info) {
+            file.changedAt = info.date;
+            file.changedCommit = info.hash;
+          }
+        } else if (file.status === 'diverged' || file.status === 'pinned') {
+          // For diverged/pinned: store both fork and upstream info
+          const forkFileInfo = forkInfo.get(file.path);
+          const upstreamFileInfo = upstreamInfo.get(file.path);
+          if (forkFileInfo) {
+            file.changedAt = forkFileInfo.date;
+            file.changedCommit = forkFileInfo.hash;
+          }
+          if (upstreamFileInfo) {
+            file.upstreamChangedAt = upstreamFileInfo.date;
+            file.upstreamCommit = upstreamFileInfo.hash;
           }
         }
       }
-
-      onStep?.('analysis complete', `${analyzedFiles.length} files analyzed, dry run — no changes applied`);
-
-      const summary = calculateSummary(analyzedFiles);
-
-      // Cleanup worktree
-      onProgress?.('cleaning up worktree...');
-      await cleanupWorktree(forkPath, worktreePath);
-
-      // For analyze mode, count diverged files as potential conflicts
-      const potentialConflicts = analyzedFiles.filter((f) => f.status === 'diverged').map((f) => f.path);
-
-      return {
-        success: true,
-        files: analyzedFiles,
-        summary,
-        worktreePath,
-        conflicts: potentialConflicts,
-        upstreamBranch: config.settings.upstreamBranch,
-        upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
-        forkGitHubUrl: forkGitHubUrl ?? undefined,
-        upstreamCommit,
-      };
     }
+
+    onStep?.('analysis complete', `${analyzedFiles.length} files analyzed, dry run — no changes applied`);
+
+    const summary = calculateSummary(analyzedFiles);
+
+    // Cleanup worktree
+    onProgress?.('cleaning up worktree...');
+    await cleanupWorktree(forkPath, worktreePath);
+
+    // For analyze mode, count diverged files as potential conflicts
+    const potentialConflicts = analyzedFiles.filter((f) => f.status === 'diverged').map((f) => f.path);
+
+    return {
+      success: true,
+      files: analyzedFiles,
+      summary,
+      worktreePath,
+      conflicts: potentialConflicts,
+      upstreamBranch: config.settings.upstreamBranch,
+      upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
+      forkGitHubUrl: forkGitHubUrl ?? undefined,
+      upstreamCommit,
+    };
   } catch (error) {
     // Clean up on error
     await cleanupWorktree(forkPath, worktreePath);

@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { schemaTags } from '#/core/openapi-helpers';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
 import { mockUserBase } from '../../mocks/mock-entity-base';
 
@@ -19,4 +20,5 @@ export const userBaseSchema = contextEntityBaseSchema
   .openapi('UserBase', {
     description: 'Base user schema with essential fields for identification and display.',
     example: mockUserBase(),
+    'x-tags': schemaTags('base', 'users', 'cella'),
   });

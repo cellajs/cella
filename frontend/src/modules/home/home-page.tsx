@@ -2,12 +2,12 @@ import { Link } from '@tanstack/react-router';
 import { ShieldAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AlertBanner } from '~/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -23,14 +23,12 @@ export function HomePage() {
         className="pt-4 md:pt-6"
       />
       {showMfaAlert && (
-        <AlertWrap id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
+        <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
           <p>{t('common:require_mfa.text')}</p>
-          <Button variant="plain" size="sm" className="mt-2" asChild>
-            <Link to="/account" hash="authentication">
-              {t('common:setup_resource', { resource: t('common:authentication').toLowerCase() })}
-            </Link>
+          <Button size="sm" className="mt-2" render={<Link to="/account" hash="authentication" />}>
+            {t('common:setup_resource', { resource: t('common:authentication').toLowerCase() })}
           </Button>
-        </AlertWrap>
+        </AlertBanner>
       )}
       <div className="mt-6 mb-24 hidden has-[div[role='grid']]:block">
         <Card className="pb-0">

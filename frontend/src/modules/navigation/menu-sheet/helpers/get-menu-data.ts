@@ -1,9 +1,10 @@
+// biome-ignore lint/style/noRestrictedImports: imperative cache prefetch helper — used by router loader path; not eligible for a hook.
+import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { getMyMemberships } from '~/api.gen';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { meKeys } from '~/modules/me/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 import { buildMenuFromCache } from './build-menu-from-cache';
 
 /**
@@ -29,6 +30,7 @@ export async function getMenuData() {
       const factory = getContextEntityTypeToListQueries()[entityType];
       if (!factory) return;
       const queryOpts = factory({ relatableUserId: userId });
+      // biome-ignore lint/suspicious/noExplicitAny: heterogeneous infinite query options across entity types.
       await queryClient.ensureInfiniteQueryData({ ...queryOpts, revalidateIfStale: true } as any);
     }),
   );

@@ -1,7 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
-import type { Env } from '#/lib/context';
-import { AppError, appErrorHandler } from '#/lib/error';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
+import { appErrorHandler } from '#/lib/error';
 import { getHealthResponse } from '#/lib/health';
 import middlewares from '#/middlewares/app';
 
@@ -14,20 +15,11 @@ baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.
 baseApp.route('/', middlewares);
 
 /**
- * Health check endpoint with two depth levels:
- *
- * - `/health?depth=shallow` — Lightweight connectivity probe (no DB, no JSON).
- *   Returns 204. Used by frontend `checkConnectivity()` to detect "WiFi connected
- *   but no internet" scenarios. CDN-cacheable for 5s to absorb probe storms when
- *   many clients reconnect simultaneously.
- *
- * - `/health` or `/health?depth=full` — Full diagnostics (DB check, memory, uptime).
- *   Returns JSON with 200 (healthy) or 503 (unhealthy). Used by monitoring tools,
- *   Kubernetes readiness probes, and stream-store circuit breaker recovery.
- *   CDN-cacheable for 10s with 5s stale-while-revalidate.
+ * Health check: `/health` returns 204 (shallow probe for LBs/frontend).
+ * `/health?depth=full` returns JSON diagnostics with 200 or 503.
  */
 baseApp.get('/health', async (c) => {
-  const depth = c.req.query('depth') ?? 'full';
+  const depth = c.req.query('depth') ?? 'shallow';
 
   if (depth === 'shallow') {
     c.header('Cache-Control', 'public, max-age=5');

@@ -2,13 +2,14 @@ import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import type { ReactElement } from 'react';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { Mode } from '~/store/ui';
+import type { Mode } from '~/modules/ui/ui-store';
 
 dayjs.extend(localizedFormat);
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 type Row = Record<string, any>;
 type Column = ColumnOrColumnGroup<Row>;
+
 /**
  * Exports table data to a CSV file.
  *
@@ -21,6 +22,7 @@ type Column = ColumnOrColumnGroup<Row>;
  *
  * @returns A promise that resolves when CSV is downloaded.
  */
+// TODO remove this in favor of a backend solution
 export async function exportToCsv<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],
   rows: R[],

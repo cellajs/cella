@@ -1,27 +1,31 @@
 /**
- * Entity cache service - simple key-value store with TTL.
+ * Entity cache service - entity-keyed store with token-based access.
  *
- * Cache token (nanoid) is the key, entity data is the value.
- * Empty value (null) means reserved but not enriched yet.
- * Index maps entityType:entityId → token for delete lookups.
+ * Forward-only design: cache is keyed by entityType:entityId (single entry per entity).
+ * Tokens are a lightweight index for resolving client requests to the entity key.
+ * Old tokens still resolve to the same entity, so stale clients get cache hits
+ * instead of unnecessary DB round-trips.
  *
  * Flow:
- * 1. CDC reserves token with null value
- * 2. First user fetch enriches: handler sets actual data
- * 3. Subsequent users get cache hit
+ * 1. CDC reserves token → maps token to entity key, invalidates stale data
+ * 2. First client fetch (any valid token) → enriches cache with DB data
+ * 3. Subsequent clients (any token, old or new) → cache hit
  */
 
-import { entityCacheMetrics } from '#/lib/cache-metrics';
 import { TTLCache } from '#/lib/ttl-cache';
-import { coalesce, isInFlight } from '#/sync/request-coalescing';
+import { logEvent } from '#/utils/logger';
+import { coalesce, isInFlight } from '#/utils/request-coalescing';
+import { entityCacheMetrics } from './metrics';
 
 /** Cache TTL: 10 minutes */
 const cacheTtl = 10 * 60 * 1000;
 
 /** Cache configuration */
 const cacheConfig = {
-  /** Max entries in cache */
+  /** Max entries in entity cache */
   maxSize: 5000,
+  /** Max entries in token index (tokens per entity accumulate between edits) */
+  tokenIndexMaxSize: 10000,
   /** Default TTL: 10 minutes */
   defaultTtl: cacheTtl,
 };
@@ -29,83 +33,96 @@ const cacheConfig = {
 /** Entity data type - null means reserved but not enriched */
 type CacheValue = Record<string, unknown> | null;
 
-/** Main cache: token → entity data (or null if reserved) */
+/** Main cache: entityKey → entity data (or null if reserved) */
 const cache = new TTLCache<CacheValue>({
   maxSize: cacheConfig.maxSize,
   defaultTtl: cacheConfig.defaultTtl,
   onDispose: (key, _value, reason) => {
     if (reason === 'stale' || reason === 'evict') {
-      console.debug('[cache] DISPOSE', { key: key.slice(0, 8), reason });
-      // Also remove from index when cache entry is disposed
-      for (const [indexKey, token] of entityIndex.entries()) {
-        if (token === key) {
-          entityIndex.delete(indexKey);
-          break;
-        }
-      }
+      logEvent(null, 'trace', 'Entity cache disposed', { key, reason });
     }
   },
 });
 
-/** Index: entityType:entityId → token (for delete lookups) */
-const entityIndex = new Map<string, string>();
+/** Token index: token → entityKey (forward-only: old tokens still resolve) */
+const tokenIndex = new TTLCache<string>({
+  maxSize: cacheConfig.tokenIndexMaxSize,
+  defaultTtl: cacheConfig.defaultTtl,
+});
 
-/** Build index key */
-function indexKey(entityType: string, entityId: string): string {
+/** Batch token index: batchToken → entityKey[] */
+const batchTokenIndex = new TTLCache<string[]>({
+  maxSize: 1000,
+  defaultTtl: cacheConfig.defaultTtl,
+});
+
+/** Build entity key */
+function entityKey(entityType: string, entityId: string): string {
   return `${entityType}:${entityId}`;
 }
 
 /**
  * Entity cache service.
- * Simple token → data store with reserve/set/get semantics.
+ * Entity-keyed store with token resolution. Forward-only: old tokens
+ * resolve to the same entity key, avoiding duplicate cache entries.
  */
 export const entityCache = {
   /**
    * Reserve a cache slot for an entity.
-   * Called by CDC when entity changes. Sets null value with index.
+   * Called by CDC when entity changes. Maps token to entity key
+   * and invalidates stale cached data so next fetch goes to DB.
+   * Old tokens for the same entity remain valid (forward-only).
    *
-   * @param token - Cache token (nanoid)
-   * @param entityType - Entity type for index
-   * @param entityId - Entity ID for index
-   * @param ttlMs - Optional TTL in ms (defaults to cacheTokenTtl)
+   * @param token - Cache token (nanoid from CDC)
+   * @param entityType - Entity type for key
+   * @param entityId - Entity ID for key
+   * @param ttlMs - Optional TTL in ms (defaults to cacheTtl)
    */
   reserve(token: string, entityType: string, entityId: string, ttlMs?: number): void {
-    const key = indexKey(entityType, entityId);
+    const key = entityKey(entityType, entityId);
+    const ttl = ttlMs ?? cacheConfig.defaultTtl;
 
-    // Remove old token from cache if exists
-    const oldToken = entityIndex.get(key);
-    if (oldToken && oldToken !== token) {
-      cache.delete(oldToken);
-    }
+    // Map token to entity key (forward-only: old tokens remain)
+    tokenIndex.set(token, key, ttl);
 
-    // Set new token with null value (reserved, not enriched)
-    cache.set(token, null, ttlMs ?? cacheConfig.defaultTtl);
-    entityIndex.set(key, token);
+    // Invalidate stale data — set null (reserved, not enriched)
+    cache.set(key, null, ttl);
+  },
+
+  /**
+   * Resolve a token to its entity key.
+   * Works for both current and old tokens (forward-only).
+   *
+   * @param token - Cache token
+   * @returns Entity key or undefined if token unknown/expired
+   */
+  resolveToken(token: string): string | undefined {
+    return tokenIndex.get(token);
   },
 
   /**
    * Set enriched entity data in cache.
    * Called by handler after fetching and enriching from DB.
    *
-   * @param token - Cache token
+   * @param key - Entity key (entityType:entityId)
    * @param data - Enriched entity data
    * @param ttlMs - Optional TTL in ms
    */
-  set(token: string, data: Record<string, unknown>, ttlMs?: number): void {
-    cache.set(token, data, ttlMs ?? cacheConfig.defaultTtl);
+  set(key: string, data: Record<string, unknown>, ttlMs?: number): void {
+    cache.set(key, data, ttlMs ?? cacheConfig.defaultTtl);
   },
 
   /**
-   * Get entity data from cache.
-   * Returns undefined if token not found.
+   * Get entity data from cache by entity key.
+   * Returns undefined if not found.
    * Returns null if reserved but not enriched.
    * Returns data if enriched.
    *
-   * @param token - Cache token
+   * @param key - Entity key (entityType:entityId)
    * @returns Entity data, null (reserved), or undefined (not found)
    */
-  get(token: string): Record<string, unknown> | null | undefined {
-    const data = cache.get(token);
+  get(key: string): Record<string, unknown> | null | undefined {
+    const data = cache.get(key);
 
     if (data === undefined) {
       entityCacheMetrics.recordMiss();
@@ -126,29 +143,28 @@ export const entityCache = {
    * Check if cache entry is enriched (has actual data, not just reserved).
    * Uses presence of 'id' field as enrichment indicator.
    *
-   * @param token - Cache token
+   * @param key - Entity key (entityType:entityId)
    * @returns true if enriched, false if reserved/missing
    */
-  isEnriched(token: string): boolean {
-    const data = cache.get(token);
+  isEnriched(key: string): boolean {
+    const data = cache.get(key);
     return data !== undefined && data !== null && 'id' in data;
   },
 
   /**
    * Invalidate cache entry by entity type and ID.
-   * Uses index to find token, removes both cache entry and index.
+   * Removes entity data from cache. Token index entries expire naturally.
    *
    * @param entityType - Entity type
    * @param entityId - Entity ID
    * @returns true if entry was found and removed
    */
   invalidateByEntity(entityType: string, entityId: string): boolean {
-    const key = indexKey(entityType, entityId);
-    const token = entityIndex.get(key);
+    const key = entityKey(entityType, entityId);
+    const existed = cache.has(key);
 
-    if (token) {
-      cache.delete(token);
-      entityIndex.delete(key);
+    if (existed) {
+      cache.delete(key);
       entityCacheMetrics.recordInvalidation(1);
       return true;
     }
@@ -157,46 +173,53 @@ export const entityCache = {
   },
 
   /**
-   * Get token for an entity if cached.
-   *
-   * @param entityType - Entity type
-   * @param entityId - Entity ID
-   * @returns Token if found, undefined otherwise
+   * Reserve a batch token mapping to N entity keys.
+   * Each individual entity should also be reserved via reserve().
    */
-  getToken(entityType: string, entityId: string): string | undefined {
-    return entityIndex.get(indexKey(entityType, entityId));
+  reserveBatch(batchToken: string, entityKeys: string[], ttlMs?: number): void {
+    batchTokenIndex.set(batchToken, entityKeys, ttlMs ?? cacheConfig.defaultTtl);
   },
 
   /**
-   * Clear all cache entries and index.
+   * Resolve a batch token to its entity keys.
+   * Returns undefined if token unknown/expired.
+   */
+  resolveBatchToken(batchToken: string): string[] | undefined {
+    return batchTokenIndex.get(batchToken);
+  },
+
+  /**
+   * Clear all cache entries and token index.
    */
   clear(): void {
     cache.clear();
-    entityIndex.clear();
+    tokenIndex.clear();
+    batchTokenIndex.clear();
   },
 
   /**
    * Fetch with coalescing: prevents thundering herd on cache miss.
-   * Concurrent requests for same token share a single fetch.
+   * Coalesces by entity key, so different tokens for the same entity
+   * share a single in-flight fetch.
    *
-   * @param token - Cache token
+   * @param key - Entity key (entityType:entityId)
    * @param fetcher - Async function to fetch and enrich data
    * @returns The fetched/cached data or null
    */
   async fetchWithCoalescing(
-    token: string,
+    key: string,
     fetcher: () => Promise<Record<string, unknown> | null>,
   ): Promise<Record<string, unknown> | null> {
     // Check cache first
-    const cached = this.get(token);
+    const cached = this.get(key);
     if (cached !== undefined && cached !== null) {
       return cached;
     }
 
     // Track if this was coalesced
-    const wasInFlight = isInFlight(token);
+    const wasInFlight = isInFlight(key);
 
-    const data = await coalesce(token, fetcher);
+    const data = await coalesce(key, fetcher);
 
     if (wasInFlight) {
       entityCacheMetrics.recordCoalesced();
@@ -204,7 +227,7 @@ export const entityCache = {
 
     // Cache the result if fetched successfully
     if (data) {
-      this.set(token, data);
+      this.set(key, data);
     }
 
     return data;
@@ -215,14 +238,14 @@ export const entityCache = {
    */
   stats(): {
     cacheSize: number;
-    indexSize: number;
+    tokenIndexSize: number;
     capacity: number;
     utilization: number;
   } {
     const cacheStats = cache.stats;
     return {
       cacheSize: cacheStats.size,
-      indexSize: entityIndex.size,
+      tokenIndexSize: tokenIndex.size,
       capacity: cacheStats.capacity,
       utilization: cacheStats.utilization,
     };

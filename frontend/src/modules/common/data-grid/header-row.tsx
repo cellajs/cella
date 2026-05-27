@@ -1,16 +1,12 @@
-import { memo, useState } from 'react';
-import type { DataGridProps } from './data-grid';
+import { memo } from 'react';
 import { HeaderCell } from './header-cell';
-import { rowSelectedClassname } from './style/row';
-import type { CalculatedColumn, Maybe, Position, ResizedWidth } from './types';
+import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import { cn, getColSpan } from './utils/grid-utils';
 
-type SharedDataGridProps<R, SR, K extends React.Key> = Pick<
-  DataGridProps<R, SR, K>,
-  'sortColumns' | 'onSortColumnsChange' | 'onColumnsReorder'
->;
-
-export interface HeaderRowProps<R, SR, K extends React.Key> extends SharedDataGridProps<R, SR, K> {
+export interface HeaderRowProps<R, SR> {
+  sortColumns?: Maybe<readonly SortColumn[]>;
+  onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
+  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   rowIdx: number;
   columns: readonly CalculatedColumn<R, SR>[];
   onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
@@ -19,12 +15,13 @@ export interface HeaderRowProps<R, SR, K extends React.Key> extends SharedDataGr
   lastFrozenColumnIndex: number;
   selectedCellIdx: number | undefined;
   shouldFocusGrid: boolean;
+  isCellSelectionEnabled: boolean;
   headerRowClass: Maybe<string>;
 }
 
-export const headerRowClassname = 'rdg-header-row';
+export const headerRowClassname = 'rdg-header-row contents font-semibold text-foreground/70';
 
-function HeaderRow<R, SR, K extends React.Key>({
+function HeaderRow<R, SR>({
   headerRowClass,
   rowIdx,
   columns,
@@ -37,10 +34,9 @@ function HeaderRow<R, SR, K extends React.Key>({
   selectedCellIdx,
   selectCell,
   shouldFocusGrid,
-}: HeaderRowProps<R, SR, K>) {
-  const [draggedColumnKey, setDraggedColumnKey] = useState<string>();
-
-  const cells = [];
+  isCellSelectionEnabled,
+}: HeaderRowProps<R, SR>) {
+  const cells: React.ReactNode[] = [];
   for (let index = 0; index < columns.length; index++) {
     const column = columns[index];
     const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'HEADER' });
@@ -55,6 +51,7 @@ function HeaderRow<R, SR, K extends React.Key>({
         colSpan={colSpan}
         rowIdx={rowIdx}
         isCellSelected={selectedCellIdx === column.idx}
+        isCellSelectionEnabled={isCellSelectionEnabled}
         onColumnResize={onColumnResize}
         onColumnResizeEnd={onColumnResizeEnd}
         onColumnsReorder={onColumnsReorder}
@@ -62,8 +59,6 @@ function HeaderRow<R, SR, K extends React.Key>({
         sortColumns={sortColumns}
         selectCell={selectCell}
         shouldFocusGrid={shouldFocusGrid && index === 0}
-        draggedColumnKey={draggedColumnKey}
-        setDraggedColumnKey={setDraggedColumnKey}
       />,
     );
   }
@@ -75,7 +70,7 @@ function HeaderRow<R, SR, K extends React.Key>({
       className={cn(
         headerRowClassname,
         {
-          [rowSelectedClassname]: selectedCellIdx === -1,
+          'rdg-row-selected': selectedCellIdx === -1,
         },
         headerRowClass,
       )}
@@ -85,7 +80,6 @@ function HeaderRow<R, SR, K extends React.Key>({
   );
 }
 
-const HeaderRowMemo = memo(HeaderRow) as <R, SR, K extends React.Key>(
-  props: HeaderRowProps<R, SR, K>,
-) => React.JSX.Element;
+const HeaderRowMemo = memo(HeaderRow) as <R, SR>(props: HeaderRowProps<R, SR>) => React.JSX.Element;
+
 export { HeaderRowMemo as HeaderRow };

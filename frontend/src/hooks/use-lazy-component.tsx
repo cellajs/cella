@@ -1,4 +1,4 @@
-import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useState } from 'react';
+import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useRef, useState } from 'react';
 
 /**
  * Lazily loads a component after a specified delay.
@@ -13,17 +13,17 @@ export function useLazyComponent<T extends ComponentType<any>>(
   delay: number,
 ): LazyExoticComponent<T> | null {
   const [Component, setComponent] = useState<LazyExoticComponent<T> | null>(null);
+  const importRef = useRef(importFunc);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      importFunc().then((module) => {
-        const LazyComponent = lazy(() => Promise.resolve(module));
-        setComponent(LazyComponent);
+      importRef.current().then((module) => {
+        setComponent(lazy(() => Promise.resolve(module)));
       });
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [importFunc, delay]);
+  }, [delay]);
 
   return Component;
 }

@@ -84,7 +84,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 
 ### Tips
 
-- Run `pnpm cella --sync-service analyze` first to preview changes without applying
+- Run `pnpm cella --service analyze` first to preview changes without applying
 - Use `pinned` for files you fully control (modify, keep, or delete)
 - Use `ignored` for app-specific docs, assets, or config you fully own
 
@@ -165,7 +165,7 @@ For a quick non-interactive push, use:
 pnpm cella --contribute
 ```
 
-This runs a lightweight analysis, pushes all drifted files to `contrib/<fork-name>`, and updates the `upstream/pinned` branch — no prompts, no menu.
+This runs a lightweight analysis and pushes all drifted files to `contrib/<fork-name>` — no prompts, no menu.
 
 ### Upstream side
 

@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
+import { schemaTags } from '#/core/openapi-helpers';
 import { usersTable } from '#/db/schema/users';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
@@ -7,9 +8,10 @@ import { languageSchema, paginationQuerySchema, validCDNUrlSchema, validNameSche
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockUserResponse } from '../../../mocks/mock-user';
 
-export const enabledOAuthProvidersEnum = z.enum(
-  appConfig.enabledOAuthProviders as [EnabledOAuthProvider, ...EnabledOAuthProvider[]],
-);
+export const enabledOAuthProvidersEnum = z.enum([...appConfig.enabledOAuthProviders] as [
+  EnabledOAuthProvider,
+  ...EnabledOAuthProvider[],
+]);
 
 export const userFlagsSchema = z.object(
   Object.keys(appConfig.defaultUserFlags).reduce(
@@ -27,7 +29,7 @@ export const userSchema = createSelectSchema(usersTable, {
   userFlags: userFlagsSchema,
 })
   .extend({
-    // Activity timestamps from user_activity table (populated via subqueries in userSelect)
+    // Timestamps from user_counters table (populated via subqueries in userSelect)
     lastSeenAt: z.string().nullable(),
     lastStartedAt: z.string().nullable(),
     lastSignInAt: z.string().nullable(),
@@ -35,6 +37,7 @@ export const userSchema = createSelectSchema(usersTable, {
   .openapi('User', {
     description: 'A user with profile data and activity timestamps.',
     example: mockUserResponse(),
+    'x-tags': schemaTags('data', 'users', 'cella'),
   });
 
 /** Public user schema for cross-tenant and member-facing endpoints. Based on userBaseSchema + lastSeenAt. */

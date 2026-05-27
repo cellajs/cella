@@ -7,7 +7,6 @@ import * as React from 'react';
  * the user types, making it expand or contract according to the `scrollHeight`. The hook exposes the textarea
  * reference to parent components via `useImperativeHandle`.
  *
- * @param ref - Forwarded reference to the textarea element.
  * @param autoResize - Boolean flag indicating whether the auto-resizing behavior should be applied.
  *
  * @returns An object containing the `areaRef` to be used in the parent component.
@@ -31,7 +30,7 @@ export const useAutoResize = (autoResize: boolean) => {
 
     ref?.addEventListener('input', updateAreaHeight);
     return () => ref?.removeEventListener('input', updateAreaHeight);
-  }, []);
+  }, [autoResize]);
 
   return { areaRef };
 };

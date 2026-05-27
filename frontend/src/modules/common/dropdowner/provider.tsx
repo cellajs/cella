@@ -4,7 +4,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 /**
  * Renders dropdowns as drawers on mobile and popovers on desktop.

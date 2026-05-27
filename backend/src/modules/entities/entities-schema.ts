@@ -1,7 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import { validSlugSchema } from '#/schemas';
 
 export const checkSlugBodySchema = z.object({
-  slug: z.string(),
-  entityType: z.enum(['user', ...appConfig.contextEntityTypes]),
+  slug: validSlugSchema,
+  entityType: z.enum(appConfig.contextEntityTypes),
 });

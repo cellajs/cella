@@ -2,9 +2,9 @@ import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { appConfig } from 'shared';
-import { setMiddlewareExtension } from '#/docs/x-middleware';
-import { AppError } from '#/lib/error';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
+import { AppError } from '#/core/error';
+import { setMiddlewareExtension } from '#/core/x-middleware';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
 
@@ -20,7 +20,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+    sendAccountSecurityEmail(ctx, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
       ip,
       route: ctx.req.path,
       timestamp: new Date().toISOString(),
@@ -41,7 +41,7 @@ const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
   ipRestriction(getIp, { allowList }, async (remote) => {
     const ip = remote.addr ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+    sendAccountSecurityEmail(null, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
       ip,
       route: 'ip-restricted',
       timestamp: new Date().toISOString(),

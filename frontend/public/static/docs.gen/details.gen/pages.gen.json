@@ -19,42 +19,39 @@
                 "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["page"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -64,15 +61,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -80,11 +73,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -94,10 +82,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -105,11 +93,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -119,7 +102,7 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
@@ -130,11 +113,19 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
-                  "publicAccess": { "type": "boolean", "required": true },
+                  "renderMode": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["default", "overview", "nodeOnly"]
+                  },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
                   "displayOrder": {
                     "type": "number",
@@ -153,49 +144,47 @@
         "example": {
           "items": [
             {
-              "id": "9xn03u76eo7z71y60a882cwp",
-              "tenantId": "xtanax",
+              "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
               "entityType": "page",
-              "name": "Tersus summa caterva socius.",
-              "description": "[{\"id\":\"45yb0gleyvjbbm5piweg2q4g\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo adhuc virtus vesco audentia.\",\"styles\":{}}],\"children\":[]},{\"id\":\"he0ctrmzc53x7z222ydtq57i\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Alioqui valens vester cavus contego. Volubilis cum vindico audacia perspiciatis supra. Chirographum depraedor rem dolorum magni deleniti. Crustulum amita defendo vitae amicitia coaegresco celo pecco.\",\"styles\":{}}],\"children\":[]},{\"id\":\"mz5oaqf10oe7y51pr5lcu4lm\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Streamlined bottom-line alliance\",\"styles\":{}}],\"children\":[]},{\"id\":\"0l6fxcwzg7pdsllfn51vpq8c\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Spargo acceptus cervus stultus consequuntur conitor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"wtoksrox8rpubibp4ljoerjt\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Custodia thermae clibanus temptatio catena depereo comprehendo excepturi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"g4fy8snmw3q0ts7h7wl6gb11\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vita una brevis constans soleo crapula.\",\"styles\":{}}],\"children\":[]},{\"id\":\"fcpxxlqco70wm7r0g3ve9eiv\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Speciosus atque accusamus caelum cattus placeat bellicus. Patria conspergo temporibus. Cinis asporto demitto sumo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"pxog2ydmwz53d0ojmroq27ld\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Desolo cerno contego doloribus crux tenus et adstringo terra.\",\"styles\":{}}],\"children\":[]},{\"id\":\"53gmh22maakkpjiu759cx3hj\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Uberrime aequitas vicinus porro apud debilito peccatus pauci crepusculum aestivus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"78tk7f643ew8qqff8crqfj8p\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Statua volo apud.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9ivx2zf9hx3mev9yp4k0259g\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adversus amitto demergo itaque placeat ubi alienus solus tandem. Careo arma suspendo celer accusamus. Aiunt tener aestus labore.\\nDegero adfero vix angustus nisi arceo sono defero. Vitae antea corpus conspergo amplus delectatio. Corrumpo alter alter molestiae terra speciosus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "voluptatum vinco venia",
+              "name": "Vesco audentia angustus articulus voco.",
+              "description": "[{\"id\":\"yvjbbm5piweg2q4gqa3vx9cf\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Abduco deduco occaecati cubicularis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ctrmzc53x7z222ydtq57iu31\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vindico audacia perspiciatis supra derideo chirographum. Rem dolorum magni deleniti quisquam crustulum. Defendo vitae amicitia. Celo pecco denuncio cum abbas.\",\"styles\":{}}],\"children\":[]},{\"id\":\"oaqf10oe7y51pr5lcu4lmdeo\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Profit-focused zero trust benchmark\",\"styles\":{}}],\"children\":[]},{\"id\":\"6fxcwzg7pdsllfn51vpq8cnf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Stultus consequuntur conitor a peccatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ksrox8rpubibp4ljoerjtgyu\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Clibanus temptatio catena depereo comprehendo excepturi vallum tot suadeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"y8snmw3q0ts7h7wl6gb11wlo\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Soleo crapula defendo anser debitis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"70lcr6a6hpfcpxxlqco70wm7\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Caelum cattus placeat.\",\"styles\":{}}],\"children\":[]},{\"id\":\"pri9cieri2spxog2ydmwz53d\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Abundans delego ambulo usitas cumque ceno cruciamentum doloribus unus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"253gmh22maakkpjiu759cx3h\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Eveniet praesentium tepesco stillicidium supra aedificium blanditiis nulla. Vulpes uberrime aequitas vicinus porro. Debilito peccatus pauci crepusculum.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "illum amissio statua",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-11-21T04:00:59.122Z",
               "parentId": null,
-              "displayOrder": 31.13,
+              "displayOrder": 96.89,
               "createdAt": "2024-11-21T04:00:59.122Z",
-              "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
-              "modifiedAt": "2024-11-21T04:00:59.122Z",
-              "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-              "seqAt": 130,
+              "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "updatedAt": "2024-11-21T04:00:59.122Z",
+              "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "seq": 70,
               "stx": {
-                "mutationId": "1509ncgtazcd9foprltovdwq",
-                "sourceId": "src_5b2ytr918e6src707l5r518j",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "33d93722-16e3-4bb6-a635-cb683b8d1178",
+                "sourceId": "d1ac532b-4021-4c18-9b70-f192a76f2551",
+                "fieldTimestamps": {}
               }
             },
             {
-              "id": "clxs8vayzrul7vmeyahbgyu0",
-              "tenantId": "1sr6ut",
+              "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
               "entityType": "page",
-              "name": "Conitor suspendo aiunt.",
-              "description": "[{\"id\":\"6tpd77kpi37syiavgc67t5nr\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Acidus advoco ventus sub cogito argentum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"wmvl0e44bpmhsyauxcwuwjsr\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Appello depono ultio explicabo ascit suscipio utpote. Nihil aut concedo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ac8qx1h9s6vzhgvcj0rs3xtu\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Virtual tangible utilisation\",\"styles\":{}}],\"children\":[]},{\"id\":\"co9kzp2r8sr1z8uzj99km4ai\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Alius delibero vicissitudo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"vg8ngqzxmk35ee92ta8rpig1\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tenuis depono terreo exercitationem pel eius ancilla tardus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"vu0uyumluud11ppu88to0zzd\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Versus sufficio provident conforto atqui supellex vado adeo curso.\",\"styles\":{}}],\"children\":[]},{\"id\":\"8ewazjctj7glz1gzaexz6kom\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Comitatus sordeo stips veniam umbra concido. Calcar ver sub eius antepono stabilis similique. Ex abscido dolor cruentus aestivus quisquam abbas.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rlgzp7mi918d0fjixbcaeao0\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Defluo deinde aureus ater ago bellum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"iblw7armq5i2e6x9rosj7i2y\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Commemoro vulariter vicinus decens.\",\"styles\":{}}],\"children\":[]},{\"id\":\"hchtqa0jbzwkudp8d6d8dten\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Accusator avaritia eius cursus. Peccatus ademptio voco bardus dignissimos sordeo. Turbo stultus color venia.\\nId terra vulariter adflicto unde umerus. Vilicus baiulus culpo amiculum unde titulus. Antea cibus deputo paulatim exercitationem censura voco delectatio valeo.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "sum ventito dolorem",
+              "name": "Cogito argentum attonbitus trans.",
+              "description": "[{\"id\":\"37syiavgc67t5nr6k4huj5qv\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Crapula bestia auxilium non sui desino.\",\"styles\":{}}],\"children\":[]},{\"id\":\"syauxcwuwjsrzvzac8qx1h9s\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Aut concedo vel praesentium universe pecus accusator. Amplus antea concedo sumo repellendus deorsum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"hgvcj0rs3xtuk03gxco9kzp2\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Digitized tangible website\",\"styles\":{}}],\"children\":[]},{\"id\":\"8uzj99km4ainrhsjli4rvg8n\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tergo tenax adiuvo voluptates.\",\"styles\":{}}],\"children\":[]},{\"id\":\"5ee92ta8rpig1rxpmc6pv1fv\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tamquam voluptatum vicinus perferendis molestias aliqua.\",\"styles\":{}}],\"children\":[]},{\"id\":\"11ppu88to0zzdvgboowucm8w\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Acsi umquam voluntarius tyrannus quis peccatus ulciscor tunc corrupti.\",\"styles\":{}}],\"children\":[]},{\"id\":\"e2m08ewazjctj7glz1gzaexz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Eius antepono stabilis similique odio ex abscido dolor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"637rlgzp7mi918d0fjixbcae\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Stultus quod centum deprecator defluo deinde aureus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"lw7armq5i2e6x9rosj7i2yn6\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Absens ater commemoro vulariter vicinus decens eos colligo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"gl1y7io4uobwejsz1uuex7e3\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Avaritia eius cursus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"u9ctrdgg4kaumw3zxhnizc7z\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Temperantia antea cibus deputo paulatim exercitationem censura voco delectatio. Derideo confero deputo triduana surgo claudeo acer hic commodo voluptas. Necessitatibus tutamen corrigo suppellex capio copia aufero corrupti canis copiose.\\nCrur somniculosus sum ventito dolorem bestia vobis comptus fugiat. Testimonium assumenda fugit cunabula. Iusto comburo coruscus appositus cum talus candidus conicio venustas aequitas.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "ocer quasi velum",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-10-29T08:46:20.790Z",
               "parentId": null,
-              "displayOrder": 21.43,
+              "displayOrder": 67.77,
               "createdAt": "2024-10-29T08:46:20.790Z",
-              "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "modifiedAt": "2024-10-29T08:46:20.790Z",
-              "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "seqAt": 483,
+              "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "updatedAt": "2024-10-29T08:46:20.790Z",
+              "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "seq": 434,
               "stx": {
-                "mutationId": "bj4s6jezkbd4eq8cw2u9ctrd",
-                "sourceId": "src_gg4kaumw3zxhnizc7zlmwovf",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "6de3dc39-c7df-4e4d-89ce-e4a79db6b476",
+                "sourceId": "00d5468c-e823-4efe-8ca7-f2affcb9870c",
+                "fieldTimestamps": {}
               }
             }
           ],
@@ -231,6 +220,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -241,15 +237,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          },
+          "q": { "type": "string", "required": false, "maxLength": 255 },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": ["name", "status", "createdAt"]
+            "enum": ["name", "status", "createdAt", "displayOrder"]
           },
           "order": {
             "type": "string",
@@ -258,216 +250,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "afterSeq": { "type": "string", "required": false }
-        }
-      }
-    }
-  },
-  {
-    "operationId": "getPage",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Page",
-        "name": "Page",
-        "ref": "#/components/schemas/Page",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "description": "A content page for documentation purposes.",
-          "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["page"]
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "stx": {
-              "type": "object",
-              "required": true,
-              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
-              "properties": {
-                "mutationId": { "type": "string", "required": true },
-                "sourceId": { "type": "string", "required": true },
-                "version": { "type": "integer", "required": true },
-                "fieldVersions": {
-                  "type": "object",
-                  "required": true,
-                  "additionalProperties": { "type": "integer", "required": false }
-                }
-              },
-              "ref": "#/components/schemas/StxBase"
-            },
-            "description": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 1000000
-            },
-            "keywords": {
-              "type": "string",
-              "required": true,
-              "maxLength": 1000000
-            },
-            "createdBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
-            },
-            "modifiedBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
-            },
-            "seqAt": {
-              "type": "integer",
-              "required": true,
-              "minimum": -9007199254740991,
-              "maximum": 9007199254740991
-            },
-            "status": {
-              "type": "string",
-              "required": true,
-              "enum": ["unpublished", "published", "archived"]
-            },
-            "publicAccess": { "type": "boolean", "required": true },
-            "parentId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 50
-            },
-            "displayOrder": {
-              "type": "number",
-              "required": true,
-              "minimum": -140737488355328,
-              "maximum": 140737488355327
-            }
-          },
-          "ref": "#/components/schemas/Page",
-          "contentType": "application/json"
-        },
-        "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "tenantId": "ijllhz",
-          "entityType": "page",
-          "name": "Torrens adfectus.",
-          "description": "[{\"id\":\"ydeovelzeiwv1pvo6ikw8yai\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe.\",\"styles\":{}}],\"children\":[]},{\"id\":\"eho7gg1xwx21e333ngqujcbp\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ple60p8h3tnk9zpovjd1ic97\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Sustainable logistical help-desk\",\"styles\":{}}],\"children\":[]},{\"id\":\"rhaner6dofixisx6z8hucvnn\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Argumentum civitas suppellex illum corroboro damnatio templum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"fzi4ksi3o1tcsht8b45feprf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Ventus apto tempus aurum delectus facilis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9lzubypddo8vfjx4d5px26kw\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tenax cornu candidus communis comedo pauci. Votum vigilo conitor accusantium virgo sublime rem termes agnitio talis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3hfq8bqakccdhvdb8s40m4i4\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amiculum suus adiuvo brevis conturbo alveus ver.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xnbu1zzl7dazo02dcpq1pli4\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Civis delicate aestivus laudantium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"x941wz85bw59zakz3rkdm0lo\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vulticulus ventito arguo sumptus sortitus debeo conor. Conculco turpis cui tametsi amplexus rem voluntarius defetiscor expedita. Fugit varietas depulso succurro apparatus concido uredo desolo balbus.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "accendo veniam copiose",
-          "status": "unpublished",
-          "publicAccess": true,
-          "parentId": null,
-          "displayOrder": 99.04,
-          "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "seqAt": 318,
-          "stx": {
-            "mutationId": "gogrvuhqrkqh65nj2bav4mp8",
-            "sourceId": "src_avgoyfos69bvat094q3skvku",
-            "version": 1,
-            "fieldVersions": {}
-          }
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "id": { "type": "string", "required": true }
+          "seqCursor": { "type": "string", "required": false }
         }
       }
     }
@@ -492,42 +275,39 @@
                 "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["page"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -537,15 +317,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -553,11 +329,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -567,10 +338,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -578,11 +349,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -592,7 +358,7 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
@@ -603,11 +369,19 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
-                  "publicAccess": { "type": "boolean", "required": true },
+                  "renderMode": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["default", "overview", "nodeOnly"]
+                  },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
                   "displayOrder": {
                     "type": "number",
@@ -619,7 +393,7 @@
                 "ref": "#/components/schemas/Page"
               }
             },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -629,11 +403,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -641,53 +411,51 @@
         "example": {
           "data": [
             {
-              "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-              "tenantId": "lwtksu",
+              "id": "7f53a0c8-a26b-4695-acc9-ed9cd1f55c64",
               "entityType": "page",
-              "name": "Voluntarius contra.",
-              "description": "[{\"id\":\"hoiny6rsob7j0p6kfz7rauzy\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6pakf4ovzm1ne3h55lgj31d6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vergo deputo deprimo statim eos vulnero subito eligendi sophismata exercitationem. Cattus cilicium textilis cervus alo tactus confido colligo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"apx99a5auvr5cyj5s37irnjj\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Configurable motivating data-warehouse\",\"styles\":{}}],\"children\":[]},{\"id\":\"qz0iqmny8wdl2xm36um7v2n0\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conspergo angulus repellat umerus sumo ulterius.\",\"styles\":{}}],\"children\":[]},{\"id\":\"yotm2bb6438g9cersdww4bfs\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Quam velut suffoco comminor pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"o33lcgsn94dor3vtrwsv2ecf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Thema arcus torqueo consectetur.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3n6vzijsfbpwvzgocxlca7n1\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Crux temeritas depopulo creber cibus cetera. Arguo collum torrens.\",\"styles\":{}}],\"children\":[]},{\"id\":\"oyl7ocb37kjsew1md90vg1e6\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"In subvenio curis cilicium eligendi deripio deduco vesica delectatio.\",\"styles\":{}}],\"children\":[]},{\"id\":\"aty5hb1zfo81varofu137lku\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Hic vix censura terga iste cohors tabgo suasoria tutis vobis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"dqp8e5uh7l2ekz72028a701j\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Sol averto tergo tolero aurum coerceo saepe. Denuncio quae spectaculum terreo corroboro conicio tenax arcus audio votum. Itaque vacuus caelum calcar amissio complectus absorbeo.\\nTriumphus cado suppellex viridis sponte curto iure. Nostrum subnecto vapulus pecco. Conduco aetas cernuus quisquam vester apto necessitatibus patior contigo.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "speculum alienus ulterius",
+              "name": "Sponte dolor somnus.",
+              "description": "[{\"id\":\"0p6kfz7rauzy6zwhhoizpinj\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Atavus tergiversatio tersus suadeo colo benigne id.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ne3h55lgj31d63n9apx99a5a\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cilicium textilis cervus alo tactus. Colligo audio substantia coepi laudantium. Apparatus suasoria valde voveo quis adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"5cyj5s37irnjjhhc4mupuqz0\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Stand-alone systemic process improvement\",\"styles\":{}}],\"children\":[]},{\"id\":\"xm36um7v2n0dmwpblyotm2bb\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Quas sollers vivo caritas ventosus creptio occaecati advoco.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9cersdww4bfs8s5tco33lcgs\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amplitudo altus caput defleo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rwsv2ecfgeerhda905bt3n6v\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cernuus apostolus convoco stultus templum ago urbs torqueo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ihgxgoyl7ocb37kjsew1md90\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Itaque territo decet commodi succedo vapulus ut. Delibero stillicidium consuasor vetus nostrum conculco clibanus barba rerum admiratio. Triduana in subvenio curis cilicium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9rjbqpuyaty5hb1zfo81varo\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adamo cunae aufero via hic vix.\",\"styles\":{}}],\"children\":[]},{\"id\":\"uwkn7st6anzhmosdcr56zljv\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Umerus ademptio amet bardus peior libero.\",\"styles\":{}}],\"children\":[]},{\"id\":\"lt8pyofk8kpwlvc29mx4klcd\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Calcar amissio complectus absorbeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"7i7bpsljy61q7zd9iyy206g5\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cariosus cubitum arguo turbo demum avaritia pax aduro. Minus volutabrum brevis aeneus acceptus aggredior. Cinis bibo abduco adeptio.\\nSpeculum alienus ulterius tamen una depraedor curtus. Aeternus vulnero textilis teneo patria denuo conscendo teneo spectaculum modi. Summopere commodo dolorem minima validus sed.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aureus subseco cito",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-04-19T14:04:35.773Z",
               "parentId": null,
-              "displayOrder": 74.67,
+              "displayOrder": 4.18,
               "createdAt": "2024-04-19T14:04:35.773Z",
-              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "modifiedAt": "2024-04-19T14:04:35.773Z",
-              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "seqAt": 430,
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "seq": 240,
               "stx": {
-                "mutationId": "hfy2zsrlhcrokfpbikwn7i7b",
-                "sourceId": "src_psljy61q7zd9iyy206g56pa1",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "5224e9f7-ead1-401d-aa1d-b35dcdd3518e",
+                "sourceId": "b8a4bf41-4ac8-45dd-8f89-270ed2f3237a",
+                "fieldTimestamps": {}
               }
             },
             {
-              "id": "74l7581dwpxxbqdej8622zpg",
-              "tenantId": "o54qw5",
+              "id": "6ebef5b6-6832-410f-bb7a-21be26ba4ee7",
               "entityType": "page",
-              "name": "Taedium spargo cetera.",
-              "description": "[{\"id\":\"fmg18wbwob9s8r85nah671yb\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4hj92yzr7v1itpc9wztvbcy2\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus. Degero cicuta aranea.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4oq81k5rbzt4yq63pob5r5tp\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Automated reciprocal adapter\",\"styles\":{}}],\"children\":[]},{\"id\":\"m92qh3rrfeu660ozr0yjbedn\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Sufficio coaegresco denuncio soleo assumenda caute volup.\",\"styles\":{}}],\"children\":[]},{\"id\":\"lud6hh0iebfum8827w318qwf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Corrigo arx deleo thalassinus candidus alioqui aurum similique cunae.\",\"styles\":{}}],\"children\":[]},{\"id\":\"1kgq21dhh7cq7p98bue9ul9q\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Peior placeat summa acidus solitudo creo. Ceno ultra armarium anser a voveo vito tandem. Undique sortitus benigne adstringo crinis creator veritatis sopor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"k6yiz04y97bwd5dpef0kr8b3\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Careo thymbra bonus commodo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3i7o7kdrafg5eczfdkp6l22j\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Incidunt audio comitatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6rkct63zbj5vosl8hdyhcuvu\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Synagoga vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.\",\"styles\":{}}],\"children\":[]},{\"id\":\"hp1pp7j4ajboke3sgwqgzn5g\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Audax vinculum verbum cubo uredo. Antea attollo curo vir amissio accendo tabgo angulus doloremque. Supra crux terebro universe defaeco alter cumque allatus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "annus sono paulatim",
+              "name": "Denique tum.",
+              "description": "[{\"id\":\"8wbwob9s8r85nah671ybl6y4\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Curvo perspiciatis defendo adinventitias.\",\"styles\":{}}],\"children\":[]},{\"id\":\"wztvbcy21q04oq81k5rbzt4y\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vulnus subseco vomica auxilium ascit cuppedia abbas amo patior credo. Aestus degero cicuta aranea approbo depraedor inventore cervus adversus. Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"pob5r5tp1lpahn69ym92qh3r\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Realigned composite architecture\",\"styles\":{}}],\"children\":[]},{\"id\":\"zr0yjbednvd5gs836nelud6h\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cupressus una audio aufero abscido sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"m8827w318qwfuflmp0ndq9u5\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Accusamus enim cunabula combibo curtus trucido.\",\"styles\":{}}],\"children\":[]},{\"id\":\"qmuo72edxo1kgq21dhh7cq7p\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"A voveo vito.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ul9qu68s7bk6yiz04y97bwd5\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Carbo cohaero ultra cupressus casus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3i7o7kdrafg5eczfdkp6l22j\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Crur curia absum molestiae terga carbo colligo amita. Incidunt audio comitatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6rkct63zbj5vosl8hdyhcuvu\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.\",\"styles\":{}}],\"children\":[]},{\"id\":\"vu46fy30q4ioqervg3e3hp1p\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Clibanus audax vinculum verbum cubo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"e3sgwqgzn5g4nl3n1hygl6gf\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Averto eveniet appono coadunatio id comitatus statua molestias.\",\"styles\":{}}],\"children\":[]},{\"id\":\"t9cc4m0m3pcjsymzo23ke5u9\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Natus vox cibo virtus arma ipsam. Solutio ab absens depono peior. Accusamus adamo theologus ventosus avarus contra acsi doloremque volutabrum eveniet.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "sit constans thalassinus",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-02-25T13:01:35.301Z",
               "parentId": null,
-              "displayOrder": 10.37,
+              "displayOrder": 26.25,
               "createdAt": "2024-02-25T13:01:35.301Z",
-              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "modifiedAt": "2024-02-25T13:01:35.301Z",
-              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "seqAt": 329,
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "seq": 282,
               "stx": {
-                "mutationId": "1hygl6gf3gkzay5jcn00hlz0",
-                "sourceId": "src_1sw7c1izjt9cc4m0m3pcjsym",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "c7322a76-df22-42ce-a572-2149f37040f3",
+                "sourceId": "d087491b-fe46-48f8-89d1-74eb3d3911fc",
+                "fieldTimestamps": {}
               }
             }
           ],
-          "rejectedItemIds": []
+          "rejectedIds": []
         }
       },
       {
@@ -707,42 +475,39 @@
                 "description": "A content page for documentation purposes.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["page"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -752,15 +517,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -768,11 +529,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -782,10 +538,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -793,11 +549,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -807,7 +558,7 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
@@ -818,11 +569,19 @@
                     "required": true,
                     "enum": ["unpublished", "published", "archived"]
                   },
-                  "publicAccess": { "type": "boolean", "required": true },
+                  "renderMode": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["default", "overview", "nodeOnly"]
+                  },
+                  "publicAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "parentId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
                   "displayOrder": {
                     "type": "number",
@@ -834,7 +593,7 @@
                 "ref": "#/components/schemas/Page"
               }
             },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -844,11 +603,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -856,53 +611,51 @@
         "example": {
           "data": [
             {
-              "id": "wgpaj0cfyc7n2sjn5fpfkbrs",
-              "tenantId": "lwtksu",
+              "id": "7f53a0c8-a26b-4695-acc9-ed9cd1f55c64",
               "entityType": "page",
-              "name": "Voluntarius contra.",
-              "description": "[{\"id\":\"hoiny6rsob7j0p6kfz7rauzy\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Tergo crepusculum certe desparatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6pakf4ovzm1ne3h55lgj31d6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vergo deputo deprimo statim eos vulnero subito eligendi sophismata exercitationem. Cattus cilicium textilis cervus alo tactus confido colligo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"apx99a5auvr5cyj5s37irnjj\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Configurable motivating data-warehouse\",\"styles\":{}}],\"children\":[]},{\"id\":\"qz0iqmny8wdl2xm36um7v2n0\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conspergo angulus repellat umerus sumo ulterius.\",\"styles\":{}}],\"children\":[]},{\"id\":\"yotm2bb6438g9cersdww4bfs\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Quam velut suffoco comminor pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"o33lcgsn94dor3vtrwsv2ecf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Thema arcus torqueo consectetur.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3n6vzijsfbpwvzgocxlca7n1\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Crux temeritas depopulo creber cibus cetera. Arguo collum torrens.\",\"styles\":{}}],\"children\":[]},{\"id\":\"oyl7ocb37kjsew1md90vg1e6\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"In subvenio curis cilicium eligendi deripio deduco vesica delectatio.\",\"styles\":{}}],\"children\":[]},{\"id\":\"aty5hb1zfo81varofu137lku\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Hic vix censura terga iste cohors tabgo suasoria tutis vobis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"dqp8e5uh7l2ekz72028a701j\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Sol averto tergo tolero aurum coerceo saepe. Denuncio quae spectaculum terreo corroboro conicio tenax arcus audio votum. Itaque vacuus caelum calcar amissio complectus absorbeo.\\nTriumphus cado suppellex viridis sponte curto iure. Nostrum subnecto vapulus pecco. Conduco aetas cernuus quisquam vester apto necessitatibus patior contigo.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "speculum alienus ulterius",
+              "name": "Sponte dolor somnus.",
+              "description": "[{\"id\":\"0p6kfz7rauzy6zwhhoizpinj\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Atavus tergiversatio tersus suadeo colo benigne id.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ne3h55lgj31d63n9apx99a5a\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cilicium textilis cervus alo tactus. Colligo audio substantia coepi laudantium. Apparatus suasoria valde voveo quis adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"5cyj5s37irnjjhhc4mupuqz0\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Stand-alone systemic process improvement\",\"styles\":{}}],\"children\":[]},{\"id\":\"xm36um7v2n0dmwpblyotm2bb\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Quas sollers vivo caritas ventosus creptio occaecati advoco.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9cersdww4bfs8s5tco33lcgs\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amplitudo altus caput defleo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"rwsv2ecfgeerhda905bt3n6v\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cernuus apostolus convoco stultus templum ago urbs torqueo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ihgxgoyl7ocb37kjsew1md90\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Itaque territo decet commodi succedo vapulus ut. Delibero stillicidium consuasor vetus nostrum conculco clibanus barba rerum admiratio. Triduana in subvenio curis cilicium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9rjbqpuyaty5hb1zfo81varo\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adamo cunae aufero via hic vix.\",\"styles\":{}}],\"children\":[]},{\"id\":\"uwkn7st6anzhmosdcr56zljv\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Umerus ademptio amet bardus peior libero.\",\"styles\":{}}],\"children\":[]},{\"id\":\"lt8pyofk8kpwlvc29mx4klcd\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Calcar amissio complectus absorbeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"7i7bpsljy61q7zd9iyy206g5\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cariosus cubitum arguo turbo demum avaritia pax aduro. Minus volutabrum brevis aeneus acceptus aggredior. Cinis bibo abduco adeptio.\\nSpeculum alienus ulterius tamen una depraedor curtus. Aeternus vulnero textilis teneo patria denuo conscendo teneo spectaculum modi. Summopere commodo dolorem minima validus sed.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "aureus subseco cito",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-04-19T14:04:35.773Z",
               "parentId": null,
-              "displayOrder": 74.67,
+              "displayOrder": 4.18,
               "createdAt": "2024-04-19T14:04:35.773Z",
-              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "modifiedAt": "2024-04-19T14:04:35.773Z",
-              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "seqAt": 430,
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "seq": 240,
               "stx": {
-                "mutationId": "hfy2zsrlhcrokfpbikwn7i7b",
-                "sourceId": "src_psljy61q7zd9iyy206g56pa1",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "5224e9f7-ead1-401d-aa1d-b35dcdd3518e",
+                "sourceId": "b8a4bf41-4ac8-45dd-8f89-270ed2f3237a",
+                "fieldTimestamps": {}
               }
             },
             {
-              "id": "74l7581dwpxxbqdej8622zpg",
-              "tenantId": "o54qw5",
+              "id": "6ebef5b6-6832-410f-bb7a-21be26ba4ee7",
               "entityType": "page",
-              "name": "Taedium spargo cetera.",
-              "description": "[{\"id\":\"fmg18wbwob9s8r85nah671yb\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Vehemens deprecator ventus ascit denique tum candidus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4hj92yzr7v1itpc9wztvbcy2\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Virga aptus corrupti utpote. Subseco vomica auxilium ascit cuppedia abbas amo patior credo tenus. Degero cicuta aranea.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4oq81k5rbzt4yq63pob5r5tp\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Automated reciprocal adapter\",\"styles\":{}}],\"children\":[]},{\"id\":\"m92qh3rrfeu660ozr0yjbedn\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Sufficio coaegresco denuncio soleo assumenda caute volup.\",\"styles\":{}}],\"children\":[]},{\"id\":\"lud6hh0iebfum8827w318qwf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Corrigo arx deleo thalassinus candidus alioqui aurum similique cunae.\",\"styles\":{}}],\"children\":[]},{\"id\":\"1kgq21dhh7cq7p98bue9ul9q\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Peior placeat summa acidus solitudo creo. Ceno ultra armarium anser a voveo vito tandem. Undique sortitus benigne adstringo crinis creator veritatis sopor.\",\"styles\":{}}],\"children\":[]},{\"id\":\"k6yiz04y97bwd5dpef0kr8b3\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Careo thymbra bonus commodo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3i7o7kdrafg5eczfdkp6l22j\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Incidunt audio comitatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6rkct63zbj5vosl8hdyhcuvu\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Synagoga vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.\",\"styles\":{}}],\"children\":[]},{\"id\":\"hp1pp7j4ajboke3sgwqgzn5g\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Audax vinculum verbum cubo uredo. Antea attollo curo vir amissio accendo tabgo angulus doloremque. Supra crux terebro universe defaeco alter cumque allatus.\",\"styles\":{}}],\"children\":[]}]",
-              "keywords": "annus sono paulatim",
+              "name": "Denique tum.",
+              "description": "[{\"id\":\"8wbwob9s8r85nah671ybl6y4\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Curvo perspiciatis defendo adinventitias.\",\"styles\":{}}],\"children\":[]},{\"id\":\"wztvbcy21q04oq81k5rbzt4y\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vulnus subseco vomica auxilium ascit cuppedia abbas amo patior credo. Aestus degero cicuta aranea approbo depraedor inventore cervus adversus. Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"pob5r5tp1lpahn69ym92qh3r\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Realigned composite architecture\",\"styles\":{}}],\"children\":[]},{\"id\":\"zr0yjbednvd5gs836nelud6h\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Cupressus una audio aufero abscido sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"m8827w318qwfuflmp0ndq9u5\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Accusamus enim cunabula combibo curtus trucido.\",\"styles\":{}}],\"children\":[]},{\"id\":\"qmuo72edxo1kgq21dhh7cq7p\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"A voveo vito.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ul9qu68s7bk6yiz04y97bwd5\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Carbo cohaero ultra cupressus casus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3i7o7kdrafg5eczfdkp6l22j\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Crur curia absum molestiae terga carbo colligo amita. Incidunt audio comitatus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"6rkct63zbj5vosl8hdyhcuvu\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.\",\"styles\":{}}],\"children\":[]},{\"id\":\"vu46fy30q4ioqervg3e3hp1p\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Clibanus audax vinculum verbum cubo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"e3sgwqgzn5g4nl3n1hygl6gf\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Averto eveniet appono coadunatio id comitatus statua molestias.\",\"styles\":{}}],\"children\":[]},{\"id\":\"t9cc4m0m3pcjsymzo23ke5u9\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Natus vox cibo virtus arma ipsam. Solutio ab absens depono peior. Accusamus adamo theologus ventosus avarus contra acsi doloremque volutabrum eveniet.\",\"styles\":{}}],\"children\":[]}]",
+              "keywords": "sit constans thalassinus",
               "status": "unpublished",
-              "publicAccess": true,
+              "renderMode": "default",
+              "publicAt": "2024-02-25T13:01:35.301Z",
               "parentId": null,
-              "displayOrder": 10.37,
+              "displayOrder": 26.25,
               "createdAt": "2024-02-25T13:01:35.301Z",
-              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "modifiedAt": "2024-02-25T13:01:35.301Z",
-              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "seqAt": 329,
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "seq": 282,
               "stx": {
-                "mutationId": "1hygl6gf3gkzay5jcn00hlz0",
-                "sourceId": "src_1sw7c1izjt9cc4m0m3pcjsym",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "c7322a76-df22-42ce-a572-2149f37040f3",
+                "sourceId": "d087491b-fe46-48f8-89d1-74eb3d3911fc",
+                "fieldTimestamps": {}
               }
             }
           ],
-          "rejectedItemIds": []
+          "rejectedIds": []
         }
       },
       {
@@ -934,6 +687,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -942,15 +702,6 @@
       }
     ],
     "request": {
-      "path": {
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
-        }
-      },
       "body": {
         "type": "array",
         "itemType": "object",
@@ -958,21 +709,19 @@
           "type": "object",
           "required": true,
           "properties": {
-            "name": {
-              "type": "string",
-              "required": false,
-              "maxLength": 255
-            },
+            "name": { "type": "string", "required": false, "maxLength": 255 },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "displayOrder": { "type": "number", "required": false },
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
               "properties": {
                 "mutationId": {
                   "type": "string",
                   "required": true,
-                  "description": "Unique mutation ID (nanoid)",
-                  "maxLength": 32
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
                 },
                 "sourceId": {
                   "type": "string",
@@ -980,14 +729,14 @@
                   "description": "Tab/instance identifier for echo prevention",
                   "maxLength": 64
                 },
-                "lastReadVersion": {
-                  "type": "integer",
+                "fieldTimestamps": {
+                  "type": "object",
                   "required": true,
-                  "description": "Entity version when last read (for conflict detection)",
-                  "minimum": 0
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
                 }
               },
-              "ref": "#/components/schemas/StxRequestBase"
+              "ref": "#/components/schemas/StxBase"
             }
           }
         },
@@ -1009,7 +758,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -1019,11 +768,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -1058,6 +803,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1066,15 +818,6 @@
       }
     ],
     "request": {
-      "path": {
-        "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
-        }
-      },
       "body": {
         "type": "object",
         "properties": {
@@ -1100,11 +843,11 @@
     }
   },
   {
-    "operationId": "updatePage",
+    "operationId": "getPage",
     "responses": [
       {
         "status": 200,
-        "description": "Page updated",
+        "description": "Page",
         "name": "Page",
         "ref": "#/components/schemas/Page",
         "contentType": "application/json",
@@ -1113,42 +856,39 @@
           "description": "A content page for documentation purposes.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["page"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
               "properties": {
-                "mutationId": { "type": "string", "required": true },
-                "sourceId": { "type": "string", "required": true },
-                "version": { "type": "integer", "required": true },
-                "fieldVersions": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
                   "type": "object",
                   "required": true,
-                  "additionalProperties": { "type": "integer", "required": false }
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
                 }
               },
               "ref": "#/components/schemas/StxBase"
@@ -1158,15 +898,11 @@
               "required": true,
               "maxLength": 1000000
             },
-            "keywords": {
-              "type": "string",
-              "required": true,
-              "maxLength": 1000000
-            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1174,11 +910,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1188,10 +919,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1199,11 +930,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1213,7 +939,7 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "seqAt": {
+            "seq": {
               "type": "integer",
               "required": true,
               "minimum": -9007199254740991,
@@ -1224,11 +950,19 @@
               "required": true,
               "enum": ["unpublished", "published", "archived"]
             },
-            "publicAccess": { "type": "boolean", "required": true },
+            "renderMode": {
+              "type": "string",
+              "required": true,
+              "enum": ["default", "overview", "nodeOnly"]
+            },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
             "parentId": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
             "displayOrder": {
               "type": "number",
@@ -1241,26 +975,25 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "co96vrmic3wbowmxzbqa1e9f",
-          "tenantId": "ijllhz",
+          "id": "851e5ae9-ef5b-4406-a468-8997f0d08f5c",
           "entityType": "page",
-          "name": "Torrens adfectus.",
-          "description": "[{\"id\":\"ydeovelzeiwv1pvo6ikw8yai\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Voluptates cornu tempus eaque universe.\",\"styles\":{}}],\"children\":[]},{\"id\":\"eho7gg1xwx21e333ngqujcbp\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Aptus accusamus praesentium cibus subito viscus vox nemo. Video tremo molestias charisma clam ipsa suscipit. Atrox tendo compello ante tonsor ullus damnatio maiores.\",\"styles\":{}}],\"children\":[]},{\"id\":\"ple60p8h3tnk9zpovjd1ic97\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"Sustainable logistical help-desk\",\"styles\":{}}],\"children\":[]},{\"id\":\"rhaner6dofixisx6z8hucvnn\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Argumentum civitas suppellex illum corroboro damnatio templum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"fzi4ksi3o1tcsht8b45feprf\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Ventus apto tempus aurum delectus facilis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"9lzubypddo8vfjx4d5px26kw\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tenax cornu candidus communis comedo pauci. Votum vigilo conitor accusantium virgo sublime rem termes agnitio talis.\",\"styles\":{}}],\"children\":[]},{\"id\":\"3hfq8bqakccdhvdb8s40m4i4\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Amiculum suus adiuvo brevis conturbo alveus ver.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xnbu1zzl7dazo02dcpq1pli4\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Civis delicate aestivus laudantium.\",\"styles\":{}}],\"children\":[]},{\"id\":\"x941wz85bw59zakz3rkdm0lo\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vulticulus ventito arguo sumptus sortitus debeo conor. Conculco turpis cui tametsi amplexus rem voluntarius defetiscor expedita. Fugit varietas depulso succurro apparatus concido uredo desolo balbus.\",\"styles\":{}}],\"children\":[]}]",
-          "keywords": "accendo veniam copiose",
+          "name": "Volubilis conturbo cubo sponte utpote.",
+          "description": "[{\"id\":\"wv1pvo6ikw8yaifq40mapyzk\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Pecco vulticulus cunctatio dolorum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xwx21e333ngqujcbpukfple6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"h3tnk9zpovjd1ic979l5apjd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"AI-driven optimal concept\",\"styles\":{}}],\"children\":[]},{\"id\":\"fixisx6z8hucvnngw4r6gjfz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"tcsht8b45feprfkhrd8bblxz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Animadverto maxime theatrum esse amo statua adfectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"zubypddo8vfjx4d5px26kw7k\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"q8bqakccdhvdb8s40m4i46ag\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adiuvo brevis conturbo alveus ver ait deserunt decet.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l7dazo02dcpq1pli45kzw5po\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vestrum solus cohors trucido ad vorax voluptatum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4mygjrjwhp4cvi7x941wz85b\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conor ullam conculco turpis cui tametsi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"avgoyfos69bvat094q3skvku\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "repellat speculum terga",
           "status": "unpublished",
-          "publicAccess": true,
+          "renderMode": "default",
+          "publicAt": "2024-08-06T10:28:33.226Z",
           "parentId": null,
-          "displayOrder": 99.04,
+          "displayOrder": 61.84,
           "createdAt": "2024-08-06T10:28:33.226Z",
-          "createdBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "modifiedAt": "2024-08-06T10:28:33.226Z",
-          "modifiedBy": "0f0ak5vkrrl687pmkwpa1vju",
-          "seqAt": 318,
+          "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "updatedAt": "2024-08-06T10:28:33.226Z",
+          "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "seq": 434,
           "stx": {
-            "mutationId": "gogrvuhqrkqh65nj2bav4mp8",
-            "sourceId": "src_avgoyfos69bvat094q3skvku",
-            "version": 1,
-            "fieldVersions": {}
+            "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
+            "sourceId": "56b8c007-8e68-4f47-b816-fb2404a2a519",
+            "fieldTimestamps": {}
           }
         }
       },
@@ -1293,6 +1026,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1303,80 +1043,275 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
+          "id": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "updatePage",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Page updated",
+        "name": "Page",
+        "ref": "#/components/schemas/Page",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A content page for documentation purposes.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["page"]
+            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
+                }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "seq": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["unpublished", "published", "archived"]
+            },
+            "renderMode": {
+              "type": "string",
+              "required": true,
+              "enum": ["default", "overview", "nodeOnly"]
+            },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "parentId": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "displayOrder": {
+              "type": "number",
+              "required": true,
+              "minimum": -140737488355328,
+              "maximum": 140737488355327
+            }
           },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
+          "ref": "#/components/schemas/Page",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "851e5ae9-ef5b-4406-a468-8997f0d08f5c",
+          "entityType": "page",
+          "name": "Volubilis conturbo cubo sponte utpote.",
+          "description": "[{\"id\":\"wv1pvo6ikw8yaifq40mapyzk\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Pecco vulticulus cunctatio dolorum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xwx21e333ngqujcbpukfple6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"h3tnk9zpovjd1ic979l5apjd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"AI-driven optimal concept\",\"styles\":{}}],\"children\":[]},{\"id\":\"fixisx6z8hucvnngw4r6gjfz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"tcsht8b45feprfkhrd8bblxz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Animadverto maxime theatrum esse amo statua adfectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"zubypddo8vfjx4d5px26kw7k\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"q8bqakccdhvdb8s40m4i46ag\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adiuvo brevis conturbo alveus ver ait deserunt decet.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l7dazo02dcpq1pli45kzw5po\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vestrum solus cohors trucido ad vorax voluptatum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4mygjrjwhp4cvi7x941wz85b\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conor ullam conculco turpis cui tametsi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"avgoyfos69bvat094q3skvku\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.\",\"styles\":{}}],\"children\":[]}]",
+          "keywords": "repellat speculum terga",
+          "status": "unpublished",
+          "renderMode": "default",
+          "publicAt": "2024-08-06T10:28:33.226Z",
+          "parentId": null,
+          "displayOrder": 61.84,
+          "createdAt": "2024-08-06T10:28:33.226Z",
+          "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "updatedAt": "2024-08-06T10:28:33.226Z",
+          "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "seq": 434,
+          "stx": {
+            "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
+            "sourceId": "56b8c007-8e68-4f47-b816-fb2404a2a519",
+            "fieldTimestamps": {}
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true }
+        }
+      },
+      "query": {
+        "properties": {
+          "fullResponse": {
+            "required": false,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
+            ]
           }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "key": {
+          "ops": {
+            "type": "object",
             "required": true,
-            "anyOf": [
-              {
-                "type": "string",
+            "properties": {
+              "name": { "type": "string", "required": false, "maxLength": 255 },
+              "description": {
+                "type": ["string", "null"],
                 "required": false,
-                "enum": ["name"]
+                "maxLength": 1000000
               },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["description"]
+              "keywords": {
+                "type": ["string", "null"],
+                "required": false
               },
-              {
+              "displayOrder": { "type": "number", "required": false },
+              "status": {
                 "type": "string",
                 "required": false,
-                "enum": ["keywords"]
+                "enum": ["unpublished", "published", "archived"]
               },
-              {
+              "renderMode": {
                 "type": "string",
                 "required": false,
-                "enum": ["displayOrder"]
+                "enum": ["default", "overview", "nodeOnly"]
               },
-              {
-                "type": "string",
+              "parentId": {
+                "type": ["string", "null"],
                 "required": false,
-                "enum": ["status"]
+                "maxLength": 50
               },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["parentId"]
+              "publicAt": {
+                "type": ["string", "null"],
+                "required": false
               }
-            ]
-          },
-          "data": {
-            "required": true,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "number", "required": false },
-              { "type": "boolean", "required": false },
-              {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              },
-              { "type": "null", "required": false }
-            ]
+            }
           },
           "stx": {
             "type": "object",
             "required": true,
-            "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+            "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
             "properties": {
               "mutationId": {
                 "type": "string",
                 "required": true,
-                "description": "Unique mutation ID (nanoid)",
-                "maxLength": 32
+                "description": "Unique mutation ID",
+                "maxLength": 36
               },
               "sourceId": {
                 "type": "string",
@@ -1384,14 +1319,14 @@
                 "description": "Tab/instance identifier for echo prevention",
                 "maxLength": 64
               },
-              "lastReadVersion": {
-                "type": "integer",
+              "fieldTimestamps": {
+                "type": "object",
                 "required": true,
-                "description": "Entity version when last read (for conflict detection)",
-                "minimum": 0
+                "description": "Per-field HLC timestamps for scalar fields being changed",
+                "additionalProperties": { "type": "string", "required": false }
               }
             },
-            "ref": "#/components/schemas/StxRequestBase"
+            "ref": "#/components/schemas/StxBase"
           }
         },
         "required": true,

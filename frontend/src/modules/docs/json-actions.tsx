@@ -9,7 +9,6 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { ButtonGroup } from '~/modules/ui/button-group';
-
 import { useSheeter } from '../common/sheeter/use-sheeter';
 
 interface JsonActionsProps {
@@ -42,7 +41,7 @@ export const JsonActions = ({
 
   const handleCopy = () => {
     copyToClipboard(JSON.stringify(data, null, 2));
-    toaster(t('common:success.resource_copied', { resource: resourceName ?? 'JSON' }), 'success');
+    toaster(t('c:success.resource_copied', { resource: resourceName ?? 'JSON' }), 'success');
   };
 
   const handleDownload = () => {
@@ -56,60 +55,59 @@ export const JsonActions = ({
   };
 
   const iconSize = 16;
-  const size = smallMode ? 'sm' : 'default';
+  const size = smallMode ? 'xs' : 'default';
 
   return (
     <ButtonGroup className={className}>
       {/* View */}
       {viewerUrl && (
-        <TooltipButton toolTipContent={t('common:view')}>
-          <Button variant="outline" size={size} className="gap-2 flex-none" asChild>
-            <Link
-              resetScroll
-              to={viewerUrl}
-              onClick={() => {
-                isMobile && useSheeter.getState().remove();
-                // Scroll the docs main content area to top (resetScroll only handles window scroll)
-                requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
-              }}
-            >
-              <span className={smallMode ? 'text-xs' : undefined}>json</span>
-            </Link>
+        <TooltipButton toolTipContent={t('c:view')}>
+          <Button
+            variant="outline"
+            size={size}
+            className="flex-none gap-2"
+            render={
+              <Link
+                resetScroll
+                to={viewerUrl}
+                onClick={() => {
+                  isMobile && useSheeter.getState().remove();
+                  // Scroll the docs main content area to top (resetScroll only handles window scroll)
+                  requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
+                }}
+              />
+            }
+          >
+            <span className={smallMode ? 'text-xs' : undefined}>{filename}</span>
           </Button>
         </TooltipButton>
       )}
       {/* Open */}
-      <TooltipButton toolTipContent={t('common:open')}>
-        <Button
-          variant="outline"
-          size={size}
-          className="gap-2 flex-none"
-          aria-label={t('common:open')}
-          onClick={handleOpen}
-        >
+      <TooltipButton toolTipContent={t('c:open')}>
+        <Button variant="outline" size={size} className="flex-none gap-2" aria-label={t('c:open')} onClick={handleOpen}>
           <ExternalLinkIcon size={iconSize} />
-          {!smallMode && <span className="max-lg:hidden">{t('common:open')}</span>}
+          {!smallMode && <span className="max-lg:hidden">{t('c:open')}</span>}
         </Button>
       </TooltipButton>
       {/* Copy */}
-      <TooltipButton toolTipContent={t('common:copy')}>
-        <Button variant="outline" size={size} className="gap-2" aria-label={t('common:copy')} onClick={handleCopy}>
+      <TooltipButton toolTipContent={t('c:copy')}>
+        <Button variant="outline" size={size} className="gap-2" aria-label={t('c:copy')} onClick={handleCopy}>
           {copied ? <CopyCheckIcon size={iconSize} /> : <CopyIcon size={iconSize} />}
-          {!smallMode && <span className="max-lg:hidden">{t('common:copy')}</span>}
+          {!smallMode && <span className="max-lg:hidden">{t('c:copy')}</span>}
         </Button>
       </TooltipButton>
       {/* Download */}
-      <TooltipButton toolTipContent={t('common:download')}>
+      <TooltipButton toolTipContent={t('c:download')}>
         <Button
           variant="outline"
           size={size}
-          className="gap-2 flex-none"
-          aria-label={t('common:download')}
+          className="flex-none gap-2"
+          aria-label={t('c:download')}
           disabled={isInProgress}
           onClick={handleDownload}
         >
           {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon size={iconSize} />}
-          {!smallMode && <span className="max-lg:hidden">{t('common:download')}</span>}
+          {!smallMode && <span className="max-lg:hidden">{t('c:download')}</span>}
         </Button>
       </TooltipButton>
     </ButtonGroup>

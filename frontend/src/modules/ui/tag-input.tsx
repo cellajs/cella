@@ -272,15 +272,15 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     : tags;
 
   return (
-    <div className="flex flex-col relative" ref={ref}>
+    <div className="relative flex flex-col" ref={ref}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse  */}
       <div
         id="tag-input-wrapper"
         role="group"
         onClick={handleClick}
         className={cn(
-          'flex flex-wrap items-center py-1 px-3 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium shadow-xs sm:focus-within:ring-2 sm:focus-within:ring-offset-2 ring-offset-background sm:focus-within:ring-ring',
-          'flex-row bg-background border border-input disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground focus-effect',
+          'flex flex-wrap items-center rounded-md px-3 py-1 text-sm shadow-xs ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm sm:focus-within:ring-2 sm:focus-within:ring-ring sm:focus-within:ring-offset-2',
+          'focus-effect flex-row border border-input bg-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
           styleClasses?.input,
         )}
       >
@@ -306,7 +306,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
           onBlur={handleInputBlur}
           {...inputProps}
           className={cn(
-            'h-8 w-auto grow shadow-none -my-px border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-0',
+            '-my-px h-8 w-auto grow border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
             tags.length && 'ml-1',
           )}
           disabled={maxTags !== undefined && tags.length >= maxTags}
@@ -317,7 +317,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
       {showCount && (
         <Badge
           size="micro"
-          className={`inline-flex items-center justify-center absolute -top-1 p-0 z-10 text-[10px]  ${maxTags ? '-right-2 w-5' : ' -right-1 w-4'}`}
+          className={`absolute -top-1 z-10 inline-flex items-center justify-center p-0 text-[10px] ${maxTags ? '-right-2 w-5' : '-right-1 w-4'}`}
         >
           {tagCount}
           {maxTags && `/${maxTags}`}
@@ -327,9 +327,9 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
         <Button
           type="button"
           onClick={handleClearAll}
-          className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}
+          className={cn('mt-2 flex items-center gap-1', styleClasses?.clearAllButton)}
         >
-          {t('common:clear_all')}
+          {t('c:clear_all')}
           <RefreshCwIcon size={16} />
         </Button>
       )}
@@ -350,13 +350,13 @@ type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'onTagClick'>
 
 function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) {
   return (
-    <div className={cn('flex flex-wrap gap-1 rounded-md flex-row', classStyleProps.tagListClasses)}>
+    <div className={cn('flex flex-row flex-wrap gap-1 rounded-md', classStyleProps.tagListClasses)}>
       {tags.map((tag, index) => (
         <Badge
           key={tag}
           {...badgeVariants}
           className={cn(
-            'pr-0 gap-0.5',
+            'gap-0.5 pr-0',
             {
               'focus-effect': index === activeTagIndex,
             },
@@ -373,7 +373,7 @@ function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
               onRemoveTag(tag);
             }}
             className={cn(
-              'active:translate-y-0! size-4.5 ring-inset sm:focus-visible:ring-2 p-0 rounded-full cursor-pointer',
+              'size-4.5 cursor-pointer rounded-full p-0 ring-inset active:translate-y-0! sm:focus-visible:ring-2',
               classStyleProps.tagClasses?.closeButton,
             )}
           >

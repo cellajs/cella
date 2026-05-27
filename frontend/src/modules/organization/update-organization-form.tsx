@@ -3,13 +3,13 @@ import i18n from 'i18next';
 import type { UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
+import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { z } from 'zod';
-import type { Organization } from '~/api.gen';
-import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectCountry } from '~/modules/common/form-fields/select-combobox/country';
@@ -22,22 +22,20 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 // Override generated schema: omit fields not managed by this form (welcomeText is in details form),
 // transform empty strings to null for optional fields, and add https:// validation for websiteUrl
-const formSchema = zUpdateOrganizationData.shape.body
-  .unwrap()
-  .omit({ welcomeText: true })
-  .extend({
-    websiteUrl: z
-      .string()
-      .max(2048)
-      .refine((v) => v === '' || v.startsWith('https://'), { message: i18n.t('error:invalid_url') })
-      .transform((v) => (v.trim() === '' ? null : v))
-      .nullable()
-      .optional(),
-  });
+const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
+  languages: z.array(z.enum(appConfig.languages)).min(1),
+  websiteUrl: z
+    .string()
+    .max(2048)
+    .refine((v) => v === '' || v.startsWith('https://'), { message: i18n.t('error:invalid_url') })
+    .transform((v) => (v.trim() === '' ? null : v))
+    .nullable()
+    .optional(),
+});
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
@@ -71,7 +69,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+          toaster(t('c:success.update_resource', { resource: t('c:organization') }), 'success');
           callback?.({ data: updatedOrganization, status: 'success' });
         },
       },
@@ -83,7 +81,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
           form={form}
-          label={t('common:resource_logo', { resource: t('common:organization') })}
+          label={t('c:resource_logo', { resource: t('c:organization') })}
           type="organization"
           name="thumbnailUrl"
           entity={organization}
@@ -91,37 +89,38 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <InputFormField
           control={form.control}
           name="name"
-          label={t('common:name')}
-          placeholder={t('common:placeholder.type_name')}
+          label={t('c:name')}
+          placeholder={t('c:placeholder.type_name')}
           required
         />
         <InputFormField
           control={form.control}
           name="shortName"
-          label={t('common:short_name')}
-          placeholder={t('common:placeholder.type_name')}
+          label={t('c:short_name')}
+          placeholder={t('c:placeholder.type_name')}
           required
         />
         <SlugFormField
           control={form.control}
           entityType="organization"
-          label={t('common:resource_handle', { resource: t('common:organization') })}
-          description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
+          tenantId={organization.tenantId}
+          label={t('c:resource_handle', { resource: t('c:organization') })}
+          description={t('c:resource_handle.text', { resource: t('c:organization').toLowerCase() })}
           previousSlug={organization.slug}
           prefix={`/${organization.tenantId}/`}
         />
         <InputFormField
           control={form.control}
           type="email"
-          placeholder={t('common:placeholder.your_email')}
+          placeholder={t('c:placeholder.your_email')}
           name="notificationEmail"
-          label={t('common:notification_email')}
-          description={t('common:notification_email.text')}
+          label={t('c:notification_email')}
+          description={t('c:notification_email.text')}
         />
         <InputFormField
           control={form.control}
           name="websiteUrl"
-          label={t('common:website_url')}
+          label={t('c:website_url')}
           placeholder="https://"
           type="url"
         />
@@ -131,20 +130,18 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           render={({ field }) => (
             <FormItem name="languages">
               <FormLabel>
-                {t('common:languages')}
+                {t('c:languages')}
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
-              <FormControl>
-                <SelectLanguages value={field.value ?? []} onChange={field.onChange} />
-              </FormControl>
+              <SelectLanguages value={field.value ?? []} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
           )}
         />
         <DefaultLanguageField form={form} />
 
-        <SelectCountry control={form.control} name="country" label={t('common:country')} />
-        <SelectTimezone control={form.control} name="timezone" label={t('common:timezone')} />
+        <SelectCountry control={form.control} name="country" label={t('c:country')} />
+        <SelectTimezone control={form.control} name="timezone" label={t('c:timezone')} />
 
         {/* NOT IN USE ATM <Collapsible>
           <CollapsibleTrigger asChild>
@@ -152,8 +149,8 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
               <UnfoldVertical size={16} className="group-data-[state=open]:hidden" />
               <FoldVertical size={16} className="hidden group-data-[state=open]:block" />
               <span className="ml-2">
-                <span className="block group-data-[state=open]:hidden">{t('common:show_advanced_settings')}</span>
-                <span className="hidden group-data-[state=open]:block">{t('common:hide_advanced_settings')}</span>
+                <span className="block group-data-[state=open]:hidden">{t('c:show_advanced_settings')}</span>
+                <span className="hidden group-data-[state=open]:block">{t('c:hide_advanced_settings')}</span>
               </span>
             </Button>
           </CollapsibleTrigger>
@@ -161,9 +158,9 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           </CollapsibleContent>
         </Collapsible> */}
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
-            {t('common:save_changes')}
+            {t('c:save_changes')}
           </SubmitButton>
           <Button
             type="reset"
@@ -171,7 +168,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
             onClick={() => form.reset()}
             className={form.isDirty ? '' : 'invisible'}
           >
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
         </div>
       </form>
@@ -196,13 +193,11 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
         return (
           <FormItem name="defaultLanguage">
             <FormLabel>
-              {t('common:default_language')}
+              {t('c:default_language')}
               <span className="ml-1 opacity-50">*</span>
             </FormLabel>
-            <FormDescription>{t('common:default_language.text')}</FormDescription>
-            <FormControl>
-              <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
-            </FormControl>
+            <FormDescription>{t('c:default_language.text')}</FormDescription>
+            <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
             <FormMessage />
           </FormItem>
         );

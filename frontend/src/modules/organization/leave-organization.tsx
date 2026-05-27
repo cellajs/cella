@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LeaveEntityButton, type LeaveEntityButtonProps } from '~/modules/memberships/leave-entity-button';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 function LeaveOrgButton(props: LeaveEntityButtonProps) {
@@ -15,18 +14,10 @@ function LeaveOrgButton(props: LeaveEntityButtonProps) {
       <Popover open={openPopover} onOpenChange={setOpenPopover}>
         <PopoverTrigger render={<Button size="sm" variant="success" aria-label="Leave" />}>
           <CheckIcon size={16} />
-          <span className="max-xs:hidden ml-1">{t('common:joined')}</span>
+          <span className="ml-1 max-xs:hidden">{t('c:joined')}</span>
         </PopoverTrigger>
-        <PopoverContent className="w-44 p-0 rounded-lg pointer" finalFocus={false} sideOffset={4} align="end">
-          <Command className="relative rounded-lg">
-            <CommandList>
-              <CommandGroup>
-                <CommandItem className="sm:p-0">
-                  <LeaveEntityButton {...props} />
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
+        <PopoverContent className="pointer w-44 rounded-lg p-1" finalFocus={false} sideOffset={4} align="end">
+          <LeaveEntityButton {...props} />
         </PopoverContent>
       </Popover>
     </div>

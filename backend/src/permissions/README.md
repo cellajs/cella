@@ -13,7 +13,7 @@ User ──membership──► Context (org) ──role──► Policy ──�
                           └── createdBy ──► implicit "owner" relation
 ```
 
-The design is inspired by Zanzibar (Google's authorization system). Memberships are explicit relations (`user→context`), while ownership is an implicit relation derived from the `createdBy` field on product entities. This keeps the model simple while leaving a path to explicit relation tuples if needed.
+Memberships are explicit relations (`user→context`), while ownership is an implicit relation derived from the `createdBy` field on product entities. This keeps the model simple while leaving a path to explicit relation tuples if needed.
 
 ## Configuration
 

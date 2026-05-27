@@ -2,15 +2,15 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BuildingIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Tenant } from 'sdk';
 import { appConfig } from 'shared';
-import type { Tenant } from '~/api.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
-import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
+import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
@@ -95,8 +95,8 @@ function TenantsTable() {
           NoRowsComponent: (
             <ContentPlaceholder
               icon={BuildingIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:tenants').toLowerCase() }}
+              title="c:no_resource_yet"
+              titleProps={{ resource: t('c:tenants').toLowerCase() }}
             />
           ),
         }}

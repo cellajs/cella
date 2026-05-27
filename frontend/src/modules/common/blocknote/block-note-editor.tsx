@@ -3,35 +3,34 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import {
-  FilePanelExtension,
-  FormattingToolbarExtension,
-  SideMenuExtension,
-  SuggestionMenu,
-} from '@blocknote/core/extensions';
-import { GridSuggestionMenuController, useCreateBlockNote, useExtension, useExtensionState } from '@blocknote/react';
+  FilePanelController,
+  type FilePanelProps,
+  GridSuggestionMenuController,
+  useCreateBlockNote,
+} from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useEffect, useRef } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
-import * as Y from 'yjs';
+import { type MouseEventHandler, useCallback, useEffect, useRef } from 'react';
+import { appConfig, type ProductEntityType } from 'shared';
+import type { WebsocketProvider } from 'y-websocket';
+import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/helpers';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
-import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel/file-panel';
+import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
-import {
-  compareIsContentSame,
-  getParsedContent,
-  getRandomColor,
-} from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
+import { createResolveFileUrl } from '~/modules/common/blocknote/helpers/resolve-file-url';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
+import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
+import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
+import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
+import { useYjsContentSeed } from '~/modules/common/blocknote/hooks/use-yjs-content-seed';
+import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import type {
   CommonBlockNoteProps,
   CustomBlockFileTypes,
@@ -39,81 +38,68 @@ import type {
   CustomBlockRegularTypes,
   CustomBlockTypes,
 } from '~/modules/common/blocknote/types';
+import { useDerivedFieldsSender } from '~/modules/common/blocknote/use-derived-fields-sender';
+import { useUIStore } from '~/modules/ui/ui-store';
 import router from '~/routes/router';
-import { useUIStore } from '~/store/ui';
 
-// IDE-like wrapping characters (constant, no need to recreate per keystroke)
-const wrappingChars: Record<string, string> = {
-  '[': ']',
-  '{': '}',
-  '(': ')',
-  '`': '`',
-  '"': '"',
-  "'": "'",
-};
+/** Pre-built collaboration config from the connection manager store. */
+interface CollaborationConfig {
+  provider: WebsocketProvider;
+  fragment: XmlFragment;
+  user: { name: string; color: string };
+  showCursorLabels?: 'activity' | 'always';
+}
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
-      type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
-      collaborative: true;
-      user: {
-        id?: string;
-        name: string;
-        color?: string;
-      };
+      /** When true, fire `updateData` on every change (form-binding mode). Default: only on blur/Escape/Cmd+Enter. */
+      commitOnEveryChange?: boolean;
+      collaboration: CollaborationConfig;
+      entityType: ProductEntityType;
+      entityId: string;
+      /** Callback that sends description update through a React Query mutation (fires lifecycle hooks). */
+      sendDerivedUpdate: (entityId: string, description: string) => Promise<void>;
     })
   | (CommonBlockNoteProps & {
-      type: 'edit' | 'create';
       updateData: (strBlocks: string) => void;
       autoFocus?: boolean;
-      collaborative?: false | undefined;
-      user?: never;
-    })
-  | (CommonBlockNoteProps & {
-      type: 'preview';
-      editable?: never;
-      updateData?: never;
-      autoFocus?: never;
-      onEscapeClick?: never;
-      onEnterClick?: never;
-      onBeforeLoad?: never;
-      filePanel?: never;
-      baseFilePanelProps?: never;
-      collaborative?: never;
-      user?: never;
+      commitOnEveryChange?: boolean;
+      collaboration?: never;
+      entityType?: never;
+      entityId?: never;
+      sendDerivedUpdate?: never;
     });
-
-const EMPTY_BLOCK_TYPES: CustomBlockRegularTypes[] = [];
-const EMPTY_FILE_BLOCK_TYPES: CustomBlockFileTypes[] = [];
 
 function BlockNote({
   id,
-  type,
   className = '',
   defaultValue = '', // stringified blocks
   trailingBlock = true,
-  clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
+  clickOpensPreview = false, // click on FileBlock opens preview when not editable
   dense = false,
   // Editor functional
   headingLevels = [1, 2, 3],
-  editable = type !== 'preview',
+  editable = true,
   autoFocus = false,
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
-  excludeBlockTypes = EMPTY_BLOCK_TYPES, // default types
-  excludeFileBlockTypes = EMPTY_FILE_BLOCK_TYPES, // default filetypes
+  excludeBlockTypes,
+  excludeFileBlockTypes,
   extensions,
   members, // for mentions
   publicFiles,
   filePanel,
   baseFilePanelProps,
+  commitOnEveryChange = false,
   // Collaboration
-  collaborative = false,
-  user,
+  collaboration,
+  entityType: entityTypeProp,
+  entityId: entityIdProp,
+  sendDerivedUpdate,
   // Functions
   updateData,
   onEscapeClick,
@@ -124,45 +110,20 @@ function BlockNote({
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpointBelow('sm');
 
+  const collaborative = !!collaboration;
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
-
-  // Refs to capture latest values for unmount cleanup (closure would stale otherwise)
-  const updateDataRef = useRef(updateData);
-  updateDataRef.current = updateData;
-  const defaultValueRef = useRef(defaultValue);
-  defaultValueRef.current = defaultValue;
 
   const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
   const allowedBlockTypes = defaultAllowedBlockTypes.filter(
     (type) =>
-      !excludeBlockTypes.includes(type as CustomBlockRegularTypes) &&
-      !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
+      !excludeBlockTypes?.includes(type as CustomBlockRegularTypes) &&
+      !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes),
   );
-
-  const collaborationConfig = collaborative
-    ? (() => {
-        // Share a single Y.Doc between provider and fragment so collaboration actually works
-        const yDoc = new Y.Doc();
-        return {
-          // The Yjs Provider responsible for transporting updates:
-          provider: new WebrtcProvider(id, yDoc),
-          // Where to store BlockNote data in the Y.Doc:
-          fragment: yDoc.getXmlFragment('document-store'),
-          // Information (name and color) for this user:
-          user: {
-            name: user?.name || 'Anonymous User',
-            color: user?.color || getRandomColor(),
-          },
-          // When to show user labels on the collaboration cursor. Set by default to
-          // "activity" (show when the cursor moves), but can also be set to "always".
-          showCursorLabels: 'activity' as const,
-        };
-      })()
-    : undefined;
 
   // Parse initial content once at creation time so the undo history starts clean
   // (BlockNote's recommended pattern from https://www.blocknotejs.org/examples/backend/saving-loading)
-  const initialContent = getParsedContent(defaultValue);
+  // When using collaboration, skip initialContent — the Yjs provider supplies the document state.
+  const initialContent = collaborative ? undefined : getParsedContent(defaultValue);
 
   const editor = useCreateBlockNote({
     schema: customSchema,
@@ -170,129 +131,74 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    collaboration: collaborationConfig,
-    extensions: [checkboxesExtension(), ...(extensions ?? [])],
-    // Offline-first file URL resolution:
-    // 1. If key looks like an attachment ID (nanoid format), check local blob storage
-    // 2. Fall back to presigned URL from cloud (backend infers public/private from key pattern)
-    resolveFileUrl: async (key) => {
-      if (!key.length) return '';
+    collaboration,
 
-      // Check if this looks like an attachment ID (for offline-first lookup)
-      // Attachment IDs are nanoid format, cloud keys contain slashes
-      const isAttachmentId = !key.includes('/');
+    extensions: [checkedExtension(), ...(extensions ?? [])],
+    resolveFileUrl: createResolveFileUrl({ publicFiles, baseFilePanelProps }),
+  }) as unknown as CustomBlockNoteEditor;
 
-      if (isAttachmentId) {
-        // Try local blob with variant fallback (converted → original → raw)
-        const localResult = await attachmentStorage.createBlobUrlWithVariant(key, 'converted', true);
-        if (localResult) {
-          return localResult.url;
+  // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.
+  useYjsUndoManagerFix(editor, collaborative);
+
+  // Send derived fields (summary, checkbox counts, etc.) to backend in collaborative mode.
+  // Also manages Yjs editor store registration for SSE suppression — unregister is
+  // chained after the flush mutation completes so SSE can't overwrite with stale data.
+  const { markContentAsSent } = useDerivedFieldsSender(
+    collaborative && entityTypeProp && entityIdProp && sendDerivedUpdate
+      ? {
+          entityId: entityIdProp,
+          entityType: entityTypeProp,
+          editor,
+          sendUpdate: sendDerivedUpdate,
         }
-      }
+      : null,
+  );
 
-      // Fall back to cloud URL
-      // Use publicFiles prop if set, otherwise default to private
-      const isPublic = publicFiles ?? baseFilePanelProps?.isPublic ?? false;
-
-      // Get organizationId and tenantId from cache (if key is attachment ID) or from props
-      const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
-      const tenantId = cachedAttachment?.tenantId ?? baseFilePanelProps?.tenantId;
-      const organizationId = cachedAttachment?.organizationId ?? baseFilePanelProps?.organizationId;
-
-      if (!tenantId || !organizationId) {
-        console.error(
-          '[BlockNote] Cannot resolve private file URL: no tenantId/organizationId available for key:',
-          key,
-        );
-        return '';
-      }
-
-      return getFileUrl(key, isPublic, tenantId, organizationId);
-    },
+  // Seed Y.Doc with existing content on first sync when document is empty
+  useYjsContentSeed({
+    editor,
+    provider: collaboration?.provider,
+    defaultValue,
+    markContentAsSent,
   });
 
-  const handleKeyDown: KeyboardEventHandler = (event) => {
-    const { metaKey, ctrlKey, key } = event;
-    const isEscape = key === 'Escape';
-    const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
+  const handleKeyDown = useEditorKeyboard({
+    editor,
+    onEscapeClick,
+    onEnterClick,
+    commit: () => handleUpdateData(editor),
+  });
 
-    // Handle character-based wrapping
-    if (key in wrappingChars) {
-      const selection = editor.getSelection();
-
-      const singleBlockSelected =
-        selection &&
-        selection.blocks.length === 1 &&
-        Array.isArray(selection.blocks[0].content) &&
-        selection.blocks[0].content.length > 0;
-
-      if (singleBlockSelected) {
-        event.preventDefault();
-
-        const [currentBlock] = selection.blocks;
-        const selectedText = editor.getSelectedText();
-
-        editor.updateBlock(currentBlock, {
-          content: `${key}${selectedText}${wrappingChars[key]}`,
-        });
-
-        return;
-      }
-    }
-
-    // Skip everything else if it's not special command
-    if (!isEscape && !isCmdEnter) return;
-
-    event.preventDefault();
-
-    // Escape handling
-    if (isEscape) {
-      onEscapeClick?.();
-      return;
-    }
-
-    // Cmd/Ctrl + Enter
-    event.stopPropagation();
-    onEnterClick?.();
-
-    if (!editor.isEmpty) handleUpdateData(editor);
-  };
+  const checkUntrustedMedia = useUntrustedMediaWarning();
 
   const handleUpdateData = (editor: CustomBlockNoteEditor) => {
     const strBlocks = JSON.stringify(editor.document);
-    if (compareIsContentSame(strBlocks, defaultValue) || !updateData) return;
+    if (strBlocks === defaultValue || !updateData) return;
 
+    checkUntrustedMedia(editor.document);
     updateData(strBlocks);
   };
 
   const handleOnBeforeLoad = () => onBeforeLoad?.(editor);
 
-  const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
-  const suggestionMenuExt = useExtension(SuggestionMenu, { editor });
-  const formattingToolbarShown = useExtensionState(FormattingToolbarExtension, {
+  const renderUppyFilePanel = useCallback(
+    (props: FilePanelProps) => {
+      if (!baseFilePanelProps) return null;
+      return <UppyFilePanel {...baseFilePanelProps} {...props} />;
+    },
+    [baseFilePanelProps],
+  );
+
+  const handleBlur = useSmartBlur({
     editor,
+    containerRef: blockNoteRef,
+    onBlur: () => {
+      // In `commitOnEveryChange` mode, every change is already pushed via onChange,
+      // so blur is a no-op. Otherwise we commit pending edits to the cache here.
+      // Guarded with `!editor.isEmpty` to avoid writing empty content before Yjs sync.
+      if (!commitOnEveryChange && !editor.isEmpty) handleUpdateData(editor);
+    },
   });
-  const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
-
-  const handleBlur: FocusEventHandler = (event) => {
-    // if user in Side Menu does not update
-    if (sideMenuExt?.show) return;
-
-    // if user in Formatting Toolbar does not update
-    if (formattingToolbarShown) return;
-
-    // if user in Slash Menu does not update
-    if (suggestionMenuExt.shown()) return;
-
-    // if user in file panel does not update
-    if (filePanelShown) return;
-
-    const nextFocused = event.relatedTarget;
-    // Check if the next focused element is still inside the editor
-    if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
-
-    if (type === 'edit') handleUpdateData(editor);
-  };
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || editable) return;
@@ -318,17 +224,6 @@ function BlockNote({
     return () => unsubscribe();
   }, []);
 
-  // Flush unsaved content on unmount (e.g. virtualizer drops the card while editing)
-  useEffect(() => {
-    return () => {
-      if (!updateDataRef.current) return;
-      const strBlocks = JSON.stringify(editor.document);
-      if (!compareIsContentSame(strBlocks, defaultValueRef.current)) {
-        updateDataRef.current(strBlocks);
-      }
-    };
-  }, []);
-
   return (
     <BlockNoteView
       id={id}
@@ -342,14 +237,14 @@ function BlockNote({
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={!slashMenu}
-      formattingToolbar={!formattingToolbar}
+      formattingToolbar={false}
       emojiPicker={!emojis}
-      filePanel={false} // Because in CustomFilePanel renders default UI
+      filePanel={false}
       onFocus={onFocus}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
-      {...(type === 'create' && { onChange: handleUpdateData })}
+      {...(commitOnEveryChange && { onChange: handleUpdateData })}
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
@@ -365,7 +260,13 @@ function BlockNote({
       {/* Changes the Emoji Picker to only have 8 columns & min length of 0. */}
       {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
 
-      <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
+      {baseFilePanelProps && appConfig.has.uploadEnabled ? (
+        <FilePanelController filePanel={renderUppyFilePanel} />
+      ) : filePanel ? (
+        <FilePanelController filePanel={filePanel} />
+      ) : (
+        <FilePanelController />
+      )}
     </BlockNoteView>
   );
 }

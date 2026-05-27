@@ -3,7 +3,7 @@ import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
-import { ShowcaseItem } from '~/modules/marketing/about/showcase';
+import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { ElementIcon } from '~/modules/marketing/icons/element';
 import { GithubIcon } from '~/modules/marketing/icons/github';
 
@@ -39,7 +39,7 @@ export const footerSections = [
     title: 'common:documentation',
     hideOnMobile: true,
     links: [
-      { title: 'common:api_docs', href: `/docs` },
+      { title: 'common:api_docs', href: '/docs' },
       { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
       { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],

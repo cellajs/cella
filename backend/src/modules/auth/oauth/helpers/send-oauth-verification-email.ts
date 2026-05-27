@@ -1,20 +1,19 @@
 import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
 import { userSelect } from '#/modules/user/helpers/select';
-import { logEvent } from '#/utils/logger';
+import { type LogContext, logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OAuthVerificationEmail } from '../../../../../emails';
+import { oauthVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -26,7 +25,10 @@ interface Props {
  * OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  * This is done to be sure that the oauth account holder also owns the email address.
  */
-export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+export const sendOAuthVerificationEmail = async (
+  { userId, oauthAccountId, redirectPath }: Props,
+  logCtx: LogContext = null,
+) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
@@ -67,19 +69,12 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
     })
     .returning();
 
-  // Only update when no verified email exists
+  // Link token to existing email record (only if not already verified by another flow)
   if (!emailInUse) {
     await db
-      .insert(emailsTable)
-      .values({ email, userId: user.id, tokenId: tokenRecord.id })
-      .onConflictDoUpdate({
-        target: emailsTable.email,
-        where: eq(emailsTable.verified, false),
-        set: {
-          tokenId: tokenRecord.id,
-          userId: user.id,
-        },
-      });
+      .update(emailsTable)
+      .set({ tokenId: tokenRecord.id })
+      .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, user.id), eq(emailsTable.verified, false)));
   }
 
   // Send email
@@ -92,13 +87,15 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   if (redirectPath) verificationURL.searchParams.set('redirectAfter', redirectPath);
 
   // Prepare & send email
-  const subjectText = 'backend:email.email_verification.subject';
-  const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
-  const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
-  const recipients = [{ email }];
+  const staticProps = {
+    verificationLink: verificationURL.toString(),
+    name: user.name,
+    providerEmail: oauthAccount.email,
+    providerName: oauthAccount.provider,
+  };
+  const recipients = [{ email, lng }];
 
-  const staticOAuthProps = { ...staticProps, providerEmail: oauthAccount.email, providerName: oauthAccount.provider };
-  mailer.prepareEmails(OAuthVerificationEmail, staticOAuthProps, recipients);
+  mailer.prepareEmails(oauthVerificationEmail, staticProps, recipients);
 
-  logEvent('info', 'Verification email sent', { userId: user.id });
+  logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };

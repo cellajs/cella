@@ -1,20 +1,22 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
+import type { Env } from '#/core/context';
+import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import type { UserModel } from '#/db/schema/users';
 import { usersTable } from '#/db/schema/users';
-import { Env } from '#/lib/context';
-import { AppError, type ErrorKey } from '#/lib/error';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
+import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
+import type { UserWithCounters } from '#/modules/user/helpers/select';
 import { userSelect } from '#/modules/user/helpers/select';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -23,7 +25,7 @@ import { getIsoDate } from '#/utils/iso-date';
 type OAuthFlowResult =
   | {
       type: 'verified';
-      user: UserModel;
+      user: UserWithCounters;
       oauthAccount: OAuthAccountModel;
     }
   | {
@@ -149,13 +151,13 @@ const authCallbackFlow = async ({
   if (users.length === 1) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // No user found and registration is disabled
-  if (!appConfig.has.registrationEnabled) {
+  if (!appConfig.has.selfRegistration) {
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
   // No user match → create a new user and OAuth account atomically
   const newOAuthAccount = await db.transaction(async (tx) => {
-    const user = await handleCreateUser({ newUser: providerUser, emailVerified: false, db: tx });
+    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
     return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
   });
 
@@ -250,13 +252,13 @@ const inviteCallbackFlow = async ({
     .where(eq(emailsTable.email, providerUser.email));
   if (usersWithVerifiedEmail.length) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // User may have signed up via another method (password/OAuth) but hasn't verified email yet
+  // User may have signed up via another method (e.g. OAuth) but hasn't verified email yet
   const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, providerUser.email));
   if (existingUser) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // No user match → create a new user and OAuth account atomically
   const newOAuthAccount = await db.transaction(async (tx) => {
-    const user = await handleCreateUser({ newUser: providerUser, emailVerified: false, db: tx });
+    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
     return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
   });
 
@@ -302,24 +304,11 @@ const verifyCallbackFlow = async ({
         ),
       );
 
-    // Add email to emails table if it doesn't exist
-    await tx
-      .insert(emailsTable)
-      .values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() })
-      .onConflictDoNothing();
-
-    // Set email verified if it exists
+    // Mark email as verified
     await tx
       .update(emailsTable)
       .set({ verified: true, verifiedAt: getIsoDate() })
-      .where(
-        and(
-          eq(emailsTable.tokenId, verifyToken.id),
-          eq(emailsTable.userId, user.id),
-          eq(emailsTable.email, verifyToken.email),
-          eq(emailsTable.verified, false),
-        ),
-      );
+      .where(and(eq(emailsTable.email, verifyToken.email), eq(emailsTable.userId, user.id)));
   });
 
   // Verification successful → return verified OAuth account result
@@ -374,8 +363,8 @@ const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; 
     // Start MFA challenge if the user has MFA enabled
     const mfaRedirectPath = await initiateMfa(ctx, info.user);
 
-    // Build full URL for redirect
-    const redirectPath = mfaRedirectPath || redirectAfterPath;
+    // Build full URL for redirect — new users go to welcome page
+    const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(info.user);
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     // If MFA is not required, set session immediately
@@ -383,20 +372,22 @@ const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; 
 
     // Redirect to determined URL
     return ctx.redirect(redirectUrl, 302);
-  } else {
-    // For unverified accounts, send an OAuth verification email
-    sendOAuthVerificationEmail({
+  }
+  // For unverified accounts, send an OAuth verification email
+  sendOAuthVerificationEmail(
+    {
       userId: oauthAccount.userId,
       oauthAccountId: oauthAccount.id,
       redirectPath: redirectAfterPath,
-    });
+    },
+    ctx,
+  );
 
-    // Redirect to client explaining next step for email verification
-    const redirectUrl = new URL(
-      `/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`,
-      appConfig.frontendUrl,
-    );
+  // Redirect to client explaining next step for email verification
+  const redirectUrl = new URL(
+    `/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`,
+    appConfig.frontendUrl,
+  );
 
-    return ctx.redirect(redirectUrl, 302);
-  }
+  return ctx.redirect(redirectUrl, 302);
 };

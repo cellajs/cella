@@ -3,39 +3,44 @@ import i18n from 'i18next';
 import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, roles } from 'shared';
+import { hierarchy, roles } from 'shared';
+import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { RenderSelect } from '~/modules/common/data-table/select-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
-import { openUpdateSheet, UpdateRow } from '~/modules/organization/table/update-row';
+import { openUpdateSheet } from '~/modules/organization/table/update-row';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isCompact: boolean) => {
+export const useColumns = () => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<EnrichedOrganization>[] = [
     CheckboxColumn,
     {
       key: 'name',
-      name: t('common:name'),
+      name: t('c:name'),
       sortable: true,
       minWidth: 200,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
-        <Link
-          className={buttonVariants({ variant: 'cell', size: 'cell' })}
-          to="/$tenantId/$orgSlug/organization/members"
-          draggable="false"
-          tabIndex={tabIndex}
-          params={{ tenantId: row.tenantId, orgSlug: row.slug }}
+        <Button
+          variant="cell"
+          size="cell"
+          render={
+            <Link
+              to="/$tenantId/$organizationSlug/organization/members"
+              draggable={false}
+              tabIndex={tabIndex}
+              params={{ tenantId: row.tenantId, organizationSlug: row.slug }}
+            />
+          }
         >
           <EntityAvatar
             type="organization"
@@ -44,21 +49,11 @@ export const useColumns = (isCompact: boolean) => {
             name={row.name}
             url={row.thumbnailUrl}
           />
-          <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+          <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50">
             {row.name || '-'}
           </span>
-        </Link>
+        </Button>
       ),
-    },
-    {
-      key: 'edit',
-      name: '',
-      minBreakpoint: 'md',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => {
-        if ((row.included.counts?.membership.admin ?? 0) > 0 || (row.included.counts?.membership.member ?? 0) > 0)
-          return <UpdateRow organization={row} tabIndex={tabIndex} />;
-      },
     },
     {
       key: 'ellipsis',
@@ -67,7 +62,7 @@ export const useColumns = (isCompact: boolean) => {
       renderCell: ({ row, tabIndex }) => {
         const ellipsisOptions: EllipsisOption<EnrichedOrganization>[] = [
           {
-            label: i18n.t('common:edit'),
+            label: i18n.t('c:edit'),
             icon: PencilIcon,
             onSelect: (row, triggerRef) => {
               useDropdowner.getState().remove();
@@ -75,7 +70,7 @@ export const useColumns = (isCompact: boolean) => {
             },
           },
           {
-            label: i18n.t('common:delete'),
+            label: i18n.t('c:delete'),
             icon: TrashIcon,
             onSelect: (row) => {
               const { update } = useDropdowner.getState();
@@ -83,7 +78,7 @@ export const useColumns = (isCompact: boolean) => {
 
               update({
                 content: (
-                  <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+                  <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
                     <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />
                   </PopConfirm>
                 ),
@@ -97,28 +92,32 @@ export const useColumns = (isCompact: boolean) => {
     },
     {
       key: 'role',
-      name: t('common:your_role'),
-      sortable: false,
+      name: t('c:your_role'),
+
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) =>
-        row.membership?.role ? (
-          t(`${row.membership.role}`, { ns: ['app', 'common'] })
-        ) : (
-          <span className="text-muted">-</span>
-        ),
-      renderEditCell: ({ row, onRowChange }) =>
-        RenderSelect({
-          row,
-          onRowChange,
-          options: roles.all,
-        }),
+      placeholderValue: '-',
+      editable: true,
+      editorOptions: enumSelectEditorOptions,
+      renderCell: ({ row }) => (row.membership?.role ? t(`${row.membership.role}`) : null),
+      renderEditCell: (props) => (
+        <RenderEnumSelect
+          {...props}
+          options={roles.all}
+          currentValue={props.row.membership?.role}
+          setValue={(row, role) => ({
+            ...row,
+            membership: { ...(row.membership ?? {}), role } as EnrichedOrganization['membership'],
+          })}
+          renderOption={(role) => i18n.t(role)}
+        />
+      ),
     },
 
     {
       key: 'createdAt',
-      name: t('common:created_at'),
+      name: t('c:created_at'),
       sortable: true,
       minBreakpoint: 'md',
       minWidth: 120,
@@ -127,10 +126,9 @@ export const useColumns = (isCompact: boolean) => {
     },
     {
       key: 'createdBy',
-      name: t('common:created_by'),
+      name: t('c:created_by'),
       hidden: true,
-      minWidth: isCompact ? null : 160,
-      width: isCompact ? 50 : null,
+      minWidth: 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
@@ -138,7 +136,7 @@ export const useColumns = (isCompact: boolean) => {
     // Dynamic membership count columns from role config
     ...roles.all.map((role) => ({
       key: `${role}Count`,
-      name: t(`common:${role}s`),
+      name: t(`c:${role}s`),
       minBreakpoint: 'md' as const,
       minWidth: 60,
       maxWidth: 140,
@@ -153,27 +151,30 @@ export const useColumns = (isCompact: boolean) => {
         </>
       ),
     })),
-    // Dynamic entity count columns for org-scoped product entities
-    ...appConfig.productEntityTypes
-      .filter(
-        (type) =>
-          !appConfig.parentlessProductEntityTypes.includes(
-            type as (typeof appConfig.parentlessProductEntityTypes)[number],
-          ),
-      )
-      .map((type) => ({
+    // Dynamic entity count columns for org-scoped descendant entities
+    ...(() => {
+      const descendants = hierarchy.getOrderedDescendants('organization');
+      const contextDescendants = descendants.filter((t) => hierarchy.isContext(t));
+      const productDescendants = descendants.filter((t) => !hierarchy.isContext(t));
+      // Context: last visible, Product: first visible
+      const lastContext = contextDescendants[contextDescendants.length - 1];
+      const firstProduct = productDescendants[0];
+
+      return descendants.map((type) => ({
         key: `${type}Count`,
-        name: t(`common:${type}`, { count: 2 }),
+        name: t(`c:${type}`, { count: 2 }),
+        hidden: type !== lastContext && type !== firstProduct,
         minBreakpoint: 'md' as const,
         minWidth: 60,
         maxWidth: 120,
         renderCell: ({ row }: { row: EnrichedOrganization }) => (
           <>
             <BoxIcon className="mr-2 opacity-50" size={16} />
-            {row.included.counts?.entities[type] ?? '-'}
+            {(row.included.counts?.entities as Record<string, number>)?.[type] ?? '-'}
           </>
         ),
-      })),
+      }));
+    })(),
   ];
 
   return useState<ColumnOrColumnGroup<EnrichedOrganization>[]>(columns);

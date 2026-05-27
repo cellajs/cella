@@ -44,7 +44,7 @@ export function StepLabel({ isCurrentStep, opacity, label, description }: StepLa
       aria-current={isCurrentStep ? 'step' : undefined}
       className={cn(
         'stepper__step-label-container',
-        'flex-col flex',
+        'flex flex-col',
         variant !== 'line' ? 'ms-2' : orientation === 'horizontal' && 'my-2',
         variant === 'circle-alt' && 'text-center',
         variant === 'circle-alt' && orientation === 'horizontal' && 'ms-0',
@@ -62,7 +62,7 @@ export function StepLabel({ isCurrentStep, opacity, label, description }: StepLa
         <span
           className={cn(
             'stepper__step-description',
-            'text-muted-foreground font-semibold',
+            'font-semibold text-muted-foreground',
             descriptionVariants({ size }),
             styles?.['step-description'],
           )}

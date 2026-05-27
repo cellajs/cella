@@ -1,0 +1,32 @@
+import { sharedDataTypes } from '~/modules/marketing/legal/legal-config';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
+
+/**
+ * Component to display a list of processed data types in a table format.
+ */
+export function ProcessedDataTypes() {
+  return (
+    <Table title="Processed Data Types" className="mt-2">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Purpose</TableHead>
+          <TableHead>Data Categories</TableHead>
+          <TableHead>Storage Location</TableHead>
+          <TableHead>Retention Period</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sharedDataTypes.map((type) => (
+          <TableRow key={type.slug}>
+            <TableCell>{type.name}</TableCell>
+            <TableCell className="whitespace-normal">{type.purpose}</TableCell>
+            <TableCell className="whitespace-normal">{type.dataCategories.join(', ')}</TableCell>
+            <TableCell className="whitespace-normal">{type.storageLocation}</TableCell>
+            <TableCell className="whitespace-normal">{type.retentionPeriod}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}

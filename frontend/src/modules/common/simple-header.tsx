@@ -31,11 +31,11 @@ export const SimpleHeader = ({
 
   return (
     <div className={cn('flex h-auto flex-col', useCollapse ? '' : 'gap-2 md:gap-3', className)}>
-      {heading && <h1 className="font-heading text-xl font-semibold">{t(heading)}</h1>}
+      {heading && <h1 className="font-heading font-semibold text-xl">{t(heading)}</h1>}
       {text && (
         <p
           className={cn(
-            'text-muted-foreground font-light text-base',
+            'text-base text-muted-foreground',
             collapseText && (hasScrolled ? collapseTextClasses : expandedTextClasses),
             textClassName,
           )}

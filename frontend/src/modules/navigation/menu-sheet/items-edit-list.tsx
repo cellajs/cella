@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import { useNavigationStore } from '~/store/navigation';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 export const MenuSheetItemsEdit = ({
   data,
@@ -20,8 +20,8 @@ export const MenuSheetItemsEdit = ({
 
   if (options && data.length === 0) {
     return (
-      <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: options.entityType })}
+      <li className="py-2 text-center text-light text-muted-foreground text-sm">
+        {t('c:no_resource_yet', { resource: options.entityType })}
       </li>
     );
   }

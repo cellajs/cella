@@ -11,7 +11,6 @@ import {
   type ProductEntityType,
 } from 'shared';
 import { env } from '#/env';
-import { getMembershipContextId } from '#/modules/memberships/helpers/context-ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import type { ActionAttribution, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types';
@@ -27,11 +26,10 @@ type PolicyIndex = Map<string, EntityActionPermissions>;
 const buildMembershipIndex = <T extends MembershipBaseModel>(memberships: T[]): MembershipIndex<T> => {
   const index: MembershipIndex<T> = new Map();
   for (const m of memberships) {
-    const contextId = getMembershipContextId(m, m.contextType);
-    if (!contextId) {
+    if (!m.contextId) {
       throw new Error(`[Permission] Membership missing context ID for ${m.contextType}`);
     }
-    const key = `${m.contextType}:${contextId}`;
+    const key = `${m.contextType}:${m.contextId}`;
     const list = index.get(key) ?? [];
     list.push(m);
     index.set(key, list);

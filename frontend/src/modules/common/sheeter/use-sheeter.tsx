@@ -18,7 +18,7 @@ export type SheetData = {
   className?: string;
   headerClassName?: string;
   closeSheetOnEsc?: boolean;
-  modal?: boolean;
+  modal?: boolean | 'trap-focus';
   disablePointerDismissal?: boolean;
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;

@@ -10,8 +10,8 @@ export function InviteOnlyStep() {
 
   return (
     <>
-      <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
-      <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: appConfig.name })}</h2>
+      <h1 className="mt-4 pb-2 text-center text-2xl">{t('c:hi')}</h1>
+      <h2 className="mt-4 pb-4 text-center text-xl">{t('c:invite_only.text', { appName: appConfig.name })}</h2>
     </>
   );
 }

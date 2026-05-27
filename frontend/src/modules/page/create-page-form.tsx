@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
-import { type UseFormProps } from 'react-hook-form';
+import { useMemo, useState } from 'react';
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { zCreatePagesBody } from 'sdk/zod.gen';
+import { generateId } from 'shared/entity-id';
 import type { z } from 'zod';
-import { zCreatePagesData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { usePageCreateMutation } from '~/modules/page/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -15,15 +16,16 @@ interface Props {
 }
 
 // Form only collects the data portion - tx is added by mutation
-// zCreatePagesData.shape.body is an array schema with tx in each element, use .element and omit tx
-const formSchema = zCreatePagesData.shape.body.element.omit({ stx: true });
+// zCreatePagesBody is an array schema with tx in each element, use .element and omit tx
+const formSchema = zCreatePagesBody.element.omit({ stx: true });
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreatePageForm = ({ callback }: Props) => {
   const { t } = useTranslation();
   const createPage = usePageCreateMutation();
+  const [defaultId] = useState(generateId);
 
-  const defaultValues = { name: '' };
+  const defaultValues = { name: '', id: defaultId };
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -45,11 +47,11 @@ export const CreatePageForm = ({ callback }: Props) => {
   return (
     <Form {...form} labelDirection="top">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:title')} required />
+        <InputFormField control={form.control} name="name" label={t('c:title')} required />
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton allowOfflineDelete disabled={!form.isDirty || createPage.isPending}>
-            {t('common:create')}
+            {t('c:create')}
           </SubmitButton>
 
           <Button
@@ -59,7 +61,7 @@ export const CreatePageForm = ({ callback }: Props) => {
             aria-label="Cancel"
             onClick={() => form.reset()}
           >
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
         </div>
       </form>

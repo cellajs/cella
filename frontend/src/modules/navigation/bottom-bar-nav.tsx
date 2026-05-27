@@ -1,9 +1,9 @@
 import { Fragment } from 'react/jsx-runtime';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
-import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
 // Cached base nav items
@@ -23,14 +23,17 @@ interface BottomBarNavProps {
 export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
   const { hasStarted } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const floatingNavActive = useNavigationStore((state) => state.floatingNavActive);
+
+  if (floatingNavActive) return null;
 
   return (
     <nav
       id="bottom-bar-nav"
       data-started={hasStarted}
-      className="in-[.floating-nav]:hidden fixed z-100 flex justify-between flex-row w-full bottom-0 transition-transform ease-out shadow-xs bg-sidebar data-[started=false]:translate-y-full group-[.focus-view]/body:hidden"
+      className="fixed bottom-0 z-100 flex w-full flex-row justify-between bg-sidebar shadow-xs transition-transform ease-out group-[.focus-view]/body:hidden data-[started=false]:translate-y-full"
     >
-      <ul className="flex flex-row justify-between p-1 w-full px-2">
+      <ul className="flex w-full flex-row justify-between p-1 px-2">
         {getBaseNavItems().map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;
           const isActive = navSheetOpen === navItem.id;
@@ -46,7 +49,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
               >
                 <BottomBarNavButton navItem={navItem} isActive={isActive} onClick={triggerNavItem} />
               </li>
-              {isSecondItem && <div className={`hidden xs:flex xs:grow`} />}
+              {isSecondItem && <div className={'xs:flex hidden xs:grow'} />}
             </Fragment>
           );
         })}

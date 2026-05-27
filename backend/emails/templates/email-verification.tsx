@@ -1,50 +1,58 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailButton, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import {
+  EmailBody,
+  EmailButton,
+  EmailContainer,
+  EmailFooter,
+  EmailHeader,
+  EmailLogo,
+  EmailText,
+  SafeHtml,
+} from '../components';
 import i18n from '../i18n';
 import { greetingStyle } from '../styles';
-import type { BasicTemplateType } from '../types';
+import { defineEmailTemplate, type EmailRecipient } from '../types';
 
 const appName = appConfig.name;
 
-interface EmailVerificationEmailProps extends BasicTemplateType {
-  name: string;
+interface EmailVerificationStatic {
   verificationLink: string;
-  email: string;
+  name: string;
 }
 
 /**
  * Email template for users to verify ownership of this email address.
  */
-export const EmailVerificationEmail = ({ lng, verificationLink, email, name }: EmailVerificationEmailProps) => {
-  return (
-    <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
-      <EmailHeader headerText={i18n.t('backend:email.email_verification.title', { appName, lng })} />
-      <EmailBody>
-        {name && <Text style={greetingStyle}>{i18n.t('backend:email.hi', { lng, name })}</Text>}
-        <Text>
-          <span
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.email_verification.text', { lng, appName, email, name }),
-            }}
-          />
-        </Text>
-
-        <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
-      </EmailBody>
-      <EmailLogo />
-      <Footer />
-    </EmailContainer>
-  );
-};
-
-// Template export
-export const Template = EmailVerificationEmail;
-
-// Preview props for jsx-email CLI
-export const previewProps = {
-  lng: 'en',
-  subject: 'Verify your email',
-  name: 'Emily',
-  verificationLink: 'https://cellajs.com/auth/verify?token=preview-token',
-  email: 'jane@example.com',
-} satisfies EmailVerificationEmailProps;
+export const emailVerificationEmail = defineEmailTemplate<
+  EmailVerificationStatic,
+  EmailRecipient & { email: string }
+>()({
+  translate(lng, { verificationLink, name }) {
+    return {
+      subject: i18n.t('backend:email.email_verification.subject', { lng, appName }),
+      previewText: i18n.t('backend:email.email_verification.preview', { appName, lng }),
+      headerText: i18n.t('backend:email.email_verification.title', { appName, lng }),
+      hiText: name ? i18n.t('backend:email.hi', { lng, name }) : '',
+      bodyHtml: i18n.t('backend:email.email_verification.text', { lng, appName, email: '{{params.email}}', name }),
+      buttonText: i18n.t('c:verify_my_email', { lng }),
+      supportText: i18n.t('backend:email.support_email', { lng }),
+      verificationLink,
+    };
+  },
+  component({ previewText, headerText, hiText, bodyHtml, buttonText, verificationLink, supportText }) {
+    return (
+      <EmailContainer previewText={previewText}>
+        <EmailHeader headerText={headerText} />
+        <EmailBody>
+          {hiText && <EmailText style={greetingStyle}>{hiText}</EmailText>}
+          <EmailText>
+            <SafeHtml html={bodyHtml} policy="inline" />
+          </EmailText>
+          <EmailButton ButtonText={buttonText} href={verificationLink} />
+        </EmailBody>
+        <EmailLogo />
+        <EmailFooter supportText={supportText} />
+      </EmailContainer>
+    );
+  },
+});

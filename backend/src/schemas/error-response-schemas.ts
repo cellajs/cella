@@ -1,6 +1,7 @@
-import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import type { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
+import { schemaTags } from '#/core/openapi-helpers';
 import { apiErrorSchema } from './api-error-schemas';
 
 type Responses = Parameters<typeof createRoute>[0]['responses'];
@@ -11,8 +12,13 @@ type ZodBackedResponse = {
 };
 
 type ErrorOption = (typeof errorResponseOptions)[number];
-type ErrorCode = ErrorOption['code'];
 type Ref = ErrorOption['ref'];
+
+/** HTTP error status codes registered in the OpenAPI spec. */
+export type ErrorCode = ErrorOption['code'];
+
+/** Error codes that operations can produce (excludes 401 — handled by auth middleware). */
+export type OperationErrorCode = Exclude<ErrorCode, 401>;
 
 /**
  * Standardized error response specifications, used to generate:
@@ -50,6 +56,13 @@ const errorResponseOptions = [
     ref: '#/components/responses/NotFoundError',
   },
   {
+    code: 409,
+    name: 'ConflictError',
+    description: 'Conflict: resource state conflict.',
+    schemaDescription: 'Error returned when the request conflicts with current resource state.',
+    ref: '#/components/responses/ConflictError',
+  },
+  {
     code: 429,
     name: 'TooManyRequestsError',
     description: 'Rate limit: too many requests.',
@@ -63,6 +76,7 @@ const errorBodySchema = (code: ErrorCode) => {
   const option = errorResponseOptions.find((o) => o.code === code);
   return apiErrorSchema.extend({ status: z.literal(code) }).openapi(option?.name ?? 'Error', {
     description: option?.schemaDescription,
+    'x-tags': schemaTags('errors', 'cella'),
   });
 };
 

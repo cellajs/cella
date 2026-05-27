@@ -7,9 +7,10 @@
 
 import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
+import process from 'node:process';
 import { Separator, select } from '@inquirer/prompts';
-import pc from 'picocolors';
 import type { ForkConfig, RuntimeConfig } from '../config/types';
+import pc from '../utils/colors';
 import { loadConfig } from '../utils/config';
 import { getCommitInfo, getCurrentBranch, getStoredSyncRef, git, isClean } from '../utils/git';
 

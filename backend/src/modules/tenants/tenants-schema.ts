@@ -8,6 +8,7 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import { schemaTags } from '#/core/openapi-helpers';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/db/schema/tenants';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema, validNameSchema } from '#/schemas';
@@ -16,7 +17,7 @@ import { paginationQuerySchema, validNameSchema } from '#/schemas';
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
 /** Tenant status schema */
-export const tenantStatusSchema = z.enum(tenantStatusValues);
+const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 
 /** Restrictions: rate limits sub-schema */
@@ -43,7 +44,10 @@ export const tenantSchema = z
     }).omit({ subscriptionData: true }).shape,
     domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
   })
-  .openapi('Tenant', { description: 'A tenant representing an isolated data partition for multi-tenancy.' });
+  .openapi('Tenant', {
+    description: 'A tenant representing an isolated data partition for multi-tenancy.',
+    'x-tags': schemaTags('data', 'tenants', 'cella'),
+  });
 
 /**
  * Schema for creating a new tenant.
@@ -51,6 +55,13 @@ export const tenantSchema = z
 export const createTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
 }).pick({ name: true, status: true });
+
+/**
+ * Schema for self-serve tenant creation by authenticated users.
+ */
+export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, {
+  name: validNameSchema,
+}).pick({ name: true });
 
 /** Partial restrictions schema for update operations */
 const partialRestrictionsSchema = z

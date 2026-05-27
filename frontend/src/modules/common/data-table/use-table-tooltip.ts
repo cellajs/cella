@@ -1,5 +1,16 @@
-import { autoUpdate, computePosition, offset } from '@floating-ui/dom';
 import { useEffect, useRef } from 'react';
+
+/**
+ * Position tooltip to the right of the reference element with a gap, centered vertically.
+ */
+const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {
+  const rect = reference.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  Object.assign(tooltip.style, {
+    left: `${rect.right + gap}px`,
+    top: `${rect.top + (rect.height - tooltipRect.height) / 2}px`,
+  });
+};
 
 /**
  * Tooltip designed to be used with a data grid. Works largely outside of react to prevent rerendering/perf issues.
@@ -11,7 +22,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
   const timeoutRef = useRef<number | null>(null);
   const lastShownCellRef = useRef<HTMLElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
-  const cleanupAutoUpdateRef = useRef<(() => void) | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!gridRef?.current) return;
@@ -19,7 +30,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
     const tooltip = document.createElement('div');
 
     tooltip.className =
-      'max-md:invisible bg-muted-foreground text-primary-foreground absolute pointer-events-none hidden font-light rounded-md text-xs px-3 py-1.5 z-200';
+      'max-md:invisible bg-muted-foreground text-primary-foreground fixed pointer-events-none hidden rounded-md text-xs px-3 py-1.5 z-200';
     document.body.appendChild(tooltip);
     tooltipRef.current = tooltip;
 
@@ -31,22 +42,17 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.style.display = 'block';
       lastShownCellRef.current = cell;
 
-      // Clean up previous autoUpdate before starting a new one
-      cleanupAutoUpdateRef.current?.();
-      cleanupAutoUpdateRef.current = autoUpdate(cell, tooltip, () => {
-        // When virtualization recycles the row, the cell gets detached — dismiss the orphaned tooltip
-        if (!cell.isConnected) return clearTooltip();
+      // Cancel previous positioning loop
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-        computePosition(cell, tooltip, {
-          placement: 'right',
-          middleware: [offset(4)],
-        }).then(({ x, y }) => {
-          Object.assign(tooltip.style, {
-            left: `${x}px`,
-            top: `${y}px`,
-          });
-        });
-      });
+      // Position immediately, then keep in sync via rAF (handles virtualization recycling)
+      positionTooltip(cell, tooltip);
+      const track = () => {
+        if (!cell.isConnected) return clearTooltip();
+        positionTooltip(cell, tooltip);
+        rafRef.current = requestAnimationFrame(track);
+      };
+      rafRef.current = requestAnimationFrame(track);
 
       observerRef.current?.disconnect();
       observerRef.current = new MutationObserver(() => updateTooltipContent(cell));
@@ -91,8 +97,10 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
     const clearTooltip = () => {
       tooltip.style.display = 'none';
       lastShownCellRef.current = null;
-      cleanupAutoUpdateRef.current?.();
-      cleanupAutoUpdateRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       observerRef.current?.disconnect();
     };
 
@@ -109,7 +117,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       gridEl.removeEventListener('focusin', handleFocus);
       gridEl.removeEventListener('focusout', clearTooltip);
       gridEl.removeEventListener('scroll', clearTooltip, { capture: true });
-      cleanupAutoUpdateRef.current?.();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       observerRef.current?.disconnect();
       tooltip.remove();
     };

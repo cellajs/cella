@@ -159,12 +159,12 @@ export const CustomStyling: Story = {
       <div className="space-y-4">
         <InputOTP maxLength={6} value={value} onChange={(value) => setValue(value)} className="gap-4">
           <InputOTPGroup>
-            <InputOTPSlot index={0} className="w-12 h-12 text-lg" />
-            <InputOTPSlot index={1} className="w-12 h-12 text-lg" />
-            <InputOTPSlot index={2} className="w-12 h-12 text-lg" />
-            <InputOTPSlot index={3} className="w-12 h-12 text-lg" />
-            <InputOTPSlot index={4} className="w-12 h-12 text-lg" />
-            <InputOTPSlot index={5} className="w-12 h-12 text-lg" />
+            <InputOTPSlot index={0} className="h-12 w-12 text-lg" />
+            <InputOTPSlot index={1} className="h-12 w-12 text-lg" />
+            <InputOTPSlot index={2} className="h-12 w-12 text-lg" />
+            <InputOTPSlot index={3} className="h-12 w-12 text-lg" />
+            <InputOTPSlot index={4} className="h-12 w-12 text-lg" />
+            <InputOTPSlot index={5} className="h-12 w-12 text-lg" />
           </InputOTPGroup>
         </InputOTP>
       </div>
@@ -193,8 +193,8 @@ export const AuthForm: Story = {
     return (
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-semibold">Verify your identity</h2>
-          <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to your device</p>
+          <h2 className="font-semibold text-2xl">Verify your identity</h2>
+          <p className="text-muted-foreground text-sm">Enter the 6-digit code sent to your device</p>
         </div>
 
         <div className="space-y-4">
@@ -220,7 +220,7 @@ export const AuthForm: Story = {
         </div>
 
         <div className="text-center">
-          <button className="text-sm text-muted-foreground hover:text-foreground underline">
+          <button className="text-muted-foreground text-sm underline hover:text-foreground">
             Didn't receive a code? Resend
           </button>
         </div>
@@ -245,14 +245,14 @@ export const RecoveryCodes: Story = {
     return (
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Enter Recovery Codes</h3>
-          <p className="text-sm text-muted-foreground">Enter any 3 of your 8-character recovery codes</p>
+          <h3 className="font-semibold text-lg">Enter Recovery Codes</h3>
+          <p className="text-muted-foreground text-sm">Enter any 3 of your 8-character recovery codes</p>
         </div>
 
         <div className="space-y-4">
           {codes.map((code, index) => (
             <div key={index} className="flex items-center space-x-2">
-              <span className="text-sm font-medium w-20">Code {index + 1}:</span>
+              <span className="w-20 font-medium text-sm">Code {index + 1}:</span>
               <InputOTP maxLength={8} value={code} onChange={(value) => handleCodeChange(index, value)}>
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />

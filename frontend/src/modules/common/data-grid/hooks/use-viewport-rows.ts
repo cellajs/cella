@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-
 import { floor, max, min } from '../utils/grid-utils';
 
 interface ViewportRowsArgs<R> {
@@ -36,6 +35,18 @@ export function useViewportRows<R>({
     let currentHeight: number | null = null;
     let repeatCount = 0;
 
+    // Helper to flush a run of same-height rows into the gridTemplateRows string.
+    // Uses minmax(Xpx, max-content) so rendered rows can grow beyond the estimate
+    // while non-rendered rows stay at the estimated minimum.
+    const flushRun = (height: number, count: number) => {
+      const track = `minmax(${height}px,max-content)`;
+      if (count > 1) {
+        gridTemplateRows += `repeat(${count},${track}) `;
+      } else {
+        gridTemplateRows += `${track} `;
+      }
+    };
+
     const rowPositions = rows.map((row, index) => {
       const currentRowHeight = rowHeight(row);
 
@@ -52,22 +63,13 @@ export function useViewportRows<R>({
         // If the current row height is the same as the previous one, increment the repeat count
         repeatCount++;
       } else {
-        if (repeatCount > 1) {
-          gridTemplateRows += `repeat(${repeatCount}, ${currentHeight}px) `;
-        } else {
-          gridTemplateRows += `${currentHeight}px `;
-        }
-
+        flushRun(currentHeight, repeatCount);
         currentHeight = currentRowHeight;
         repeatCount = 1;
       }
 
       if (index === rows.length - 1) {
-        if (repeatCount > 1) {
-          gridTemplateRows += `repeat(${repeatCount}, ${currentHeight}px)`;
-        } else {
-          gridTemplateRows += `${currentHeight}px`;
-        }
+        flushRun(currentHeight!, repeatCount);
       }
 
       return position;

@@ -3,19 +3,19 @@ import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { zMembershipInviteBody } from 'sdk/zod.gen';
 import type z from 'zod';
-import { zMembershipInviteData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AlertBanner } from '~/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
 
-const InviteFormSchema = zMembershipInviteData.shape.body;
+const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
 /**
@@ -54,11 +54,11 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
         <div className="flex items-center gap-2">
           {mode[0] ? (
             <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
-              {t('common:invite')}
+              {t('c:invite')}
             </button>
           ) : (
             <div>
-              <UnsavedBadge title={t('common:invite')} />
+              <UnsavedBadge title={t('c:invite')} />
             </div>
           )}
           <AnimatePresence>
@@ -71,7 +71,7 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
                 <ChevronRightIcon className="opacity-50" size={16} />
-                <UnsavedBadge title={mode[0] === 'search' ? t('common:search') : t('common:email')} />
+                <UnsavedBadge title={mode[0] === 'search' ? t('c:search') : t('c:email')} />
               </motion.span>
             )}
           </AnimatePresence>
@@ -88,20 +88,20 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
             <ToggleGroup
               type="multiple"
               onValueChange={(v) => updateMode(v as ('search' | 'email')[])}
-              className="max-sm:flex-col sm:h-40 py-3 gap-2 sm:gap-3 items-stretch w-full"
+              className="w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3"
             >
               <ToggleGroupItem
                 size="tile"
                 variant="tile"
                 value="email"
                 aria-label="Add by email"
-                className="py-6 sm:py-10 w-auto grow"
+                className="w-auto grow py-6 sm:py-10"
               >
                 <AtSignIcon size={48} strokeWidth={1} />
-                <div className="flex flex-col pl-3 truncate">
-                  <p>{t('common:invite_by_email')}</p>
-                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100 truncate">
-                    <strong>{t('common:continue')}</strong>
+                <div className="flex flex-col truncate pl-3">
+                  <p>{t('c:invite_by_email')}</p>
+                  <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">
+                    <strong>{t('c:continue')}</strong>
                     <AnimatedArrow />
                   </div>
                 </div>
@@ -111,13 +111,13 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
                 variant="tile"
                 value="search"
                 aria-label="Search users"
-                className="py-6 sm:py-10 w-auto grow"
+                className="w-auto grow py-6 sm:py-10"
               >
                 <SearchIcon size={48} strokeWidth={1} />
-                <div className="flex flex-col pl-3 truncate">
-                  <div>{t('common:invite_by_name')}</div>
-                  <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100 truncate">
-                    <strong>{t('common:continue')}</strong>
+                <div className="flex flex-col truncate pl-3">
+                  <div>{t('c:invite_by_name')}</div>
+                  <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover:opacity-100">
+                    <strong>{t('c:continue')}</strong>
                     <AnimatedArrow />
                   </div>
                 </div>
@@ -132,9 +132,9 @@ export function InviteUsers({ contextEntity, dialog: isDialog, mode: baseMode, c
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col gap-4"
           >
-            <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
-              {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
-            </AlertWrap>
+            <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
+              {t(inviteMode === 'email' ? 'c:explain.invite_email.text' : 'c:explain.invite_search.text')}
+            </AlertBanner>
             {inviteMode === 'email' ? (
               <InviteEmailForm contextEntity={contextEntity} dialog={isDialog}>
                 {children}

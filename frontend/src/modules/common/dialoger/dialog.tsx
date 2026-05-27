@@ -54,7 +54,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
             <div
               className={cn(
                 'absolute inset-0 z-30 bg-background/75 duration-200',
-                open ? 'animate-in fade-in-0' : 'animate-out fade-out-0',
+                open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out',
               )}
             />,
             container.overlayRef.current,
@@ -63,14 +63,14 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
           <div
             className={cn(
               'fixed inset-0 z-30 bg-background/75 duration-200',
-              open ? 'animate-in fade-in-0' : 'animate-out fade-out-0',
+              open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out',
             )}
           />
         ))}
       <DialogContent
         id={String(id)}
         container={containerElement}
-        className={cn(className, containerElement && 'z-40 in-[.sheeter-open]:z-40')}
+        className={cn(className, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? finalFocusRef : undefined}
       >
@@ -78,7 +78,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
           sticky
           className={cn(isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName)}
         >
-          <DialogTitle className={`${title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
+          <DialogTitle className={`${title ? '' : 'hidden'} h-6 leading-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>
 

@@ -1,5 +1,5 @@
-import { createXRoute } from '#/docs/x-routes';
-import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { createXRoute } from '#/core/x-routes';
+import { authGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, tenantOnlyParamSchema } from '#/schemas';
 import {
@@ -18,8 +18,8 @@ export const domainRoutes = {
     operationId: 'getDomains',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
-    tags: ['tenants'],
+    xGuard: [authGuard, sysAdminGuard, tenantGuard],
+    tags: ['tenants', 'cella'],
     summary: 'List domains for a tenant',
     description:
       'Returns all domains belonging to a tenant, including verification tokens. System admin access required.',
@@ -44,9 +44,9 @@ export const domainRoutes = {
     operationId: 'createDomain',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['tenants'],
+    xGuard: [authGuard, sysAdminGuard, tenantGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
     summary: 'Add a domain to a tenant',
     description: 'Adds a new domain to a tenant. The domain starts unverified. System admin access required.',
     request: {
@@ -76,9 +76,9 @@ export const domainRoutes = {
     operationId: 'deleteDomain',
     method: 'delete',
     path: '/{id}',
-    xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['tenants'],
+    xGuard: [authGuard, sysAdminGuard, tenantGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
     summary: 'Remove a domain',
     description: 'Removes a domain from a tenant. System admin access required.',
     request: { params: domainParamSchema },
@@ -102,8 +102,8 @@ export const domainRoutes = {
     operationId: 'getDomain',
     method: 'get',
     path: '/{id}',
-    xGuard: [authGuard, sysAdminGuard],
-    tags: ['tenants'],
+    xGuard: [authGuard, sysAdminGuard, tenantGuard],
+    tags: ['tenants', 'cella'],
     summary: 'Get domain with verification token',
     description:
       'Returns a single domain including its verification token for DNS TXT setup. System admin access required.',
@@ -128,9 +128,9 @@ export const domainRoutes = {
     operationId: 'verifyDomain',
     method: 'post',
     path: '/{id}/verify',
-    xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['tenants'],
+    xGuard: [authGuard, sysAdminGuard, tenantGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
     summary: 'Verify domain ownership via DNS',
     description:
       'Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.',

@@ -2,15 +2,15 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
-import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface PasskeyStrategyProps extends Omit<PasskeyCredentialProps, 'type'> {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
@@ -34,7 +34,6 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
   >({
     mutationFn: async (email) => {
       const body = await getPasskeyVerifyCredential({ email, type });
-      // Send signed response to BE to complete authentication
       return await signInWithPasskey({ body });
     },
     onSuccess: () => {
@@ -53,13 +52,13 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
     <div data-mode={mode} className="group flex flex-col space-y-2">
       <Button
         type="button"
-        variant={type === 'mfa' ? 'default' : 'outline'}
+        variant={type === 'mfa' ? 'default' : 'plain'}
         onClick={() => passkeyAuth(email)}
         className="w-full gap-1.5 truncate"
       >
         <FingerprintIcon size={16} />
         <span className="truncate">
-          {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+          {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
         </span>
       </Button>
     </div>

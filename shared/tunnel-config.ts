@@ -1,4 +1,4 @@
-import type { DeepPartial } from './src/builder/types';
+import type { DeepPartial } from './src/config-builder/types';
 import type _default from './default-config';
 
 export default {
@@ -9,7 +9,4 @@ export default {
   backendUrl: 'http://cella.ngrok.dev',
   backendAuthUrl: 'https://raak.ngrok.dev/auth',
 
-  s3: {
-    bucketPrefix: 'cella-tunnel',
-  },
 } satisfies DeepPartial<typeof _default>;

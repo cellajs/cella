@@ -1,14 +1,14 @@
+import { PencilIcon } from 'lucide-react';
 import { type MouseEvent, memo } from 'react';
-
 import { useRovingTabIndex } from './hooks';
 import type { CellMouseEventHandler, CellRendererProps } from './types';
 import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
-const cellInRangeClassname = 'bg-primary/10';
-const cellRangeTopClassname = 'rdg-cell-range-top';
-const cellRangeBottomClassname = 'rdg-cell-range-bottom';
-const cellRangeLeftClassname = 'rdg-cell-range-left';
-const cellRangeRightClassname = 'rdg-cell-range-right';
+const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10 aria-selected:outline-none';
+const cellRangeTopClassname = 'rdg-cell-range-top border-t-2 border-t-primary';
+const cellRangeBottomClassname = 'rdg-cell-range-bottom border-b-2 border-b-primary';
+const cellRangeLeftClassname = 'rdg-cell-range-left border-l-2 border-l-primary';
+const cellRangeRightClassname = 'rdg-cell-range-right border-r-2 border-r-primary';
 
 function Cell<R, SR>({
   column,
@@ -31,9 +31,16 @@ function Cell<R, SR>({
   onRowChange,
   selectCell,
   style,
+  isCellSelectionEnabled,
   ...props
 }: CellRendererProps<R, SR>) {
-  const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(isCellSelected);
+  const roving = useRovingTabIndex(isCellSelected);
+  // When cell selection is disabled, the gridcell wrapper is not a tab stop and any
+  // interactive children stay reachable via natural DOM tab order. Otherwise use the
+  // standard roving-tabindex pattern.
+  const tabIndex = isCellSelectionEnabled ? roving.tabIndex : -1;
+  const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
+  const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
 
   const { cellClass } = column;
 
@@ -46,6 +53,11 @@ function Cell<R, SR>({
       [cellRangeLeftClassname]: isInSelectedRange === true && (rangeBoundary?.isLeft ?? false),
       [cellRangeRightClassname]: isInSelectedRange === true && (rangeBoundary?.isRight ?? false),
     },
+    // When cell selection is disabled, render the focus affordance via :focus-visible on
+    // any interactive child (Button cell variant, links). Using has-[:focus-visible]
+    // (instead of :focus-within) avoids showing the outline on mouse clicks.
+    !isCellSelectionEnabled &&
+      'has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
     className,
   );
@@ -69,6 +81,19 @@ function Cell<R, SR>({
   }
 
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
+    // Suppress the browser's native focus-on-mousedown scroll. The cell is
+    // `tabIndex`'d for roving-tabindex keyboard nav and also has `scroll-mt-32`
+    // (so keyboard navigation keeps the focused cell out from under the page's
+    // sticky header). Together these cause a visible "page jumps after first
+    // click" when clicking a cell near the top edge of the viewport — the UA
+    // honors scroll-margin-top during the implicit focus scroll.
+    //
+    // Focus the cell ourselves *synchronously* with `preventScroll: true`. The
+    // browser's implicit focus then sees an already-focused element and becomes
+    // a no-op (no scroll). We deliberately do NOT call `event.preventDefault()`
+    // here: that would also cancel the subsequent `dragstart` event and break
+    // any pragmatic-dnd row-drag wiring on the cell.
+    event.currentTarget.focus({ preventScroll: true });
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
       // select cell if the event is not prevented
@@ -126,6 +151,9 @@ function Cell<R, SR>({
         tabIndex: childTabIndex,
         onRowChange: handleRowChange,
       })}
+      {isEditable && (
+        <PencilIcon className="pointer-events-none absolute top-2 right-2 hidden size-3 text-muted-foreground sm:group-hover/cell:block" />
+      )}
     </div>
   );
 }
@@ -137,7 +165,7 @@ function renderCellContent<R, SR>(
 ) {
   const content = column.renderCell(props);
   if (content == null && column.placeholderValue != null) {
-    return <span className="text-muted">{column.placeholderValue}</span>;
+    return <span className="text-muted-foreground/50">{column.placeholderValue}</span>;
   }
   return content;
 }

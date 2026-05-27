@@ -26,19 +26,19 @@ export const CollapsedPreview: FC<CollapsedPreviewProps> = ({
 }) => {
   return (
     <>
-      <span className="opacity-50 italic mx-1 text-xs">
+      <span className="mx-1.5 whitespace-nowrap text-xs italic opacity-50">
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </span>
       <span className={`font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`}>{closeBracket}</span>
       {hiddenMatchCount > 0 && (
         <span
-          className={`ml-1.5 px-1.5 py-0.5 text-sm font-medium rounded ${theme.matchBadge}`}
+          className={`ml-1.5 rounded px-1.5 py-0.5 font-medium text-sm ${theme.matchBadge}`}
           title="Contains search matches - click to expand"
         >
           {hiddenMatchCount} {hiddenMatchCount === 1 ? 'match' : 'matches'}
         </span>
       )}
-      {displayDataTypes && <span className="text-sm opacity-50 ml-2">{typeLabel}</span>}
+      {displayDataTypes && <span className="ml-2 text-sm opacity-50">{typeLabel}</span>}
     </>
   );
 };

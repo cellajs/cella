@@ -27,7 +27,7 @@ export const Default: Story = {
     const [emails, setEmails] = useState(['user@example.com', 'test@domain.org']);
     return (
       <div className="w-80">
-        <SelectEmails emails={emails} onChange={setEmails} placeholder="Add email addresses..." />
+        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Add email addresses..." />
       </div>
     );
   },
@@ -41,7 +41,7 @@ export const Empty: Story = {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-80">
-        <SelectEmails emails={emails} onChange={setEmails} placeholder="Enter email addresses..." />
+        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Enter email addresses..." />
       </div>
     );
   },
@@ -58,7 +58,7 @@ export const WithDisplayName: Story = {
       <div className="w-96">
         <SelectEmails
           emails={emails}
-          onChange={setEmails}
+          onValueChange={setEmails}
           allowDisplayName
           placeholder="Name <email> or just email..."
         />
@@ -77,7 +77,7 @@ export const StripDisplayName: Story = {
       <div className="w-96">
         <SelectEmails
           emails={emails}
-          onChange={(newEmails) => {
+          onValueChange={(newEmails) => {
             console.info('Emails:', newEmails);
             setEmails(newEmails);
           }}
@@ -85,7 +85,7 @@ export const StripDisplayName: Story = {
           stripDisplayName
           placeholder="Try: John Doe <john@example.com>"
         />
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground text-xs">
           Display names are stripped, only email addresses are stored.
         </p>
       </div>
@@ -101,8 +101,8 @@ export const AllowDuplicates: Story = {
     const [emails, setEmails] = useState(['user@example.com']);
     return (
       <div className="w-80">
-        <SelectEmails emails={emails} onChange={setEmails} allowDuplicate placeholder="Duplicates allowed..." />
-        <p className="text-xs text-muted-foreground mt-2">Try adding the same email twice.</p>
+        <SelectEmails emails={emails} onValueChange={setEmails} allowDuplicate placeholder="Duplicates allowed..." />
+        <p className="mt-2 text-muted-foreground text-xs">Try adding the same email twice.</p>
       </div>
     );
   },
@@ -118,7 +118,7 @@ export const WithMaxEmails: Story = {
       <div className="w-80">
         <SelectEmails
           emails={emails}
-          onChange={setEmails}
+          onValueChange={setEmails}
           maxTags={5}
           showCount
           placeholder="Add up to 5 emails..."
@@ -139,7 +139,7 @@ export const CustomStyling: Story = {
       <div className="w-80">
         <SelectEmails
           emails={emails}
-          onChange={setEmails}
+          onValueChange={setEmails}
           placeholder="Styled emails..."
           badgeVariants={{ variant: 'outline' }}
           styleClasses={{
@@ -163,8 +163,8 @@ export const PasteMultiple: Story = {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-96">
-        <SelectEmails emails={emails} onChange={setEmails} placeholder="Paste multiple emails..." />
-        <p className="text-xs text-muted-foreground mt-2">
+        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Paste multiple emails..." />
+        <p className="mt-2 text-muted-foreground text-xs">
           Try pasting: test1@example.com, test2@example.com; test3@example.com
         </p>
       </div>
@@ -182,7 +182,7 @@ export const WithCallbacks: Story = {
       <div className="w-80">
         <SelectEmails
           emails={emails}
-          onChange={setEmails}
+          onValueChange={setEmails}
           onTagAdd={(email) => console.info('Added:', email)}
           onTagRemove={(email) => console.info('Removed:', email)}
           onInputChange={(value) => console.info('Input:', value)}

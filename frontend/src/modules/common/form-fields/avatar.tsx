@@ -11,7 +11,8 @@ import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 
 interface Props {
-  form: UseFormReturn;
+  // biome-ignore lint/suspicious/noExplicitAny: Accept any form shape
+  form: UseFormReturn<any>;
   name: string;
   label: string;
   entity: {
@@ -39,7 +40,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
 
   // Open upload dialog
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
     upload.create({
       id: 'upload-image',
       isPublic: true,
@@ -53,7 +54,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
           upload.remove();
         },
       },
-      title: t('common:upload_item', { item: t('common:profile_picture').toLowerCase() }),
+      title: t('c:upload_item', { item: t('c:profile_picture').toLowerCase() }),
     });
   };
 
@@ -69,19 +70,17 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
 
             <div className="flex flex-col gap-2">
               {appConfig.has.uploadEnabled ? (
-                <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
+                <p className="text-xs sm:text-sm">{t('c:upload_img_max_10mb.text')}</p>
               ) : (
                 appConfig.mode === 'development' && (
-                  <p className="font-light text-xs text-muted-foreground sm:text-sm">
-                    {t('common:restrict_image_upload')}
-                  </p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{t('c:restrict_image_upload')}</p>
                 )
               )}
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (
                   <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
                     <UploadIcon size={16} className="mr-2" />
-                    <span>{t('common:upload')}</span>
+                    <span>{t('c:upload')}</span>
                   </Button>
                 )}
 

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -41,7 +41,7 @@ const membershipRoutes = {
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
-    tags: ['memberships'],
+    tags: ['memberships', 'cella'],
     summary: 'Create memberships',
     description:
       'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
@@ -74,8 +74,8 @@ const membershipRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['memberships'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['memberships', 'cella'],
     summary: 'Delete memberships',
     description:
       'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
@@ -107,8 +107,8 @@ const membershipRoutes = {
     method: 'put',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['memberships'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['memberships', 'cella'],
     summary: 'Update membership',
     description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
     request: {
@@ -133,8 +133,8 @@ const membershipRoutes = {
     method: 'post',
     path: '/{id}/{acceptOrReject}',
     xGuard: [authGuard, crossTenantGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['memberships'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['memberships', 'cella'],
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: {
@@ -156,7 +156,7 @@ const membershipRoutes = {
     method: 'get',
     path: '/members',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    tags: ['memberships'],
+    tags: ['memberships', 'cella'],
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
     request: {
@@ -184,7 +184,7 @@ const membershipRoutes = {
     method: 'get',
     path: '/pending',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    tags: ['memberships'],
+    tags: ['memberships', 'cella'],
     summary: 'Get list of pending memberships',
     description:
       'Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.',

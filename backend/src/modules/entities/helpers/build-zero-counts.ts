@@ -6,10 +6,10 @@ import { type ContextEntityType, hierarchy, recordFromKeys, roles } from 'shared
  *
  * @param entityType - The context entity type (e.g. 'organization')
  * @param creatorRole - The role assigned to the creator (defaults to 'admin')
- * @returns Object matching fullCountsSchema: { membership: {...}, entities: {...} }
+ * @returns Object matching contextEntityIncludedSchema counts: { membership: {...}, entities: {...} }
  */
-export const buildZeroCounts = (entityType: ContextEntityType, creatorRole: string = 'admin') => {
-  const entities = recordFromKeys(hierarchy.getChildren(entityType), () => 0);
+export const buildZeroCounts = (entityType: ContextEntityType, creatorRole = 'admin') => {
+  const entities = recordFromKeys(hierarchy.getOrderedDescendants(entityType), () => 0);
   const membership = {
     ...recordFromKeys(roles.all, (role) => (role === creatorRole ? 1 : 0)),
     pending: 0,

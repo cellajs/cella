@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Switch } from '~/modules/ui/switch';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export const OfflineAccessSwitch = () => {
   const { t } = useTranslation();
@@ -11,7 +11,7 @@ export const OfflineAccessSwitch = () => {
   const onCheckedChange = (isOffline: boolean) => {
     // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
     setTimeout(() => {
-      toaster(t(`common:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: appConfig.name }), 'info');
+      toaster(t(`c:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: appConfig.name }), 'info');
     }, 0);
 
     toggleOfflineAccess();
@@ -23,10 +23,10 @@ export const OfflineAccessSwitch = () => {
         id="offlineMode"
         checked={offlineAccess}
         onCheckedChange={onCheckedChange}
-        aria-label={t('common:offline_access')}
+        aria-label={t('c:offline_access')}
       />
-      <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm font-medium leading-none">
-        {t('common:offline_access')}
+      <label htmlFor="offlineMode" className="cursor-pointer select-none font-medium text-sm leading-none">
+        {t('c:offline_access')}
       </label>
     </div>
   );

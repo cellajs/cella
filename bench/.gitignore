@@ -1,0 +1,11 @@
+# Results output
+results/
+
+# Baseline snapshots (local only)
+.baselines/
+
+# Artillery bundled processors
+src/processors/dist/
+
+# Dependencies
+node_modules/

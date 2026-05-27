@@ -5,16 +5,21 @@ import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
-import type { Env } from '#/lib/context';
+import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { loggerMiddleware } from '#/middlewares/logger';
-import { monitoringMiddleware } from '#/middlewares/monitoring/monitoring-middleware';
-import { observabilityMiddleware } from '#/middlewares/observability/observability-middleware';
 
 const app = new OpenAPIHono<Env>();
 
 // Secure headers
-app.use('*', secureHeaders({ referrerPolicy: 'strict-origin-when-cross-origin' }));
+app.use(
+  '*',
+  secureHeaders({
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
+    permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+  }),
+);
 
 // OpenTelemetry HTTP instrumentation (route-aware spans)
 app.use(
@@ -25,12 +30,6 @@ app.use(
   }),
 );
 
-// Get metrics and trace (prom-client)
-app.use('*', observabilityMiddleware);
-
-// Error and perf monitoring (Sentry)
-app.use('*', monitoringMiddleware);
-
 // Logger (pino)
 app.use('*', loggerMiddleware);
 
@@ -38,7 +37,8 @@ const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  allowHeaders: [],
+  allowHeaders: ['content-type', 'x-cache-token', 'traceparent', 'tracestate'],
+  maxAge: 7200,
 };
 
 // CORS

@@ -26,7 +26,7 @@ function readPkg(dir: string, relativePath = ''): Record<string, unknown> {
 /** Write package.json to a path */
 function writePkg(dir: string, data: Record<string, unknown>, relativePath = ''): void {
   const fullPath = path.join(dir, relativePath, 'package.json');
-  fs.writeFileSync(fullPath, JSON.stringify(data, null, 2) + '\n');
+  fs.writeFileSync(fullPath, `${JSON.stringify(data, null, 2)}\n`);
 }
 
 describe('packages merge', () => {
@@ -41,7 +41,8 @@ describe('packages merge', () => {
 
     // Create upstream repo with root package.json
     fs.mkdirSync(upstreamPath);
-    exec('git init', upstreamPath);
+    // -b main: don't depend on the runner's init.defaultBranch (CI defaults to master).
+    exec('git init -b main', upstreamPath);
     exec('git config user.email "test@test.com" && git config user.name "Test"', upstreamPath);
 
     const rootPkg = {
@@ -56,7 +57,7 @@ describe('packages merge', () => {
         typescript: '^5.3.0',
       },
     };
-    fs.writeFileSync(path.join(upstreamPath, 'package.json'), JSON.stringify(rootPkg, null, 2) + '\n');
+    fs.writeFileSync(path.join(upstreamPath, 'package.json'), `${JSON.stringify(rootPkg, null, 2)}\n`);
     exec('git add -A && git commit -m "initial"', upstreamPath);
 
     // Clone as fork

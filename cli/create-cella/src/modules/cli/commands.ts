@@ -1,13 +1,12 @@
 import { basename, resolve } from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
-
 import { NAME, VERSION } from '#/constants';
 import { validateProjectName } from '#/utils/validate-project-name';
 import type { CLIConfig, CLIOptions } from './types';
 
 // Initialize CLI variables
 let directory: string | null = null;
-let newBranchName: string | null = null;
+const newBranchName: string | null = null;
 const packageManager = 'pnpm';
 
 /**
@@ -21,18 +20,16 @@ export const command = new Command(NAME)
   .helpOption('-h, --help', 'display this help message')
   .option('--template <path>', 'use a custom template (local path or github:user/repo)')
   .action((name: string) => {
-    if (typeof name === 'string') {
-      name = name.trim();
-    }
+    const trimmedName = typeof name === 'string' ? name.trim() : name;
 
-    if (name) {
-      const validation = validateProjectName(basename(resolve(name)));
+    if (trimmedName) {
+      const validation = validateProjectName(basename(resolve(trimmedName)));
 
       if (!validation.valid) {
         throw new InvalidArgumentError(`Invalid project name: ${validation.problems?.[0] ?? 'unknown error'}`);
       }
 
-      directory = name;
+      directory = trimmedName;
     }
   })
   .parse();

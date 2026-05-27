@@ -1,6 +1,6 @@
 import { appConfig, type ContextEntityType } from 'shared';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
 import { flattenInfiniteData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 import { buildMenu } from './build-menu';
@@ -29,12 +29,12 @@ export function buildMenuFromCache(userId: string): UserMenu {
     }
 
     const data = queryClient.getQueryData(factory({ relatableUserId: userId }).queryKey);
-    // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous
+    // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous across entity types.
     const items = data ? flattenInfiniteData<any>(data as any) : [];
 
     byType.set(
       entityType,
-      items.filter((item: any): item is UserMenuItem => !!item.membership),
+      items.filter((item): item is UserMenuItem => !!(item as Partial<UserMenuItem>).membership),
     );
   }
 

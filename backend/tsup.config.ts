@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/main.ts'],
+  entry: {
+    main: 'src/main.ts',
+    'seeds-bundle': 'scripts/seeds-bundle.ts',
+  },
   splitting: false,
   sourcemap: true,
   clean: true,
@@ -17,6 +20,7 @@ export default defineConfig({
     options.platform = 'node'; // Ensure the platform is set to Node.js
     options.mainFields = ['module', 'main']; // Prioritize ESM entry points
     options.conditions = ['module']; // Enforce use of ESM
+    options.jsx = 'automatic'; // Use modern JSX transform for email templates
   },
-  external: ['papaparse', '@ngrok/ngrok'],
+  external: ['papaparse', '@ngrok/ngrok', /^@opentelemetry/],
 });

@@ -3,7 +3,6 @@ import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
@@ -44,8 +43,8 @@ export function Pricing() {
         triggerRef: buttonRef,
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',
-        title: t('common:waitlist_request'),
-        description: t('common:waitlist_request.text', { appName: appConfig.name }),
+        title: t('c:waitlist_request'),
+        description: t('c:waitlist_request.text', { appName: appConfig.name }),
       });
     }
   };
@@ -64,43 +63,43 @@ export function Pricing() {
         return (
           <div
             key={id}
-            className={`bg-card relative flex flex-col justify-between rounded-lg border p-6 ${borderColor} ${
+            className={`relative flex flex-col justify-between rounded-lg border bg-card p-6 ${borderColor} ${
               isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full'
             }`}
           >
             {popular && (
               <Badge
                 size="sm"
-                className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center"
+                className="absolute top-0 left-1/2 -translate-x-2/4 -translate-y-2/4 px-4 py-1 text-center"
               >
                 🚀 {t('about:pricing.popular')}
               </Badge>
             )}
             <div className="mt-4">
-              <h3 className="text-center text-2xl flex w-full justify-center font-bold">
+              <h3 className="flex w-full justify-center text-center font-bold text-2xl">
                 {t(title)}
                 {popular && (
                   <SparklesIcon className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />
                 )}
               </h3>
-              <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
+              <div className="mt-4 flex items-center justify-center text-gray-600 dark:text-gray-400">
                 {discount && (
-                  <Badge size="md" className="text-lg mr-2 py-0 px-2">
+                  <Badge size="md" className="mr-2 px-2 py-0 text-lg">
                     {discount}
                   </Badge>
                 )}
-                <span className={`text-3xl font-bold ${discount ? 'line-through mr-2' : 'mr-1'}`}>{t(price)}</span>
-                <span className="font-light">/ {t('common:year')}</span>
+                <span className={`font-bold text-3xl ${discount ? 'mr-2 line-through' : 'mr-1'}`}>{t(price)}</span>
+                <span>/ {t('c:year')}</span>
               </div>
 
-              <div className="mt-4 text-center font-light text-muted-foreground">
+              <div className="mt-4 text-center text-muted-foreground">
                 <span className="">{t(text)}</span>
               </div>
 
               <ul className="mt-4 space-y-2">
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
-                  <li key={`${id}-${featureIndex}`} className="flex text-sm font-light items-center">
+                  <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
                     <CheckIcon className="mr-2 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
                   </li>
@@ -111,11 +110,11 @@ export function Pricing() {
             <Button
               ref={ref}
               variant={popular ? 'default' : 'plain'}
-              className="w-full mt-6"
-              aria-label={`Handle the ${t(`common:${action}`)} click`}
+              className="mt-6 w-full"
+              aria-label={`Handle the ${t(`c:${action}`)} click`}
               onClick={() => handleActionClick(action, ref)}
             >
-              {t(`common:${action}`)}
+              {t(`c:${action}`)}
             </Button>
           </div>
         );

@@ -6,7 +6,7 @@ import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
@@ -26,36 +26,36 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
 
   return (
     <Card
-      className="w-full group/tile py-0 sm:py-0 sm:has-[button:focus]:ring-2 transition-all"
+      className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2"
       data-expanded={expanded}
     >
-      <CardContent className="flex p-2! sm:p-3! lg:items-center gap-2 sm:gap-3">
-        <DeviceIcon className="size-4 sm:w-8 sm:h-8 max-sm:mt-0.5" strokeWidth={1.5} />
+      <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
+        <DeviceIcon className="size-4 max-sm:mt-0.5 sm:h-8 sm:w-8" strokeWidth={1.5} />
 
-        <div className="flex flex-col gap-1 w-full overflow-hidden">
-          <div className="flex max-md:flex-col items-start gap-1 md:gap-2">
-            <span className="text-sm max-sm:hidden">{passkey.deviceName || t('common:unknown_device')}</span>
+        <div className="flex w-full flex-col gap-1 overflow-hidden">
+          <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
+            <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
             <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
-              <Badge size="xs" variant="outline" className="truncate max-w-48">
+              <Badge size="xs" variant="outline" className="max-w-48 truncate">
                 <KeyRoundIcon size={12} className="shrink-0" />
                 <span className="truncate">{passkey.nameOnDevice}</span>
               </Badge>
             </TooltipButton>
           </div>
 
-          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm text-muted-foreground">
-            <p className="truncate" aria-describedby={t('common:created_at')}>
+          <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-muted-foreground text-sm md:gap-x-5">
+            <p className="truncate" aria-describedby={t('c:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
             <p
-              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
+              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
               aria-describedby="OS"
             >
               {passkey.deviceOs}
             </p>
             <p
-              className="truncate hidden lg:inline max-lg:group-data-[expanded=true]/tile:inline"
-              aria-describedby={t('common:browser')}
+              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
+              aria-describedby={t('c:browser')}
             >
               {passkey.browser}
             </p>
@@ -65,7 +65,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
               size="xs"
-              className="lg:hidden p-0 font-light h-auto sm:opacity-0 group-hover/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-transparent ring-offset-0 outline-0 transition-opacity"
+              className="h-auto p-0 outline-0 ring-offset-0 transition-opacity focus-visible:opacity-100 focus-visible:ring-transparent group-hover/tile:opacity-100 sm:opacity-0 lg:hidden"
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
@@ -77,13 +77,13 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending, onlyPassk
         <Button
           variant="plain"
           size="sm"
-          className="text-sm ml-auto"
+          className="ml-auto text-sm"
           loading={isPending}
           disabled={user.mfaRequired && onlyPasskeyLeft}
           onClick={() => handleUnlinkPasskey(passkey.id)}
         >
           <UnlinkIcon size={16} />
-          <span className="ml-1 max-md:hidden">{t('common:unlink')}</span>
+          <span className="ml-1 max-md:hidden">{t('c:unlink')}</span>
         </Button>
       </CardContent>
     </Card>

@@ -1,15 +1,14 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { publicCache } from '#/middlewares/entity-cache';
-import { authGuard, publicGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
+import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   batchResponseSchema,
   errorResponseRefs,
+  fullResponseQuerySchema,
   idsWithStxBodySchema,
   paginationSchema,
-  tenantIdParamSchema,
-  tenantOnlyParamSchema,
 } from '#/schemas';
 import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
 import {
@@ -27,14 +26,13 @@ const pagesRoutes = {
   createPages: createXRoute({
     operationId: 'createPages',
     method: 'post',
-    path: '/{tenantId}/pages',
-    xGuard: [authGuard, tenantGuard, sysAdminGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['pages'],
+    path: '/pages',
+    xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['pages', 'cella', 'product'],
     summary: 'Create pages',
     description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
     request: {
-      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: pageCreateManyStxBodySchema } },
@@ -70,7 +68,7 @@ const pagesRoutes = {
     method: 'get',
     path: '/pages',
     xGuard: [publicGuard],
-    tags: ['pages'],
+    tags: ['pages', 'cella', 'product'],
     summary: 'Get pages',
     description: 'Get all matching *pages*.',
     request: {
@@ -94,8 +92,8 @@ const pagesRoutes = {
     method: 'get',
     path: '/pages/{id}',
     xGuard: [publicGuard],
-    xCache: publicCache('page'),
-    tags: ['pages'],
+    xCache: [publicCache('page')],
+    tags: ['pages', 'cella', 'product'],
     summary: 'Get page',
     description: 'Get a single *page* by ID. Cached using LRU - first request warms cache.',
     request: {
@@ -117,14 +115,15 @@ const pagesRoutes = {
   updatePage: createXRoute({
     operationId: 'updatePage',
     method: 'put',
-    path: '/{tenantId}/pages/{id}',
-    xGuard: [authGuard, tenantGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['pages'],
+    path: '/pages/{id}',
+    xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['pages', 'cella', 'product'],
     summary: 'Update page',
     description: 'Update a single *page* by ID.',
     request: {
-      params: tenantIdParamSchema,
+      params: z.object({ id: z.string() }),
+      query: fullResponseQuerySchema,
       body: {
         required: true,
         content: { 'application/json': { schema: pageUpdateStxBodySchema } },
@@ -144,14 +143,13 @@ const pagesRoutes = {
   deletePages: createXRoute({
     operationId: 'deletePages',
     method: 'delete',
-    path: '/{tenantId}/pages',
-    xGuard: [authGuard, tenantGuard, sysAdminGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['pages'],
+    path: '/pages',
+    xGuard: [authGuard, sysAdminGuard],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['pages', 'cella', 'product'],
     summary: 'Delete pages',
     description: 'Delete one or more *pages* by ID.',
     request: {
-      params: tenantOnlyParamSchema,
       body: {
         required: true,
         content: { 'application/json': { schema: idsWithStxBodySchema() } },

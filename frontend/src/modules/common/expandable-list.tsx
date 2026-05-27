@@ -53,17 +53,17 @@ export const ExpandableList = <T,>({
       {!expanded && items.length > initialDisplayCount && (
         <Button
           variant="ghost"
-          className="w-full group flex items-center"
+          className="group flex w-full items-center"
           onClick={() => {
             hasExpandedOnce.current = true;
             setExpanded(true);
           }}
         >
-          <Badge size="sm" className="mr-2 aspect-square py-0 px-1">
+          <Badge size="sm" className="mr-2 aspect-square px-1 py-0">
             {items.length - initialDisplayCount}
           </Badge>
           {t(expandText)}
-          <ChevronDownIcon className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
+          <ChevronDownIcon className="ml-2 opacity-50 transition-opacity group-hover:opacity-100" size={16} />
         </Button>
       )}
     </>

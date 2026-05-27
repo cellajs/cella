@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -16,8 +16,8 @@ const authGeneralRoutes = {
     operationId: 'getAuthHealth',
     method: 'get',
     path: '/health',
-    xGuard: publicGuard,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    tags: ['auth', 'cella'],
     summary: 'Auth health check',
     description:
       'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
@@ -44,7 +44,7 @@ const authGeneralRoutes = {
     method: 'get',
     path: '/impersonation/start',
     xGuard: [authGuard, sysAdminGuard],
-    tags: ['auth'],
+    tags: ['auth', 'cella'],
     summary: 'Start impersonating',
     description:
       'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
@@ -64,8 +64,8 @@ const authGeneralRoutes = {
     operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
-    xGuard: authGuard,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    tags: ['auth', 'cella'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
     responses: {
@@ -80,10 +80,10 @@ const authGeneralRoutes = {
     operationId: 'checkEmail',
     method: 'post',
     path: '/check-email',
-    xGuard: publicGuard,
-    xRateLimiter: emailEnumLimiter,
+    xGuard: [publicGuard],
+    xRateLimiter: [emailEnumLimiter],
     middleware: isNoBot,
-    tags: ['auth'],
+    tags: ['auth', 'cella'],
     summary: 'Check if email exists',
     description: 'Checks if a user with the specified email address exists in the system.',
     request: {
@@ -104,13 +104,13 @@ const authGeneralRoutes = {
     operationId: 'invokeToken',
     method: 'get',
     path: '/invoke-token/{type}/{token}',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('token'),
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
-    tags: ['auth'],
+    tags: ['auth', 'cella'],
     summary: 'Invoke token session',
     description:
-      'Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
+      'Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
       params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
     },
@@ -129,10 +129,10 @@ const authGeneralRoutes = {
     operationId: 'getTokenData',
     method: 'get',
     path: '/token/{type}/{id}',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('token'),
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
-    tags: ['auth'],
+    tags: ['auth', 'cella'],
     summary: 'Get token data',
     description:
       'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
@@ -154,9 +154,9 @@ const authGeneralRoutes = {
     operationId: 'resendInvitationWithToken',
     method: 'post',
     path: '/resend-invitation',
-    xGuard: publicGuard,
-    xRateLimiter: spamLimiter,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [spamLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Resend invitation',
     description: 'Resends an invitation email with token to a new user using the provided email address and token ID.',
     request: {
@@ -176,8 +176,8 @@ const authGeneralRoutes = {
     operationId: 'signOut',
     method: 'post',
     path: '/sign-out',
-    xGuard: publicGuard,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    tags: ['auth', 'cella'],
     summary: 'Sign out',
     description: 'Signs out the *current user* and clears the active session.',
     responses: {

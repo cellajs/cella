@@ -63,6 +63,15 @@ li:has(.is-focused) {
   color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
 }
 
+/* BlockNote renders its placeholder via `::after` on `.bn-block-content` (see
+   @blocknote/core's Placeholder extension). Override its font sizing so the
+   placeholder matches the editor's paragraph text instead of the larger default. */
+.bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-size: 0.888rem;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
 .bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
   display: none;
 }

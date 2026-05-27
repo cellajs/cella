@@ -1,7 +1,6 @@
 import { defaultProps } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
-
 import { MessageCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
@@ -28,7 +27,6 @@ export const notifyBlock = createReactBlockSpec(
   {
     render: ({ block, editor, contentRef }) => {
       const [open, setOpen] = useState(false);
-      // biome-ignore lint/style/noNonNullAssertion: designed by creator
       const notifyType = notifyTypes.find((a) => a.value === block.props.type)!;
       const Icon = notifyType.icon;
       return (
@@ -52,7 +50,7 @@ export const notifyBlock = createReactBlockSpec(
                 return (
                   <DropdownMenuItem
                     key={value}
-                    className="flex flex-row gap-2 p-1 min-h-8"
+                    className="flex min-h-8 flex-row gap-2 p-1"
                     onClick={() => editor.updateBlock(block, { type: 'notify', props: { type: value } })}
                   >
                     {<Icon className={'notify-icon'} size={16} data-notify-icon-type={value} />}

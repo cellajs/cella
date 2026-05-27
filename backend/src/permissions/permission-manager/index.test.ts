@@ -17,6 +17,7 @@ type TestMembership = {
   id: string;
   tenantId: string;
   contextType: ContextEntityType;
+  contextId: string;
   userId: string;
   role: EntityRole;
   displayOrder: number;
@@ -33,6 +34,7 @@ const createTestMembership = (
 ): TestMembership => ({
   id: 'mem-test',
   tenantId: 'test01',
+  contextId: overrides.organizationId,
   userId: 'user-test',
   displayOrder: 0,
   muted: false,
@@ -62,7 +64,7 @@ describe('hierarchy (from appConfig.hierarchy)', () => {
     });
 
     it('returns empty array for page entity (no organization scope)', () => {
-      // Note: page entities in cella have parent: null (global)
+      // Note: page entities have parent: null (global)
       const ancestors = hierarchy.getOrderedAncestors('page');
       expect(ancestors).toEqual([]);
     });
@@ -281,8 +283,12 @@ describe('PermissionDecision action attribution', () => {
     const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
     const decision = getAllDecisions(policies, memberships, subject);
 
-    expect(decision.orderedContexts).toEqual(['organization']);
-    expect(decision.primaryContext).toBe('organization');
+    // Derive expected contexts from hierarchy rather than hardcoding
+    const ancestors = hierarchy.getOrderedAncestors('attachment') as ContextEntityType[];
+    const expectedContexts = isContextEntity('attachment') ? ['attachment', ...ancestors] : [...ancestors];
+
+    expect(decision.orderedContexts).toEqual(expectedContexts);
+    expect(decision.primaryContext).toBe(expectedContexts[0]);
   });
 
   it('accumulates multiple grants for same action from different roles', () => {

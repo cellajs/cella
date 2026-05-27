@@ -1,5 +1,4 @@
 import { createContext, useContext } from 'react';
-
 import type { SelectHeaderRowEvent, SelectRowEvent } from '../types';
 
 export interface RowSelectionContextValue {
@@ -10,7 +9,7 @@ export interface RowSelectionContextValue {
 export const RowSelectionContext = createContext<RowSelectionContextValue | undefined>(undefined);
 
 export const RowSelectionChangeContext = createContext<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: row-shape agnostic context shared across grids.
   ((selectRowEvent: SelectRowEvent<any>) => void) | undefined
 >(undefined);
 

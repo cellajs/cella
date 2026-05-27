@@ -1,9 +1,9 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
+import { generatePasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
-import { generatePasskeyChallenge } from '~/api.gen';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 /**
  * Check if the browser supports conditional mediation (passkey autofill).
@@ -22,12 +22,28 @@ export const isConditionalMediationAvailable = async (): Promise<boolean> => {
  * Starts a conditional mediation (passkey autofill) flow.
  * Returns an AbortController so the caller can cancel it (e.g. on unmount or navigation).
  * When a user selects a passkey from autofill, `onCredential` is called with the assertion data.
+ *
+ * @param onCredential - Callback when user selects a passkey
+ * @param signal - AbortSignal to cancel the mediation
+ * @param email - Optional email to get specific credential IDs (non-discoverable). If omitted, uses discoverable credentials only.
  */
 export const startConditionalMediation = async (
   onCredential: (data: ConditionalMediationResult) => void,
   signal: AbortSignal,
+  email?: string,
 ) => {
-  const { challenge } = await getChallenge({ type: 'authentication' });
+  const challengeQuery = email ? { type: 'authentication' as const, email } : { type: 'authentication' as const };
+  const { challenge, credentialIds } = await getChallenge(challengeQuery);
+
+  // If email provided, use specific credential IDs; otherwise use discoverable credentials
+  const allowCredentials =
+    email && credentialIds?.length
+      ? credentialIds.map((id: string) => ({
+          id: new Uint8Array(decodeBase64(id)),
+          type: 'public-key' as const,
+          transports: ['internal'] as AuthenticatorTransport[],
+        }))
+      : [];
 
   const credential = await navigator.credentials.get({
     mediation: 'conditional',
@@ -36,7 +52,7 @@ export const startConditionalMediation = async (
       challenge,
       rpId: appConfig.mode === 'development' ? 'localhost' : appConfig.domain,
       userVerification: 'required',
-      allowCredentials: [], // Empty = discoverable credentials only
+      allowCredentials, // Empty = discoverable credentials, or specific IDs for email
     },
   });
 

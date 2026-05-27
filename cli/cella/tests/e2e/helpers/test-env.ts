@@ -54,7 +54,8 @@ export function createTestEnv(): TestEnv {
 
   // Create upstream repo with initial content
   fs.mkdirSync(upstreamPath);
-  exec('git init', upstreamPath);
+  // -b main: don't depend on the runner's init.defaultBranch (CI defaults to master).
+  exec('git init -b main', upstreamPath);
   exec(GIT_USER, upstreamPath);
 
   // Create initial files

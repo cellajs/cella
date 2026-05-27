@@ -25,13 +25,16 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
+  const tags = allTags.filter((t) => t.count > 0);
   const hash = useCurrentSection();
 
   return (
     <SidebarMenu className="gap-1 p-0 pt-1 pb-4">
       {tags.map((tag) => {
-        const tagOperations = operationsByTag[tag.name] ?? [];
+        const isExpanded = activeTag === tag.name;
+        // Only pass items for expanded tag to avoid mounting all operations upfront
+        const tagOperations = isExpanded ? (operationsByTag[tag.name] ?? []) : [];
         const isActive = hash === `tag/${tag.name}` || hash?.startsWith(`tag/${tag.name}/`);
         const activeOperationIndex = tagOperations.findIndex((op) => op.hash === hash);
 
@@ -41,7 +44,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
             key={tag.name}
             tag={tag}
             items={tagOperations}
-            isExpanded={activeTag === tag.name}
+            isExpanded={isExpanded}
             layoutId={layoutId}
             isActive={isActive}
             activeItemIndex={activeOperationIndex}

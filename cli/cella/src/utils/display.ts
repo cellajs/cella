@@ -7,10 +7,10 @@
 import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import ora, { type Ora } from 'ora';
-import pc from 'picocolors';
+import process from 'node:process';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { AnalysisSummary, AnalyzedFile, FileStatus, MergeResult } from '../config/types';
+import pc from './colors';
 
 /** CLI name */
 export const NAME = 'cella cli';
@@ -35,8 +35,58 @@ export interface LinkOptions {
 /** Line divider */
 export const DIVIDER = '─'.repeat(60);
 
+/** Warning mark for non-fatal warnings */
+export const warningMark = pc.yellow('⚠');
+
+interface Spinner {
+  text: string;
+  start(): Spinner;
+  stop(): void;
+}
+
+class TerminalSpinner implements Spinner {
+  private readonly frames = ['-', '\\', '|', '/'];
+  private frameIndex = 0;
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private readonly enabled: boolean;
+
+  constructor(
+    public text: string,
+    isSilent: boolean,
+  ) {
+    this.enabled = !isSilent && !!process.stdout.isTTY;
+  }
+
+  start(): Spinner {
+    if (!this.enabled || this.timer) return this;
+
+    this.render();
+    this.timer = setInterval(() => {
+      this.frameIndex = (this.frameIndex + 1) % this.frames.length;
+      this.render();
+    }, 80);
+
+    return this;
+  }
+
+  stop(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    if (!this.enabled) return;
+
+    process.stdout.write('\r\x1b[2K');
+  }
+
+  private render(): void {
+    process.stdout.write(`\r${pc.cyan(this.frames[this.frameIndex])} ${this.text}`);
+  }
+}
+
 /** Active spinner reference */
-let activeSpinner: Ora | null = null;
+let activeSpinner: Spinner | null = null;
 
 /**
  * Get the header line for CLI output.
@@ -46,7 +96,7 @@ function getHeader(): string {
   // Account for ANSI codes when calculating padding
   const visibleLeft = `⧈ ${NAME} v${VERSION}`;
   const padding = Math.max(1, 60 - visibleLeft.length - right.length);
-  return pc.cyan(`⧈ ${NAME}`) + `${pc.dim(` · v${VERSION}`)}` + pc.cyan(`${' '.repeat(padding)}${right}`);
+  return `${pc.cyan(`⧈ ${NAME}`)}${pc.dim(` · v${VERSION}`)}${pc.cyan(`${' '.repeat(padding)}${right}`)}`;
 }
 
 /**
@@ -75,9 +125,9 @@ function printStep(label: string, detail?: string): void {
  * Create a progress spinner.
  * Uses isSilent in test environments to suppress output.
  */
-export function createSpinner(text: string): Ora {
+export function createSpinner(text: string): Spinner {
   const isTestEnv = !!process.env.VITEST || process.env.NODE_ENV === 'test';
-  activeSpinner = ora({ text, isSilent: isTestEnv });
+  activeSpinner = new TerminalSpinner(text, isTestEnv);
   activeSpinner.start();
   return activeSpinner;
 }
@@ -311,11 +361,18 @@ function printFileGroup(
   printSectionHeader(`${title} ${pc.dim(`· ${filtered.length} files`)}`);
 
   const useUpstream = options?.dateSource === 'upstream';
-  for (const file of filtered) {
+  const maxLines = 100;
+  const shown = filtered.length > maxLines ? filtered.slice(0, maxLines) : filtered;
+
+  for (const file of shown) {
     const commit = useUpstream ? file.upstreamCommit : file.changedCommit;
     const date = useUpstream ? file.upstreamChangedAt : file.changedAt;
     const dateInfo = formatFileDateInfo(file.path, commit, date, linkOptions);
     console.info(`  ${config.icon} ${file.path}${dateInfo}`);
+  }
+
+  if (filtered.length > maxLines) {
+    console.info(pc.dim(`  ... + ${filtered.length - maxLines} more`));
   }
 
   if (options?.hint) {
@@ -338,7 +395,7 @@ export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions):
  */
 export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'drifted', linkOptions, {
-    title: `${pc.yellow('⚠ drifted from upstream')}`,
+    title: `${warningMark} ${pc.yellow('drifted from upstream')}`,
     hint: 'these files have fork changes but are not pinned or ignored.',
   });
 }
@@ -392,6 +449,7 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
 
   for (const file of sortedFiles) {
     const config = statusConfig[file.status];
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI escape sequences requires \x1b literal.
     const icon = config.icon.replace(/\x1b\[[0-9;]*m/g, ''); // Strip ANSI
     lines.push(`  ${icon} ${config.label.padEnd(12)} ${file.path}`);
   }

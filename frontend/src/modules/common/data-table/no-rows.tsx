@@ -2,7 +2,6 @@ import { SearchIcon } from 'lucide-react';
 import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import '~/modules/common/data-table/style.css';
 
 interface NoRowsProps {
   isFiltered?: boolean;
@@ -14,17 +13,17 @@ export const NoRows = ({ isFiltered, isFetching, customComponent }: NoRowsProps)
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-center w-full p-8">
+    <div className="flex w-full flex-col items-center justify-center p-8">
       {isFiltered && !isFetching && (
         <ContentPlaceholder
           icon={SearchIcon}
-          title="common:no_resource_found"
-          titleProps={{ resource: t('common:results').toLowerCase() }}
+          title="c:no_resource_found"
+          titleProps={{ resource: t('c:results').toLowerCase() }}
         />
       )}
       {!isFiltered &&
         !isFetching &&
-        (customComponent ?? t('common:no_resource_yet', { resource: t('common:results').toLowerCase() }))}
+        (customComponent ?? t('c:no_resource_yet', { resource: t('c:results').toLowerCase() }))}
     </div>
   );
 };

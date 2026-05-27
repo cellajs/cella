@@ -33,7 +33,7 @@ export function SelectSort<T extends readonly SortOptionBase[]>({
   iconOnly = true,
 }: SelectSortProps<T>) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const selected = sortOptions.find((option) => option.value === value) ?? sortOptions[0];
 

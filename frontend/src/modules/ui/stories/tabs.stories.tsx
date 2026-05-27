@@ -62,7 +62,7 @@ export const Underline: Story = {
  */
 export const Side: Story = {
   render: (args) => (
-    <Tabs {...args} className="w-96 flex flex-row">
+    <Tabs {...args} className="flex w-96 flex-row">
       <TabsList variant="side">
         <TabsTrigger value="account">Account</TabsTrigger>
         <TabsTrigger value="password">Password</TabsTrigger>

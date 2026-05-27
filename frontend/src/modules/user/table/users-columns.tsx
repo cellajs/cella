@@ -2,7 +2,6 @@ import i18n from 'i18next';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -10,7 +9,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { ImpersonateRow } from '~/modules/user/table/impersonate-row';
-import { openUpdateUserSheet, UpdateRow } from '~/modules/user/table/update-row';
+import { openUpdateUserSheet } from '~/modules/user/table/update-row';
 import type { BaseUser } from '~/modules/user/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
@@ -22,7 +21,7 @@ export const useColumns = () => {
     CheckboxColumn,
     {
       key: 'name',
-      name: t('common:name'),
+      name: t('c:name'),
       sortable: true,
       minWidth: 200,
       resizable: true,
@@ -36,21 +35,13 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
     },
     {
-      key: 'edit',
-      name: '',
-      minBreakpoint: 'md',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} />,
-    },
-    {
       key: 'ellipsis',
       name: '',
-      maxBreakpoint: 'sm',
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const ellipsisOptions: EllipsisOption<BaseUser>[] = [
           {
-            label: i18n.t('common:edit'),
+            label: i18n.t('c:edit'),
             icon: PencilIcon,
             onSelect: (row, triggerRef) => {
               useDropdowner.getState().remove();
@@ -58,7 +49,7 @@ export const useColumns = () => {
             },
           },
           {
-            label: i18n.t('common:delete'),
+            label: i18n.t('c:delete'),
             icon: TrashIcon,
             onSelect: (row) => {
               const { update } = useDropdowner.getState();
@@ -66,7 +57,7 @@ export const useColumns = () => {
 
               update({
                 content: (
-                  <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+                  <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
                     <DeleteUsers users={[row]} callback={callback} />
                   </PopConfirm>
                 ),
@@ -80,7 +71,7 @@ export const useColumns = () => {
     },
     {
       key: 'email',
-      name: t('common:email'),
+      name: t('c:email'),
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 140,
@@ -89,7 +80,7 @@ export const useColumns = () => {
           <a
             href={`mailto:${row.email}`}
             tabIndex={tabIndex}
-            className="truncate hover:underline underline-offset-4 decoration-foreground/20 outline-0 ring-0 font-light"
+            className="truncate decoration-foreground/20 underline-offset-4 outline-0 ring-0 hover:underline"
           >
             {row.email || <span className="text-muted">-</span>}
           </a>
@@ -98,16 +89,16 @@ export const useColumns = () => {
     },
     {
       key: 'role',
-      name: t('common:role'),
+      name: t('c:role'),
       sortable: true,
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => <div>{row.role ? t(row.role, { ns: ['app', 'common'] }) : t('common:user')}</div>,
+      renderCell: ({ row }) => <div>{row.role ? t(row.role) : t('c:user')}</div>,
     },
     {
       key: 'createdAt',
-      name: t('common:created_at'),
+      name: t('c:created_at'),
       sortable: true,
       minBreakpoint: 'md',
       minWidth: 120,
@@ -116,7 +107,7 @@ export const useColumns = () => {
     },
     {
       key: 'lastSeenAt',
-      name: t('common:last_seen_at'),
+      name: t('c:last_seen_at'),
       sortable: true,
       minBreakpoint: 'md',
       minWidth: 120,

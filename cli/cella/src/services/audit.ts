@@ -8,7 +8,6 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { checkbox, confirm, Separator } from '@inquirer/prompts';
-import pc from 'picocolors';
 import type { RuntimeConfig } from '../config/types';
 import {
   type AuditResult,
@@ -31,7 +30,8 @@ import {
   terminalLink,
   type VulnerabilityInfo,
 } from '../utils/audit-utils';
-import { createSpinner, spinnerSuccess } from '../utils/display';
+import pc from '../utils/colors';
+import { createSpinner, spinnerSuccess, warningMark } from '../utils/display';
 
 /** Options for the audit service */
 interface AuditOptions {
@@ -39,6 +39,8 @@ interface AuditOptions {
   clearCache?: boolean;
   /** Whether to bypass pnpm metadata cache for fresh registry data */
   force?: boolean;
+  /** Whether to check which pnpm.overrides are still needed */
+  checkOverrides?: boolean;
 }
 
 /**
@@ -50,6 +52,12 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   // Handle cache clearing
   if (options.clearCache) {
     clearCache();
+    return;
+  }
+
+  // Handle check-overrides mode
+  if (options.checkOverrides) {
+    await checkOverrides(forkPath);
     return;
   }
 
@@ -93,7 +101,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
         const packageJsonPath = path.join(dep.location, 'package.json');
         try {
           const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-          dependentNameCache.set(dep.location, (pkgJson.name || path.basename(dep.location)).replace('@cella/', ''));
+          dependentNameCache.set(dep.location, pkgJson.name || path.basename(dep.location));
         } catch {
           dependentNameCache.set(dep.location, path.basename(dep.location));
         }
@@ -121,7 +129,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
             const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
             const spec = pkgJson[pkg.dependencyType]?.[name] || '';
             if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
-              pinnedIn.push(d.name.replace('@cella/', ''));
+              pinnedIn.push(d.name);
             }
           } catch {
             // skip
@@ -132,7 +140,7 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
           name,
           current: pkg.current,
           latest: pkg.latest,
-          dependents: pkg.dependentPackages.map((d) => d.name.replace('@cella/', '')),
+          dependents: pkg.dependentPackages.map((d) => d.name),
           dependentLocations: pkg.dependentPackages.map((d) => d.location),
           isDev: pkg.dependencyType === 'devDependencies',
           isMajorUpdate: isMajorVersionChange(pkg.current, pkg.latest),
@@ -314,7 +322,7 @@ async function promptForUpdates(
     const devTag = pkg.isDev ? pc.dim(' (dev)') : '';
     const version = `${pc.red(pkg.current)} → ${pc.green(pkg.latest)}`;
     const pinnedWarning =
-      pkg.pinnedIn.length > 0 ? `  ${pc.yellow('⚠')} ${pc.dim(`pinned in ${pkg.pinnedIn.join(', ')}`)}` : '';
+      pkg.pinnedIn.length > 0 ? `  ${warningMark} ${pc.dim(`pinned in ${pkg.pinnedIn.join(', ')}`)}` : '';
     return {
       name: `${pkg.name}${devTag}  ${version}${pinnedWarning}`,
       value: pkg.name,
@@ -343,7 +351,7 @@ async function promptForUpdates(
     const vulnSummary = parts.length > 0 ? ` ${pc.dim('·')} ${parts.join(' ')}` : '';
     choices.push(new Separator(pc.red(`── vulnerabilities${vulnSummary} ──`)));
     choices.push({
-      name: `${pc.cyan('pnpm audit --fix')}  ${pc.dim('add overrides for non-vulnerable versions')}`,
+      name: `${pc.cyan('pnpm audit --fix override')}  ${pc.dim('add overrides for non-vulnerable versions')}`,
       value: AUDIT_FIX_VALUE,
       checked: false,
     });
@@ -449,17 +457,17 @@ async function promptForUpdates(
 
   // Run pnpm audit --fix first (before package updates) so overrides are applied during install
   if (runAuditFix) {
-    console.info(pc.dim('running pnpm audit --fix...'));
-    const auditFixResult = spawnSync('pnpm', ['audit', '--fix'], {
+    console.info(pc.dim('running pnpm audit --fix override...'));
+    const auditFixResult = spawnSync('pnpm', ['audit', '--fix', 'override'], {
       cwd: forkPath,
       stdio: 'inherit',
     });
 
     console.info();
     if (auditFixResult.status === 0) {
-      console.info(pc.green('✓ pnpm audit --fix completed'));
+      console.info(pc.green('✓ pnpm audit --fix override completed'));
     } else {
-      console.error(pc.red(`✗ pnpm audit --fix failed (exit code ${auditFixResult.status})`));
+      console.error(pc.red(`✗ pnpm audit --fix override failed (exit code ${auditFixResult.status})`));
     }
   }
 
@@ -535,5 +543,174 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
     console.info(`${pc.green('✓')} no vulnerabilities found`);
   }
 
+  console.info();
+}
+
+/**
+ * Parses the top-level 'overrides:' block from pnpm-workspace.yaml.
+ * Simple line-based parser for flat key: value entries — avoids a YAML dependency.
+ */
+function parseYamlOverrides(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const lines = content.split('\n');
+  let inOverrides = false;
+
+  for (const line of lines) {
+    // Detect start of overrides block (top-level key, no indentation)
+    if (/^overrides:\s*$/.test(line)) {
+      inOverrides = true;
+      continue;
+    }
+
+    // If we're in overrides, parse indented key: value lines
+    if (inOverrides) {
+      // End of block: non-indented non-empty line
+      if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+        break;
+      }
+
+      // Match "  key: 'value'" or "  key: value"
+      const match = line.match(/^\s+(.+?):\s+['"]?([^'"]+)['"]?\s*$/);
+      if (match) {
+        result[match[1]] = match[2];
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Reads all pnpm.overrides from package.json and pnpm-workspace.yaml.
+ * Returns a map of override key -> { target version, source file }.
+ */
+function readOverrides(forkPath: string): Map<string, { target: string; source: string }> {
+  const overrides = new Map<string, { target: string; source: string }>();
+
+  // Read from package.json pnpm.overrides
+  const pkgJsonPath = path.join(forkPath, 'package.json');
+  try {
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+    const pnpmOverrides = pkgJson.pnpm?.overrides || {};
+    for (const [key, value] of Object.entries(pnpmOverrides)) {
+      overrides.set(key, { target: value as string, source: 'package.json' });
+    }
+  } catch {
+    // skip
+  }
+
+  // Read from pnpm-workspace.yaml overrides
+  const workspacePath = path.join(forkPath, 'pnpm-workspace.yaml');
+  try {
+    const content = fs.readFileSync(workspacePath, 'utf-8');
+    const wsOverrides = parseYamlOverrides(content);
+    for (const [key, value] of Object.entries(wsOverrides)) {
+      overrides.set(key, { target: value, source: 'pnpm-workspace.yaml' });
+    }
+  } catch {
+    // skip
+  }
+
+  return overrides;
+}
+
+/**
+ * Checks which pnpm.overrides are still needed by cross-referencing
+ * with current audit results and installed versions.
+ */
+async function checkOverrides(forkPath: string): Promise<void> {
+  const spinner = createSpinner('checking overrides against current audit...');
+
+  const overrides = readOverrides(forkPath);
+
+  if (overrides.size === 0) {
+    spinnerSuccess('no pnpm.overrides found');
+    return;
+  }
+
+  // Run audit to see current vulnerabilities
+  const auditResult = runPnpmAudit(forkPath);
+
+  // Build set of currently vulnerable package names from advisories
+  const activeAdvisoryPackages = new Set<string>();
+  if (auditResult?.advisories) {
+    for (const advisory of Object.values(auditResult.advisories)) {
+      activeAdvisoryPackages.add(advisory.module_name);
+    }
+  }
+
+  spinner.stop();
+
+  // Categorize each override
+  const securityOverrides: Array<{ key: string; pkg: string; target: string; source: string; status: string }> = [];
+  const pinOverrides: Array<{ key: string; target: string; source: string }> = [];
+
+  for (const [key, { target, source }] of overrides) {
+    // Security overrides have version selectors like "pkg@<=1.0.0" or "pkg@>=1.0.0 <2.0.0"
+    const atIndex = key.indexOf('@', key.startsWith('@') ? 1 : 0);
+    if (atIndex > 0) {
+      const pkg = key.slice(0, atIndex);
+      const hasActiveAdvisory = activeAdvisoryPackages.has(pkg);
+      const status = hasActiveAdvisory ? 'active' : 'likely stale';
+      securityOverrides.push({ key, pkg, target, source, status });
+    } else {
+      pinOverrides.push({ key, target, source });
+    }
+  }
+
+  // Print results
+  const allKeys = Array.from(overrides.keys());
+  const allValues = Array.from(overrides.values());
+  const maxKeyLen = Math.max(8, ...allKeys.map((k) => k.length));
+  const maxTargetLen = Math.max(6, ...allValues.map((v) => v.target.length));
+
+  if (securityOverrides.length > 0) {
+    console.info(pc.bold(`security overrides (${securityOverrides.length})`));
+    console.info('─'.repeat(60));
+
+    for (const o of securityOverrides) {
+      const icon = o.status === 'active' ? pc.red('●') : pc.green('○');
+      const statusText = o.status === 'active' ? pc.red('active') : pc.green('likely stale');
+      const keyText = pc.white(o.key.padEnd(maxKeyLen));
+      const targetText = pc.dim(o.target.padEnd(maxTargetLen));
+      const sourceText = pc.dim(o.source);
+      console.info(`  ${icon} ${keyText} → ${targetText} ${statusText}  ${sourceText}`);
+    }
+    console.info();
+  }
+
+  if (pinOverrides.length > 0) {
+    console.info(pc.bold(`version pins (${pinOverrides.length})`));
+    console.info('─'.repeat(60));
+
+    for (const o of pinOverrides) {
+      const keyText = pc.white(o.key.padEnd(maxKeyLen));
+      const targetText = pc.dim(o.target.padEnd(maxTargetLen));
+      const sourceText = pc.dim(o.source);
+      console.info(`  ${pc.blue('◆')} ${keyText} → ${targetText}  ${sourceText}`);
+    }
+    console.info();
+  }
+
+  // Summary
+  const staleCount = securityOverrides.filter((o) => o.status === 'likely stale').length;
+  const activeCount = securityOverrides.filter((o) => o.status === 'active').length;
+
+  if (staleCount > 0) {
+    console.info(
+      `${pc.green('○')} ${staleCount} override${staleCount !== 1 ? 's' : ''} likely stale — no matching advisory found in current audit`,
+    );
+    console.info(pc.dim('  overrides mask vulnerabilities — verify by temporarily removing and running pnpm audit'));
+  }
+  if (activeCount > 0) {
+    console.info(
+      `${pc.red('●')} ${activeCount} override${activeCount !== 1 ? 's' : ''} still active — advisory present without override`,
+    );
+  }
+  if (pinOverrides.length > 0) {
+    console.info(
+      `${pc.blue('◆')} ${pinOverrides.length} version pin${pinOverrides.length !== 1 ? 's' : ''} — not security-related, review manually`,
+    );
+  }
   console.info();
 }

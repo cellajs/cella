@@ -3,22 +3,22 @@ import { useMutation } from '@tanstack/react-query';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { type CheckEmailData, type CheckEmailResponse, checkEmail } from 'sdk';
+import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
-import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
-import { useAuthStore } from '~/store/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
+const emailEnabled = enabledStrategies.includes('passkey');
 
-const formSchema = zCheckEmailData.shape.body;
+const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
 /**
@@ -32,7 +32,7 @@ export function CheckEmailStep() {
   const { setStep, setRestrictedMode } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
-  const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
+  const title = appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,7 +52,7 @@ export function CheckEmailStep() {
       let nextStep: AuthStep = 'inviteOnly';
 
       // If registration is enabled or user has a token, proceed to sign up
-      if (appConfig.has.registrationEnabled) nextStep = 'signUp';
+      if (appConfig.has.selfRegistration) nextStep = 'signUp';
       // If registration is disabled and user has no token, proceed to waitlist
       else if (appConfig.has.waitlist) nextStep = 'waitlist';
 
@@ -65,7 +65,7 @@ export function CheckEmailStep() {
 
   return (
     <Form {...form}>
-      <h1 className="text-2xl text-center pb-2 mt-4">{title}</h1>
+      <h1 className="mt-4 pb-2 text-center text-2xl">{title}</h1>
 
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
@@ -81,8 +81,8 @@ export function CheckEmailStep() {
                     className="h-12"
                     type="email"
                     autoFocus={!isMobile}
-                    autoComplete="username webauthn"
-                    placeholder={t('common:email')}
+                    autoComplete="email"
+                    placeholder={t('c:email')}
                   />
                 </FormControl>
                 <FormMessage className="mt-2" />
@@ -90,7 +90,7 @@ export function CheckEmailStep() {
             )}
           />
           <SubmitButton loading={isPending} className="w-full">
-            {t('common:continue')}
+            {t('c:continue')}
             <ArrowRightIcon size={16} className="ml-2" />
           </SubmitButton>
         </form>

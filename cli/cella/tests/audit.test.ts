@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import {
   CACHE_FILE,
   CHANGELOG_PATHS,

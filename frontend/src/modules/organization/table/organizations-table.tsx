@@ -33,11 +33,9 @@ function OrganizationsTable() {
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  const [isCompact, setIsCompact] = useState(false);
-
   // Build columns
   const [selected, setSelected] = useState<EnrichedOrganization[]>([]);
-  const [columns, setColumns] = useColumns(isCompact);
+  const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = organizationsListQueryOptions({ ...search, limit, include: 'counts' });
@@ -91,8 +89,6 @@ function OrganizationsTable() {
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
       />
       <DataTable<EnrichedOrganization>
         {...{
@@ -116,8 +112,8 @@ function OrganizationsTable() {
           NoRowsComponent: (
             <ContentPlaceholder
               icon={BirdIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:organizations').toLowerCase() }}
+              title="c:no_resource_yet"
+              titleProps={{ resource: t('c:organizations').toLowerCase() }}
             />
           ),
         }}

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent } from 'storybook/test';
-
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';

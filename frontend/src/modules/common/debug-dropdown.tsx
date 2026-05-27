@@ -6,7 +6,6 @@ import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
-
 import { cn } from '~/utils/cn';
 
 interface DebugItem {
@@ -78,11 +77,11 @@ function DebugDropdown({ className }: DebugDropdownProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" className={cn('w-12 h-12', className)} aria-label="toggle debug toolbar" />}
+          render={<Button variant="ghost" className={cn('h-12 w-12', className)} aria-label="toggle debug toolbar" />}
         >
           🐞
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" sideOffset={24} className="p-1 w-48 z-300">
+        <DropdownMenuContent side="right" align="end" sideOffset={24} className="z-300 w-48 p-1">
           {debugOptions.map((item) => (
             <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
               <span className="mr-2">{item.icon}</span>

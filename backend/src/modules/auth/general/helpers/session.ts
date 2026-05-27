@@ -2,20 +2,24 @@ import type { z } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/entity-id';
 import { nanoid } from 'shared/nanoid';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { systemRolesTable } from '#/db/schema/system-roles';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
-import { sendAccountSecurityEmail } from '#/lib/send-account-security-email';
+import { lookupIp } from '#/lib/geoip';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { type UserWithActivity, userSelect } from '#/modules/user/helpers/select';
+import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
 import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
+import { hashIpForUser, hashSubnet } from '#/utils/hash-pii';
+import { toSubnet } from '#/utils/ip-subnet';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
@@ -47,12 +51,17 @@ export const setUserSession = async (
   // Notify security email when a system admin signs in (skip in development)
   if (isSystemAdmin && appConfig.mode !== 'development') {
     const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
+    sendAccountSecurityEmail(ctx, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
       email: user.email,
       ip,
       timestamp: new Date().toISOString(),
     });
   }
+
+  // Pseudonymize network identity. Raw IP is never persisted.
+  const rawIp = getIp(ctx);
+  const subnet = rawIp ? toSubnet(rawIp) : null;
+  const { country, asn } = await lookupIp(rawIp);
 
   // Get device information
   const device = deviceInfo(ctx);
@@ -64,7 +73,9 @@ export const setUserSession = async (
   // Calculate expiration
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
+  const sessionId = generateId();
   const session = {
+    id: sessionId,
     secret: hashedSessionToken,
     userId: user.id,
     type,
@@ -73,6 +84,10 @@ export const setUserSession = async (
     deviceOs: device.os,
     browser: device.browser,
     authStrategy: strategy,
+    ipHash: rawIp ? hashIpForUser(rawIp, user.id) : null,
+    ipSubnetHash: subnet ? hashSubnet(subnet) : null,
+    ipCountry: country,
+    ipAsn: asn,
     createdAt: getIsoDate(),
     expiresAt: createDate(timeSpan),
   };
@@ -81,7 +96,8 @@ export const setUserSession = async (
   await db.insert(sessionsTable).values(session);
 
   const adminUser = ctx.var.user;
-  const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
+  const adminUserIdPart = type === 'impersonation' ? adminUser.id : '';
+  const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
@@ -89,13 +105,13 @@ export const setUserSession = async (
   // Exit early if it's impersonation
   if (type === 'impersonation') return;
 
-  // Update user last signIn in user_activity table (avoids CDC noise on users table)
+  // Update user last signIn in user_counters table (avoids CDC noise on users table)
   const lastSignInAt = getIsoDate();
-  await db.insert(userActivityTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
-    target: userActivityTable.userId,
+  await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
+    target: userCountersTable.userId,
     set: { lastSignInAt },
   });
-  logEvent('info', 'User signed in', { userId: user.id, strategy });
+  logEvent(ctx, 'info', 'User signed in', { strategy });
 };
 
 /**
@@ -106,7 +122,7 @@ export const setUserSession = async (
  */
 export const validateSession = async (
   hashedSessionToken: string,
-): Promise<{ session: SessionModel; user: UserWithActivity }> => {
+): Promise<{ session: SessionModel; user: UserWithCounters }> => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
@@ -143,13 +159,13 @@ export const getParsedSessionCookie = async (
     // If no session data, return null
     if (!sessionData) throw new Error();
 
-    // Parse delimited string: "<hashedSessionToken>.<adminUserId>"
-    const [sessionToken, adminUserIdRaw] = sessionData.split('.');
-    if (!sessionToken) throw new Error();
+    // Parse delimited string: "<hashedSessionToken>.<sessionId>.<adminUserId>"
+    const [sessionToken, sessionId, adminUserIdRaw] = sessionData.split('.');
+    if (!sessionToken || !sessionId) throw new Error();
 
     const adminUserId = adminUserIdRaw || undefined;
 
-    return sessionCookieSchema.parse({ sessionToken, adminUserId });
+    return sessionCookieSchema.parse({ sessionToken, sessionId, adminUserId });
   } catch (error) {
     if (deleteOnError) deleteAuthCookie(ctx, 'session');
     throw new AppError(401, 'unauthorized', 'warn');

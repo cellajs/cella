@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface HamburgerButtonProps {
@@ -38,12 +38,12 @@ export function HamburgerButton({ isOpen, toggle, className, ref }: HamburgerBut
       data-open={isOpen}
     >
       <HamburgerLine
-        className="group-data-[open=true]:rotate-45 group-data-[open=true]:translate-y-1.5"
+        className="group-data-[open=true]:translate-y-1.5 group-data-[open=true]:rotate-45"
         lineColor={lineColor}
       />
       <HamburgerLine className="opacity-100 group-data-[open=true]:opacity-0" lineColor={lineColor} />
       <HamburgerLine
-        className="group-data-[open=true]:-rotate-45 group-data-[open=true]:-translate-y-1.5"
+        className="group-data-[open=true]:-translate-y-1.5 group-data-[open=true]:-rotate-45"
         lineColor={lineColor}
       />
     </Button>

@@ -1,7 +1,7 @@
 import type { Key } from 'react';
 import { useCallback, useMemo } from 'react';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
-import { renderToggleGroup } from './cellRenderers';
+import { renderToggleGroup } from './cell-renderers';
 import { SELECT_COLUMN_KEY } from './columns';
 import type { DataGridProps } from './data-grid';
 import { DataGrid } from './data-grid';

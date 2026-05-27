@@ -133,10 +133,10 @@ function getVerticalPadding(node: HTMLElement) {
 }
 
 enum MODES {
-  stickyTop,
-  stickyBottom,
-  relative,
-  small,
+  stickyTop = 0,
+  stickyBottom = 1,
+  relative = 2,
+  small = 3,
 }
 
 type StickyMode = null | (typeof MODES)[keyof typeof MODES];
@@ -452,7 +452,7 @@ function useStickyBox({ offsetTop = 0, offsetBottom = 0, bottom = false, enabled
     handleScrollLike();
 
     return () => {
-      unsubs.forEach((fn) => fn());
+      for (const fn of unsubs) fn();
       addTarget.removeEventListener('scroll', handleScrollLike);
       window.removeEventListener('resize', onResize);
       ro?.disconnect();
@@ -491,7 +491,7 @@ export function StickyBox(props: StickyBoxCompProps) {
   }, [setRef]);
 
   useEffect(() => {
-    if (!hideWhenOutOfView || !ref.current) return;
+    if (!hideWhenOutOfView || !enabled || !ref.current) return;
 
     const scrollParent = getScrollParent(ref.current);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
@@ -523,14 +523,14 @@ export function StickyBox(props: StickyBoxCompProps) {
     return () => {
       scrollParent.removeEventListener('scroll', onScroll);
     };
-  }, [hideWhenOutOfView]);
+  }, [hideWhenOutOfView, enabled]);
 
   // When element returns to its natural (non-sticky) position, ensure it's visible
   useEffect(() => {
     if (hideWhenOutOfView && !isSticky) setVisible(true);
   }, [hideWhenOutOfView, isSticky]);
 
-  if (!hideWhenOutOfView) {
+  if (!hideWhenOutOfView || !enabled) {
     return (
       <div className={className} data-sticky={isSticky} style={style} ref={ref} {...rest}>
         {children}

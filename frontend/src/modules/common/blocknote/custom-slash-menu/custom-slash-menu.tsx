@@ -73,7 +73,7 @@ export const CustomSlashMenuComponent = ({
             onClick={() => onItemClick?.(item)}
             tabIndex={-1}
           >
-            <div className="flex items-center gap-3 mr-2 text-sm">
+            <div className="mr-2 flex items-center gap-3 text-sm">
               {item.icon}
               {item.title}
             </div>

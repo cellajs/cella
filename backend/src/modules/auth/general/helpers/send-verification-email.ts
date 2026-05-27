@@ -1,18 +1,17 @@
 import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/error';
 import { mailer } from '#/lib/mailer';
 import { userSelect } from '#/modules/user/helpers/select';
-import { logEvent } from '#/utils/logger';
+import { type LogContext, logEvent } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { EmailVerificationEmail } from '../../../../../emails';
+import { emailVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
@@ -22,7 +21,7 @@ interface Props {
 /**
  * Send a verification email to user.
  */
-export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
+export const sendVerificationEmail = async ({ userId, redirectPath }: Props, logCtx: LogContext = null) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
@@ -58,19 +57,12 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
     })
     .returning();
 
-  // Only update when no verified email exists
+  // Link token to existing email record (only if not already verified by another flow)
   if (!emailInUse) {
     await db
-      .insert(emailsTable)
-      .values({ email, userId: user.id, tokenId: tokenRecord.id })
-      .onConflictDoUpdate({
-        target: emailsTable.email,
-        where: eq(emailsTable.verified, false),
-        set: {
-          tokenId: tokenRecord.id,
-          userId: user.id,
-        },
-      });
+      .update(emailsTable)
+      .set({ tokenId: tokenRecord.id })
+      .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, user.id), eq(emailsTable.verified, false)));
   }
 
   // Send email
@@ -83,14 +75,12 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   if (redirectPath) verificationURL.searchParams.set('redirect', redirectPath);
 
   // Prepare & send email
-  const subjectText = 'backend:email.email_verification.subject';
-  const subject = i18n.t(subjectText, { lng, appName: appConfig.name });
-  const staticProps = { verificationLink: verificationURL.toString(), subject, lng, name: user.name };
-  const recipients = [{ email }];
+  const staticProps = { verificationLink: verificationURL.toString(), name: user.name };
+  const recipients = [{ email, lng }];
 
-  mailer.prepareEmails(EmailVerificationEmail, staticProps, recipients);
+  mailer.prepareEmails(emailVerificationEmail, staticProps, recipients);
 
-  logEvent('info', 'Verification email sent', { userId: user.id });
+  logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };
 
 export const deleteVerificationTokens = async (

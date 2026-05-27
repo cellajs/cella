@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLatestRef } from './use-latest-ref';
 
 /**
  * Hook to listen for window events.
@@ -15,11 +16,13 @@ export function useEventListener<K extends keyof WindowEventMap>(
   options?: { enabled?: boolean; passive?: boolean },
 ): void {
   const { enabled = true, passive } = options ?? {};
+  const handlerRef = useLatestRef(handler);
 
   useEffect(() => {
     if (!enabled) return;
 
-    window.addEventListener(eventName, handler, { passive });
-    return () => window.removeEventListener(eventName, handler);
-  }, [eventName, handler, enabled, passive]);
+    const listener = (e: WindowEventMap[K]) => handlerRef.current(e);
+    window.addEventListener(eventName, listener, { passive });
+    return () => window.removeEventListener(eventName, listener);
+  }, [eventName, enabled, passive]);
 }

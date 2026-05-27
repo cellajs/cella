@@ -14,7 +14,7 @@ type VerticalStepProps = StepSharedProps & {
 
 const verticalStepVariants = cva(
   [
-    'flex flex-col relative transition-all duration-200',
+    'relative flex flex-col transition-all duration-200',
     'data-[completed=true]:not-last:after:bg-primary',
     'data-[invalid=true]:not-last:after:bg-destructive',
   ],
@@ -22,15 +22,15 @@ const verticalStepVariants = cva(
     variants: {
       variant: {
         circle: cn(
-          'not-last:pb-(--step-gap) not-last:gap-(--step-gap)',
-          "not-last:after:content-[''] not-last:after:w-0.5 not-last:after:bg-border",
+          'not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
+          "not-last:after:w-0.5 not-last:after:bg-border not-last:after:content-['']",
           'not-last:after:inset-x-[calc(var(--step-icon-size)/2)]',
           'not-last:after:absolute',
           'not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
           'not-last:after:bottom-(--step-gap)',
           'not-last:after:transition-all not-last:after:duration-200',
         ),
-        line: 'flex-1 border-t-0 mb-4',
+        line: 'mb-4 flex-1 border-t-0',
       },
     },
   },
@@ -99,7 +99,7 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
                 });
               }
             }}
-            className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up"
+            className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down"
           >
             {children}
           </CollapsibleContent>
@@ -133,7 +133,7 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
           className={cn(
             'stepper__vertical-step-container',
             'flex items-center',
-            variant === 'line' && 'border-s-[.19rem] data-[active=true]:border-primary py-2 ps-3',
+            variant === 'line' && 'border-s-[.19rem] py-2 ps-3 data-[active=true]:border-primary',
             styles?.['vertical-step-container'],
           )}
         >
@@ -160,7 +160,7 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
         className={cn(
           'stepper__vertical-step-content',
           !isLastStep && 'min-h-4',
-          variant !== 'line' && 'sm:ps-(--step-icon-size) max-sm:relative max-sm:z-1',
+          variant !== 'line' && 'max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)',
           variant === 'line' && orientation === 'vertical' && 'min-h-0',
           styles?.['vertical-step-content'],
         )}

@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import { mockNanoid } from './mock-nanoid';
+import { mockUuid } from './mock-nanoid';
 
 /**
  * Type for dynamically generated context entity ID columns in mocks.
@@ -22,7 +22,7 @@ export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = '
 
   for (const entityType of entityTypes) {
     const columnName = appConfig.entityIdColumnKeys[entityType];
-    columns[columnName] = mockNanoid();
+    columns[columnName] = mockUuid();
   }
 
   return columns as MockContextEntityIdColumns;

@@ -1,5 +1,5 @@
+import type { ContextEntityBase, MembershipBase } from 'sdk';
 import type { ContextEntityType, EntityCanMap } from 'shared';
-import type { ContextEntityBase, MembershipBase } from '~/api.gen';
 
 /** Ancestor context entity slugs for URL building — populated via cache enrichment */
 export type AncestorSlugs = Partial<Record<ContextEntityType, string>>;

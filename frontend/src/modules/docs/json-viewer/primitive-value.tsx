@@ -117,8 +117,9 @@ export const PrimitiveValue: FC<PrimitiveValueProps> = ({
       const isMatch = searchText && str.toLowerCase().includes(searchText.toLowerCase());
 
       return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON viewer; expanding a truncated string is a visual mouse affordance.
         <span
-          className={`${baseClass} max-w-[600px] inline-block align-top ${shouldTruncate ? 'cursor-pointer' : ''}`}
+          className={`${baseClass} inline-block max-w-[600px] align-top ${shouldTruncate ? 'cursor-pointer' : ''}`}
           onClick={shouldTruncate ? () => setIsExpanded(!isExpanded) : undefined}
           title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
         >

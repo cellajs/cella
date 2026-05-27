@@ -1,7 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/modules/ui/badge';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface HeroProps {
   title: string;
@@ -43,7 +43,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
               {t(badgeText)}
             </Badge>
           )}
-          <h1 className="font-heading text-primary leading-12 sm:leading-16 md:leading-24 mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="mt-6 mb-6 font-heading text-4xl text-primary leading-12 sm:text-5xl sm:leading-16 md:text-6xl md:leading-24 lg:text-7xl">
             {title && <span className="font-semibold">{t(title)}</span>}
             {title && subtitle && <br />}
             {subtitle && (
@@ -53,7 +53,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
             )}
           </h1>
           {text && (
-            <h2 className="text-foreground/80 mx-auto mb-8 max-w-3xl text-xl md:text-2xl md:leading-10">
+            <h2 className="mx-auto mb-8 max-w-3xl text-foreground/80 text-xl md:text-2xl md:leading-10">
               <Trans t={t} i18nKey={text} components={{ strong: <strong /> }} />
             </h2>
           )}

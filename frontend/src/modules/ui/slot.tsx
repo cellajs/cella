@@ -20,8 +20,8 @@ function mergeProps(slotProps: Record<string, unknown>, childProps: Record<strin
       merged[key] = { ...(slotVal as object), ...(childVal as object) };
     } else if (/^on[A-Z]/.test(key) && typeof slotVal === 'function' && typeof childVal === 'function') {
       merged[key] = (...args: unknown[]) => {
-        (childVal as Function)(...args);
-        (slotVal as Function)(...args);
+        (childVal as (...a: unknown[]) => unknown)(...args);
+        (slotVal as (...a: unknown[]) => unknown)(...args);
       };
     } else {
       merged[key] = childVal;

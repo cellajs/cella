@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -20,9 +20,9 @@ const authPasskeysRoutes = {
     operationId: 'generatePasskeyChallenge',
     method: 'post',
     path: '/passkey/generate-challenge',
-    xGuard: publicGuard,
-    xRateLimiter: passkeyChallengeLimiter,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [passkeyChallengeLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     request: {
@@ -46,9 +46,9 @@ const authPasskeysRoutes = {
     operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Create passkey',
     description:
       'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.',
@@ -73,9 +73,9 @@ const authPasskeysRoutes = {
     operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey/{id}',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Delete passkey',
     description: 'Delete a passkey by id from the *current user*.',
     request: { params: z.object({ id: validIdSchema }) },
@@ -93,9 +93,9 @@ const authPasskeysRoutes = {
     operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('passkey'),
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('passkey')],
+    tags: ['auth', 'cella'],
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',
     request: {

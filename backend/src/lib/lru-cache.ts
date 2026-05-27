@@ -37,7 +37,7 @@ export class LRUCache<T extends {}> {
       dispose: options.onDispose
         ? (value, key, reason) => {
             const mappedReason: DisposeReason = reason === 'set' ? 'set' : reason === 'evict' ? 'evict' : 'delete';
-            options.onDispose!(key, value, mappedReason);
+            options.onDispose?.(key, value, mappedReason);
           }
         : undefined,
     });

@@ -5,9 +5,9 @@ import { useBodyClass } from '~/hooks/use-body-class';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface FocusViewProps {
@@ -29,7 +29,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const removeSheet = sheeter.getState().remove;
 
   const toggleFocus = () => {
-    toaster(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
+    toaster(focusView ? t('c:left_focus.text') : t('c:entered_focus.text'), 'success');
     setFocusView(!focusView);
     removeSheet();
     setNavSheetOpen(null);
@@ -37,10 +37,10 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   };
 
   return (
-    <TooltipButton toolTipContent={t('common:focus_view')} disabled={!iconOnly} className="max-lg:hidden">
+    <TooltipButton toolTipContent={t('c:focus_view')} disabled={!iconOnly} className="max-lg:hidden">
       <Button variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
         {focusView ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
-        {!iconOnly && <span className="ml-1">{focusView ? t('common:leave_focus_view') : t('common:focus_view')}</span>}
+        {!iconOnly && <span className="ml-1">{focusView ? t('c:leave_focus_view') : t('c:focus_view')}</span>}
       </Button>
     </TooltipButton>
   );
@@ -57,9 +57,9 @@ export const FocusViewContainer = ({ children, className = '', disabled }: Focus
   return (
     <div
       className={cn(
-        'focus-view-container container min-h-screen flex flex-col pt-3 gap-2',
+        'focus-view-container container flex min-h-screen flex-col gap-2 pt-3',
         className,
-        isActive ? 'focused w-full max-w-none min-w-full min-h-full' : '',
+        isActive ? 'focused min-h-full w-full min-w-full max-w-none' : '',
       )}
     >
       {children}

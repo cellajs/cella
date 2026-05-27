@@ -3,11 +3,15 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
 
-export const SkipOrganization = ({
-  setOnboardingState,
-}: {
+interface SkipOrganizationProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
-}) => {
+}
+
+/**
+ * Confirmation dialog content for skipping organization creation during onboarding.
+ * Marks onboarding as completed or cancels the action.
+ */
+export const SkipOrganization = ({ setOnboardingState }: SkipOrganizationProps) => {
   const { t } = useTranslation();
 
   const removeDialog = useDialoger((state) => state.remove);
@@ -22,12 +26,12 @@ export const SkipOrganization = ({
   };
 
   return (
-    <div className="flex sm:flex-row gap-2">
+    <div className="flex gap-2 sm:flex-row">
       <Button type="submit" variant="destructive" onClick={onDelete} aria-label="Skip">
-        {t('common:skip')}
+        {t('c:skip')}
       </Button>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
-        {t('common:cancel')}
+        {t('c:cancel')}
       </Button>
     </div>
   );

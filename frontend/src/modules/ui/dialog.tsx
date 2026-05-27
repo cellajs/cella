@@ -1,6 +1,6 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -30,7 +30,7 @@ function DialogOverlay({
       className={cn(
         disabled
           ? ''
-          : 'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-115 in-[.sheeter-open]:z-125 bg-muted/30 backdrop-blur-xs',
+          : 'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 in-[.sheeter-open]:z-125 z-115 bg-black/20 starting:opacity-0 backdrop-blur-xs data-closed:animate-out data-open:animate-in data-starting-style:opacity-0',
         className,
       )}
       {...props}
@@ -57,7 +57,7 @@ function DialogContent({
       <DialogPrimitive.Viewport
         data-slot="dialog-viewport"
         className={cn(
-          !container && 'fixed inset-0 z-115 in-[.sheeter-open]:z-125 sm:grid place-items-center overflow-y-auto',
+          !container && 'fixed inset-0 in-[.sheeter-open]:z-125 z-115 place-items-center overflow-y-auto sm:grid',
         )}
       >
         <DialogPrimitive.Popup
@@ -65,7 +65,7 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'overflow-x-clip overflow-y-clip max-sm:overflow-y-auto max-sm:max-h-[85vh] bg-background mt-4 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative z-116 in-[.sheeter-open]:z-126 grid w-[95vw] gap-4 p-4 shadow-lg duration-200 rounded-lg mx-auto',
+            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto mt-4 grid w-[95vw] starting:scale-95 gap-4 overflow-x-clip overflow-y-clip rounded-lg bg-background p-4 starting:opacity-0 shadow-lg duration-200 focus-visible:outline-none data-starting-style:scale-95 data-closed:animate-out data-open:animate-in data-starting-style:opacity-0 max-sm:max-h-[85dvh] max-sm:overflow-y-auto',
             className,
           )}
           {...props}
@@ -83,7 +83,7 @@ function DialogHeader({ className, sticky, children, ...props }: React.Component
       data-slot="dialog-header"
       className={cn(
         'group/header relative flex flex-col gap-2 text-left',
-        sticky && 'sm:sticky sm:top-0 z-10 sm:bg-background/70 sm:backdrop-blur-xs',
+        sticky && 'z-10 sm:sticky sm:top-0 sm:bg-background/70 sm:backdrop-blur-xs',
         className,
       )}
       {...props}
@@ -91,7 +91,7 @@ function DialogHeader({ className, sticky, children, ...props }: React.Component
       {children}
       <DialogPrimitive.Close
         data-slot="dialog-close"
-        className="hidden group-[.with-close-btn]/header:block absolute right-0 top-0 p-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+        className="focus-effect absolute top-0 right-0 hidden rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 group-[.with-close-btn]/header:block data-disabled:pointer-events-none"
       >
         <XIcon className="size-5" strokeWidth={1.5} />
         <span className="sr-only">Close</span>
@@ -114,7 +114,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props & Reac
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-lg leading-none font-semibold', className)}
+      className={cn('font-semibold leading-none', className)}
       {...props}
     />
   );

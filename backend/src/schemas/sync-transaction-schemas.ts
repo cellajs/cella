@@ -1,40 +1,29 @@
 import { z } from '@hono/zod-openapi';
-import { mockStxBase, mockStxRequest, mockStxResponse } from '../../mocks/mock-entity-base';
+import { schemaTags } from '#/core/openapi-helpers';
+import { mockStxBase, mockStxResponse } from '../../mocks/mock-entity-base';
 
 /**
  * Zod schema for StxBase (sync transaction base).
- * Stored on product entities for sync/offline support.
+ * Used for both storage and request validation.
+ *
+ * Enables HLC-based conflict resolution, idempotency, and sync tracking.
  */
 export const stxBaseSchema = z
   .object({
-    mutationId: z.string(),
-    sourceId: z.string(),
-    version: z.number().int(),
-    fieldVersions: z.record(z.string(), z.number().int()),
+    mutationId: z.string().max(36).describe('Unique mutation ID'),
+    sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
+    fieldTimestamps: z
+      .record(z.string(), z.string())
+      .describe('Per-field HLC timestamps for scalar fields being changed'),
   })
   .openapi('StxBase', {
-    description: 'Sync transaction metadata stored on entities for offline and realtime support.',
+    description:
+      'Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.',
     example: mockStxBase(),
+    'x-tags': schemaTags('base', 'cella'),
   });
 
 export type StxBase = z.infer<typeof stxBaseSchema>;
-
-/**
- * Sync transaction metadata sent with product entity mutations.
- * Enables conflict detection, idempotency, and sync tracking.
- */
-export const stxRequestSchema = z
-  .object({
-    mutationId: z.string().max(32).describe('Unique mutation ID (nanoid)'),
-    sourceId: z.string().max(64).describe('Tab/instance identifier for echo prevention'),
-    lastReadVersion: z.number().int().min(0).describe('Entity version when last read (for conflict detection)'),
-  })
-  .openapi('StxRequestBase', {
-    description: 'Sync transaction metadata sent with mutations for idempotency and conflict detection.',
-    example: mockStxRequest(),
-  });
-
-export type StxRequest = z.infer<typeof stxRequestSchema>;
 
 /**
  * Sync transaction metadata returned in mutation responses.
@@ -43,7 +32,7 @@ export type StxRequest = z.infer<typeof stxRequestSchema>;
 export const stxResponseSchema = z
   .object({
     mutationId: z.string().describe('Echoes the request mutation ID'),
-    version: z.number().int().describe('New entity version after mutation'),
+    droppedFields: z.array(z.string()).default([]).describe('Fields whose HLC lost and were silently dropped'),
   })
   .openapi('StxResponseBase', {
     description: 'Sync transaction acknowledgment returned after a mutation.',

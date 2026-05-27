@@ -11,6 +11,9 @@ interface Props {
   id?: string;
 }
 
+/**
+ * Component for rendering tabs inside a sheet.
+ */
 export const SheetTabs = ({ tabs }: Props) => {
   const layoutId = nanoid();
   const { t } = useTranslation();
@@ -28,7 +31,7 @@ export const SheetTabs = ({ tabs }: Props) => {
               <Button
                 variant="none"
                 data-current={currentPage.id === tab.id}
-                className="peer hover:opacity-100 opacity-80 data-[current=true]:opacity-100 group"
+                className="peer group opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
                 onClick={() => setCurrentPage(tab)}
               >
                 <span className="block group-active:translate-y-[.05rem]">{t(tab.label)}</span>
@@ -37,7 +40,7 @@ export const SheetTabs = ({ tabs }: Props) => {
                     initial={false}
                     layoutId={layoutId}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                    className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
+                    className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
                   />
                 )}
               </Button>

@@ -20,7 +20,7 @@ export function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
   const { mutate: _deleteUsers, isPending } = useUserDeleteMutation();
 
   const onDelete = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
 
     _deleteUsers(users, {
       onSuccess: () => {

@@ -2,17 +2,16 @@
 This document describes the high-level architecture of Cella.
 
 ### Target product
-* frequent-use or heavy use web applications
-* focused on user-generated content that requires authentication/authorization
-* Requires a great UX on different devices, bur native apps are not a direct priority
-* Development budget and time is limited
+* Frequent-use or heavy use web applications
+* Focused on user-generated content that requires authentication/authorization
+* Requires a great UX on different devices, but native apps are not a priority
 * Fullstack development is seen as beneficial to work effectively
 
 ### DX aspects
- * Type safe, without overdoing it. 
+ * Three foundational elements: Postgres, OpenAPI & React Query.
+ * Type safe without overdoing it. 
  * Prevent abstraction layers, use composable functions.
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
- * Focus on proven Postgres, OpenAPI & React Query patterns. Three foundational layers.
  * Modularity: As Cella grows, be able to scaffold only modules that you need.
  * Open standards: long-term vision is that each Cella can speak with other cell(a)s.
  * Focused on client-side rendering (CSR) and in future static site generation (SSG).
@@ -25,6 +24,7 @@ This document describes the high-level architecture of Cella.
 - [zod](https://github.com/colinhacks/zod)
 - [openapi](https://www.openapis.org)
 - [jsx-email](https://jsx.email/)
+- [yjs](https://yjs.dev) / [y-protocols](https://github.com/yjs/y-protocols)
 
 ### Frontend
 - [react](https://reactjs.org)
@@ -43,7 +43,6 @@ This document describes the high-level architecture of Cella.
 - [storybook](https://storybook.js.org)
 - [biome](https://biomejs.dev)
 - [lefthook](https://github.com/evilmartians/lefthook)
-- [pglite](https://pglite.dev/)
 
 
 ## File structure
@@ -51,38 +50,43 @@ Cella is a flat-root monorepo.
 
 ```
 .
+├── ai                        AI worker entrypoint (delegates to backend)
 ├── backend
-│   ├── .db                   Location of db when using pglite
 │   ├── drizzle               DB migrations
 │   ├── emails                Email templates with jsx-email
 │   ├── scripts               Seed scripts and other dev scripts
 │   ├── src
 │   │   ├── db                Connect, table schemas
-│   │   ├── lib               3rd party libs & important helpers
+│   │   ├── core              Foundational types & logic primitives 
+│   │   ├── lib               Stateful services & 3rd party wrappers (mailer, logger, caches)
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   ├── permissions       Permission/authorization layer
 │   │   ├── schemas           Shared Zod schemas
-│   │   ├── sync              Sync engine utilities
 │   │   └── utils             Reusable functions
+├── bench                     Artillery load testing
 ├── cdc                       Change Data Capture worker (WAL → activities → SSE)
+├── cli/cella                 CLI for syncing forks with upstream Cella
 ├── frontend
 │   ├── public
 │   ├── src
-│   │   ├── api.gen           Generated SDK client from openapi.json
+│   │   ├── alerter           Global alert/banner manager
 │   │   ├── hooks             Generic react hooks
-│   │   ├── lib               Library code and core helper functions
-│   │   ├── modules           Modular distribution of components
+│   │   ├── lib               Library code & core helper functions
+│   │   ├── modules           Modular distribution of components (Zustand stores live per-module)
 │   │   ├── query             Query client with offline/realtime logic
 │   │   ├── routes            Code-based routes
-│   │   ├── store             Zustand data stores
 │   │   ├── styling           Tailwind styling
 │   │   └── utils             Reusable functions
 │   └── vite                  Vite-related plugins & scripts
-├── infra                     Terraform IaC (Scaleway)
+├── infra                     Pulumi IaC (Scaleway)
 ├── info                      Documentation, changelog, migration plans
+├── json                      Static JSON data 
 ├── locales                   Translations
-└── shared                    Shared config, types and utils
+├── sdk                       Auto-generated SDK (types, zod schemas, fetch client) consumed by frontend
+├── shared                    Shared config, types & utils
+├── studio                    Drizzle Studio launcher for local DB inspection
+└── yjs                       Yjs collaborative editing worker (ws binary relay)
 ```
 
 ## Data modeling & modularity
@@ -98,25 +102,37 @@ Both frontend and backend have business logic split in modules. Most of them are
 
 ### Entity hierarchy builder
 
-The entity taxonomy is defined using `createEntityHierarchy()` (in `shared/src/builder/`). Forks customize their entity setup in `shared/hierarchy-config.ts`.
+The entity taxonomy is defined using `createEntityHierarchy()` (in `shared/src/config-builder/`). Forks customize their entity setup in `shared/hierarchy-config.ts`.
 
 ```
 createEntityHierarchy(roles).user().context('organization', ...).product('attachment', ...).build()
 ```
 
-The builder validates at construction time that parents exist before children and that public-access inheritance is consistent. The resulting frozen `EntityHierarchy` object is the central configuration artifact — it drives RLS policy selection, permission checks, menu structure, count tracking, and SSE dispatcher routing.
+The builder validates at construction time that parents exist before children and that `publicRead` inheritance is consistent (e.g. `'publicParent'` requires a parent context with `'publicSelf'`). The resulting frozen `EntityHierarchy` object is the central configuration artifact — it drives RLS policy selection, permission checks, menu structure, count tracking, and SSE dispatcher routing.
 
-Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`, `canBePublic()`.
+Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`, `getPublicReadMode()`.
 
 ## Hybrid sync engine
 
 Cella has a hybrid approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they have read-only offline access via prefetched menu data. Product entities (e.g. attachments, pages) can be upgraded with a full sync layer using a 'notify-then-fetch' pattern. All data is consistently collected by the react-query queryClient.
 
 The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent SSE streams:
-- **App stream** (`/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
-- **Public stream** (`/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
+- **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
+- **Public stream** (`/entities/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
 
-Sequence numbers are hierarchy-aware: a PostgreSQL trigger (`stamp_entity_seq_at`) atomically stamps `seqAt` on all product entity rows. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. List endpoints support `afterSeq` for efficient delta fetches during catchup.
+Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. This keeps write transactions fast (no trigger overhead) while CDC atomically increments `context_counters` and stamps the entity row before sending SSE notifications. List endpoints support `seqCursor` for efficient delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [SYNC_ENGINE.md](./SYNC_ENGINE.md) for details.
+
+### Per-field merge strategies
+
+Product entity mutations use per-field merge strategies instead of a single conflict model. The strategy is implicit from the value shape in the `ops` key:
+
+| Strategy | CRDT type | Example fields | Merge rule |
+|----------|-----------|----------------|------------|
+| **LWW** | LWW-Register (HLC) | `name`, `status`, `points` | Latest HLC timestamp wins silently |
+| **AWSet** | Add-Wins Set | `labels`, `assignedTo` | Commutative `{ add, remove }` deltas |
+| **YATA** | Yjs CRDT | `description` | Character-level merge via standalone Yjs worker |
+
+Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [FIELD_MERGE_STRATEGIES.md](./FIELD_MERGE_STRATEGIES.md) for full implementation details.
 
 ### Client sync cycle
 
@@ -126,7 +142,7 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
    - Patches deletes directly into detail + list caches (no invalidation)
    - Compares entity-type seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
    - Handles membership changes
-   - **Cache integrity check**: compares server entity counts vs cached totals to catch seq/cache drift
+   - **Cache integrity check**: compares server entity counts vs cached totals
 
 2. **Phase B (sync service)** — background, after SSE reaches `live`:
    - High priority: `ensureQueryData` for current org (resolves staleness from Phase A)
@@ -137,13 +153,13 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
    - High priority (current org): fetch single entity + patch into list caches
    - Low priority (other orgs): mark stale, refetch on next access
 
-Offline mutations are queued with stx metadata and squashed per entity until connectivity returns.
+Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.
 
-For full details on CDC, the realtime pipeline, stx transactions, offline mutations, and context counters, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
+For more details, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
 
 ## Query layer
 
-React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`). Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `entityQueryRegistry`, enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`useMutateQueryData`, `createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
+React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`). Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `contextEntityQueryRegistry` (see `frontend/src/list-queries-config.tsx`), enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
 
 Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
 
@@ -166,50 +182,59 @@ This is how `item.membership`, `item.can`, and `item.ancestorSlugs` are populate
 
 ## Authentication
 
-Cella supports four auth strategies (configurable per fork via `appConfig.authStrategies`):
+Cella supports four auth strategies (configurable per fork via `appConfig.enabledAuthStrategies`, magic link is the default passwordless strategy):
 
 | Strategy | Description | Key details |
 |----------|-------------|-------------|
-| Password | Email + password | Argon2id hashing via `ARGON_SECRET` |
+| Magic Link | Email magic link | Single-use tokenized link sent via email |
 | Passkey | FIDO2/WebAuthn | Credentials stored in `passkeys` table |
 | OAuth | GitHub, Google, Microsoft | Uses `arctic` library. Google + Microsoft use PKCE. |
 | TOTP | Time-based one-time password | MFA fallback, only usable after passkey primary auth |
 
-Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with single-use tokens for verification, password reset, and invitation flows. Auth endpoints are rate-limited with parallel brute-force protection. Sysadmin impersonation is supported with IP allowlist enforcement.
+Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with single-use tokens for verification and invitation flows. Auth endpoints are rate-limited with parallel brute-force protection. Sysadmin impersonation is supported with IP allowlist enforcement.
 
 ## Multi-tenancy
 
 A `tenant` is the top-level isolation unit. Tenants are not entities — they are system resources managed by system admins only.
 
-Tenant-scoped routes use `/:tenantId/` in the path. Guards (`authGuard` → `tenantGuard` → `orgGuard`) validate membership and wrap each request in a transaction with RLS session variables set. Session variables are transaction-scoped to prevent connection pool leakage. See AGENTS.md for the full guard chain.
+Tenant-scoped routes use `/:tenantId/` in the path. Guards (`authGuard` → `tenantGuard` → `orgGuard`) validate membership and set `ctx.var.db` to `baseDb`. Product entity handlers wrap their DB operations in `tenantRead()` or `tenantWrite()` to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS). See AGENTS.md for the full guard chain.
 
 ## Security & tenant isolation
 
-Cella uses three defense-in-depth layers. The permission manager is the primary authorization mechanism; RLS, composite FKs, and immutability triggers are safety nets that catch application bugs.
+Cella uses three defense-in-depth layers. The permission manager and guard chain are the primary authorization mechanisms; RLS (on product entities), composite FKs, and immutability triggers are safety nets that catch application bugs.
 
 | Layer | What it catches | Key files |
 |-------|----------------|-----------|
+| Guard chain (orgGuard) | Cross-org access within a tenant | `backend/src/middlewares/guard/` |
 | Permission Manager | Unauthorized actions (role/membership checks) | `backend/src/permissions/` |
-| Row-Level Security | Cross-tenant and cross-org data leaks | `backend/src/db/rls-helpers.ts`, `backend/src/db/schema/` |
+| Row-Level Security | Cross-tenant data leaks (product entities only) | `backend/src/db/rls-helpers.ts`, `backend/src/db/tenant-context.ts` |
 | Composite Foreign Keys | Franken-rows (mismatched tenant/org references) | `backend/src/db/schema/` |
 
 ### Boundaries
 
-RLS session variables (`app.tenant_id`, `app.user_id`, `app.is_authenticated`) are set per transaction by the guard chain. `tenant_id` is a **hard** column-match boundary — every tenant-scoped table's RLS policy compares the row's `tenant_id` directly against the session variable.
+RLS session variables (`app.tenant_id`, `app.user_id`) are set per transaction by the `tenantRead()` helper in handler code. `tenant_id` is the **hard** DB-enforced boundary for **product entity** tables — every product entity table's SELECT policy compares the row's `tenant_id` directly against the session variable.
 
-Organization isolation works differently: there is no `app.organization_id` session variable. Instead, org-scoped policies (`orgScopedCrudPolicies`, `orgOwnedCrudPolicies`) use a `membershipExists()` subquery — the user can only access rows in organizations where they have an active membership. Public/tenant-only entities (e.g. pages) have no org boundary since they lack `organization_id`.
+**Context entities** (organizations, projects, workspaces) and **memberships** do not use RLS. Access control for these tables is enforced entirely at the application layer by the guard chain (`authGuard` → `tenantGuard` → `orgGuard`). This avoids read-lock contention on shared relationship data.
 
-In forks with nested context entities (e.g. projects within an org), isolation between sibling contexts is application-layer only — RLS checks membership at the organization level, not at the nested entity level. All policies are fail-closed: missing or empty session context returns zero rows.
+Organization isolation is enforced at the **application layer** by the guard chain, not at the RLS level. This avoids expensive `EXISTS` membership subqueries on every row access. The orgGuard validates that the authenticated user has a membership in the target organization before any handler runs. Cross-org API tests (`backend/tests/security/cross-org.test.ts`) verify this boundary.
+
+All RLS policies on product entities are fail-closed: missing or empty session context returns zero rows.
+
+### RLS read/write split
+
+Product entity handlers use helpers from `backend/src/db/tenant-context.ts`:
+
+- **`tenantRead(ctx, fn)`** — Opens a read-only transaction with RLS session variables. `SET TRANSACTION READ ONLY` provides lock-free reads. SELECT policies are evaluated.
+- **`tenantWrite(fn)`** — Opens a plain read-write transaction. No session variables are set — write isolation is enforced by guards + composite FKs + immutability triggers, not RLS.
+
+The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx } }` so query functions can use the RLS-scoped transaction.
 
 ### RLS policy categories
 
 | Category | SELECT | Write | Builder | Use case |
 |----------|--------|-------|---------|----------|
-| Standard | tenant + org | tenant + org | `orgScopedCrudPolicies()` | Org-scoped product entities (attachments) |
-| Org-owned | tenant + org OR createdBy | tenant + auth | `orgOwnedCrudPolicies()` | Context entities (projects, workspaces) — SELECT includes `createdBy` match so RETURNING works after INSERT before membership exists |
-| Hybrid | public OR tenant+org | tenant + auth | `publicAccessCrudPolicies()` | Entities with `public_access` column (pages) |
-| Cross-tenant | authenticated | tenant | Custom | Authenticated users can read all memberships; writes are tenant-scoped (memberships) |
-| Privilege-based | role | role | Custom | Append-only / system-only (activities) |
+| Tenant-scoped | tenant + auth | No policy (app-layer) | `tenantSelectPolicy()` | Product entity tables (attachments, tasks, labels, yjs-docs) |
+| No RLS | — | — | — | Context entities (organizations, projects, workspaces), memberships, pages |
 
 ### Database roles
 
@@ -225,11 +250,17 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 ### Permission manager
 
-`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/permissions-config.ts`). Policies support three values: `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId` — an implicit "owner" relation inspired by Zanzibar). Grant attribution tracks whether access was granted via a membership or an owner relation. System admins bypass all checks. See AGENTS.md for the full list of permission helpers.
+`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/permissions-config.ts`). Policies support three values: `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId` — an implicit "owner" relation inspired by Zanzibar). Grant attribution tracks whether access was granted via a membership or an owner relation. System admins bypass all checks.
 
 ### Fork contract
 
 > Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities require `tenant_id` only. The entity hierarchy config (`shared/hierarchy-config.ts`) determines which pattern applies.
+
+## Observability
+
+OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs; the frontend uses a browser `WebTracerProvider` for `traceparent` propagation. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
+
+See [OTEL.md](./OTEL.md) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
 
 ## API design
 
@@ -243,15 +274,14 @@ At startup the backend builds the full spec (including an `info.x-extensions` bl
 
 ### Mocks
 
-Mock generators in `backend/mocks/` are a single source of truth serving three purposes:
+Mock generators in `backend/mocks/` serve two purposes:
 
 | Purpose | Mock type | ID context |
 |---------|-----------|------------|
 | OpenAPI examples | Response mocks (deterministic via seeded faker) | `'example'` — no prefix |
-| Database seeding | Insert mocks | `'script'` — `gen-` prefix |
-| Test fixtures | Insert mocks | `'test'` — `test-` prefix |
+| Database seeding & tests | Insert mocks | `'script'` — `gen-` prefix |
 
-Response mocks are passed as `example:` values to `.openapi()` on Zod schemas and route responses — the sole source of OpenAPI examples. Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer` for uniqueness. The context-aware ID prefix system lets CDC workers and test cleanup distinguish generated data.
+Response mocks are passed as `example:` values to `.openapi()` on Zod schemas and route responses — the sole source of OpenAPI examples. Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer` for uniqueness. The `gen-` ID prefix lets the CDC worker skip seeded/test data.
 
 
 ## Testing

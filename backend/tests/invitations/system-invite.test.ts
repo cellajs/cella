@@ -1,69 +1,65 @@
 import { eq } from 'drizzle-orm';
-import { testClient } from 'hono/testing';
+import { systemInvite } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { defaultHeaders } from '../fixtures';
-import { createPasswordUser, createSystemAdminUser, parseResponse } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { createSystemAdminUser, createTestSession, createTestUser } from '../helpers';
+import { createAppClient } from '../test-client';
+import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+
+vi.mock('#/modules/system/handlers', async () => {
+  const actual = await vi.importActual('#/modules/system/handlers');
+  return {
+    ...actual,
+    SystemInviteEmail: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 setTestConfig({
-  enabledAuthStrategies: ['password'],
-  registrationEnabled: true,
+  enabledAuthStrategies: ['passkey'],
+  selfRegistration: true,
 });
 
 beforeAll(async () => {
   mockFetchRequest();
-
-  // Mock email sending
-  vi.mock('#/modules/system/handlers', async () => {
-    const actual = await vi.importActual('#/modules/system/handlers');
-    return {
-      ...actual,
-      SystemInviteEmail: vi.fn().mockResolvedValue(undefined),
-    };
-  });
-
-  mockRateLimiter();
 });
 
 afterEach(async () => await clearDatabase());
 
 describe('System Invitation', async () => {
-  const { default: app } = await import('#/routes');
-  const client = testClient(app);
+  const call = await createAppClient();
 
   // Helper function to create admin session
   async function createAdminSession() {
-    await createSystemAdminUser('admin@cella.com', 'adminPassword123!');
-    const signInRes = await client['auth']['sign-in'].$post(
-      { json: { email: 'admin@cella.com', password: 'adminPassword123!' } },
-      { headers: defaultHeaders },
-    );
-    return signInRes.headers.get('set-cookie') || '';
+    const admin = await createSystemAdminUser('admin@example.com');
+    return await createTestSession(admin);
   }
 
   // Helper function to make invite request
   async function makeInviteRequest(emails: string[], sessionCookie: string) {
-    return await client['system']['invite'].$post(
-      { json: { emails } },
-      { headers: { ...defaultHeaders, Cookie: sessionCookie } },
-    );
+    return await call(systemInvite, {
+      body: { emails },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
   }
 
   describe('Basic Functionality', () => {
     it('should invite new users successfully', async () => {
       const sessionCookie = await createAdminSession();
-      const res = await makeInviteRequest(['user1@cella.com', 'user2@cella.com'], sessionCookie);
+      const { response: res, data } = await makeInviteRequest(
+        ['user1@example.com', 'user2@example.com'],
+        sessionCookie,
+      );
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as {
+      const response = data as {
         data: any[];
-        rejectedItemIds: string[];
+        rejectedIds: string[];
         invitesSentCount: number;
       };
       expect(response.invitesSentCount).toBe(2);
-      expect(response.rejectedItemIds).toHaveLength(0);
+      expect(response.rejectedIds).toHaveLength(0);
 
       // Verify invitation tokens were created
       const tokens = await db.select().from(tokensTable).where(eq(tokensTable.type, 'invitation'));
@@ -71,54 +67,53 @@ describe('System Invitation', async () => {
     });
 
     it('should filter out existing users', async () => {
-      await createPasswordUser('existing@cella.com', 'password123!');
+      await createTestUser('existing@example.com');
       const sessionCookie = await createAdminSession();
-      const res = await makeInviteRequest(['existing@cella.com', 'newuser@cella.com'], sessionCookie);
+      const { response: res, data } = await makeInviteRequest(
+        ['existing@example.com', 'newuser@example.com'],
+        sessionCookie,
+      );
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as {
+      const response = data as {
         data: any[];
-        rejectedItemIds: string[];
+        rejectedIds: string[];
         invitesSentCount: number;
       };
       expect(response.invitesSentCount).toBe(1); // Only new user
-      expect(response.rejectedItemIds).toContain('existing@cella.com');
+      expect(response.rejectedIds).toContain('existing@example.com');
     });
 
     it('should handle duplicate emails in single request', async () => {
       const sessionCookie = await createAdminSession();
-      const res = await makeInviteRequest(['user@cella.com', 'user@cella.com'], sessionCookie);
+      const { response: res, data } = await makeInviteRequest(['user@example.com', 'user@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as {
+      const response = data as {
         data: any[];
-        rejectedItemIds: string[];
+        rejectedIds: string[];
         invitesSentCount: number;
       };
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
-      expect(response.rejectedItemIds).toHaveLength(0);
+      expect(response.rejectedIds).toHaveLength(0);
     });
   });
 
   describe('Security & Authorization', () => {
     it('should reject unauthenticated requests', async () => {
-      const res = await client['system']['invite'].$post(
-        { json: { emails: ['user@cella.com'] } },
-        { headers: defaultHeaders },
-      );
+      const { response: res } = await call(systemInvite, {
+        body: { emails: ['user@example.com'] },
+        headers: defaultHeaders,
+      });
 
       expect(res.status).toBe(401);
     });
 
     it('should reject non-admin users', async () => {
-      await createPasswordUser('user@cella.com', 'password123!');
-      const signInRes = await client['auth']['sign-in'].$post(
-        { json: { email: 'user@cella.com', password: 'password123!' } },
-        { headers: defaultHeaders },
-      );
-      const sessionCookie = signInRes.headers.get('set-cookie') || '';
+      const user = await createTestUser('user@example.com');
+      const sessionCookie = await createTestSession(user);
 
-      const res = await makeInviteRequest(['newuser@cella.com'], sessionCookie);
+      const { response: res } = await makeInviteRequest(['newuser@example.com'], sessionCookie);
       expect(res.status).toBe(403);
     });
   });
@@ -126,14 +121,18 @@ describe('System Invitation', async () => {
   describe('Input Validation', () => {
     it('should reject empty email list', async () => {
       const sessionCookie = await createAdminSession();
-      const res = await makeInviteRequest([], sessionCookie);
-      expect(res.status).toBe(403);
+      // SDK validates client-side before sending the request
+      const { error, response } = await makeInviteRequest([], sessionCookie);
+      expect(error).toBeInstanceOf(Error);
+      expect(response).toBeUndefined();
     });
 
     it('should reject invalid email formats', async () => {
       const sessionCookie = await createAdminSession();
-      const res = await makeInviteRequest(['invalid-email', 'user@cella.com'], sessionCookie);
-      expect(res.status).toBe(403);
+      // SDK validates client-side before sending the request
+      const { error, response } = await makeInviteRequest(['invalid-email', 'user@example.com'], sessionCookie);
+      expect(error).toBeInstanceOf(Error);
+      expect(response).toBeUndefined();
     });
   });
 
@@ -142,33 +141,31 @@ describe('System Invitation', async () => {
       const sessionCookie = await createAdminSession();
 
       // First invitation
-      const firstRes = await makeInviteRequest(['user@cella.com'], sessionCookie);
+      const { response: firstRes } = await makeInviteRequest(['user@example.com'], sessionCookie);
       expect(firstRes.status).toBe(200);
 
       // Second invitation for same user
-      const secondRes = await makeInviteRequest(['user@cella.com'], sessionCookie);
+      const { response: secondRes, data } = await makeInviteRequest(['user@example.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 
-      const response = await parseResponse<{ data: any[]; rejectedItemIds: string[]; invitesSentCount: number }>(
-        secondRes,
-      );
+      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(0);
-      expect(response.rejectedItemIds).toContain('user@cella.com');
+      expect(response.rejectedIds).toContain('user@example.com');
     });
 
     it('should handle multiple valid emails efficiently', async () => {
       const sessionCookie = await createAdminSession();
-      const emails = ['user1@cella.com', 'user2@cella.com', 'user3@cella.com'];
-      const res = await makeInviteRequest(emails, sessionCookie);
+      const emails = ['user1@example.com', 'user2@example.com', 'user3@example.com'];
+      const { response: res, data } = await makeInviteRequest(emails, sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = (await parseResponse(res)) as {
+      const response = data as {
         data: any[];
-        rejectedItemIds: string[];
+        rejectedIds: string[];
         invitesSentCount: number;
       };
       expect(response.invitesSentCount).toBe(3);
-      expect(response.rejectedItemIds).toHaveLength(0);
+      expect(response.rejectedIds).toHaveLength(0);
     });
   });
 });

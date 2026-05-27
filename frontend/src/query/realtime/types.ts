@@ -1,4 +1,4 @@
-import type { StreamNotification } from '~/api.gen';
+import type { StreamNotification } from 'sdk';
 
 /** Stream connection state. */
 export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
@@ -6,7 +6,6 @@ export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live'
 /** Base options for stream hooks. */
 interface BaseStreamOptions {
   enabled?: boolean;
-  onStateChange?: (state: StreamState) => void;
 }
 
 /** Base return value for stream hooks. */

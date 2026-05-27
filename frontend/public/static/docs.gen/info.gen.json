@@ -1,7 +1,7 @@
 {
-  "title": "Cella API",
+  "title": "Cella DEVELOPMENT API",
   "version": "v1",
-  "description": "⚠️ ATTENTION: PRERELEASE!  \n                  This API is organized into modules based on logical domains (e.g. `auth`, `organizations`, `memberships`).\n                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.\n\n                  The documentation is generated from source code using `zod` schemas, converted into OpenAPI via `zod-openapi` and served through the `hono` framework.",
+  "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
   "extensions": [
     {
@@ -9,14 +9,15 @@
       "id": "xGuard",
       "description": "Authorization middleware applied to the endpoint",
       "required": true,
+      "kind": "middleware",
       "values": {
         "publicGuard": { "name": "public", "description": "No authentication required; provides baseDb without RLS context" },
         "authGuard": { "name": "auth", "description": "Requires valid session and sets auth context (user, memberships, baseDb)" },
-        "crossTenantGuard": { "name": "crossTenant", "description": "Requires authGuard and sets user-scoped RLS db context for cross-tenant access" },
+        "crossTenantGuard": { "name": "crossTenant", "description": "Requires authGuard and sets baseDb for cross-tenant access" },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "relatableGuard": { "name": "relatable", "description": "Checks that the requesting user shares at least one organization with the target user" },
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
-        "tenantGuard": { "name": "tenant", "description": "Requires authGuard, validates tenant access, and sets tenant-scoped RLS db context" }
+        "tenantGuard": { "name": "tenant", "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context" }
       }
     },
     {
@@ -24,15 +25,17 @@
       "id": "xRateLimiter",
       "description": "Rate limiting rules applied to the endpoint",
       "required": false,
+      "kind": "middleware",
       "values": {
         "spamLimiter": { "name": "spam", "description": "Max 10 requests/hour per IP for email-sending endpoints" },
         "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
-        "passwordLimiter": { "name": "password", "description": "Blocks email/IP for 30 min after 10 consecutive failures" },
         "presignedUrlLimiter": { "name": "presignedUrl", "description": "Max 2000 requests/hour per user for presigned URLs" },
-        "totpVerificationLimiter": { "name": "totpVerification", "description": "Blocks for 30 min after 5 failed TOTP attempts" },
-        "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Max 5 passkey challenges/hour per IP" },
+        "totpVerificationLimiter": { "name": "totpVerification", "description": "Blocks IP for 30 min after 5 failed TOTP attempts" },
+        "magicLinkLimiter": { "name": "magicLink", "description": "Max 2 magic link emails per 30 min per email address" },
+        "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Max 30 passkey challenges/hour per IP" },
         "pointsLimiter": { "name": "points", "description": "Consumes 1 API point(s) per request against per-tenant hourly budget" },
-        "tokenLimiter": { "name": "token", "description": "Blocks IP for 30 min after 10 consecutive token failures" }
+        "tokenLimiter": { "name": "token", "description": "Blocks IP for 30 min after 10 consecutive token failures" },
+        "insertEntityLock": { "name": "insertEntityLock", "description": "Prevents concurrent entity creation for the same tenant" }
       }
     },
     {
@@ -40,11 +43,19 @@
       "id": "xCache",
       "description": "Caching strategy applied to the endpoint",
       "required": false,
+      "kind": "middleware",
       "values": {
-        "appCache": { "name": "app", "description": "TTL cache with session-signed token validation" },
+        "appCache": { "name": "app", "description": "Entity-keyed TTL cache with forward-only token resolution" },
         "httpCache": { "name": "http", "description": "HTTP private cache: max-age=3600s" },
         "publicCache": { "name": "public", "description": "LRU cache for public page entities" }
       }
+    },
+    {
+      "key": "x-tool",
+      "id": "xTool",
+      "description": "Tool registration metadata for AI and MCP integrations",
+      "required": false,
+      "kind": "metadata"
     }
   ]
 }

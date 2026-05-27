@@ -1,13 +1,29 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { resetConnectivityCache } from '~/lib/connectivity';
-import { onError } from '~/query/on-error';
-import { onSuccess } from '~/query/on-success';
+import type { ApiError } from '~/lib/api';
+import { resetConnectivityCache } from '~/query/offline/connectivity';
+import type { QueryMeta } from '~/query/react-query';
 
-const queryClientConfig = { onError, onSuccess };
+// Lazy import to break circular dependency: query-client → on-error → flush-stores → query-client
+// Without this, HMR re-evaluation hits a TDZ error on `onError`.
+const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
+  import('~/query/on-error').then((m) => m.onError(error, meta));
+const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
+
+const mutationCacheConfig = {
+  onError: (error: ApiError, _vars: unknown, _ctx: unknown, mutation: { meta?: QueryMeta }) =>
+    handleError(error, mutation.meta),
+  onSuccess: handleSuccess,
+};
+
+const queryCacheConfig = {
+  onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta),
+  onSuccess: handleSuccess,
+};
 
 // Stale time constants
 const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
+const defaultGcTime = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 /**
  * Handle online status — guarded to avoid duplicate listeners on HMR.
@@ -31,12 +47,12 @@ if (!import.meta.hot?.data?.listenersAttached) {
 export const queryClient: QueryClient =
   (import.meta.hot?.data?.queryClient as QueryClient) ??
   new QueryClient({
-    mutationCache: new MutationCache(queryClientConfig),
-    queryCache: new QueryCache(queryClientConfig),
+    mutationCache: new MutationCache(mutationCacheConfig),
+    queryCache: new QueryCache(queryCacheConfig),
     defaultOptions: {
       queries: {
         networkMode: 'offlineFirst',
-        gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+        gcTime: defaultGcTime,
         staleTime: defaultStaleTime,
 
         refetchOnMount: false,

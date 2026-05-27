@@ -1,10 +1,10 @@
+import type { StreamNotification } from 'sdk';
+import { postAppCatchup, postPublicCatchup } from 'sdk';
 import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { StreamNotification } from '~/api.gen';
-import { postAppCatchup, postPublicCatchup } from '~/api.gen';
 import { isDebugMode } from '~/env';
-import { useSyncStore } from '~/store/sync';
+import { useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { processAppCatchup, processPublicCatchup } from './catchup-processor';
 import { handlePublicStreamNotification } from './public-stream-handler';
@@ -23,6 +23,8 @@ const CIRCUIT_COOLDOWN_MS = 60_000;
 const INITIAL_BACKOFF_MS = 5_000;
 const MAX_BACKOFF_MS = 30_000;
 const BACKOFF_FACTOR = 2;
+const RECONNECT_JITTER_MS = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
+const MIN_UPTIME_MS = 10_000; // Connection must stay up 10s before backoff resets
 const HEALTH_URL = `${appConfig.backendUrl}/auth/health`;
 
 interface StreamConfig {
@@ -30,7 +32,7 @@ interface StreamConfig {
   withCredentials: boolean;
   useTabCoordination: boolean;
   /** Fetch catchup summary and process it. Returns the new cursor. */
-  fetchAndProcessCatchup: (offset: string | null) => Promise<string | null>;
+  fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** Process a single live SSE notification. */
   processNotification: (notification: unknown) => void;
 }
@@ -38,29 +40,28 @@ interface StreamConfig {
 interface StreamStoreState {
   state: StreamState;
   cursor: string | null;
-  isFirstConnect: boolean;
 }
 
 interface StreamStoreActions {
   setState: (state: StreamState) => void;
   setCursor: (cursor: string | null) => void;
-  setIsFirstConnect: (isFirst: boolean) => void;
   reset: () => void;
 }
 
 type StreamStore = StreamStoreState & StreamStoreActions;
 
+/**
+ * Manages SSE connection lifecycle with robust reconnect logic and circuit breaker.
+ */
 function createStreamStore(name: string) {
   return create<StreamStore>()(
     devtools(
       (set) => ({
         state: 'disconnected',
         cursor: null,
-        isFirstConnect: true,
         setState: (state) => set({ state }),
         setCursor: (cursor) => set({ cursor }),
-        setIsFirstConnect: (isFirst) => set({ isFirstConnect: isFirst }),
-        reset: () => set({ state: 'disconnected', cursor: null, isFirstConnect: true }),
+        reset: () => set({ state: 'disconnected', cursor: null }),
       }),
       { name, enabled: isDebugMode },
     ),
@@ -77,7 +78,7 @@ function createStreamStore(name: string) {
  * for the lifetime of the page (we only need to gate the initial cache restore).
  */
 let initialCatchupResolve: (() => void) | null = null;
-let initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
+const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
   initialCatchupResolve = resolve;
 });
 
@@ -98,6 +99,7 @@ class StreamManager {
   private circuitOpen = false;
   private circuitOpenedAt: number | null = null;
   private currentBackoff = INITIAL_BACKOFF_MS;
+  private connectedAt: number | null = null;
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
   private leaderUnsubscribe: (() => void) | null = null;
@@ -106,8 +108,10 @@ class StreamManager {
   private catchupResolve: (() => void) | null = null;
 
   readonly useStore: ReturnType<typeof createStreamStore>;
+  private readonly name: string;
 
   constructor(name: string, config: StreamConfig) {
+    this.name = name;
     this.config = config;
     this.useStore = createStreamStore(name);
   }
@@ -125,18 +129,18 @@ class StreamManager {
     const { state } = this.useStore.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
+    // Circuit breaker: stop if too many consecutive failures
+    if (this.circuitOpen) {
+      console.debug(`[${this.name}] Circuit breaker open, not attempting reconnect`);
+      return;
+    }
+
     // Create a fresh resolve callback for this connect cycle (drives initialCatchupGate)
     let resolveCatchup: () => void;
     new Promise<void>((r) => {
       resolveCatchup = r;
     });
     this.catchupResolve = resolveCatchup!;
-
-    // Circuit breaker: stop if too many consecutive failures
-    if (this.circuitOpen) {
-      console.debug('[StreamStore] Circuit breaker open, not attempting reconnect');
-      return;
-    }
 
     this.abortController?.abort();
     this.abortController = new AbortController();
@@ -155,18 +159,18 @@ class StreamManager {
         });
 
         if (!isLeader()) {
-          console.debug('[StreamStore] Not leader, listening to broadcasts only');
+          console.debug(`[${this.name}] Not leader, listening to broadcasts only`);
           this.useStore.getState().setState('live');
           return;
         }
       }
 
-      // Phase 1: Fetch and process catchup summary
+      // Phase 1: Fetch and process catchup
       this.useStore.getState().setState('catching-up');
 
       const currentCursor = useTabCoordination ? useSyncStore.getState().cursor : this.useStore.getState().cursor;
 
-      console.debug('[StreamStore] Fetching catchup from offset:', currentCursor ?? 'null');
+      console.debug(`[${this.name}] Fetching catchup from offset:`, currentCursor ?? 'null');
       const newCursor = await this.config.fetchAndProcessCatchup(currentCursor);
       if (signal.aborted) return;
 
@@ -178,18 +182,15 @@ class StreamManager {
         }
       }
 
-      this.useStore.getState().setIsFirstConnect(false);
-
-      console.debug('[StreamStore] Catchup complete, cursor:', newCursor);
+      console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
 
       // Signal that catchup is done — paused mutations can now safely resume
       this.catchupResolve?.();
       this.catchupResolve = null;
       resolveInitialCatchupGate();
 
-      // Reset circuit breaker and backoff on success
+      // Reset failure count on catchup success (backoff resets when SSE stays up > MIN_UPTIME_MS)
       this.consecutiveFailures = 0;
-      this.currentBackoff = INITIAL_BACKOFF_MS;
 
       if (!signal.aborted) this.connectSSE();
     } catch (error) {
@@ -197,7 +198,7 @@ class StreamManager {
         this.consecutiveFailures++;
         const isPermanentError = this.isPermanentError(error);
 
-        console.error('[StreamStore] Catchup failed:', error);
+        console.error(`[${this.name}] Catchup failed:`, error);
         this.useStore.getState().setState('error');
 
         // Resolve catchup promise on failure so paused mutations aren't stuck forever
@@ -237,7 +238,7 @@ class StreamManager {
     const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
 
     eventSource.onopen = () => {
-      console.debug('[StreamStore] SSE connected, waiting for offset...');
+      console.debug(`[${this.name}] SSE connected, waiting for offset...`);
     };
 
     eventSource.addEventListener('change', (e) => {
@@ -253,27 +254,53 @@ class StreamManager {
         if (useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
         this.config.processNotification(notification);
       } catch (error) {
-        console.debug('[StreamStore] Failed to parse message:', error);
+        console.debug(`[${this.name}] Failed to parse message:`, error);
       }
     });
 
     eventSource.addEventListener('offset', (e) => {
-      console.debug('[StreamStore] SSE offset received:', e.data);
+      console.debug(`[${this.name}] SSE offset received:`, e.data);
       if (e.data) {
         this.useStore.getState().setCursor(e.data);
         if (useTabCoordination) useSyncStore.getState().setCursor(e.data);
       }
-      // Reset failure count and backoff on successful connection
+      // Reset failure count; backoff resets only when connection stays up > MIN_UPTIME_MS (checked in onerror)
       this.consecutiveFailures = 0;
-      this.currentBackoff = INITIAL_BACKOFF_MS;
+      this.connectedAt = Date.now();
       this.useStore.getState().setState('live');
     });
 
-    eventSource.addEventListener('ping', () => {});
+    // Application-level error event from the server (typed payload). Distinct from the
+    // built-in transport `error` (handled by `onerror` below) which is a bare Event.
+    eventSource.addEventListener('error', (e) => {
+      if (!(e instanceof MessageEvent) || !e.data) return; // transport error -> falls through to onerror
+      try {
+        const payload = JSON.parse(e.data) as { code?: string; message?: string };
+        const permanent =
+          payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
+        console.debug(`[${this.name}] Server stream error:`, payload);
+        eventSource.close();
+        this.eventSource = null;
+        this.useStore.getState().setState('error');
+        if (permanent) {
+          this.openCircuit(`server error: ${payload.code}`);
+        } else {
+          this.scheduleReconnect();
+        }
+      } catch {
+        // Malformed payload — let onerror handle the eventual transport close.
+      }
+    });
 
     eventSource.onerror = () => {
       this.consecutiveFailures++;
-      console.debug('[StreamStore] SSE error');
+      console.debug(`[${this.name}] SSE error`);
+
+      // Reset backoff if connection was stable long enough (prevents rapid reconnect loops)
+      if (this.connectedAt && Date.now() - this.connectedAt >= MIN_UPTIME_MS) {
+        this.currentBackoff = INITIAL_BACKOFF_MS;
+      }
+      this.connectedAt = null;
 
       this.useStore.getState().setState('error');
       eventSource.close();
@@ -293,16 +320,23 @@ class StreamManager {
   private openCircuit(reason: string) {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
-    console.warn('[StreamStore] Circuit breaker opened:', reason);
+    console.warn(`[${this.name}] Circuit breaker opened:`, reason);
+
+    // Cancel any pending reconnect timer so it won't fire after circuit opens
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
   }
 
   private scheduleReconnect() {
     if (this.reconnectTimeout || this.circuitOpen) return;
 
-    const delay = this.currentBackoff;
-    this.currentBackoff = Math.min(MAX_BACKOFF_MS, delay * BACKOFF_FACTOR);
+    const jitter = Math.random() * RECONNECT_JITTER_MS;
+    const delay = this.currentBackoff + jitter;
+    this.currentBackoff = Math.min(MAX_BACKOFF_MS, this.currentBackoff * BACKOFF_FACTOR);
 
-    console.debug('[StreamStore] Scheduling reconnect in', delay / 1000, 's');
+    console.debug(`[${this.name}] Scheduling reconnect in`, Math.round(delay / 1000), 's');
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       this.connect();
@@ -324,7 +358,7 @@ class StreamManager {
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
       console.debug(
-        '[StreamStore] Circuit cooldown:',
+        `[${this.name}] Circuit cooldown:`,
         Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000),
         's remaining',
       );
@@ -335,21 +369,21 @@ class StreamManager {
     if (this.healthCheckInProgress) return;
     this.healthCheckInProgress = true;
 
-    console.debug('[StreamStore] Circuit cooldown elapsed, checking health');
+    console.debug(`[${this.name}] Circuit cooldown elapsed, checking health`);
 
     try {
       const response = await fetch(HEALTH_URL);
       if (response.ok) {
-        console.debug('[StreamStore] Health check passed, reconnecting');
+        console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
       } else {
         // Health check failed — reset cooldown timer
         this.circuitOpenedAt = Date.now();
-        console.debug('[StreamStore] Health check failed, extending cooldown');
+        console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
     } catch {
       this.circuitOpenedAt = Date.now();
-      console.debug('[StreamStore] Health check unreachable, extending cooldown');
+      console.debug(`[${this.name}] Health check unreachable, extending cooldown`);
     } finally {
       this.healthCheckInProgress = false;
     }
@@ -361,7 +395,7 @@ class StreamManager {
     this.visibilityHandler = () => {
       const shouldReconnect = this.config.useTabCoordination ? isLeader() : true;
       if (document.visibilityState === 'visible' && shouldReconnect && !this.isConnected()) {
-        console.debug('[StreamStore] Tab visible, attempting reconnect...');
+        console.debug(`[${this.name}] Tab visible, attempting reconnect...`);
         this.attemptReconnect();
       }
     };
@@ -381,7 +415,7 @@ class StreamManager {
     let wasLeader = useTabCoordinatorStore.getState().isLeader;
     this.leaderUnsubscribe = useTabCoordinatorStore.subscribe((s) => {
       if (s.isLeader && !wasLeader && !this.isConnected()) {
-        console.debug('[StreamStore] Became leader, attempting reconnect...');
+        console.debug(`[${this.name}] Became leader, attempting reconnect...`);
         this.attemptReconnect();
       }
       wasLeader = s.isLeader;
@@ -413,6 +447,7 @@ class StreamManager {
 
     this.broadcastCleanup?.();
     this.broadcastCleanup = null;
+    this.connectedAt = null;
     this.useStore.getState().setState('disconnected');
   }
 
@@ -421,6 +456,7 @@ class StreamManager {
     this.consecutiveFailures = 0;
     this.circuitOpen = false;
     this.circuitOpenedAt = null;
+    this.connectedAt = null;
     this.currentBackoff = INITIAL_BACKOFF_MS;
   }
 
@@ -444,13 +480,13 @@ export const publicStreamManager = new StreamManager('PublicStream', {
   endpoint: `${appConfig.backendUrl}/entities/public/stream`,
   withCredentials: false,
   useTabCoordination: false,
-  fetchAndProcessCatchup: async (offset) => {
-    const seqs = useSyncStore.getState().seqs;
+  fetchAndProcessCatchup: async (cursor) => {
+    const seqs = useSyncStore.getState().getFlatSeqs();
     const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
     const response = await postPublicCatchup({
-      body: { cursor: offset ?? undefined, seqs: seqsParam },
+      body: { cursor: cursor ?? undefined, seqs: seqsParam },
     });
-    await processPublicCatchup(response);
+    await processPublicCatchup(response, !cursor);
     return response.cursor ?? null;
   },
   processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
@@ -467,13 +503,13 @@ export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
   useTabCoordination: true,
-  fetchAndProcessCatchup: async (offset) => {
-    const seqs = useSyncStore.getState().seqs;
+  fetchAndProcessCatchup: async (cursor) => {
+    const seqs = useSyncStore.getState().getFlatSeqs();
     const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
     const response = await postAppCatchup({
-      body: { cursor: offset ?? undefined, seqs: seqsParam },
+      body: { cursor: cursor ?? undefined, seqs: seqsParam },
     });
-    await processAppCatchup(response);
+    await processAppCatchup(response, !cursor);
     return response.cursor ?? null;
   },
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),

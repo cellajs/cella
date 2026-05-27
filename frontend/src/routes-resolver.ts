@@ -23,9 +23,9 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, _isSubitem?: 
     if (paramKey) params[paramKey] = ancestorSlug;
   }
 
-  // Organization uses its own slug as orgSlug (it has no ancestors)
+  // Organization uses its own slug as organizationSlug (it has no ancestors)
   if (entityType === 'organization') {
-    params.orgSlug = slug;
+    params.organizationSlug = slug;
   }
 
   return { to, params, search: {} };

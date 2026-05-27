@@ -13,11 +13,14 @@
 !cdc/src/
 !cdc/tsconfig.json
 
-# Config package
-!config/
+# Backend source (for bundled imports via tsup)
+!backend/src/
 
-# Tracing package
-!packages/tracing/
+# Shared package
+!shared/
+
+# Patches
+!patches/
 
 # Ignore tests and dev files
 **/*.test.ts

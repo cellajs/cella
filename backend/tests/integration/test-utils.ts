@@ -2,7 +2,7 @@
  * Integration test setup for CDC + EventBus tests.
  *
  * These tests require:
- * - Real PostgreSQL (not PGlite) with logical replication enabled
+ * - Real PostgreSQL with logical replication enabled
  * - DATABASE_URL environment variable pointing to the test database
  *
  * The setup handles:
@@ -23,7 +23,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { activityBus } from '#/sync/activity-bus';
+import { activityBus } from '#/lib/activity-bus';
 
 /**
  * Run database migrations for integration tests.
@@ -48,7 +48,7 @@ export async function clearDatabase() {
   await db.delete(organizationsTable);
 }
 
-import type { ActivityEventWithEntity } from '#/sync/activity-bus';
+import type { ActivityEvent } from '#/lib/activity-bus';
 
 /**
  * Helper to wait for an event with timeout.
@@ -58,7 +58,7 @@ import type { ActivityEventWithEntity } from '#/sync/activity-bus';
 export function waitForEvent(
   eventType: Parameters<typeof activityBus.once>[0],
   timeoutMs = 10000,
-): Promise<ActivityEventWithEntity> {
+): Promise<ActivityEvent> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));

@@ -33,7 +33,7 @@ Use `import { z } from '@hono/zod-openapi'` in backend (NOT plain zod).
 ### Frontend API Client
 Generated SDK in `frontend/src/api.gen/` - **never edit manually**. After backend route/schema changes:
 ```bash
-pnpm generate:openapi
+pnpm sdk
 ```
 
 ### Frontend Routing (Code-based, not file-based)
@@ -53,10 +53,9 @@ Product entities are typically daily-use content data models that can optionally
 ## Essential Commands
 
 ```bash
-pnpm quick          # Fast dev with PGlite (DEV_MODE=basic, no Docker)
+pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC, requires Docker)
 pnpm dev            # Full dev with PostgreSQL + CDC Worker (DEV_MODE=full, requires Docker)
-pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC)
-pnpm check          # Run generate:openapi + typecheck + lint:fix
+pnpm check          # Run sdk + typecheck + lint:fix
 pnpm generate       # Create Drizzle migrations from schema changes
 pnpm seed           # Seed database with test data
 pnpm test           # Run all Vitest tests
@@ -65,7 +64,7 @@ pnpm cella           # Sync changes from upstream cella to fork (useful for fork
 
 ## Code style and conventions
 
-- **Git**: Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools.
+- **Git**: Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools. **Never** run destructive worktree ops (`git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean -fd`) to "isolate" or reset state — other Copilot sessions or the user may share this worktree. Read-only `git status`/`git diff` are fine.
 - **Formatter/Linter**: Biome (`pnpm lint:fix`)
 - **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
 - **Files**: kebab-case (`user-profile.tsx`)

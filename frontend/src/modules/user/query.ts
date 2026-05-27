@@ -1,16 +1,11 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { User } from 'sdk';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from 'sdk';
 import { appConfig } from 'shared';
-import type { User } from '~/api.gen';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { BaseUser } from '~/modules/user/types';
-import {
-  baseInfiniteQueryOptions,
-  createEntityKeys,
-  findEntityInListCache,
-  invalidateIfLastMutation,
-} from '~/query/basic';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
+import { baseInfiniteQueryOptions, createCacheFinder, createEntityKeys, invalidateIfLastMutation } from '~/query/basic';
+import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import type { MutationData } from '~/query/types';
 
 type UserFilters = Omit<GetUsersData['query'], 'limit' | 'offset'>;
@@ -19,8 +14,8 @@ const keys = createEntityKeys<UserFilters>('user');
 
 export const userQueryKeys = keys;
 
-/** Find a user in the list cache by id. */
-const findUserInListCache = (entityId: string) => findEntityInListCache<User>('user', (user) => user.id === entityId);
+/** Find a user in cache by id. */
+const findUserInCache = createCacheFinder<User>('user');
 
 /**
  * Query options for fetching a user by ID.
@@ -29,7 +24,7 @@ export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
     queryFn: async () => getUser({ path: { relatableUserId: id } }),
-    placeholderData: () => findUserInListCache(id),
+    placeholderData: () => findUserInCache(id),
   });
 
 /**
@@ -62,16 +57,17 @@ export const usersListQueryOptions = ({
  */
 export const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
+  const listKey = keys.list.base;
 
   return useMutation<User, ApiError, MutationData<UpdateUserData>>({
     mutationKey: keys.update,
     mutationFn: ({ path, body }) => updateUser({ path, body }),
     onSuccess: (updatedUser) => {
-      mutateCache.update([updatedUser]);
+      cacheUpdate(listKey, [updatedUser]);
+      queryClient.invalidateQueries({ queryKey: keys.detail.base });
     },
     onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
     },
     gcTime: 1000 * 10,
   });
@@ -82,7 +78,7 @@ export const useUserUpdateMutation = () => {
  */
 export const useUserDeleteMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, (user) => keys.detail.byId(user.id), ['remove']);
+  const listKey = keys.list.base;
 
   return useMutation<void, ApiError, BaseUser[]>({
     mutationKey: keys.delete,
@@ -91,10 +87,11 @@ export const useUserDeleteMutation = () => {
       await deleteUsers({ body: { ids } });
     },
     onSuccess: (_, users) => {
-      mutateCache.remove(users);
+      cacheRemove(listKey, users);
+      for (const user of users) queryClient.removeQueries({ queryKey: keys.detail.byId(user.id) });
     },
     onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
     },
   });
 };

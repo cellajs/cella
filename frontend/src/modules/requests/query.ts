@@ -1,6 +1,5 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { appConfig } from 'shared';
 import {
   type CreateRequestData,
   type CreateRequestResponse,
@@ -12,7 +11,8 @@ import {
   type SystemInviteData,
   type SystemInviteResponse,
   systemInvite,
-} from '~/api.gen';
+} from 'sdk';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { baseInfiniteQueryOptions } from '~/query/basic';
@@ -85,7 +85,7 @@ export const useSendApprovalInviteMutation = () => {
   return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
     mutationKey: requestsKeys.approve(),
     mutationFn: async (body) => await systemInvite({ body }),
-    onSuccess: () => toaster(t('common:success.users_invited'), 'success'),
+    onSuccess: () => toaster(t('c:success.users_invited'), 'success'),
     onError: () => toaster(t('error:bad_request_action'), 'error'),
   });
 };
@@ -104,4 +104,18 @@ export const useDeleteRequestMutation = () => {
       return true;
     },
   });
+};
+
+/** Fetch requests for table export. Bypasses cache; returns flat items. */
+export const fetchRequestsForExport = async (params: {
+  limit: number;
+  q?: string;
+  sort?: NonNullable<GetRequestsData['query']>['sort'];
+  order?: NonNullable<GetRequestsData['query']>['order'];
+}) => {
+  const { limit, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const response = await getRequests({
+    query: { q, sort, order, limit: String(limit), offset: '0' },
+  });
+  return response.items;
 };

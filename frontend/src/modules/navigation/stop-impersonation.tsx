@@ -2,14 +2,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { UserXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { stopImpersonation as breakImpersonation } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { getAndSetMe } from '~/modules/me/helpers';
-import { meKeys } from '~/modules/me/query';
+import { stopImpersonationFlow } from '~/modules/me/helpers';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
-import { queryClient } from '~/query/query-client';
-import { appStreamManager } from '~/query/realtime/stream-store';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
@@ -24,19 +20,12 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { impersonating, setImpersonating } = useUIStore();
+  const { impersonating } = useUIStore();
 
   const stopImpersonation = async () => {
-    await breakImpersonation();
-    setImpersonating(false);
-    // Remove stale user and membership caches so fresh data is fetched for the restored admin user
-    queryClient.removeQueries({ queryKey: meKeys.all });
-    queryClient.removeQueries({ queryKey: meKeys.memberships });
-    await getAndSetMe();
-    // Reconnect SSE so the subscriber uses the restored admin's role and memberships
-    appStreamManager.reconnect();
+    await stopImpersonationFlow();
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
-    toaster(t('common:success.stopped_impersonation'), 'success');
+    toaster(t('c:success.stopped_impersonation'), 'success');
   };
 
   if (!impersonating) return null;
@@ -44,26 +33,21 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
-    <SidebarMenuItem className="flex transform grow-0 justify-start pb-2">
+    <SidebarMenuItem className="flex grow-0 transform justify-start pb-2">
       <SidebarMenuButton
         size="lg"
         data-collapsed={isCollapsed}
-        tooltip={{ children: t('common:stop_impersonation'), hidden: !showTooltip }}
+        tooltip={{ children: t('c:stop_impersonation'), hidden: !showTooltip }}
         onClick={stopImpersonation}
-        className="h-14 ring-inset focus-visible:ring-offset-0 group transition-[width] duration-200 linear
-          hover:bg-background/30 text-sidebar-foreground
-          w-full data-[collapsed=true]:w-16 justify-center"
+        className="group linear h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16"
       >
         <UserXIcon
-          className="group-hover:scale-110 transition-transform size-5 min-w-5 min-h-5 shrink-0"
+          className="size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110"
           strokeWidth={1.8}
         />
         {hasSidebarTextLabels && (
-          <span
-            className="pl-1.5 font-medium whitespace-nowrap transition-[opacity,width] duration-200 linear overflow-hidden
-            opacity-100 w-auto group-data-[collapsed=true]:opacity-0 group-data-[collapsed=true]:w-0"
-          >
-            {t('common:stop_impersonation')}
+          <span className="linear w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
+            {t('c:stop_impersonation')}
           </span>
         )}
       </SidebarMenuButton>

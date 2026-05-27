@@ -9,6 +9,7 @@ export interface GroupedColumnHeaderRowProps<R, SR> {
   columns: readonly CalculatedColumn<R, SR>[];
   selectCell: (position: Position) => void;
   selectedCellIdx: number | undefined;
+  isCellSelectionEnabled: boolean;
 }
 
 function GroupedColumnHeaderRow<R, SR>({
@@ -17,8 +18,9 @@ function GroupedColumnHeaderRow<R, SR>({
   columns,
   selectedCellIdx,
   selectCell,
+  isCellSelectionEnabled,
 }: GroupedColumnHeaderRowProps<R, SR>) {
-  const cells = [];
+  const cells: React.ReactNode[] = [];
   const renderedParents = new Set<CalculatedColumnParent<R, SR>>();
 
   for (const column of columns) {
@@ -40,6 +42,7 @@ function GroupedColumnHeaderRow<R, SR>({
           column={parent}
           rowIdx={rowIdx}
           isCellSelected={selectedCellIdx === idx}
+          isCellSelectionEnabled={isCellSelectionEnabled}
           selectCell={selectCell}
         />,
       );
@@ -60,4 +63,5 @@ function GroupedColumnHeaderRow<R, SR>({
 const GroupedColumnHeaderRowMemo = memo(GroupedColumnHeaderRow) as <R, SR>(
   props: GroupedColumnHeaderRowProps<R, SR>,
 ) => React.JSX.Element;
+
 export { GroupedColumnHeaderRowMemo as GroupedColumnHeaderRow };

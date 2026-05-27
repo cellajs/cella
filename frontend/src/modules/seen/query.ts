@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getUnseenCounts } from '~/api.gen';
+import { getUnseenCounts } from 'sdk';
 
 export const seenKeys = {
   unseenCounts: ['me', 'unseen', 'counts'],

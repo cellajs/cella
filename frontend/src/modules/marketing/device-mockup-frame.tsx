@@ -10,12 +10,12 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
   switch (type) {
     case 'tablet':
       return (
-        <div className="relative mx-auto border-gray-300 bg-gray-300 border-[.88rem] rounded-[2.5rem] aspect-3/4">
-          <div className="h-8 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-20 rounded-s-lg" />
-          <div className="h-12 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-32 rounded-s-lg" />
-          <div className="h-12 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-44 rounded-s-lg" />
-          <div className="h-16 w-1 bg-gray-300 dark:bg-gray-800 absolute -end-4 top-36 rounded-e-lg" />
-          <div className="rounded-8 bg-white dark:bg-gray-800 h-full w-full cursor-pointer">
+        <div className="relative mx-auto aspect-3/4 rounded-[2.5rem] border-[.88rem] border-gray-300 bg-gray-300">
+          <div className="absolute -start-4 top-20 h-8 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
+          <div className="absolute -start-4 top-32 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
+          <div className="absolute -start-4 top-44 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
+          <div className="absolute -end-4 top-36 h-16 w-1 rounded-e-lg bg-gray-300 dark:bg-gray-800" />
+          <div className="h-full w-full cursor-pointer rounded-8 bg-white dark:bg-gray-800">
             {inView && renderCarousel('rounded-[2rem]')}
           </div>
         </div>
@@ -23,24 +23,24 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
     case 'pc':
       return (
         <div className="w-full">
-          <div className="relative mx-auto border-gray-400/75 mb-[.05rem] dark:border-gray-700 border-[.25rem] rounded-t-xl max-w-[85%] aspect-video">
-            <div className="rounded-lg h-full w-full bg-background cursor-pointer">
+          <div className="relative mx-auto mb-[.05rem] aspect-video max-w-[85%] rounded-t-xl border-[.25rem] border-gray-400/75 dark:border-gray-700">
+            <div className="h-full w-full cursor-pointer rounded-lg bg-background">
               {inView && renderCarousel('rounded-t-[.5rem]')}
             </div>
           </div>
-          <div className="relative mx-auto bg-gray-300 dark:bg-gray-800 rounded-b-xl rounded-t-sm h-3 md:h-4">
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 rounded-b-xl w-14 h-1 md:w-24 md:h-2 bg-gray-500/25 dark:bg-gray-900/25 border-background border border-t-0" />
+          <div className="relative mx-auto h-3 rounded-t-sm rounded-b-xl bg-gray-300 md:h-4 dark:bg-gray-800">
+            <div className="absolute top-0 left-1/2 h-1 w-14 -translate-x-1/2 rounded-b-xl border border-background border-t-0 bg-gray-500/25 md:h-2 md:w-24 dark:bg-gray-900/25" />
           </div>
         </div>
       );
     case 'mobile':
       return (
-        <div className="relative mx-auto border-gray-300 dark:border-gray-700 border-[.6rem] rounded-[1.5rem] h-[32rem] sm:h-[40rem] aspect-9/16">
-          <div className="h-8 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-20 rounded-s-lg" />
-          <div className="h-12 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-32 rounded-s-lg" />
-          <div className="h-12 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-44 rounded-s-lg" />
-          <div className="h-12 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -end-3 top-36 rounded-e-lg" />
-          <div className="rounded-[1rem] h-full w-full bg-gray-200 dark:bg-gray-800 cursor-pointer">
+        <div className="relative mx-auto aspect-9/16 h-[32rem] rounded-[1.5rem] border-[.6rem] border-gray-300 sm:h-[40rem] dark:border-gray-700">
+          <div className="absolute -start-3 top-20 h-8 w-[.19rem] rounded-s-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute -start-3 top-32 h-12 w-[.19rem] rounded-s-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute -start-3 top-44 h-12 w-[.19rem] rounded-s-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="absolute -end-3 top-36 h-12 w-[.19rem] rounded-e-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="h-full w-full cursor-pointer rounded-[1rem] bg-gray-200 dark:bg-gray-800">
             {inView && renderCarousel('rounded-[1rem]')}
           </div>
         </div>

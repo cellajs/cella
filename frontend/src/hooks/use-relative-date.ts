@@ -15,7 +15,9 @@ const getDelay = (date: string) => {
   return 0;
 };
 
-/** Hook to get a relative date string that updates over time. 10s, 30s, 1h intervals. It stops updating after 1 day. */
+/**
+ * Hook to get a relative date string that updates over time. 10s, 30s, 1h intervals. It stops updating after 1 day.
+ */
 export const useRelativeDate = (date: string, loc: keyof typeof locale, addStr?: string) => {
   const [text, setText] = useState(() => dateMini(date, loc, addStr));
 

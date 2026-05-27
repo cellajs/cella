@@ -27,23 +27,32 @@ export const MarketingNav = () => {
 
   const renderNavItems = () => {
     return marketingNavConfig.map(({ url, hash, id }) => (
-      <Button key={id} variant="ghost" size="lg" asChild>
-        <Link
-          to={url}
-          hash={hash}
-          replace={location.pathname === '/about'}
-          draggable="false"
-          onClick={(e) => {
-            if (!hash) {
-              closeDrawer();
-              return;
-            }
-            e.preventDefault();
-            handleNavClick(hash);
-          }}
-        >
-          {t(id)}
-        </Link>
+      <Button
+        key={id}
+        variant="ghost"
+        size="lg"
+        render={
+          <Link
+            to={url}
+            hash={hash}
+            replace={location.pathname === '/about'}
+            draggable={false}
+            onClick={(e) => {
+              if (!hash) {
+                closeDrawer();
+                return;
+              }
+              if (location.pathname === '/about') {
+                e.preventDefault();
+                handleNavClick(hash);
+              } else {
+                closeDrawer();
+              }
+            }}
+          />
+        }
+      >
+        {t(id)}
       </Button>
     ));
   };
@@ -54,10 +63,10 @@ export const MarketingNav = () => {
 
   return (
     <>
-      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-121 h-16 w-full">
-        <div className="flex h-full items-center gap-2 max-w-336 mx-auto justify-between transition-colors duration-300">
+      <header className="absolute top-2 z-121 h-16 w-full px-2 sm:top-4 lg:top-8 lg:px-4">
+        <div className="mx-auto flex h-full max-w-336 items-center justify-between gap-2 transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
-            <div className="md:hidden pointer-events-auto!">
+            <div className="pointer-events-auto! md:hidden">
               <HamburgerButton
                 isOpen={drawerOpen}
                 toggle={() => setDrawerOpen((prev) => !prev)}
@@ -69,7 +78,7 @@ export const MarketingNav = () => {
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 transition-transform sm:hover:scale-105 sm:active:scale-100 relative p-0.5 rounded-md focus-effect pointer-events-auto!"
+              className="focus-effect pointer-events-auto! relative rounded-md p-0.5 transition-transform sm:mr-1 sm:active:scale-100 sm:hover:scale-105 md:mr-2 md:ml-1 md:pr-4"
               aria-label="Go to about page"
             >
               <Logo height={36} />
@@ -78,7 +87,7 @@ export const MarketingNav = () => {
                 xmlns="http://www.w3.org/2000/svg"
                 width="12"
                 height="12"
-                className="max-md:hidden absolute top-0.5 right-0.5"
+                className="absolute top-0.5 right-0.5 max-md:hidden"
               >
                 <title>We support Ukraine</title>
                 <g fill="none">
@@ -100,7 +109,7 @@ export const MarketingNav = () => {
           </div>
 
           <div
-            className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${drawerOpen ? 'opacity-0' : ''}`}
+            className={`flex items-center gap-2 px-2 transition-opacity duration-300 ease-in-out ${drawerOpen ? 'opacity-0' : ''}`}
           >
             <UserLanguage />
 
@@ -118,22 +127,20 @@ export const MarketingNav = () => {
               </Button>
             )}
 
-            <Button className="sm:ml-2" asChild>
-              <Link to="/auth/authenticate" preload={false}>
-                {t('common:sign_in')}
-              </Link>
+            <Button className="sm:ml-2" render={<Link to="/auth/authenticate" preload={false} />}>
+              {t('c:sign_in')}
             </Button>
           </div>
         </div>
       </header>
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="md:hidden pb-8">
+        <DrawerContent className="pb-8 md:hidden">
           <span className="sr-only">
             <DrawerTitle>Navigation</DrawerTitle>
           </span>
-          <div className="flex flex-col px-4 gap-2 items-stretch">
-            <UserTheme buttonClassName="xs:hidden m-1 self-end" />
+          <div className="flex flex-col items-stretch gap-2 px-4">
+            <UserTheme buttonClassName="xs:hidden bg-accent m-1 self-end" />
             {renderNavItems()}
             {appConfig.company.githubUrl && (
               <Button

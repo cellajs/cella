@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { PencilIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
-import type { Organization } from '~/api.gen';
+import type { Organization } from 'sdk';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
@@ -30,11 +30,9 @@ export function openUpdateSheet(
       triggerRef: buttonRef,
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() }),
+      title: i18n.t('c:edit_resource', { resource: i18n.t('c:organization').toLowerCase() }),
       titleContent: (
-        <UnsavedBadge
-          title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })}
-        />
+        <UnsavedBadge title={i18n.t('c:edit_resource', { resource: i18n.t('c:organization').toLowerCase() })} />
       ),
     },
   );
@@ -52,7 +50,7 @@ export function UpdateRow({ organization, tabIndex }: Props) {
       tabIndex={tabIndex}
       className="justify-center"
       data-tooltip="true"
-      data-tooltip-content={i18n.t('common:edit')}
+      data-tooltip-content={i18n.t('c:edit')}
       onClick={() => openUpdateSheet(organization, buttonRef)}
     >
       <PencilIcon size={16} />

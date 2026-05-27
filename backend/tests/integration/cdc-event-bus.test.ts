@@ -17,9 +17,23 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
-import type { ActivityEventWithEntity } from '#/sync/activity-bus';
-import { activityBus } from '#/sync/activity-bus';
+import type { ActivityEvent } from '#/lib/activity-bus';
+import { activityBus } from '#/lib/activity-bus';
 import { mockActivity } from '../../mocks/mock-activity';
+
+/** Create a mock ActivityEvent from a mock activity. */
+const mockEventWithData = (key: string): ActivityEvent =>
+  ({
+    ...mockActivity(key),
+    rowData: {},
+    cacheToken: null,
+    seq: null,
+    batchUntilSeq: null,
+    deletedIds: null,
+    propagation: null,
+    trace: null,
+  }) as ActivityEvent;
+
 import { mockContextMembership } from '../../mocks/mock-membership';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { mockUser } from '../../mocks/mock-user';
@@ -35,7 +49,7 @@ describe('EventBus Integration', () => {
     it('should receive locally emitted events', async () => {
       const handler = vi.fn();
       // Use mockActivity for entity-agnostic event generation
-      const mockEvent = mockActivity('test:emit-basic') as ActivityEventWithEntity;
+      const mockEvent = mockEventWithData('test:emit-basic');
 
       activityBus.on(mockEvent.type, handler);
       activityBus.emit(mockEvent);
@@ -47,7 +61,7 @@ describe('EventBus Integration', () => {
 
     it('should support one-time event handlers', async () => {
       const handler = vi.fn();
-      const mockEvent = mockActivity('test:once-handler') as ActivityEventWithEntity;
+      const mockEvent = mockEventWithData('test:once-handler');
 
       activityBus.once(mockEvent.type, handler);
 
@@ -113,7 +127,7 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
     const event = await eventPromise;
 
     expect(event.type).toBe('membership.created');
-    expect(event.entityId).toBe(membershipData.id);
+    expect(event.subjectId).toBe(membershipData.id);
     expect(event.organizationId).toBe(testOrg.id);
   });
 });

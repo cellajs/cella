@@ -7,24 +7,24 @@ import { MarketingLayout } from '~/modules/marketing/layout';
 const methods = [
   {
     icon: MapPinIcon,
-    title: 'common:visit',
+    title: 'c:visit',
     link: appConfig.company.googleMapsUrl,
     text: appConfig.company.streetAddress,
   },
-  { icon: MailIcon, title: 'common:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
+  { icon: MailIcon, title: 'c:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
 ];
 
 if (appConfig.company.scheduleCallUrl)
   methods.push({
     icon: CalendarCheckIcon,
-    title: 'common:book',
+    title: 'c:book',
     link: appConfig.company.scheduleCallUrl,
-    text: 'common:schedule_call.text',
+    text: 'c:schedule_call.text',
   });
 if (appConfig.company.tel)
   methods.push({
     icon: PhoneCallIcon,
-    title: 'common:call',
+    title: 'c:call',
     link: `tel:${appConfig.company.tel}`,
     text: appConfig.company.tel,
   });
@@ -33,27 +33,27 @@ export function ContactPage() {
   const { t } = useTranslation();
 
   return (
-    <MarketingLayout title="common:contact_us">
-      <div className="container pb-16 pt-20">
-        <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">
-          {t('common:leave_message.text')}
+    <MarketingLayout title="c:contact_us">
+      <div className="container pt-20 pb-16">
+        <h1 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">
+          {t('c:leave_message.text')}
         </h1>
-        <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
+        <p className="mb-8 text-center text-muted-foreground sm:text-left sm:text-lg">{t('c:contact_us.text')}</p>
         <ContactForm />
       </div>
       <div className="container mb-12">
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
-            <div key={t(method.title)} className="mb-10 text-center h-48 w-40 sm:w-48">
-              <div className="text-primary mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 sm:h-32 sm:w-32">
+            <div key={t(method.title)} className="mb-10 h-48 w-40 text-center sm:w-48">
+              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:h-32 sm:w-32">
                 <method.icon size={48} strokeWidth={1} />
               </div>
               <div className="text-center">
-                <h4 className="mb-3 text-lg font-semibold">{t(method.title)}</h4>
+                <h4 className="mb-3 font-semibold text-lg">{t(method.title)}</h4>
                 <p>
                   <a
                     href={method.link}
-                    className="hover:underline underline-offset-4 text-sm sm:text-base group p-0.5 rounded-md focus-effect"
+                    className="group focus-effect rounded-md p-0.5 text-sm underline-offset-4 hover:underline sm:text-base"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -61,7 +61,7 @@ export function ContactPage() {
                     <ArrowUpRightIcon
                       size={16}
                       strokeWidth={appConfig.theme.strokeWidth}
-                      className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100"
+                      className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100"
                     />
                   </a>
                 </p>

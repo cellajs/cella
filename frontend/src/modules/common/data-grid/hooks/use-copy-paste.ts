@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-
 import type { CalculatedColumn, CellRange, Position } from '../types';
 import { getCellsInRange, normalizeCellRange } from '../utils/cell-range-utils';
 import { parseTSVToCells, serializeCellsToHTML, serializeCellsToTSV } from '../utils/clipboard-utils';
@@ -42,11 +41,11 @@ interface CopyPasteOptions<R, SR> {
   /** Grid columns */
   columns: readonly CalculatedColumn<R, SR>[];
   /** Callback when single cell is copied - return false to prevent default copy behavior */
-  onCopy?: (args: CopyCallbackArgs<R, SR>) => boolean | void;
+  onCopy?: (args: CopyCallbackArgs<R, SR>) => boolean | undefined;
   /** Callback when content is pasted into single cell - return the new row or undefined to prevent paste */
   onPaste?: (args: PasteCallbackArgs<R, SR>) => R | undefined;
   /** Callback when cell range is copied - return false to prevent default */
-  onCopyRange?: (args: CopyRangeArgs<R, SR>) => boolean | void;
+  onCopyRange?: (args: CopyRangeArgs<R, SR>) => boolean | undefined;
   /** Callback when content is pasted into range - return updated rows or undefined to prevent */
   onPasteRange?: (args: PasteRangeArgs<R, SR>) => R[] | undefined;
   /** Function to update a single row */

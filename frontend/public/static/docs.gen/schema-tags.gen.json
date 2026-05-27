@@ -1,17 +1,5 @@
 [
-  {
-    "name": "base",
-    "description": "Schemas with base fields only",
-    "count": 6
-  },
-  {
-    "name": "data",
-    "description": "Complete data schemas",
-    "count": 16
-  },
-  {
-    "name": "errors",
-    "description": "Error schemas",
-    "count": 7
-  }
+  { "name": "data", "description": "Complete data schemas", "count": 12 },
+  { "name": "base", "description": "Schemas with base fields only", "count": 6 },
+  { "name": "errors", "description": "Error schemas", "count": 7 }
 ]

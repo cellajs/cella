@@ -1,237 +1,85 @@
 /**
  * Cella Data Grid Styles
- * Migrated from ecij CSS-in-JS to plain CSS with Tailwind CSS variables
+ *
+ * Only rules that cannot be expressed as Tailwind classes live here:
+ * - CSS vars consumed by JS (--rdg-grid-row-start)
+ * - Complex selectors (:nth-last-child, :not())
+ * - Pseudo-elements (::before/::after for drop indicators)
+ * - Relative oklch colors (not in Tailwind palette)
+ *
+ * Everything else is on the components via Tailwind aria-* modifiers.
  */
 
-/* CSS Layers for proper cascade ordering */
-@layer rdg.Defaults, rdg.Root, rdg.Row, rdg.Cell, rdg.FocusSink;
-
 /* ==========================================================================
-   Root / Grid Container
+   Cell Styles (layout that needs CSS vars + complex selectors)
    ========================================================================== */
 
-@layer rdg.Defaults {
-  .rdg *,
-  .rdg *::before,
-  .rdg *::after {
-    box-sizing: inherit;
-  }
+/* Grid-row-start via CSS var — cascades naturally through display:contents rows */
+.rdg-cell {
+  grid-row-start: var(--rdg-grid-row-start);
 }
 
-@layer rdg.Root {
-  .rdg {
-    /* CSS Custom Properties - can be overridden */
-    --rdg-selection-width: 2px;
-    --rdg-selection-color: var(--primary);
-    --rdg-font-size: 0.875rem;
-    --rdg-cell-frozen-box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
-    --rdg-border-width: 1px;
-    --rdg-color: var(--foreground);
-    --rdg-border-color: var(--border);
-    --rdg-background-color: var(--background);
-    --rdg-header-background-color: var(--muted);
-    --rdg-row-hover-background-color: oklch(from var(--muted) l c h / 0.5);
-    --rdg-row-selected-background-color: var(--accent);
-    --rdg-row-selected-hover-background-color: var(--accent);
-
-    display: grid;
-    accent-color: var(--primary);
-
-    /* Page-embedded mode: vertical overflow visible, horizontal scroll internal */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 300px;
-    contain: layout style;
-    border: 1px solid var(--rdg-border-color);
-    box-sizing: border-box;
-    overflow-x: auto;
-    overflow-y: visible;
-    background-color: var(--rdg-background-color);
-    color: var(--rdg-color);
-    font-size: var(--rdg-font-size);
-  }
-
-  .rdg.rdg-dark {
-    color-scheme: dark;
-  }
-
-  .rdg.rdg-light {
-    color-scheme: light;
-  }
-
-  /* Firefox scrollbar fix */
-  .rdg::before {
-    content: "";
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-  }
+/* Last frozen cell shadow — only when grid is scrolled horizontally */
+[data-scrolled-left] > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen),
+[data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
+  box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
 }
 
 /* ==========================================================================
-   Row Styles
+   DataTable Overrides (drag-and-drop indicators)
    ========================================================================== */
 
-@layer rdg.Row {
-  .rdg-row {
-    display: contents;
-    background-color: var(--rdg-background-color);
-  }
-
-  .rdg-row:hover {
-    background-color: var(--rdg-row-hover-background-color);
-  }
-
-  .rdg-row[aria-selected="true"] {
-    background-color: var(--rdg-row-selected-background-color);
-  }
-
-  .rdg-row[aria-selected="true"]:hover {
-    background-color: var(--rdg-row-selected-hover-background-color);
-  }
+/* Drop indicator line spanning the full row.
+ *
+ * The `data-drop-edge` attribute is written imperatively (no React state) by
+ * row-drag-cell.tsx onto the `.rdg-row` element during drag. Plain attribute
+ * selectors only — no `:has()`, no sibling combinators — so style invalidation
+ * is O(1) per row regardless of table size. `:has()` with sibling combinators
+ * is a known foot-gun on large/virtualized lists because it forces relational
+ * re-evaluation across siblings on every attribute mutation.
+ *
+ * Cells use `overflow: hidden`, so absolute pseudo-elements positioned outside
+ * the cell box would be clipped. We use inset box-shadows instead, which paint
+ * inside the cell and are unaffected by overflow.
+ *
+ * To prevent the indicator from "jumping" 2px when the pointer crosses a row
+ * seam, the JS redirects a `bottom` zone on row N to a `top` mark on row N+1
+ * (so the line sits in the same pixel band whether the user is at the bottom
+ * of row N or the top of row N+1). The last row, having no next sibling, is
+ * the only case where `data-drop-edge="bottom"` is actually written to the DOM.
+ */
+.rdg-row[data-drop-edge="top"] > .rdg-cell {
+  box-shadow: inset 0 2px 0 0 var(--primary);
 }
 
-/* ==========================================================================
-   Cell Styles
-   ========================================================================== */
-
-@layer rdg.Cell {
-  .rdg-cell {
-    position: relative;
-    padding-block: 0;
-    padding-inline: 0.5rem;
-    border-inline-end: var(--rdg-border-width) solid var(--rdg-border-color);
-    border-block-end: var(--rdg-border-width) solid var(--rdg-border-color);
-    grid-row-start: var(--rdg-grid-row-start);
-    align-content: center;
-    background-color: inherit;
-
-    white-space: nowrap;
-    overflow: clip;
-    text-overflow: ellipsis;
-    outline: none;
-  }
-
-  .rdg-cell[aria-selected="true"] {
-    outline: var(--rdg-selection-width) solid var(--rdg-selection-color);
-    outline-offset: calc(var(--rdg-selection-width) * -1);
-  }
-
-  /* Frozen cells */
-  .rdg-cell-frozen {
-    position: sticky;
-    z-index: 1;
-  }
-
-  .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
-    box-shadow: var(--rdg-cell-frozen-box-shadow);
-  }
+.rdg-row[data-drop-edge="bottom"] > .rdg-cell {
+  box-shadow: inset 0 -2px 0 0 var(--primary);
 }
 
-/* Wrap-text cells: outside @layer so it overrides DataTable's unlayered
-   `display: flex` on .rdg-cell. Line-clamp targets the direct child because
-   -webkit-line-clamp only works on -webkit-box's own content, not nested blocks. */
-.rdg-cell-wrap-text {
-  white-space: pre-line;
-  overflow: hidden;
-  align-content: center;
+/* Center drop zone — highlight entire row for reparenting.
+ * Rows use `display: contents` so we can't put a single border on the row.
+ * Instead, compose a continuous 1px ring across all cells using inset
+ * box-shadows: top+bottom on every cell (which join seamlessly between cells),
+ * left only on the first cell, right only on the last. This avoids the noisy
+ * per-cell dashed outline where each cell would draw its own broken rectangle.
+ */
+.rdg-row[data-drop-edge="center"] > .rdg-cell {
+  background-color: oklch(from var(--primary) l c h / 0.08);
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary);
 }
 
-.rdg-cell-wrap-text > * {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--rdg-wrap-text-lines, none);
+.rdg-row[data-drop-edge="center"] > .rdg-cell:first-child {
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary),
+    inset 1px 0 0 0 var(--primary);
 }
 
-/* ==========================================================================
-   Focus Sink (for keyboard navigation outline)
-   ========================================================================== */
-
-@layer rdg.FocusSink {
-  .rdg-focus-sink {
-    grid-column: 1 / -1;
-    pointer-events: none;
-    /* Make the focus sink render above frozen cells */
-    z-index: 2;
-  }
-
-  .rdg-focus-sink-header-summary {
-    /* row outline should not cover the focus outline */
-    z-index: 3;
-  }
-
-  .rdg-row-selected-outline {
-    outline: 2px solid var(--rdg-selection-color);
-    outline-offset: -2px;
-  }
-
-  .rdg-row-selected-frozen::before {
-    content: "";
-    display: inline-block;
-    block-size: 100%;
-    position: sticky;
-    inset-inline-start: 0;
-    border-inline-start: 2px solid var(--rdg-selection-color);
-  }
-}
-
-/* ==========================================================================
-   Header Row
-   ========================================================================== */
-
-.rdg-header-row {
-  display: contents;
-  font-weight: 600;
-  background-color: var(--rdg-header-background-color);
-}
-
-.rdg-header-row > .rdg-cell {
-  background-color: var(--rdg-header-background-color);
-}
-
-/* ==========================================================================
-   Additional classes
-   ========================================================================== */
-
-/* Group Row */
-.rdg-group-row:not([aria-selected="true"]) {
-  background-color: var(--rdg-header-background-color);
-}
-
-.rdg-group-row > .rdg-cell:not(:last-child, .rdg-cell-frozen),
-.rdg-group-row > :nth-last-child(n + 2 of .rdg-cell-frozen) {
-  border-inline-end: none;
-}
-
-/* ==========================================================================
-   Cell Range Selection
-   ========================================================================== */
-
-.rdg-cell-range-top {
-  border-block-start: var(--rdg-selection-width) solid var(--rdg-selection-color);
-}
-
-.rdg-cell-range-bottom {
-  border-block-end: var(--rdg-selection-width) solid var(--rdg-selection-color);
-}
-
-.rdg-cell-range-left {
-  border-inline-start: var(--rdg-selection-width) solid var(--rdg-selection-color);
-}
-
-.rdg-cell-range-right {
-  border-inline-end: var(--rdg-selection-width) solid var(--rdg-selection-color);
-}
-
-/* ==========================================================================
-   Touch Mode
-   ========================================================================== */
-
-.rdg-touch-mode {
-  --rdg-touch-cell-padding: 0.75rem;
-}
-
-.rdg-touch-mode .rdg-cell {
-  padding-inline: var(--rdg-touch-cell-padding);
-  min-block-size: 44px;
+.rdg-row[data-drop-edge="center"] > .rdg-cell:last-child {
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary),
+    inset -1px 0 0 0 var(--primary);
 }

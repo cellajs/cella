@@ -1,17 +1,17 @@
-import { boolean, foreignKey, index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 const languagesEnum = appConfig.languages;
 
 /** Users table. Closely related to `emailsTable` for email verification. */
-export const usersTable = pgTable(
+export const usersTable = snakeCase.table(
   'users',
   {
     createdAt: timestampColumns.createdAt,
-    id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
+    id: uuid().primaryKey().$defaultFn(generateId),
     entityType: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
@@ -30,15 +30,15 @@ export const usersTable = pgTable(
       .$type<UserFlags>()
       .notNull()
       .default({} as UserFlags),
-    modifiedAt: timestampColumns.modifiedAt,
-    modifiedBy: varchar({ length: maxLength.id }),
+    updatedAt: timestampColumns.updatedAt,
+    updatedBy: uuid(),
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),
     index('users_email_index').on(table.email.desc()),
     index('users_created_at_index').on(table.createdAt.desc()),
     foreignKey({
-      columns: [table.modifiedBy],
+      columns: [table.updatedBy],
       foreignColumns: [table.id],
     }),
   ],

@@ -2,7 +2,6 @@ import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/is-cdn-url';
-import zxcvbn from 'zxcvbn';
 import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };
@@ -50,22 +49,8 @@ export const cookieSchema = z.string().max(maxLength.field);
 /** Schema for session cookie */
 export const sessionCookieSchema = z.object({
   sessionToken: z.string().max(maxLength.field),
+  sessionId: z.string().max(maxLength.id),
   adminUserId: z.string().max(maxLength.id).optional(),
-});
-
-/** Password input schema: basic length validation only (used for sign-in) */
-export const passwordInputSchema = z.string().min(8).max(maxLength.password);
-
-/** Password schema: extends passwordInputSchema with minimum zxcvbn score of 2 (used for create/edit) */
-export const passwordSchema = passwordInputSchema.superRefine((password, ctx) => {
-  const { score } = zxcvbn(password);
-  if (score < 2) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Password is too weak',
-      params: { type: 'weak_password' },
-    });
-  }
 });
 
 /** Schema for supported languages (enum) */
@@ -88,33 +73,33 @@ export const tenantOnlyParamSchema = z.object({
   tenantId: validIdSchema,
 });
 
-/** Schema for an organization identifier orgId */
-export const inOrgParamSchema = z.object({ orgId: validIdSchema });
+/** Schema for an organization identifier organizationId */
+export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
 
-/** Schema for entity id within an organization orgId */
-export const idInOrgParamSchema = z.object({ id: validIdSchema, orgId: validIdSchema });
+/** Schema for entity id within an organization organizationId */
+export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: validIdSchema });
 
 /*************************************************************************************************
  * Tenant-scoped param schemas (for RLS-enabled routes)
  ************************************************************************************************/
 
-/** Schema for tenant-scoped routes: tenantId + orgId */
+/** Schema for tenant-scoped routes: tenantId + organizationId */
 export const tenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
 });
 
 /** Schema for entity id within tenant + org context */
 export const idInTenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
   id: validIdSchema,
 });
 
 /** Schema for user id within tenant + org context (for getUser route) */
 export const userIdInTenantOrgParamSchema = z.object({
   tenantId: validIdSchema,
-  orgId: validIdSchema,
+  organizationId: validIdSchema,
   userId: validIdSchema,
 });
 
@@ -151,15 +136,8 @@ export const paginationQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
     .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
-  /** Sequence-based delta filter — returns entities with seqAt > this value. Hierarchy-aware: seqAt is scoped per parent context. */
-  afterSeq: z
-    .string()
-    .optional()
-    .transform((val) => (val ? Number.parseInt(val, 10) : undefined))
-    .refine(
-      (val) => val === undefined || (Number.isInteger(val) && val >= 0),
-      'afterSeq must be a non-negative integer',
-    ),
+  /** Seq-based delta filter. "51" for open-ended (>= 51), "51,150" for bounded range (>= 51 AND <= 150). */
+  seqCursor: z.string().optional(),
 });
 
 /** Schema for optional excludeArchived query param (transforms to boolean) */
@@ -167,6 +145,11 @@ export const excludeArchivedQuerySchema = z
   .enum(['true', 'false'])
   .optional()
   .transform((val) => val === 'true');
+
+/** Schema for optional fullResponse query param — when true, return fully hydrated relations */
+export const fullResponseQuerySchema = z.object({
+  fullResponse: booleanTransformSchema.optional(),
+});
 
 /** Valid options for include query param */
 export const includeOptions = ['counts', 'membership'] as const;
@@ -252,11 +235,8 @@ export const refineWithType = <T>(check: (val: T) => boolean, errorType: string)
   };
 };
 
-/** Schema for a client-provided nanoid: lowercase alphanumeric, 12-50 chars */
-export const validNanoidSchema = z
-  .string()
-  .max(maxLength.id)
-  .superRefine(refineWithType((s) => /^[a-z0-9]{12,50}$/.test(s), 'invalid_id'));
+/** Schema for a client-provided entity ID: valid UUID format */
+export const validUuidSchema = z.string().uuid({ message: t('error:invalid_id') });
 
 /** Refinement that rejects arrays with duplicate slug values */
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>

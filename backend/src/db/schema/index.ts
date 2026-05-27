@@ -1,4 +1,7 @@
+// Core schemas
 export * from './activities';
+// App-specific schemas (fork-customizable)
+export * from './app-schemas';
 export * from './attachments';
 export * from './context-counters';
 export * from './domains';
@@ -9,7 +12,7 @@ export * from './oauth-accounts';
 export * from './organizations';
 export * from './pages';
 export * from './passkeys';
-export * from './passwords';
+export * from './product-counters';
 export * from './rate-limits';
 export * from './requests';
 export * from './seen-by';
@@ -20,5 +23,6 @@ export * from './tenants';
 export * from './tokens';
 export * from './totps';
 export * from './unsubscribe-tokens';
-export * from './user-activity';
+export * from './user-counters';
 export * from './users';
+export * from './yjs-documents';

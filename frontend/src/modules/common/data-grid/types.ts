@@ -1,7 +1,5 @@
 import type { Key, ReactElement, ReactNode } from 'react';
 
-import type { DataGridProps } from './data-grid';
-
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Maybe<T> = T | undefined | null;
@@ -74,6 +72,13 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly sortable?: Maybe<boolean>;
   /** Enable dragging of the column */
   readonly draggable?: Maybe<boolean>;
+  /**
+   * Mark this column's cells as the row drag handle (drag source) for row
+   * reordering. Combine with DataGrid `onRowReorder` to enable.
+   * If no column is marked, no row dragging is possible — drop targets are
+   * still active per-cell so other columns can be dragged onto.
+   */
+  readonly rowDragHandle?: Maybe<boolean>;
   /** Sets the column sort order to be descending instead of ascending the first time the column is sorted */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
@@ -217,14 +222,19 @@ export interface RenderHeaderCellProps<TRow, TSummaryRow = unknown> {
   tabIndex: number;
 }
 
-interface BaseCellRendererProps<TRow, TSummaryRow = unknown>
-  extends Omit<React.ComponentProps<'div'>, 'children'>,
-    Pick<
-      DataGridProps<TRow, TSummaryRow>,
-      'onCellMouseDown' | 'onCellClick' | 'onCellDoubleClick' | 'onCellContextMenu'
-    > {
+interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.ComponentProps<'div'>, 'children'> {
+  onCellMouseDown?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellClick?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellDoubleClick?: CellMouseEventHandler<TRow, TSummaryRow>;
+  onCellContextMenu?: CellMouseEventHandler<TRow, TSummaryRow>;
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
+  /**
+   * Whether cell selection (and the cell-level roving tab index) is enabled for the grid.
+   * When false, the gridcell wrapper drops out of the tab order and interactive children
+   * (buttons, links) fall back to natural DOM tab order.
+   */
+  isCellSelectionEnabled: boolean;
 }
 
 export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererProps<TRow, TSummaryRow> {
@@ -386,9 +396,7 @@ export interface RenderCheckboxProps
 
 export interface Renderers<TRow, TSummaryRow> {
   renderCell?: Maybe<(key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode>;
-  renderCheckbox?: Maybe<(props: RenderCheckboxProps) => ReactNode>;
   renderRow?: Maybe<(key: Key, props: RenderRowProps<TRow, TSummaryRow>) => ReactNode>;
-  renderSortStatus?: Maybe<(props: RenderSortStatusProps) => ReactNode>;
   noRowsFallback?: Maybe<ReactNode>;
 }
 
@@ -406,19 +414,27 @@ export interface ColumnWidth {
 export type ColumnWidths = ReadonlyMap<string, ColumnWidth>;
 
 /**
- * Selection mode for the data grid.
- * - 'none': No selection, no cell focus, keyboard navigation disabled
- * - 'cell': Single cell focus only (keyboard nav, no row selection)
- * - 'cell-range': Multi-cell range selection (Shift+Click/Arrow)
- * - 'row': Single row selection + cell focus
- * - 'row-multi': Multiple row selection + cell focus (default)
+ * Cell selection mode — governs cell focus & range selection.
+ * Independent of row selection (which is driven by `selectedRows`/`onSelectedRowsChange`
+ * and the optional checkbox column).
+ * - 'none': No cell focus, keyboard navigation disabled
+ * - 'cell': Single cell focus (keyboard nav, copy/paste single cell) — default
+ * - 'cell-range': Multi-cell range selection (Shift+Click/Arrow, range copy/paste)
  */
-export type SelectionMode = 'none' | 'cell' | 'cell-range' | 'row' | 'row-multi';
+export type CellSelectionMode = 'none' | 'cell' | 'cell-range';
 
 /**
- * Touch/mobile mode configuration.
- * Can be boolean or breakpoint-based auto-detection.
+ * Row selection mode — governs what clicking a row body does.
+ * The checkbox column (if present) always operates as multi-select regardless of this prop.
+ * - 'none': Clicking a row body does not change row selection (default)
+ * - 'single': Clicking a row body selects only that row (replaces selection)
+ * - 'multi': Clicking a row body toggles it; Shift+click extends a range
  */
-export type TouchModeConfig = boolean | { max: BreakpointKey } | { min: BreakpointKey };
+export type RowSelectionMode = 'none' | 'single' | 'multi';
 
 export type ResizedWidth = number | 'max-content';
+
+export type DefaultColumnOptions<R, SR> = Pick<
+  Column<R, SR>,
+  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable' | 'draggable'
+>;

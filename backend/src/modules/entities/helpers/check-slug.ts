@@ -1,42 +1,25 @@
-import { appConfig, type ContextEntityType } from 'shared';
-import type { DbOrTx } from '#/db/db';
-import { resolveEntity } from '#/lib/resolve-entity';
+import type { ContextEntityType } from 'shared';
+import type { DbContext } from '#/core/context';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 
 type EntityTypeWithSlug = ContextEntityType | 'user';
 
-const entitiesWithSlug = [...appConfig.contextEntityTypes, 'user'] satisfies EntityTypeWithSlug[];
-
 /**
- * Checks if a slug is available across context entity & user entity types. Resolves the availability of the slug for each entity.
- *
- * @param slug - The slug to check for availability.
- * @param db - Database or transaction to use (from ctx.var.db).
- * @param entityType - (Optional) The type of entity to check against.
- * @returns Boolean(true if available, false if taken).
+ * Checks if a slug is available for a specific entity type.
  */
-export const checkSlugAvailable = async (slug: string, db: DbOrTx, entityType?: EntityTypeWithSlug) => {
-  const entities = entityType ? [entityType] : entitiesWithSlug;
-
-  const promises = entities.map((entity) => resolveEntity(entity, slug, db, true));
-  const results = await Promise.all(promises);
-
-  // Check if any result is found, if so, slug is not available
-  const isAvailable = results.every((result) => !result);
-
-  return isAvailable;
+export const checkSlugAvailable = async (ctx: DbContext, slug: string, entityType: EntityTypeWithSlug) => {
+  const result = await resolveEntity(ctx, entityType, slug, true);
+  return !result;
 };
 
 /**
  * Batch check slug availability. Returns a Map of slug -> boolean (true = available).
- * @param slugs - Array of slugs to check.
- * @param db - Database or transaction to use (from ctx.var.db).
- * @param entityType - (Optional) The type of entity to check against.
  */
-export const checkSlugsAvailable = async (slugs: string[], db: DbOrTx, entityType?: EntityTypeWithSlug) => {
+export const checkSlugsAvailable = async (ctx: DbContext, slugs: string[], entityType: EntityTypeWithSlug) => {
   const results = await Promise.all(
     slugs.map(async (slug) => ({
       slug,
-      available: await checkSlugAvailable(slug, db, entityType),
+      available: await checkSlugAvailable(ctx, slug, entityType),
     })),
   );
   return new Map(results.map((r) => [r.slug, r.available]));

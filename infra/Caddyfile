@@ -1,0 +1,43 @@
+# Caddyfile for standalone (non-Pulumi) deployments.
+# Used only with: docker compose --profile all up -d
+# Caddy auto-provisions Let's Encrypt TLS certificates.
+#
+# Host names are env-driven so this file ships unchanged for any fork.
+# Set in .env (see infra/.env.example):
+#   APEX_HOST, APP_HOST, BACKEND_HOST, YJS_HOST, AI_HOST, ADMIN_EMAIL
+
+{
+	email {$ADMIN_EMAIL}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self' *.cellajs.com *.vimeo.com *.gleap.io; connect-src 'self' blob: *.cellajs.com *.gleap.io wss://ws.gleap.io; img-src 'self' blob: https: data:; media-src 'self' blob: data: https://i.ytimg.com *.gleap.io; frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com *.gleap.io"
+		-Server
+	}
+}
+
+{$BACKEND_HOST} {
+	import security_headers
+	reverse_proxy backend:4000
+}
+
+{$YJS_HOST} {
+	import security_headers
+	reverse_proxy yjs:4002
+}
+
+{$AI_HOST} {
+	import security_headers
+	reverse_proxy ai:4003
+}
+
+{$APEX_HOST} {
+	redir https://{$APP_HOST}{uri} permanent
+}

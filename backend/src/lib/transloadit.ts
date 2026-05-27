@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import { uploadTemplates } from 'shared/upload-templates';
+import { uploadTemplates } from 'shared/transloadit-config';
 import { env } from '#/env';
 import { utcDateString } from '#/utils/utc-data-string';
 
@@ -47,8 +47,7 @@ export const getSignature = (paramsString: string) => {
   const authSecret = env.TRANSLOADIT_SECRET;
   if (!authSecret) throw Error('auth_key_not_found');
 
-  // Note: This is HMAC for Transloadit API request signing, not password hashing.
-  // Passwords use Argon2id (see modules/auth/passwords/helpers/argon2id).
+  // Note: This is HMAC for Transloadit API request signing.
   const signatureBytes = crypto.createHmac('sha384', authSecret).update(Buffer.from(paramsString, 'utf-8'));
   // The final signature needs the hash name in front, so
   // the hashing algorithm can be updated in a backwards-compatible

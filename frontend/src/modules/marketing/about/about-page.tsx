@@ -2,6 +2,7 @@ import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
 import { AboutCards } from '~/modules/marketing/about/cards';
 // import { Counters } from '~/modules/marketing/about/counters';
@@ -27,7 +28,7 @@ export function AboutPage() {
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  const { scrollToSection } = useScrollSpy(aboutSectionIds);
+  useScrollSpy(aboutSectionIds);
 
   return (
     <>
@@ -61,7 +62,7 @@ export function AboutPage() {
             variant="ghost"
             size="lg"
             className="group"
-            onClick={() => scrollToSection('why')}
+            onClick={() => scrollToSectionById('why')}
             aria-label="Read more"
           >
             <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>

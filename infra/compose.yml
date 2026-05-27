@@ -1,0 +1,117 @@
+# Docker Compose for backend services.
+#
+# Usage:
+#   Standalone (all services + Caddy):
+#     docker compose --profile all up -d
+#
+#   Single service (used by Pulumi cloud-init):
+#     docker compose --profile backend up -d
+#     docker compose --profile cdc up -d
+#     docker compose --profile yjs up -d
+#     docker compose --profile ai up -d
+
+services:
+  backend:
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend, all]
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      DEV_MODE: core
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4000/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  cdc:
+    image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
+    profiles: [cdc, all]
+    restart: unless-stopped
+    ports:
+      - '4001:4001'
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      API_WS_URL: ${API_WS_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      DEV_MODE: full
+      CDC_HEALTH_PORT: '4001'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  yjs:
+    image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
+    profiles: [yjs, all]
+    restart: unless-stopped
+    ports:
+      - '4002:4002'
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      BACKEND_URL: ${BACKEND_URL}
+      YJS_PORT: '4002'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4002/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ai:
+    image: ${REGISTRY}/backend:${AI_TAG:-latest}
+    profiles: [ai, all]
+    restart: unless-stopped
+    ports:
+      - '4003:4003'
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: ai-worker
+      PORT: '4003'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      AI_API_URL: ${AI_API_URL}
+      DEV_MODE: core
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4003/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: [all]
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

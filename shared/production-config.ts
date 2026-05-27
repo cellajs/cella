@@ -1,4 +1,4 @@
-import type { DeepPartial } from './src/builder/types';
+import type { DeepPartial } from './src/config-builder/types';
 import type _default from './default-config';
 
 export default {

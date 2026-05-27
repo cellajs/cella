@@ -440,6 +440,7 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
             {(['spans', 'stats', 'timeline'] as const).map((tab) => (
               <button
                 key={tab}
+                type="button"
                 style={{
                   ...styles.tab,
                   ...(state.activeTab === tab ? styles.tabActive : {}),
@@ -449,7 +450,7 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
                 {tab}
               </button>
             ))}
-            <button style={styles.tab} onClick={onClose}>
+            <button type="button" style={styles.tab} onClick={onClose}>
               ✕
             </button>
           </div>
@@ -471,7 +472,7 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
             value={state.filter}
             onChange={(e) => setState((s) => ({ ...s, filter: e.target.value }))}
           />
-          <button style={styles.button} onClick={() => clearSpans()}>
+          <button type="button" style={styles.button} onClick={() => clearSpans()}>
             Clear
           </button>
         </div>

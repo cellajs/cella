@@ -19,11 +19,11 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
   const { t } = useTranslation();
 
   return (
-    <div className={cn('max-sm:hidden text-sm flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-2 text-sm max-sm:hidden', className)}>
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
           <FilterXIcon size={16} className="mr-2" />
-          {t('common:clear')}
+          {t('c:clear')}
         </Button>
       )}
       {typeof count === 'number' && (
@@ -31,7 +31,7 @@ export function TableCount({ count, label, className, isFiltered, children, onRe
           <div className="flex items-center gap-1 text-muted-foreground">
             <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
             <span>{t(label, { count }).toLowerCase()}</span>
-            {isFiltered && <span>{` ${t('common:found')}`}</span>}
+            {isFiltered && <span>{` ${t('c:found')}`}</span>}
           </div>
           {children}
         </>

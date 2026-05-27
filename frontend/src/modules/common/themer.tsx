@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { appConfig, type Theme } from 'shared';
-import { type Mode, uiStore } from '~/store/ui';
+import { type Mode, uiStore } from '~/modules/ui/ui-store';
 
 const root = window.document.documentElement;
 

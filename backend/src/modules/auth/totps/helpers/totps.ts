@@ -2,9 +2,9 @@ import { decodeBase32 } from '@oslojs/encoding';
 import { verifyTOTPWithGracePeriod } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { totpsTable } from '#/db/schema/totps';
-import { AppError } from '#/lib/error';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig;
 

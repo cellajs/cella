@@ -10,6 +10,14 @@ const wrapTextPadding = 12;
 const defaultMaxLines = 10;
 
 /**
+ * Quantized height tiers for wrapText rows.
+ * Rows snap to one of these discrete heights instead of continuous values.
+ * This improves CSS grid track RLE compression and bounds scroll jitter
+ * when using `minmax(tierPx, max-content)` tracks.
+ */
+const heightTiers = [1, 2, 3, 4] as const;
+
+/**
  * Resolve a wrapText value to a concrete max-lines number.
  * - `undefined` / `null` / `false` → 0 (no wrapping)
  * - `true` → defaultMaxLines
@@ -41,18 +49,29 @@ function estimateTextLines(value: unknown): number {
 }
 
 /**
- * Compute the effective row height for a row, taking wrapText columns into account.
- *
- * For each column with `wrapText`, estimates content lines from `row[column.key]`,
- * clamps to the column's max lines, and returns:
- *   `max(baseHeight, maxNeededLines * lineHeight + padding)`
- *
- * @param baseHeight - The base row height (number)
- * @param columns - All calculated columns
- * @param row - The row data object
- * @param lineHeight - Pixel height per line (default: wrapTextLineHeight)
- * @param padding - Vertical cell padding in pixels (default: wrapTextPadding)
+ * Snap a line count to the nearest height tier.
+ * Returns the smallest tier that is ≥ the given line count.
  */
+function snapToTier(lines: number): number {
+  for (const tier of heightTiers) {
+    if (lines <= tier) return tier;
+  }
+  return heightTiers[heightTiers.length - 1];
+}
+
+/**
+ * Convert a tier (line count) to a pixel height.
+ */
+export function tierToHeight(
+  tier: number,
+  baseHeight: number,
+  lineHeight = wrapTextLineHeight,
+  padding = wrapTextPadding,
+): number {
+  if (tier <= 1) return baseHeight;
+  return Math.max(baseHeight, tier * lineHeight + padding);
+}
+
 export function computeWrapTextRowHeight<R>(
   baseHeight: number,
   columns: readonly CalculatedColumn<R, unknown>[],
@@ -75,8 +94,9 @@ export function computeWrapTextRowHeight<R>(
     if (clamped > maxLines) maxLines = clamped;
   }
 
-  if (maxLines <= 1) return baseHeight;
-  return Math.max(baseHeight, maxLines * lineHeight + padding);
+  // Snap to discrete tier for predictable grid track sizing
+  const tier = snapToTier(maxLines);
+  return tierToHeight(tier, baseHeight, lineHeight, padding);
 }
 
 /**

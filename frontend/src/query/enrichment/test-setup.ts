@@ -52,6 +52,7 @@ export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType
 interface TestMembership {
   organizationId: string;
   contextType: string;
+  contextId: string;
   archived: boolean;
   muted: boolean;
   displayOrder: number;
@@ -63,6 +64,7 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
   return {
     organizationId: entityId,
     contextType: 'organization',
+    contextId: entityId,
     archived: false,
     muted: false,
     displayOrder: 0,

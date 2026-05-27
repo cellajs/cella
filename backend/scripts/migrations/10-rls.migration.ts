@@ -1,8 +1,10 @@
 import { getTableName } from 'drizzle-orm';
 import pc from 'picocolors';
-import { entityTables } from '#/table-config';
+import { appConfig } from 'shared';
+import { entityTables } from '#/tables';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { yjsDocumentsTable } from '#/db/schema/yjs-documents';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 
@@ -19,18 +21,35 @@ async function run() {
     .filter(([entityType]) => entityType !== 'user')
     .map(([, table]) => getTableName(table));
 
-  const membershipTables = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
-  const rlsTables = [...entityTableNames, ...membershipTables];
+  // Context entity and membership tables no longer use RLS — access control is application-layer (guards)
+  const contextEntityTableNames = appConfig.contextEntityTypes.map((entityType) => {
+    const table = entityTables[entityType as keyof typeof entityTables];
+    if (!table) throw new Error(`No table found for context entity type: ${entityType}`);
+    return getTableName(table);
+  });
+  const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Tables without RLS but needing grants (auth, system, etc.)
+  // Pages have no RLS — parentless, always public, protected by sysAdminGuard
+  const noRlsProductEntityNames = ['pages'];
+
+  // Only product entity tables + yjs_documents still use RLS (excluding pages)
+  const additionalRlsTables = [getTableName(yjsDocumentsTable)];
+  const rlsTables = [
+    ...entityTableNames.filter((t) => !contextEntityTableNames.includes(t) && !noRlsProductEntityNames.includes(t)),
+    ...additionalRlsTables,
+  ];
+
+  // Tables without RLS but needing grants (auth, system, context entities, memberships, pages, etc.)
   const fullCrudTables = [
+    ...contextEntityTableNames,
+    ...membershipTableNames,
+    ...noRlsProductEntityNames,
     'users',
     'sessions',
-    'user_activity',
+    'user_counters',
     'tokens',
     'passkeys',
     'oauth_accounts',
-    'passwords',
     'totps',
     'requests',
     'unsubscribe_tokens',
@@ -38,11 +57,18 @@ async function run() {
     'rate_limits',
     'context_counters',
     'seen_by',
-    'seen_counts',
+    'product_counters',
     'domains',
     'tenants',
   ];
   const readOnlyTables = ['system_roles', 'activities'];
+
+  // Product entity tables where CDC needs column-level UPDATE(seq) permission
+  const productEntityTableNames = appConfig.productEntityTypes.map((entityType) => {
+    const table = entityTables[entityType as keyof typeof entityTables];
+    if (!table) throw new Error(`No table found for product entity type: ${entityType}`);
+    return getTableName(table);
+  });
 
   // ============================================================================
   // Migration SQL
@@ -51,12 +77,13 @@ async function run() {
   const migrationSql = `-- RLS (Row-Level Security) Setup
 -- Configures FORCE RLS, table ownership, and grants.
 -- Policies are defined in Drizzle schema files using pgPolicy().
--- For PGlite: migration is skipped (no role support).
+-- RLS enforces tenant-level isolation only; org-level isolation is application-layer (orgGuard).
+-- Gracefully skips if required roles are not yet created.
 
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
-    RAISE NOTICE 'Roles not available - skipping RLS setup (e.g., PGlite).';
+    RAISE NOTICE 'Roles not available - skipping RLS setup.';
     RETURN;
   END IF;
 
@@ -72,11 +99,13 @@ ${rlsTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runt
 ${fullCrudTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
 ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\n')}
 
-    -- Grants: cdc_role (append-only activities + counter sequences)
+    -- Grants: cdc_role (append-only activities + counter sequences + seq stamping)
     GRANT INSERT ON activities TO cdc_role;
     GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
     GRANT SELECT ON tenants TO cdc_role;
     GRANT SELECT ON organizations TO cdc_role;
+  ${productEntityTableNames.map((t) => `    GRANT SELECT (id, stx), UPDATE (seq, stx) ON ${t} TO cdc_role;`).join('\n')}
+    GRANT UPDATE (labels) ON tasks TO cdc_role;
 
     -- Grants: admin_role (full access)
     GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
@@ -100,12 +129,12 @@ END $$;
   logMigrationResult(result, 'RLS setup');
 
   console.info('');
-  console.info(`  ${pc.cyanBright('RLS tables:')} ${rlsTables.join(', ')}`);
-  console.info(`  ${pc.dim('(Policies defined in Drizzle schema via pgPolicy())')}`);
+  console.info(`  ${pc.greenBright('RLS tables:')} ${rlsTables.join(', ')}`);
+  console.info('');
 }
 
 export const generateConfig: GenerateScript = {
-  name: 'RLS setup migration',
+  name: 'RLS',
   type: 'migration',
   run,
 };

@@ -13,23 +13,19 @@ export function Subprocessors() {
           <TableHead>Country</TableHead>
           <TableHead>Services</TableHead>
           <TableHead>Categories</TableHead>
-          <TableHead>Affected</TableHead>
-          <TableHead>Risk</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {subprocessors.map((subprocessor) => (
           <TableRow key={subprocessor.slug}>
             <TableCell>
-              <a href={subprocessor.website} target="_blank">
+              <a href={subprocessor.website} target="_blank" rel="noopener">
                 {subprocessor.legalName}
               </a>
             </TableCell>
             <TableCell>{subprocessor.country}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.servicesProvided}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.categoriesOfPersonalData.join(', ')}</TableCell>
-            <TableCell className="whitespace-normal">{subprocessor.dataSubjects.join(', ')}</TableCell>
-            <TableCell>{subprocessor.riskRating}</TableCell>
           </TableRow>
         ))}
       </TableBody>

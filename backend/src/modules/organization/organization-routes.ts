@@ -1,8 +1,8 @@
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
+import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
-  organizationAutoCreateBodySchema,
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationQuerySchema,
@@ -33,8 +33,8 @@ const organizationRoutes = {
     method: 'post',
     path: '/{tenantId}/organizations',
     xGuard: [authGuard, tenantGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['organizations'],
+    xRateLimiter: [insertEntityLock, bulkPointsLimiter],
+    tags: ['organizations', 'cella', 'context'],
     summary: 'Create organizations',
     description: 'Creates one or more new *organizations* within a tenant.',
     request: {
@@ -58,37 +58,6 @@ const organizationRoutes = {
     },
   }),
   /**
-   * Create an organization with auto-tenant creation (for new users without a tenant)
-   */
-  autoCreateOrganization: createXRoute({
-    operationId: 'autoCreateOrganization',
-    method: 'post',
-    path: '/organizations',
-    xGuard: [authGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['organizations'],
-    summary: 'Create organization with auto-tenant',
-    description:
-      'Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.',
-    request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: organizationAutoCreateBodySchema } },
-      },
-    },
-    responses: {
-      201: {
-        description: 'Organization was created',
-        content: {
-          'application/json': {
-            schema: organizationWithMembershipSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
    * Get list of organizations (cross-tenant)
    */
   getOrganizations: createXRoute({
@@ -96,7 +65,7 @@ const organizationRoutes = {
     method: 'get',
     path: '/organizations',
     xGuard: [authGuard, crossTenantGuard, relatableGuard],
-    tags: ['organizations'],
+    tags: ['organizations', 'cella', 'context'],
     summary: 'Get list of organizations',
     description: 'Returns a list of *organizations*.',
     request: { query: organizationListQuerySchema },
@@ -121,7 +90,7 @@ const organizationRoutes = {
     method: 'get',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [authGuard, tenantGuard],
-    tags: ['organizations'],
+    tags: ['organizations', 'cella', 'context'],
     summary: 'Get organization',
     description: 'Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: organizationQuerySchema },
@@ -141,8 +110,8 @@ const organizationRoutes = {
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [authGuard, tenantGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['organizations'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['organizations', 'cella', 'context'],
     summary: 'Update organization',
     description: 'Updates an *organization* within a tenant.',
     request: {
@@ -167,8 +136,8 @@ const organizationRoutes = {
     method: 'delete',
     path: '/{tenantId}/organizations',
     xGuard: [authGuard, tenantGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['organizations'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['organizations', 'cella', 'context'],
     summary: 'Delete organizations',
     description: 'Deletes one or more *organizations* by ID within a tenant.',
     request: {

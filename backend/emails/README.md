@@ -2,6 +2,8 @@
 
 Email templates are processed by jsx-email. View backend/package.json for email commands.
 
+https://jsx.email/
+
 ## Structure
 
 - `index.ts` - Barrel file exporting all templates

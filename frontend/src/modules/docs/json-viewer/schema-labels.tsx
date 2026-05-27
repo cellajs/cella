@@ -66,7 +66,7 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
       {typeValues.map((type, index) => (
         <span key={type}>
           <span
-            className={`ml-0.5 px-1 py-0.5 text-xs font-medium rounded opacity-70 ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
+            className={`ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70 ${theme.schemaType} ${getTypeColorClass(type, theme)}`}
           >
             {type}
           </span>
@@ -74,16 +74,16 @@ export const SchemaLabels: FC<SchemaLabelsProps> = ({
         </span>
       ))}
       {compositionLabel && (
-        <span className="ml-0.5 px-1 py-0.5 text-xs font-medium rounded text-amber-600 dark:text-amber-400 bg-amber-500/10">
+        <span className="ml-0.5 rounded bg-amber-500/10 px-1 py-0.5 font-medium text-amber-600 text-xs dark:text-amber-400">
           {compositionLabel}
         </span>
       )}
       {refValue && (
-        <span className="ml-0.5 px-1 py-0.5 text-xs font-medium rounded text-primary bg-primary/10">{refValue}</span>
+        <span className="ml-0.5 rounded bg-primary/10 px-1 py-0.5 font-medium text-primary text-xs">{refValue}</span>
       )}
-      {contentTypeValue && <span className="ml-1 italic text-xs text-foreground/40">{contentTypeValue}</span>}
+      {contentTypeValue && <span className="ml-1 text-foreground/40 text-xs italic">{contentTypeValue}</span>}
       {constraints && (
-        <span className="ml-1.5 text-xs text-foreground/35">
+        <span className="ml-1.5 text-foreground/35 text-xs">
           {[
             constraints.minLength != null && `min:${constraints.minLength}`,
             constraints.maxLength != null && `max:${constraints.maxLength}`,

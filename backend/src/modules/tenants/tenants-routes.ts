@@ -7,11 +7,17 @@
  * @see info/ARCHITECTURE.md for architecture documentation
  */
 
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
-import { createTenantBodySchema, tenantListQuerySchema, tenantSchema, updateTenantBodySchema } from './tenants-schema';
+import {
+  createTenantBodySchema,
+  selfCreateTenantBodySchema,
+  tenantListQuerySchema,
+  tenantSchema,
+  updateTenantBodySchema,
+} from './tenants-schema';
 
 export const tenantRoutes = {
   /**
@@ -22,7 +28,7 @@ export const tenantRoutes = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    tags: ['tenants'],
+    tags: ['tenants', 'cella'],
     summary: 'Get list of tenants',
     description: 'Returns a paginated list of tenants. System admin access required.',
     request: { query: tenantListQuerySchema },
@@ -47,14 +53,46 @@ export const tenantRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['tenants'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
     summary: 'Create a new tenant',
     description: 'Creates a new tenant. System admin access required.',
     request: {
       body: {
         required: true,
         content: { 'application/json': { schema: createTenantBodySchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Created tenant',
+        content: {
+          'application/json': {
+            schema: tenantSchema,
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+
+  /**
+   * Self-serve tenant creation for authenticated users without a tenant
+   */
+  selfCreateTenant: createXRoute({
+    operationId: 'selfCreateTenant',
+    method: 'post',
+    path: '/self',
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
+    summary: 'Create a tenant for yourself',
+    description:
+      'Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.',
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: selfCreateTenantBodySchema } },
       },
     },
     responses: {
@@ -78,8 +116,8 @@ export const tenantRoutes = {
     method: 'put',
     path: '/{tenantId}',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['tenants'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['tenants', 'cella'],
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
     request: {

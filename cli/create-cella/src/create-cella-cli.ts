@@ -4,7 +4,6 @@ import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { input, select } from '@inquirer/prompts';
 import pc from 'picocolors';
-
 import { TEMPLATE_URL } from '#/constants';
 import { create } from '#/create';
 import { type CreateOptions, cli, showWelcome } from '#/modules/cli';

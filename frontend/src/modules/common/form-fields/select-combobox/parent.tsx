@@ -1,17 +1,18 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { FieldValues } from 'react-hook-form';
+import type { ContextEntityBase } from 'sdk';
 import type { ContextEntityType } from 'shared';
-import { ContextEntityBase } from '~/api.gen';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useUserStore } from '~/store/user';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ContextEntityType;
   options?: ComboboxSelectProps['options'];
+  onSelect?: (item: ContextEntityBase) => void;
 };
 
 /**
@@ -23,6 +24,7 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
   name,
   label,
   options: opts,
+  onSelect,
   required,
   disabled,
 }: SelectParentProps<TFieldValues>) => {
@@ -57,14 +59,20 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
           <ComboboxSelect
             options={options}
             value={value}
-            onChange={onChange}
+            onChange={(nextValue) => {
+              onChange(nextValue);
+
+              const selectedItem = items.find((item) => item.id === nextValue);
+              if (selectedItem && onSelect) onSelect(selectedItem);
+            }}
             disabled={disabled}
+            searchableTrigger
             renderAvatar
             placeholders={{
-              trigger: 'common:select_resource',
-              search: 'common:placeholder.search',
-              notFound: 'common:no_resource_found',
-              resource: `common:${parentType}`,
+              trigger: 'c:select_resource',
+              search: 'c:placeholder.search',
+              notFound: 'c:no_resource_found',
+              resource: `c:${parentType}`,
             }}
           />
 

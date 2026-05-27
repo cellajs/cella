@@ -7,6 +7,12 @@ export type DropdownData = {
   triggerRef: RefObject<HTMLButtonElement | null>;
   align?: 'start' | 'center' | 'end';
   modal?: boolean;
+  /**
+   * Bypass the 300ms "reopen with same triggerId" guard. Set this for
+   * programmatic openers (e.g. data-grid edit cells) where there's no race
+   * between a button onClick and a popover dismiss to debounce.
+   */
+  programmatic?: boolean;
 };
 
 export type InternalDropdown = DropdownData & {
@@ -44,11 +50,16 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
       return data.id;
     }
 
-    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick)
-    const { lastRemovedTriggerId, lastRemovedAt } = get();
-    if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
-      set({ lastRemovedTriggerId: null });
-      return data.id;
+    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick).
+    // Programmatic openers opt out — they don't have a click-to-toggle race to debounce, and the
+    // guard otherwise breaks them under React StrictMode (mount → cleanup → mount runs `create`
+    // twice with the same id within the 300ms window).
+    if (!data.programmatic) {
+      const { lastRemovedTriggerId, lastRemovedAt } = get();
+      if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
+        set({ lastRemovedTriggerId: null });
+        return data.id;
+      }
     }
 
     // Mark new trigger as active

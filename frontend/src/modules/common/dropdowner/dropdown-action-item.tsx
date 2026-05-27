@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button, ButtonProps } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface Props {
@@ -26,7 +26,7 @@ export function DropdownActionItem({
   if (isMobile) {
     return (
       <div className="sm:p-1">
-        <Button onClick={onSelect} variant={variant} className={cn('flex items-center w-full', className)}>
+        <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
           {Icon && <Icon size={16} className="mr-2" />}
           {children}
         </Button>
@@ -40,7 +40,7 @@ export function DropdownActionItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        'focus:bg-accent focus:text-accent-foreground relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 min-h-10 text-sm outline-hidden w-full',
+        'relative flex min-h-10 w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground',
         className,
       )}
     >

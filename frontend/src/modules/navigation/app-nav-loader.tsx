@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
 import { Logo } from '~/modules/common/logo';
 import { Spinner } from '~/modules/common/spinner';
-import { useNavigationStore } from '~/store/navigation';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { cn } from '~/utils/cn';
 
 /**
@@ -44,7 +44,7 @@ export function AppNavLoader({ className }: { className?: string }) {
   const skipInitialAnimation = !hasLoaded && navSheetOpen === 'menu';
 
   return (
-    <div className="relative flex items-center justify-center size-10 overflow-visible">
+    <div className="relative flex size-10 items-center justify-center overflow-visible">
       <AnimatePresence>
         {showLogo && (
           <motion.div
@@ -89,7 +89,7 @@ export function AppNavLoader({ className }: { className?: string }) {
             {isLoading ? (
               <Spinner className={cn('size-5', className)} noDelay />
             ) : (
-              <div className="group-hover:scale-110 transition-transform">
+              <div className="transition-transform group-hover:scale-110">
                 <HomeIcon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />
               </div>
             )}

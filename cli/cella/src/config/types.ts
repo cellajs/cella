@@ -34,6 +34,17 @@ export interface SyncSettings {
   /** Upstream branch to sync from (e.g., 'development') */
   upstreamBranch: string;
 
+  /**
+   * Optional commit SHA to pin upstream to. When set, analyze/sync operations
+   * fetch and diff against this exact commit instead of the tip of `upstreamBranch`.
+   * Bump via PR to make upstream changes reviewable — analogous to a lockfile entry
+   * for the upstream template. Recommended for CI to defend against a compromised
+   * upstream pushing unreviewed commits between sync runs.
+   *
+   * Example: 'a1b2c3d4e5f6...' (full 40-char SHA)
+   */
+  upstreamPinnedSha?: string;
+
   /** Git remote name for upstream (default: 'cella-upstream') */
   upstreamRemoteName?: string;
 
@@ -61,12 +72,10 @@ export interface SyncSettings {
   syncWithPackages?: boolean;
 
   /**
-   * Automatically push drifted files to a `contrib/<fork-name>` branch in upstream
-   * after sync or analyze. Upstream can then review and cherry-pick changes.
-   * Requires upstreamLocalPath to be set.
-   * @default false
+   * GitHub repo identifier for the upstream repository (e.g., 'cellajs/cella').
+   * Used by the contribute service to create PRs via `gh pr create --repo`.
    */
-  autoContribute?: boolean;
+  upstreamRepo?: string;
 
   /**
    * How to link files in CLI output.
@@ -141,7 +150,16 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions';
+export type SyncService =
+  | 'analyze'
+  | 'inspect'
+  | 'sync'
+  | 'packages'
+  | 'audit'
+  | 'contribute'
+  | 'forks'
+  | 'contributions'
+  | 'stats';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -166,14 +184,14 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Pre-selected fork name (skips fork selection prompt) */
   fork?: string;
 
-  /** Quick-push drifted files to contrib branch without interactive menu */
-  contribute?: boolean;
-
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;
 
   /** Bypass pnpm metadata cache for fresh registry data (audit service) */
   force?: boolean;
+
+  /** Check which pnpm.overrides are still needed (audit service) */
+  checkOverrides?: boolean;
 }
 
 /** File status after analysis */

@@ -1,34 +1,20 @@
 import { BlockNoteEditor } from '@blocknote/core';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import {
-  type CheckboxEntry,
-  checkboxesExtension,
-} from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton — avoids expensive BlockNoteEditor.create() on every call
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
-const headlessCheckboxExt = checkboxesExtension({ checkboxes: [] });
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
     headlessEditor = BlockNoteEditor.create({
       schema: customSchema,
       _headless: true,
-      extensions: [headlessCheckboxExt],
+      extensions: [checkedExtension()],
     });
   }
   return headlessEditor;
 };
-
-/** Update the headless editor's checkbox store before rendering full HTML */
-export const setHeadlessCheckboxes = (checkboxes: CheckboxEntry[]) => {
-  const editor = getHeadlessEditor();
-  const ext = editor.getExtension(checkboxesExtension);
-  ext.store.setState({ checkboxes, persisted: true });
-};
-
-export const compareIsContentSame = (currentStringifiedBlocks: string, initialStringifiedBlocks: string) =>
-  currentStringifiedBlocks === initialStringifiedBlocks;
 
 export const getParsedContent = (initialStringifiedBlocks: string | undefined) => {
   if (!initialStringifiedBlocks) return undefined;
@@ -71,11 +57,43 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
   }
 };
 
-export const getRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
+/**
+ * Update a block without recording it in the undo/redo history.
+ * Works in both collaborative (Yjs UndoManager) and non-collaborative (ProseMirror history) modes.
+ * Uses BlockNote's `transact` so the outer transaction carries `addToHistory: false`.
+ */
+type Editor = ReturnType<typeof BlockNoteEditor.create>;
+
+export const updateBlockWithoutHistory = (
+  editor: Editor,
+  blockId: Parameters<Editor['updateBlock']>[0],
+  update: Parameters<Editor['updateBlock']>[1],
+) => {
+  editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
+    tr.setMeta('addToHistory', false);
+    editor.updateBlock(blockId, update);
+  });
+};
+
+/**
+ * Clear the Yjs UndoManager stacks (undo + redo) so programmatic seeding
+ * doesn't pollute the user's undo history. No-op if not in collaborative mode.
+ */
+export const clearYjsUndoManagerStacks = (editor: Editor) => {
+  try {
+    const yUndoExt = editor.extensions.get('yUndo');
+    if (!yUndoExt) return;
+
+    // The yUndo ProseMirror plugin stores the UndoManager in the plugin state
+    // Access it via: pluginKey.getState(editorState).undoManager
+    for (const plugin of editor.prosemirrorState.plugins) {
+      const state = plugin.getState(editor.prosemirrorState) as { undoManager?: { clear: () => void } } | undefined;
+      if (state?.undoManager?.clear) {
+        state.undoManager.clear();
+        return;
+      }
+    }
+  } catch {
+    // Silently fail — undo history pollution is non-critical
   }
-  return color;
 };

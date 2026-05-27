@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { Separator } from '~/modules/ui/separator';
 
 /**

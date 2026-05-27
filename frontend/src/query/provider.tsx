@@ -3,42 +3,42 @@ import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/download-service';
 import { uploadService } from '~/modules/attachment/upload-service';
-import { initContextEntityEnrichment } from '~/query/enrichment/init';
+import { useUIStore } from '~/modules/ui/ui-store';
+import { initContextEntityEnrichment } from '~/query/enrichment/init-enrichment';
 import { initMutationDefaults } from '~/query/mutation-registry';
-import '~/modules/attachment/query';
-import '~/modules/page/query';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { useTabCoordinatorStore } from '~/query/realtime/tab-coordinator';
-import { useUIStore } from '~/store/ui';
 
 /**
  * Initialize mutation defaults BEFORE any cache restoration.
- * This registers mutationFn for each entity type so that paused mutations
- * can resume after page reload (mutationFn cannot be serialized to IndexedDB).
- *
- * NOTE: Query modules (~/modules/..../query) must be imported AFTER mutation-registry
- * as they call addMutationRegistrar() at module load time.
+ * This stores the queryClient so that entity modules can self-register their
+ * mutationFn via addMutationRegistrar() whenever they load — no explicit imports needed.
  */
 initMutationDefaults(queryClient);
 
 /**
  * Init context entity enrichment — guarded to prevent duplicate subscribers during HMR.
  */
-let unsubscribeEnrichment = initContextEntityEnrichment();
-
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    unsubscribeEnrichment();
-  });
-}
+const unsubscribeEnrichment = initContextEntityEnrichment();
 
 /**
  * Start offline services for background blob caching and upload sync.
  */
 downloadService.start();
 uploadService.start();
+
+/**
+ * HMR cleanup: stop services and unsubscribe enrichment to prevent duplicates on re-evaluation.
+ */
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unsubscribeEnrichment();
+    downloadService.stop();
+    uploadService.stop();
+  });
+}
 
 /**
  * QueryClientProvider wrapper handling cache persistence and offline capabilities.
@@ -53,7 +53,9 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   const isActive = useTabCoordinatorStore((state) => state.isActive);
 
   // Disable offline access if PWA is not enabled in the config
-  if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
+  useEffect(() => {
+    if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
+  }, [offlineAccess, toggleOfflineAccess]);
 
   // Clean up orphaned session-scoped IndexedDB entries on mount (fire-and-forget)
   useEffect(() => {
@@ -107,13 +109,13 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
         dehydrateOptions: {
           // Public routes (!isActive): always persist. App routes: only leader persists after ready.
           shouldDehydrateMutation: () => !isActive || (isReady && isLeader),
+          shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
         },
       }}
       onSuccess={() => {
         markCacheRestored();
         // Wait for stream catchup to complete before resuming paused mutations.
-        // This ensures the cache has fresh data (and fresh stx versions) so replayed
-        // mutations don't send stale lastReadVersion values causing avoidable 409s.
+        // This ensures the cache has fresh data so replayed mutations work correctly.
         waitForActiveCatchup().then(() => {
           queryClient.resumePausedMutations().then(() => {
             // Only invalidate queries if we're in offline mode (IDB persister)

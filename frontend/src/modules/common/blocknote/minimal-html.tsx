@@ -1,5 +1,6 @@
+import DOMPurify from 'dompurify';
 import type { HTMLAttributes } from 'react';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 import '@blocknote/shadcn/style.css';
@@ -13,7 +14,7 @@ type BlockNoteMinimalHtmlProps = {
  * Lightweight component for rendering pre-generated HTML strings (e.g. task summaries)
  * with BlockNote styling. For rendering full BlockNote JSON content, use BlockNoteFullHtml instead.
  */
-export const BlockNoteMinimalHtml = ({ html: __html, className = '', ...rest }: BlockNoteMinimalHtmlProps) => {
+export const BlockNoteMinimalHtml = ({ html, className = '', ...rest }: BlockNoteMinimalHtmlProps) => {
   const mode = useUIStore.getState().mode;
 
   return (
@@ -22,7 +23,10 @@ export const BlockNoteMinimalHtml = ({ html: __html, className = '', ...rest }: 
       data-color-scheme={mode}
       {...rest}
     >
-      <p dangerouslySetInnerHTML={{ __html }} />
+      <p
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+      />
     </div>
   );
 };

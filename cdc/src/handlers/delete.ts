@@ -1,49 +1,22 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import type { InsertActivityModel } from '#/db/schema/activities';
-import { getTableName } from 'drizzle-orm';
-import type { ProcessMessageResult } from '../process-message';
-import type { TableRegistryEntry } from '../types';
-import { actionToVerb, convertRowKeys, extractActivityContext, extractRowData, extractStxData } from '../utils';
+import type { ParseMessageResult } from '../pipeline/parse-message';
+import type { TableMeta } from '../types';
+import { convertRowKeys, extractRowData } from '../utils';
+import { compactRowData } from '../utils/compact-row-data';
+import { createActivity } from './create-activity';
 
 /**
  * Handle a DELETE message and create an activity with entity data.
  */
 export function handleDelete(
-  entry: TableRegistryEntry,
+  tableMeta: TableMeta,
   message: Pgoutput.MessageDelete,
-): ProcessMessageResult {
-  // For DELETE, we only have old row data (if REPLICA IDENTITY is set)
-  const row = convertRowKeys(extractRowData(message.old));
-  const ctx = extractActivityContext(entry, row);
+): ParseMessageResult {
+  // For deletes, the pre-deletion snapshot from message.old is used as rowData
+  // (there is no "new" state). oldRowData is null since diffs don't apply.
+  const rowData = convertRowKeys(extractRowData(message.old), tableMeta.columnNameMap);
 
-  const action = 'delete';
-  const entityOrResourceType = ctx.entityType ?? ctx.resourceType;
-  const type = `${entityOrResourceType}.${actionToVerb(action)}`;
-  const tableName = getTableName(entry.table);
+  const activity = createActivity(tableMeta, rowData, 'delete');
 
-  // For user deletes, the userId would reference the deleted user (from modifiedBy/createdBy/userId),
-  // which no longer exists. Set to null to avoid foreign key violation.
-  const userId = tableName === 'users' ? null : ctx.userId;
-
-  // Extract stx data from realtime entities
-  const stx = extractStxData(row);
-
-  // Destructure known fields; remaining are dynamic context entity IDs (organizationId, projectId, etc.)
-  const { entityId, userId: _userId, tenantId, entityType, resourceType, ...contextEntityIds } = ctx;
-
-  const activity: InsertActivityModel = {
-    tenantId,
-    userId,
-    entityType,
-    resourceType,
-    action,
-    tableName,
-    type,
-    entityId,
-    ...contextEntityIds,
-    changedKeys: null,
-    stx,
-  };
-
-  return { activity, entityData: row, entry };
+  return { activity, rowData: compactRowData(rowData), oldRowData: null, tableMeta };
 }

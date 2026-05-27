@@ -1,10 +1,10 @@
-import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
+// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback — not eligible for a React Query hook.
+import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import { getUploadToken, type UploadToken } from '~/api.gen';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
@@ -32,7 +32,8 @@ export const createBaseTransloaditUppy = async (
   let hasCloudUpload = false;
 
   try {
-    if (onlineManager.isOnline()) {
+    // Skip cloud upload when uploadEnabled is false — all files go to IndexedDB
+    if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Cloud upload only available if Transloadit is configured
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
@@ -40,7 +41,7 @@ export const createBaseTransloaditUppy = async (
   } catch (err) {
     // Offline or failed to get token - will use local storage
     if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
-      Sentry.captureException(err);
+      console.error('Failed to get upload token:', err);
     }
     cloudToken = null;
     hasCloudUpload = false;

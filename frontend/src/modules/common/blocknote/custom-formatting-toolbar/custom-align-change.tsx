@@ -5,7 +5,6 @@ import { ChevronDownIcon, MoveHorizontalIcon } from 'lucide-react';
 type BasicTextAlign = React.ComponentProps<typeof TextAlignButton>['textAlignment'];
 
 export const CustomTextAlignSelect = () => {
-  // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
 
   const variants = ['left', 'center', 'right', 'justify'] satisfies BasicTextAlign[];

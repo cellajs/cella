@@ -1,29 +1,26 @@
 import type { SeedScript } from '../types';
-import { migrationDb } from '#/db/db';
+import { seedDb } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { passwordsTable } from '#/db/schema/passwords';
-import { tenantsTable } from '#/db/schema/tenants';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { mockAdmin, mockEmail, mockPassword, mockUnsubscribeToken } from '../../mocks/mock-user';
+import { mockAdmin, mockEmail, mockUnsubscribeToken } from '../../mocks/mock-user';
 import { setMockContext } from '../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/db/schema/system-roles';
 import { checkMark } from '#/utils/console';
 
-// Set mock context for seed script - IDs will get 'gen-' prefix (CDC worker skips these)
+// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)
 setMockContext('script');
 
 const isProduction = appConfig.mode === 'production';
 
-// Seed scripts use admin connection (migrationDb) for privileged operations
-const db = migrationDb;
+// Seed scripts use admin connection for privileged operations
+const db = seedDb;
 
 const isUserSeeded = async () => {
-  if (!db) return true; // Skip if no admin connection
   const usersInTable = await db
     .select()
     .from(usersTable)
@@ -35,8 +32,8 @@ const isUserSeeded = async () => {
 /**
  * Seed an admin user to access app first time.
  * Works in all environments:
- * - Development: uses fixtures (admin-test@cellajs.com / 12345678)
- * - Production: uses ADMIN_EMAIL env var, no password (use "forgot password" or OAuth to sign in)
+ * - Development: uses fixtures (admin-test@cellajs.com)
+ * - Production: uses ADMIN_EMAIL env var
  */
 export const initSeed = async () => {
   // Determine admin email: env var takes precedence, then fixture default
@@ -47,14 +44,8 @@ export const initSeed = async () => {
     return console.error('ADMIN_EMAIL environment variable is required for production seeding.');
   }
 
-  // Admin connection required
-  if (!db) return console.error('DATABASE_ADMIN_URL required for seeding');
-
   // Records already exist → skip seeding
   if (await isUserSeeded()) return console.warn('Users table is not empty → skip seeding');
-
-  // Create public tenant (needed for pages and other platform-wide content)
-  await db.insert(tenantsTable).values({ id: appConfig.publicTenant.id, name: appConfig.publicTenant.name }).onConflictDoNothing();
 
   // Make admin user → Insert into the database
   const adminId = isProduction ? undefined : defaultAdminUser.id;
@@ -69,16 +60,8 @@ export const initSeed = async () => {
   // Insert system role record into the database
   await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();
 
-  // In dev, set a default password. In production, skip password (use "forgot password" or OAuth to sign in)
-  if (!isProduction) {
-    const { hashPassword } = await import('#/modules/auth/passwords/helpers/argon2id');
-    const hashed = await hashPassword(defaultAdminUser.password);
-    const passwordRecord = mockPassword(adminUser, hashed);
-    await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
-  }
-
   // Make unsubscribeToken record → Insert into the database
-  const unsubscribeTokenRecord = mockUnsubscribeToken(adminUser);
+  const unsubscribeTokenRecord = await mockUnsubscribeToken(adminUser);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
   // Make email record → Insert into the database
@@ -90,11 +73,11 @@ export const initSeed = async () => {
 
   if (isProduction) {
     console.info(
-      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use "forgot password" or OAuth to sign in\n `,
+      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
     );
   } else {
     console.info(
-      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))} and password ${pc.bold(pc.greenBright(defaultAdminUser.password))}\n `,
+      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
     );
   }
 };

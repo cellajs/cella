@@ -10,26 +10,37 @@
  * Integration with react-query:
  * - Attachments are fetched via normal queries and cached
  * - This service queues them for blob download in background
- * - Uses findEntityInListCache to lookup attachment metadata from react-query cache
+ * - Uses findAttachmentInCache to lookup attachment metadata from react-query cache
  * - Blobs are stored in IndexedDB for offline access
  */
+
 import { onlineManager } from '@tanstack/react-query';
+import { liveQuery, type Subscription } from 'dexie';
+import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import type { Attachment } from '~/api.gen';
 import { attachmentsDb, type BlobVariant } from '~/modules/attachment/dexie/attachments-db';
+import { downloadQueue } from '~/modules/attachment/dexie/download-queue';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { getFileUrl } from '~/modules/attachment/helpers';
-import { findEntityInListCache } from '~/query/basic';
+import { getFileUrl } from '~/modules/attachment/file-url';
+import { findAttachmentInCache } from '~/modules/attachment/query';
+import { isPersisted } from '~/modules/attachment/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
 /** Variant download priority - download in this order */
 const variantPriority: BlobVariant[] = ['thumbnail', 'converted', 'original'];
 
+/** Per-fetch timeout for variant downloads. */
+const variantFetchTimeoutMs = 30_000;
+
+/** Result of attempting to download a single variant. */
+type VariantResult = 'stored' | 'skipped' | 'failed-auth' | 'failed-other';
+
 class AttachmentDownloadService {
   private processing = false;
-  private intervalId: ReturnType<typeof setInterval> | null = null;
-  private onlineHandler: (() => void) | null = null;
+  private wakeScheduled = false;
+  private queueSubscription: Subscription | null = null;
+  private onlineUnsubscribe: (() => void) | null = null;
   private cacheUnsubscribe: (() => void) | null = null;
   private mutationUnsubscribe: (() => void) | null = null;
 
@@ -49,8 +60,24 @@ class AttachmentDownloadService {
       return;
     }
 
-    this.onlineHandler = () => this.processQueue();
-    window.addEventListener('online', this.onlineHandler);
+    // Wake up when connectivity returns.
+    this.onlineUnsubscribe = onlineManager.subscribe((online) => {
+      if (online) this.processQueueSoon();
+    });
+
+    // Drive processing reactively from the queue itself: any time there are pending
+    // rows, schedule a run. Replaces the previous setInterval polling.
+    // Note: uses a table-scan `.filter` rather than `.where('status')` because `status`
+    // is only part of a compound index (`[organizationId+status]`) in the schema —
+    // the queue is small so a scan is cheap and avoids a schema migration.
+    this.queueSubscription = liveQuery(() =>
+      attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count(),
+    ).subscribe({
+      next: (count) => {
+        if (count > 0) this.processQueueSoon();
+      },
+      error: (err) => console.error('[DownloadService] Queue liveQuery error:', err),
+    });
 
     // Subscribe to query cache to detect new attachments
     this.cacheUnsubscribe = queryClient.getQueryCache().subscribe((event) => {
@@ -88,9 +115,6 @@ class AttachmentDownloadService {
       });
     });
 
-    // Process queue every 30 seconds
-    this.intervalId = setInterval(() => this.processQueue(), 30000);
-
     console.debug('[DownloadService] Started');
   }
 
@@ -98,13 +122,13 @@ class AttachmentDownloadService {
    * Stop the download service.
    */
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.queueSubscription) {
+      this.queueSubscription.unsubscribe();
+      this.queueSubscription = null;
     }
-    if (this.onlineHandler) {
-      window.removeEventListener('online', this.onlineHandler);
-      this.onlineHandler = null;
+    if (this.onlineUnsubscribe) {
+      this.onlineUnsubscribe();
+      this.onlineUnsubscribe = null;
     }
     if (this.cacheUnsubscribe) {
       this.cacheUnsubscribe();
@@ -118,6 +142,19 @@ class AttachmentDownloadService {
   }
 
   /**
+   * Schedule a queue run on the next microtask, deduped by `wakeScheduled`.
+   * Cheap to call from many places; processQueue itself guards against re-entry.
+   */
+  private processQueueSoon(): void {
+    if (this.wakeScheduled) return;
+    this.wakeScheduled = true;
+    queueMicrotask(() => {
+      this.wakeScheduled = false;
+      this.processQueue();
+    });
+  }
+
+  /**
    * Queue attachments for download.
    * Call this when attachments are loaded from react-query.
    */
@@ -125,15 +162,20 @@ class AttachmentDownloadService {
     if (!this.config?.enabled) return;
     if (!attachments.length) return;
 
+    // Skip transient optimistic rows; queue only persisted attachments.
+    const queueable = attachments.filter(isPersisted);
+    if (!queueable.length) return;
+
     // Get organization ID from first attachment
-    const organizationId = attachments[0]?.organizationId;
+    const organizationId = queueable[0]?.organizationId;
     if (!organizationId) return;
 
-    await attachmentStorage.queueForDownload(attachments, organizationId);
+    await downloadQueue.enqueue(queueable, organizationId);
 
-    // Trigger processing if online
+    // The queue liveQuery will pick up the new pending rows and wake processing,
+    // but call directly too in case enqueue produced no new rows (e.g. all already cached).
     if (onlineManager.isOnline()) {
-      this.processQueue();
+      this.processQueueSoon();
     }
   }
 
@@ -148,11 +190,10 @@ class AttachmentDownloadService {
     this.processing = true;
 
     try {
-      // Get pending downloads with concurrency limit
       const concurrency = this.config.downloadConcurrency ?? 2;
 
-      // Get all organizations with pending downloads
-      const pendingAll = await attachmentsDb.downloadQueue.where('status').equals('pending').toArray();
+      // Get all pending downloads (table scan is fine — small table)
+      const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
 
       if (pendingAll.length === 0) return;
 
@@ -190,81 +231,49 @@ class AttachmentDownloadService {
 
   /**
    * Download a single attachment by looking up metadata from react-query cache.
-   */
-  /**
-   * Download a single attachment by looking up metadata from react-query cache.
    * Downloads variants in priority order: thumbnail → converted → original.
    * Evicts raw blob after original is downloaded.
    */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
+    // Lookup attachment in react-query cache *before* claiming the row, so we don't
+    // burn an attempt on rows whose metadata hasn't synced yet. The liveQuery will
+    // re-trigger us once the cache fills.
+    const attachment = findAttachmentInCache(attachmentId);
+    if (!attachment) {
+      console.debug(`[DownloadService] Attachment ${attachmentId} not in cache yet, leaving pending`);
+      return;
+    }
+
+    if (!attachment.originalKey) {
+      await downloadQueue.transition(attachmentId, 'skipped', 'No originalKey');
+      return;
+    }
+
+    if (!attachment.tenantId || !attachment.organizationId) {
+      await downloadQueue.transition(attachmentId, 'skipped', 'Missing tenantId or organizationId');
+      return;
+    }
+
+    // Claim the row.
+    await downloadQueue.transition(attachmentId, 'downloading');
+
     try {
-      // Mark as downloading
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'downloading');
-
-      // Lookup attachment in react-query cache
-      const attachment = findEntityInListCache<Attachment>('attachment', attachmentId);
-
-      if (!attachment) {
-        console.debug(`[DownloadService] Attachment ${attachmentId} not found in cache, will retry later`);
-        // Leave in 'pending' state for retry - don't mark as skipped
-        await attachmentStorage.updateDownloadStatus(attachmentId, 'pending', 'Waiting for cache');
-        return;
-      }
-
-      if (!attachment.originalKey) {
-        await attachmentStorage.updateDownloadStatus(attachmentId, 'skipped', 'No originalKey');
-        return;
-      }
-
-      // Download variants in priority order
+      let downloadedAny = false;
       let downloadedOriginal = false;
+      let authFailed = false;
 
       for (const variant of variantPriority) {
-        const key = this.getVariantKey(attachment, variant);
-        if (!key) continue;
+        const result = await this.downloadVariant(attachment, variant, organizationId);
 
-        // Check if already downloaded
-        const existingVariant = await attachmentStorage.hasAnyVariant(attachmentId);
-        if (existingVariant === variant) continue;
-
-        try {
-          const url = await getFileUrl(key, attachment.public, attachment.tenantId, attachment.organizationId);
-
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-          const response = await fetch(url, { signal: controller.signal });
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            console.debug(
-              `[DownloadService] Failed to download ${variant} for ${attachmentId}: HTTP ${response.status}`,
-            );
-            continue;
-          }
-
-          const blob = await response.blob();
-          const contentType =
-            variant === 'converted' && attachment.convertedContentType
-              ? attachment.convertedContentType
-              : attachment.contentType || blob.type;
-
-          await attachmentStorage.storeDownloadBlobWithVariant(
-            attachmentId,
-            variant,
-            organizationId,
-            blob,
-            contentType,
-          );
-
-          console.debug(`[DownloadService] Downloaded ${variant} for ${attachmentId}`);
-
-          if (variant === 'original') {
-            downloadedOriginal = true;
-          }
-        } catch (err) {
-          console.debug(`[DownloadService] Error downloading ${variant} for ${attachmentId}:`, err);
+        if (result === 'stored') {
+          downloadedAny = true;
+          if (variant === 'original') downloadedOriginal = true;
+        } else if (result === 'failed-auth') {
+          // Auth/permission failures will repeat for every variant — bail out.
+          authFailed = true;
+          break;
         }
+        // 'skipped' and 'failed-other' just continue to the next variant.
       }
 
       // Evict raw blob after original is downloaded (smart eviction)
@@ -272,12 +281,71 @@ class AttachmentDownloadService {
         await attachmentStorage.evictRawBlob(attachmentId);
       }
 
-      // Mark as downloaded in queue
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'downloaded');
-      console.debug(`[DownloadService] Completed downloading attachment ${attachmentId}`);
+      if (downloadedAny) {
+        await downloadQueue.transition(attachmentId, 'downloaded');
+        console.debug(`[DownloadService] Completed downloading attachment ${attachmentId}`);
+      } else {
+        await downloadQueue.transition(attachmentId, 'failed');
+        console.debug(
+          `[DownloadService] No variants downloaded for ${attachmentId}, marked as failed${authFailed ? ' (auth)' : ''}`,
+        );
+      }
     } catch (error) {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
-      await attachmentStorage.updateDownloadStatus(attachmentId, 'failed');
+      await downloadQueue.transition(attachmentId, 'failed');
+    }
+  }
+
+  /**
+   * Download and store a single variant. Returns the outcome so the caller can
+   * decide how to aggregate results across variants.
+   */
+  private async downloadVariant(
+    attachment: Attachment,
+    variant: BlobVariant,
+    organizationId: string,
+  ): Promise<VariantResult> {
+    const key = this.getVariantKey(attachment, variant);
+    if (!key) return 'skipped';
+
+    // Already have it locally — nothing to do.
+    if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
+
+    // Guarded above in downloadAttachment, but keep narrow types happy.
+    if (!attachment.tenantId || !attachment.organizationId) return 'failed-other';
+
+    try {
+      const url = await getFileUrl(key, attachment.public, attachment.tenantId, attachment.organizationId);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), variantFetchTimeoutMs);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (response.status === 401 || response.status === 403) {
+        console.debug(`[DownloadService] Auth failure (${response.status}) for ${attachment.id}/${variant}`);
+        return 'failed-auth';
+      }
+
+      if (!response.ok) {
+        console.debug(`[DownloadService] HTTP ${response.status} for ${attachment.id}/${variant}`);
+        return 'failed-other';
+      }
+
+      const blob = await response.blob();
+      const contentType =
+        variant === 'converted' && attachment.convertedContentType
+          ? attachment.convertedContentType
+          : attachment.contentType || blob.type;
+
+      await attachmentStorage.storeDownloadBlobWithVariant(attachment.id, variant, organizationId, blob, contentType);
+
+      console.debug(`[DownloadService] Downloaded ${variant} for ${attachment.id}`);
+      return 'stored';
+    } catch (err) {
+      console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, err);
+      return 'failed-other';
     }
   }
 
@@ -295,110 +363,6 @@ class AttachmentDownloadService {
       default:
         return null;
     }
-  }
-
-  /**
-   * Download an attachment immediately (not queued).
-   * Downloads original variant and evicts raw if present.
-   */
-  async downloadNow(attachment: Attachment): Promise<boolean> {
-    if (!this.config?.enabled) return false;
-    if (!onlineManager.isOnline()) return false;
-
-    try {
-      // Check if original already cached
-      const existingVariant = await attachmentStorage.hasAnyVariant(attachment.id);
-      if (existingVariant === 'original') return true;
-
-      // Get URL for original
-      const url = await getFileUrl(
-        attachment.originalKey,
-        attachment.public,
-        attachment.tenantId,
-        attachment.organizationId,
-      );
-
-      // Download with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-
-      // Store as original variant
-      await attachmentStorage.storeDownloadBlobWithVariant(
-        attachment.id,
-        'original',
-        attachment.organizationId,
-        blob,
-        attachment.contentType || blob.type,
-      );
-
-      // Evict raw blob if present
-      await attachmentStorage.evictRawBlob(attachment.id);
-
-      console.debug(`[DownloadService] Downloaded attachment ${attachment.id}`);
-      return true;
-    } catch (error) {
-      console.error(`[DownloadService] Failed to download ${attachment.id}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Get download statistics.
-   */
-  async getStats(organizationId?: string): Promise<{
-    pending: number;
-    downloading: number;
-    downloaded: number;
-    failed: number;
-    skipped: number;
-    storageUsed: number;
-  }> {
-    const baseQuery = organizationId
-      ? attachmentsDb.downloadQueue.where('organizationId').equals(organizationId)
-      : attachmentsDb.downloadQueue;
-
-    const allEntries = await baseQuery.toArray();
-
-    const stats = {
-      pending: 0,
-      downloading: 0,
-      downloaded: 0,
-      failed: 0,
-      skipped: 0,
-    };
-
-    for (const entry of allEntries) {
-      switch (entry.status) {
-        case 'pending':
-          stats.pending++;
-          break;
-        case 'downloading':
-          stats.downloading++;
-          break;
-        case 'downloaded':
-          stats.downloaded++;
-          break;
-        case 'failed':
-          stats.failed++;
-          break;
-        case 'skipped':
-          stats.skipped++;
-          break;
-      }
-    }
-
-    const storageUsed = organizationId ? await attachmentStorage.getStorageUsed(organizationId) : 0;
-
-    return { ...stats, storageUsed };
   }
 }
 

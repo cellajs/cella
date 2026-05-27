@@ -68,7 +68,7 @@ export const getEntitySyncQueries = (
           membersListQueryOptions({
             entityId: entityId,
             tenantId: tenantId,
-            orgId: entityId,
+            organizationId: entityId,
             entityType: entityType,
             limit: 200,
           }),
@@ -79,7 +79,7 @@ export const getEntitySyncQueries = (
       queries.push(
         attachmentsListQueryOptions({
           tenantId: tenantId,
-          orgId: entityId,
+          organizationId: entityId,
         }),
       );
 

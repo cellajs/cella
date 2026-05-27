@@ -13,6 +13,7 @@ type BaseBlockNoteProps = Omit<
 type BlocknoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
   autoFocus?: boolean;
+  containerClassName?: string;
 };
 
 /**
@@ -25,6 +26,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
   required,
   disabled,
   autoFocus,
+  containerClassName,
   baseBlockNoteProps: { excludeBlockTypes, ...restBlockNoteProps },
 }: BlocknoteFieldProps<TFieldValues>) => {
   return (
@@ -33,7 +35,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
       name={name}
       render={({ field: { onChange, value } }) => {
         return (
-          <FormItem name={name} aria-disabled={disabled}>
+          <FormItem name={name} aria-disabled={disabled} className={containerClassName}>
             {typeof label === 'string' && (
               <FormLabel>
                 {label}
@@ -42,7 +44,7 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
             )}
             <FormControl>
               <BlockNote
-                type="create"
+                commitOnEveryChange
                 autoFocus={autoFocus}
                 defaultValue={value}
                 excludeBlockTypes={excludeBlockTypes}

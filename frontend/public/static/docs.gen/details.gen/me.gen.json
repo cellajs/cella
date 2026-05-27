@@ -18,30 +18,18 @@
               "description": "A user with profile data and activity timestamps.",
               "properties": {
                 "createdAt": { "type": "string", "required": true },
-                "id": {
-                  "type": "string",
-                  "required": true,
-                  "maxLength": 50
-                },
+                "id": { "type": "string", "required": true, "format": "uuid" },
                 "entityType": {
                   "type": "string",
                   "required": true,
                   "enum": ["user"]
                 },
-                "name": {
-                  "type": "string",
-                  "required": true,
-                  "maxLength": 255
-                },
+                "name": { "type": "string", "required": true, "maxLength": 255 },
                 "description": {
                   "type": ["string", "null"],
                   "required": true
                 },
-                "slug": {
-                  "type": "string",
-                  "required": true,
-                  "maxLength": 255
-                },
+                "slug": { "type": "string", "required": true, "maxLength": 255 },
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true,
@@ -52,11 +40,7 @@
                   "required": true,
                   "maxLength": 2048
                 },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
+                "email": { "type": "string", "required": true, "format": "email" },
                 "mfaRequired": { "type": "boolean", "required": true },
                 "firstName": {
                   "type": ["string", "null"],
@@ -81,14 +65,14 @@
                     "finishedOnboarding": { "type": "boolean", "required": true }
                   }
                 },
-                "modifiedAt": {
+                "updatedAt": {
                   "type": ["string", "null"],
                   "required": true
                 },
-                "modifiedBy": {
+                "updatedBy": {
                   "type": ["string", "null"],
                   "required": true,
-                  "maxLength": 50
+                  "format": "uuid"
                 },
                 "lastSeenAt": {
                   "type": ["string", "null"],
@@ -105,34 +89,30 @@
               },
               "ref": "#/components/schemas/User"
             },
-            "isSystemAdmin": {
-              "type": "boolean",
-              "required": true,
-              "description": "Whether the current user has system admin privileges."
-            }
+            "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
           },
           "ref": "#/components/schemas/Me",
           "contentType": "application/json"
         },
         "example": {
           "user": {
-            "id": "snou9b80h3jlnu1j458h6mvs",
+            "id": "caad4530-7189-4ad0-8822-372adc47fa07",
             "entityType": "user",
-            "name": "Douglas McClure",
-            "firstName": "Douglas",
+            "name": "Donald McClure",
+            "firstName": "Donald",
             "lastName": "McClure",
-            "email": "douglas.mcclure57@yahoo.com",
-            "slug": "douglasmcclure74",
+            "email": "donald.mcclure57@yahoo.com",
+            "slug": "donaldmcclure74",
             "description": null,
             "thumbnailUrl": null,
             "bannerUrl": null,
             "language": "en",
-            "newsletter": false,
+            "newsletter": true,
             "mfaRequired": false,
             "userFlags": {},
             "createdAt": "2024-07-14T22:49:14.651Z",
-            "modifiedAt": "2024-07-14T22:49:14.651Z",
-            "modifiedBy": null,
+            "updatedAt": "2024-07-14T22:49:14.651Z",
+            "updatedBy": null,
             "lastStartedAt": "2024-07-14T22:49:14.651Z",
             "lastSignInAt": "2024-07-14T22:49:14.651Z",
             "lastSeenAt": "2024-07-14T22:49:14.651Z"
@@ -169,6 +149,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -191,30 +178,18 @@
           "description": "A user with profile data and activity timestamps.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -225,11 +200,7 @@
               "required": true,
               "maxLength": 2048
             },
-            "email": {
-              "type": "string",
-              "required": true,
-              "format": "email"
-            },
+            "email": { "type": "string", "required": true, "format": "email" },
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
@@ -254,14 +225,14 @@
                 "finishedOnboarding": { "type": "boolean", "required": true }
               }
             },
-            "modifiedAt": {
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -280,13 +251,13 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "7sfzetbhjls7m9dg1xzavv78",
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
-          "name": "Cecilia Hodkiewicz",
-          "firstName": "Cecilia",
+          "name": "Cathy Hodkiewicz",
+          "firstName": "Cathy",
           "lastName": "Hodkiewicz",
-          "email": "cecilia.hodkiewicz@hotmail.com",
-          "slug": "ceciliahodkiewicz17",
+          "email": "cathy.hodkiewicz@hotmail.com",
+          "slug": "cathyhodkiewicz17",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
@@ -295,8 +266,8 @@
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
-          "modifiedAt": "2024-12-13T11:17:23.643Z",
-          "modifiedBy": null,
+          "updatedAt": "2024-12-13T11:17:23.643Z",
+          "updatedBy": null,
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
           "lastSignInAt": "2024-12-13T11:17:23.643Z",
           "lastSeenAt": "2024-12-13T11:17:23.643Z"
@@ -328,6 +299,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -422,6 +400,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -444,30 +429,18 @@
           "description": "A user with profile data and activity timestamps.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -478,11 +451,7 @@
               "required": true,
               "maxLength": 2048
             },
-            "email": {
-              "type": "string",
-              "required": true,
-              "format": "email"
-            },
+            "email": { "type": "string", "required": true, "format": "email" },
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
@@ -507,14 +476,14 @@
                 "finishedOnboarding": { "type": "boolean", "required": true }
               }
             },
-            "modifiedAt": {
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -533,13 +502,13 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "7sfzetbhjls7m9dg1xzavv78",
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
-          "name": "Cecilia Hodkiewicz",
-          "firstName": "Cecilia",
+          "name": "Cathy Hodkiewicz",
+          "firstName": "Cathy",
           "lastName": "Hodkiewicz",
-          "email": "cecilia.hodkiewicz@hotmail.com",
-          "slug": "ceciliahodkiewicz17",
+          "email": "cathy.hodkiewicz@hotmail.com",
+          "slug": "cathyhodkiewicz17",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
@@ -548,8 +517,8 @@
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
-          "modifiedAt": "2024-12-13T11:17:23.643Z",
-          "modifiedBy": null,
+          "updatedAt": "2024-12-13T11:17:23.643Z",
+          "updatedBy": null,
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
           "lastSignInAt": "2024-12-13T11:17:23.643Z",
           "lastSeenAt": "2024-12-13T11:17:23.643Z"
@@ -581,6 +550,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -633,7 +609,6 @@
               "enum": ["github"]
             },
             "hasTotp": { "type": "boolean", "required": true },
-            "hasPassword": { "type": "boolean", "required": true },
             "sessions": {
               "type": "array",
               "required": true,
@@ -641,21 +616,13 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "type": {
                     "type": "string",
                     "required": true,
                     "enum": ["regular", "impersonation", "mfa"]
                   },
-                  "userId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
                   "deviceName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -679,7 +646,28 @@
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "ipHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipSubnetHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipCountry": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2
+                  },
+                  "ipAsn": {
+                    "type": ["integer", "null"],
+                    "required": true,
+                    "minimum": -2147483648,
+                    "maximum": 2147483647
                   },
                   "createdAt": { "type": "string", "required": true },
                   "expiresAt": { "type": "string", "required": true },
@@ -694,16 +682,8 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
-                  "userId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
                   "deviceName": {
                     "type": ["string", "null"],
                     "required": true,
@@ -724,11 +704,7 @@
                     "required": true,
                     "maxLength": 255
                   },
-                  "nameOnDevice": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 },
                   "createdAt": { "type": "string", "required": true }
                 }
               }
@@ -740,19 +716,22 @@
         "example": {
           "enabledOAuth": ["github"],
           "hasTotp": false,
-          "hasPassword": true,
           "sessions": [
             {
-              "id": "1yyluhj040oyd732g8rl7t64",
-              "userId": "ccb8qru6yupvx5ntxp604xgo",
+              "id": "0ff9d780-10bf-4531-b073-c93c225553bc",
+              "userId": "3fdbee2a-ceb3-401e-b7af-e58710cdd4a5",
               "type": "regular",
               "createdAt": "2024-05-29T08:00:36.178Z",
               "expiresAt": "2024-06-28T08:00:36.178Z",
-              "deviceName": "Safari on iPhone",
-              "deviceType": "mobile",
-              "deviceOs": "Windows",
-              "browser": "Safari",
-              "authStrategy": "password",
+              "deviceName": "Firefox on Windows",
+              "deviceType": "desktop",
+              "deviceOs": "iOS",
+              "browser": "Edge",
+              "authStrategy": "passkey",
+              "ipHash": null,
+              "ipSubnetHash": null,
+              "ipCountry": null,
+              "ipAsn": null,
               "isCurrent": true
             }
           ],
@@ -785,6 +764,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -821,7 +807,7 @@
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
                       "createdAt": { "type": "string", "required": true },
-                      "modifiedAt": {
+                      "updatedAt": {
                         "type": ["string", "null"],
                         "required": true
                       },
@@ -849,35 +835,24 @@
                     "description": "A membership record for a user who has not yet accepted an invitation.",
                     "properties": {
                       "createdAt": { "type": "string", "required": true },
-                      "id": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 50
-                      },
-                      "tenantId": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 24
-                      },
+                      "id": { "type": "string", "required": true, "format": "uuid" },
+                      "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                       "contextType": {
                         "type": "string",
                         "required": true,
                         "enum": ["organization"]
                       },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 255
-                      },
+                      "contextId": { "type": "string", "required": true, "format": "uuid" },
+                      "email": { "type": "string", "required": true, "maxLength": 255 },
                       "userId": {
                         "type": ["string", "null"],
                         "required": true,
-                        "maxLength": 50
+                        "format": "uuid"
                       },
                       "tokenId": {
                         "type": ["string", "null"],
                         "required": true,
-                        "maxLength": 50
+                        "format": "uuid"
                       },
                       "role": {
                         "type": "string",
@@ -891,7 +866,7 @@
                       "createdBy": {
                         "type": ["object", "null"],
                         "required": true,
-                        "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                        "description": "Minimal user data for references.",
                         "properties": {
                           "id": { "type": "string", "required": true },
                           "name": { "type": "string", "required": true },
@@ -899,11 +874,6 @@
                           "thumbnailUrl": {
                             "type": ["string", "null"],
                             "required": true
-                          },
-                          "email": {
-                            "type": "string",
-                            "required": true,
-                            "format": "email"
                           },
                           "entityType": {
                             "type": "string",
@@ -913,11 +883,7 @@
                         },
                         "extendsRef": "#/components/schemas/UserMinimalBase"
                       },
-                      "organizationId": {
-                        "type": "string",
-                        "required": true,
-                        "maxLength": 50
-                      }
+                      "organizationId": { "type": "string", "required": true, "format": "uuid" }
                     },
                     "ref": "#/components/schemas/InactiveMembership"
                   }
@@ -932,53 +898,55 @@
           "items": [
             {
               "entity": {
-                "id": "kk63h1dxe8cgq643ccglytgb",
-                "createdAt": "2024-12-25T19:05:51.784Z",
-                "modifiedAt": "2024-12-27T22:12:06.410Z",
-                "tenantId": "kv08ddk8lkbjmurn9341gpf1",
-                "name": "Effertz Group",
+                "id": "21706e63-57b3-4215-a579-fd75f58d0366",
+                "createdAt": "2024-03-25T15:30:55.707Z",
+                "updatedAt": "2024-09-10T16:28:26.750Z",
+                "tenantId": "kbjmurn9341gpf179lp8d6lk",
+                "name": "MacGyver LLC",
                 "entityType": "organization",
-                "slug": "effertz-group",
+                "slug": "macgyver-llc",
                 "thumbnailUrl": null,
                 "bannerUrl": null
               },
               "inactiveMembership": {
-                "id": "6gr354pie22th7dif16z86xc",
+                "id": "3f5e59d4-e502-4132-8e0d-915e1951a439",
                 "contextType": "organization",
-                "email": "russ.herzog17@yahoo.com",
-                "userId": "ezumc4icc5vmduw22tjoaw74",
-                "tokenId": "3zfj14fctcamlgi5coyrzuov",
-                "role": "admin",
+                "contextId": "dc3036bd-bd6a-4ea8-8385-228db2dcc869",
+                "email": "preston36@gmail.com",
+                "userId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
+                "tokenId": "825afcfd-ad27-4c12-81b8-610c7358603f",
+                "role": "member",
                 "rejectedAt": null,
                 "createdAt": "2024-11-13T18:39:21.444Z",
-                "createdBy": "5w1ul2bx3ld4na8k0ts708fo",
-                "organizationId": "ft7nt6w77qphfz9detwtt178",
+                "createdBy": "00a860e8-42d5-4fdb-a0c0-498664dbe27b",
+                "organizationId": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
                 "tenantId": "test01"
               }
             },
             {
               "entity": {
-                "id": "ip52vb8otvpz1qn2gfy3zjnp",
-                "createdAt": "2024-03-25T23:28:46.492Z",
-                "modifiedAt": "2024-06-03T13:50:52.760Z",
-                "tenantId": "od7xdlm77e2i9qj90kx71lz5",
-                "name": "Hansen - Reynolds",
+                "id": "e53bddbf-0ba1-476f-81f8-ab33a63f6993",
+                "createdAt": "2024-05-25T05:30:17.465Z",
+                "updatedAt": "2024-06-11T19:44:39.362Z",
+                "tenantId": "i9qj90kx71lz51b5gpm0z1yc",
+                "name": "Kutch - Bernier",
                 "entityType": "organization",
-                "slug": "hansen---reynolds",
+                "slug": "kutch---bernier",
                 "thumbnailUrl": null,
                 "bannerUrl": null
               },
               "inactiveMembership": {
-                "id": "3gqwjug71n1cwllydl9l6917",
+                "id": "40302515-5a0c-4427-9dd4-7dee4eb2c5eb",
                 "contextType": "organization",
-                "email": "bethany.osinski75@gmail.com",
-                "userId": "gbc099sv1n33rsaavdzvrv0a",
-                "tokenId": "rzesl0rhhdendngwylqyrn1s",
+                "contextId": "221aad91-1de2-4e38-93b7-dcc8a33619bf",
+                "email": "mitchell.cummerata29@gmail.com",
+                "userId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
+                "tokenId": "7ef9bfca-0c17-4be8-8d73-0a05e99f5949",
                 "role": "admin",
                 "rejectedAt": null,
                 "createdAt": "2024-04-12T10:35:38.557Z",
-                "createdBy": "gtt9htxwawq5tdvqh553onul",
-                "organizationId": "okmsol2r5n4cy72j57t1tgy0",
+                "createdBy": "79eeb9fc-d1b1-4f1e-a874-19513f16c2bc",
+                "organizationId": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
                 "tenantId": "test01"
               }
             }
@@ -1015,6 +983,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1034,7 +1009,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -1044,11 +1019,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -1080,6 +1051,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -1140,6 +1118,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1150,11 +1135,7 @@
     "request": {
       "query": {
         "properties": {
-          "entityId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
+          "entityId": { "type": "string", "required": true, "maxLength": 50 },
           "entityType": {
             "type": "string",
             "required": true,
@@ -1248,6 +1229,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1308,6 +1296,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1342,26 +1337,15 @@
                 "type": "object",
                 "description": "Core membership fields shared across active and inactive memberships.",
                 "properties": {
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                   "contextType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "userId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "contextId": { "type": "string", "required": true, "format": "uuid" },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
                   "role": {
                     "type": "string",
                     "required": true,
@@ -1375,11 +1359,7 @@
                     "minimum": -140737488355328,
                     "maximum": 140737488355327
                   },
-                  "organizationId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  }
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" }
                 },
                 "ref": "#/components/schemas/MembershipBase"
               }
@@ -1414,6 +1394,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {

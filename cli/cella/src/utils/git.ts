@@ -8,6 +8,7 @@ import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, rmdir, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import process from 'node:process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
@@ -112,6 +113,26 @@ export async function fetch(cwd: string, remoteName: string): Promise<void> {
 }
 
 /**
+ * Fetch a specific commit SHA from a remote. Used when pinning to ensure
+ * the SHA is reachable even if it predates a shallow fetch of the branch tip.
+ * Requires `uploadpack.allowReachableSHA1InWant` on the remote (enabled on github.com).
+ */
+export async function fetchSha(cwd: string, remoteName: string, sha: string): Promise<void> {
+  await git(['fetch', remoteName, sha], cwd);
+}
+
+/**
+ * Resolve a ref to its full commit SHA. Returns null if the ref does not exist.
+ */
+export async function resolveSha(cwd: string, ref: string): Promise<string | null> {
+  try {
+    return (await git(['rev-parse', '--verify', `${ref}^{commit}`], cwd)).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get the latest commit info from a ref.
  */
 export async function getCommitInfo(
@@ -119,7 +140,7 @@ export async function getCommitInfo(
   ref: string,
 ): Promise<{ hash: string; message: string; date: string }> {
   const format = '%H%n%s%n%ar'; // hash, subject, relative date
-  const output = await git(['log', '-1', '--format=' + format, ref], cwd);
+  const output = await git(['log', '-1', `--format=${format}`, ref], cwd);
   const [hash, message, date] = output.split('\n');
   return { hash, message, date };
 }

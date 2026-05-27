@@ -55,7 +55,8 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<s
   for (const item of items) {
     const keys = keyFn(item);
     for (const key of Array.isArray(keys) ? keys : [keys]) {
-      (result[key] ??= []).push(item);
+      result[key] ??= [];
+      result[key].push(item);
     }
   }
   return result;
@@ -130,6 +131,9 @@ export const schemaTagsQueryOptions = queryOptions({
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
-    queryFn: () => fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`),
+    queryFn: () =>
+      tagName
+        ? fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`)
+        : ([] as GenOperationDetail[]),
     staleTime: Number.POSITIVE_INFINITY,
   });

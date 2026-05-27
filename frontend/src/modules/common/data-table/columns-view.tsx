@@ -37,13 +37,13 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
         setColumnSearch('');
       }}
     >
-      <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
+      <TooltipButton className={className} toolTipContent={t('c:columns_view')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
           {filteredColumns.some((column) => column.hidden) && (
-            <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />
+            <Badge className="absolute -top-1 -right-1 z-10 flex h-2 w-2 justify-center p-0" />
           )}
           <SlidersHorizontalIcon className="size-4" />
-          <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
+          <span className="ml-1 max-xl:hidden">{t('c:view')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>
@@ -68,7 +68,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
             {column.name}
           </DropdownMenuCheckboxItem>
         ))}
-        <DropdownMenuSeparator className="border-t my-1 last:hidden" />
+        <DropdownMenuSeparator className="my-1 border-t last:hidden" />
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

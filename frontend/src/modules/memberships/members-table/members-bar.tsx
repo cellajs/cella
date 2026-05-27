@@ -2,7 +2,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { getMembers } from '~/api.gen';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -24,6 +23,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
+import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { InviteUsers } from '~/modules/user/invite-users';
 import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
@@ -78,7 +78,7 @@ export const MembersTableBar = ({
     createDialog(
       <DeleteMemberships
         tenantId={contextEntity.tenantId}
-        orgId={contextEntity.organizationId || contextEntity.id}
+        organizationId={contextEntity.organizationId || contextEntity.id}
         entityId={contextEntity.id}
         entityType={contextEntity.entityType}
         dialog
@@ -89,11 +89,11 @@ export const MembersTableBar = ({
         id: 'delete-memberships',
         triggerRef: deleteButtonRef,
         className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('common:members').toLowerCase() }),
+        title: t('c:remove_resource', { resource: t('c:members').toLowerCase() }),
         description: (
           <Trans
             t={t}
-            i18nKey="common:confirm.remove_members"
+            i18nKey="c:confirm.remove_members"
             values={{
               entityType: contextEntity.entityType,
               emails: selected.map((member) => member.email).join(', '),
@@ -105,7 +105,7 @@ export const MembersTableBar = ({
   };
 
   const openInviteDialog = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
 
     createDialog(<InviteUsers contextEntity={contextEntity} mode={null} dialog />, {
       id: 'invite-users',
@@ -113,27 +113,24 @@ export const MembersTableBar = ({
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
       container: { ref: inviteContainerRef, overlay: !isSheet },
-      title: t('common:invite'),
-      titleContent: <UnsavedBadge title={t('common:invite')} />,
-      description: `${t('common:invite_members.text')}`,
+      title: t('c:invite'),
+      titleContent: <UnsavedBadge title={t('c:invite')} />,
+      description: `${t('c:invite_members.text')}`,
     });
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getMembers({
-      query: {
-        q,
-        sort: sort || 'createdAt',
-        order: order || 'asc',
-        role,
-        limit: String(limit),
-        offset: '0',
-        entityId: contextEntity.id,
-        entityType: contextEntity.entityType,
-      },
-      path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+    return fetchMembersForExport({
+      limit,
+      q,
+      sort: sort || 'createdAt',
+      order: order || 'asc',
+      role,
+      entityId: contextEntity.id,
+      entityType: contextEntity.entityType,
+      tenantId: contextEntity.tenantId,
+      organizationId: contextEntity.organizationId || contextEntity.id,
     });
-    return items;
   };
 
   return (
@@ -151,10 +148,10 @@ export const MembersTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label={contextEntity.id ? 'common:remove' : 'common:delete'}
+                  label={contextEntity.id ? 'c:remove' : 'c:delete'}
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
               </>
             ) : (
               !isFiltered &&
@@ -162,13 +159,13 @@ export const MembersTableBar = ({
                 <TableBarButton
                   ref={inviteButtonRef}
                   icon={MailIcon}
-                  label="common:invite"
+                  label="c:invite"
                   onClick={() => openInviteDialog()}
                 />
               )
             )}
             {selected.length === 0 && (
-              <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
+              <TableCount count={total} label="c:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
                 {canUpdate && !isFiltered && <PendingMembershipsCount contextEntity={contextEntity} />}
               </TableCount>
             )}

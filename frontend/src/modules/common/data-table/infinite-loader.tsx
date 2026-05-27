@@ -21,7 +21,7 @@ type InfiniteLoaderProps = {
  */
 export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetchMore }: InfiniteLoaderProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   // Intersection observer for non-DataGrid usage (e.g., entity grids)
   const { ref: measureRef } = useInView({
@@ -35,14 +35,12 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetc
 
   // Error state
   if (isFetchMoreError)
-    return <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>;
+    return <div className="my-8 text-center text-red-600 text-sm">{t('error:load_more_failed')}</div>;
 
   // Offline but more data is available
   if (!isOnline && hasNextPage)
     return (
-      <div className="w-full mt-4 italic text-muted-foreground/50 text-sm text-center">
-        {t('common:offline.load_more')}
-      </div>
+      <div className="mt-4 w-full text-center text-muted-foreground/50 text-sm italic">{t('c:offline.load_more')}</div>
     );
 
   return (
@@ -58,7 +56,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, fetc
 
 function AllLoaded() {
   return (
-    <div className="opacity-50 w-full text-xl mt-4 mb-10 text-center">
+    <div className="mt-4 mb-10 w-full text-center text-xl opacity-50">
       <div>&#183;</div>
       <div className="-mt-5">&#183;</div>
       <div className="-mt-5">&#183;</div>
@@ -69,11 +67,11 @@ function AllLoaded() {
 
 function Loading() {
   return (
-    <div className="flex space-x-1 opacity-50 justify-center items-center relative top-4 h-0 mb-10 w-full animate-pulse">
+    <div className="relative top-4 mb-10 flex h-0 w-full animate-pulse items-center justify-center space-x-1 opacity-50">
       <span className="sr-only">Loading...</span>
-      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
-      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
-      <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
+      <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
+      <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />
+      <div className="h-1 w-3 animate-bounce rounded-full bg-foreground" />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { varchar } from 'drizzle-orm/pg-core';
+import { uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ContextEntityType } from 'shared';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
@@ -12,6 +12,6 @@ export const contextEntityColumns = <T extends ContextEntityType>(entityType: T)
   slug: varchar({ length: maxLength.field }).unique().notNull(),
   thumbnailUrl: varchar({ length: maxLength.url }),
   bannerUrl: varchar({ length: maxLength.url }),
-  createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'set null' }),
+  createdBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
 });

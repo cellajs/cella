@@ -13,8 +13,8 @@ export const contactFormHandler = (ref: RefObject<HTMLButtonElement | null>) => 
     triggerRef: ref,
     drawerOnMobile: false,
     className: 'sm:max-w-5xl',
-    title: i18n.t('common:contact_us'),
-    titleContent: <UnsavedBadge title={i18n.t('common:contact_us')} />,
-    description: i18n.t('common:contact_us.text'),
+    title: i18n.t('c:contact_us'),
+    titleContent: <UnsavedBadge title={i18n.t('c:contact_us')} />,
+    description: i18n.t('c:contact_us.text'),
   });
 };

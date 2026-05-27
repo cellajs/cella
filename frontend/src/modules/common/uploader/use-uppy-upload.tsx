@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
@@ -33,7 +32,6 @@ export function useUploadUppy() {
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
-    const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
 
     const {
       isPublic,
@@ -44,7 +42,9 @@ export function useUploadUppy() {
       statusEventHandler = {},
     } = uploaderData;
 
-    const allowedFileTypes = isUploadFullyEnabled
+    const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
+
+    const allowedFileTypes = onlineManager.isOnline()
       ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes)
       : ['image/*'];
 
@@ -61,10 +61,6 @@ export function useUploadUppy() {
         localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId, organizationId });
 
         localUppy
-          .on('files-added', () => {
-            if (onlineManager.isOnline() && !appConfig.has.uploadEnabled)
-              toaster(t('common:file_upload_warning'), 'warning');
-          })
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);
             statusEventHandler.onFileEditorComplete?.(file);
@@ -85,8 +81,7 @@ export function useUploadUppy() {
               statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>),
             ).catch((err) => {
               console.error('onComplete handler failed:', err);
-              Sentry.captureException(err);
-              toaster(t('error:create_resource', { resource: t('common:attachment').toLowerCase() }), 'error');
+              toaster(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }), 'error');
             });
           });
         // Plugin Options
@@ -115,7 +110,7 @@ export function useUploadUppy() {
         }
         setUppy(localUppy);
       } catch (err) {
-        Sentry.captureException(err);
+        console.error('Failed to initialize upload:', err);
         const message = err instanceof Error ? err.message : 'Failed to initialize upload';
         setError(message);
       }

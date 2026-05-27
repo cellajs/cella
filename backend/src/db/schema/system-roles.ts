@@ -1,21 +1,20 @@
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/entity-id';
 import { usersTable } from '#/db/schema/users';
-import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 const roleEnum = appConfig.systemRoles;
 
-export const systemRolesTable = pgTable('system_roles', {
-  id: varchar({ length: maxLength.id }).primaryKey().$defaultFn(nanoid),
-  userId: varchar({ length: maxLength.id })
+export const systemRolesTable = snakeCase.table('system_roles', {
+  id: uuid().primaryKey().$defaultFn(generateId),
+  userId: uuid()
     .notNull()
     .unique()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull(),
   createdAt: timestampColumns.createdAt,
-  modifiedAt: timestampColumns.modifiedAt,
+  updatedAt: timestampColumns.updatedAt,
 });
 
 export type SystemRoleModel = typeof systemRolesTable.$inferSelect;

@@ -3,16 +3,32 @@ import type { ItemData } from '~/query/basic/types';
 
 /** Minimal query keys interface needed by stream handlers. */
 export interface EntityQueryKeys {
-  list: { base: readonly unknown[] };
+  list: {
+    base: readonly unknown[];
+    org: (organizationId: string) => readonly unknown[];
+    /** Canonical scope key — args are hierarchy ancestor IDs (root-first) */
+    scope: (...ancestorIds: string[]) => readonly unknown[];
+    /** Ancestor ID column keys in root-first order, e.g. ['organizationId', 'projectId'] for task */
+    scopeKeys: readonly string[];
+  };
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
 /**
  * Delta fetch function signature for catchup-based sync.
- * Called with orgId (null for public entities) and the client's last known seq.
- * Returns changed entities since that seq via the list endpoint's `afterSeq` param.
+ * Called with organizationId (null for public entities), tenantId, and a seqCursor string.
+ * Returns changed entities since that seq via the list endpoint's `seqCursor` param.
+ *
+ * seqCursor formats:
+ * - "51" — open-ended (seq >= 51), used by catchup
+ * - "51,150" — bounded range (seq >= 51 AND seq <= 150), used by batch notifications
  */
-export type DeltaFetchFn = (orgId: string | null, afterSeq: number) => Promise<{ items: ItemData[]; total: number }>;
+export type DeltaFetchFn = (
+  organizationId: string | null,
+  tenantId: string | null,
+  seqCursor: string,
+  options?: { cacheToken?: string },
+) => Promise<{ items: ItemData[]; total: number }>;
 
 /**
  * Central registry for entity query keys.
@@ -40,7 +56,7 @@ const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
  * Call this at module initialization (e.g., in the entity's query.ts file).
  *
  * The `deltaFetch` function enables efficient catchup: instead of full list refetch,
- * the catchup processor calls the list endpoint with `afterSeq` to get only changed entities.
+ * the catchup processor calls the list endpoint with `seqCursor` to get only changed entities.
  */
 export function registerEntityQueryKeys(
   entityType: EntityType,

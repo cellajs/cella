@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -36,8 +36,8 @@ const meRoutes = {
     operationId: 'getMe',
     method: 'get',
     path: '/',
-    xGuard: authGuard,
-    tags: ['me'],
+    xGuard: [authGuard],
+    tags: ['me', 'cella'],
     summary: 'Get self',
     description: 'Returns the *current user*.',
     responses: {
@@ -61,7 +61,7 @@ const meRoutes = {
     method: 'get',
     path: '/invitations',
     xGuard: [authGuard, crossTenantGuard],
-    tags: ['me'],
+    tags: ['me', 'cella'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
     responses: {
@@ -84,9 +84,9 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['me'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['me', 'cella'],
     summary: 'Update self',
     description: 'Updates the *current user*.',
     request: {
@@ -114,9 +114,9 @@ const meRoutes = {
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['me'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['me', 'cella'],
     summary: 'Delete self',
     description:
       "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
@@ -132,8 +132,8 @@ const meRoutes = {
     operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
-    xGuard: authGuard,
-    tags: ['me'],
+    xGuard: [authGuard],
+    tags: ['me', 'cella'],
     summary: 'Get auth data',
     description:
       'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
@@ -152,9 +152,9 @@ const meRoutes = {
     operationId: 'deleteMySessions',
     method: 'delete',
     path: '/sessions',
-    xGuard: authGuard,
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['me'],
+    xGuard: [authGuard],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['me', 'cella'],
     summary: 'Terminate sessions',
     description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
     request: {
@@ -180,8 +180,8 @@ const meRoutes = {
     method: 'delete',
     path: '/leave',
     xGuard: [authGuard, crossTenantGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['me'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['me', 'cella'],
     summary: 'Leave entity',
     description: 'Removes the *current user* from an entity they are a member of.',
     request: { query: entityWithTypeQuerySchema },
@@ -199,9 +199,9 @@ const meRoutes = {
     operationId: 'unsubscribeMe',
     method: 'get',
     path: '/unsubscribe',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('unsubscribe'),
-    tags: ['me'],
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('unsubscribe')],
+    tags: ['me', 'cella'],
     summary: 'Unsubscribe',
     description:
       'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.',
@@ -221,8 +221,8 @@ const meRoutes = {
     operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
-    xGuard: authGuard,
-    tags: ['me'],
+    xGuard: [authGuard],
+    tags: ['me', 'cella'],
     summary: 'Get upload token',
     description:
       'Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization',
@@ -242,9 +242,9 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['me'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['me', 'cella'],
     summary: 'Toggle MFA',
     description:
       'Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.',
@@ -266,8 +266,8 @@ const meRoutes = {
     operationId: 'getMyMemberships',
     method: 'get',
     path: '/memberships',
-    xGuard: authGuard,
-    tags: ['me'],
+    xGuard: [authGuard],
+    tags: ['me', 'cella'],
     summary: 'Get my memberships',
     description: 'Returns all memberships for the *current user* across all context entities.',
     responses: {

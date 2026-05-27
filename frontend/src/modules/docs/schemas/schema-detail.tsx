@@ -31,12 +31,12 @@ const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
   return (
     <Card id={`spy-${refId}`} className={cn('border-0', className)}>
       <CardHeader className="group">
-        <CardTitle className="text-xl leading-8 gap-2">
+        <CardTitle className="gap-2 text-xl leading-8">
           {schema.name}
           <HashUrlButton id={refId} />
         </CardTitle>
         {schema.description && (
-          <CardDescription className="my-2 text-base max-w-4xl">{schema.description}</CardDescription>
+          <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>
         )}
       </CardHeader>
       <CardContent>
@@ -68,7 +68,7 @@ export const TagSchemasList = ({ schemas }: TagSchemasListProps) => {
   useScrollSpy(sectionIds);
 
   return (
-    <div className="border-t">
+    <div className="border-t border-dashed">
       {schemas.map((schema) => (
         <SchemaDetail key={schema.name} schema={schema} className="rounded-none last:rounded-b-lg" />
       ))}

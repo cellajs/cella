@@ -8,8 +8,6 @@ import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
-import type { EnrichedOrganization } from '~/modules/organization/types';
-import { OrganizationRoute } from '~/routes/organization-routes';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organization/leave-organization'));
 
@@ -26,7 +24,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
 
   const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);
   // Organization is enriched with membership via cache subscription
-  const { data: organization } = useSuspenseQuery(orgQueryOptions) as { data: EnrichedOrganization };
+  const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const canUpdate = organization.can?.organization?.update === true;
 
@@ -39,7 +37,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
     mutate(
       { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
       {
-        onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
+        onSuccess: () => toaster(t('c:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
@@ -71,7 +69,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
         <PageTabNav
           title={organization.name}
           avatar={organization}
-          parentRouteId={OrganizationRoute.id}
+          parentRouteId="/appLayout/$tenantId/$organizationSlug/organization"
           filterTabIds={filterTabIds}
         />
         <FocusViewContainer>

@@ -7,5 +7,5 @@ import type { PageDraggableItemData } from '~/modules/navigation/types';
  * @returns True if the data is a PageDraggableItemData, false otherwise
  */
 export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
+  return data.dragItem === true && typeof data.displayOrder === 'number' && data.type === 'menuItem';
 };

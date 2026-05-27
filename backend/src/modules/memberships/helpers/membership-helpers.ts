@@ -1,11 +1,11 @@
 import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
-import type { DbOrTx } from '#/db/db';
-import { InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
-import type { EntityModel } from '#/lib/resolve-entity';
-
-import { MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
-import { logEvent } from '#/utils/logger';
+import { defaultOrder, orderGap } from 'shared/display-order';
+import type { DbContext } from '#/core/context';
+import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import type { EntityModel } from '#/modules/entities/entities-queries';
+import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import { type LogContext, logEvent } from '#/utils/logger';
 
 /**
  * The root context entity type — the parentless context entity (e.g. 'organization').
@@ -75,9 +75,10 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  * @returns inserted target memberships (MembershipBaseModel)
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
-  db: DbOrTx,
-  items: Array<InsertMultipleProps<T>>,
+  ctx: DbContext,
+  { items, logCtx }: { items: Array<InsertMultipleProps<T>>; logCtx?: LogContext },
 ): Promise<Array<MembershipBaseModel>> => {
+  const { db } = ctx.var;
   // Early exit: nothing to insert
   if (!items.length) return [];
 
@@ -106,11 +107,12 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     // Get organizationId: prefer entity.organizationId if present, else entity.id (organization)
     const targetEntitiesIdColumnKeys = getBaseMembershipEntityId(entity);
 
-    // Compute incremental order per user: start from global max, then +10 per assignment
+    // Compute incremental order per user: start from global max, then +orderGap per assignment.
+    // For users with no existing memberships, seed so the first assignment lands on `defaultOrder`.
     const prevMax = maxOrdersByUser.get(userId) ?? 0;
     const alreadyAssigned = assignedCounts.get(userId) ?? 0;
-    const base = prevMax === 0 ? 990 : prevMax;
-    const nextOrder = base + (alreadyAssigned + 1) * 10;
+    const base = prevMax === 0 ? defaultOrder - orderGap : prevMax;
+    const nextOrder = base + (alreadyAssigned + 1) * orderGap;
 
     assignedCounts.set(userId, alreadyAssigned + 1);
 
@@ -139,6 +141,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
         role: 'member', // parent membership is always 'member'
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
         contextType: rootContextType,
+        contextId: targetEntitiesIdColumnKeys[rootIdColumnKey],
       } as InsertMembershipModel;
     });
 
@@ -166,6 +169,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
         role: 'member', // parent/associated membership is always 'member'
         ...remainingIdColumnKeys,
         contextType: associatedType,
+        contextId: associatedField,
       } as InsertMembershipModel;
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -176,6 +180,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       ...baseMembership,
       tenantId: entity.tenantId,
       contextType: entity.entityType,
+      contextId: entity.id,
       ...targetEntitiesIdColumnKeys,
       ...extraFields,
     }),
@@ -192,8 +197,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       : Promise.resolve(),
   ]);
 
-  if (insertedTarget.length) {
-    logEvent('info', `${insertedTarget.length} memberships have been created`);
+  if (insertedTarget.length && logCtx) {
+    logEvent(logCtx, 'info', 'Memberships created', { count: insertedTarget.length });
   }
 
   return insertedTarget;

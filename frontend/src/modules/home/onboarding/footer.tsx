@@ -8,11 +8,15 @@ import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
 
-export function StepperFooter({
-  setOnboardingState,
-}: {
+interface StepperFooterProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
-}) {
+}
+
+/**
+ * Footer for onboarding stepper. Renders a skip button on optional steps
+ * and prompts confirmation when skipping organization creation.
+ */
+export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
   const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
 
@@ -30,8 +34,8 @@ export function StepperFooter({
         id: 'skip-org-creation',
         triggerRef: skipButtonRef,
         className: 'md:max-w-xl',
-        title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,
-        description: t('common:skip_org_creation.text'),
+        title: `${t('c:skip')} ${t('c:create_resource', { resource: t('c:organization') }).toLowerCase()}`,
+        description: t('c:skip_org_creation.text'),
       });
       return;
     }
@@ -39,11 +43,11 @@ export function StepperFooter({
   };
 
   return (
-    <div className="w-full flex gap-2 max-sm:justify-stretch">
+    <div className="flex w-full gap-2 max-sm:justify-stretch">
       {isOptionalStep && (
         <Button ref={skipButtonRef} onClick={skipStep} variant="secondary" className="max-sm:w-full">
           <RedoIcon size={16} className="mr-2" />
-          {t('common:skip')}
+          {t('c:skip')}
         </Button>
       )}
     </div>

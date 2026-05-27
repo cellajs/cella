@@ -24,7 +24,7 @@ export const HashUrlButton = ({ id }: HashUrlButtonProps) => {
       tabIndex={-1}
       size="xs"
       onClick={handleCopy}
-      className="opacity-0 group-hover:opacity-70 transition-opacity hover:opacity-100"
+      className="opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-70"
       aria-label="Copy link to section"
     >
       {copied ? <CheckIcon className="size-3.5 text-success" /> : <HashIcon className="size-3.5" />}

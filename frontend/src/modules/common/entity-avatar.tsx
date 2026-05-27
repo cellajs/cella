@@ -20,34 +20,29 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
       <Avatar
         {...props}
         className={cn(
-          'group bg-background flex justify-center items-center rounded-md data-[type=user]:rounded-full overflow-hidden',
+          'group flex items-center justify-center overflow-hidden rounded-md bg-background data-[type=user]:rounded-full',
           className,
         )}
       >
-        <Icon className="opacity-70 fill-accent size-[70%]" strokeWidth={1.5} />
+        <Icon className="size-[70%] fill-accent opacity-70" strokeWidth={1.5} />
       </Avatar>
     );
 
   const avatarBackground = numberToColorClass(id);
 
   return (
-    //key will force remounting of AvatarImage or AvatarFallback when URL changes
     <Avatar
-      key={url ? 'image' : 'fallback'}
       {...props}
       data-type={type}
-      className={cn('group rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
+      className={cn('group overflow-hidden rounded-md data-[type=user]:rounded-full', className)}
     >
-      {url ? (
-        <AvatarImage src={url} draggable="false" />
-      ) : (
-        <AvatarFallback className={avatarBackground}>
-          <span className="sr-only">{name}</span>
-          <div className="text-black opacity-40 font-semibold flex h-full items-center justify-center">
-            {name?.charAt(0).toUpperCase() || '-'}
-          </div>
-        </AvatarFallback>
-      )}
+      {url && <AvatarImage src={url} draggable={false} />}
+      <AvatarFallback className={avatarBackground}>
+        <span className="sr-only">{name}</span>
+        <div className="flex h-full items-center justify-center font-semibold text-black uppercase opacity-40">
+          {name?.charAt(0).toUpperCase() || '-'}
+        </div>
+      </AvatarFallback>
     </Avatar>
   );
 }

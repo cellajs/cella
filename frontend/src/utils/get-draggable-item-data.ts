@@ -6,7 +6,7 @@ export type DraggableItemData<T, D extends string> = {
   item: T;
   itemType: EntityType;
   dragItem: true;
-  order: number;
+  displayOrder: number;
 };
 
 /**
@@ -29,5 +29,5 @@ export const getDraggableItemData = <T, D extends string>(
   type: D,
   itemType: EntityType,
 ): DraggableItemData<T, D> => {
-  return { dragItem: true, item, order: itemOrder, type, itemType };
+  return { dragItem: true, item, displayOrder: itemOrder, type, itemType };
 };

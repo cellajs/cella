@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { action } from 'storybook/actions';
 import { expect, userEvent } from 'storybook/test';
 import * as z from 'zod';
-
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
@@ -50,7 +49,7 @@ function ProfileForm(args: Story['args']) {
               <FormLabel>Username</FormLabel>
               <FormControl>
                 <input
-                  className="border-input bg-background w-full rounded-md border px-3 py-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
                   placeholder="username"
                   {...field}
                 />

@@ -18,8 +18,8 @@ import {
   usePagination,
   useState,
 } from '@inquirer/core';
-import pc from 'picocolors';
 import type { RuntimeConfig } from '../config/types';
+import pc from '../utils/colors';
 import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess } from '../utils/display';
 import { git } from '../utils/git';
 
@@ -250,7 +250,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   if (branches.length === 0) {
     spinnerSuccess('no contrib branches found');
     console.info();
-    console.info(pc.dim('  forks push contributions via autoContribute or inspect service'));
+    console.info(pc.dim('  forks push contributions via the contribute service'));
     return;
   }
 

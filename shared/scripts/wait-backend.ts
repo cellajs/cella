@@ -1,14 +1,24 @@
 /**
  * Wait for the backend health endpoint before proceeding.
- * Derives the URL from appConfig so port changes only need to happen in development-config.ts.
  *
- * Usage: tsx shared/scripts/wait-backend.ts [wait-on options]
+ * Usage: tsx shared/scripts/wait-backend.ts [-i interval] [-t timeout]
  * Example: tsx shared/scripts/wait-backend.ts -i 2000 -t 60000
  */
-import { execSync } from 'node:child_process';
-import { appConfig } from '..';
+import { waitForBackend } from '../src/utils/wait-for-backend';
 
-const args = process.argv.slice(2).join(' ');
-const healthUrl = `${appConfig.backendUrl}/health`;
+const args = process.argv.slice(2);
+let interval = 1000;
+let timeout = 30000;
 
-execSync(`npx wait-on ${args} ${healthUrl}`, { stdio: 'inherit' });
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '-i' && args[i + 1]) interval = Number(args[i + 1]);
+  if (args[i] === '-t' && args[i + 1]) timeout = Number(args[i + 1]);
+}
+
+try {
+  await waitForBackend(interval, timeout);
+} catch {
+  console.error(`Backend not ready after ${timeout}ms`);
+  process.exit(1);
+}
+process.exit(1);

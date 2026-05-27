@@ -1,18 +1,17 @@
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
-
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 const TabsListVariants = cva(
-  'bg-none text-muted-foreground inline-flex h-9 w-full items-center justify-center rounded-lg p-[3px] gap-2',
+  'inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-none p-[3px] text-muted-foreground',
   {
     variants: {
       variant: {
         default: '',
-        side: 'flex flex-col h-fit w-fit [&>button]:w-full border-none',
+        side: 'flex h-fit w-fit flex-col border-none [&>button]:w-full',
         // 'bg-background gap-2 p-0 h-9',
-        underline: 'border-b rounded-none pb-2',
+        underline: 'rounded-none border-b pb-2',
       },
     },
     defaultVariants: {
@@ -39,7 +38,7 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
-      className="data-[selected]:bg-secondary dark:data-[selected]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[selected]:border-input dark:data-[selected]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[selected]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+      className="inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1 font-medium text-foreground text-sm transition-[color,box-shadow] focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-disabled:pointer-events-none data-selected:bg-secondary data-disabled:opacity-50 data-selected:shadow-sm dark:text-muted-foreground dark:data-selected:border-input dark:data-selected:bg-input/30 dark:data-selected:text-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
       {...props}
     />
   );

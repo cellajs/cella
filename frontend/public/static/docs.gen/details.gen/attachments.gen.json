@@ -16,45 +16,43 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A file attachment belonging to an organization.",
+                "description": "A product entity for file attachment metadata.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -64,15 +62,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -80,11 +74,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -94,10 +83,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -105,11 +94,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -119,48 +103,28 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
-                  "filename": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "contentType": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
                   "convertedContentType": {
                     "type": ["string", "null"],
                     "required": true,
                     "maxLength": 255
                   },
-                  "size": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "originalKey": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 2048
-                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
                   "convertedKey": {
                     "type": ["string", "null"],
                     "required": true,
@@ -171,16 +135,8 @@
                     "required": true,
                     "maxLength": 2048
                   },
-                  "organizationId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
-                  "viewCount": {
-                    "type": "integer",
-                    "required": false,
-                    "minimum": 0
-                  }
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
                 "ref": "#/components/schemas/Attachment"
               }
@@ -192,64 +148,62 @@
         "example": {
           "items": [
             {
-              "id": "o7z71y60a882cwpxtanaxnsp",
-              "tenantId": "9nes1y",
+              "id": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50",
+              "tenantId": "leyvjb",
               "entityType": "attachment",
-              "name": "elegantly.vss",
+              "name": "vice.mar",
               "description": null,
-              "keywords": "vesco audentia angustus",
+              "keywords": "concedo quae arca",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "elegantly.vss",
-              "contentType": "application/vnd.apple.installer+xml",
+              "filename": "vice.mar",
+              "contentType": "image/gif",
               "convertedContentType": null,
-              "size": "9665489",
-              "originalKey": "uploads/b0gleyvjbbm5piweg2q4gqa3/elegantly.vss",
+              "size": "5109236",
+              "originalKey": "uploads/weg2q4gqa3vx9cfyey6mqh9h/vice.mar",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-11-21T04:00:59.122Z",
-              "createdBy": "qqp8d07imsvjbtqtl3rtjgxd",
-              "modifiedAt": "2024-11-21T04:00:59.122Z",
-              "modifiedBy": "qqp8d07imsvjbtqtl3rtjgxd",
-              "seqAt": 444,
+              "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "updatedAt": "2024-11-21T04:00:59.122Z",
+              "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "seq": 318,
               "stx": {
-                "mutationId": "x9cfyey6mqh9hmikgme3gy3a",
-                "sourceId": "src_9lhe0ctrmzc53x7z222ydtq5",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
+                "sourceId": "db238d10-af2a-44b7-a00b-63f20bc295d2",
+                "fieldTimestamps": {}
               },
-              "organizationId": "7iu31mz5oaqf10oe7y51pr5l"
+              "organizationId": "966a04b5-5092-46e5-aef7-3b6c996a20eb"
             },
             {
-              "id": "yahbgyu01sr6utecq3o02wpa",
-              "tenantId": "56tpd7",
+              "id": "65b1a01e-b422-4db6-8339-b813cf84d752",
+              "tenantId": "t5nr6k",
               "entityType": "attachment",
-              "name": "woefully_bah.vsw",
+              "name": "bah_oof_truthfully.css",
               "description": null,
-              "keywords": "auxilium non sui",
+              "keywords": "appello depono ultio",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "woefully_bah.vsw",
-              "contentType": "audio/3gpp",
+              "filename": "bah_oof_truthfully.css",
+              "contentType": "audio/aac",
               "convertedContentType": null,
-              "size": "1107841",
-              "originalKey": "uploads/7syiavgc67t5nr6k4huj5qv4/woefully_bah.vsw",
+              "size": "1633382",
+              "originalKey": "uploads/qv4k6bwmvl0e44bpmhsyauxc/bah_oof_truthfully.css",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-10-29T08:46:20.790Z",
-              "createdBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "modifiedAt": "2024-10-29T08:46:20.790Z",
-              "modifiedBy": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "seqAt": 290,
+              "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "updatedAt": "2024-10-29T08:46:20.790Z",
+              "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "seq": 447,
               "stx": {
-                "mutationId": "6bwmvl0e44bpmhsyauxcwuwj",
-                "sourceId": "src_srzvzac8qx1h9s6vzhgvcj0r",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
+                "sourceId": "d9017e5b-49fb-41c3-acc0-f3df8449a148",
+                "fieldTimestamps": {}
               },
-              "organizationId": "s3xtuk03gxco9kzp2r8sr1z8"
+              "organizationId": "c7c8981c-d73a-47bf-9e99-126641d43cb8"
             }
           ],
           "total": 2
@@ -284,6 +238,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -294,25 +255,13 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          },
+          "q": { "type": "string", "required": false, "maxLength": 255 },
           "sort": {
             "type": "string",
             "required": false,
@@ -325,7 +274,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "afterSeq": { "type": "string", "required": false }
+          "seqCursor": { "type": "string", "required": false }
         }
       }
     }
@@ -347,45 +296,43 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A file attachment belonging to an organization.",
+                "description": "A product entity for file attachment metadata.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -395,15 +342,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -411,11 +354,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -425,10 +363,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -436,11 +374,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -450,48 +383,28 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
-                  "filename": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "contentType": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
                   "convertedContentType": {
                     "type": ["string", "null"],
                     "required": true,
                     "maxLength": 255
                   },
-                  "size": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "originalKey": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 2048
-                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
                   "convertedKey": {
                     "type": ["string", "null"],
                     "required": true,
@@ -502,21 +415,13 @@
                     "required": true,
                     "maxLength": 2048
                   },
-                  "organizationId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
-                  "viewCount": {
-                    "type": "integer",
-                    "required": false,
-                    "minimum": 0
-                  }
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
                 "ref": "#/components/schemas/Attachment"
               }
             },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -526,11 +431,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -538,67 +439,65 @@
         "example": {
           "data": [
             {
-              "id": "slwtksu3yccsd9ihoiny6rso",
-              "tenantId": "b7j0p6",
+              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "tenantId": "fz7rau",
               "entityType": "attachment",
-              "name": "excluding_ugh_besides.svgz",
+              "name": "ugh_besides.svgz",
               "description": null,
-              "keywords": "nam curatio xiphias",
+              "keywords": "vulgo vinum atavus",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "excluding_ugh_besides.svgz",
-              "contentType": "application/vnd.ms-fontobject",
+              "filename": "ugh_besides.svgz",
+              "contentType": "video/webm",
               "convertedContentType": null,
-              "size": "7651256",
-              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
+              "size": "9148253",
+              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-19T14:04:35.773Z",
-              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "modifiedAt": "2024-04-19T14:04:35.773Z",
-              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "seqAt": 155,
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "seq": 348,
               "stx": {
-                "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
-                "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
+                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "fieldTimestamps": {}
               },
-              "organizationId": "njjhhc4mupuqz0iqmny8wdl2"
+              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
             },
             {
-              "id": "pxxbqdej8622zpgo54qw5fqo",
-              "tenantId": "9wwhw5",
+              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "tenantId": "8r85na",
               "entityType": "attachment",
-              "name": "gown.txt",
+              "name": "instead_volleyball.jpe",
               "description": null,
-              "keywords": "denique tum candidus",
+              "keywords": "derelinquo attollo autem",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "gown.txt",
-              "contentType": "application/x-sh",
+              "filename": "instead_volleyball.jpe",
+              "contentType": "application/json",
               "convertedContentType": null,
-              "size": "6125227",
-              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
+              "size": "9478414",
+              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-25T13:01:35.301Z",
-              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "modifiedAt": "2024-02-25T13:01:35.301Z",
-              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "seqAt": 476,
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "seq": 276,
               "stx": {
-                "mutationId": "4dvzpz75e03ldr2ga54hj92y",
-                "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
+                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "fieldTimestamps": {}
               },
-              "organizationId": "81k5rbzt4yq63pob5r5tp1lp"
+              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
             }
           ],
-          "rejectedItemIds": []
+          "rejectedIds": []
         }
       },
       {
@@ -615,45 +514,43 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A file attachment belonging to an organization.",
+                "description": "A product entity for file attachment metadata.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["attachment"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
                     "properties": {
-                      "mutationId": { "type": "string", "required": true },
-                      "sourceId": { "type": "string", "required": true },
-                      "version": { "type": "integer", "required": true },
-                      "fieldVersions": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
                         "type": "object",
                         "required": true,
-                        "additionalProperties": { "type": "integer", "required": false }
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
                       }
                     },
                     "ref": "#/components/schemas/StxBase"
@@ -663,15 +560,11 @@
                     "required": true,
                     "maxLength": 1000000
                   },
-                  "keywords": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 1000000
-                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -679,11 +572,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -693,10 +581,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -704,11 +592,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -718,48 +601,28 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "seqAt": {
+                  "seq": {
                     "type": "integer",
                     "required": true,
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
                   },
                   "public": { "type": "boolean", "required": true },
-                  "bucketName": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
                   "groupId": {
                     "type": ["string", "null"],
                     "required": true,
-                    "maxLength": 50
+                    "format": "uuid"
                   },
-                  "filename": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "contentType": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
                   "convertedContentType": {
                     "type": ["string", "null"],
                     "required": true,
                     "maxLength": 255
                   },
-                  "size": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "originalKey": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 2048
-                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
                   "convertedKey": {
                     "type": ["string", "null"],
                     "required": true,
@@ -770,21 +633,13 @@
                     "required": true,
                     "maxLength": 2048
                   },
-                  "organizationId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
-                  "viewCount": {
-                    "type": "integer",
-                    "required": false,
-                    "minimum": 0
-                  }
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
                 "ref": "#/components/schemas/Attachment"
               }
             },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -794,11 +649,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -806,67 +657,65 @@
         "example": {
           "data": [
             {
-              "id": "slwtksu3yccsd9ihoiny6rso",
-              "tenantId": "b7j0p6",
+              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "tenantId": "fz7rau",
               "entityType": "attachment",
-              "name": "excluding_ugh_besides.svgz",
+              "name": "ugh_besides.svgz",
               "description": null,
-              "keywords": "nam curatio xiphias",
+              "keywords": "vulgo vinum atavus",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "excluding_ugh_besides.svgz",
-              "contentType": "application/vnd.ms-fontobject",
+              "filename": "ugh_besides.svgz",
+              "contentType": "video/webm",
               "convertedContentType": null,
-              "size": "7651256",
-              "originalKey": "uploads/auzy6zwhhoizpinjn9as93qc/excluding_ugh_besides.svgz",
+              "size": "9148253",
+              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-04-19T14:04:35.773Z",
-              "createdBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "modifiedAt": "2024-04-19T14:04:35.773Z",
-              "modifiedBy": "kzmv5qbhdcqeiuvwlosan0fc",
-              "seqAt": 155,
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "seq": 348,
               "stx": {
-                "mutationId": "6pakf4ovzm1ne3h55lgj31d6",
-                "sourceId": "src_3n9apx99a5auvr5cyj5s37ir",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
+                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "fieldTimestamps": {}
               },
-              "organizationId": "njjhhc4mupuqz0iqmny8wdl2"
+              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
             },
             {
-              "id": "pxxbqdej8622zpgo54qw5fqo",
-              "tenantId": "9wwhw5",
+              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "tenantId": "8r85na",
               "entityType": "attachment",
-              "name": "gown.txt",
+              "name": "instead_volleyball.jpe",
               "description": null,
-              "keywords": "denique tum candidus",
+              "keywords": "derelinquo attollo autem",
               "public": false,
               "bucketName": "attachments",
               "groupId": null,
-              "filename": "gown.txt",
-              "contentType": "application/x-sh",
+              "filename": "instead_volleyball.jpe",
+              "contentType": "application/json",
               "convertedContentType": null,
-              "size": "6125227",
-              "originalKey": "uploads/g18wbwob9s8r85nah671ybl6/gown.txt",
+              "size": "9478414",
+              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
               "convertedKey": null,
               "thumbnailKey": null,
               "createdAt": "2024-02-25T13:01:35.301Z",
-              "createdBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "modifiedAt": "2024-02-25T13:01:35.301Z",
-              "modifiedBy": "p3t0ygxx0aa83en3sk1fs1we",
-              "seqAt": 476,
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "seq": 276,
               "stx": {
-                "mutationId": "4dvzpz75e03ldr2ga54hj92y",
-                "sourceId": "src_zr7v1itpc9wztvbcy21q04oq",
-                "version": 1,
-                "fieldVersions": {}
+                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
+                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "fieldTimestamps": {}
               },
-              "organizationId": "81k5rbzt4yq63pob5r5tp1lp"
+              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
             }
           ],
-          "rejectedItemIds": []
+          "rejectedIds": []
         }
       },
       {
@@ -898,6 +747,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -908,16 +764,8 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -927,46 +775,18 @@
           "type": "object",
           "required": true,
           "properties": {
-            "id": {
-              "type": "string",
-              "required": false,
-              "maxLength": 50
-            },
-            "name": {
-              "type": "string",
-              "required": false,
-              "maxLength": 255
-            },
-            "filename": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "contentType": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "size": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "originalKey": {
-              "type": "string",
-              "required": true,
-              "maxLength": 2048
-            },
-            "bucketName": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "name": { "type": "string", "required": false, "maxLength": 255 },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "public": { "type": "boolean", "required": false },
             "groupId": {
               "type": ["string", "null"],
               "required": false,
-              "maxLength": 50
+              "format": "uuid"
             },
             "convertedContentType": {
               "type": ["string", "null"],
@@ -986,13 +806,13 @@
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
               "properties": {
                 "mutationId": {
                   "type": "string",
                   "required": true,
-                  "description": "Unique mutation ID (nanoid)",
-                  "maxLength": 32
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
                 },
                 "sourceId": {
                   "type": "string",
@@ -1000,14 +820,14 @@
                   "description": "Tab/instance identifier for echo prevention",
                   "maxLength": 64
                 },
-                "lastReadVersion": {
-                  "type": "integer",
+                "fieldTimestamps": {
+                  "type": "object",
                   "required": true,
-                  "description": "Entity version when last read (for conflict detection)",
-                  "minimum": 0
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
                 }
               },
-              "ref": "#/components/schemas/StxRequestBase"
+              "ref": "#/components/schemas/StxBase"
             }
           }
         },
@@ -1029,7 +849,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -1039,11 +859,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -1078,6 +894,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1088,16 +911,8 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -1162,6 +977,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1172,25 +994,13 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "query": {
         "properties": {
-          "key": {
-            "type": "string",
-            "required": true,
-            "maxLength": 2048
-          }
+          "key": { "type": "string", "required": true, "maxLength": 2048 }
         }
       }
     }
@@ -1206,45 +1016,43 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A file attachment belonging to an organization.",
+          "description": "A product entity for file attachment metadata.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
               "properties": {
-                "mutationId": { "type": "string", "required": true },
-                "sourceId": { "type": "string", "required": true },
-                "version": { "type": "integer", "required": true },
-                "fieldVersions": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
                   "type": "object",
                   "required": true,
-                  "additionalProperties": { "type": "integer", "required": false }
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
                 }
               },
               "ref": "#/components/schemas/StxBase"
@@ -1254,15 +1062,11 @@
               "required": true,
               "maxLength": 1000000
             },
-            "keywords": {
-              "type": "string",
-              "required": true,
-              "maxLength": 1000000
-            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1270,11 +1074,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1284,10 +1083,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1295,11 +1094,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1309,48 +1103,28 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "seqAt": {
+            "seq": {
               "type": "integer",
               "required": true,
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "public": { "type": "boolean", "required": true },
-            "bucketName": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
-            "filename": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "contentType": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
             "convertedContentType": {
               "type": ["string", "null"],
               "required": true,
               "maxLength": 255
             },
-            "size": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "originalKey": {
-              "type": "string",
-              "required": true,
-              "maxLength": 2048
-            },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
             "convertedKey": {
               "type": ["string", "null"],
               "required": true,
@@ -1361,49 +1135,40 @@
               "required": true,
               "maxLength": 2048
             },
-            "organizationId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "viewCount": {
-              "type": "integer",
-              "required": false,
-              "minimum": 0
-            }
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "viewCount": { "type": "integer", "required": false, "minimum": 0 }
           },
           "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"
         },
         "example": {
-          "id": "og9ynkm3vp2mdgi3oeicogxv",
-          "tenantId": "lphxlo",
+          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "tenantId": "qnt152",
           "entityType": "attachment",
-          "name": "yet_rightfully_lest.ogx",
+          "name": "rightfully_lest_noted.mp3",
           "description": null,
-          "keywords": "damno tenax arx",
+          "keywords": "vereor strenuus verecundia",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
-          "filename": "yet_rightfully_lest.ogx",
-          "contentType": "application/vnd.ms-fontobject",
+          "filename": "rightfully_lest_noted.mp3",
+          "contentType": "video/mp4",
           "convertedContentType": null,
-          "size": "2524242",
-          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
+          "size": "7611296",
+          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
-          "createdBy": "0uwim8y2tppz7th9tol75wjz",
-          "modifiedAt": "2024-10-12T17:43:05.360Z",
-          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "seqAt": 352,
+          "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "updatedAt": "2024-10-12T17:43:05.360Z",
+          "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "seq": 123,
           "stx": {
-            "mutationId": "keuemouu8t58r8fuj3tlenhq",
-            "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
-            "version": 1,
-            "fieldVersions": {}
+            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
+            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "fieldTimestamps": {}
           },
-          "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
+          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
         }
       },
       {
@@ -1435,6 +1200,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1445,21 +1217,9 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       }
     }
@@ -1475,45 +1235,43 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A file attachment belonging to an organization.",
+          "description": "A product entity for file attachment metadata.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["attachment"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata stored on entities for offline and realtime support.",
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
               "properties": {
-                "mutationId": { "type": "string", "required": true },
-                "sourceId": { "type": "string", "required": true },
-                "version": { "type": "integer", "required": true },
-                "fieldVersions": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
                   "type": "object",
                   "required": true,
-                  "additionalProperties": { "type": "integer", "required": false }
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
                 }
               },
               "ref": "#/components/schemas/StxBase"
@@ -1523,15 +1281,11 @@
               "required": true,
               "maxLength": 1000000
             },
-            "keywords": {
-              "type": "string",
-              "required": true,
-              "maxLength": 1000000
-            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1539,11 +1293,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1553,10 +1302,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1564,11 +1313,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1578,48 +1322,28 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "seqAt": {
+            "seq": {
               "type": "integer",
               "required": true,
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "public": { "type": "boolean", "required": true },
-            "bucketName": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
             "groupId": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
-            "filename": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "contentType": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
             "convertedContentType": {
               "type": ["string", "null"],
               "required": true,
               "maxLength": 255
             },
-            "size": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "originalKey": {
-              "type": "string",
-              "required": true,
-              "maxLength": 2048
-            },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
             "convertedKey": {
               "type": ["string", "null"],
               "required": true,
@@ -1630,49 +1354,40 @@
               "required": true,
               "maxLength": 2048
             },
-            "organizationId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "viewCount": {
-              "type": "integer",
-              "required": false,
-              "minimum": 0
-            }
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "viewCount": { "type": "integer", "required": false, "minimum": 0 }
           },
           "ref": "#/components/schemas/Attachment",
           "contentType": "application/json"
         },
         "example": {
-          "id": "og9ynkm3vp2mdgi3oeicogxv",
-          "tenantId": "lphxlo",
+          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "tenantId": "qnt152",
           "entityType": "attachment",
-          "name": "yet_rightfully_lest.ogx",
+          "name": "rightfully_lest_noted.mp3",
           "description": null,
-          "keywords": "damno tenax arx",
+          "keywords": "vereor strenuus verecundia",
           "public": false,
           "bucketName": "attachments",
           "groupId": null,
-          "filename": "yet_rightfully_lest.ogx",
-          "contentType": "application/vnd.ms-fontobject",
+          "filename": "rightfully_lest_noted.mp3",
+          "contentType": "video/mp4",
           "convertedContentType": null,
-          "size": "2524242",
-          "originalKey": "uploads/y6bqnt152wowxrfkyy8dwkbm/yet_rightfully_lest.ogx",
+          "size": "7611296",
+          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
           "convertedKey": null,
           "thumbnailKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
-          "createdBy": "0uwim8y2tppz7th9tol75wjz",
-          "modifiedAt": "2024-10-12T17:43:05.360Z",
-          "modifiedBy": "0uwim8y2tppz7th9tol75wjz",
-          "seqAt": 352,
+          "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "updatedAt": "2024-10-12T17:43:05.360Z",
+          "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "seq": 123,
           "stx": {
-            "mutationId": "keuemouu8t58r8fuj3tlenhq",
-            "sourceId": "src_urk6hu54pnfytf99mpmuhw07",
-            "version": 1,
-            "fieldVersions": {}
+            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
+            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "fieldTimestamps": {}
           },
-          "organizationId": "eswx7d6csd6xo4nqwl7k09e1"
+          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
         }
       },
       {
@@ -1704,6 +1419,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1714,65 +1436,43 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "orgId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "fullResponse": {
+            "required": false,
+            "anyOf": [
+              { "type": "string", "required": false },
+              { "type": "boolean", "required": false }
+            ]
           }
         }
       },
       "body": {
         "type": "object",
         "properties": {
-          "key": {
+          "ops": {
+            "type": "object",
             "required": true,
-            "anyOf": [
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["name"]
-              },
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["originalKey"]
-              }
-            ]
-          },
-          "data": {
-            "required": true,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "number", "required": false },
-              { "type": "boolean", "required": false },
-              {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              },
-              { "type": "null", "required": false }
-            ]
+            "properties": {
+              "name": { "type": "string", "required": false, "maxLength": 255 },
+              "originalKey": { "type": "string", "required": false }
+            }
           },
           "stx": {
             "type": "object",
             "required": true,
-            "description": "Sync transaction metadata sent with mutations for idempotency and conflict detection.",
+            "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
             "properties": {
               "mutationId": {
                 "type": "string",
                 "required": true,
-                "description": "Unique mutation ID (nanoid)",
-                "maxLength": 32
+                "description": "Unique mutation ID",
+                "maxLength": 36
               },
               "sourceId": {
                 "type": "string",
@@ -1780,14 +1480,14 @@
                 "description": "Tab/instance identifier for echo prevention",
                 "maxLength": 64
               },
-              "lastReadVersion": {
-                "type": "integer",
+              "fieldTimestamps": {
+                "type": "object",
                 "required": true,
-                "description": "Entity version when last read (for conflict detection)",
-                "minimum": 0
+                "description": "Per-field HLC timestamps for scalar fields being changed",
+                "additionalProperties": { "type": "string", "required": false }
               }
             },
-            "ref": "#/components/schemas/StxRequestBase"
+            "ref": "#/components/schemas/StxBase"
           }
         },
         "required": true,

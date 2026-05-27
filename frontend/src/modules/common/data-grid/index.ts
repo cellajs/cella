@@ -1,7 +1,6 @@
-import './css-properties.d';
 import './style/data-grid.css';
 
-export * from './cellRenderers';
+export * from './cell-renderers';
 export * from './columns';
 export {
   DataGrid,
@@ -11,13 +10,14 @@ export type {
   CellMouseArgs,
   CellMouseEvent,
   CellRendererProps,
+  CellSelectionMode,
   Column,
   ColumnOrColumnGroup,
   ColumnWidths,
   RenderCellProps,
   RenderHeaderCellProps,
   RenderRowProps,
+  RowSelectionMode,
   RowsChangeData,
-  SelectionMode,
   SortColumn,
 } from './types';

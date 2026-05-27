@@ -1,22 +1,16 @@
 {
-  "name": "@cellajs/cella",
-  "version": "0.0.2",
+  "name": "cella",
+  "version": "0.0.1",
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
-  "description": "Cella is a TypeScript template to create powerful web apps with sync and offline capabilities.",
+  "description": "Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.",
   "keywords": [
-    "template",
-    "monorepo",
+    "starter kit",
     "fullstack",
+    "monorepo",
     "typescript",
-    "hono",
-    "drizzle",
-    "shadcn",
-    "postgres",
-    "react",
-    "vite",
-    "pwa"
+    "cellajs"
   ],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
@@ -28,77 +22,54 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "node prepare.js",
-    "quick": "cross-env pnpm -r --parallel --stream quick",
     "docker": "pnpm --filter backend docker:up --detach",
-    "docker:test": "docker compose --profile test up -d --wait db_test",
-    "docker:test:down": "docker compose --profile test down",
+    "docker:test": "docker compose -f backend/compose.yaml --profile test up -d --wait db_test",
+    "docker:test:down": "docker compose -f backend/compose.yaml --profile test down",
     "stop": "pnpm -r --parallel --stream stop",
     "generate": "pnpm --filter backend generate",
-    "generate:openapi": "pnpm --filter backend generate-openapi && pnpm --filter frontend generate-client",
+    "sdk": "pnpm --filter backend generate:openapi && pnpm --filter sdk generate:sdk",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm clean && cross-env DEV_MODE=full pnpm -r --parallel --stream dev",
     "dev:core": "pnpm clean && cross-env DEV_MODE=core pnpm -r --parallel --stream dev",
-    "offline": "cross-env DEV_MODE=full pnpm -r --parallel --stream --filter backend --filter @cella/cdc dev & pnpm --filter frontend offline",
-    "offline:watch": "cross-env DEV_MODE=full pnpm -r --parallel --stream --filter backend --filter @cella/cdc dev & pnpm --filter frontend offline:watch",
+    "dev:migration": "pnpm clean && cross-env DEV_MODE=core DATABASE_URL=postgres://postgres:postgres@0.0.0.0:5555/postgres DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5555/postgres pnpm -r --parallel --stream dev",
     "tunnel": "pnpm clean && cross-env pnpm -r --parallel --stream tunnel",
-    "dev:proxy": "pnpm clean && cross-env DEV_MODE=full pnpm -r --parallel --stream --filter backend --filter @cella/cdc --filter frontend --filter @cella/proxy dev",
+    "dev:proxy": "pnpm clean && cross-env DEV_MODE=full pnpm -r --parallel --stream --filter backend --filter cdc --filter frontend --filter proxy dev",
     "seed": "pnpm --filter backend seed",
-    "check": "pnpm generate:openapi && pnpm ts && pnpm lint:fix",
+    "check": "concurrently -g 'pnpm sdk' 'pnpm --filter backend ts' && pnpm -r --filter '!raak' --filter '!backend' ts && pnpm lint:fix",
     "lint": "pnpm biome check .",
     "lint:fix": "pnpm biome check --write .",
-    "ts": "pnpm --filter backend ts && pnpm --filter '!backend' ts",
-    "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf",
+    "ts": "pnpm -r --filter '!raak' ts",
+    "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf && pnpm --filter cdc tsperf && pnpm --filter yjs tsperf",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
     "build:dev": "pnpm -r --parallel build:dev",
     "build:staging": "pnpm -r --parallel build:staging",
     "start": "pnpm -r --parallel start",
     "test": "pnpm test:core",
-    "test:basic": "cross-env TEST_MODE=basic vitest run",
     "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run",
     "test:full": "pnpm docker:test && cross-env TEST_MODE=full vitest run",
-    "test:watch": "pnpm docker:test && cross-env TEST_MODE=core vitest",
-    "test:update": "cross-env TEST_MODE=basic vitest run -u",
-    "cella": "pnpm --filter @cellajs/cli cella"
+    "test:update": "pnpm docker:test && cross-env TEST_MODE=core vitest run -u",
+    "cella": "pnpm --filter @cellajs/cli cella",
+    "offline": "cross-env DEV_MODE=full pnpm -r --parallel --stream --filter backend --filter cdc dev & pnpm --filter frontend offline",
+    "story": "pnpm --filter frontend storybook",
+    "bench": "pnpm -C bench bench"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.6",
-    "@evilmartians/lefthook": "^2.1.4",
-    "@typescript/native-preview": "7.0.0-dev.20260302.1",
+    "@biomejs/biome": "^2.4.15",
+    "@evilmartians/lefthook": "^2.1.6",
+    "@typescript/native-preview": "7.0.0-dev.20260526.1",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "knip": "^5.86.0",
+    "knip": "^6.14.1",
     "rimraf": "^6.1.3",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
-  },
-  "dependencies": {
-    "dotenv": "^17.3.1"
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   },
   "overrides": {
     "@types/node": "24.10.13",
     "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3"
+    "@types/react-dom": "19.2.3",
+    "yjs": "13.6.30"
   },
-  "pnpm": {
-    "packageExtensions": {
-      "@hookform/resolvers@5.2.2": {
-        "peerDependencies": {
-          "zod": "*"
-        }
-      }
-    },
-    "patchedDependencies": {
-      "slugify@1.6.6": "patches/slugify@1.6.6.patch",
-      "dexie@4.3.0": "patches/dexie@4.3.0.patch"
-    },
-    "overrides": {
-      "esbuild@<=0.24.2": ">=0.25.0",
-      "eslint@<9.26.0": ">=9.26.0",
-      "seroval@<1.4.1": ">=1.4.1",
-      "seroval@<=1.4.0": ">=1.4.1",
-      "serialize-javascript@<=7.0.2": ">=7.0.3",
-      "hono@<4.12.7": ">=4.12.7"
-    }
-  }
+  "packageManager": "pnpm@11.1.3"
 }

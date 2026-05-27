@@ -15,12 +15,6 @@
 !backend/tsup.config.ts
 !backend/tsconfig.json
 
-# Config package
-!config/
-
-# Tracing package
-!packages/tracing/
-
 # Locales
 !locales/
 

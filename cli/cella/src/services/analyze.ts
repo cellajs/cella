@@ -5,8 +5,8 @@
  * Uses the same merge-engine as sync, but discards the result.
  */
 
-import pc from 'picocolors';
 import type { MergeResult, RuntimeConfig } from '../config/types';
+import pc from '../utils/colors';
 import {
   createSpinner,
   type LinkOptions,

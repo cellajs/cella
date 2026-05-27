@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { appCache } from '#/middlewares/entity-cache';
 import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { httpCache } from '#/middlewares/http-cache';
@@ -15,6 +15,7 @@ import {
 import {
   batchResponseSchema,
   errorResponseRefs,
+  fullResponseQuerySchema,
   idInTenantOrgParamSchema,
   idsWithStxBodySchema,
   paginationSchema,
@@ -35,7 +36,7 @@ const attachmentRoutes = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    tags: ['attachments'],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachments',
     description: 'Returns a paginated list of *attachments* for the organization.',
     request: {
@@ -63,8 +64,8 @@ const attachmentRoutes = {
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['attachments'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Create attachments',
     description:
       'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
@@ -99,8 +100,8 @@ const attachmentRoutes = {
     method: 'get',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xCache: appCache(),
-    tags: ['attachments'],
+    xCache: [appCache()],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
     description: 'Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.',
     request: {
@@ -122,12 +123,13 @@ const attachmentRoutes = {
     method: 'put',
     path: '/{id}',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['attachments'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Update attachment',
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
     request: {
       params: idInTenantOrgParamSchema,
+      query: fullResponseQuerySchema,
       body: {
         required: true,
         content: { 'application/json': { schema: attachmentUpdateStxBodySchema } },
@@ -149,8 +151,8 @@ const attachmentRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['attachments'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Delete attachments',
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
     request: {
@@ -180,9 +182,9 @@ const attachmentRoutes = {
     method: 'get',
     path: '/presigned-url',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    xRateLimiter: presignedUrlLimiter,
-    xCache: httpCache({ scope: 'private', maxAge: 3600 }),
-    tags: ['attachments'],
+    xRateLimiter: [presignedUrlLimiter],
+    xCache: [httpCache({ scope: 'private', maxAge: 3600 })],
+    tags: ['attachments', 'cella', 'product'],
     summary: 'Get presigned URL',
     description:
       'Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.',

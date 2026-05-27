@@ -11,26 +11,26 @@ export function CallToAction() {
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">
-      <p className="font-semibold text-4xl sm:text-5xl lg:text-6xl leading-16 mb-12">
+      <p className="mb-12 font-semibold text-4xl leading-16 sm:text-5xl lg:text-6xl">
         {t('about:call_to_action.intro')}
       </p>
-      <p className="text-2xl sm:text-4xl leading-[3.3rem] mb-12">
-        <span className="opacity-50 mr-2">“</span>
-        <span className="font-light">{t('about:call_to_action.start')}</span>
-        <span className="opacity-50 ml-2">”</span>
-        <span className="opacity-50 ml-4 mr-2">—</span>
+      <p className="mb-12 text-2xl leading-[3.3rem] sm:text-4xl">
+        <span className="mr-2 opacity-50">“</span>
+        <span>{t('about:call_to_action.start')}</span>
+        <span className="ml-2 opacity-50">”</span>
+        <span className="mr-2 ml-4 opacity-50">—</span>
         {t('about:call_to_action.finish')}
       </p>
-      <div className="flex flex-col sm:flex-row z-10 mx-auto mt-6 mb-12 gap-4">
+      <div className="z-10 mx-auto mt-6 mb-12 flex flex-col gap-4 sm:flex-row">
         <Button
           ref={ref}
           variant="ghost"
           size="xl"
           onClick={() => contactFormHandler(ref)}
-          className="glow-button bg-background/95 px-10 rounded-full! relative hover:bg-background! active:bg-background"
+          className="glow-button relative rounded-full! bg-background/95 px-10 hover:bg-background! active:bg-background"
           aria-label="Contact"
         >
-          {t('common:contact_us')}
+          {t('c:contact_us')}
         </Button>
         <Button
           variant="plain"
@@ -39,7 +39,7 @@ export function CallToAction() {
           className="flex gap-1 rounded-full! px-10"
           aria-label="Contact"
         >
-          {t('common:chat_with_us')}
+          {t('c:chat_with_us')}
         </Button>
       </div>
     </div>

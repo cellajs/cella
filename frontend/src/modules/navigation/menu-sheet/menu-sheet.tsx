@@ -1,34 +1,24 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { SearchIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
 import { appConfig } from 'shared';
 import { menuSectionsSchema } from '~/menu-config';
-import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { filterMenuItems, getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
-import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
+import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
-import { useUserStore } from '~/store/user';
+import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
+import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
 export const MenuSheet = () => {
-  const { t } = useTranslation();
   const { user } = useUserStore();
-
   const { mutateAsync } = useMemberUpdateMutation();
 
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isSearchActive, setSearchActive] = useState<boolean>(false);
-
   const { menu, isLoading } = useMenu(user?.id);
-
-  const searchResults = useMemo(() => filterMenuItems(menu, searchTerm), [menu, searchTerm]);
 
   // monitoring drop event
   useEffect(() => {
@@ -52,7 +42,7 @@ export const MenuSheet = () => {
             sourceItem.entityType,
             sourceItem.membership.archived,
             sourceItem.id,
-            targetData.order,
+            targetData.displayOrder,
             edge,
           );
 
@@ -63,7 +53,7 @@ export const MenuSheet = () => {
             path: {
               id: sourceItem.membership.id,
               tenantId: sourceItem.tenantId,
-              orgId: sourceItem.membership.organizationId || sourceItem.id,
+              organizationId: sourceItem.membership.organizationId || sourceItem.id,
             },
             body: { displayOrder: newOrder },
             entityId: sourceItem.id,
@@ -79,12 +69,6 @@ export const MenuSheet = () => {
   // Show skeleton when loading or no user data yet
   if (isLoading || !user) return <Spinner />;
 
-  const searchResultsListItems = () => {
-    return searchResults.length > 0
-      ? searchResults.map((item) => <MenuSheetItem key={item.id} searchResults item={item} />)
-      : [];
-  };
-
   const renderedSections = appConfig.menuStructure
     .map(({ entityType }) => {
       const menuData = menu[entityType];
@@ -96,29 +80,15 @@ export const MenuSheet = () => {
     .filter((el) => el !== null);
 
   return (
-    <div data-search={!!searchTerm} className="group/menu bg-card w-full py-3 px-3 gap-1 min-h-screen flex flex-col">
+    <div className="group/menu flex min-h-screen w-full flex-col bg-card">
       <FocusTarget target="sheet" />
 
-      <MenuSheetHeader
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSearchActive={isSearchActive}
-        setSearchActive={setSearchActive}
-      />
-      <div className="mt-2 flex flex-col gap-1 group-data-[search=false]/menu:hidden">
-        {searchResultsListItems().length > 0 ? (
-          searchResultsListItems()
-        ) : (
-          <ContentPlaceholder
-            icon={SearchIcon}
-            title="common:no_resource_found"
-            titleProps={{ resource: t('common:results').toLowerCase() }}
-          />
-        )}
-      </div>
-      {!searchTerm && <>{renderedSections}</>}
+      <MenuSheetHeader />
+      {renderedSections}
+      <span className="mt-10" />
+      <MenuSheetPanels />
       {/* Keyboard-only skip links at end of sheet */}
-      <div className="mt-auto flex flex-col">
+      <div className="flex flex-col focus-within:p-3">
         <FocusBridge direction="to-content" className="focus:relative" />
         <FocusBridge direction="to-sidebar" className="focus:relative" />
       </div>

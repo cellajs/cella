@@ -108,9 +108,9 @@ export const CustomRenderOption: Story = {
           value={value}
           onChange={setValue}
           renderOption={(option) => (
-            <div className="flex items-center justify-between w-full">
+            <div className="flex w-full items-center justify-between">
               <span className="font-medium">{option.label}</span>
-              <span className="text-xs text-muted-foreground">ID: {option.value}</span>
+              <span className="text-muted-foreground text-xs">ID: {option.value}</span>
             </div>
           )}
         />
@@ -140,9 +140,9 @@ export const Disabled: Story = {
 };
 
 const placeholders: ComboboxSelectProps['placeholders'] = {
-  trigger: 'common:select_resource' as TKey,
-  search: 'common:search' as TKey,
-  notFound: 'common:no_resource_found' as TKey,
+  trigger: 'c:select_resource' as TKey,
+  search: 'c:search' as TKey,
+  notFound: 'c:no_resource_found' as TKey,
 };
 
 /**
@@ -189,9 +189,9 @@ export const CustomPlaceholders: Story = {
           value={value}
           onChange={setValue}
           placeholders={{
-            trigger: 'common:select_resource' as TKey,
-            search: 'common:search' as TKey,
-            notFound: 'common:no_resource_found' as TKey,
+            trigger: 'c:select_resource' as TKey,
+            search: 'c:search' as TKey,
+            notFound: 'c:no_resource_found' as TKey,
           }}
         />
       </div>
@@ -232,7 +232,7 @@ export const Multiple: Story = {
     const [value2, setValue2] = useState('');
 
     return (
-      <div className="space-y-4 w-80">
+      <div className="w-80 space-y-4">
         <ComboboxSelect {...args} options={args.options} value={value1} onChange={setValue1} />
         <ComboboxSelect {...args} options={args.options} value={value2} onChange={setValue2} renderAvatar={true} />
       </div>

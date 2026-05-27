@@ -3,6 +3,7 @@ import { UsersIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -14,7 +15,6 @@ import { useColumns } from '~/modules/memberships/members-table/members-columns'
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
-import { OrganizationLayoutRoute } from '~/routes/organization-routes';
 
 const LIMIT = appConfig.requestLimits.members;
 
@@ -34,14 +34,14 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   // Get organization from route context - MembersTable is always rendered within OrganizationLayoutRoute
-  const { organization } = OrganizationLayoutRoute.useRouteContext();
+  const { organization } = useOrganizationLayoutContext();
 
   const updateMemberMembership = useMemberUpdateMutation();
 
   const entityId = contextEntity.id;
   const entityType = contextEntity.entityType;
   const tenantId = organization.tenantId;
-  const orgId = organization.id;
+  const organizationId = organization.id;
 
   // Check if user can update this context entity (and thus manage its members)
   const canUpdate = contextEntity.can?.[contextEntity.entityType]?.update === true;
@@ -55,7 +55,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
   const [columns, setColumns] = useColumns(canUpdate, isSheet);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, orgId, ...search, limit });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit });
 
   const {
     data: rows,
@@ -79,7 +79,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
         path: {
           id: changedRows[index].membership.id,
           tenantId,
-          orgId,
+          organizationId,
         },
         body: { role: changedRows[index].membership.role },
         entityId,
@@ -140,8 +140,8 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
           NoRowsComponent: (
             <ContentPlaceholder
               icon={UsersIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:members').toLowerCase() }}
+              title="c:no_resource_yet"
+              titleProps={{ resource: t('c:members').toLowerCase() }}
             />
           ),
         }}

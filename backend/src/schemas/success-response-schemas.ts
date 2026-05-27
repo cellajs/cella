@@ -21,17 +21,17 @@ export const paginationSchema = <O, I>(schema: z.ZodType<O, I>) =>
  * @example
  * // For create operations - returns created items
  * const pagesResponseSchema = batchResponseSchema(pageSchema);
- * // Result: { data: Page[], rejectedItemIds: string[], rejectionReasons?: Record<string, string[]> }
+ * // Result: { data: Page[], rejectedIds: string[], rejectionReasons?: Record<string, string[]> }
  *
  * @example
  * // For delete operations - returns empty data
  * const deleteResponseSchema = batchResponseSchema();
- * // Result: { data: [], rejectedItemIds: string[], rejectionReasons?: Record<string, string[]> }
+ * // Result: { data: [], rejectedIds: string[], rejectionReasons?: Record<string, string[]> }
  */
 export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
   z.object({
     data: itemSchema ? z.array(itemSchema) : z.tuple([]).rest(z.never()),
-    rejectedItemIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
+    rejectedIds: z.array(z.string()).describe('Identifiers of items that could not be processed'),
     rejectionReasons: z
       .record(z.string(), z.array(z.string()))
       .optional()
@@ -41,6 +41,6 @@ export const batchResponseSchema = <T extends z.ZodTypeAny>(itemSchema?: T) =>
 /** BatchResponse type for delete operations (no data items) */
 export interface BatchResponseEmpty {
   data: [];
-  rejectedItemIds: string[];
+  rejectedIds: string[];
   rejectionReasons?: Record<string, string[]>;
 }

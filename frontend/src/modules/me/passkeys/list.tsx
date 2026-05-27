@@ -6,7 +6,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export function PasskeysList() {
   const { t } = useTranslation();
@@ -22,19 +22,19 @@ export function PasskeysList() {
   const hasPasskey = passkeys.length > 0;
 
   const handleUnlinkPasskey = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
     if (user.mfaRequired && passkeys.length <= 1)
-      return toaster(t('common:unlink_mfa_last', { method: 'the last passkey' }), 'info');
+      return toaster(t('c:unlink_mfa_last', { method: 'the last passkey' }), 'info');
     deletePasskey({ path: { id } });
   };
   return (
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">
         <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <PlusIcon className="size-4 mr-2" /> : <Fingerprint className="size-4 mr-2" />}
+          {hasPasskey ? <PlusIcon className="mr-2 size-4" /> : <Fingerprint className="mr-2 size-4" />}
           {hasPasskey
-            ? t('common:add_resource', { resource: t('common:passkey').toLowerCase() })
-            : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
+            ? t('c:add_resource', { resource: t('c:passkey').toLowerCase() })
+            : t('c:create_resource', { resource: t('c:passkey').toLowerCase() })}
         </Button>
       </div>
       <div className="flex flex-col gap-2 has-first:mt-4">
@@ -50,7 +50,7 @@ export function PasskeysList() {
             />
           )}
           initialDisplayCount={3}
-          expandText="common:more"
+          expandText="c:more"
         />
       </div>
     </div>

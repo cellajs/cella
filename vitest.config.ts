@@ -17,20 +17,12 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     projects: [
-      // Reference folders directly - Vitest picks up their vitest.config.ts
       'backend',
       'shared',
-      // Frontend: inline config for node tests only (Storybook tests run separately)
-      {
-        test: {
-          name: 'frontend',
-          root: './frontend',
-          include: ['vite/**/*.test.ts'],
-          environment: 'node',
-          setupFiles: ['./vitest.setup.ts'],
-          passWithNoTests: true,
-        },
-      },
+      'yjs',
+      'cdc',
+      'infra',
+      'frontend',
     ],
   },
 });

@@ -1,8 +1,6 @@
-import { zGetOrganizationsData } from '~/api.gen/zod.gen';
+import { zGetOrganizationsQuery } from 'sdk/zod.gen';
 
 /**
  * Search params schema for organizations route.
  */
-export const organizationsRouteSearchParamsSchema = zGetOrganizationsData.shape.query
-  .unwrap()
-  .pick({ q: true, sort: true, order: true });
+export const organizationsRouteSearchParamsSchema = zGetOrganizationsQuery.pick({ q: true, sort: true, order: true });

@@ -1,10 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDown, ChevronDownIcon, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
+import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import { cn } from '~/utils/cn';
 import {
   type DefinitionIndex,
   getTypeCodeForResponse,
@@ -13,7 +12,7 @@ import {
   zodIndexQueryOptions,
 } from '../helpers/extract-types';
 import { getStatusColor } from '../helpers/get-status-color';
-import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
+import { schemasQueryOptions } from '../query';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
@@ -43,7 +42,7 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
   const { t } = useTranslation();
 
   if (responses.length === 0) {
-    return <div className="text-sm text-muted-foreground py-2">{t('common:docs.no_responses_defined')}</div>;
+    return <div className="py-2 text-muted-foreground text-sm">{t('c:docs.no_responses_defined')}</div>;
   }
 
   return (
@@ -52,18 +51,16 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="py-2 group opacity-80 hover:opacity-100 group-data-[open]:opacity-100">
-              <div className="flex items-center justify-between w-full pr-2 gap-3">
+            <AccordionTrigger className="group py-2 opacity-80 hover:opacity-100 group-data-open:opacity-100">
+              <div className="flex w-full items-center justify-between gap-3 pr-2">
                 <div
-                  className={`font-mono text-sm font-semibold px-2 py-0.5 rounded group-data-[open]:opacity-100 ${getStatusColor(response.status)}`}
+                  className={`rounded px-2 py-0.5 font-mono font-semibold text-sm decoration-transparent group-data-open:opacity-100 ${getStatusColor(response.status)}`}
                 >
                   {response.status}
                 </div>
-                <div className="text-sm text-muted-foreground grow group-data-[open]:text-foreground">
-                  {response.description}
-                </div>
+                <div className="grow text-foreground text-sm group-data-open:text-primary">{response.description}</div>
                 {response.name && (
-                  <span className="max-md:hidden truncate text-xs font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                  <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs max-md:hidden">
                     {response.name}
                   </span>
                 )}
@@ -78,7 +75,7 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
                   example={response.example}
                 />
               ) : (
-                <div className="p-3 text-sm text-muted-foreground">{t('common:docs.no_response_body')}</div>
+                <div className="p-3 text-muted-foreground text-sm">{t('c:docs.no_response_body')}</div>
               )}
             </AccordionContent>
           </AccordionItem>
@@ -98,7 +95,6 @@ interface OperationResponsesProps {
  */
 export const OperationResponses = ({ detail }: OperationResponsesProps) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
@@ -107,17 +103,16 @@ export const OperationResponses = ({ detail }: OperationResponsesProps) => {
   const responses = detail?.responses ?? [];
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
-      <CollapsibleTrigger className="flex items-center gap-2 group w-full text-left">
-        <h4 className="text-sm font-medium">{t('common:docs.responses')}</h4>
-        <ChevronDownIcon
-          className={cn(
-            'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
-            isOpen && 'rotate-180',
-          )}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+    <Collapsible defaultOpen className="mt-8">
+      <CollapsibleTrigger
+        render={
+          <Button variant="ghost" size="sm" className="group w-full justify-start gap-2">
+            <span className="font-medium text-sm">{t('c:docs.responses')}</span>
+            <ChevronDownIcon className="size-4 opacity-40 transition-transform duration-200 group-hover:opacity-70 group-data-panel-open:rotate-180" />
+          </Button>
+        }
+      />
+      <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
         <div className="mt-2">
           <ResponsesAccordion
             responses={responses}
@@ -129,40 +124,5 @@ export const OperationResponses = ({ detail }: OperationResponsesProps) => {
         </div>
       </CollapsibleContent>
     </Collapsible>
-  );
-};
-
-interface TagExpandButtonProps {
-  tagName: string;
-  isOpen: boolean;
-}
-
-/**
- * Button content that triggers data load via useSuspenseQuery.
- * When wrapped in Suspense, shows loading state until data is ready.
- */
-export const TagExpandButtonContent = ({ tagName, isOpen }: TagExpandButtonProps) => {
-  const { t } = useTranslation();
-  // This triggers the Suspense - data will be cached for when content renders
-  useSuspenseQuery(tagDetailsQueryOptions(tagName));
-
-  return (
-    <span className="contents group" data-open={isOpen}>
-      {t('common:docs.hide_details')}
-      <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 opacity-50 group-data-[open=true]:rotate-180" />
-    </span>
-  );
-};
-
-/**
- * Loading fallback for the expand button - shows spinner instead of chevron
- */
-export const TagExpandButtonLoading = () => {
-  const { t } = useTranslation();
-  return (
-    <>
-      {t('common:docs.show_details')}
-      <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
-    </>
   );
 };

@@ -1,0 +1,55 @@
+/**
+ * Hybrid Logical Clock for per-tab causal ordering.
+ * Each browser tab has its own HLC instance.
+ *
+ * Format: "millis:counter:source" — lexicographic comparison gives causal ordering.
+ */
+
+import { hashSourceId } from 'shared/hash-source-id';
+import { uuidv7 } from 'uuidv7';
+
+/**
+ * Unique identifier for this browser tab/instance.
+ * Generated once per page load, used for:
+ * - Mutation source tracking (`stx.sourceId`)
+ * - "Is this mine?" checks on stream notifications
+ */
+export const sourceId = uuidv7();
+
+// Module-scoped state — one clock per tab
+let lastTimestamp = 0;
+let lastCounter = 0;
+
+// Derive 5-char hash from sourceId for compact HLC strings
+const sourceHash = hashSourceId(sourceId);
+
+/**
+ * Create an HLC string for this tab.
+ * Monotonically increasing within a tab — safe for concurrent field edits.
+ */
+export function createHLC(): string {
+  const now = Date.now();
+  if (now > lastTimestamp) {
+    lastTimestamp = now;
+    lastCounter = 0;
+  } else {
+    lastCounter++;
+  }
+  const ts = String(lastTimestamp);
+  const cnt = String(lastCounter).padStart(4, '0');
+  return `${ts}:${cnt}:${sourceHash}`;
+}
+
+/**
+ * Generate HLC timestamps for a set of field names.
+ * All fields in a single mutation get the same HLC (atomic update).
+ */
+export function createFieldTimestamps(fieldNames: string[]): Record<string, string> {
+  if (fieldNames.length === 0) return {};
+  const hlc = createHLC();
+  const timestamps: Record<string, string> = {};
+  for (const name of fieldNames) {
+    timestamps[name] = hlc;
+  }
+  return timestamps;
+}

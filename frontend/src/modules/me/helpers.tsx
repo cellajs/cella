@@ -1,6 +1,9 @@
-import { getMe, getMyAuth } from '~/api.gen';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
+import { getMe, getMyAuth, startImpersonation, stopImpersonation } from 'sdk';
+import { meKeys } from '~/modules/me/query';
+import { useUIStore } from '~/modules/ui/ui-store';
+import { useUserStore } from '~/modules/user/user-store';
+import { queryClient } from '~/query/query-client';
+import { appStreamManager } from '~/query/realtime/stream-store';
 
 /**
  * Retrieves the current user's information and updates the user store.
@@ -24,6 +27,37 @@ export const getAndSetMe = async () => {
 export const getAndSetMeAuthData = async () => {
   const authInfo = await getMyAuth();
   return authInfo;
+};
+
+/**
+ * Refresh me/membership caches and reconnect SSE so the active user's
+ * role and memberships are picked up after switching identity.
+ */
+const refreshIdentityCaches = async () => {
+  // Remove stale user and membership caches so fresh data is fetched for the new identity
+  queryClient.removeQueries({ queryKey: meKeys.all });
+  queryClient.removeQueries({ queryKey: meKeys.memberships });
+  await getAndSetMe();
+  // Reconnect SSE so the subscriber uses the new role and memberships
+  appStreamManager.reconnect();
+};
+
+/**
+ * Start impersonating the given user and refresh local identity state.
+ */
+export const startImpersonationFlow = async (targetUserId: string) => {
+  await startImpersonation({ query: { targetUserId } });
+  useUIStore.getState().setImpersonating(true);
+  await refreshIdentityCaches();
+};
+
+/**
+ * Stop impersonation and refresh local identity state back to the admin user.
+ */
+export const stopImpersonationFlow = async () => {
+  await stopImpersonation();
+  useUIStore.getState().setImpersonating(false);
+  await refreshIdentityCaches();
 };
 
 /**

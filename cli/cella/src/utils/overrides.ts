@@ -7,8 +7,8 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import pc from 'picocolors';
 import type { CellaCliConfig } from '../config/types';
+import { warningMark } from './display';
 
 /**
  * Check if a pattern contains glob characters.
@@ -174,7 +174,7 @@ export function validateOverrides(
  */
 export function printWarnings(warnings: ConfigWarning[]): void {
   for (const warning of warnings) {
-    console.info(`${pc.yellow('⚠')} ${warning.message}`);
+    console.info(`${warningMark} ${warning.message}`);
   }
 }
 

@@ -11,6 +11,7 @@ import { type AnyColumn, asc, desc, type SQLWrapper } from 'drizzle-orm';
 export const getOrderColumn = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>(
   sort: U | undefined,
   def: T[U],
+  // biome-ignore lint/style/useDefaultParameterLast: param order matches the URL query (sort, column, order, options); default kept for ~12 call-sites that omit it.
   order: 'asc' | 'desc' = 'asc',
   sortOptions: T,
 ) => {

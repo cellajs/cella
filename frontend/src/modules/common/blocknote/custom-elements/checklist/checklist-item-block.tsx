@@ -3,7 +3,6 @@ import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 import { CheckSquareIcon } from 'lucide-react';
 import { nanoid } from 'shared/nanoid';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 
@@ -23,7 +22,7 @@ const checklistExtensions = createExtension({
 
       // Empty checklist item → convert to paragraph
       if (blockInfo.blockContent.node.childCount === 0) {
-        editor.updateBlock(editor.getTextCursorPosition().block, { type: 'paragraph', props: {} } as any);
+        editor.updateBlock(editor.getTextCursorPosition().block, { type: 'paragraph', props: {} });
         return true;
       }
 
@@ -38,7 +37,7 @@ const checklistExtensions = createExtension({
           // (render component auto-assigns a fresh checkboxId when it's empty)
           tr.split(pos, 2, [
             { type: info.bnBlock.node.type, attrs: {} },
-            { type: info.blockContent.node.type, attrs: {} },
+            { type: info.blockContent.node.type, attrs: { checkboxId: nanoid(12) } },
           ]);
         });
         return true;
@@ -50,31 +49,33 @@ const checklistExtensions = createExtension({
   inputRules: [
     {
       find: /^\s?\[\s*]\s$/,
-      replace: () => ({ type: 'checklistItem' as any, props: { checkboxId: nanoid(12) } }),
+      replace: () => ({ type: 'checklistItem' as const, props: { checkboxId: nanoid(12) } }),
     },
     {
       find: /^\s?\[[Xx]]\s$/,
-      replace: () => ({ type: 'checklistItem' as any, props: { checkboxId: nanoid(12) } }),
+      replace: () => ({ type: 'checklistItem' as const, props: { checkboxId: nanoid(12) } }),
     },
   ],
 });
 
-export const checklistItemBlock = createReactBlockSpec(
-  {
-    type: 'checklistItem' as const,
-    propSchema: {
-      textAlignment: defaultProps.textAlignment,
-      textColor: defaultProps.textColor,
-      checkboxId: { default: '' },
-    },
-    content: 'inline',
+export const checklistItemConfig = {
+  type: 'checklistItem' as const,
+  propSchema: {
+    textAlignment: defaultProps.textAlignment,
+    textColor: defaultProps.textColor,
+    checkboxId: { default: '' as string },
+    checked: { default: false as boolean },
   },
+  content: 'inline' as const,
+};
+
+export const checklistItemBlock = createReactBlockSpec(
+  checklistItemConfig,
   {
     meta: { isolating: false },
     render: (props) => <ChecklistItemRender {...props} />,
-    toExternalHTML: ({ block, contentRef, editor }) => {
-      const checkboxes = editor.getExtension(checkboxesExtension)?.store?.state?.checkboxes;
-      const isChecked = checkboxes?.find((c: { id: string }) => c.id === block.props.checkboxId)?.checked ?? false;
+    toExternalHTML: ({ block, contentRef }) => {
+      const isChecked = block.props.checked ?? false;
       return (
         <div className="checklist-item" data-checked={isChecked}>
           <div contentEditable={false} className="checklist-checkbox-wrapper">
@@ -91,7 +92,7 @@ export const checklistItemBlock = createReactBlockSpec(
       );
     },
   },
-  [checklistExtensions] as any,
+  [checklistExtensions],
 );
 
 // Slash menu item — inserts a checklistItem with a pre-generated checkboxId
@@ -100,7 +101,7 @@ export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
   key: 'checklistItem',
   onItemClick: () => {
     insertOrUpdateBlockForSlashMenu(editor, {
-      type: 'checklistItem' as any,
+      type: 'checklistItem' as const,
       props: { checkboxId: nanoid(12) },
     });
   },
@@ -112,6 +113,6 @@ export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
 // Side menu item for block type switching
 export const insertSideChecklistItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Todos',
-  type: 'checklistItem' as any,
+  type: 'checklistItem' as const,
   icon: CheckSquareIcon as unknown as IconType,
 });

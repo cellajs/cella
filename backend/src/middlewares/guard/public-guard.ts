@@ -1,5 +1,5 @@
+import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { xMiddleware } from '#/docs/x-middleware';
 
 /**
  * Middleware for routes that require no authentication (auth, webhooks, etc.).

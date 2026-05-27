@@ -2,13 +2,16 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+// biome-ignore lint/style/noRestrictedImports: colocated mutation — imperative leave-entity flow tied to confirmation dialog.
+import { type ContextEntityBase, deleteMyMembership } from 'sdk';
 import { appConfig } from 'shared';
-import { type ContextEntityBase, deleteMyMembership } from '~/api.gen';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { cacheRemove } from '~/query/basic/cache-mutations';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
-import { invalidateContextList, invalidateMemberships } from '~/query/realtime/membership-ops';
+import { invalidateMemberships } from '~/query/realtime/membership-ops';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = {
@@ -33,19 +36,16 @@ export const LeaveEntityButton = ({
       return await deleteMyMembership({ query: { entityId, entityType: contextEntity.entityType } });
     },
     onSuccess: () => {
-      toaster(t('common:success.you_left_entity', { entity: contextEntity.entityType }), 'success');
+      toaster(t('c:success.you_left_entity', { entity: contextEntity.entityType }), 'success');
       navigate({ to: redirectPath, replace: true });
 
-      // Clear related cache entries for this specific entity
-      queryClient.removeQueries({
-        predicate: ({ queryKey }) =>
-          queryKey.includes(contextEntity.entityType) &&
-          queryKey.some((k) => k === contextEntity.id || k === contextEntity.slug),
-      });
+      // Directly remove entity from list cache so menu updates immediately
+      const keys = getEntityQueryKeys(contextEntity.entityType);
+      cacheRemove(keys.list.base, [contextEntity]);
+      queryClient.invalidateQueries({ queryKey: keys.detail.base });
 
-      // Invalidate memberships and entity list so enrichment subscriber rebuilds menu
+      // Invalidate memberships so enrichment subscriber rebuilds menu
       invalidateMemberships();
-      invalidateContextList(contextEntity.entityType);
 
       callback?.({ status: 'success' });
     },
@@ -53,7 +53,7 @@ export const LeaveEntityButton = ({
 
   const handleLeave = () => {
     if (!onlineManager.isOnline()) {
-      toaster(t('common:action.offline.text'), 'warning');
+      toaster(t('c:action.offline.text'), 'warning');
       return;
     }
     leaveEntity();
@@ -70,11 +70,11 @@ export const LeaveEntityButton = ({
       onClick={handleLeave}
       onKeyDown={handleKeyDown}
       {...buttonProps}
-      className={cn('flex justify-start gap-2 items-center w-full rounded-md', buttonProps?.className)}
+      className={cn('flex w-full items-center justify-start gap-2 rounded-md', buttonProps?.className)}
       aria-label="Leave"
     >
       <UserRoundXIcon size={16} />
-      <span className="ml-1">{t('common:leave')}</span>
+      <span className="ml-1">{t('c:leave')}</span>
     </Button>
   );
 };

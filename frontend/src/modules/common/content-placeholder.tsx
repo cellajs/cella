@@ -24,10 +24,10 @@ export function ContentPlaceholder({
 }: Props) {
   const { t } = useTranslation();
 
-  const titleText = t(title, { ...titleProps, returnObjects: false });
+  const titleText = t(title, titleProps as Record<string, unknown>);
 
   return (
-    <div className={cn('flex flex-col items-center w-full text-center p-8 h-full justify-center relative', className)}>
+    <div className={cn('relative flex h-full w-full flex-col items-center justify-center p-8 text-center', className)}>
       {Icon && <Icon strokeWidth={0.7} size={80} className="opacity-50" />}
       <p className="mt-4 text-sm opacity-60">{titleText}</p>
       {children && <div className="mt-8">{children}</div>}

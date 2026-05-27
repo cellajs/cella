@@ -2,26 +2,26 @@ import { Link } from '@tanstack/react-router';
 import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserBase } from '~/api.gen';
+import type { UserBase } from 'sdk';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUserUpdateMutation } from '~/modules/user/query';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const ProfilePageContent = lazy(() => import('~/modules/user/user-profile-content'));
 
 interface Props {
   user: UserBase;
-  orgId?: string;
+  organizationId?: string;
   isSheet?: boolean;
 }
 
 /**
  * Profile page for a user
  */
-export function UserProfilePage({ user, orgId, isSheet }: Props) {
+export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
@@ -34,7 +34,7 @@ export function UserProfilePage({ user, orgId, isSheet }: Props) {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     const callbacks = {
-      onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
+      onSuccess: () => toaster(t('c:success.upload_cover'), 'success'),
       onError: () => toaster(t('error:image_upload_failed'), 'error'),
     };
 
@@ -56,15 +56,15 @@ export function UserProfilePage({ user, orgId, isSheet }: Props) {
         coverUpdateCallback={coverUpdateCallback}
         panel={
           isSelf && (
-            <div className="max-xs:hidden flex items-center p-2">
+            <div className="flex items-center p-2 max-xs:hidden">
               <Link
                 to="/account"
-                draggable="false"
+                draggable={false}
                 tabIndex={0}
-                className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium transition-colors focus-effect bg-primary text-primary-foreground hover:bg-primary/80"
+                className="focus-effect inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/80"
               >
                 <UserRoundCogIcon size={16} />
-                <span className="max-sm:hidden ml-1">{t('common:my_account')}</span>
+                <span className="ml-1 max-sm:hidden">{t('c:my_account')}</span>
               </Link>
             </div>
           )
@@ -72,7 +72,7 @@ export function UserProfilePage({ user, orgId, isSheet }: Props) {
       />
       <Suspense>
         <div className="container">
-          <ProfilePageContent user={user} orgId={orgId} isSheet={isSheet} />
+          <ProfilePageContent user={user} organizationId={organizationId} isSheet={isSheet} />
         </div>
       </Suspense>
     </>
