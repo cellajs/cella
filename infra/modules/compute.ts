@@ -17,7 +17,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appUrls, domains, hasDomain, infraConfig } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig } from '../helpers'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
@@ -247,7 +247,13 @@ sed -i '/SECRET\\|PASSWORD\\|API_KEY\\|DATABASE_URL\\|docker login/Id' /var/log/
 const backendUrl = hasDomain ? appUrls.backend : 'http://localhost:4000'
 const frontendUrl = appUrls.frontend
 const aiApiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
-const cdcWsUrl = hasDomain ? `wss://${domains.api}/internal/cdc` : 'ws://localhost:4000/internal/cdc'
+
+// CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
+// path. The backend rejects sources outside loopback or the VPC /24 (see
+// backend/src/lib/cdc-websocket.ts), so we route over the private network
+// directly to the backend VM instead of through the public LB.
+// Computed lazily after the backend VM is created, below.
+let cdcWsUrl: pulumi.Input<string> = 'ws://localhost:4000/internal/cdc'
 
 const services: ServiceConfig[] = [
   {
@@ -270,7 +276,7 @@ const services: ServiceConfig[] = [
       REGISTRY: registryEndpoint,
       CDC_TAG: infra.cdcImageTag,
       APP_MODE: mode,
-      API_WS_URL: cdcWsUrl,
+      get API_WS_URL() { return cdcWsUrl },
       BACKEND_URL: backendUrl,
     },
   },
@@ -312,41 +318,54 @@ export interface ComputeInstance {
 
 const instances: ComputeInstance[] = []
 
-if (infra.deployCompute) {
+function createVm(service: ServiceConfig): ComputeInstance {
+  // Each VM needs a public IP for internet access (package install, image pull)
+  const ip = new scaleway.instance.Ip(`ip-${service.name}`, {
+    zone,
+    tags,
+  })
+
+  const server = new scaleway.instance.Server(`vm-${service.name}`, {
+    name: naming.resource(service.name),
+    type: infra.instanceType,
+    image: 'ubuntu_noble',
+    zone,
+    tags,
+    securityGroupId: securityGroup.id,
+    cloudInit: buildCloudInit(service),
+    ipIds: [ip.id],
+    privateNetworks: [{
+      pnId: privateNetworkId,
+    }],
+  }, {
+    // cloud-init only runs on first boot; in-place updates would never apply new env/scripts to running VMs.
+    replaceOnChanges: ['cloudInit'],
+    // Delete old VM before creating new (IP can only be attached to one server)
+    // CDC is additionally a singleton — must not run two at once.
+    deleteBeforeReplace: true,
+  })
+
+  // The private IP is assigned by IPAM when attaching to the private network
+  // Pick the IPv4 address (skip IPv6 SLAAC addresses)
+  const privateIp = server.privateIps.apply(
+    (ips) => ips?.find((ip) => ip.address && !ip.address.includes(':'))?.address ?? ips?.[0]?.address ?? '',
+  )
+
+  const inst = { name: service.name, server, privateIp }
+  instances.push(inst)
+  return inst
+}
+
+if (infra.computeEnabled) {
+  // Create backend first so we can wire CDC's API_WS_URL to its private IP.
+  const backendService = services.find((s) => s.name === 'backend')!
+  const backend = createVm(backendService)
+  cdcWsUrl = backend.privateIp.apply((ip) => `ws://${ip}:4000/internal/cdc`)
+
+  // Create remaining services (cdc reads cdcWsUrl via the getter on composeEnv).
   for (const service of services) {
-    // Each VM needs a public IP for internet access (package install, image pull)
-    const ip = new scaleway.instance.Ip(`ip-${service.name}`, {
-      zone,
-      tags,
-    })
-
-    const server = new scaleway.instance.Server(`vm-${service.name}`, {
-      name: naming.resource(service.name),
-      type: infra.instanceType,
-      image: 'ubuntu_noble',
-      zone,
-      tags,
-      securityGroupId: securityGroup.id,
-      cloudInit: buildCloudInit(service),
-      ipIds: [ip.id],
-      privateNetworks: [{
-        pnId: privateNetworkId,
-      }],
-    }, {
-      // cloud-init only runs on first boot; in-place updates would never apply new env/scripts to running VMs.
-      replaceOnChanges: ['cloudInit'],
-      // Delete old VM before creating new (IP can only be attached to one server)
-      // CDC is additionally a singleton — must not run two at once.
-      deleteBeforeReplace: true,
-    })
-
-    // The private IP is assigned by IPAM when attaching to the private network
-    // Pick the IPv4 address (skip IPv6 SLAAC addresses)
-    const privateIp = server.privateIps.apply(
-      (ips) => ips?.find((ip) => ip.address && !ip.address.includes(':'))?.address ?? ips?.[0]?.address ?? '',
-    )
-
-    instances.push({ name: service.name, server, privateIp })
+    if (service.name === 'backend') continue
+    createVm(service)
   }
 }
 

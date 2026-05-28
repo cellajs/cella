@@ -4,7 +4,7 @@
  * so a redeploy would silently keep the old image.
  *
  * Pure — extracted from helpers.ts so it can be unit-tested without a Pulumi
- * runtime. helpers.ts re-uses this function inside its `if (deployCompute)` guard.
+ * runtime. helpers.ts re-uses this function inside its `if (computeEnabled)` guard.
  */
 
 /** Returns the list of "infra:<name>" tags that fail the immutability check. */

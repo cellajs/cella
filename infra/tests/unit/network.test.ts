@@ -11,7 +11,10 @@ import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pu
 let h: MockHarness
 
 beforeAll(async () => {
-  h = await installPulumiMocks({ stack: 'production' })
+  // bootstrap:applyInProgress gates compute off, which keeps the
+  // image-tag pin assertion in helpers.ts from firing in unit tests that
+  // don't care about compute.
+  h = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:applyInProgress': 'test' } })
   await import('../../modules/network.js')
   await flushPulumi()
 })

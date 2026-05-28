@@ -45,6 +45,14 @@ const sizingDefaults = isProduction
 
 const backendImageTag = infraConfig.get('backendImageTag') ?? 'latest'
 
+// Compute is on by default. It is only skipped while the bootstrap tooling is
+// mid-flight — bootstrap.ts sets `bootstrap:applyInProgress` before the initial
+// `pulumi up` (registry has no images yet, VMs would crash-loop) and during
+// "Apply infra change" mode, and clears it via try/finally + signal handlers.
+// Treating its presence as the gate means a stray local `pulumi up` cannot
+// silently tear down compute the way a missing `deployCompute=true` would.
+const bootstrapInProgress = new pulumi.Config('bootstrap').get('applyInProgress') !== undefined
+
 export const infra = {
   dbNodeType: infraConfig.get('dbNodeType') ?? sizingDefaults.dbNodeType,
   dbVolumeSize: infraConfig.getNumber('dbVolumeSize') ?? sizingDefaults.dbVolumeSize,
@@ -54,12 +62,12 @@ export const infra = {
   cdcImageTag: infraConfig.get('cdcImageTag') ?? 'latest',
   yjsImageTag: infraConfig.get('yjsImageTag') ?? 'latest',
   aiWorkerImageTag: infraConfig.get('aiWorkerImageTag') ?? backendImageTag,
-  deployCompute: infraConfig.getBoolean('deployCompute') ?? false,
+  computeEnabled: !bootstrapInProgress,
 }
 
 // Refuse to provision VMs with mutable tags — Pulumi can't detect a registry-side
 // :latest update, so a deploy would silently keep the old image.
-if (infra.deployCompute) {
+if (infra.computeEnabled) {
   assertPinnedImageTags({
     backendImageTag: infra.backendImageTag,
     cdcImageTag: infra.cdcImageTag,

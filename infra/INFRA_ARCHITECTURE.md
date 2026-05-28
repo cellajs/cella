@@ -69,7 +69,7 @@ All sizing has mode-aware defaults in `helpers.ts`. No `Pulumi.<stack>.yaml` con
 | `dbVolumeSize` | 20 GB | 50 GB |
 | `instanceType` | DEV1-S | DEV1-S |
 | `enableWaf` | true | true |
-| `deployCompute` | false | false |
+| `computeEnabled` | true (gated off only while `bootstrap:applyInProgress` is set) | true (same) |
 
 To override any value:
 

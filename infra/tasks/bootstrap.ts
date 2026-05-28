@@ -290,8 +290,11 @@ console.info(DIVIDER)
 // Offer to run `pulumi up` from inside bootstrap. Running it from a plain
 // shell requires AWS_*/PULUMI_CONFIG_PASSPHRASE for the S3 state backend,
 // which bootstrap already has in `childEnv` — so the friction-free path is
-// to invoke it here. Compute is intentionally skipped (deployCompute
-// defaults to false); VMs are deployed by CI after images are pushed.
+// to invoke it here. Compute is intentionally skipped on a fresh stack
+// (registry has no images yet) — we set the `bootstrap:applyInProgress`
+// marker so helpers.ts gates compute off; CI deploys VMs after pushing
+// images. If this run crashes before clearing the marker, compute stays
+// off (safe) until a follow-up bootstrap resume clears it.
 const canDeploy = hasCiKey || !!ciAccessKey
 if (canDeploy) {
   console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network — no compute yet)`)
@@ -332,10 +335,20 @@ if (canDeploy) {
     // (the provider{} block) instead of warning about Multiple variable
     // sources. Fresh has no stack creds yet, so env vars are required.
     const pulumiUpEnv: NodeJS.ProcessEnv = usingBootstrapKey ? childEnv : stripScwProviderEnv(childEnv)
+    // Fresh stacks: gate compute off via the bootstrap marker. Resume re-runs
+    // an already-bootstrapped stack and must NOT toggle the gate.
+    if (usingBootstrapKey) {
+      const startedAt = new Date().toISOString()
+      spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', stackName], { cwd: infraDir, env: pulumiUpEnv, stdio: 'inherit' })
+    }
+    let upOk = false
     while (true) {
       const code = await runPulumiUpWithHint(stackName, infraDir, pulumiUpEnv)
-      if (code === 0) break
+      if (code === 0) { upOk = true; break }
       if (!(await confirm({ message: 'Retry?', default: true }))) process.exit(code)
+    }
+    if (usingBootstrapKey && upOk) {
+      spawnSync('pulumi', ['config', 'rm', 'bootstrap:applyInProgress', '--stack', stackName], { cwd: infraDir, env: pulumiUpEnv, stdio: 'ignore' })
     }
     console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
     // On Fresh, persist the CI key now that bootstrap-owned resources exist.

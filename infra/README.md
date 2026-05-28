@@ -118,9 +118,9 @@ pulumi config set --secret scaleway:secretKey <ci-secret> --stack organization/i
 
 (If you declined the auto-deploy, bootstrap printed both values to the terminal — copy them from there. They are not stored anywhere readable after the run ends, only written into GitHub Environment secrets which are write-only.)
 
-This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — `deployCompute` defaults to `false`, so VMs are only created once CI pushes images. This is intentional: CI needs the registry to exist before it can push, and VMs need images to exist before they can start.
+This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — bootstrap.ts sets the transient `bootstrap:applyInProgress` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
 
-After this completes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push Docker images, set `deployCompute=true`, and run a second `pulumi up` that creates the compute VMs. **You do not need to run `pulumi up` a second time locally.**
+After this completes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push Docker images and run a second `pulumi up`. The marker is no longer set, so compute VMs come up on their own. **You do not need to run `pulumi up` a second time locally.**
 
 ### 8. Revoke the bootstrap key
 

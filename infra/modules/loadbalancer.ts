@@ -7,7 +7,7 @@
  * own Let's Encrypt cert and health check. HTTP on 80 only carries redirect ACLs
  * (HTTP→HTTPS, plus apex→www so the apex stays canonical-free).
  *
- * Only provisioned when a real domain is configured AND deployCompute is true,
+ * Only provisioned when a real domain is configured AND compute is enabled,
  * since without compute VMs the LB has no backends to route to.
  */
 import * as pulumi from '@pulumi/pulumi'
@@ -24,7 +24,7 @@ let _apiDomainUrl: pulumi.Output<string> | undefined
 let _yjsDomainUrl: pulumi.Output<string> | undefined
 let _aiDomainUrl: pulumi.Output<string> | undefined
 
-if (hasDomain && infra.deployCompute) {
+if (hasDomain && infra.computeEnabled) {
   // -------------------------------------------------------------------------
   // LB IP (static public IPv4)
   // -------------------------------------------------------------------------

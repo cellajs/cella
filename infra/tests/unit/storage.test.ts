@@ -19,7 +19,9 @@ let h: MockHarness
 beforeAll(async () => {
   h = await installPulumiMocks({
     stack: 'production',
-    config: { 'infra:applicationId': '00000000-0000-0000-0000-000000000001' },
+    // bootstrap:applyInProgress gates compute off so helpers.ts skips the
+    // image-tag pin assertion (these tests don't render compute).
+    config: { 'infra:applicationId': '00000000-0000-0000-0000-000000000001', 'bootstrap:applyInProgress': 'test' },
   })
   await import('../../modules/storage.js')
   await flushPulumi()
