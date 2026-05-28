@@ -6,7 +6,7 @@ Guide for diagnosing slow TypeScript type-checking in this monorepo.
 
 ```bash
 # Per-package timing (tsgo)
-pnpm -r --filter '!raak' ts
+pnpm -r ts
 
 # Extended diagnostics for a single package
 npx tsgo -p <package>/tsconfig.json --extendedDiagnostics

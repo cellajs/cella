@@ -4,7 +4,7 @@
  */
 import { mockContextMembership } from '../../../backend/mocks/mock-membership';
 import type { InsertMembershipModel } from '../../../backend/src/db/schema/memberships';
-import { ORG_ID, TENANT_ID, TOTAL_PROJECTS, projectId, userId } from './ids';
+import { ORG_ID, TENANT_ID, userId } from './ids';
 
 /**
  * Generate organization-level membership for a load-test user.
@@ -24,24 +24,3 @@ export const loadtestOrgMembership = (userIndex: number): InsertMembershipModel 
     muted: false,
   };
 };
-
-/**
- * Generate project-level memberships for a load-test user (one per project).
- */
-export const loadtestProjectMemberships = (userIndex: number): InsertMembershipModel[] =>
-  Array.from({ length: TOTAL_PROJECTS }, (_, p) => {
-    const membership = mockContextMembership(
-      'project',
-      { id: projectId(p), tenantId: TENANT_ID },
-      { id: userId(userIndex) },
-      { organizationId: ORG_ID },
-    );
-    return {
-      ...membership,
-      role: 'admin' as const,
-      createdBy: userId(0),
-      displayOrder: p + 1,
-      archived: false,
-      muted: false,
-    };
-  });

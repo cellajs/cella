@@ -18,17 +18,12 @@ import {
   TENANT_ID,
   ORG_ID,
   TOTAL_USERS,
-  TOTAL_PROJECTS,
-  TOTAL_TASKS,
   TOTAL_ATTACHMENTS,
   loadtestUser,
   loadtestEmail,
   loadtestOrganization,
-  loadtestProject,
-  loadtestTask,
   loadtestAttachment,
   loadtestOrgMembership,
-  loadtestProjectMemberships,
   loadtestSession,
   sessionId,
 } from './generators';
@@ -149,7 +144,7 @@ async function cleanLoadtestData(pool: pg.Pool) {
     await client.query(`SET session_replication_role = 'replica'`);
 
     // Delete in reverse FK order — match 00000000-0000-4000-a UUID prefix (bench-specific)
-    const tables = ['sessions', 'memberships', 'tasks', 'attachments', 'projects', 'organizations', 'emails', 'users'];
+    const tables = ['sessions', 'memberships', 'attachments', 'organizations', 'emails', 'users'];
     for (const table of tables) {
       updateSpinner(`cleaning ${table}...`);
       await client.query(`DELETE FROM ${table} WHERE id::text LIKE '00000000-0000-4000-a%'`);
@@ -214,39 +209,14 @@ async function seed() {
     await batchInsert(pool, 'organizations', orgColumns, [orgRow]);
     succeedSpinner('organization inserted');
 
-    // ── 5. Projects ────────────────────────────────────────────────────
-    startSpinner(`seeding ${pc.cyan(String(TOTAL_PROJECTS))} projects...`);
-    const projColumns = ['id', 'entity_type', 'tenant_id', 'name', 'slug', 'organization_id', 'public_at', 'created_at'];
-    const projRows = Array.from({ length: TOTAL_PROJECTS }, (_, i) =>
-      recordToRow({ ...loadtestProject(i), createdAt: now }, projColumns),
-    );
-    await batchInsert(pool, 'projects', projColumns, projRows);
-    succeedSpinner(`${TOTAL_PROJECTS} projects inserted`);
-
-    // ── 6. Tasks ───────────────────────────────────────────────────────
-    startSpinner(`seeding ${pc.cyan(String(TOTAL_TASKS))} tasks...`);
-    const taskColumns = [
-      'id', 'entity_type', 'tenant_id', 'name', 'stx',
-      'description', 'keywords', 'summary', 'summary_length',
-      'variant', 'status', 'display_order', 'labels', 'assigned_to',
-      'organization_id', 'project_id', 'created_by', 'seq', 'expandable',
-      'checkbox_count', 'checked_count', 'created_at',
-    ];
-    const taskPgArrays = new Set(['labels', 'assigned_to']);
-    const taskRows = Array.from({ length: TOTAL_TASKS }, (_, i) =>
-      recordToRow({ ...loadtestTask(i), createdAt: now, seq: 0 }, taskColumns, taskPgArrays),
-    );
-    await batchInsert(pool, 'tasks', taskColumns, taskRows);
-    succeedSpinner(`${TOTAL_TASKS} tasks inserted`);
-
-    // ── 8b. Attachments ────────────────────────────────────────────────
+    // ── 5. Attachments ─────────────────────────────────────────────────
     startSpinner(`seeding ${pc.cyan(String(TOTAL_ATTACHMENTS))} attachments...`);
     const attachColumns = [
       'id', 'entity_type', 'tenant_id', 'name', 'stx',
       'description', 'keywords', 'public', 'bucket_name', 'group_id',
       'filename', 'content_type', 'converted_content_type', 'size',
       'original_key', 'converted_key', 'thumbnail_key',
-      'organization_id', 'project_id', 'created_by', 'seq', 'created_at',
+      'organization_id', 'created_by', 'seq', 'created_at',
     ];
     const attachRows = Array.from({ length: TOTAL_ATTACHMENTS }, (_, i) =>
       recordToRow({ ...loadtestAttachment(i), createdAt: now, seq: 0 }, attachColumns),
@@ -254,23 +224,19 @@ async function seed() {
     await batchInsert(pool, 'attachments', attachColumns, attachRows);
     succeedSpinner(`${TOTAL_ATTACHMENTS} attachments inserted`);
 
-    // ── 7. Memberships ─────────────────────────────────────────────────
-    const totalProjectMemberships = TOTAL_USERS * TOTAL_PROJECTS;
-    startSpinner(`seeding ${pc.cyan(String(TOTAL_USERS))} org + ${pc.cyan(String(totalProjectMemberships))} project memberships...`);
+    // ── 6. Memberships ─────────────────────────────────────────────────
+    startSpinner(`seeding ${pc.cyan(String(TOTAL_USERS))} org memberships...`);
     const membColumns = [
       'id', 'tenant_id', 'context_type', 'context_id', 'user_id', 'role',
-      'created_by', 'display_order', 'organization_id', 'project_id', 'archived', 'muted',
+      'created_by', 'display_order', 'organization_id', 'archived', 'muted',
       'created_at',
     ];
     const membRows: unknown[][] = [];
     for (let i = 0; i < TOTAL_USERS; i++) {
       membRows.push(recordToRow({ ...loadtestOrgMembership(i), createdAt: now }, membColumns));
-      for (const projMemb of loadtestProjectMemberships(i)) {
-        membRows.push(recordToRow({ ...projMemb, createdAt: now }, membColumns));
-      }
     }
     await batchInsert(pool, 'memberships', membColumns, membRows);
-    succeedSpinner(`${TOTAL_USERS} org + ${totalProjectMemberships} project memberships inserted`);
+    succeedSpinner(`${TOTAL_USERS} org memberships inserted`);
 
     // ── 8. Sessions ────────────────────────────────────────────────────
     startSpinner(`seeding ${pc.cyan(String(TOTAL_USERS))} sessions...`);

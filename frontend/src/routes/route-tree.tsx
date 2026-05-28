@@ -14,6 +14,7 @@ import {
   HomeRoute,
   OrganizationLayoutRoute,
   OrganizationRoute,
+  PublicContentLayoutRoute,
   PublicLayoutRoute,
   RootRoute,
   SystemRoute,
@@ -31,7 +32,7 @@ import {
 export const routeTree = RootRoute.addChildren([
   PublicLayoutRoute.addChildren([
     ...basePublicChildren,
-    DocsLayoutRoute.addChildren([...baseDocsChildren]),
+    PublicContentLayoutRoute.addChildren([DocsLayoutRoute.addChildren([...baseDocsChildren])]),
     AuthLayoutRoute.addChildren([...baseAuthChildren]),
     // Fork public routes here
   ]),

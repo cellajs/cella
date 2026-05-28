@@ -24,13 +24,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 cleanup() {
-  docker rm -f raak-dryrun-dump raak-dryrun-target >/dev/null 2>&1 || true
+  docker rm -f cella-dryrun-dump cella-dryrun-target >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 echo "==> Start two throwaway PG17 containers"
-docker run -d --name raak-dryrun-dump   -e POSTGRES_PASSWORD=pw -p 55411:5432 postgres:17-alpine >/dev/null
-docker run -d --name raak-dryrun-target -e POSTGRES_PASSWORD=pw -p 55412:5432 postgres:17-alpine >/dev/null
+docker run -d --name cella-dryrun-dump   -e POSTGRES_PASSWORD=pw -p 55411:5432 postgres:17-alpine >/dev/null
+docker run -d --name cella-dryrun-target -e POSTGRES_PASSWORD=pw -p 55412:5432 postgres:17-alpine >/dev/null
 
 DUMP_URL='postgres://postgres:pw@localhost:55411/postgres'
 TARGET_URL='postgres://postgres:pw@localhost:55412/postgres'

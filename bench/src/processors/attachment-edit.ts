@@ -7,9 +7,14 @@ import { nanoid } from 'nanoid';
 import { uuidv7 } from 'uuidv7';
 import { TENANT_ID, ORG_ID, attachmentId } from '../config';
 import { TOTAL_ATTACHMENTS } from '../generators/ids';
-import { type StxPayload } from '../helpers/edits';
 
 export { authenticate } from './auth';
+
+interface StxPayload {
+  mutationId: string;
+  sourceId: string;
+  fieldTimestamps: Record<string, string>;
+}
 
 function hashSourceId(sourceId: string): string {
   let hash = 0;

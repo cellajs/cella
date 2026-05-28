@@ -16,8 +16,7 @@
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
-      "sdk/openapi-ts.config.ts",
-      "!.raak-port"
+      "sdk/openapi-ts.config.ts"
     ]
   },
   "assist": {

@@ -7,6 +7,6 @@ export default {
 
   frontendUrl: 'https://localhost:3000',
   backendUrl: 'http://cella.ngrok.dev',
-  backendAuthUrl: 'https://raak.ngrok.dev/auth',
+  backendAuthUrl: 'https://cella.ngrok.dev/auth',
 
 } satisfies DeepPartial<typeof _default>;

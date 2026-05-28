@@ -1,7 +1,7 @@
 # =============================================================================
 # Scaleway Deployment Workflow
 # =============================================================================
-# Deploys Raak to Scaleway infrastructure using Pulumi
+# Deploys Cella to Scaleway infrastructure using Pulumi
 # Triggered on pushes to main (production) or manually for other environments
 # =============================================================================
 

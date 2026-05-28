@@ -17,15 +17,9 @@ export const ORG_ID = benchUuid('a001', 0);
 export const userId = (i: number) => benchUuid('a000', i);
 export const userEmail = (i: number) => `xbench-user-${String(i).padStart(4, '0')}@xbench.local`;
 export const emailId = (i: number) => benchUuid('a002', i);
-export const projectId = (i: number) => benchUuid('a003', i);
-export const taskId = (i: number) => benchUuid('a004', i);
 export const attachmentId = (i: number) => benchUuid('a005', i);
 export const membershipId = (i: number) => benchUuid('a006', i);
 export const sessionId = (i: number) => benchUuid('a007', i);
 
-export const PROJECT_IDS = Array.from({ length: 10 }, (_, i) => projectId(i));
-
 export const TOTAL_USERS = 1200;
-export const TOTAL_PROJECTS = 10;
-export const TOTAL_TASKS = 500;
 export const TOTAL_ATTACHMENTS = 500;

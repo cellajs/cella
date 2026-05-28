@@ -1,6 +1,6 @@
 # Bench
 
-Artillery load testing suite for the RAAK backend.
+Artillery load testing suite for the Cella backend.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ Artillery load testing suite for the RAAK backend.
 ## Quick start
 
 ```bash
-# Start DB + seed test data (1200 users, org, projects, tasks, memberships)
+# Start DB + seed test data (1200 users, org, attachments, memberships)
 pnpm db:up
 
 # Start the backend (in another terminal)
@@ -20,13 +20,10 @@ cd .. && pnpm dev
 pnpm bench
 
 # Or run a specific scenario directly (CI-friendly)
-pnpm bench -- --scenario task-edit
+pnpm bench -- --scenario attachment-edit
 
 # Skip re-seeding if DB is already prepared
-pnpm bench -- --scenario task-edit --skip-seed
-
-# CDC scenarios automatically start the CDC health poller
-pnpm bench -- --scenario cdc-throughput
+pnpm bench -- --scenario attachment-edit --skip-seed
 
 # Clean up test data
 pnpm db:teardown
@@ -52,7 +49,7 @@ pnpm db:teardown
 
 **Processors** are plain Node.js/TypeScript modules that export functions used by YAML scenarios:
 - `beforeScenario` hooks (e.g., `authenticate`) run once per virtual user
-- `function` steps (e.g., `buildTaskEditPayload`) set `context.vars` for the next HTTP request
+- `function` steps (e.g., `buildAttachmentEditPayload`) set `context.vars` for the next HTTP request
 
 **Authentication** uses pre-seeded sessions — the auth processor builds cookies from deterministic tokens without any HTTP calls. This eliminates the auth warmup phase entirely. The `sign-in` scenario is the dedicated benchmark for testing sign-in throughput.
 
@@ -123,17 +120,15 @@ If your scenario needs new entity types, add a generator in `src/generators/` an
 | Emails | 1,200 | `xbench-email-*` |
 | Tenant | 1 | `xbench` |
 | Organization | 1 | `xbench-org-*` |
-| Projects | 10 | `xbench-proj-*` |
-| Tasks | 500 | `xbench-task-*` |
 | Attachments | 500 | `xbench-atch-*` |
-| Memberships | 13,200 | `lt-*` (1,200 org + 12,000 project) |
+| Memberships | 1,200 | `lt-*` (org) |
 
 ## Configuration
 
 Override via environment variables:
 
 ```bash
-BASE_URL=http://staging:4000 pnpm bench -- --scenario task-edit
+BASE_URL=http://staging:4000 pnpm bench -- --scenario attachment-edit
 PG_HOST=db.example.com PG_PORT=5432 pnpm db:seed
 ```
 
@@ -142,23 +137,19 @@ PG_HOST=db.example.com PG_PORT=5432 pnpm db:seed
 ```
 bench/
 ├── scenarios/                  # Artillery YAML scenario definitions
-│   ├── task-edit.yaml
 │   ├── page-load.yaml
 │   ├── get-me.yaml
 │   ├── attachment-edit.yaml
-│   ├── sign-in.yaml
-│   └── cdc-throughput.yaml
+│   └── sign-in.yaml
 ├── src/
 │   ├── bench-cli.ts            # Interactive CLI entry point
 │   ├── cdc-poller.ts           # Standalone CDC health metrics poller
 │   ├── config.ts               # Shared constants and IDs
 │   ├── data-setup.ts           # DB seeding script (runs via tsx)
-│   ├── generators/             # Test data generators (users, tasks, sessions)
-│   ├── helpers/                # Edit payload builders
+│   ├── generators/             # Test data generators (users, attachments, sessions)
 │   └── processors/             # Artillery processor functions
 │       ├── auth.ts             # Pre-seeded session cookie builder
 │       ├── sign-in.ts          # Sign-in payload builder
-│       ├── task-edit.ts        # Task edit payload builder
-│       ├── attachment-edit.ts  # Attachment edit payload builder
+│       └── attachment-edit.ts  # Attachment edit payload builder
 └── results/                    # Output directory (gitignored)
 ```

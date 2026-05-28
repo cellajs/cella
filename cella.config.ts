@@ -28,6 +28,7 @@ export default defineConfig({
     ignored: [
       "README.md",
       "bench/**",
+      "infra/Pulumi.*.yaml",
       "frontend/public/static/docs.gen/**",
       "frontend/public/static/icons/**",
       "frontend/public/static/images/**",

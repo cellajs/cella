@@ -30,7 +30,7 @@ interface ContribItem {
   path: string;
   /** Fork name (extracted from branch name) */
   fork: string;
-  /** Full remote branch ref (e.g., origin/contrib/raak) */
+  /** Full remote branch ref (e.g., origin/contrib/myfork) */
   ref: string;
   /** Whether file is selected for acceptance */
   checked: boolean;
@@ -60,7 +60,7 @@ async function listContribBranches(cwd: string): Promise<{ fork: string; ref: st
     .map((line) => line.trim())
     .filter(Boolean)
     .map((ref) => {
-      // ref is like "origin/contrib/raak"
+      // ref is like "origin/contrib/myfork"
       const fork = ref.replace('origin/contrib/', '');
       return { fork, ref };
     });

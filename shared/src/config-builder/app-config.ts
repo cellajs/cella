@@ -31,7 +31,7 @@ if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
 if (process.env.AI_API_URL) merged.aiApiUrl = process.env.AI_API_URL;
 
 // Derive S3 bucket names and CDN URLs from slug + mode prefix unless explicitly overridden.
-// Each environment gets dedicated buckets (e.g. raak-public, raak-development-public).
+// Each environment gets dedicated buckets (e.g. cella-public, cella-development-public).
 const s3 = merged.s3 as S3Config;
 const bucketPrefix = merged.slug;
 s3.publicBucket ??= `${bucketPrefix}-public`;

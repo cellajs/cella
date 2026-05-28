@@ -27,7 +27,7 @@ function BgAnimation() {
     };
   }, [document]);
 
-  return <canvas id="animation-canvas" className="absolute z-[-1] w-full h-full opacity-30" />;
+  return <canvas id="animation-canvas" className="absolute z-[-1] h-full w-full opacity-30" />;
 }
 
 export default BgAnimation;

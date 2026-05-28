@@ -7,12 +7,11 @@
  *
  * Usage:
  *   pnpm bench                                        # interactive
- *   pnpm bench -- --scenario task-edit                 # direct
- *   pnpm bench -- --scenario task-edit --skip-seed     # skip seeding
+ *   pnpm bench -- --scenario attachment-edit           # direct
+ *   pnpm bench -- --scenario attachment-edit --skip-seed     # skip seeding
  *   pnpm bench -- --skip-services                      # use already-running services
  *   pnpm bench -- --keep-services                      # don't stop services after run
- *   pnpm bench -- --scenario cdc-throughput --poller    # with CDC health poller
- *   pnpm bench -- --scenario task-edit --save-baseline  # save results as baseline
+ *   pnpm bench -- --scenario attachment-edit --save-baseline  # save results as baseline
  */
 
 import { execSync, spawn, type ChildProcess } from 'node:child_process';
@@ -65,12 +64,10 @@ function parseArgs() {
 // ── Scenario discovery ─────────────────────────────────────────────────────
 
 const descriptions: Record<string, string> = {
-  'task-edit': 'Task edit step-up (50→125 arrivals/s, ~625 req/s)',
   'page-load': 'Page-load reads (60 arrivals/s, ~2700 req/s)',
   'attachment-edit': 'Attachment edit step-up (25→100 arrivals/s, ~1200 req/s)',
   'get-me': 'GET /me sustained (100 arrivals/s, ~2000 req/s)',
   'sign-in': 'Sign-in throughput (10→50 arrivals/s)',
-  'cdc-throughput': 'CDC replication lag under load (25→100 arrivals/s)',
 };
 
 function discoverScenarios(): string[] {
