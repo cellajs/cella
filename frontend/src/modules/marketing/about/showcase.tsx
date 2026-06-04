@@ -21,7 +21,7 @@ export function Showcase() {
   const darkItems = showcaseItems.flatMap((item) => item.darkItems);
 
   return (
-    <div className="mx-auto mb-12 mt-20 flex max-sm:flex-col gap-8 max-w-3xl items-center lg:mb-16 relative">
+    <div className="relative mx-auto mt-20 mb-12 flex max-w-3xl items-center gap-8 max-sm:flex-col lg:mb-16">
       <div className="w-full">
         <div className="flex flex-wrap">
           {showcaseItems.map((item, index) => {
@@ -32,13 +32,13 @@ export function Showcase() {
               <div className="w-full" key={item.id}>
                 <div className="flex">
                   <div className="w-full">
-                    <a href={item.url} target="_blank" rel="noreferrer" className="rounded-md focus-effect block">
-                      <h3 className="mb-2 text-xl group font-medium 2xl:text-[1.38rem]">
+                    <a href={item.url} target="_blank" rel="noreferrer" className="focus-effect block rounded-md">
+                      <h3 className="group mb-2 font-medium text-xl 2xl:text-[1.38rem]">
                         {t(title)}
                         <ArrowUpRightIcon
                           size={16}
                           strokeWidth={appConfig.theme.strokeWidth}
-                          className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100"
+                          className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100"
                         />
                       </h3>
                     </a>

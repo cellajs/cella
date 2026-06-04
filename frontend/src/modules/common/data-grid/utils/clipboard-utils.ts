@@ -2,6 +2,20 @@ import type { CalculatedColumn, CellRange } from '../types';
 import { normalizeCellRange } from './cell-range-utils';
 
 /**
+ * Convert a cell value to a clipboard-friendly string.
+ * Objects fall back to their `name` field (common convention for entity-shaped
+ * values like users, organizations, labels). Anything else uses `String(value)`.
+ */
+export function cellValueToText(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'object') {
+    const name = (value as { name?: unknown }).name;
+    return name != null ? String(name) : '';
+  }
+  return String(value);
+}
+
+/**
  * Serialize cells in a range to TSV (Tab-Separated Values) format.
  * This is the standard format for spreadsheet clipboard operations.
  */
@@ -25,8 +39,7 @@ export function serializeCellsToTSV<R, SR>(
       }
       const column = columns[colIdx];
       const value = row[column.key as keyof R];
-      // Convert value to string, handling null/undefined
-      const textValue = value != null ? String(value) : '';
+      const textValue = cellValueToText(value);
       // Escape tabs and newlines within cell values
       cells.push(textValue.replace(/\t/g, ' ').replace(/\n/g, ' '));
     }
@@ -69,7 +82,7 @@ export function serializeCellsToHTML<R, SR>(
       }
       const column = columns[colIdx];
       const value = row[column.key as keyof R];
-      const textValue = value != null ? String(value) : '';
+      const textValue = cellValueToText(value);
       // Escape HTML entities
       const escapedValue = textValue.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       html += `<td>${escapedValue}</td>`;

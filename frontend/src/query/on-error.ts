@@ -1,20 +1,21 @@
-import { default as i18n, default as i18next } from 'i18next';
+import i18n from 'i18next';
+import { useAlertStore } from '~/alerter/alert-store';
 import { ApiError } from '~/lib/api';
-import { checkConnectivity } from '~/lib/connectivity';
 import { toaster } from '~/modules/common/toaster/toaster';
-import router from '~/routes/router';
-import { useAlertStore } from '~/store/alert';
+import { checkConnectivity } from '~/query/offline/connectivity';
+import type { QueryMeta } from '~/query/react-query';
 import { flushStores } from '~/utils/flush-stores';
 
-/**
- * Fallback messages for common 400 errors
- */
-const fallbackMessages: Partial<Record<number, string>> = {
-  400: i18n.t('error:bad_request_action'),
-  401: i18n.t('error:unauthorized_action'),
-  403: i18n.t('error:forbidden_action'),
-  404: i18n.t('error:not_found'),
-  429: i18n.t('error:too_many_requests'),
+/** Fallback messages for common errors — called lazily so i18next is initialized */
+const getFallbackMessage = (status: number): string | undefined => {
+  const messages: Partial<Record<number, string>> = {
+    400: i18n.t('error:bad_request_action'),
+    401: i18n.t('error:unauthorized_action'),
+    403: i18n.t('error:forbidden_action'),
+    404: i18n.t('error:not_found'),
+    429: i18n.t('error:too_many_requests'),
+  };
+  return messages[status];
 };
 
 /**
@@ -23,12 +24,12 @@ const fallbackMessages: Partial<Record<number, string>> = {
  */
 const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   // Priority 1: Resource-specific translation (e.g., resource_not_found with entity interpolation)
-  if (entityType && type && i18next.exists(`error:resource_${type}`)) {
+  if (entityType && type && i18n.exists(`error:resource_${type}`)) {
     return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
   }
 
   // Priority 2: Direct type translation (e.g., invalid_slug, invalid_cdn_url)
-  if (type && i18next.exists(`error:${type}`)) {
+  if (type && i18n.exists(`error:${type}`)) {
     return i18n.t(`error:${type}`);
   }
 
@@ -36,7 +37,7 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   if (message) return message;
 
   // Priority 4: Status-based fallback
-  return fallbackMessages[status] || 'Unknown error occurred';
+  return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
 /**
@@ -53,9 +54,9 @@ const isNetworkError = (error: Error): boolean => {
   );
 };
 
-export const onError = (error: Error | ApiError) => {
+export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // Handle network-level failures (no HTTP response received)
-  if (!(error instanceof ApiError) && error instanceof Error && isNetworkError(error)) {
+  if (!(error instanceof ApiError) && isNetworkError(error)) {
     checkConnectivity();
     return;
   }
@@ -76,12 +77,26 @@ export const onError = (error: Error | ApiError) => {
     // Hide error if casually trying /me or /me/menu. It should fail silently if no valid session.
     if (isCasualSessionAttempt && statusCode === 401) return;
 
-    // Translate, try most specific first
-    const errorMessage = getErrorMessage(error);
+    // Honor opt-out from query/mutation `meta` — local handler will (or already did) show its own toast.
+    const suppress = meta?.suppressGlobalErrorToast;
+    const skipToast = typeof suppress === 'function' ? suppress(error) : suppress === true;
 
-    // Show toast
-    const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
-    toaster(errorMessage, toastType);
+    if (!skipToast) {
+      // Translate, try most specific first
+      const errorMessage = getErrorMessage(error);
+
+      // For 429 errors, show remaining wait time as description
+      let description: string | undefined;
+      if (statusCode === 429 && error.meta?.retryAfter) {
+        const seconds = Number(error.meta.retryAfter);
+        const minutes = Math.ceil(seconds / 60);
+        description = i18n.t('c:retry_in_minutes', { count: minutes });
+      }
+
+      // Show toast
+      const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
+      toaster(errorMessage, toastType, { description });
+    }
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
@@ -98,7 +113,8 @@ export const onError = (error: Error | ApiError) => {
 
       // Flush sensitive stores and navigate to the sign-in page
       flushStores();
-      router.navigate(redirectOptions);
+      // Dynamic import breaks circular dep: query-client → on-error → router → route-tree → base-routes → query-client
+      import('~/routes/router').then(({ default: r }) => r.navigate(redirectOptions));
     }
   }
 };

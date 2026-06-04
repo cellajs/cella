@@ -5,75 +5,69 @@ import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 
 interface SelectLanguagesProps {
   value: Language[];
   onChange: (value: Language[]) => void;
 }
 
+interface SelectLanguagesContentProps extends Pick<SelectLanguagesProps, 'onChange'> {
+  initialValue: Language[];
+  triggerWidth?: number;
+}
+
 /**
  * Dropdowner content for multi-selecting languages.
  * Maintains local state because dropdowner renders a snapshot.
  */
-function SelectLanguagesContent({
-  initialValue,
-  onChange,
-  triggerWidth = 240,
-}: {
-  initialValue: Language[];
-  onChange: (value: Language[]) => void;
-  triggerWidth?: number;
-}) {
+function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: SelectLanguagesContentProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<Language[]>(initialValue);
-  const [searchValue, setSearchValue] = useState('');
 
-  const allOptions = appConfig.languages.map((lang) => ({ value: lang, label: t(`common:${lang}`) }));
-  const filteredOptions = allOptions.filter(({ label }) => label.toLowerCase().includes(searchValue.toLowerCase()));
+  const options = appConfig.languages.map((lang) => ({ value: lang, label: t(`c:${lang}`) }));
 
   const toggleLanguage = (language: Language) => {
+    if (selected.includes(language) && selected.length === 1) return;
     const next = selected.includes(language) ? selected.filter((l) => l !== language) : [...selected, language];
     setSelected(next);
     onChange(next);
   };
 
   return (
-    <Command
-      shouldFilter={false}
+    <div
+      role="listbox"
+      aria-multiselectable="true"
       className="relative overflow-hidden rounded-lg sm:w-(--trigger-width)"
       style={{ '--trigger-width': `${triggerWidth}px` } as CSSProperties}
     >
-      <CommandInput
-        value={searchValue}
-        onValueChange={setSearchValue}
-        clearValue={setSearchValue}
-        placeholder={t('common:placeholder.search')}
-        wrapClassName="hidden"
-        className="leading-normal focus-visible:ring-transparent rounded-none"
-      />
-      <CommandList className="max-h-[30vh] overflow-y-auto">
-        <CommandGroup>
-          {filteredOptions.map((option) => (
-            <CommandItem
-              key={option.value}
-              value={option.label}
-              onSelect={() => toggleLanguage(option.value)}
-              className="group rounded-md flex justify-between items-center w-full leading-normal"
-            >
-              <div className="flex items-center flex-nowrap truncate">
-                <span className="truncate">{option.label}</span>
-              </div>
-              <CheckIcon
-                size={16}
-                strokeWidth={3}
-                className={`text-success ${!selected.includes(option.value) && 'invisible'}`}
-              />
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
+      <div className="max-h-[30vh] overflow-y-auto p-1">
+        {options.map((option) => (
+          <div
+            key={option.value}
+            role="option"
+            aria-selected={selected.includes(option.value)}
+            className="relative flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground"
+            onClick={() => toggleLanguage(option.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleLanguage(option.value);
+              }
+            }}
+            tabIndex={0}
+          >
+            <div className="flex flex-nowrap items-center truncate">
+              <span className="truncate">{option.label}</span>
+            </div>
+            <CheckIcon
+              size={16}
+              strokeWidth={3}
+              className={`text-success ${!selected.includes(option.value) && 'invisible'}`}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -101,20 +95,20 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
       disabled={appConfig.languages.length < 2}
       variant="input"
       aria-label="Select language"
-      className="w-full justify-between font-normal data-dropdowner-active:ring-ring data-dropdowner-active:ring-1"
+      className="w-full justify-between font-normal data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
       onClick={openDropdown}
     >
       {value.length > 0 ? (
-        <div className="flex items-center flex-nowrap truncate">
+        <div className="flex flex-nowrap items-center truncate">
           {value.map((lang, index) => (
-            <span key={lang} className="flex items-center mr-2 flex-nowrap truncate">
-              <span className="truncate">{t(`common:${lang}`)}</span>
+            <span key={lang} className="mr-2 flex flex-nowrap items-center truncate">
+              <span className="truncate">{t(`c:${lang}`)}</span>
               {index !== value.length - 1 && <span className="ml-1">,</span>}
             </span>
           ))}
         </div>
       ) : (
-        <span className="text-muted-foreground">{t('common:placeholder.select_languages')}</span>
+        <span className="text-muted-foreground">{t('c:placeholder.select_languages')}</span>
       )}
       <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
     </Button>

@@ -5,12 +5,16 @@ import './styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 
+import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/ascii';
-import { initSentry } from '~/lib/sentry';
-import { RouterWrapper } from '~/modules/common/router-wrapper';
+import { createClientConfig } from '~/api-client';
+import { AppRouter } from '~/modules/common/app/app-router';
 import { QueryClientProvider } from '~/query/provider';
-import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
+import { initFaviconBadge } from '~/utils/init-favicon-badge';
+
+// Configure the SDK client with runtime settings (credentials, error handling, etc.)
+client.setConfig(createClientConfig());
 
 /**
  * Check if debug mode is enabled via VITE_DEBUG_MODE environment variable.
@@ -23,10 +27,7 @@ if (!root) throw new Error('Root element not found');
 renderAscii();
 
 // Add badge to favicon based on config mode
-addBadgeToFavicon(appConfig.mode);
-
-// Initialize Sentry
-initSentry();
+initFaviconBadge(appConfig.mode);
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.
 // `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.
@@ -43,7 +44,7 @@ ReactDOM.createRoot(root).render(
   <StrictMode>
     <Themer />
     <QueryClientProvider>
-      <RouterWrapper />
+      <AppRouter />
     </QueryClientProvider>
   </StrictMode>,
 );

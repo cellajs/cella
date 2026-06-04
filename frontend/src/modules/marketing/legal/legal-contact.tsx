@@ -15,12 +15,12 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
 
   return (
     <div className={cn('flex', className)}>
-      <span className="flex flex-col items-center mr-6">
-        <BuildingIcon size={16} className="shrink-0 mt-1" />
-        <span className="w-px grow bg-border mt-1" />
+      <span className="mr-6 flex flex-col items-center">
+        <BuildingIcon size={16} className="mt-1 shrink-0" />
+        <span className="mt-1 w-px grow bg-border" />
       </span>
-      <ul className="list-none m-0! pl-0">
-        <li className="mt-0!">
+      <ul className="m-0! list-none pl-0">
+        <li className="mt-0! mb-2">
           <strong>{companyFull}</strong>
         </li>
         <li>{streetAddress}</li>

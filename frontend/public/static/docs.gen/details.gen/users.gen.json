@@ -20,7 +20,7 @@
                   "id": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
                   "createdAt": { "type": "string", "required": true },
-                  "modifiedAt": {
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
@@ -37,11 +37,7 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "email": {
-                    "type": "string",
-                    "required": true,
-                    "format": "email"
-                  },
+                  "email": { "type": "string", "required": true, "format": "email" },
                   "entityType": {
                     "type": "string",
                     "required": true,
@@ -67,48 +63,49 @@
         "example": {
           "items": [
             {
-              "id": "mybas8856dxliw6zkuiovvao",
+              "id": "af54c332-26e9-48e2-9f9d-8ade4a445d7f",
               "entityType": "user",
-              "name": "Becky Gutmann",
-              "firstName": "Becky",
+              "name": "Beatrice Gutmann",
+              "firstName": "Beatrice",
               "lastName": "Gutmann",
-              "email": "becky.gutmann@gmail.com",
-              "slug": "beckygutmann",
+              "email": "beatrice.gutmann@gmail.com",
+              "slug": "beatricegutmann",
               "description": null,
               "thumbnailUrl": null,
               "bannerUrl": null,
               "language": "en",
-              "newsletter": true,
+              "newsletter": false,
               "mfaRequired": false,
               "userFlags": {},
               "createdAt": "2024-11-11T02:15:51.916Z",
-              "modifiedAt": "2024-11-11T02:15:51.916Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-11-11T02:15:51.916Z",
+              "updatedBy": null,
               "lastStartedAt": "2024-11-11T02:15:51.916Z",
               "lastSignInAt": "2024-11-11T02:15:51.916Z",
               "lastSeenAt": "2024-11-11T02:15:51.916Z",
               "memberships": [
                 {
-                  "id": "300jor4orrvsgezqoyxfckg3",
-                  "tenantId": "ifex0a",
+                  "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                  "tenantId": "u87zf2",
                   "contextType": "organization",
-                  "userId": "gu87zf240qkfh0faoqjip69q",
-                  "organizationId": "fpb1r33xdbp099f3xi8028r0",
-                  "role": "member",
-                  "displayOrder": 38,
+                  "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                  "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
+                  "organizationId": "ab6c6ea4-cec4-470a-acfc-5636298aa0f2",
+                  "role": "admin",
+                  "displayOrder": 83,
                   "muted": false,
                   "archived": false
                 }
               ]
             },
             {
-              "id": "rfau2m1vkjc8nvp8e05meqcc",
+              "id": "c64d1a0d-9853-4aeb-8360-296b55c24f83",
               "entityType": "user",
-              "name": "Lonie Kuhn",
-              "firstName": "Lonie",
+              "name": "Lina Kuhn",
+              "firstName": "Lina",
               "lastName": "Kuhn",
-              "email": "lonie_kuhn75@gmail.com",
-              "slug": "loniekuhn64",
+              "email": "lina_kuhn75@gmail.com",
+              "slug": "linakuhn64",
               "description": null,
               "thumbnailUrl": null,
               "bannerUrl": null,
@@ -117,20 +114,21 @@
               "mfaRequired": false,
               "userFlags": {},
               "createdAt": "2024-05-19T00:16:13.149Z",
-              "modifiedAt": "2024-05-19T00:16:13.149Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-05-19T00:16:13.149Z",
+              "updatedBy": null,
               "lastStartedAt": "2024-05-19T00:16:13.149Z",
               "lastSignInAt": "2024-05-19T00:16:13.149Z",
               "lastSeenAt": "2024-05-19T00:16:13.149Z",
               "memberships": [
                 {
-                  "id": "1u44cckbz5av195r4h3wiruz",
-                  "tenantId": "44b7wk",
+                  "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                  "tenantId": "lwj64z",
                   "contextType": "organization",
-                  "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
-                  "organizationId": "eylomg4p6xgvt4g11e2hqqxx",
-                  "role": "admin",
-                  "displayOrder": 7,
+                  "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                  "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
+                  "organizationId": "661de358-c94b-4156-816b-769bf63c907e",
+                  "role": "member",
+                  "displayOrder": 73,
                   "muted": false,
                   "archived": false
                 }
@@ -169,6 +167,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -179,11 +184,7 @@
     "request": {
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          },
+          "q": { "type": "string", "required": false, "maxLength": 255 },
           "sort": {
             "type": "string",
             "required": false,
@@ -196,7 +197,7 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "afterSeq": { "type": "string", "required": false },
+          "seqCursor": { "type": "string", "required": false },
           "role": {
             "type": "string",
             "required": false,
@@ -220,7 +221,7 @@
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
             "createdAt": { "type": "string", "required": true },
-            "modifiedAt": {
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
@@ -237,11 +238,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "email": {
-              "type": "string",
-              "required": true,
-              "format": "email"
-            },
+            "email": { "type": "string", "required": true, "format": "email" },
             "entityType": {
               "type": "string",
               "required": true,
@@ -256,16 +253,16 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "eyp654w9neyhyka0hezx1xnh",
-          "createdAt": "2024-05-14T11:11:41.599Z",
-          "modifiedAt": "2024-08-06T10:38:55.463Z",
-          "name": "Rosendo Bayer",
+          "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
+          "createdAt": "2024-01-29T02:54:50.413Z",
+          "updatedAt": "2024-05-13T10:02:34.917Z",
+          "name": "Rosalia Bayer",
           "description": null,
           "entityType": "user",
-          "slug": "rosendo.bayer89",
+          "slug": "rosalia.bayer28",
           "thumbnailUrl": null,
           "bannerUrl": null,
-          "email": "rosendo.bayer7@yahoo.com"
+          "email": "rosalia_bayer@hotmail.com"
         }
       },
       {
@@ -297,6 +294,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -307,11 +311,7 @@
     "request": {
       "path": {
         "properties": {
-          "relatableUserId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "relatableUserId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "query": {

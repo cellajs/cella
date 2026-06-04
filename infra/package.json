@@ -1,0 +1,36 @@
+{
+  "name": "infra",
+  "description": "Pulumi IaC for Scaleway infrastructure and Kubernetes workloads",
+  "type": "module",
+  "scripts": {
+    "bootstrap": "tsx tasks/bootstrap.ts",
+    "setup-ci-key": "tsx tasks/setup-ci-key.ts",
+    "test": "vitest run",
+    "test:integration": "INTEGRATION=1 vitest run tests/integration",
+    "preview": "pulumi preview",
+    "up": "pulumi up",
+    "destroy": "pulumi destroy",
+    "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
+    "init-stack-secrets": "tsx tasks/init-stack-secrets.ts",
+    "print-deploy-env": "tsx tasks/print-deploy-env.ts",
+    "wait-for-version": "tsx tasks/wait-for-version.ts",
+    "wait-for-images": "tsx tasks/wait-for-images.ts",
+    "verify-frontend-bundle": "tsx tasks/verify-frontend-bundle.ts",
+    "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
+    "smoke": "tsx tasks/smoke.ts",
+    "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
+    "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1057.0",
+    "@inquirer/prompts": "^8.5.1",
+    "@pulumi/pulumi": "^3.244.0",
+    "@pulumi/random": "^4.21.0",
+    "@pulumiverse/scaleway": "^1.50.0",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

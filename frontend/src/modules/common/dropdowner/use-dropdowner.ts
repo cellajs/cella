@@ -1,12 +1,26 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
+export type DropdownKind = 'menu' | 'panel';
+
 export type DropdownData = {
   id: number | string;
   triggerId: string;
   triggerRef: RefObject<HTMLButtonElement | null>;
   align?: 'start' | 'center' | 'end';
   modal?: boolean;
+  /**
+   * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead).
+   * 'panel' uses a Popover with a focus trap for arbitrary content (forms,
+   * comboboxes, date pickers). Defaults to 'panel'.
+   */
+  kind?: DropdownKind;
+  /**
+   * Bypass the 300ms "reopen with same triggerId" guard. Set this for
+   * programmatic openers (e.g. data-grid edit cells) where there's no race
+   * between a button onClick and a popover dismiss to debounce.
+   */
+  programmatic?: boolean;
 };
 
 export type InternalDropdown = DropdownData & {
@@ -14,6 +28,7 @@ export type InternalDropdown = DropdownData & {
   content: ReactNode;
   align: 'start' | 'center' | 'end';
   modal: boolean;
+  kind: DropdownKind;
 };
 
 interface DropdownStoreState {
@@ -44,11 +59,16 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
       return data.id;
     }
 
-    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick)
-    const { lastRemovedTriggerId, lastRemovedAt } = get();
-    if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
-      set({ lastRemovedTriggerId: null });
-      return data.id;
+    // Skip reopening if same trigger was just closed (popover dismiss raced with button onClick).
+    // Programmatic openers opt out — they don't have a click-to-toggle race to debounce, and the
+    // guard otherwise breaks them under React StrictMode (mount → cleanup → mount runs `create`
+    // twice with the same id within the 300ms window).
+    if (!data.programmatic) {
+      const { lastRemovedTriggerId, lastRemovedAt } = get();
+      if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
+        set({ lastRemovedTriggerId: null });
+        return data.id;
+      }
     }
 
     // Mark new trigger as active
@@ -58,7 +78,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
     set({
-      dropdown: { content, align: 'start', modal: true, ...data, key: Date.now() },
+      dropdown: { content, align: 'start', modal: true, kind: 'panel', ...data, key: Date.now() },
     });
 
     return data.id;

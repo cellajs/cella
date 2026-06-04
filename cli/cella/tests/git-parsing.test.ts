@@ -26,7 +26,8 @@ function exec(cmd: string, cwd?: string): string {
 /** Create a minimal git repo with an initial commit */
 function createRepo(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cella-git-test-'));
-  exec('git init', dir);
+  // -b main: don't depend on the runner's init.defaultBranch (CI defaults to master).
+  exec('git init -b main', dir);
   exec('git config user.email "test@test.com" && git config user.name "Test"', dir);
   fs.writeFileSync(path.join(dir, 'initial.txt'), 'initial\n');
   exec('git add -A && git commit -m "initial"', dir);

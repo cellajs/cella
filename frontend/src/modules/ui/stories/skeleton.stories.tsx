@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { Skeleton } from '~/modules/ui/skeleton';
 
 /**

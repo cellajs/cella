@@ -1,22 +1,40 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import { EditIcon } from 'lucide-react';
+import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { ChevronRightIcon, EditIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Page } from 'sdk';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { Spinner } from '~/modules/common/spinner';
 import { StickyBox } from '~/modules/common/sticky-box';
-import { pageQueryOptions } from '~/modules/page/query';
+import { pageQueryOptions, pagesListQueryOptions } from '~/modules/page/query';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 import { dateShort } from '~/utils/date-short';
 
 interface ViewPageProps {
   pageId: string;
 }
 
+/** Get published child pages sorted by displayOrder from the pages list cache. */
+function useChildPages(parentId: string) {
+  const { data } = useInfiniteQuery({
+    ...pagesListQueryOptions({}),
+    select: ({ pages }) =>
+      pages
+        .flatMap(({ items }) => items)
+        .filter((p) => p.parentId === parentId && p.status === 'published')
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+  });
+  return data ?? [];
+}
+
 /**
  * Displays a page with its name as title and description as the main content.
+ * Supports three render modes:
+ * - default: renders full page content
+ * - overview: renders intro content + auto-generated child page list
+ * - nodeOnly: redirects-like experience showing child page navigation only
  */
 function ViewPage({ pageId }: ViewPageProps) {
   const { t } = useTranslation();
@@ -28,11 +46,13 @@ function ViewPage({ pageId }: ViewPageProps) {
 
   if (!page) {
     return (
-      <div className="my-4 md:mt-8 mx-auto flex justify-center">
+      <div className="mx-auto my-4 flex justify-center md:mt-8">
         <Spinner className="my-16 h-6 w-6" />
       </div>
     );
   }
+
+  const renderMode = page.renderMode ?? 'default';
 
   return (
     <div className="container">
@@ -43,17 +63,17 @@ function ViewPage({ pageId }: ViewPageProps) {
               {isSystemAdmin && (
                 <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id/edit', params: { id: pageId } })}>
                   <EditIcon size={16} className="mr-2" />
-                  {t('common:edit')}
+                  {t('c:edit')}
                 </Button>
               )}
             </div>
-            <div className="flex lowercase flex-col items-end gap-1 text-sm text-muted-foreground">
+            <div className="flex flex-col items-end gap-1 text-muted-foreground text-sm lowercase">
               <div>
-                {page.status === 'published' ? t('common:published') : t('common:created')} {dateShort(page.createdAt)}
+                {page.status === 'published' ? t('c:published') : t('c:created')} {dateShort(page.createdAt)}
               </div>
-              {page.status === 'published' && page.modifiedAt && (
+              {page.status === 'published' && page.updatedAt && (
                 <div className="opacity-50">
-                  {t('common:last_edited')} {dateShort(page.modifiedAt)}
+                  {t('c:last_edited')} {dateShort(page.updatedAt)}
                 </div>
               )}
             </div>
@@ -63,21 +83,102 @@ function ViewPage({ pageId }: ViewPageProps) {
         <div className="prose dark:prose-invert max-w-none">
           <h1 className="pt-2">{page.name}</h1>
 
-          {page.description && (
+          {/* Default mode: render full content */}
+          {renderMode === 'default' && page.description && (
             <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
               <BlockNoteFullHtml
                 id={`page-${pageId}`}
                 defaultValue={page.description}
-                className="text-muted-foreground font-light"
+                className="text-muted-foreground"
                 clickOpensPreview
                 publicFiles
               />
             </Suspense>
           )}
+
+          {/* Overview mode: optional intro content + child page cards */}
+          {renderMode === 'overview' && (
+            <>
+              {page.description && (
+                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+                  <BlockNoteFullHtml
+                    id={`page-${pageId}`}
+                    defaultValue={page.description}
+                    className="text-muted-foreground"
+                    clickOpensPreview
+                    publicFiles
+                  />
+                </Suspense>
+              )}
+              <ChildPagesList parentId={pageId} />
+            </>
+          )}
+
+          {/* Node-only mode: just navigation to children, no content */}
+          {renderMode === 'nodeOnly' && <ChildPagesList parentId={pageId} />}
         </div>
       </div>
     </div>
   );
+}
+
+/** Auto-generated list of published child pages with descriptions. */
+function ChildPagesList({ parentId }: { parentId: string }) {
+  const { t } = useTranslation();
+  const children = useChildPages(parentId);
+
+  if (children.length === 0) {
+    return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;
+  }
+
+  return (
+    <div className="not-prose mt-6 grid gap-3">
+      {children.map((child) => (
+        <ChildPageCard key={child.id} page={child} />
+      ))}
+    </div>
+  );
+}
+
+/** Card for a child page in overview/nodeOnly mode. */
+function ChildPageCard({ page }: { page: Page }) {
+  return (
+    <Link
+      to="/docs/page/$id"
+      params={{ id: page.id }}
+      className="group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50"
+    >
+      <div className="min-w-0 flex-1">
+        <h3 className="font-medium text-base underline-offset-2 group-hover:underline">{page.name}</h3>
+        {page.description && (
+          <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{extractPlainText(page.description)}</p>
+        )}
+      </div>
+      <ChevronRightIcon
+        size={16}
+        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+      />
+    </Link>
+  );
+}
+
+/** Extract plain text from BlockNote JSON description for preview. */
+function extractPlainText(description: string): string {
+  try {
+    const blocks = JSON.parse(description);
+    const texts: string[] = [];
+    for (const block of blocks) {
+      if (block.content) {
+        for (const inline of block.content) {
+          if (inline.text) texts.push(inline.text);
+        }
+      }
+      if (texts.length > 3) break;
+    }
+    return texts.join(' ').slice(0, 200);
+  } catch {
+    return description.slice(0, 200);
+  }
 }
 
 export default ViewPage;

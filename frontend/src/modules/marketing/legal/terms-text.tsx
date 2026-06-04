@@ -18,7 +18,7 @@ function TermsText() {
   return (
     <div id="terms-content">
       <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="italic mb-2 pt-8">Last updated: {lastUpdated}</p>
+        <p className="mb-2 pt-8 italic">Last updated: {lastUpdated}</p>
         <p>Questions about these terms? Contact us.</p>
         <LegalContact className="mt-8" />
       </LegalSection>

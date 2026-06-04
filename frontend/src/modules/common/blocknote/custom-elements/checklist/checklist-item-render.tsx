@@ -1,20 +1,11 @@
-import type { BlockNoteEditor } from '@blocknote/core';
-import { useExtensionState } from '@blocknote/react';
+import { type ReactCustomBlockRenderProps, useExtensionState } from '@blocknote/react';
 import { useEffect } from 'react';
 import { nanoid } from 'shared/nanoid';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import type { checklistItemConfig } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 
-interface ChecklistItemRenderProps {
-  block: {
-    id: string;
-    props: {
-      checkboxId: string;
-    };
-  };
-  editor: BlockNoteEditor<any, any, any>;
-  contentRef: (node: HTMLElement | null) => void;
-}
+type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
 
 export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItemRenderProps) {
   // Assign a checkboxId if missing OR if duplicated (e.g. block created by pressing Enter to split)
@@ -22,7 +13,8 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
     const id = block.props.checkboxId;
 
     if (!id) {
-      editor.updateBlock(block as any, { props: { checkboxId: nanoid(12) } });
+      // Defer to avoid flushSync inside React lifecycle
+      setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
       return;
     }
 
@@ -32,38 +24,18 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
       if ((b.props as { checkboxId?: string }).checkboxId !== id) continue;
       if (b.id === block.id) break; // We're the first occurrence — keep our ID
       // Another block above us has the same checkboxId — assign a fresh one
-      editor.updateBlock(block as any, { props: { checkboxId: nanoid(12) } });
+      setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
       break;
     }
   }, [block.id, block.props.checkboxId, editor]);
 
-  const { checkboxes, persisted } = useExtensionState(checkboxesExtension, { editor });
-  const entry = checkboxes?.find((c) => c.id === block.props.checkboxId);
-  const isChecked = entry?.checked ?? false;
-  // Checkbox is disabled until the task is persisted (set via extension options from content.tsx)
-  const isPersisted = persisted;
+  const { persisted } = useExtensionState(checkedExtension, { editor });
+  const isChecked = block.props.checked ?? false;
 
   const handleToggle = () => {
-    if (!isPersisted) return;
-    // Update extension store immediately for instant visual feedback
-    const ext = editor.getExtension(checkboxesExtension);
-    const newChecked = !isChecked;
-    if (ext?.store) {
-      const current = ext.store.state.checkboxes;
-      const exists = current.some((cb) => cb.id === block.props.checkboxId);
-      ext.store.setState((prev) => ({
-        ...prev,
-        checkboxes: exists
-          ? current.map((cb) => (cb.id === block.props.checkboxId ? { ...cb, checked: newChecked } : cb))
-          : [...current, { id: block.props.checkboxId, checked: newChecked }],
-      }));
-    }
-
-    // Persist to backend via custom event
-    dispatchCustomEvent('toggleCheckbox', {
-      checkboxId: block.props.checkboxId,
-      checked: newChecked,
-    });
+    if (!persisted) return;
+    // Toggle checked state directly in block props — this is a Y.Doc update when collaborative
+    editor.updateBlock(block, { props: { checked: !isChecked } });
   };
 
   return (
@@ -72,7 +44,7 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
         <input
           type="checkbox"
           checked={isChecked}
-          disabled={!isPersisted}
+          disabled={!persisted}
           onChange={handleToggle}
           data-checkbox-id={block.props.checkboxId}
           className="checklist-checkbox"

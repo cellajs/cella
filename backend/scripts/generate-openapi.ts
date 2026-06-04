@@ -1,12 +1,12 @@
 process.env.DEV_MODE = 'none';
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { checkMark, crossMark } from '#/utils/console';
 
-const MANIFEST_PATH = resolve(import.meta.dirname, '../.openapi-manifest.json');
+const CACHE_PATH = resolve(import.meta.dirname, '../openapi.cache.json');
 
 // Paths that affect OpenAPI output (relative to backend/)
 // Intentionally broad to avoid missing changes - false positives are safe, false negatives are not
@@ -14,11 +14,6 @@ const OPENAPI_RELEVANT_PATHS = [
   'src/',
   'mocks/',
 ];
-
-interface Manifest {
-  gitDiffHash: string;
-  generatedAt: string;
-}
 
 /** Get hash of git diff for relevant backend paths */
 function getGitDiffHash(): string | null {
@@ -36,23 +31,15 @@ function getGitDiffHash(): string | null {
   }
 }
 
-/** Load manifest from disk */
-function loadManifest(): Manifest | null {
+/** Read diff hash from the cached OpenAPI spec */
+function loadCachedDiffHash(): string | null {
   try {
-    if (!existsSync(MANIFEST_PATH)) return null;
-    return JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8'));
+    if (!existsSync(CACHE_PATH)) return null;
+    const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf-8'));
+    return cache['x-diff-hash'] ?? null;
   } catch {
     return null;
   }
-}
-
-/** Save manifest to disk */
-function saveManifest(gitDiffHash: string): void {
-  const manifest: Manifest = {
-    gitDiffHash,
-    generatedAt: new Date().toISOString(),
-  };
-  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 }
 
 /** Check if generation can be skipped */
@@ -67,12 +54,12 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
     return { skip: false, reason: 'git not available', hash: null };
   }
 
-  const manifest = loadManifest();
-  if (!manifest) {
-    return { skip: false, reason: 'no manifest', hash: currentHash };
+  const cachedHash = loadCachedDiffHash();
+  if (!cachedHash) {
+    return { skip: false, reason: 'no cache', hash: currentHash };
   }
 
-  if (manifest.gitDiffHash === currentHash) {
+  if (cachedHash === currentHash) {
     return { skip: true, reason: 'no changes', hash: currentHash };
   }
 
@@ -103,13 +90,13 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   try {
     const [{ default: app }, { default: docs }] = await Promise.all([
       import('#/routes'),
-      import('#/docs/docs'),
+      import('#/core/init-docs'),
     ]);
 
-    await docs(app, true);
-
-    // Update manifest after successful generation
-    if (hash) saveManifest(hash);
+    await docs(app, {
+      ...(hash && { diffHash: hash }),
+      generatedAt: new Date().toISOString(),
+    });
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
     console.info(`${checkMark} OpenAPI generation complete (${elapsed}s)`);
@@ -118,7 +105,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
     // Check if this is a recoverable error (existing cache can be used)
-    const hasFallbackCache = existsSync(resolve(import.meta.dirname, '../openapi.cache.json'));
+    const hasFallbackCache = existsSync(CACHE_PATH);
     const isDevModeError = err instanceof Error && err.message.includes('DEV_MODE');
 
     if (hasFallbackCache && isDevModeError) {

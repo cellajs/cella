@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useToastStore } from '~/modules/common/toaster/toast-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Toaster } from '~/modules/ui/sonner';
-import { useToastStore } from '~/store/toast';
 
 export const ToasterProvider = () => {
   const isMobile = useBreakpointBelow('sm');

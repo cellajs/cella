@@ -36,7 +36,7 @@ export const AttachmentRender = ({
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpointBelow('sm');
 
-  if (!url) return <Spinner className="h-12 w-12 mt-[45vh]" />;
+  if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
 
   return (
     <div className={containerClassName}>
@@ -51,15 +51,15 @@ export const AttachmentRender = ({
               showButtons={showButtons}
             />
           ) : (
-            <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
+            <img src={url} alt={altName} className={`${itemClassName} h-full w-full`} />
           ))}
-        {type.includes('audio') && <RenderAudio src={url} className="w-[80vw] mx-auto -mt-48 h-20" />}
-        {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-7xl mx-auto" />}
+        {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
+        {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-[90vh] max-w-7xl" />}
         {type.includes('pdf') && (
-          <RenderPDF file={url} className="w-[95vw] max-w-280 mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />
+          <RenderPDF file={url} className="m-auto mt-12 h-[calc(97vh-3rem)] w-[95vw] max-w-280 overflow-auto" />
         )}
         {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
-          <ContentPlaceholder icon={getFileIcon(type)} title="common:download_to_view" />
+          <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view" />
         )}
       </Suspense>
     </div>

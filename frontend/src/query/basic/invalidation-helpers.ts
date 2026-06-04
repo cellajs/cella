@@ -13,6 +13,21 @@ import type { ContextEntityType } from 'shared';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /**
+ * Remove pending update mutations for entities about to be deleted.
+ * Prevents stale updates from firing after the entity no longer exists.
+ */
+export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
+  const idSet = new Set(ids);
+  const mutationCache = queryClient.getMutationCache();
+  for (const mutation of mutationCache.findAll({ mutationKey: updateKey })) {
+    const vars = mutation.state.variables as { id?: string } | undefined;
+    if (vars?.id && idSet.has(vars.id)) {
+      mutationCache.remove(mutation);
+    }
+  }
+}
+
+/**
  * Check if invalidation should be skipped because other related mutations are still running.
  * Call this in onSettled before invalidating to prevent over-invalidation.
  *

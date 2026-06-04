@@ -57,14 +57,21 @@ describe('validateBlockMediaUrls', () => {
     });
 
     it('should pass blocks with CDN image URLs', () => {
-      const result = validateBlockMediaUrls(makeBlocks(cdnImage('https://imado-dev.s3.nl-ams.scw.cloud/my-image.png')));
+      const result = validateBlockMediaUrls(
+        makeBlocks(cdnImage('https://cella-public.s3.nl-ams.scw.cloud/my-image.png')),
+      );
       expect(result).toEqual({ valid: true });
     });
 
     it('should pass blocks with private CDN URLs', () => {
       const result = validateBlockMediaUrls(
-        makeBlocks(cdnImage('https://imado-dev-priv.s3.nl-ams.scw.cloud/signed/image.jpg')),
+        makeBlocks(cdnImage('https://cella-private.s3.nl-ams.scw.cloud/signed/image.jpg')),
       );
+      expect(result).toEqual({ valid: true });
+    });
+
+    it('should pass media blocks with internal object-storage keys', () => {
+      const result = validateBlockMediaUrls(makeBlocks(cdnImage('task/attachments/original/image.jpg')));
       expect(result).toEqual({ valid: true });
     });
 
@@ -172,7 +179,7 @@ describe('validateBlockMediaUrls', () => {
     it('should pass CDN URLs and reject external URLs in the same document', () => {
       const result = validateBlockMediaUrls(
         makeBlocks(
-          cdnImage('https://imado-dev.s3.nl-ams.scw.cloud/ok.png'),
+          cdnImage('https://cella-public.s3.nl-ams.scw.cloud/ok.png'),
           cdnImage('https://evil.com/bad.png'),
           paragraph('Some text'),
         ),

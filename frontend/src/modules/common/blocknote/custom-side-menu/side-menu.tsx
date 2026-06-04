@@ -87,7 +87,7 @@ function DragHandle({
     <button
       type="button"
       draggable
-      className="bn-button text-gray-400 cursor-grab"
+      className="bn-button cursor-grab text-gray-400"
       aria-label="Drag handle"
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

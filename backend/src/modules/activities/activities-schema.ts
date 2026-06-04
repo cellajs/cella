@@ -1,11 +1,9 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { activityActions, activityEventTypes, appConfig } from 'shared';
 import { activitiesTable } from '#/db/schema/activities';
-import { activityErrorSchema } from '#/db/utils/activity-error-schema';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { paginationQuerySchema } from '#/schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
-import { activityActions } from '#/sync/activity-actions';
 import { mockActivityResponse } from '../../../mocks/mock-activity';
 
 /** Schema for activity actions enum - uses literal types from activityActions */
@@ -15,12 +13,12 @@ export const activityActionSchema = z.enum(activityActions);
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
 /** Schema for resource types enum - uses literal types from appConfig */
-export const resourceTypeSchema = z.enum(appConfig.resourceTypes);
+const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 
-// Re-export for convenience
-export { activityErrorSchema } from '#/db/utils/activity-error-schema';
+/** Schema for activity event types enum - uses literal types from activityEventTypes */
+const activityEventTypeSchema = z.enum(activityEventTypes);
 
-/** Full activity schema derived from table, with proper stx and changedKeys typing */
+/** Full activity schema derived from table, with proper stx and changedFields typing */
 export const activitySchema = z
   .object({
     ...createSelectSchema(activitiesTable).shape,
@@ -28,11 +26,11 @@ export const activitySchema = z
     entityType: entityTypeSchema.nullable(),
     resourceType: resourceTypeSchema.nullable(),
     action: activityActionSchema,
+    type: activityEventTypeSchema,
     // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
-    changedKeys: z.array(z.string()).nullable(),
+    changedFields: z.array(z.string()).nullable(),
     // Use union instead of .nullable() to generate proper anyOf in OpenAPI (avoids allOf intersection issue)
     stx: z.union([stxBaseSchema, z.null()]),
-    error: z.union([activityErrorSchema, z.null()]),
   })
   .openapi('Activity', {
     description: 'An auditable event recording an entity change, used for sync and history.',
@@ -47,6 +45,6 @@ export const activityListQuerySchema = paginationQuerySchema.extend({
   resourceType: resourceTypeSchema.optional(),
   action: activityActionSchema.optional(),
   tableName: activitySchema.shape.tableName.optional(),
-  type: activitySchema.shape.type.optional(),
-  entityId: activitySchema.shape.entityId,
+  type: activityEventTypeSchema.optional(),
+  subjectId: activitySchema.shape.subjectId,
 });

@@ -3,6 +3,16 @@ import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 
 declare const self: ServiceWorkerGlobalScope;
+
+// Periodic Background Sync API (Chromium-only) — not yet in lib.dom.
+interface PeriodicSyncEvent extends ExtendableEvent {
+  readonly tag: string;
+}
+declare global {
+  interface ServiceWorkerGlobalScopeEventMap {
+    periodicsync: PeriodicSyncEvent;
+  }
+}
 declare const __BACKEND_URL__: string;
 
 // Take control of all pages immediately
@@ -23,7 +33,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Chromium-only (Chrome 80+, Edge). Fires at browser-determined intervals.
 // Fetches the real unseen count from the server so badge stays accurate.
 
-self.addEventListener('periodicsync' as any, (event: any) => {
+self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'unseen-badge-sync') {
     event.waitUntil(updateBadge());
   }

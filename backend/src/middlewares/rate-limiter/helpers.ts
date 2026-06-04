@@ -1,18 +1,18 @@
 import type { Context } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate-limiter-flexible';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
-import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
 import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
 import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { getIp } from '#/utils/get-ip';
 
 type RateLimiterOptions = {
   keyPrefix?: string;
-  points?: number;
-  duration?: number;
+  points: number;
+  duration: number;
   blockDuration?: number;
 };
 
@@ -23,6 +23,11 @@ const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>(
  * Get instance of rate limiter with correct store.
  * Uses RateLimiterDrizzle with a Drizzle-managed schema - no async table creation needed.
  * Instances are memoized by keyPrefix so all consumers sharing a prefix share one warm cache.
+ *
+ * Resilience features:
+ * - `insuranceLimiter`: RateLimiterMemory fallback when DB is unreachable (fail-open with memory safety net)
+ * - `inMemoryBlockOnConsumed`: Once a key exceeds its points budget, subsequent requests are rejected
+ *   in-memory without hitting the DB — reduces DDoS DB pressure to zero for blocked keys
  */
 export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   const keyPrefix = options.keyPrefix ?? '';
@@ -36,14 +41,20 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
 
   let instance: RateLimiterDrizzle | RateLimiterMemory;
 
-  // Use in-memory rate limiter for basic mode and none mode (no database)
-  if (env.DEV_MODE === 'basic' || env.DEV_MODE === 'none') {
+  // Use in-memory rate limiter when no database is configured
+  if (env.DEV_MODE === 'none') {
     instance = new RateLimiterMemory(enforcedOptions);
   } else {
     instance = new RateLimiterDrizzle({
       ...enforcedOptions,
       storeClient: db,
       schema: rateLimitsTable,
+      // Fail-open: when DB is unreachable, fall back to in-memory limiter
+      // rather than crashing the request with a 500
+      insuranceLimiter: new RateLimiterMemory(enforcedOptions),
+      // Block over-limit keys in-memory so repeat offenders don't hit the DB.
+      // When blockDuration=0 (e.g. pointsLimiter), uses remaining window time.
+      inMemoryBlockOnConsumed: enforcedOptions.points,
     });
   }
 
@@ -55,8 +66,9 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
  * Rate limit Error response
  */
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {
-  ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
-  throw new AppError(429, 'too_many_requests', 'warn', { meta: { rateLimitKey } });
+  const retryAfter = getRetryAfter(limitState.msBeforeNext);
+  ctx.header('Retry-After', retryAfter);
+  throw new AppError(429, 'too_many_requests', 'warn', { meta: { rateLimitKey, retryAfter: Number(retryAfter) } });
 };
 
 /**
@@ -81,43 +93,13 @@ export const extractIdentifiers = async (
   for (const identifier of identifiersToExtract) {
     switch (identifier) {
       case 'email': {
-        let email: string | null = null;
-
-        // JSON body
+        // Extract email from JSON body only – use Hono's cached json() so the body stays available for the handler
         if (ctx.req.header('content-type')?.includes('application/json')) {
           try {
-            const contentLength = ctx.req.header('content-length');
-            if (contentLength && contentLength !== '0') {
-              const body = (await ctx.req.raw.clone().json()) as { email?: string };
-              if (body.email) {
-                email = body.email;
-                break;
-              }
-            }
+            const body = (await ctx.req.json()) as { email?: string };
+            if (body.email) results.email = body.email;
           } catch {}
         }
-
-        // Query
-        const queryEmail = ctx.req.query('email');
-        if (queryEmail) {
-          email = queryEmail;
-          break;
-        }
-
-        // Params
-        const paramEmail = ctx.req.param('email');
-        if (paramEmail) {
-          email = paramEmail;
-          break;
-        }
-
-        // Headers
-        const headerEmail = ctx.req.header('x-user-email');
-        if (headerEmail) {
-          email = headerEmail;
-        }
-
-        results.email = email;
         break;
       }
 
@@ -131,7 +113,7 @@ export const extractIdentifiers = async (
         break;
       }
       case 'tenantId': {
-        const tenantId = ctx.req.param('tenantId') || ctx.var.tenantId;
+        const tenantId = ctx.var.tenantId;
         if (tenantId) results.tenantId = tenantId;
         break;
       }
@@ -187,7 +169,7 @@ export const bulkBodyLength = async (ctx: Context<Env>): Promise<number> => {
     const contentType = ctx.req.header('content-type');
     if (!contentType?.includes('application/json')) return 1;
 
-    const body = await ctx.req.raw.clone().json();
+    const body = await ctx.req.json();
 
     if (Array.isArray(body)) return Math.max(body.length, 1);
     if (body && Array.isArray(body.ids)) return Math.max(body.ids.length, 1);

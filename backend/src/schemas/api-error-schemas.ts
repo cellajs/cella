@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import type { Severity } from 'shared';
+import { schemaTags } from '#/core/openapi-helpers';
 import { mockApiError } from '../../mocks/mock-error';
 import { entityTypeSchema } from './common-schemas';
 
@@ -41,8 +42,12 @@ export const apiErrorSchema = z
     timestamp: z.string().optional(), // Optional timestamp
     userId: z.string().optional(), // Optional user identifier
     organizationId: z.string().optional(), // Optional organization identifier
+    meta: z
+      .record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()]))
+      .optional(), // Optional structured metadata (e.g. retryAfter, slug, reason)
   })
   .openapi('ApiError', {
     description: 'Standard error response returned by all API endpoints.',
     example: mockApiError(),
+    'x-tags': schemaTags('errors', 'cella'),
   });

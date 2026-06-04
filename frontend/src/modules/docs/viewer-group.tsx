@@ -49,29 +49,29 @@ export const ViewerGroup = ({
     {
       value: 'format',
       icon: TextIcon,
-      label: t('common:docs.format'),
-      ariaLabel: t('common:docs.view_format'),
+      label: t('c:docs.format'),
+      ariaLabel: t('c:docs.view_format'),
       show: true,
     },
     {
       value: 'example',
       icon: BirdIcon,
-      label: t('common:example'),
-      ariaLabel: t('common:docs.view_example'),
+      label: t('c:example'),
+      ariaLabel: t('c:docs.view_example'),
       show: example !== undefined,
     },
     {
       value: 'zod',
       icon: BracesIcon,
-      label: t('common:docs.zod'),
-      ariaLabel: t('common:docs.view_zod'),
+      label: t('c:docs.zod'),
+      ariaLabel: t('c:docs.view_zod'),
       show: !!zodCode,
     },
     {
       value: 'type',
       icon: FileTypeIcon,
-      label: t('common:type'),
-      ariaLabel: t('common:docs.view_type'),
+      label: t('c:type'),
+      ariaLabel: t('c:docs.view_type'),
       show: !!typeCode,
     },
   ];
@@ -84,7 +84,7 @@ export const ViewerGroup = ({
         onValueChange={(value: string | string[]) => value && setViewMode(value as SchemaViewMode)}
         size="xs"
         variant="outline"
-        className="max-md:hidden absolute top-2 bg-muted/50 right-2 z-10"
+        className="absolute top-2 right-2 z-10 bg-muted/50 max-md:hidden"
       >
         {toggleItems
           .filter((item) => item.show)
@@ -93,14 +93,14 @@ export const ViewerGroup = ({
               key={value}
               value={value}
               aria-label={ariaLabel}
-              className="opacity-50 hover:opacity-70 data-[state=on]:opacity-100"
+              className="opacity-50 hover:opacity-70 data-pressed:opacity-100"
             >
-              <Icon className="h-4 w-4 mr-1.5" />
-              <span className="lowercase text-xs">{label}</span>
+              <Icon className="mr-1.5 h-4 w-4" />
+              <span className="text-xs lowercase">{label}</span>
             </ToggleGroupItem>
           ))}
       </ToggleGroup>
-      <div className="rounded-md bg-muted/50 overflow-x-auto">
+      <div className="overflow-x-auto rounded-md bg-muted/50">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={viewMode}

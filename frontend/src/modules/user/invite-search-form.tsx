@@ -31,19 +31,19 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
     invite(
       {
         body: values,
-        path: { tenantId: contextEntity.tenantId, orgId: contextEntity.organizationId || contextEntity.id },
+        path: { tenantId: contextEntity.tenantId, organizationId: contextEntity.organizationId || contextEntity.id },
         query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
         contextEntity,
       },
       {
-        onSuccess: ({ invitesSentCount, rejectedItemIds }, { body: { emails } }) => {
+        onSuccess: ({ invitesSentCount, rejectedIds }, { body: { emails } }) => {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
-            const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
-            toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
+            const resource = t(`c:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
+            toaster(t('c:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
           }
-          if (rejectedItemIds.length)
-            toaster(t('common:still_not_accepted', { count: rejectedItemIds.length, total: emails.length }), 'info');
+          if (rejectedIds.length)
+            toaster(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }), 'info');
 
           if (isDialog) useDialoger.getState().remove();
         },
@@ -71,8 +71,8 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem className="flex-row gap-4 items-center">
-              <FormLabel>{t('common:role')}:</FormLabel>
+            <FormItem className="flex-row items-center gap-4">
+              <FormLabel>{t('c:role')}:</FormLabel>
               <FormControl>
                 <SelectRoleRadio value={value} onChange={onChange} />
               </FormControl>
@@ -80,7 +80,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
             </FormItem>
           )}
         />
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && (
               <Badge variant="secondary" context="button">
@@ -88,11 +88,11 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
               </Badge>
             )}
             <SendIcon size={16} className="mr-2" />
-            {t('common:invite')}
+            {t('c:invite')}
           </SubmitButton>
           {form.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
-              {t('common:cancel')}
+              {t('c:cancel')}
             </Button>
           )}
         </div>

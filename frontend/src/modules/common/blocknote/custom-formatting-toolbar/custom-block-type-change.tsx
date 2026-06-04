@@ -19,7 +19,6 @@ export const CellaCustomBlockTypeSelect = ({
 }: {
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
 }) => {
-  // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();

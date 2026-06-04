@@ -1,103 +1,19 @@
-import i18n from 'i18next';
 import { BirdIcon } from 'lucide-react';
-import { type RefObject, Suspense, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { Spinner } from '~/modules/common/spinner';
-import { OperationDetail } from '~/modules/docs/operations/operation-detail';
-import { OperationExamples } from '~/modules/docs/operations/operation-examples';
+import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
+import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
 import type { GenExtensionDefinition, GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { getMethodColor } from '../../helpers/get-method-color';
 
-/**
- * Opens a sheet with operation detail view
- */
-function openOperationSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
-  useSheeter.getState().create(
-    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
-      <div className="container pb-[50vh] pt-3">
-        <OperationDetail operation={operation} />
-      </div>
-    </Suspense>,
-    {
-      id: `operation-${operation.id}`,
-      triggerRef: buttonRef,
-      side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:docs.operation_detail'),
-    },
-  );
-}
-
-/**
- * Opens a sheet with operation examples view (ViewerGroup with example preselected)
- */
-function openExamplesSheet(operation: GenOperationSummary, buttonRef: RefObject<HTMLButtonElement | null>) {
-  useSheeter.getState().create(
-    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
-      <div className="container pb-[50vh] pt-3">
-        <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />
-      </div>
-    </Suspense>,
-    {
-      id: `examples-${operation.id}`,
-      triggerRef: buttonRef,
-      side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:docs.success_response'),
-    },
-  );
-}
-
-/**
- * Cell component for clickable operation path that opens detail sheet
- */
-function PathCell({ row }: { row: GenOperationSummary }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      className="font-mono text-xs truncate hover:underline underline-offset-3 decoration-foreground/30 text-left w-full"
-      onClick={() => openOperationSheet(row, buttonRef)}
-    >
-      {row.path}
-    </button>
-  );
-}
-
-/**
- * Cell component for clickable example icon that opens examples sheet.
- */
-function ExampleCell({ row }: { row: GenOperationSummary }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // No response body means examples are not applicable
-  if (!row.hasResponseBody) return <div className="w-full text-center text-muted-foreground/50">na</div>;
-
-  // Has response body but no example yet
-  if (!row.hasExample) return <div className="w-full text-center text-muted-foreground">-</div>;
-
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      className="flex items-center w-full justify-center opacity-60 hover:opacity-100"
-      onClick={() => openExamplesSheet(row, buttonRef)}
-    >
-      <BirdIcon className="h-4 w-4" />
-    </button>
-  );
-}
-
-export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefinition[] = []) => {
+export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
   const { t } = useTranslation();
 
-  const columns = useMemo(() => {
+  return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(() => {
     // Generate extension columns dynamically from extension definitions
     const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
       key: ext.id,
@@ -106,13 +22,14 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
         .replace(/-/g, ' ')
         .replace(/^\w/, (c) => c.toUpperCase()),
       minBreakpoint: 'md',
-      sortable: false,
       resizable: true,
       width: 150,
+      placeholderValue: '-',
       renderCell: ({ row }: { row: GenOperationSummary }) => {
         const values = row.extensions[ext.id];
-        return values?.length ? (
-          <div className="font-mono text-[11px] flex flex-wrap gap-1 truncate">
+        if (!values?.length) return null;
+        return (
+          <div className="flex flex-wrap gap-1 truncate font-mono text-xs">
             {values.map((value: string) => {
               const meta = ext.values?.[value];
               const label = meta?.name ?? value;
@@ -124,7 +41,7 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
               return (
                 <code
                   key={value}
-                  className="truncate inline-block cursor-default"
+                  className="inline-block cursor-default truncate"
                   data-tooltip={tooltipContent ? 'true' : undefined}
                   data-tooltip-content={tooltipContent}
                 >
@@ -133,23 +50,44 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
               );
             })}
           </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
         );
       },
     }));
 
-    const cols: ColumnOrColumnGroup<GenOperationSummary>[] = [
+    // Generate tag kind columns dynamically (one column per kind, e.g., 'module', 'ownership')
+    const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
+      key: `tag-${kind}`,
+      name: kind.replace(/^\w/, (c) => c.toUpperCase()),
+      sortable: true,
+      minBreakpoint: 'md',
+      resizable: true,
+      minWidth: 80,
+      placeholderValue: '-',
+      renderCell: ({ row }: { row: GenOperationSummary }) => {
+        const values = row.tagsByKind?.[kind];
+        if (!values?.length) return null;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {values.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    }));
+
+    return [
       {
         key: 'method',
-        name: t('common:method'),
+        name: t('c:method'),
         sortable: true,
-        resizable: false,
         width: 80,
         renderCell: ({ row }) => (
           <Badge
             variant="secondary"
-            className={`font-mono uppercase text-xs bg-transparent shadow-none ${getMethodColor(row.method)}`}
+            className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}
           >
             {row.method.toUpperCase()}
           </Badge>
@@ -157,33 +95,61 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       },
       {
         key: 'path',
-        name: t('common:path'),
+        name: t('c:path'),
         minWidth: 180,
         resizable: true,
         sortable: true,
-        renderCell: ({ row }) => <PathCell row={row} />,
+        renderCell: ({ row, tabIndex }) => (
+          <Button
+            variant="cell"
+            size="cell"
+            tabIndex={tabIndex}
+            title={row.path}
+            className="w-full min-w-0 justify-start font-mono text-xs decoration-foreground/30 underline-offset-3 hover:underline"
+            onClick={(e) => openOperationSheet(row, e.currentTarget)}
+          >
+            <span dir="rtl" className="block min-w-0 flex-1 truncate text-left">
+              &lrm;{row.path}
+            </span>
+          </Button>
+        ),
       },
       {
         key: 'hasExample',
         name: '',
-        resizable: false,
-        sortable: false,
+        minBreakpoint: 'sm',
         width: 50,
-        renderCell: ({ row }) => <ExampleCell row={row} />,
+        renderCell: ({ row, tabIndex }) => {
+          // No response body means examples are not applicable
+          if (!row.hasResponseBody)
+            return <span className="block w-full text-center text-muted-foreground/50 text-xs">na</span>;
+          // Has response body but no example yet
+          if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
+          return (
+            <Button
+              variant="cell"
+              size="cell"
+              tabIndex={tabIndex}
+              className="justify-center opacity-60 hover:opacity-100"
+              onClick={(e) => openExamplesSheet(row, e.currentTarget)}
+            >
+              <BirdIcon className="h-4 w-4" />
+            </Button>
+          );
+        },
       },
       {
         key: 'id',
-        name: t('common:docs.operation_id'),
+        name: t('c:docs.operation_id'),
         sortable: true,
+        minBreakpoint: 'md',
         resizable: true,
         width: 200,
-        renderCell: ({ row }) => (
-          <code className="font-mono text-[11px] text-muted-foreground/80 truncate">{row.id}</code>
-        ),
+        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground/80 text-xs">{row.id}</code>,
       },
       {
         key: 'summary',
-        name: t('common:summary'),
+        name: t('c:summary'),
         hidden: true,
         sortable: true,
         resizable: true,
@@ -195,30 +161,8 @@ export const useColumns = (_isCompact: boolean, extensions: GenExtensionDefiniti
       },
       // Insert dynamically generated extension columns
       ...extensionColumns,
-      {
-        key: 'tags',
-        name: t('common:tags'),
-        sortable: true,
-        minBreakpoint: 'md',
-        resizable: true,
-        minWidth: 80,
-        renderCell: ({ row }) =>
-          row.tags?.length ? (
-            <div className="flex flex-wrap gap-1">
-              {row.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          ),
-      },
+      // Insert dynamically generated tag kind columns
+      ...tagKindColumns,
     ];
-
-    return cols;
-  }, [t, extensions]);
-
-  return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(columns);
+  });
 };

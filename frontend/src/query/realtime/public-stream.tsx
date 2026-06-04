@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { publicStreamManager } from './stream-store';
-import type { StreamState } from './types';
 
 const debugLabel = 'PublicStream';
 
@@ -8,14 +7,12 @@ const debugLabel = 'PublicStream';
 interface UsePublicStreamOptions {
   /** Whether the stream is enabled. Default: true */
   enabled?: boolean;
-  /** Callback when state changes */
-  onStateChange?: (state: StreamState) => void;
 }
 
 /** Return value from usePublicStream hook */
 interface UsePublicStreamReturn {
   /** Current connection state */
-  state: StreamState;
+  state: string;
   /** Last received cursor/offset */
   cursor: string | null;
   /** Force reconnect */
@@ -36,7 +33,7 @@ interface UsePublicStreamReturn {
  * 4. Invalidate entity lists for create/update refetches
  */
 function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
-  const { enabled = true, onStateChange } = options;
+  const { enabled = true } = options;
 
   // Subscribe to store state
   const state = publicStreamManager.useStore((s) => s.state);
@@ -51,10 +48,11 @@ function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamR
     }
   }, [enabled]);
 
-  // Notify callback on state changes
+  // Debug log state transitions
   useEffect(() => {
-    onStateChange?.(state);
-  }, [state, onStateChange]);
+    if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
+    if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
+  }, [state]);
 
   return {
     state,
@@ -70,12 +68,6 @@ function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamR
  * No tab coordination - each tab maintains its own connection.
  */
 export function PublicStream() {
-  usePublicStream({
-    onStateChange: (state) => {
-      if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
-      if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
-    },
-  });
-
+  usePublicStream();
   return null;
 }

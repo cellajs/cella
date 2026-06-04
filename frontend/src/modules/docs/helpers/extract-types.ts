@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
+import { appConfig } from 'shared';
 
 export type DefinitionIndex = Map<string, string>;
 
@@ -9,16 +10,19 @@ export type DefinitionIndex = Map<string, string>;
 function buildIndex(content: string): DefinitionIndex {
   const index: DefinitionIndex = new Map();
   const exportRegex = /^export (?:const|type) (\w+)/gm;
-  let match: RegExpExecArray | null;
+  let match: RegExpExecArray | null = exportRegex.exec(content);
 
-  while ((match = exportRegex.exec(content)) !== null) {
+  while (match !== null) {
     const name = match[1];
     const startIndex = match.index;
 
     // Find `=` after the declaration
     let endIndex = startIndex + match[0].length;
     while (endIndex < content.length && content[endIndex] !== '=' && content[endIndex] !== '\n') endIndex++;
-    if (content[endIndex] !== '=') continue;
+    if (content[endIndex] !== '=') {
+      match = exportRegex.exec(content);
+      continue;
+    }
     endIndex++; // skip '='
     while (endIndex < content.length && content[endIndex] === ' ') endIndex++;
 
@@ -47,6 +51,7 @@ function buildIndex(content: string): DefinitionIndex {
     }
 
     index.set(name, content.slice(startIndex, endIndex).trim());
+    match = exportRegex.exec(content);
   }
 
   return index;
@@ -59,8 +64,8 @@ function buildIndex(content: string): DefinitionIndex {
 export const zodIndexQueryOptions = queryOptions({
   queryKey: ['docs', 'zod-index'],
   queryFn: async () => {
-    const module = await import('~/api.gen/zod.gen.ts?raw');
-    return buildIndex(module.default as string);
+    const res = await fetch(`${appConfig.frontendUrl}/static/zod.gen.ts`);
+    return buildIndex(await res.text());
   },
   staleTime: Number.POSITIVE_INFINITY,
 });
@@ -72,8 +77,8 @@ export const zodIndexQueryOptions = queryOptions({
 export const typesIndexQueryOptions = queryOptions({
   queryKey: ['docs', 'types-index'],
   queryFn: async () => {
-    const module = await import('~/api.gen/types.gen.ts?raw');
-    return buildIndex(module.default as string);
+    const res = await fetch(`${appConfig.frontendUrl}/static/types.gen.ts`);
+    return buildIndex(await res.text());
   },
   staleTime: Number.POSITIVE_INFINITY,
 });
@@ -126,17 +131,20 @@ export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId:
 };
 
 /**
- * Get the Zod schema code for a specific operation request (Data).
+ * Get the Zod schema code for a specific operation request.
+ * Combines available Path / Query / Body schemas (zod.gen.ts has no composite `Data` schema).
  */
 export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: string): string => {
-  const name = `z${toPascalCase(operationId)}Data`;
-  const definition = zodIndex.get(name);
+  const base = `z${toPascalCase(operationId)}`;
+  const parts = (['Path', 'Query', 'Body'] as const)
+    .map((part) => zodIndex.get(`${base}${part}`))
+    .filter((def): def is string => Boolean(def));
 
-  if (!definition) {
-    return `// Schema ${name} not found in zod.gen.ts`;
+  if (parts.length === 0) {
+    return `// No request schemas (${base}Path / ${base}Query / ${base}Body) found in zod.gen.ts`;
   }
 
-  return `// From ~/api.gen/zod.gen.ts\n${definition}`;
+  return `// From ~/api.gen/zod.gen.ts\n${parts.join('\n\n')}`;
 };
 
 /**

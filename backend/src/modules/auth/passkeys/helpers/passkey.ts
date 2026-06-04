@@ -18,11 +18,11 @@ import {
   parseClientDataJSON,
 } from '@oslojs/webauthn';
 import { and, eq } from 'drizzle-orm';
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { AppError } from '#/lib/error';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 
 /**

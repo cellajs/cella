@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, withFakerSeed } from './utils';
+import { nanoid } from 'shared/nanoid';
+import { MOCK_REF_DATE, mockUuid, withFakerSeed } from './utils';
 
 /**
  * Generates a mock passkey challenge response.
@@ -17,12 +18,12 @@ export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') 
  */
 export const mockPasskeyResponse = (key = 'passkey:default') =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate });
 
     return {
-      id: mockNanoid(),
-      userId: mockNanoid(),
+      id: mockUuid(),
+      userId: mockUuid(),
       nameOnDevice: faker.helpers.arrayElement(['Chrome on Mac', 'Safari on iPhone', 'Firefox on Windows']),
       userAgent: faker.internet.userAgent(),
       createdAt: createdAt.toISOString(),
@@ -49,21 +50,12 @@ export const mockSignUpWithTokenResponse = (key = 'sign-up-token:default') =>
   }));
 
 /**
- * Generates a mock create password response.
- * Used for createPassword endpoint example.
- */
-export const mockCreatePasswordResponse = (key = 'create-password:default') =>
-  withFakerSeed(key, () => ({
-    mfa: false,
-  }));
-
-/**
  * Generates a mock TOTP key response.
  * Used for generateTotpKey endpoint example.
  */
 export const mockTotpKeyResponse = (key = 'totp-key:default') =>
   withFakerSeed(key, () => ({
-    totpUri: `otpauth://totp/Cella:user@example.com?secret=${faker.string.alphanumeric(32).toUpperCase()}&issuer=Cella`,
+    totpUri: `otpauth://totp/App:user@example.com?secret=${faker.string.alphanumeric(32).toUpperCase()}&issuer=App`,
     manualKey: faker.string.alphanumeric(32).toUpperCase(),
   }));
 
@@ -74,6 +66,20 @@ export const mockTotpKeyResponse = (key = 'totp-key:default') =>
 export const mockTokenDataResponse = (key = 'token-data:default') =>
   withFakerSeed(key, () => ({
     email: faker.internet.email({ provider: 'demo.local' }).toLowerCase(),
-    userId: mockNanoid(),
+    userId: mockUuid(),
     inactiveMembershipId: undefined,
+  }));
+
+/**
+ * Generates a mock passkey DB record for insertion.
+ * Used in passkey integration tests.
+ */
+export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') =>
+  withFakerSeed(key, () => ({
+    userId,
+    credentialId: nanoid(32),
+    publicKey: nanoid(40),
+    nameOnDevice,
+    deviceType: 'desktop' as const,
+    createdAt: faker.date.past({ refDate: MOCK_REF_DATE }).toISOString(),
   }));

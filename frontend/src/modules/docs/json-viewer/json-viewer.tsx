@@ -29,8 +29,8 @@ function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPa
 
       const walker = document.createTreeWalker(containerRef.current, NodeFilter.SHOW_TEXT, null);
 
-      let node: Node | null;
-      while ((node = walker.nextNode())) {
+      let node: Node | null = walker.nextNode();
+      while (node) {
         const text = node.textContent?.trim();
         if (text === `"${schemaName}"` || text === schemaName) {
           const parentEl = node.parentElement;
@@ -45,6 +45,7 @@ function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPa
             return;
           }
         }
+        node = walker.nextNode();
       }
     }, 150);
   });
@@ -67,7 +68,7 @@ function createRefDataType(onNavigate: (targetPath: string) => void): DataType<s
           e.stopPropagation();
           onNavigate(value);
         }}
-        className="text-primary hover:underline cursor-pointer font-mono text-sm"
+        className="cursor-pointer font-mono text-primary text-sm hover:underline"
         title={`Go to ${value}`}
       >
         "{value}"
@@ -171,7 +172,7 @@ export const JsonViewer: FC<JsonViewerProps> = ({
       <div
         ref={containerRef}
         data-openapi-mode={openapiMode}
-        className={`group/jv font-mono text-sm leading-relaxed text-gray-900 dark:text-gray-100 ${className || ''}`}
+        className={`group/jv font-mono text-gray-900 text-sm leading-relaxed dark:text-gray-100 ${className || ''}`}
       >
         <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
       </div>

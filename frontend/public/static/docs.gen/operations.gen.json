@@ -1,24 +1,5 @@
 [
   {
-    "id": "getActivities",
-    "hash": "tag/activities/GET/activities",
-    "method": "get",
-    "path": "/activities",
-    "tags": ["activities"],
-    "summary": "Get list of activities",
-    "description": "Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    }
-  },
-  {
     "id": "getAuthHealth",
     "hash": "tag/auth/GET/auth/health",
     "method": "get",
@@ -35,6 +16,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -54,6 +39,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["emailEnumLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -63,7 +52,7 @@
     "path": "/auth/invoke-token/{type}/{token}",
     "tags": ["auth"],
     "summary": "Invoke token session",
-    "description": "Validates and invokes a token (for password reset, email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
+    "description": "Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -73,6 +62,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -92,6 +85,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -111,6 +108,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -130,6 +131,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -149,6 +154,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["spamLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -168,6 +177,33 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "sendMagicLink",
+    "hash": "tag/auth/POST/auth/magic/send",
+    "method": "post",
+    "path": "/auth/magic/send",
+    "tags": ["auth"],
+    "summary": "Send magic link",
+    "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["magicLinkLimiter", "spamLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -187,6 +223,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -206,6 +246,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -225,6 +269,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -244,101 +292,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["totpVerificationLimiter"],
       "xCache": []
-    }
-  },
-  {
-    "id": "signUp",
-    "hash": "tag/auth/POST/auth/sign-up",
-    "method": "post",
-    "path": "/auth/sign-up",
-    "tags": ["auth"],
-    "summary": "Sign up with password",
-    "description": "Registers a new user using an email and password. Sends a verification email upon successful sign up.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "signUpWithToken",
-    "hash": "tag/auth/POST/auth/sign-up/{tokenId}",
-    "method": "post",
-    "path": "/auth/sign-up/{tokenId}",
-    "tags": ["auth"],
-    "summary": "Sign up to accept invite",
-    "description": "Registers a user using an email and password in response to a system or organization invitation.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["tokenLimiter", "emailEnumLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "requestPassword",
-    "hash": "tag/auth/POST/auth/request-password",
-    "method": "post",
-    "path": "/auth/request-password",
-    "tags": ["auth"],
-    "summary": "Request new password",
-    "description": "Sends an email with a link to reset the user's password.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["spamLimiter", "emailEnumLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "createPassword",
-    "hash": "tag/auth/POST/auth/create-password/{tokenId}",
-    "method": "post",
-    "path": "/auth/create-password/{tokenId}",
-    "tags": ["auth"],
-    "summary": "Create password",
-    "description": "Sets a new password using a single-use session token in cookie and grants a session immediately upon success.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["tokenLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "signIn",
-    "hash": "tag/auth/POST/auth/sign-in",
-    "method": "post",
-    "path": "/auth/sign-in",
-    "tags": ["auth"],
-    "summary": "Sign in with password",
-    "description": "Authenticates an existing user using their email and password.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["passwordLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -358,6 +315,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -377,6 +338,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -396,6 +361,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -415,6 +384,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -434,6 +407,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -453,6 +430,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -472,6 +453,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -491,6 +476,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -510,6 +499,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -529,6 +522,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -548,6 +545,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -567,6 +568,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -586,6 +591,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -605,6 +614,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -624,6 +637,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -643,6 +660,10 @@
       "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -662,6 +683,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -681,6 +706,10 @@
       "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -700,6 +729,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -719,6 +752,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -738,6 +775,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -757,25 +798,33 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["seen"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "checkSlug",
-    "hash": "tag/entities/POST/entities/check-slug",
+    "hash": "tag/entities/POST/entities/{tenantId}/check-slug",
     "method": "post",
-    "path": "/entities/check-slug",
+    "path": "/entities/{tenantId}/check-slug",
     "tags": ["entities"],
     "summary": "Check slug availability",
-    "description": "Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+    "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
     "deprecated": false,
-    "hasParams": false,
+    "hasParams": true,
     "hasRequestBody": true,
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard"],
+      "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["entities"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -795,6 +844,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["entities"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -814,6 +867,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["entities"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -833,6 +890,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["entities"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -852,6 +913,10 @@
       "xGuard": ["authGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["entities"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -871,6 +936,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["spamLimiter", "pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["system"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -890,6 +959,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["system"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -909,25 +982,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
-    }
-  },
-  {
-    "id": "paddleWebhook",
-    "hash": "tag/system/POST/system/paddle-webhook",
-    "method": "post",
-    "path": "/system/paddle-webhook",
-    "tags": ["system"],
-    "summary": "Paddle webhook (WIP)",
-    "description": "Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["tokenLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["system"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -947,6 +1005,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["system"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -966,6 +1028,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -985,6 +1051,33 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "selfCreateTenant",
+    "hash": "tag/tenants/POST/tenants/self",
+    "method": "post",
+    "path": "/tenants/self",
+    "tags": ["tenants"],
+    "summary": "Create a tenant for yourself",
+    "description": "Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1004,6 +1097,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1020,9 +1117,13 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xGuard": ["authGuard", "sysAdminGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1039,28 +1140,13 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xGuard": ["authGuard", "sysAdminGuard", "tenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
-    }
-  },
-  {
-    "id": "deleteDomain",
-    "hash": "tag/tenants/DELETE/tenants/{tenantId}/domains/{id}",
-    "method": "delete",
-    "path": "/tenants/{tenantId}/domains/{id}",
-    "tags": ["tenants"],
-    "summary": "Remove a domain",
-    "description": "Removes a domain from a tenant. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1077,9 +1163,36 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xGuard": ["authGuard", "sysAdminGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "deleteDomain",
+    "hash": "tag/tenants/DELETE/tenants/{tenantId}/domains/{id}",
+    "method": "delete",
+    "path": "/tenants/{tenantId}/domains/{id}",
+    "tags": ["tenants"],
+    "summary": "Remove a domain",
+    "description": "Removes a domain from a tenant. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1096,28 +1209,13 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xGuard": ["authGuard", "sysAdminGuard", "tenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
-    }
-  },
-  {
-    "id": "createRequest",
-    "hash": "tag/requests/POST/requests",
-    "method": "post",
-    "path": "/requests",
-    "tags": ["requests"],
-    "summary": "Create request",
-    "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["tenants"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1137,6 +1235,33 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["requests"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "createRequest",
+    "hash": "tag/requests/POST/requests",
+    "method": "post",
+    "path": "/requests",
+    "tags": ["requests"],
+    "summary": "Create request",
+    "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["requests"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1156,44 +1281,10 @@
       "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
-    }
-  },
-  {
-    "id": "getMetrics",
-    "hash": "tag/metrics/GET/metrics",
-    "method": "get",
-    "path": "/metrics",
-    "tags": ["metrics"],
-    "summary": "Get metrics",
-    "description": "EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).\n      Primarily intended for internal monitoring and diagnostics.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getRuntimeMetrics",
-    "hash": "tag/metrics/GET/metrics/runtime",
-    "method": "get",
-    "path": "/metrics/runtime",
-    "tags": ["metrics"],
-    "summary": "Get runtime metrics",
-    "description": "Returns Node.js process health metrics and OpenTelemetry runtime instrumentation data.\n      Includes memory usage, CPU time, uptime, and event loop utilization.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["requests"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1213,44 +1304,10 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
-    }
-  },
-  {
-    "id": "getCacheStats",
-    "hash": "tag/metrics/GET/metrics/cache",
-    "method": "get",
-    "path": "/metrics/cache",
-    "tags": ["metrics"],
-    "summary": "Get entity cache statistics",
-    "description": "Returns entity cache statistics including hit rates, sizes, and invalidations.\n      Useful for monitoring cache performance and tuning.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    }
-  },
-  {
-    "id": "getSyncMetrics",
-    "hash": "tag/metrics/GET/metrics/sync",
-    "method": "get",
-    "path": "/metrics/sync",
-    "tags": ["metrics"],
-    "summary": "Get sync flow metrics",
-    "description": "Returns metrics for the sync flow: CDC Worker (messages) → ActivityBus (events) → SSE (notifications).\n      Includes message/notification counts, connection stats, and tracing span data.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["metrics"],
+      "ownership": ["cella"]
     }
   },
   {
@@ -1268,8 +1325,13 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["authGuard", "tenantGuard"],
-      "xRateLimiter": ["pointsLimiter"],
+      "xRateLimiter": ["insertEntityLock", "pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "ownership": ["cella"],
+      "entity": ["context"]
     },
     "entityType": "organization"
   },
@@ -1291,25 +1353,10 @@
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
-    "entityType": "organization"
-  },
-  {
-    "id": "autoCreateOrganization",
-    "hash": "tag/organizations/POST/organizations",
-    "method": "post",
-    "path": "/organizations",
-    "tags": ["organizations"],
-    "summary": "Create organization with auto-tenant",
-    "description": "Creates an *organization* for users without a tenant. Auto-creates a tenant or suggests an existing one based on email domain.",
-    "deprecated": false,
-    "hasParams": false,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
+    "tagsByKind": {
+      "module": ["organizations"],
+      "ownership": ["cella"],
+      "entity": ["context"]
     },
     "entityType": "organization"
   },
@@ -1331,6 +1378,11 @@
       "xRateLimiter": [],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "ownership": ["cella"],
+      "entity": ["context"]
+    },
     "entityType": "organization"
   },
   {
@@ -1350,6 +1402,11 @@
       "xGuard": ["authGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "ownership": ["cella"],
+      "entity": ["context"]
     },
     "entityType": "organization"
   },
@@ -1371,6 +1428,11 @@
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "ownership": ["cella"],
+      "entity": ["context"]
+    },
     "entityType": "organization"
   },
   {
@@ -1390,6 +1452,61 @@
       "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["pages"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
+    "entityType": "page"
+  },
+  {
+    "id": "createPages",
+    "hash": "tag/pages/POST/pages",
+    "method": "post",
+    "path": "/pages",
+    "tags": ["pages"],
+    "summary": "Create pages",
+    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["pages"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
+    "entityType": "page"
+  },
+  {
+    "id": "deletePages",
+    "hash": "tag/pages/DELETE/pages",
+    "method": "delete",
+    "path": "/pages",
+    "tags": ["pages"],
+    "summary": "Delete pages",
+    "description": "Delete one or more *pages* by ID.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "sysAdminGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["pages"],
+      "ownership": ["cella"],
+      "entity": ["product"]
     },
     "entityType": "page"
   },
@@ -1411,53 +1528,18 @@
       "xRateLimiter": [],
       "xCache": ["publicCache"]
     },
-    "entityType": "page"
-  },
-  {
-    "id": "createPages",
-    "hash": "tag/pages/POST/{tenantId}/pages",
-    "method": "post",
-    "path": "/{tenantId}/pages",
-    "tags": ["pages"],
-    "summary": "Create pages",
-    "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
-    "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "entityType": "page"
-  },
-  {
-    "id": "deletePages",
-    "hash": "tag/pages/DELETE/{tenantId}/pages",
-    "method": "delete",
-    "path": "/{tenantId}/pages",
-    "tags": ["pages"],
-    "summary": "Delete pages",
-    "description": "Delete one or more *pages* by ID.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
+    "tagsByKind": {
+      "module": ["pages"],
+      "ownership": ["cella"],
+      "entity": ["product"]
     },
     "entityType": "page"
   },
   {
     "id": "updatePage",
-    "hash": "tag/pages/PUT/{tenantId}/pages/{id}",
+    "hash": "tag/pages/PUT/pages/{id}",
     "method": "put",
-    "path": "/{tenantId}/pages/{id}",
+    "path": "/pages/{id}",
     "tags": ["pages"],
     "summary": "Update page",
     "description": "Update a single *page* by ID.",
@@ -1467,17 +1549,22 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "sysAdminGuard"],
+      "xGuard": ["authGuard", "sysAdminGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["pages"],
+      "ownership": ["cella"],
+      "entity": ["product"]
     },
     "entityType": "page"
   },
   {
     "id": "getUsers",
-    "hash": "tag/users/GET/users",
+    "hash": "tag/users/GET/users/users",
     "method": "get",
-    "path": "/users",
+    "path": "/users/users",
     "tags": ["users"],
     "summary": "Get list of users",
     "description": "Returns a list of *users*.",
@@ -1491,13 +1578,17 @@
       "xRateLimiter": [],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["users"],
+      "ownership": ["cella"]
+    },
     "entityType": "user"
   },
   {
     "id": "getUser",
-    "hash": "tag/users/GET/users/{relatableUserId}",
+    "hash": "tag/users/GET/users/users/{relatableUserId}",
     "method": "get",
-    "path": "/users/{relatableUserId}",
+    "path": "/users/users/{relatableUserId}",
     "tags": ["users"],
     "summary": "Get user",
     "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
@@ -1511,13 +1602,17 @@
       "xRateLimiter": [],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["users"],
+      "ownership": ["cella"]
+    },
     "entityType": "user"
   },
   {
     "id": "getAttachments",
-    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments",
+    "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/attachments",
+    "path": "/{tenantId}/{organizationId}/attachments",
     "tags": ["attachments"],
     "summary": "Get attachments",
     "description": "Returns a paginated list of *attachments* for the organization.",
@@ -1531,13 +1626,18 @@
       "xRateLimiter": [],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "createAttachments",
-    "hash": "tag/attachments/POST/{tenantId}/{orgId}/attachments",
+    "hash": "tag/attachments/POST/{tenantId}/{organizationId}/attachments",
     "method": "post",
-    "path": "/{tenantId}/{orgId}/attachments",
+    "path": "/{tenantId}/{organizationId}/attachments",
     "tags": ["attachments"],
     "summary": "Create attachments",
     "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
@@ -1551,13 +1651,18 @@
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "deleteAttachments",
-    "hash": "tag/attachments/DELETE/{tenantId}/{orgId}/attachments",
+    "hash": "tag/attachments/DELETE/{tenantId}/{organizationId}/attachments",
     "method": "delete",
-    "path": "/{tenantId}/{orgId}/attachments",
+    "path": "/{tenantId}/{organizationId}/attachments",
     "tags": ["attachments"],
     "summary": "Delete attachments",
     "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
@@ -1571,13 +1676,18 @@
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "getPresignedUrl",
-    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/presigned-url",
+    "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments/presigned-url",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/attachments/presigned-url",
+    "path": "/{tenantId}/{organizationId}/attachments/presigned-url",
     "tags": ["attachments"],
     "summary": "Get presigned URL",
     "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
@@ -1591,13 +1701,18 @@
       "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": ["httpCache"]
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "getAttachment",
-    "hash": "tag/attachments/GET/{tenantId}/{orgId}/attachments/{id}",
+    "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/attachments/{id}",
+    "path": "/{tenantId}/{organizationId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Get attachment",
     "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
@@ -1611,13 +1726,18 @@
       "xRateLimiter": [],
       "xCache": ["appCache"]
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "updateAttachment",
-    "hash": "tag/attachments/PUT/{tenantId}/{orgId}/attachments/{id}",
+    "hash": "tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}",
     "method": "put",
-    "path": "/{tenantId}/{orgId}/attachments/{id}",
+    "path": "/{tenantId}/{organizationId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Update attachment",
     "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
@@ -1631,13 +1751,18 @@
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "ownership": ["cella"],
+      "entity": ["product"]
+    },
     "entityType": "attachment"
   },
   {
     "id": "membershipInvite",
-    "hash": "tag/memberships/POST/{tenantId}/{orgId}/memberships",
+    "hash": "tag/memberships/POST/{tenantId}/{organizationId}/memberships",
     "method": "post",
-    "path": "/{tenantId}/{orgId}/memberships",
+    "path": "/{tenantId}/{organizationId}/memberships",
     "tags": ["memberships"],
     "summary": "Create memberships",
     "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
@@ -1650,13 +1775,17 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["spamLimiter", "pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "deleteMemberships",
-    "hash": "tag/memberships/DELETE/{tenantId}/{orgId}/memberships",
+    "hash": "tag/memberships/DELETE/{tenantId}/{organizationId}/memberships",
     "method": "delete",
-    "path": "/{tenantId}/{orgId}/memberships",
+    "path": "/{tenantId}/{organizationId}/memberships",
     "tags": ["memberships"],
     "summary": "Delete memberships",
     "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
@@ -1669,13 +1798,17 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "updateMembership",
-    "hash": "tag/memberships/PUT/{tenantId}/{orgId}/memberships/{id}",
+    "hash": "tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}",
     "method": "put",
-    "path": "/{tenantId}/{orgId}/memberships/{id}",
+    "path": "/{tenantId}/{organizationId}/memberships/{id}",
     "tags": ["memberships"],
     "summary": "Update membership",
     "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
@@ -1688,13 +1821,17 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "handleMembershipInvitation",
-    "hash": "tag/memberships/POST/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}",
+    "hash": "tag/memberships/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}",
     "method": "post",
-    "path": "/{tenantId}/{orgId}/memberships/{id}/{acceptOrReject}",
+    "path": "/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}",
     "tags": ["memberships"],
     "summary": "Respond to membership invitation",
     "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
@@ -1707,13 +1844,17 @@
       "xGuard": ["authGuard", "crossTenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "getMembers",
-    "hash": "tag/memberships/GET/{tenantId}/{orgId}/memberships/members",
+    "hash": "tag/memberships/GET/{tenantId}/{organizationId}/memberships/members",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/memberships/members",
+    "path": "/{tenantId}/{organizationId}/memberships/members",
     "tags": ["memberships"],
     "summary": "Get list of members",
     "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
@@ -1726,13 +1867,17 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "getPendingMemberships",
-    "hash": "tag/memberships/GET/{tenantId}/{orgId}/memberships/pending",
+    "hash": "tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending",
     "method": "get",
-    "path": "/{tenantId}/{orgId}/memberships/pending",
+    "path": "/{tenantId}/{organizationId}/memberships/pending",
     "tags": ["memberships"],
     "summary": "Get list of pending memberships",
     "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
@@ -1745,13 +1890,17 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "ownership": ["cella"]
     }
   },
   {
     "id": "markSeen",
-    "hash": "tag/seen/POST/{tenantId}/{orgId}/seen",
+    "hash": "tag/seen/POST/{tenantId}/{organizationId}/seen",
     "method": "post",
-    "path": "/{tenantId}/{orgId}/seen",
+    "path": "/{tenantId}/{organizationId}/seen",
     "tags": ["seen"],
     "summary": "Mark entities as seen",
     "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
@@ -1764,6 +1913,56 @@
       "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["seen"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "getYjsToken",
+    "hash": "tag/yjs/GET/yjs/token",
+    "method": "get",
+    "path": "/yjs/token",
+    "tags": ["yjs"],
+    "summary": "Get Yjs token",
+    "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "ownership": ["cella"]
+    }
+  },
+  {
+    "id": "verifyYjsEntity",
+    "hash": "tag/yjs/GET/yjs/verify-entity",
+    "method": "get",
+    "path": "/yjs/verify-entity",
+    "tags": ["yjs"],
+    "summary": "Verify Yjs entity access",
+    "description": "Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": [],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "ownership": ["cella"]
     }
   }
 ]

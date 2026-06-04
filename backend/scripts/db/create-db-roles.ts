@@ -1,15 +1,20 @@
 import { sql } from 'drizzle-orm';
 import { migrationDb } from '#/db/db';
 import { env } from '#/env';
+import { timestamp } from '#/utils/console';
 import pc from 'picocolors';
 
 /**
  * Creates database roles for RLS tenant isolation.
- * Passwords are extracted from DATABASE_URL and DATABASE_CDC_URL connection strings.
- * Works in all environments (dev + production). Idempotent — skips existing roles.
  *
- * Requires DATABASE_ADMIN_URL (superuser) to create roles.
- * In Neon, this should be the neondb_owner connection string.
+ * In production (Scaleway): roles are pre-created as Scaleway-managed users
+ * (admin_role, runtime_role, cdc_role). This script only ensures schema grants
+ * and role memberships are in place.
+ *
+ * In development (Docker Compose): roles are created from scratch using
+ * passwords extracted from DATABASE_URL and DATABASE_CDC_URL connection strings.
+ *
+ * Requires DATABASE_ADMIN_URL (superuser/admin) to create or configure roles.
  */
 
 /**
@@ -26,8 +31,7 @@ return {
 
 /**
  * Build idempotent SQL to create roles with passwords from connection strings.
- * Neon doesn't support REPLICATION on custom roles, so we skip it for cdc_role
- * and let Neon handle logical replication at the project level.
+ * Only used in development — production roles are Scaleway-managed users.
  */
 function buildCreateRolesSql(runtimePassword: string, cdcPassword: string, adminPassword: string): string {
 // Escape single quotes for SQL injection safety
@@ -36,9 +40,9 @@ const escSql = (s: string) => s.replace(/'/g, "''");
 return `
 DO $$
 BEGIN
--- Check if we can create roles (not available in PGlite)
+-- Check if we can create roles
 IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'pg_database_owner') THEN
-  RAISE NOTICE 'Role management not available (e.g., PGlite) - skipping.';
+  RAISE NOTICE 'Role management not available - skipping.';
   RETURN;
 END IF;
 
@@ -70,25 +74,52 @@ END IF;
     END IF;
   END;
 
--- admin_role: Migrations, seeds, system admin
--- Try BYPASSRLS first, fall back without it (Scaleway doesn't allow BYPASSRLS on custom roles)
+-- admin_role: Migrations, seeds, system admin, CDC worker.
+-- Needs BYPASSRLS (for CDC seq stamping under FORCE RLS) and REPLICATION (for the CDC slot).
+-- Try with both first; fall back without them on managed providers that forbid these attributes.
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role with BYPASSRLS';
+    CREATE ROLE admin_role WITH LOGIN BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
+    RAISE NOTICE 'Created role admin_role with BYPASSRLS + REPLICATION';
   ELSE
-    ALTER ROLE admin_role WITH BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+    ALTER ROLE admin_role WITH BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
   END IF;
 EXCEPTION WHEN OTHERS THEN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
     CREATE ROLE admin_role WITH LOGIN PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role without BYPASSRLS (managed provider)';
+    RAISE NOTICE 'Created role admin_role without BYPASSRLS/REPLICATION (managed provider)';
   ELSE
     ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
   END IF;
 END;
 
 -- Grant schema access
+GRANT USAGE ON SCHEMA public TO runtime_role;
+GRANT USAGE ON SCHEMA public TO cdc_role;
+GRANT ALL ON SCHEMA public TO admin_role;
+
+-- Grant role membership to current user so migrations can ALTER TABLE ... OWNER TO admin_role
+BEGIN
+  GRANT runtime_role TO CURRENT_USER;
+  GRANT cdc_role TO CURRENT_USER;
+  GRANT admin_role TO CURRENT_USER;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Could not grant roles to current user (may already be granted or not supported)';
+END;
+
+END $$;
+`;
+}
+
+/**
+ * Build SQL to ensure schema grants and role memberships are in place.
+ * Used in production when roles already exist as Scaleway-managed users.
+ */
+function buildEnsureGrantsSql(): string {
+return `
+DO $$
+BEGIN
+-- Grant schema access (idempotent)
 GRANT USAGE ON SCHEMA public TO runtime_role;
 GRANT USAGE ON SCHEMA public TO cdc_role;
 GRANT ALL ON SCHEMA public TO admin_role;
@@ -119,19 +150,34 @@ const result = await migrationDb!.execute(
 return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
 }
 
-export async function createDbRoles() {
-if (env.DEV_MODE === 'basic') {
-  // PGlite doesn't support roles
-  return;
+/**
+ * Check if the current database user is one of the application roles.
+ * If so, roles are Scaleway-managed and we only need to ensure grants.
+ */
+async function isRoleManagedExternally(): Promise<boolean> {
+  const result = await migrationDb!.execute(sql.raw('SELECT CURRENT_USER AS cu'));
+  const currentUser = (result.rows[0] as { cu: string }).cu;
+  return requiredRoles.includes(currentUser as typeof requiredRoles[number]);
 }
 
+export async function createDbRoles() {
   if (!migrationDb) {
     throw new Error('DATABASE_ADMIN_URL required for role setup');
   }
 
+  // If we're connected as one of the application roles, they're managed externally
+  // (e.g., Scaleway-managed users). Only ensure grants are in place.
+  if (await isRoleManagedExternally()) {
+    if (await rolesExist()) {
+      console.info(`${timestamp()} ${pc.green('✔')} All roles exist (externally managed), ensuring grants`);
+      await migrationDb.execute(sql.raw(buildEnsureGrantsSql()));
+      return;
+    }
+  }
+
   // Quick pre-check: skip entirely when all roles already exist (common on hot-reload)
   if (await rolesExist()) {
-    console.info(`${pc.green('✔')} All roles exist, skipping`);
+    console.info(`${timestamp()} ${pc.green('✔')} All roles exist, skipping`);
     return;
   }
 
@@ -139,7 +185,7 @@ if (env.DEV_MODE === 'basic') {
 const runtime = parseCredentials(env.DATABASE_URL);
 const cdcUrl = process.env.DATABASE_CDC_URL;
 
-// TODO review: For admin_role, use a dedicated env var or fall back to same password as runtime
+// For admin_role in dev, use a dedicated env var or fall back to same password as runtime
 const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
 // CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)

@@ -16,15 +16,15 @@ interface SelectRoleProps {
  */
 export function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const roleOptions = entity ? roles.all : appConfig.systemRoles;
 
   const options = [
-    { value: 'all', label: t('common:all') },
+    { value: 'all', label: t('c:all') },
     ...roleOptions.map((role) => ({
       value: role,
-      label: t(role, { ns: ['app', 'common'] }),
+      label: t(role),
     })),
   ];
 
@@ -33,8 +33,8 @@ export function SelectRole({ entity = false, onChange, value, className }: Selec
       options={options}
       value={value === undefined || value === 'all' ? 'all' : value}
       onChange={(role: string) => onChange(role === 'all' ? undefined : role)}
-      placeholder={t('common:placeholder.select_role')}
-      title={t('common:role')}
+      placeholder={t('c:placeholder.select_role')}
+      title={t('c:role')}
       className={className}
       disabled={!isOnline}
     />

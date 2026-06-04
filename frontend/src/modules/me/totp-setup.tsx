@@ -10,7 +10,7 @@ import {
   createTotp,
   generateTotpKey,
   type MeAuthData,
-} from '~/api.gen';
+} from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -47,7 +47,7 @@ export const SetupTotp = () => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: true };
       });
-      toaster(t('common:success.totp_added'), 'success');
+      toaster(t('c:success.totp_added'), 'success');
     },
     onError: () => {
       // Reset form component to force re-entry of TOTP verify code
@@ -78,42 +78,42 @@ export const SetupTotp = () => {
     useDialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
       id: 'mfa-key',
       triggerRef,
-      title: t('common:totp_manual.title'),
-      description: t('common:totp_manual.description'),
+      title: t('c:totp_manual.title'),
+      description: t('c:totp_manual.description'),
       className: 'sm:max-w-md',
     });
   };
 
   return (
     <div className="group flex flex-col space-y-2">
-      <div className="flex gap-2 items-center justify-center">
+      <div className="flex items-center justify-center gap-2">
         <CircleAlertIcon size={14} className="shrink-0 text-amber-500" />
-        <div className="text-sm text-muted-foreground">
-          <span>{t('common:totp_manual.footer_description')}</span>
+        <div className="text-muted-foreground text-sm">
+          <span>{t('c:totp_manual.footer_description')}</span>
           <Button
             ref={triggerRef}
             variant="none"
-            className="p-0 h-auto underline inline cursor-pointer"
+            className="inline h-auto cursor-pointer p-0 underline"
             onClick={openManualKey}
           >
-            {t('common:totp_manual.button_text')}
+            {t('c:totp_manual.button_text')}
           </Button>
         </div>
       </div>
 
-      <QRCodeSVG className="mx-auto border-8 border-white my-3 mb-6" value={data.totpUri} size={275} />
+      <QRCodeSVG className="mx-auto my-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
       {expired ? (
         <div className="flex flex-col items-center gap-3 py-2">
-          <p className="text-sm text-muted-foreground">{t('common:totp_qr.expired')}</p>
+          <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
           <Button variant="plain" onClick={regenerate}>
             <RefreshCwIcon size={14} />
-            {t('common:refresh')}
+            {t('c:refresh')}
           </Button>
         </div>
       ) : (
         <TotpConfirmationForm
           key={formVersion}
-          label={t('common:totp_verify')}
+          label={t('c:totp_verify')}
           onSubmit={onSubmit}
           isPending={isPending}
           onCancel={() => useDialoger.getState().remove('setup-totp')}
@@ -131,15 +131,15 @@ function TotpManualKey({ manualKey }: { manualKey: string }) {
   const { copyToClipboard, copied } = useCopyToClipboard();
 
   return (
-    <div className="flex truncate bg-card gap-2 text-card-foreground rounded-lg px-3 py-2 font-mono sm:text-lg">
-      <div className="truncate w-full grow">{manualKey}</div>
+    <div className="flex gap-2 truncate rounded-lg bg-card px-3 py-2 font-mono text-card-foreground sm:text-lg">
+      <div className="w-full grow truncate">{manualKey}</div>
       <Button
         variant="cell"
         size="icon"
         className="h-full"
         aria-label="Copy"
         data-tooltip="true"
-        data-tooltip-content={copied ? t('common:copied') : t('common:copy')}
+        data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
         onClick={() => copyToClipboard(manualKey)}
       >
         {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}

@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { roles } from 'shared';
+import { schemaTags } from '#/core/openapi-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -23,22 +24,25 @@ import { contextEntityIncludedSchema } from '#/schemas/context-entity-included';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from '../../../mocks/mock-organization';
 
+const organizationIncludedSchema = contextEntityIncludedSchema('organization');
+
 export const organizationSchema = z
   .object({
     ...createSelectSchema(organizationsTable).shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     languages: z.array(languageSchema).min(1),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
-    included: contextEntityIncludedSchema,
+    included: organizationIncludedSchema,
   })
   .openapi('Organization', {
-    description: 'An organization with membership context.',
+    description: 'The main context entity is an organization.',
     example: mockOrganizationResponse(),
+    'x-tags': schemaTags('data', 'organizations', 'cella'),
   });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({
-  included: contextEntityIncludedSchema.extend({ membership: membershipBaseSchema }),
+  included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
 });
 
 const organizationCreateItemSchema = z.object({
@@ -53,13 +57,6 @@ export const organizationCreateBodySchema = organizationCreateItemSchema
   .min(1)
   .max(10)
   .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
-
-/** Schema for creating an organization with auto-tenant creation (no tenantId in path) */
-export const organizationAutoCreateBodySchema = z.object({
-  name: validNameSchema,
-  slug: validSlugSchema,
-  createNewTenant: z.boolean().optional().default(false),
-});
 
 export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
@@ -100,7 +97,7 @@ export const organizationQuerySchema = z.object({
 });
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder').optional(),
   relatableUserId: z.string().max(maxLength.id).optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,

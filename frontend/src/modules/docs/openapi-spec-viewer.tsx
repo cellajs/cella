@@ -124,7 +124,7 @@ export function OpenApiSpecViewer() {
     return (
       <div className="flex items-center justify-center p-12">
         <span className="text-destructive">
-          {t('error:load_resource', { resource: t('common:docs.openapi_specification').toLowerCase() })}
+          {t('error:load_resource', { resource: t('c:docs.openapi_specification').toLowerCase() })}
         </span>
       </div>
     );
@@ -139,11 +139,11 @@ export function OpenApiSpecViewer() {
         url={openApiUrl}
         data={data}
         filename="openapi.json"
-        resourceName={t('common:docs.openapi_json')}
-        className="w-full sm:hidden mb-2 *:flex-1!"
+        resourceName={t('c:docs.openapi_json')}
+        className="mb-2 w-full *:flex-1! sm:hidden"
       />
 
-      <div className="sticky top-0 z-10 bg-background/60 backdrop-blur-xs py-2 -mt-2 mb-2 flex items-center gap-2 max-sm:flex-col w-full">
+      <div className="sticky top-0 z-10 -mt-2 mb-2 flex w-full items-center gap-2 bg-background/60 py-2 backdrop-blur-xs max-sm:flex-col">
         {/* Search through JSON */}
         <InputGroup className="max-sm:w-full">
           <InputGroupAddon>
@@ -151,7 +151,7 @@ export function OpenApiSpecViewer() {
           </InputGroupAddon>
           <InputGroupInput
             type="text"
-            placeholder={`${t('common:search')}...`}
+            placeholder={`${t('c:search')}...`}
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
@@ -165,19 +165,19 @@ export function OpenApiSpecViewer() {
                 transition={{ duration: 0.15 }}
                 className="flex items-center overflow-hidden"
               >
-                <span className="text-xs text-muted-foreground whitespace-nowrap px-2">
+                <span className="whitespace-nowrap px-2 text-muted-foreground text-xs">
                   {matchCount > 0
                     ? currentMatchIndex >= 0
                       ? `${currentMatchIndex + 1}/${matchCount}`
                       : `${matchCount}`
-                    : t('common:no_results')}
+                    : t('c:no_results')}
                 </span>
                 <button
                   type="button"
                   onClick={handlePrevMatch}
                   disabled={matchCount === 0}
-                  className="p-1 hover:bg-muted rounded disabled:opacity-30"
-                  title={t('common:previous')}
+                  className="rounded p-1 hover:bg-muted disabled:opacity-30"
+                  title={t('c:previous')}
                 >
                   <ChevronUpIcon size={14} />
                 </button>
@@ -185,8 +185,8 @@ export function OpenApiSpecViewer() {
                   type="button"
                   onClick={handleNextMatch}
                   disabled={matchCount === 0}
-                  className="p-1 mr-2 hover:bg-muted rounded disabled:opacity-30"
-                  title={t('common:next')}
+                  className="mr-2 rounded p-1 hover:bg-muted disabled:opacity-30"
+                  title={t('c:next')}
                 >
                   <ChevronDownIcon size={14} />
                 </button>
@@ -196,7 +196,7 @@ export function OpenApiSpecViewer() {
           <InputGroupAddon align="inline-end">
             <XCircleIcon
               size={16}
-              className={cn('opacity-70 hover:opacity-100 cursor-pointer', searchText.length ? 'visible' : 'invisible')}
+              className={cn('cursor-pointer opacity-70 hover:opacity-100', searchText.length ? 'visible' : 'invisible')}
               onClick={() => handleSearchChange('')}
             />
           </InputGroupAddon>
@@ -204,7 +204,7 @@ export function OpenApiSpecViewer() {
 
         <Button
           variant="outline"
-          className="max-sm:hidden gap-2"
+          className="gap-2 max-sm:hidden"
           aria-label={isExpanded ? 'Reset to default' : 'Expand all'}
           onClick={() => {
             if (isExpanded) {
@@ -215,7 +215,7 @@ export function OpenApiSpecViewer() {
           }}
         >
           {isExpanded ? <ChevronsDownUpIcon size={16} /> : <ChevronsUpDownIcon size={16} />}
-          <span>{isExpanded ? t('common:reset') : t('common:expand')}</span>
+          <span>{isExpanded ? t('c:reset') : t('c:expand')}</span>
         </Button>
 
         {/* Copy, download and open in new tab (desktop only, mobile version is above sticky bar) */}
@@ -223,13 +223,13 @@ export function OpenApiSpecViewer() {
           url={openApiUrl}
           data={data}
           filename="openapi.json"
-          resourceName={t('common:docs.openapi_json')}
+          resourceName={t('c:docs.openapi_json')}
           className="max-sm:hidden"
         />
       </div>
 
       {/* JSON viewer with collapsible nodes and OpenAPI $ref navigation */}
-      <div ref={viewerContainerRef} className="rounded-lg bg-muted/30 p-4 overflow-x-auto">
+      <div ref={viewerContainerRef} className="overflow-x-auto rounded-lg bg-muted/30 p-4">
         <JsonViewer
           key={resetKey}
           value={data}

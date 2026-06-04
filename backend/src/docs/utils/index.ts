@@ -1,1 +1,0 @@
-export { toMiddlewareArray } from './middleware';

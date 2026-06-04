@@ -1,11 +1,13 @@
 import { createRouter } from '@tanstack/react-router';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { useUIStore } from '~/modules/ui/ui-store';
+import { appStreamManager } from '~/query/realtime/stream-store';
 import { routeTree } from '~/routes/route-tree';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
+import type { BoundaryType } from '~/routes/types';
 
 /**
- * Our Router instance
+ * The router instance
  *
  * @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
  */
@@ -19,13 +21,30 @@ const router = createRouter({
   defaultPendingMinMs: 0,
 });
 
-// Router lifecycle subscriptions
-router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+/** Get the deepest boundary from a route match array (e.g. 'app' or 'public') */
+const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
+  matches?.findLast((m) => m.staticData.boundary)?.staticData.boundary;
+
+/** Clean up sheets and streams when crossing layout boundaries (e.g. app <-> public) */
+const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
+  if (!current || !pending || current === pending) return;
+  useSheeter.getState().remove(undefined, { isCleanup: true });
+  useNavigationStore.getState().setNavSheetOpen(null);
+  if (pending === 'public') appStreamManager.disconnect();
+};
+
+/**
+ * Router lifecycle subscriptions
+ */
+router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   if (!pathChanged) return;
 
+  // Clear focus view on route change to prevent stuck focus state
   if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
-  useDialoger.getState().remove();
-  // Note: Sheet cleanup for boundary changes is handled in layout route beforeLoad functions
+
+  // Boundary based cleanup
+  const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
+  cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
 
   useNavigationStore.getState().setNavLoading(true);
 });

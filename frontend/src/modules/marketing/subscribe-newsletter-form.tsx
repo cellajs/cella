@@ -23,7 +23,7 @@ export function SubscribeNewsletterForm() {
       { email, type: 'newsletter', message: null },
       {
         onSuccess: () => {
-          toaster(t('common:success.newsletter_sign_up', { appName: appConfig.name }), 'success');
+          toaster(t('c:success.newsletter_sign_up', { appName: appConfig.name }), 'success');
           formRef.current?.reset();
         },
       },
@@ -37,7 +37,7 @@ export function SubscribeNewsletterForm() {
           type="email"
           name="email"
           id="email"
-          placeholder={t('common:placeholder.your_email')}
+          placeholder={t('c:placeholder.your_email')}
           autoComplete="email"
           aria-label="Email for newsletter"
           required
@@ -47,9 +47,9 @@ export function SubscribeNewsletterForm() {
           <InputGroupButton
             type="submit"
             aria-label="Submit email for newsletter"
-            className="text-white size-10 rounded-lg mr-0.5"
+            className="mr-0.5 size-10 rounded-lg text-white"
           >
-            {isPending ? <Spinner className="w-4 h-4" noDelay /> : <SendIcon className="w-4" />}
+            {isPending ? <Spinner className="h-4 w-4" noDelay /> : <SendIcon className="w-4" />}
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>

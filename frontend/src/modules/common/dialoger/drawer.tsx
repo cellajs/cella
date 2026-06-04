@@ -1,4 +1,4 @@
-import { InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 

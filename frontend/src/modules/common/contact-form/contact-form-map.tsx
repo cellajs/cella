@@ -16,7 +16,7 @@ import { appConfig } from 'shared';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import Logo from '/static/logo/logo-icon-only.svg';
 
 type MapConfig = {
@@ -54,9 +54,9 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
 
       {infowindowOpen && (
         <InfoWindow headerDisabled={true} shouldFocus={false} anchor={marker}>
-          <div className="text-xs text-slate-800 min-w-36 p-1">
-            <div className="flex justify-between items-center">
-              <strong className="text-sm ">{appConfig.company.name}</strong>
+          <div className="min-w-36 p-1 text-slate-800 text-xs">
+            <div className="flex items-center justify-between">
+              <strong className="text-sm">{appConfig.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
                 <XIcon size={14} />
               </Button>
@@ -66,11 +66,11 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
             <a
               href={appConfig.company.googleMapsUrl}
               target="_blank"
-              className="font-semibold flex mt-1 rounded-md p-1 focus-effect"
+              className="focus-effect mt-1 flex rounded-md p-1 font-semibold"
               rel="noreferrer"
             >
               <MilestoneIcon size={12} strokeWidth={2.5} className="mr-1" />
-              {t('common:get_directions')}
+              {t('c:get_directions')}
               <ArrowUpRightIcon size={12} className="ml-1 opacity-50" />
             </a>
           </div>
@@ -89,12 +89,12 @@ type CustomZoomControlProps = {
 function CustomZoomControl({ controlPosition, zoom, onZoomChange }: CustomZoomControlProps) {
   return (
     <MapControl position={controlPosition}>
-      <div className="flex flex-col m-2 p-1">
+      <div className="m-2 flex flex-col p-1">
         <Button
           onClick={() => onZoomChange(zoom + 0.5)}
           size="micro"
           variant="outlineGhost"
-          className="border-b-0 rounded-b-none"
+          className="rounded-b-none border-b-0"
         >
           <PlusIcon size={14} />
         </Button>
@@ -120,8 +120,8 @@ function ContactFormMap() {
         <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
-      <div className="w-full h-full">
-        <div className="w-full h-full rounded-sm overflow-hidden bg-accent">
+      <div className="h-full w-full">
+        <div className="h-full w-full overflow-hidden rounded-sm bg-accent">
           <APIProvider apiKey={appConfig.googleMapsKey} libraries={['marker']}>
             <AnimatePresence>
               {hasStarted && (
@@ -131,7 +131,7 @@ function ContactFormMap() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5, delay: 1 }}
-                  className="w-full h-full"
+                  className="h-full w-full"
                 >
                   <GMap
                     mapId={mapConfig.mapId || null}

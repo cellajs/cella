@@ -1,5 +1,5 @@
 import { and, eq, exists, inArray } from 'drizzle-orm';
-import type { DbOrTx } from '#/db/db';
+import type { DbContext } from '#/core/context';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 
@@ -9,10 +9,12 @@ import { usersTable } from '#/db/schema/users';
  *
  * Used as defense-in-depth in cross-tenant user queries (mirrors relatableGuard).
  */
-export const sharesOrgFilter = (db: DbOrTx, myOrgIds: string[]) =>
-  exists(
+export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string[] }) => {
+  const { db } = ctx.var;
+  return exists(
     db
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds))),
   );
+};

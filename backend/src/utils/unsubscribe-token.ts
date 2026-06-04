@@ -4,7 +4,14 @@ import { constantTimeEqual } from '@oslojs/crypto/subtle';
 import { encodeHexLowerCase } from '@oslojs/encoding';
 import { env } from '../env';
 
-const secretKey = new TextEncoder().encode(env.UNSUBSCRIBE_SECRET);
+let secretKey: Uint8Array | undefined;
+
+function getSecretKey(): Uint8Array {
+  if (!secretKey) {
+    secretKey = new TextEncoder().encode(env.UNSUBSCRIBE_SECRET);
+  }
+  return secretKey;
+}
 
 /**
  * Generates an unsubscribe token for a given email.
@@ -14,7 +21,7 @@ const secretKey = new TextEncoder().encode(env.UNSUBSCRIBE_SECRET);
  */
 export const generateUnsubscribeToken = (email: string) => {
   const message = new TextEncoder().encode(email);
-  return encodeHexLowerCase(hmac(SHA256, secretKey, message));
+  return encodeHexLowerCase(hmac(SHA256, getSecretKey(), message));
 };
 
 /**

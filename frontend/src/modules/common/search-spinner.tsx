@@ -15,12 +15,12 @@ export function SearchSpinner({ isSearching, value }: { isSearching: boolean; va
           animate={{ opacity: 1, transition: { delay: 0.3 } }} // appear with delay
           exit={{ opacity: 0, transition: { delay: 0 } }} // disappear immediately
         >
-          <Spinner className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0" noDelay />
+          <Spinner className="mr-2 size-4 h-auto shrink-0 group-[.text-lg]:size-5" noDelay />
         </motion.div>
       ) : (
         <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <SearchIcon
-            className="size-4 mr-2 group-[.text-lg]:size-5 h-auto shrink-0"
+            className="mr-2 size-4 h-auto shrink-0 group-[.text-lg]:size-5"
             style={{ opacity: value ? 1 : 0.5 }}
           />
         </motion.div>

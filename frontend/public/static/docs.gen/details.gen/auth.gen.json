@@ -44,6 +44,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -85,6 +92,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -96,11 +110,7 @@
       "body": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "required": true,
-            "format": "email"
-          }
+          "email": { "type": "string", "required": true, "format": "email" }
         },
         "required": true,
         "contentType": "application/json"
@@ -140,6 +150,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -153,7 +170,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
           },
           "token": { "type": "string", "required": true }
         }
@@ -170,17 +187,13 @@
         "schema": {
           "type": "object",
           "properties": {
-            "email": {
-              "type": "string",
-              "required": true,
-              "format": "email"
-            },
+            "email": { "type": "string", "required": true, "format": "email" },
             "userId": { "type": "string", "required": false },
             "inactiveMembershipId": { "type": "string", "required": false }
           },
           "contentType": "application/json"
         },
-        "example": { "email": "ona.becker-hickle@demo.local", "userId": "ifqwn7yznn0t633emq5sbn33" }
+        "example": { "email": "obie.becker-hickle@demo.local", "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c" }
       },
       {
         "status": 400,
@@ -211,6 +224,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -224,13 +244,9 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "password-reset", "invitation", "confirm-mfa"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
           },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       }
     }
@@ -265,6 +281,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -316,6 +339,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -357,6 +387,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -370,22 +407,14 @@
           {
             "type": "object",
             "properties": {
-              "email": {
-                "type": "string",
-                "required": true,
-                "format": "email"
-              },
+              "email": { "type": "string", "required": true, "format": "email" },
               "tokenId": { "type": "string", "required": false }
             }
           },
           {
             "type": "object",
             "properties": {
-              "email": {
-                "type": "string",
-                "required": false,
-                "format": "email"
-              },
+              "email": { "type": "string", "required": false, "format": "email" },
               "tokenId": { "type": "string", "required": true }
             }
           }
@@ -428,6 +457,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -435,6 +471,64 @@
         "contentType": "application/json"
       }
     ]
+  },
+  {
+    "operationId": "sendMagicLink",
+    "responses": [
+      { "status": 204, "description": "Magic link email sent (or silently ignored if email not found)" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "required": true, "format": "email" }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
   },
   {
     "operationId": "generateTotpKey",
@@ -451,7 +545,7 @@
           },
           "contentType": "application/json"
         },
-        "example": { "totpUri": "otpauth://totp/Cella:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=Cella", "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8" }
+        "example": { "totpUri": "otpauth://totp/App:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=App", "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8" }
       },
       {
         "status": 400,
@@ -479,6 +573,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -520,6 +621,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -574,6 +682,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -615,6 +730,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -634,348 +756,6 @@
     }
   },
   {
-    "operationId": "signUp",
-    "responses": [
-      { "status": 201, "description": "User signed up" },
-      { "status": 302, "description": "Redirect to frontend" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "required": true,
-            "format": "email"
-          },
-          "password": {
-            "type": "string",
-            "required": true,
-            "minLength": 8,
-            "maxLength": 100
-          }
-        },
-        "required": false,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "signUpWithToken",
-    "responses": [
-      {
-        "status": 201,
-        "description": "User signed up",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "membershipInvite": { "type": "boolean", "required": true }
-          },
-          "contentType": "application/json"
-        },
-        "example": { "membershipInvite": true }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "tokenId": { "type": "string", "required": true }
-        }
-      },
-      "body": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "required": true,
-            "format": "email"
-          },
-          "password": {
-            "type": "string",
-            "required": true,
-            "minLength": 8,
-            "maxLength": 100
-          }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "requestPassword",
-    "responses": [
-      { "status": 204, "description": "Password reset email sent" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "required": true,
-            "format": "email"
-          }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "createPassword",
-    "responses": [
-      {
-        "status": 201,
-        "description": "Password created",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "mfa": { "type": "boolean", "required": true }
-          },
-          "contentType": "application/json"
-        },
-        "example": { "mfa": false }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "path": {
-        "properties": {
-          "tokenId": { "type": "string", "required": true }
-        }
-      },
-      "body": {
-        "type": "object",
-        "properties": {
-          "password": {
-            "type": "string",
-            "required": true,
-            "minLength": 8,
-            "maxLength": 100
-          }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "signIn",
-    "responses": [
-      {
-        "status": 200,
-        "description": "User signed in",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "emailVerified": { "type": "boolean", "required": true },
-            "mfa": { "type": "boolean", "required": false }
-          },
-          "contentType": "application/json"
-        },
-        "example": { "emailVerified": true, "mfa": false }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "required": true,
-            "format": "email"
-          },
-          "password": {
-            "type": "string",
-            "required": true,
-            "minLength": 8,
-            "maxLength": 100
-          }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
     "operationId": "createPasskey",
     "responses": [
       {
@@ -985,16 +765,8 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "userId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "userId": { "type": "string", "required": true, "format": "uuid" },
             "deviceName": {
               "type": ["string", "null"],
               "required": true,
@@ -1015,20 +787,16 @@
               "required": true,
               "maxLength": 255
             },
-            "nameOnDevice": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 },
             "createdAt": { "type": "string", "required": true }
           },
           "contentType": "application/json"
         },
         "example": {
-          "id": "wi1u74x2b4g096dtzu91o9w8",
-          "userId": "zslal6vzkcqd10drzf37piml",
-          "nameOnDevice": "Chrome on Mac",
-          "userAgent": "FakerBot/2.17.17",
+          "id": "e80d32e1-5270-4425-bdfd-40a4e3fc9492",
+          "userId": "f95b6005-cf61-43b8-9a92-03dd84c4ebd9",
+          "nameOnDevice": "Safari on iPhone",
+          "userAgent": "Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/576.15 (KHTML, like Gecko) Chrome/108.7.7.15 Mobile Safari/574.19",
           "createdAt": "2024-08-15T16:12:55.564Z"
         }
       },
@@ -1061,6 +829,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1074,11 +849,7 @@
         "properties": {
           "attestationObject": { "type": "string", "required": true },
           "clientDataJSON": { "type": "string", "required": true },
-          "nameOnDevice": {
-            "type": "string",
-            "required": true,
-            "maxLength": 255
-          }
+          "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 }
         },
         "required": true,
         "contentType": "application/json"
@@ -1118,6 +889,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1128,11 +906,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       }
     }
@@ -1148,11 +922,7 @@
           "type": "object",
           "properties": {
             "challengeBase64": { "type": "string", "required": true },
-            "credentialIds": {
-              "type": "array",
-              "required": true,
-              "itemType": "string"
-            }
+            "credentialIds": { "type": "array", "required": true, "itemType": "string" }
           },
           "contentType": "application/json"
         },
@@ -1190,6 +960,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1206,11 +983,7 @@
             "required": true,
             "enum": ["authentication", "mfa", "registration"]
           },
-          "email": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          }
+          "email": { "type": "string", "required": false, "maxLength": 255 }
         },
         "required": true,
         "contentType": "application/json"
@@ -1250,6 +1023,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1270,11 +1050,7 @@
             "required": true,
             "enum": ["authentication", "mfa"]
           },
-          "email": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          }
+          "email": { "type": "string", "required": false, "maxLength": 255 }
         },
         "required": true,
         "contentType": "application/json"
@@ -1311,6 +1087,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -1367,6 +1150,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1417,6 +1207,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -1473,6 +1270,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1525,6 +1329,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1571,6 +1382,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {

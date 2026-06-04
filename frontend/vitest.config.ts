@@ -8,6 +8,14 @@ const dirname =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  // Top-level alias so this config also works when invoked as a single project
+  // from the root vitest config (which flattens nested `projects`).
+  resolve: {
+    alias: {
+      '~': path.resolve(dirname, './src'),
+      '#json': path.resolve(dirname, '../json'),
+    },
+  },
   test: {
     passWithNoTests: true,
     projects: [
@@ -51,6 +59,7 @@ export default defineConfig({
             enabled: true,
             provider: playwright({}),
             headless: true,
+            viewport: { width: 1280, height: 720 },
             instances: [{ browser: 'chromium' }],
           },
           setupFiles: ['./.storybook/vitest.setup.ts'],

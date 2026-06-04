@@ -1,6 +1,16 @@
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { generateMockContextEntityIdColumns, mockNanoid, withFakerSeed } from '../utils';
+import {
+  generateMockContextEntityIdColumns,
+  mockNanoid,
+  mockTenantId,
+  mockUuid,
+  SCRIPT_ID_PREFIX,
+  SCRIPT_UUID_PREFIX,
+  setMockContext,
+  withFakerSeed,
+  withMockContext,
+} from '../utils';
 
 describe('generateMockContextEntityIdColumns', () => {
   it('returns correct column names for default config', () => {
@@ -51,5 +61,70 @@ describe('withFakerSeed', () => {
     const id2 = withFakerSeed('seed-b', mockNanoid);
 
     expect(id1).not.toBe(id2);
+  });
+});
+
+describe('mockNanoid', () => {
+  it('generates IDs with default length of 24', () => {
+    const id = mockNanoid();
+    expect(id).toHaveLength(24);
+  });
+
+  it('generates IDs with custom length', () => {
+    const id = mockNanoid(12);
+    expect(id).toHaveLength(12);
+  });
+
+  it('generates IDs without prefix in example context (default)', () => {
+    setMockContext('example');
+    const id = mockNanoid();
+    expect(id).not.toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+  });
+
+  it('generates IDs with gen- prefix in script context', () => {
+    const id = withMockContext('script', () => mockNanoid());
+    expect(id).toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+    expect(id).toHaveLength(24);
+  });
+
+  it('restores context after withMockContext', () => {
+    setMockContext('example');
+    withMockContext('script', () => mockNanoid());
+    const id = mockNanoid();
+    expect(id).not.toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+  });
+});
+
+describe('mockTenantId', () => {
+  it('generates a 6-character tenant ID', () => {
+    const id = mockTenantId();
+    expect(id).toHaveLength(6);
+  });
+});
+
+describe('mockUuid', () => {
+  it('generates a valid UUID', () => {
+    setMockContext('example');
+    const id = mockUuid();
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
+  it('generates UUIDs with 00000000 prefix in script context', () => {
+    const id = withMockContext('script', () => mockUuid());
+    expect(id).toMatch(new RegExp(`^${SCRIPT_UUID_PREFIX}`));
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
+  it('generates deterministic UUIDs with same seed', () => {
+    const id1 = withFakerSeed('entity-seed', mockUuid);
+    const id2 = withFakerSeed('entity-seed', mockUuid);
+    expect(id1).toEqual(id2);
+  });
+
+  it('restores context after withMockContext', () => {
+    setMockContext('example');
+    withMockContext('script', () => mockUuid());
+    const id = mockUuid();
+    expect(id).not.toMatch(new RegExp(`^${SCRIPT_UUID_PREFIX}`));
   });
 });

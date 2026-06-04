@@ -1,21 +1,45 @@
 {
   "name": "shared",
+  "description": "Shared config, permissions, types, and cross-package utilities",
   "type": "module",
   "scripts": {
+    "ts": "cd .. && tsgo -p shared/tsconfig.json --pretty",
+    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
     "test": "vitest run"
   },
   "exports": {
     ".": "./index.ts",
-    "./nanoid": "./src/utils/nanoid.ts",
-    "./upload-templates": "./upload-templates.ts",
-    "./tracing": "./src/tracing/tracing.ts",
-    "./builder": "./src/builder/index.ts",
+    "./*": "./src/utils/*.ts",
+    "./cli-utils/*": "./src/cli-utils/*.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
-    "./is-cdn-url": "./src/utils/is-cdn-url.ts",
-    "./ascii": "./src/utils/ascii.ts"
+    "./transloadit-config": "./config/transloadit-config.ts",
+    "./tracing": "./src/tracing/tracing.ts",
+    "./otel": "./src/otel.ts",
+    "./config-builder": "./src/config-builder/index.ts",
+    "./pino": "./src/pino.ts"
   },
   "dependencies": {
-    "@blocknote/core": "^0.47.1",
-    "nanoid": "^5.1.6"
+    "@blocknote/core": "^0.51.4",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.218.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.218.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-logs": "^0.218.0",
+    "@opentelemetry/sdk-metrics": "^2.7.1",
+    "@opentelemetry/sdk-node": "^0.218.0",
+    "@opentelemetry/sdk-trace-base": "^2.7.1",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "nanoid": "^5.1.11",
+    "picocolors": "^1.1.1",
+    "pino": "^10.3.1",
+    "pino-opentelemetry-transport": "^3.0.0",
+    "uuidv7": "^1.2.1"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260603.1",
+    "strip-json-comments": "^5.0.3",
+    "typescript": "^6.0.3"
   }
 }

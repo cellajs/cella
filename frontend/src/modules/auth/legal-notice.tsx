@@ -40,33 +40,29 @@ export const LegalNotice = ({
   };
 
   return (
-    <p className="font-light text-center space-x-1">
+    <p className="space-x-1 text-center">
       {mode === 'signup' &&
-        (email ? (
-          <span>{t('common:legal_notice_email.text', { email })}</span>
-        ) : (
-          <span>{t('common:legal_notice.text')}</span>
-        ))}
-      {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
-      {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
+        (email ? <span>{t('c:legal_notice_email.text', { email })}</span> : <span>{t('c:legal_notice.text')}</span>)}
+      {mode === 'waitlist' && <span>{t('c:legal_notice_waitlist.text', { email })}</span>}
+      {mode === 'verify' && <span>{t('c:request_verification.legal_notice')}</span>}
       <Button
         ref={termsButtonRef}
         type="button"
         variant="link"
-        className="p-0 text-base h-auto"
+        className="h-auto p-0 text-base"
         onClick={openDialog('terms', termsButtonRef)}
       >
-        {t('common:terms').toLocaleLowerCase()}
+        {t('c:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
       <Button
         ref={privacyButtonRef}
         type="button"
         variant="link"
-        className="p-0 text-base h-auto"
+        className="h-auto p-0 text-base"
         onClick={openDialog('privacy', privacyButtonRef)}
       >
-        {t('common:privacy_policy').toLocaleLowerCase()}
+        {t('c:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {appConfig.company.name}.</span>
     </p>

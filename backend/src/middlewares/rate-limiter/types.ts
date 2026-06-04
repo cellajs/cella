@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
-import type { Env } from '#/lib/context';
+import type { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
+import type { Env } from '#/core/context';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
 export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'tenantId';

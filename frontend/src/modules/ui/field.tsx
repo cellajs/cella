@@ -74,7 +74,7 @@ const fieldLayoutVariants = cva('group/field flex w-full gap-3 data-[invalid=tru
         'has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
       ],
       responsive: [
-        'flex-col [&>*]:w-full [&>.sr-only]:w-auto @md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>*]:w-auto',
+        '@md/field-group:flex-row flex-col @md/field-group:items-center @md/field-group:[&>*]:w-auto [&>*]:w-full [&>.sr-only]:w-auto',
         '@md/field-group:[&>[data-slot=field-label]]:flex-auto',
         '@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
       ],
@@ -118,7 +118,7 @@ export function FieldLabel({ className, ...props }: React.ComponentProps<typeof 
       className={cn(
         'group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50',
         'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-4',
-        'has-data-[state=checked]:bg-primary/5 has-data-[state=checked]:border-primary dark:has-data-[state=checked]:bg-primary/10',
+        'has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 dark:has-data-[state=checked]:bg-primary/10',
         className,
       )}
       {...props}
@@ -131,7 +131,7 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
     <div
       data-slot="field-label"
       className={cn(
-        'flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50',
+        'flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled=true]/field:opacity-50',
         className,
       )}
       {...props}
@@ -150,7 +150,7 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<'
   return (
     <div
       data-slot="field-description"
-      className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)}
+      className={cn('relative -mt-2! text-muted-foreground text-sm', className)}
       {...props}
     >
       <div className="flex justify-between">
@@ -159,7 +159,7 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<'
           variant="link"
           size="sm"
           onClick={toggleCollapsed}
-          className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
+          className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
         >
           {collapsed && <HelpCircleIcon size={16} />}
           {!collapsed && <ChevronUpIcon size={16} />}
@@ -187,7 +187,7 @@ export function FieldSeparator({
       <Separator className="absolute inset-0 top-1/2" />
       {children && (
         <span
-          className="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
+          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
           data-slot="field-separator-content"
         >
           {children}
@@ -211,7 +211,11 @@ export function FieldError({
     if (errors.length === 1 && errors[0]?.message) return errors[0].message;
     return (
       <ul className="ml-4 flex list-disc flex-col gap-1">
-        {errors.map((error, index) => error?.message && <li key={index}>{error.message}</li>)}
+        {errors.map(
+          (error, index) =>
+            // biome-ignore lint/suspicious/noArrayIndexKey: error list rendered once at validation time; not reordered.
+            error?.message && <li key={index}>{error.message}</li>,
+        )}
       </ul>
     );
   })();
@@ -222,7 +226,7 @@ export function FieldError({
     <div
       role="alert"
       data-slot="field-error"
-      className={cn('text-destructive text-sm font-normal', className)}
+      className={cn('font-normal text-destructive text-sm', className)}
       {...props}
     >
       {content}
@@ -339,7 +343,7 @@ export function FormLabel({
     <Field.Label
       data-slot="form-label"
       nativeLabel={nativeLabel}
-      className={cn('text-sm/4.5 font-medium w-fit select-none data-invalid:text-destructive', className)}
+      className={cn('w-fit select-none font-medium text-sm/4.5 data-invalid:text-destructive', className)}
       {...props}
     />
   );
@@ -360,7 +364,7 @@ export function FormDescription({ className, children, ...props }: React.Compone
   return (
     <Field.Description
       render={<div />}
-      className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)}
+      className={cn('relative -mt-2! text-muted-foreground text-sm', className)}
       {...props}
     >
       <div className="flex justify-between">
@@ -369,7 +373,7 @@ export function FormDescription({ className, children, ...props }: React.Compone
           variant="link"
           size="sm"
           onClick={toggleCollapsed}
-          className="right-1 -top-6 absolute text-regular ring-inset opacity-50 hover:opacity-100 p-2 h-auto"
+          className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
         >
           {collapsed && <HelpCircleIcon size={16} />}
           {!collapsed && <ChevronUpIcon size={16} />}
@@ -384,7 +388,7 @@ export function FormMessage({ className, children, ...props }: React.ComponentPr
   const { t, i18n } = useTranslation();
   const { error } = useFieldState();
   const message = error?.message ?? '';
-  const body = error ? (message && i18n.exists(message) ? t(message) : message) : children;
+  const body = error ? (message && i18n?.exists?.(message) ? t(message) : message) : children;
 
   if (!body) return null;
 

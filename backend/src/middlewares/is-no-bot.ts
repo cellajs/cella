@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { isbot } from 'isbot';
-import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 
 /**
  * Middleware to block bot requests based on the User-Agent header.

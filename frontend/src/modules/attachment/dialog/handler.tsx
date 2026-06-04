@@ -15,8 +15,8 @@ const dialogId = searchParamKey;
 function AttachmentDialogHandlerBase() {
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$orgSlug', shouldThrow: false });
-  const orgId = orgMatch?.context?.organization?.id;
+  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$organizationSlug', shouldThrow: false });
+  const organizationId = orgMatch?.context?.organization?.id;
   const isOpen = !!searchParams[searchParamKey];
 
   useEffect(() => {
@@ -44,15 +44,15 @@ function AttachmentDialogHandlerBase() {
           if (!isCleanup) close();
         },
         drawerOnMobile: false,
-        className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
-        headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
+        className: 'min-w-full h-dvh max-sm:max-h-[100dvh] border-0 p-0 rounded-none flex flex-col mt-0',
+        headerClassName: 'hidden',
       });
     });
 
     return () => {
       useDialoger.getState().remove(dialogId, { isCleanup: true });
     };
-  }, [isOpen, orgId]);
+  }, [isOpen, organizationId]);
 
   return null;
 }

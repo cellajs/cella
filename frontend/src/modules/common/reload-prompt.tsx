@@ -1,16 +1,18 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
 
+// Periodic fallback interval (15 min) for SW update checks
+const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
+
 export function ReloadPrompt() {
   const { t } = useTranslation();
+  const [reloading, setReloading] = useState(false);
 
   // replaced dynamically
   const buildDate = '__DATE__';
-  // replaced dynamically
-  const reloadSW: string = '__RELOAD_SW__';
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -18,15 +20,23 @@ export function ReloadPrompt() {
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
       console.debug(`[ServiceWorker] Registered at: ${swUrl}`);
-      if (reloadSW === 'true') {
-        r &&
-          setInterval(() => {
-            console.info('Checking for sw update');
-            r.update();
-          }, 20000 /* 20s for testing purposes */);
-      } else {
-        console.debug('[ServiceWorker] Registered');
-      }
+      if (!r) return;
+
+      // Periodic fallback check
+      setInterval(() => {
+        console.debug('[ServiceWorker] Periodic update check');
+        r.update();
+      }, SW_UPDATE_INTERVAL);
+
+      // Immediate check when user returns to the tab or comes back online
+      const check = () => {
+        if (document.visibilityState === 'visible') {
+          console.debug('[ServiceWorker] Visibility/online update check');
+          r.update();
+        }
+      };
+      document.addEventListener('visibilitychange', check);
+      window.addEventListener('online', check);
     },
     onRegisterError(error) {
       console.info('SW registration error', error);
@@ -40,10 +50,12 @@ export function ReloadPrompt() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  // Attempt SW-driven reload, fall back to hard reload after timeout
+  // Attempt SW-driven reload, force a hard reload if nothing happens after 5s
   const reload = useCallback(() => {
-    const timeout = setTimeout(() => window.location.reload(), 3000);
-    updateServiceWorker(true).then(() => clearTimeout(timeout));
+    setReloading(true);
+    // Guaranteed fallback: if the SW update doesn't trigger a reload, force one
+    setTimeout(() => window.location.reload(), 5000);
+    updateServiceWorker(true);
   }, [updateServiceWorker]);
 
   const close = () => {
@@ -53,14 +65,18 @@ export function ReloadPrompt() {
   return (
     <>
       {needRefresh && (
-        <div className="fixed right-0 bottom-0 m-4 p-3 border rounded-sm z-200000 pointer-events-auto text-left bg-background">
+        <div className="pointer-events-auto fixed right-0 bottom-0 z-200000 m-4 rounded-sm border bg-background p-3 text-left">
           <div className="mb-2">
-            <span>{t('common:refresh_pwa_app.text')}</span>
+            <span>{t('c:refresh_pwa_app.text')}</span>
           </div>
           <div className="space-x-2">
-            {needRefresh && <Button onClick={reload}>{t('common:reload')}</Button>}
+            {needRefresh && (
+              <Button onClick={reload} loading={reloading}>
+                {t('c:reload')}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => close()}>
-              {t('common:close')}
+              {t('c:close')}
             </Button>
           </div>
         </div>

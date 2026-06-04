@@ -1,27 +1,21 @@
-import { renderSortStatus } from './sort-status';
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import type { RenderHeaderCellProps } from './types';
 
-export function renderHeaderCell<R, SR>({ column, sortDirection, priority }: RenderHeaderCellProps<R, SR>) {
-  if (!column.sortable) return <span className="truncate">{column.name}</span>;
+export function renderHeaderCell<R, SR>({ column, sortDirection }: RenderHeaderCellProps<R, SR>) {
+  if (!column.sortable) {
+    return <div className="truncate">{column.name}</div>;
+  }
 
   return (
-    <SortableHeaderCell sortDirection={sortDirection} priority={priority}>
-      {column.name}
-    </SortableHeaderCell>
-  );
-}
-
-type SharedHeaderCellProps<R, SR> = Pick<RenderHeaderCellProps<R, SR>, 'sortDirection' | 'priority'>;
-
-interface SortableHeaderCellProps<R, SR> extends SharedHeaderCellProps<R, SR> {
-  children: React.ReactNode;
-}
-
-function SortableHeaderCell<R, SR>({ sortDirection, priority, children }: SortableHeaderCellProps<R, SR>) {
-  return (
-    <span className="flex">
-      <span className="grow overflow-clip text-ellipsis">{children}</span>
-      <span>{renderSortStatus({ sortDirection, priority })}</span>
-    </span>
+    <div className="group flex cursor-pointer items-center gap-2">
+      <span className="truncate">{column.name}</span>
+      {sortDirection === 'DESC' ? (
+        <ArrowDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
+      ) : sortDirection === 'ASC' ? (
+        <ArrowUpIcon className="size-4 opacity-50 group-hover:opacity-75" />
+      ) : (
+        <ChevronsUpDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
+      )}
+    </div>
   );
 }

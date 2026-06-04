@@ -1,6 +1,5 @@
-import { integer, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { maxLength } from '#/db/utils/constraints';
 
 /**
  * Denormalized view count per product entity.
@@ -10,8 +9,8 @@ import { maxLength } from '#/db/utils/constraints';
  *
  * NOT tracked by CDC — this is a derived counter, not a source entity.
  */
-export const seenCountsTable = pgTable('seen_counts', {
-  entityId: varchar({ length: maxLength.id }).notNull().primaryKey(),
+export const seenCountsTable = snakeCase.table('seen_counts', {
+  entityId: uuid().notNull().primaryKey(),
   entityType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
   viewCount: integer().notNull().default(0),
   updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),

@@ -42,7 +42,7 @@ export const TO_COPY: Record<string, string> = {
 };
 
 /**
- * Placeholder config template that replaces `shared/default-config.ts` in new forks.
+ * Placeholder config template that replaces `shared/config/config.default.ts` in new forks.
  * Contains `__project_name__` and `__project_slug__` tokens interpolated at create time.
  */
 export const PLACEHOLDER_CONFIG = './cli/create-cella/configs/default-config.ts.template';
@@ -85,7 +85,7 @@ export function getBackendEnvReplacements(adminEmail: string, portOffset: number
   return {
     DATABASE_URL: `postgres://runtime_role:dev_password@0.0.0.0:${db}/postgres`,
     DATABASE_ADMIN_URL: `postgres://postgres:postgres@0.0.0.0:${db}/postgres`,
-    DATABASE_CDC_URL: `postgres://cdc_role:dev_password@0.0.0.0:${db}/postgres`,
+    DATABASE_CDC_URL: `postgres://admin_role:dev_password@0.0.0.0:${db}/postgres`,
     ADMIN_EMAIL: adminEmail,
     PORT: String(4000 + portOffset),
   };
@@ -101,7 +101,7 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
   const be = 4000 + portOffset;
 
   const header =
-    "import type { DeepPartial } from './src/builder/types';\nimport type _default from './default-config';\n";
+    "import type { DeepPartial } from './src/builder/types';\nimport type _default from './config.default';\n";
 
   // Per-environment specs: optional imports + object props (= prefix → raw TS expression)
   const envs: Record<string, { imports?: string; props: Record<string, string | boolean> }> = {
@@ -133,7 +133,7 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
       },
     },
     test: {
-      imports: "import development from './development-config';\n",
+      imports: "import development from './config.development';\n",
       props: {
         debug: false,
         domain: '',
@@ -159,7 +159,7 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
     const body = Object.entries(props)
       .map(([k, v]) => `  ${k}: ${lit(v)},`)
       .join('\n');
-    result[`./shared/${mode}-config.ts`] =
+    result[`./shared/config/config.${mode}.ts`] =
       `${imports}${header}\nexport default {\n  mode: '${mode}',\n${nameEntry}${body}\n} satisfies DeepPartial<typeof _default>;\n`;
   }
 

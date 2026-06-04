@@ -1,20 +1,20 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const alertVariants = cva(
-  'relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
+  'relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current',
   {
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
-        brand: '[--intent-color:var(--brand)] bg-brand text-brand-foreground',
-        destructive: '[--intent-color:var(--destructive)] bg-destructive text-destructive-foreground',
-        success: '[--intent-color:var(--success)] bg-success text-success-foreground',
-        plain: 'text-primary bg-background/80 border-primary/20',
+        brand: 'bg-brand text-brand-foreground [--intent-color:var(--brand)]',
+        destructive: 'bg-destructive text-destructive-foreground [--intent-color:var(--destructive)]',
+        success: 'bg-success text-success-foreground [--intent-color:var(--success)]',
+        plain: 'border-primary/20 bg-background/80 text-primary',
         secondary: 'bg-secondary text-secondary-foreground',
-        warning: '[--intent-color:var(--warning)] bg-warning text-warning-foreground',
+        warning: 'bg-warning text-warning-foreground [--intent-color:var(--warning)]',
       },
       soft: {
         true: '',
@@ -25,7 +25,7 @@ export const alertVariants = cva(
       {
         variant: ['brand', 'destructive', 'success', 'warning'],
         soft: true,
-        className: 'bg-(--intent-color)/10 text-(--intent-color) border-(--intent-color)/20',
+        className: 'soft-bg soft-border text-(--intent-color)',
       },
     ],
     defaultVariants: {
@@ -49,7 +49,7 @@ export function Alert({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-2 right-2 p-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus-effect disabled:pointer-events-none"
+          className="focus-effect absolute top-2 right-2 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 disabled:pointer-events-none"
         >
           <XIcon className="size-5" strokeWidth={1.5} />
           <span className="sr-only">Close</span>
@@ -72,6 +72,10 @@ export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>)
 
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div data-slot="alert-description" className={cn('justify-items-start gap-1 text-sm', className)} {...props} />
+    <div
+      data-slot="alert-description"
+      className={cn('col-start-2 w-full justify-items-start gap-1 text-sm', className)}
+      {...props}
+    />
   );
 }

@@ -1,6 +1,7 @@
+import { Menu } from '@base-ui/react/menu';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button, ButtonProps } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface Props {
@@ -10,6 +11,12 @@ interface Props {
   children: ReactNode;
   variant?: ButtonProps['variant'];
   className?: ButtonProps['className'];
+  /**
+   * Whether the menu should close after this item is selected (desktop only).
+   * Callers that swap to a confirmation panel (e.g. PopConfirm) via
+   * `useDropdowner.update` should set this to false. Defaults to true.
+   */
+  closeOnSelect?: boolean;
 }
 
 /**
@@ -22,11 +29,12 @@ export function DropdownActionItem({
   children,
   variant = 'secondary',
   className,
+  closeOnSelect = true,
 }: Props) {
   if (isMobile) {
     return (
       <div className="sm:p-1">
-        <Button onClick={onSelect} variant={variant} className={cn('flex items-center w-full', className)}>
+        <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
           {Icon && <Icon size={16} className="mr-2" />}
           {children}
         </Button>
@@ -35,17 +43,18 @@ export function DropdownActionItem({
   }
 
   return (
-    <button
-      role="menuitem"
-      type="button"
+    <Menu.Item
+      closeOnClick={closeOnSelect}
       onClick={onSelect}
       className={cn(
-        'focus:bg-accent focus:text-accent-foreground relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 min-h-10 text-sm outline-hidden w-full',
+        'relative flex min-h-10 w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+        variant === 'destructive' &&
+          'text-destructive data-highlighted:bg-destructive data-highlighted:text-destructive-foreground',
         className,
       )}
     >
       {Icon && <Icon size={16} />}
       <span>{children}</span>
-    </button>
+    </Menu.Item>
   );
 }

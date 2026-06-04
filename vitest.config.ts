@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 /**
  * Vitest configuration for unified monorepo testing.
@@ -10,6 +10,7 @@ import { defineConfig } from 'vitest/config';
  * ```bash
  * pnpm vitest                     # Run all package tests
  * pnpm vitest --project=backend   # Run only backend tests
+ * pnpm vitest run --coverage      # Run all tests with merged coverage
  * ```
  *
  * @link https://vitest.dev/guide/projects
@@ -17,20 +18,43 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     projects: [
-      // Reference folders directly - Vitest picks up their vitest.config.ts
       'backend',
       'shared',
-      // Frontend: inline config for node tests only (Storybook tests run separately)
-      {
-        test: {
-          name: 'frontend',
-          root: './frontend',
-          include: ['vite/**/*.test.ts'],
-          environment: 'node',
-          setupFiles: ['./vitest.setup.ts'],
-          passWithNoTests: true,
-        },
-      },
+      'yjs',
+      'cdc',
+      'infra',
+      'frontend',
+      'sdk',
     ],
+    coverage: {
+      provider: 'v8',
+      // All reporters write under a single `coverage/` directory at the repo root
+      // (the default reportsDirectory) — nothing is emitted next to source files.
+      // - text-summary: compact 4-line totals in the terminal
+      // - html:         browsable coverage/index.html for drill-down
+      // - lcov:         coverage/lcov.info for CI / editor coverage tooling
+      // - json-summary: coverage/coverage-summary.json consumed by `pnpm cella --stats`
+      reporter: ['text-summary', 'html', 'lcov', 'json-summary'],
+      include: [
+        'backend/src/**/*.ts',
+        'cdc/src/**/*.ts',
+        'frontend/src/**/*.{ts,tsx}',
+        'yjs/src/**/*.ts',
+        'shared/**/*.ts',
+        'infra/{src,tasks,modules,reconciler,caddy}/**/*.ts',
+        'infra/*.ts',
+        'sdk/src/**/*.ts',
+      ],
+      exclude: [
+        ...coverageConfigDefaults.exclude,
+        '**/*.{test,spec}.ts',
+        '**/tests/**',
+        '**/mocks/**',
+        '**/scripts/**',
+        // Generated SDK output — never hand-written, so coverage is meaningless.
+        'frontend/src/api.gen/**',
+        'sdk/gen/**',
+      ],
+    },
   },
 });

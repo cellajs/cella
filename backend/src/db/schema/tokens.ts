@@ -1,6 +1,6 @@
-import { index, pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/nanoid';
+import { generateId } from 'shared/entity-id';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
@@ -9,23 +9,23 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 const tokenTypeEnum = appConfig.tokenTypes;
 
 /**
- * Tokens for email verification, invitation, and password reset.
+ * Tokens for email verification and invitation.
  *
  * PARTITIONING: Partitioned by expiresAt via pg_partman (weekly, 30-day retention).
  * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
-export const tokensTable = pgTable(
+export const tokensTable = snakeCase.table(
   'tokens',
   {
-    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
+    id: uuid().notNull().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
-    userId: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
-    oauthAccountId: varchar({ length: maxLength.id }).references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
-    inactiveMembershipId: varchar({ length: maxLength.id }),
-    createdBy: varchar({ length: maxLength.id }).references(() => usersTable.id, { onDelete: 'cascade' }),
+    userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
+    oauthAccountId: uuid().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+    inactiveMembershipId: uuid(),
+    createdBy: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
     invokedAt: timestamp({ withTimezone: true, mode: 'string' }),
@@ -34,6 +34,8 @@ export const tokensTable = pgTable(
     primaryKey({ columns: [table.id, table.expiresAt] }),
     index('tokens_secret_type_idx').on(table.secret, table.type),
     index('tokens_user_id_idx').on(table.userId),
+    index('tokens_created_by_idx').on(table.createdBy),
+    index('tokens_single_use_token_idx').on(table.type, table.singleUseToken),
   ],
 );
 

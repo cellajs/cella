@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
-import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { createXRoute } from '#/core/x-routes';
+import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import {
   batchResponseSchema,
@@ -24,7 +24,7 @@ const systemRoutes = {
     path: '/invite',
     xGuard: [authGuard, sysAdminGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
-    tags: ['system'],
+    tags: ['system', 'cella'],
     summary: 'Invite to system',
     description:
       'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
@@ -55,8 +55,8 @@ const systemRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['system'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['system', 'cella'],
     summary: 'Delete users',
     description:
       "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
@@ -82,8 +82,8 @@ const systemRoutes = {
     method: 'put',
     path: '/{id}',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['system'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['system', 'cella'],
     summary: 'Update user',
     description: 'Updates a *user* identified by ID.',
     request: {
@@ -108,8 +108,8 @@ const systemRoutes = {
     method: 'post',
     path: '/newsletter',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: singlePointsLimiter,
-    tags: ['system'],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['system', 'cella'],
     summary: 'Newsletter to members',
     description: 'Sends a newsletter to members of one or more specified organizations.',
     request: {
@@ -122,28 +122,6 @@ const systemRoutes = {
     responses: {
       204: {
         description: 'Newsletter sent',
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  /**
-   * Paddle webhook (WIP)
-   */
-  paddleWebhook: createXRoute({
-    operationId: 'paddleWebhook',
-    method: 'post',
-    path: '/paddle-webhook',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('paddle'),
-    tags: ['system'],
-    summary: 'Paddle webhook (WIP)',
-    description: 'Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.',
-    request: {
-      body: { content: { 'application/json': { schema: z.unknown() } } },
-    },
-    responses: {
-      204: {
-        description: 'Paddle webhook received',
       },
       ...errorResponseRefs,
     },

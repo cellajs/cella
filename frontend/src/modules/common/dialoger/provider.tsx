@@ -1,14 +1,11 @@
 import { useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
-import { useBoundaryCleanup } from '~/hooks/use-boundary-cleanup';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useUIStore } from '~/store/ui';
-
-// Static callback for boundary cleanup - no deps, call store directly
-const closeAll = () => useDialoger.getState().remove(undefined, { isCleanup: true });
+import { useUIStore } from '~/modules/ui/ui-store';
+import router from '~/routes/router';
 
 /**
  * Dialoger provider to render drawers on mobile and dialogs on other screens.
@@ -29,7 +26,12 @@ export function Dialoger() {
     }
   }, [dialogs.length > 0]);
 
-  useBoundaryCleanup(closeAll);
+  // Close all dialogs on route change
+  useEffect(() => {
+    return router.subscribe('onBeforeLoad', ({ pathChanged }) => {
+      if (pathChanged) useDialoger.getState().remove();
+    });
+  }, []);
 
   if (!dialogs.length) return null;
 

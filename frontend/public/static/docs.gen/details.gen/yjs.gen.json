@@ -1,0 +1,97 @@
+[
+  {
+    "operationId": "getYjsToken",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Yjs auth token",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "token": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "entityType": { "type": "string", "required": true, "maxLength": 50 },
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "verifyYjsEntity",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Access check result",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "allowed": { "type": "boolean", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "entityType": { "type": "string", "required": true, "maxLength": 50 },
+          "entityId": { "type": "string", "required": true, "maxLength": 50 },
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "userId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  }
+]

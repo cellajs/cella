@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
@@ -14,9 +14,9 @@ const authTotpsRoutes = {
     operationId: 'generateTotpKey',
     method: 'post',
     path: '/totp/generate-key',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
     responses: {
@@ -39,9 +39,9 @@ const authTotpsRoutes = {
     operationId: 'createTotp',
     method: 'post',
     path: '/totp',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Set TOTP',
     description:
       'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.',
@@ -66,9 +66,9 @@ const authTotpsRoutes = {
     operationId: 'deleteTotp',
     method: 'delete',
     path: '/totp',
-    xGuard: authGuard,
-    xRateLimiter: singlePointsLimiter,
-    tags: ['auth'],
+    xGuard: [authGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Delete TOTP',
     description: 'Delete TOTP credential for current user.',
     responses: {
@@ -83,9 +83,9 @@ const authTotpsRoutes = {
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
-    xGuard: publicGuard,
-    xRateLimiter: totpVerificationLimiter,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [totpVerificationLimiter],
+    tags: ['auth', 'cella'],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
     request: {

@@ -1,14 +1,14 @@
-import { sql } from 'drizzle-orm';
-import { appConfig, hierarchy, isProductEntity } from 'shared';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { cdcDb } from '../db';
-import type { TableRegistryEntry } from '../types';
+import { appConfig, hierarchy } from 'shared';
+import type { ActivityAction } from 'shared';
+import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
+import type { MembershipModel } from '#/db/schema/memberships';
+import type { TableMeta } from '../types';
+import type { CdcRowData } from '../types';
+import { logEvent } from '../lib/pino';
 
-/**
- * Count delta to apply to contextCountersTable.counts JSONB.
- */
-interface CountDelta {
-  /** Context key (orgId or 'public:{type}') — the row to update */
+export interface CountDelta {
+  /** Context key (organizationId or 'public:{type}') — the row to update */
   contextKey: string;
   /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
   deltas: Record<string, number>;
@@ -28,139 +28,130 @@ interface CountDelta {
  *   - update rejectedAt null→non-null → -1 pending
  *
  * Entity counts (e: prefix):
- *   - product entity create → +1 on org AND parent context (e.g., project)
- *   - product entity delete → -1 on org AND parent context
+ *   - entity create → +1 on org AND parent context (e.g., project)
+ *   - entity delete → -1 on org AND parent context
  */
 export function getCountDeltas(
-  entry: TableRegistryEntry,
-  action: 'create' | 'update' | 'delete',
-  newRow: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
+  tableMeta: TableMeta,
+  activity: ActivityWithoutId,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
 ): CountDelta[] {
-  const orgId = getStringValue(newRow, 'organizationId') ?? getStringValue(oldRow, 'organizationId');
-  if (!orgId) return [];
+  const { action, organizationId } = activity;
 
   // Active memberships: track role counts + total
-  if (entry.kind === 'resource' && entry.type === 'membership') {
-    const delta = getMembershipDelta(action, orgId, newRow, oldRow);
+  if (tableMeta.kind === 'resource' && tableMeta.type === 'membership') {
+    const delta = getMembershipDelta(action, newRow as MembershipModel, oldRow as MembershipModel | null);
     return delta ? [delta] : [];
   }
 
   // Inactive memberships: track pending count
-  if (entry.kind === 'resource' && entry.type === 'inactive_membership') {
-    const delta = getInactiveMembershipDelta(action, orgId, newRow, oldRow);
+  if (tableMeta.kind === 'resource' && tableMeta.type === 'inactive_membership') {
+    const delta = getInactiveMembershipDelta(action, newRow as InactiveMembershipModel, oldRow as InactiveMembershipModel | null);
     return delta ? [delta] : [];
   }
 
-  // Product entities: track entity type counts on org + parent context
-  if (entry.kind === 'entity' && isProductEntity(entry.type)) {
-    return getEntityDeltas(action, orgId, entry.type, newRow, oldRow);
+  // Entities: track entity type counts on org + parent context
+  if (tableMeta.kind === 'entity' && organizationId) {
+    const deltas = getEntityDeltas(action, organizationId, tableMeta.type, newRow, oldRow);
+
+    // Embedding counters: track e:<hostEntity> counts per embedded entity ID
+    for (const embedding of appConfig.entityEmbeddings) {
+      if (embedding.hostEntity !== tableMeta.type) continue;
+      const col = embedding.hostColumn;
+      const counterKey = `e:${embedding.hostEntity}`;
+
+      if (action === 'delete') {
+        // Decrement for all embedded IDs in the deleted entity
+        const ids = getArrayValue(oldRow ?? newRow, col);
+        for (const id of ids) {
+          deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+        }
+      } else if (action === 'create') {
+        // Increment for all embedded IDs in the new entity
+        const ids = getArrayValue(newRow, col);
+        for (const id of ids) {
+          deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
+        }
+      } else if (action === 'update' && oldRow) {
+        // Diff: increment added, decrement removed
+        const oldIds = getArrayValue(oldRow, col);
+        const newIds = getArrayValue(newRow, col);
+        const added = newIds.filter((id) => !oldIds.includes(id));
+        const removed = oldIds.filter((id) => !newIds.includes(id));
+        for (const id of added) deltas.push({ contextKey: id, deltas: { [counterKey]: 1 } });
+        for (const id of removed) deltas.push({ contextKey: id, deltas: { [counterKey]: -1 } });
+      }
+    }
+
+    return deltas;
   }
 
   return [];
 }
 
-/**
- * Apply count deltas to contextCountersTable.counts JSONB.
- * Uses atomic upsert with per-key increment, floored at 0.
- */
-export async function updateContextCounts(delta: CountDelta): Promise<void> {
-  const entries = Object.entries(delta.deltas);
-  if (entries.length === 0) return;
-
-  // Build initial counts for INSERT (apply deltas from 0, floor at 0)
-  const initialCounts: Record<string, number> = {};
-  for (const [key, value] of entries) {
-    initialCounts[key] = Math.max(0, value);
-  }
-
-  // Build the SET expression for ON CONFLICT: chain jsonb || for each key
-  // Each key: jsonb_build_object('key', GREATEST(0, COALESCE((counts->>'key')::int, 0) + delta))
-  // Note: We use sql.raw() for literal key strings and explicit ::int cast for the delta
-  // because PGlite cannot infer parameter types inside jsonb_build_object / GREATEST / COALESCE.
-  const setClauses = entries.map(([key, value]) => {
-    const safeKey = key.replace(/'/g, "''");
-    return sql`jsonb_build_object(${sql.raw(`'${safeKey}'`)}, GREATEST(0, COALESCE((${contextCountersTable.counts}->>${sql.raw(`'${safeKey}'`)})::int, 0) + ${value}::int))`;
-  });
-
-  // Chain with || operator: counts || obj1 || obj2 || ...
-  let countsExpr = sql`${contextCountersTable.counts}`;
-  for (const clause of setClauses) {
-    countsExpr = sql`${countsExpr} || ${clause}`;
-  }
-
-  await cdcDb
-    .insert(contextCountersTable)
-    .values({
-      contextKey: delta.contextKey,
-      counts: initialCounts,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: contextCountersTable.contextKey,
-      set: {
-        counts: countsExpr,
-        updatedAt: new Date(),
-      },
-    });
-}
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getStringValue(row: Record<string, unknown> | undefined, key: string): string | null {
+function getStringValue(row: CdcRowData | null | undefined, key: string): string | null {
   if (!row) return null;
   const v = row[key];
   return typeof v === 'string' ? v : null;
 }
 
+function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
+  if (!row) return [];
+  const v = row[key];
+  return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
+}
+
+/**
+ * Get membership count delta based on create/update/delete action and role change.
+ */
 function getMembershipDelta(
-  action: 'create' | 'update' | 'delete',
-  orgId: string,
-  newRow: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
+  action: ActivityAction,
+  newRow: MembershipModel,
+  oldRow: MembershipModel | null,
 ): CountDelta | null {
+  const { contextId } = newRow;
+
   if (action === 'create') {
-    const role = getStringValue(newRow, 'role');
-    if (!role) return null;
-    return { contextKey: orgId, deltas: { [`m:${role}`]: 1, 'm:total': 1 } };
+    return { contextKey: contextId, deltas: { [`m:${newRow.role}`]: 1, 'm:total': 1 } };
   }
 
   if (action === 'delete') {
-    // For DELETE, row data comes from old row (REPLICA IDENTITY FULL)
-    const role = getStringValue(newRow, 'role') ?? getStringValue(oldRow, 'role');
-    if (!role) return null;
-    return { contextKey: orgId, deltas: { [`m:${role}`]: -1, 'm:total': -1 } };
+    return { contextKey: contextId, deltas: { [`m:${newRow.role}`]: -1, 'm:total': -1 } };
   }
 
   if (action === 'update' && oldRow) {
-    const oldRole = getStringValue(oldRow, 'role');
-    const newRole = getStringValue(newRow, 'role');
     // Only emit delta if role actually changed
-    if (oldRole && newRole && oldRole !== newRole) {
-      return { contextKey: orgId, deltas: { [`m:${oldRole}`]: -1, [`m:${newRole}`]: 1 } };
+    if (oldRow.role !== newRow.role) {
+      return { contextKey: contextId, deltas: { [`m:${oldRow.role}`]: -1, [`m:${newRow.role}`]: 1 } };
     }
   }
 
   return null;
 }
-
+/**
+ * Get inactive membership delta based on create/update/delete action and rejectedAt field.
+ */
 function getInactiveMembershipDelta(
-  action: 'create' | 'update' | 'delete',
-  orgId: string,
-  newRow: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
+  action: ActivityAction,
+  newRow: InactiveMembershipModel,
+  oldRow: InactiveMembershipModel | null,
 ): CountDelta | null {
+  const { contextId } = newRow;
+
   if (action === 'create') {
     // Only count pending (not rejected)
     if (newRow.rejectedAt != null) return null;
-    return { contextKey: orgId, deltas: { 'm:pending': 1 } };
+    return { contextKey: contextId, deltas: { 'm:pending': 1 } };
   }
 
   if (action === 'delete') {
     // Only decrement if it was pending (rejectedAt was null)
     const rejectedAt = newRow.rejectedAt ?? oldRow?.rejectedAt;
     if (rejectedAt != null) return null;
-    return { contextKey: orgId, deltas: { 'm:pending': -1 } };
+    return { contextKey: contextId, deltas: { 'm:pending': -1 } };
   }
 
   if (action === 'update' && oldRow) {
@@ -168,34 +159,46 @@ function getInactiveMembershipDelta(
     const isNull = newRow.rejectedAt == null;
     // Transition from pending to rejected
     if (wasNull && !isNull) {
-      return { contextKey: orgId, deltas: { 'm:pending': -1 } };
+      return { contextKey: contextId, deltas: { 'm:pending': -1 } };
     }
     // Transition from rejected to pending (unlikely but handle it)
     if (!wasNull && isNull) {
-      return { contextKey: orgId, deltas: { 'm:pending': 1 } };
+      return { contextKey: contextId, deltas: { 'm:pending': 1 } };
     }
   }
 
   return null;
 }
 
+/**
+ * Get entity count deltas based on create/delete action. Also emits deltas for parent context if applicable (e.g., project for a task).
+ */
 function getEntityDeltas(
-  action: 'create' | 'update' | 'delete',
-  orgId: string,
+  action: ActivityAction,
+  organizationId: string,
   entityType: string,
-  newRow: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
 ): CountDelta[] {
+  // Updates don't change counts
   if (action !== 'create' && action !== 'delete') return [];
-  const value = action === 'create' ? 1 : -1;
-  const deltas: CountDelta[] = [{ contextKey: orgId, deltas: { [`e:${entityType}`]: value } }];
 
-  // Also emit delta for parent context (e.g., task → project)
+  // Assert required fields are present
+  if (!newRow.id) {
+    logEvent('warn', `getEntityDeltas: missing "id" for ${entityType}`, { action });
+    return [];
+  }
+
+  const value = action === 'create' ? 1 : -1;
+  const deltas: CountDelta[] = [{ contextKey: organizationId, deltas: { [`e:${entityType}`]: value } }];
+
+  // Also emit delta for parent context (e.g., task -> project)
   const parentType = hierarchy.getParent(entityType);
   if (parentType && parentType !== 'organization') {
     const parentIdColumn = appConfig.entityIdColumnKeys[parentType];
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
     const parentId = getStringValue(row, parentIdColumn);
+    if (!parentId) logEvent('warn', `getEntityDeltas: missing "${parentIdColumn}" for ${entityType}`, { id: row.id });
     if (parentId) {
       deltas.push({ contextKey: parentId, deltas: { [`e:${entityType}`]: value } });
     }

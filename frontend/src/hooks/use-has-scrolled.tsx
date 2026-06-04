@@ -44,7 +44,7 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
     const startListening = () => {
       document.addEventListener('wheel', handleScrollIntent, { passive: true });
       document.addEventListener('touchmove', handleScrollIntent, { passive: true });
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, { passive: true });
     };
 
     if (immediate) {

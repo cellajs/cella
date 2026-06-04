@@ -97,8 +97,8 @@ async function readJsonIfExists(file: string): Promise<Record<string, unknown>> 
   try {
     const content = await fsp.readFile(file, 'utf8');
     return JSON.parse(content) as Record<string, unknown>;
-  } catch (err: any) {
-    if (err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
+  } catch (err) {
+    if (err && typeof err === 'object' && 'code' in err && (err.code === 'ENOENT' || err.code === 'ENOTDIR')) {
       return {};
     }
     throw err;
@@ -238,7 +238,7 @@ export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
      * Handle locale file changes.
      * Returns empty array to prevent Vite's default full-reload behavior.
      */
-    async handleHotUpdate(ctx: HmrContext): Promise<ModuleNode[] | void> {
+    async handleHotUpdate(ctx: HmrContext): Promise<ModuleNode[] | undefined> {
       if (!isLocaleAsset(ctx.file, options.srcDir)) return;
 
       // Send custom event to client for i18next to handle
@@ -262,8 +262,8 @@ export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
         log('error', 'failed to sync locale cache', options.verbose, err);
       }
 
-      // Return empty array to prevent full page reload
-      return [];
+      // Let Vite propagate the update through the module graph.
+      // The HMR boundary in i18n-locales.ts handles the update without full reload.
     },
   };
 }

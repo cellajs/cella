@@ -1,13 +1,13 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import type { DbOrTx } from '#/db/db';
+import type { DbContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
-import { AppError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
@@ -16,11 +16,10 @@ interface HandleCreateUserProps {
   newUser: InsertUserModel;
   inactiveMembershipId?: string | null;
   emailVerified?: boolean;
-  db: DbOrTx;
 }
 
 /**
- * Handles user creation, including password or OAuth-based sign-up.
+ * Handles user creation, including OAuth-based sign-up.
  * Inserts the user into the database, processes OAuth accounts, and sends verification emails.
  * Sets a user session upon successful sign-up.
  *
@@ -28,9 +27,13 @@ interface HandleCreateUserProps {
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ newUser, emailVerified, db }: HandleCreateUserProps): Promise<UserModel> => {
+export const handleCreateUser = async (
+  ctx: DbContext,
+  { newUser, emailVerified }: HandleCreateUserProps,
+): Promise<UserModel> => {
+  const { db } = ctx.var;
   // Check if slug is available
-  const slugAvailable = await checkSlugAvailable(newUser.slug, db);
+  const slugAvailable = await checkSlugAvailable(ctx, newUser.slug, 'user');
 
   // Insert new user into database
   try {
@@ -67,26 +70,22 @@ export const handleCreateUser = async ({ newUser, emailVerified, db }: HandleCre
 
     // If there are existing invitation tokens, set the user ID on the associated inactive memberships
     if (existingTokens.length > 0) {
-      await handleSetUserOnInactiveMemberships(
-        db,
-        user.id,
-        existingTokens.map((t) => t.inactiveMembershipId!),
-      );
-    }
-
-    // If email is verified, create verified email record
-    if (emailVerified) {
-      // Delete any unverified email under a different user
-      await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
-
-      // Insert new email entry
-      await db.insert(emailsTable).values({
-        email: normalizedEmail,
+      await handleSetUserOnInactiveMemberships(ctx, {
         userId: user.id,
-        verified: true,
-        verifiedAt: getIsoDate(),
+        inactiveMembershipIds: existingTokens.map((t) => t.inactiveMembershipId!),
       });
     }
+
+    // Delete any unverified email under a different user
+    await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
+
+    // Always create email record — verified or unverified based on sign-up strategy
+    await db.insert(emailsTable).values({
+      email: normalizedEmail,
+      userId: user.id,
+      verified: emailVerified,
+      ...(emailVerified && { verifiedAt: getIsoDate() }),
+    });
 
     return user;
   } catch (error) {
@@ -103,10 +102,10 @@ export const handleCreateUser = async ({ newUser, emailVerified, db }: HandleCre
  * @param inactiveMembershipIds - The IDs of the inactive memberships to update.
  */
 export const handleSetUserOnInactiveMemberships = async (
-  db: DbOrTx,
-  userId: string,
-  inactiveMembershipIds: string[],
+  ctx: DbContext,
+  { userId, inactiveMembershipIds }: { userId: string; inactiveMembershipIds: string[] },
 ) => {
+  const { db } = ctx.var;
   await db
     .update(inactiveMembershipsTable)
     .set({ userId })

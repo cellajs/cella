@@ -2,10 +2,8 @@
  * App-specific types derived from the merged configuration and entity hierarchy.
  * These types narrow the generic builder types to the concrete app setup.
  */
-import { hierarchy, roles } from './default-config';
-import { appConfig } from './app-config';
-
-;
+import { hierarchy, roles } from './config/config.default';
+import { appConfig } from './src/config-builder/app-config';
 
 /******************************************************************************
  * ENTITY TYPES
@@ -21,10 +19,10 @@ export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /** Parentless product entities (no organization_id) - tenant-scoped only */
-export type ParentlessProductEntityType = (typeof appConfig.parentlessProductEntityTypes)[number];
+export type ParentlessProductEntityType = (typeof hierarchy.parentlessProductTypes)[number];
 
-/** Public product entities (types with publicActions configured in hierarchy) */
-export type PublicProductEntityType = (typeof hierarchy.publicActionsTypes)[number];
+/** Public stream entity types (parentless products with publicRead) */
+export type PublicProductEntityType = (typeof hierarchy.publicStreamTypes)[number];
 
 /** Relatable context entities - context entities that appear as parents of product entities. Used for activities table columns and CDC context extraction. */
 export type RelatableContextEntityType = (typeof hierarchy.relatableContextTypes)[number];
@@ -63,6 +61,42 @@ export type Theme = keyof typeof appConfig.theme.colors | 'none';
 /** Pino log severity levels */
 export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
+/** Activity actions aligned with HTTP methods (excluding 'read'). Shared between backend and CDC. */
+export const activityActions = ['create', 'update', 'delete'] as const;
+export type ActivityAction = (typeof activityActions)[number];
+
+/** Past-tense verbs for activity event types, aligned with activityActions. */
+export const activityVerbs = ['created', 'updated', 'deleted'] as const;
+export type ActivityVerb = (typeof activityVerbs)[number];
+
+/** Mapping from action to verb for event type construction. */
+const actionVerbMap = {
+  create: 'created',
+  update: 'updated',
+  delete: 'deleted',
+} as const satisfies Record<ActivityAction, ActivityVerb>;
+
+export const actionToVerb = (action: ActivityAction): ActivityVerb => actionVerbMap[action];
+
+/** All tracked types (entities + resources) for activity events. */
+type TrackedType = EntityType | ResourceType;
+
+/** Strongly typed activity event type, e.g. 'user.created', 'membership.updated'. */
+export type ActivityEventType = `${TrackedType}.${ActivityVerb}`;
+
+/** Runtime array of all valid activity event types for schema enum constraints. */
+export const activityEventTypes = [...appConfig.entityTypes, ...appConfig.resourceTypes].flatMap(
+  (type) => activityVerbs.map((verb) => `${type}.${verb}`),
+) as unknown as readonly [ActivityEventType, ...ActivityEventType[]];
+
+/** Set of valid event types for runtime validation. */
+const validEventTypes = new Set<string>(activityEventTypes);
+
+/** Type predicate to check if a string is a valid ActivityEventType. */
+export function isValidEventType(type: string): type is ActivityEventType {
+  return validEventTypes.has(type);
+}
+
 /** All token types used in the app */
 export type TokenType = (typeof appConfig.tokenTypes)[number];
 
@@ -87,3 +121,19 @@ export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
 /** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
+
+/******************************************************************************
+ * EMBEDDING PROPAGATION TYPES
+ ******************************************************************************/
+
+/** Single entity embedding relationship derived from config */
+type EntityEmbedding = (typeof appConfig.entityEmbeddings)[number];
+
+/** Hint describing which target entities need cache updates when a source entity changes */
+export type PropagationHint = {
+  sourceType: EntityEmbedding['embeddedEntity'];
+  targetType: EntityEmbedding['hostEntity'];
+  field: EntityEmbedding['hostColumn'];
+  update: string[];
+  remove: string[];
+};

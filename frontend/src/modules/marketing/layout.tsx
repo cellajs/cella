@@ -22,7 +22,9 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
       <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
         <div className="max-w-none px-0">
           <section className="rich-gradient relative py-20 pb-16">
-            <h1 className="mt-12 mb-4 max-w-2xl px-4 mx-auto sm:w-full text-4xl text-center md:text-5xl">{t(title)}</h1>
+            <h1 className="mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl sm:w-full md:text-5xl">
+              {t(title)}
+            </h1>
             <BackgroundCurve height="clamp(1.5rem, 4vw, 3rem)" />
           </section>
 

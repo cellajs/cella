@@ -43,6 +43,7 @@ export default function RenderPDF({ file, className }: { file: string; className
       <Document file={file} options={options} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
         {scale != null &&
           Array.from(new Array(numPages || 0), (_el, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: PDF page numbers are stable and ordered.
             <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={scale} />
           ))}
       </Document>

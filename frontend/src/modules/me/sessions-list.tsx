@@ -1,8 +1,8 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ZapOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { MeAuthData } from '~/api.gen';
-import { deleteMySessions } from '~/api.gen';
+import type { MeAuthData } from 'sdk';
+import { deleteMySessions } from 'sdk';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
@@ -39,16 +39,14 @@ export function SessionsList() {
       });
 
       toaster(
-        ids.length === 1
-          ? t('common:success.session_terminated', { id: ids[0] })
-          : t('common:success.sessions_terminated'),
+        ids.length === 1 ? t('c:success.session_terminated', { id: ids[0] }) : t('c:success.sessions_terminated'),
         'success',
       );
     },
   });
 
   const handleDeleteSessions = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
     _deleteMySessions(ids);
   };
 
@@ -63,10 +61,10 @@ export function SessionsList() {
           onClick={() => handleDeleteSessions(sessionsWithoutCurrent.map((session) => session.id))}
         >
           <ZapOffIcon size={16} className="mr-2" />
-          {t('common:terminate_all')}
+          {t('c:terminate_all')}
         </Button>
       )}
-      <div className="flex flex-col mt-4 gap-2">
+      <div className="mt-4 flex flex-col gap-2">
         <ExpandableList
           items={sessions}
           renderItem={(session) => (
@@ -78,7 +76,7 @@ export function SessionsList() {
             />
           )}
           initialDisplayCount={3}
-          expandText="common:more_sessions"
+          expandText="c:more_sessions"
         />
       </div>
     </>

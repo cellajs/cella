@@ -34,11 +34,22 @@ export interface SyncSettings {
   /** Upstream branch to sync from (e.g., 'development') */
   upstreamBranch: string;
 
+  /**
+   * Optional commit SHA to pin upstream to. When set, analyze/sync operations
+   * fetch and diff against this exact commit instead of the tip of `upstreamBranch`.
+   * Bump via PR to make upstream changes reviewable — analogous to a lockfile entry
+   * for the upstream template. Recommended for CI to defend against a compromised
+   * upstream pushing unreviewed commits between sync runs.
+   *
+   * Example: 'a1b2c3d4e5f6...' (full 40-char SHA)
+   */
+  upstreamPinnedSha?: string;
+
   /** Git remote name for upstream (default: 'cella-upstream') */
   upstreamRemoteName?: string;
 
-  /** Your fork's working branch (e.g., 'development') */
-  forkBranch: string;
+  /** This repo's working branch that upstream changes are synced into (e.g., 'development') */
+  workingBranch: string;
 
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
@@ -61,12 +72,10 @@ export interface SyncSettings {
   syncWithPackages?: boolean;
 
   /**
-   * Automatically push drifted files to a `contrib/<fork-name>` branch in upstream
-   * after sync or analyze. Upstream can then review and cherry-pick changes.
-   * Requires upstreamLocalPath to be set.
-   * @default false
+   * GitHub repo identifier for the upstream repository (e.g., 'cellajs/cella').
+   * Used for building links to upstream files/commits in CLI output.
    */
-  autoContribute?: boolean;
+  upstreamRepo?: string;
 
   /**
    * How to link files in CLI output.
@@ -84,13 +93,21 @@ export interface SyncSettings {
 }
 
 /**
- * Configuration for a local fork repository.
+ * Configuration for a downstream fork repository that cella interacts with.
+ *
+ * Cella is the upstream/source-of-truth. For each fork it can:
+ * - pull contributions FROM the fork's `pullBranch` (contributions service)
+ * - sync changes INTO the fork's `pushBranch` (forks service)
  */
 export interface ForkConfig {
-  /** Display name for the fork (shown in CLI menu) */
+  /** Display name for the fork (also used as the contrib/<name> branch slug) */
   name: string;
-  /** Path to the fork repository (relative to this config or absolute) */
-  path: string;
+  /** Local path to the fork repository (relative to this config or absolute) */
+  localPath: string;
+  /** Fork branch that cella pulls contributions from (contributions service) */
+  pullBranch: string;
+  /** Fork branch that cella syncs changes into (forks service) */
+  pushBranch: string;
 }
 
 /**
@@ -102,29 +119,29 @@ export interface CellaCliConfig {
   settings: SyncSettings;
 
   /**
-   * File overrides for controlling sync behavior per file/pattern.
+   * File overrides for controlling sync behavior per folder/file.
    */
   overrides?: {
     /**
-     * Files ignored entirely during sync — never synced (existing or new).
-     * Supports glob patterns (e.g., 'frontend/public/static/*').
-     * Local territory: upstream cannot add, modify, or delete these.
+     * Folders (or exact paths) the fork fully owns — never synced (existing or new).
+     * Directory prefixes, not globs: 'bench' matches 'bench/' and everything under it,
+     * 'README.md' matches that exact file.
+     * Local territory: upstream cannot add, modify, or delete anything under these.
      */
-    ignored?: string[];
+    ignoredFolders?: string[];
 
     /**
-     * Files pinned to fork — fork wins on conflicts.
-     * Exact paths only (no wildcards - use ignored for patterns).
+     * Exact files pinned to fork — fork wins on conflicts.
+     * Exact paths only (no wildcards - use ignoredFolders for whole folders).
      * Non-conflicting upstream changes merge normally.
      * If fork deleted a pinned file, deletion is respected.
      */
-    pinned?: string[];
+    pinnedFiles?: string[];
   };
 
   /**
-   * Local fork repositories to sync to (for upstream template repos).
-   * When configured, a 'forks' service option appears in the CLI menu.
-   * Each fork should have its own cella.config.ts with overrides.
+   * Downstream fork repositories that cella interacts with (for upstream template repos).
+   * When configured, the 'forks' and 'contributions' services appear in the CLI menu.
    */
   forks?: ForkConfig[];
 }
@@ -141,7 +158,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions';
+export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions' | 'stats';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -166,14 +183,17 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Pre-selected fork name (skips fork selection prompt) */
   fork?: string;
 
-  /** Quick-push drifted files to contrib branch without interactive menu */
-  contribute?: boolean;
-
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;
 
   /** Bypass pnpm metadata cache for fresh registry data (audit service) */
   force?: boolean;
+
+  /** Check which pnpm.overrides are still needed (audit service) */
+  checkOverrides?: boolean;
+
+  /** Regenerate test coverage before showing the stats summary (stats service) */
+  coverage?: boolean;
 }
 
 /** File status after analysis */

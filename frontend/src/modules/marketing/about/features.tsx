@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { features } from '~/modules/marketing/marketing-config';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export type Feature = {
   id: string;
@@ -18,16 +18,16 @@ function Feature({ id, invertClassName }: FeatureProps) {
   const text = `about:feature.${id}_text`;
 
   return (
-    <div className="bg-card relative overflow-hidden rounded-lg p-2">
-      <div className="flex h-44 flex-col justify-between rounded-md p-6 gap-2">
+    <div className="relative overflow-hidden rounded-lg bg-card p-2">
+      <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-6">
         <img
           src={`/static/images/features/${id}.svg`}
           alt={title}
-          className={`h-8 w-8 object-contain mb-2 ${invertClassName}`}
+          className={`mb-2 h-8 w-8 object-contain ${invertClassName}`}
           loading="lazy"
         />
         <h3 className="font-medium">{t(title)}</h3>
-        <p className="text-muted-foreground text-sm grow">{t(text)}</p>
+        <p className="grow text-muted-foreground text-sm">{t(text)}</p>
       </div>
     </div>
   );
@@ -45,7 +45,7 @@ export function Features() {
         renderItem={(feature) => <Feature key={feature.id} {...feature} invertClassName={invertClass} />}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}
-        expandText="common:more_features"
+        expandText="c:more_features"
       />
     </div>
   );

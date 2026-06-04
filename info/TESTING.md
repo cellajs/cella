@@ -6,37 +6,19 @@ This document describes the test modes available in Cella and how to use them.
 
 ## Test Modes
 
-Cella supports three test modes to balance speed vs. coverage:
+Cella supports two test modes to balance speed vs. coverage:
 
 | Mode | Database | Docker | Integration Tests | CLI Tests | Use Case |
 |------|----------|--------|-------------------|-----------|----------|
-| `basic` | None | ❌ | ❌ | ❌ | Fast unit tests only |
 | `core` | PostgreSQL | ✅ | ❌ | ❌ | Standard CI/pre-commit |
 | `full` | PostgreSQL | ✅ | ✅ | ✅ | Complete validation |
 
 These align with development modes:
 
-| Dev Command | Test Command | DEV_MODE | Description |
-|-------------|--------------|----------|-------------|
-| `pnpm quick` | `pnpm test:basic` | basic | PGlite, no Docker |
-| `pnpm dev:core` | `pnpm test:core` | core | PostgreSQL, no CDC |
-| `pnpm dev` | `pnpm test:full` | full | PostgreSQL + CDC Worker |
-
-### Basic Mode (`pnpm test:basic`)
-
-- **Database**: None (database tests skipped)
-- **Requirements**: None (no Docker needed)
-- **Coverage**: Unit tests only (e.g., permission manager, utilities)
-
-Best for:
-- Quick feedback during active development
-- Running tests without Docker installed
-- CI checks on resource-constrained environments
-- Testing pure logic that doesn't need database
-
-```bash
-pnpm test:basic
-```
+| Dev Command | Test Command | Description |
+|-------------|--------------|-------------|
+| `pnpm dev` | `pnpm test:core` | PostgreSQL + CDC Worker |
+| `pnpm dev` | `pnpm test:full` | PostgreSQL + CDC Worker (incl. CDC integration tests) |
 
 ### Core Mode (`pnpm test:core` or `pnpm test`)
 

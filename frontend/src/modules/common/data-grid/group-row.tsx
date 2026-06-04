@@ -2,7 +2,6 @@ import { memo, useMemo } from 'react';
 import { SELECT_COLUMN_KEY } from './columns';
 import { GroupCell } from './group-cell';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
-import { rowClassname, rowSelectedClassname } from './style/row';
 import type { BaseRenderRowProps, GroupRow } from './types';
 import { cn, getRowStyle } from './utils/grid-utils';
 
@@ -26,6 +25,7 @@ function GroupedRow<R, SR>({
   groupBy,
   toggleGroup,
   isRowSelectionDisabled,
+  isCellSelectionEnabled,
   ...props
 }: GroupRowRendererProps<R, SR>) {
   // Select is always the first column
@@ -49,10 +49,10 @@ function GroupedRow<R, SR>({
         aria-posinset={row.posInSet + 1} // aria-posinset is 1-based
         aria-expanded={row.isExpanded}
         className={cn(
-          rowClassname,
+          'rdg-row bg-muted aria-selected:bg-accent',
           groupRowClassname,
           `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
-          selectedCellIdx === -1 && rowSelectedClassname,
+          selectedCellIdx === -1 && 'rdg-row-selected',
           className,
         )}
         onMouseDown={handleSelectGroup}
@@ -67,6 +67,7 @@ function GroupedRow<R, SR>({
             childRows={row.childRows}
             isExpanded={row.isExpanded}
             isCellSelected={selectedCellIdx === column.idx}
+            isCellSelectionEnabled={isCellSelectionEnabled}
             column={column}
             row={row}
             groupColumnIndex={idx}
@@ -80,4 +81,5 @@ function GroupedRow<R, SR>({
 }
 
 const GroupedRowMemo = memo(GroupedRow) as <R, SR>(props: GroupRowRendererProps<R, SR>) => React.JSX.Element;
+
 export { GroupedRowMemo as GroupedRow };

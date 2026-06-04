@@ -1,12 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Tenant } from 'sdk';
+import { zUpdateTenantBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
-import type { Tenant } from '~/api.gen';
-import { zUpdateTenantData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -15,7 +15,7 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
-const formSchema = zUpdateTenantData.shape.body.pick({ name: true, status: true });
+const formSchema = zUpdateTenantBody.pick({ name: true, status: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -51,7 +51,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
         onSuccess: (updatedTenant) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('common:success.update_resource', { resource: t('common:tenant') }), 'success');
+          toaster(t('c:success.update_resource', { resource: t('c:tenant') }), 'success');
           callback?.({ data: updatedTenant, status: 'success' });
         },
       },
@@ -61,13 +61,13 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="name" label={t('c:name')} required />
         <FormField
           control={form.control}
           name="status"
           render={({ field }) => (
             <FormItem name="status">
-              <FormLabel>{t('common:status')}</FormLabel>
+              <FormLabel>{t('c:status')}</FormLabel>
               <FormControl>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger className="w-full">
@@ -76,7 +76,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
                   <SelectContent>
                     {statusOptions.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {t(`common:${status}`)}
+                        {t(`c:${status}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -86,9 +86,9 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
             </FormItem>
           )}
         />
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
-            {t('common:save_changes')}
+            {t('c:save_changes')}
           </SubmitButton>
           <Button
             type="reset"
@@ -96,7 +96,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
             onClick={() => form.reset()}
             className={form.isDirty ? '' : 'invisible'}
           >
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
         </div>
       </form>

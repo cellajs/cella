@@ -54,7 +54,8 @@ export function createTestEnv(): TestEnv {
 
   // Create upstream repo with initial content
   fs.mkdirSync(upstreamPath);
-  exec('git init', upstreamPath);
+  // -b main: don't depend on the runner's init.defaultBranch (CI defaults to master).
+  exec('git init -b main', upstreamPath);
   exec(GIT_USER, upstreamPath);
 
   // Create initial files
@@ -176,23 +177,23 @@ export function buildRuntimeConfig(
   env: TestEnv,
   options: {
     service?: SyncService;
-    pinned?: string[];
-    ignored?: string[];
+    pinnedFiles?: string[];
+    ignoredFolders?: string[];
     mergeStrategy?: 'merge' | 'squash';
   } = {},
 ): RuntimeConfig {
-  const { service = 'analyze', pinned = [], ignored = [], mergeStrategy = 'squash' } = options;
+  const { service = 'analyze', pinnedFiles = [], ignoredFolders = [], mergeStrategy = 'squash' } = options;
 
   const config: CellaCliConfig = {
     settings: {
       upstreamUrl: env.upstreamPath,
       upstreamBranch: 'main',
-      forkBranch: 'main',
+      workingBranch: 'main',
       mergeStrategy,
     },
     overrides: {
-      pinned,
-      ignored,
+      pinnedFiles,
+      ignoredFolders,
     },
   };
 

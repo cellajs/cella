@@ -7,8 +7,8 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { uiStore } from '~/modules/ui/ui-store';
 import router from '~/routes/router';
-import { uiStore } from '~/store/ui';
 
 interface Props<TData> {
   filename: string;
@@ -27,11 +27,11 @@ export const Export = <R extends Record<string, any>>({
   className = '',
 }: Props<R>) => {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
   const mode = uiStore.getState().mode;
 
   const exportDefault = async (type: 'csv' | 'pdf') => {
-    if (!isOnline) return toaster(t('common:action.offline.text'), 'warning');
+    if (!isOnline) return toaster(t('c:action.offline.text'), 'warning');
     const rows = await fetchRows(1000);
     const filenameWithExtension = `${filename}.${type}`;
 
@@ -45,16 +45,16 @@ export const Export = <R extends Record<string, any>>({
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
 
-    if (!isOnline) toaster(t('common:action.offline.text'), 'warning');
+    if (!isOnline) toaster(t('c:action.offline.text'), 'warning');
     return exportToPdf(columns, selectedRows, filenameWithExtension, router.state.location.pathname, mode);
   };
 
   return (
     <DropdownMenu>
-      <TooltipButton className={className} toolTipContent={t('common:export_pdf_csv')}>
+      <TooltipButton className={className} toolTipContent={t('c:export_pdf_csv')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="flex max-xs:hidden" />}>
           <DownloadIcon size={16} />
-          <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
+          <span className="ml-1 max-xl:hidden">{t('c:export')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="p-1">
@@ -62,11 +62,11 @@ export const Export = <R extends Record<string, any>>({
           <>
             <DropdownMenuItem onClick={() => exportDefault('csv')}>
               <span>CSV</span>
-              <span className="ml-2 font-light text-xs opacity-75">{t('common:max_1k_rows')}</span>
+              <span className="ml-2 text-xs opacity-75">{t('c:max_1k_rows')}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => exportDefault('pdf')}>
               <span>PDF</span>
-              <span className="ml-2 font-light text-xs opacity-75">{t('common:max_1k_rows')}</span>
+              <span className="ml-2 text-xs opacity-75">{t('c:max_1k_rows')}</span>
             </DropdownMenuItem>
           </>
         )}
@@ -74,20 +74,20 @@ export const Export = <R extends Record<string, any>>({
           <>
             <DropdownMenuItem onClick={() => exportSelected('csv')} disabled={selectedRows.length === 0}>
               <span>CSV</span>
-              <span className="ml-2 font-light text-xs opacity-75">
+              <span className="ml-2 text-xs opacity-75">
                 {selectedRows.length
-                  ? `${selectedRows.length} ${t('common:selected').toLowerCase()}`
-                  : t('common:no_selection').toLowerCase()}
+                  ? `${selectedRows.length} ${t('c:selected').toLowerCase()}`
+                  : t('c:no_selection').toLowerCase()}
               </span>
             </DropdownMenuItem>
 
             {isOnline && (
               <DropdownMenuItem onClick={() => exportSelected('pdf')} disabled={selectedRows.length === 0}>
                 <span>PDF</span>
-                <span className="ml-2 font-light text-xs opacity-75">
+                <span className="ml-2 text-xs opacity-75">
                   {selectedRows.length
-                    ? `${selectedRows.length} ${t('common:selected').toLowerCase()}`
-                    : t('common:no_selection').toLowerCase()}
+                    ? `${selectedRows.length} ${t('c:selected').toLowerCase()}`
+                    : t('c:no_selection').toLowerCase()}
                 </span>
               </DropdownMenuItem>
             )}

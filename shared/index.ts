@@ -5,11 +5,11 @@
  */
 
 // App configuration
-export { appConfig } from './app-config';
-export type { ConfigMode } from './app-config';
+export { appConfig } from './src/config-builder/app-config';
+export type { ConfigMode } from './src/config-builder/types';
 
 // Entity hierarchy & roles
-export { hierarchy, roles } from './default-config';
+export { hierarchy, roles } from './config/config.default';
 
 // Entity hierarchy types and builder functions
 export type {
@@ -20,21 +20,22 @@ export type {
   ProductEntityView,
   RoleFromRegistry,
   UserEntityView,
-  PublicAction,
-  PublicActionsConfig,
-  PublicActionsInherited,
-  PublicActionsOption,
-} from './src/builder/entity-hierarchy';
+  PublicReadMode,
+  ContextPublicReadMode,
+} from './src/config-builder/entity-hierarchy';
 export {
   createEntityHierarchy,
   createRoleRegistry,
-} from './src/builder/entity-hierarchy';
+} from './src/config-builder/entity-hierarchy';
 
 // Config builder types
-export type { RequestLimitsConfig, RequiredConfig, S3Config } from './src/builder/types';
+export type { RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
 
 // App-derived types
 export type {
+  ActivityAction,
+  ActivityEventType,
+  ActivityVerb,
   ContextEntityType,
   EnabledOAuthProvider,
   EntityActionType,
@@ -57,17 +58,21 @@ export type {
   TokenType,
   UploadTemplateId,
   UserFlags,
+  PropagationHint,
 } from './types';
+
+// Activity actions and event types (value exports)
+export { activityActions, activityEventTypes, activityVerbs, actionToVerb, isValidEventType } from './types';
 
 export {
   getContextRoles,
+  hasParentEntity,
   isContextEntity,
   isProductEntity,
-  isPublicProductEntity,
-} from './entity-guards';
+  isPublicStreamEntity,
+} from './src/entity-guards';
 
-// Utility functions
-export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/builder/utils';
+export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
 
 // Permissions
 export type {
@@ -81,9 +86,9 @@ export type {
   SubjectAccessPolicies,
 } from './src/permissions';
 export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './src/permissions';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './src/permissions';
 export { accessPolicies, computeCan } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
 // Side-effect import: compile-time validation that config matches hierarchy
-import './src/builder/config-validation';
+import './src/config-builder/config-validation';

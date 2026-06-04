@@ -1,179 +1,242 @@
-/**
- * Catchup processors for offline sync.
- *
- * Processes summary-based catchup responses from the backend.
- * Uses server-provided entitySeqs (from stamp_entity_seq_at trigger) to detect creates/updates.
- * Deletes are always provided by the backend via activities table scan (watertight).
- *
- *   - entityDelta > deletedForType.length → creates/updates → delta fetch via afterSeq (or invalidate as fallback)
- *   - deletedIds are always applied directly (cache patching)
- *   - entityDelta == 0 → nothing changed for this entity type
- *
- * When a registered deltaFetch is available, the catchup processor fetches only changed entities
- * via the list endpoint's `afterSeq` param and patches them into the cache. Falls back to full
- * list invalidation when delta fetch is unavailable, fails, or the delta is too large.
- *
- * App stream: contextEntity-scoped seqs
- * Public stream: unscoped seqs
- */
-
-import type { PostAppCatchupResponse, PostPublicCatchupResponse } from '~/api.gen';
+import type { PostAppCatchupResponse, PostPublicCatchupResponse } from 'sdk';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
-import { useSyncStore } from '~/store/sync';
+import { useSyncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import * as membershipOps from './membership-ops';
+import { propagateEmbeddings } from './propagation';
+import { getTenantIdForOrg } from './sync-priority';
 
 /**
- * Process app stream catchup response.
- *
- * For each org:
- * 1. Remove deletedIds from both detail and list caches (direct patching)
- * 2. Compare server entitySeqs delta vs deletedByType counts to detect creates/updates
- * 3. If creates/updates detected, delta fetch via afterSeq (falls back to invalidation)
- * 4. Update stored contextEntity-scoped seqs
- *
- * Delta fetch is used when the change count is small enough. On first session (clientEntitySeq = 0)
- * or when delta exceeds the fetch limit, falls back to full list invalidation.
+ * Process app stream catchup response. For each org: remove deleted entities, store org-level
+ * and child-context entitySeqs, and use server/client seq deltas to fetch only changed entities
+ * via `seqCursor` (falling back to list invalidation on first session or when delta is too large).
+ * Deletes from `deletedByType` are always patched directly. Org-level seqs act as a fallback for
+ * entity types without child-context data (e.g. org-scoped attachments).
  */
-export async function processAppCatchup(response: PostAppCatchupResponse): Promise<void> {
+export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes } = response;
   const syncStore = useSyncStore.getState();
   const scopes = Object.keys(changes);
 
   if (scopes.length === 0) return;
 
-  console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
-
-  for (const orgId of scopes) {
-    const { deletedIds, entitySeqs, deletedByType } = changes[orgId];
-
-    // Step 1: Remove deleted entities from cache
-    if (deletedByType) {
-      for (const [entityType, ids] of Object.entries(deletedByType)) {
-        if (!hasEntityQueryKeys(entityType)) continue;
-        const keys = getEntityQueryKeys(entityType);
-        for (const entityId of ids) {
-          cacheOps.removeEntityFromCache(entityType, entityId);
-          cacheOps.removeEntityFromListCache(entityId, keys);
+  // Baseline mode: store seqs for future catchup comparison, skip delta/invalidation.
+  // Used on first connect — route loaders provide fresh data, catchup just establishes the seq baseline.
+  if (baselineOnly) {
+    for (const [organizationId, scope] of Object.entries(changes)) {
+      if (scope.entitySeqs) {
+        for (const [entityType, seq] of Object.entries(scope.entitySeqs)) {
+          syncStore.setOrgSeq(organizationId, entityType, seq);
         }
       }
-    } else {
-      // Fallback: remove deleted entities across all types (entityType-agnostic)
-      for (const entityId of deletedIds) {
-        cacheOps.removeEntityById(entityId);
+      if (scope.childContextChanges) {
+        for (const [contextId, contextData] of Object.entries(scope.childContextChanges)) {
+          if (!contextData.entitySeqs) continue;
+          for (const [entityType, seq] of Object.entries(contextData.entitySeqs)) {
+            syncStore.setContextSeq(organizationId, contextId, entityType, seq);
+          }
+        }
+      }
+    }
+    console.debug(`[CatchupProcessor] Baseline: stored seqs for ${scopes.length} orgs`);
+    return;
+  }
+
+  console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
+
+  for (const organizationId of scopes) {
+    const { entitySeqs, deletedByType, childContextChanges } = changes[organizationId];
+    // Resolve tenantId: prefer sync store (persisted, no cache dependency), fall back to query cache
+    const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
+
+    // Step 1: Remove deleted entities from cache (grouped by entityType for targeted removal)
+    for (const [entityType, ids] of Object.entries(deletedByType)) {
+      for (const entityId of ids) {
+        cacheOps.removeEntity(entityType, entityId, organizationId);
       }
     }
 
-    // Step 2: Detect creates/updates via server delta vs delete count
-    // Use stored contextEntity-scoped seqs (set by previous catchup or live SSE) for delta calculation.
-    // On first session (seqs = 0), all entity types show as having changes → full refresh, which is correct.
+    // Step 2: Store org-level seqs (for next catchup screening) and track which entity types
+    // have child-context data (so we know which to handle at org level as fallback)
+    const entityTypesWithChildContextData = new Set<string>();
+
+    if (entitySeqs) {
+      for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
+        // Store org-level seq for next catchup comparison
+        syncStore.setOrgSeq(organizationId, entityType, serverEntitySeq);
+      }
+    }
+
+    // Step 3: Child-context delta processing (precise, per-child-context)
+    if (childContextChanges) {
+      for (const [contextId, contextData] of Object.entries(childContextChanges)) {
+        if (!contextData.entitySeqs) continue;
+
+        for (const [entityType, serverContextSeq] of Object.entries(contextData.entitySeqs)) {
+          if (!hasEntityQueryKeys(entityType)) continue;
+          entityTypesWithChildContextData.add(entityType);
+
+          const clientContextSeq = syncStore.getContextSeq(organizationId, contextId, entityType);
+          if (serverContextSeq === clientContextSeq) continue; // Skip unchanged context/entityType
+
+          const deletedForType = deletedByType[entityType] ?? [];
+          const keys = getEntityQueryKeys(entityType);
+
+          if (clientContextSeq === 0) {
+            // First session for this child context → full refetch for org's entity type
+            cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+            console.debug(`[CatchupProcessor] Context ${contextId}: ${entityType} first session → full refetch`);
+          } else {
+            const contextDelta = serverContextSeq - clientContextSeq;
+            if (contextDelta > deletedForType.length) {
+              // Creates/updates in this child context — delta fetch using context-scoped seq
+              const seqCursor = String(clientContextSeq + 1);
+              const patched = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
+              if (!patched) {
+                cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+              }
+              console.debug(
+                `[CatchupProcessor] Context ${contextId}: ${entityType} delta=${contextDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
+              );
+            } else if (deletedForType.length > 0) {
+              console.debug(
+                `[CatchupProcessor] Context ${contextId}: ${entityType} only ${deletedForType.length} deletes (patched)`,
+              );
+            }
+          }
+
+          // Store child-context seq
+          syncStore.setContextSeq(organizationId, contextId, entityType, serverContextSeq);
+        }
+      }
+    }
+
+    // Step 4: Org-level fallback for entity types WITHOUT child-context data
+    // (e.g., org-scoped attachments where context_key = organization_id)
     if (entitySeqs) {
       for (const [entityType, serverEntitySeq] of Object.entries(entitySeqs)) {
         if (!hasEntityQueryKeys(entityType)) continue;
+        if (entityTypesWithChildContextData.has(entityType)) continue; // Already handled at child-context level
 
-        const clientEntitySeq = syncStore.getSeq(`${orgId}:s:${entityType}`);
-        if (serverEntitySeq === clientEntitySeq) continue; // Skip unchanged entity types
+        const clientEntitySeq = syncStore.getOrgSeq(organizationId, entityType);
+        if (serverEntitySeq === clientEntitySeq) continue;
 
-        const deletedForType = deletedByType?.[entityType] ?? [];
+        const deletedForType = deletedByType[entityType] ?? [];
         const entityDelta = serverEntitySeq - clientEntitySeq;
 
         if (entityDelta > deletedForType.length) {
-          // Creates/updates happened — try delta fetch, fall back to invalidation
           const keys = getEntityQueryKeys(entityType);
 
-          // Skip delta fetch on first session (no baseline) or very large deltas
           if (clientEntitySeq === 0) {
-            cacheOps.invalidateEntityListForOrg(keys, orgId, 'active');
-            console.debug(`[CatchupProcessor] Org ${orgId}: ${entityType} first session → full refetch`);
+            cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+            console.debug(`[CatchupProcessor] Org ${organizationId}: ${entityType} first session → full refetch`);
           } else {
-            const patched = await cacheOps.deltaFetchAndPatchList(entityType, orgId, clientEntitySeq, keys);
+            const seqCursor = String(clientEntitySeq + 1);
+            const patched = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
             if (!patched) {
-              cacheOps.invalidateEntityListForOrg(keys, orgId, 'active');
+              cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
             }
             console.debug(
-              `[CatchupProcessor] Org ${orgId}: ${entityType} delta=${entityDelta}, deletes=${deletedForType.length} → ${patched ? 'delta patched' : 'invalidated'}`,
+              `[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta}, deletes=${deletedForType.length} → ${patched ? 'delta patched' : 'invalidated'}`,
             );
           }
         } else if (deletedForType.length > 0) {
           console.debug(
-            `[CatchupProcessor] Org ${orgId}: ${entityType} only ${deletedForType.length} deletes (patched)`,
+            `[CatchupProcessor] Org ${organizationId}: ${entityType} only ${deletedForType.length} deletes (patched)`,
           );
         }
-
-        // Update contextEntity-scoped seq for next catchup comparison
-        syncStore.setSeq(`${orgId}:s:${entityType}`, serverEntitySeq);
       }
     }
 
-    // Step 3: Invalidate org-scoped member queries (per-org)
-    membershipOps.invalidateMemberQueries(orgId);
+    // Step 5: Propagate embedded entity changes (e.g., label rename → patch task.labels)
+    // Must run AFTER all delta-fetches so fresh source data is in cache.
+    const { propagation } = changes[organizationId];
+    if (propagation?.length) {
+      for (const hint of propagation) {
+        propagateEmbeddings(hint);
+      }
+    }
+
+    // Step 6: Invalidate org-scoped member queries (per-org)
+    membershipOps.invalidateMemberQueries(organizationId);
   }
 
-  // Step 4: Refresh memberships — fetches getMyMemberships, invalidates context entity lists,
+  // Step 7: Refresh memberships — fetches getMyMemberships, invalidates context entity lists,
   // and refreshes the current user. Uses fetchQuery so React Query deduplicates with
   // the ensureQueryData call in getMenuData (sync service), preventing double fetches on app init.
   membershipOps.invalidateContextList(null);
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
-  // Step 5: Cache integrity check — compare server entity counts with cached totals.
+  // Step 8: Cache integrity check — compare server entity counts with cached totals.
   // Catches drift where seqs matched but cache is out of sync (e.g., failed refetch after invalidation).
+  // Runs at both org level and child-context level for precision.
   verifyCacheIntegrity(changes);
 }
 
 /**
  * Verify cache integrity by comparing server-reported entity counts against
- * cached totals for each org. If counts diverge, the cache is stale despite
- * matching seqs — invalidate the affected list queries.
- *
- * Only checks product entity types that have registered query keys and
- * where entityCounts are provided by the backend.
+ * cached totals. Checks child-context counts (precise) first, then org-level
+ * counts for entity types not covered by child contexts.
  */
 function verifyCacheIntegrity(changes: PostAppCatchupResponse['changes']): void {
-  for (const [orgId, scope] of Object.entries(changes)) {
-    if (!scope.entityCounts) continue;
+  for (const [organizationId, scope] of Object.entries(changes)) {
+    // Collect all count checks: child-context scoped entries take priority over org-level
+    const checks = new Map<string, { serverCount: number; contextId?: string }>();
 
-    for (const [entityType, serverCount] of Object.entries(scope.entityCounts)) {
+    // Child-context counts (precise, per-project) — added first so they win
+    if (scope.childContextChanges) {
+      for (const [contextId, contextData] of Object.entries(scope.childContextChanges)) {
+        if (!contextData.entityCounts) continue;
+        for (const [entityType, serverCount] of Object.entries(contextData.entityCounts)) {
+          checks.set(`${entityType}:${contextId}`, { serverCount, contextId });
+        }
+      }
+    }
+
+    // Org-level counts (fallback for entity types without child-context data)
+    if (scope.entityCounts) {
+      for (const [entityType, serverCount] of Object.entries(scope.entityCounts)) {
+        // Skip if already covered by child-context checks
+        if ([...checks.keys()].some((k) => k.startsWith(`${entityType}:`))) continue;
+        checks.set(entityType, { serverCount });
+      }
+    }
+
+    for (const [key, { serverCount, contextId }] of checks) {
+      const entityType = key.split(':')[0];
       if (!hasEntityQueryKeys(entityType)) continue;
 
       const keys = getEntityQueryKeys(entityType);
-      const cachedTotal = getCachedListTotal(keys, orgId);
+      const cachedTotal = getCachedListTotal(keys, organizationId, contextId);
+      if (cachedTotal === null || cachedTotal === serverCount) continue;
 
-      // Skip if no cached data (will be fetched fresh by ensureQueryData)
-      if (cachedTotal === null) continue;
-
-      if (cachedTotal !== serverCount) {
-        cacheOps.invalidateEntityListForOrg(keys, orgId, 'active');
-        console.debug(
-          `[CatchupProcessor] Integrity: ${entityType} in org ${orgId} count mismatch — cached=${cachedTotal}, server=${serverCount} → invalidated`,
-        );
-      }
+      cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+      const scope = contextId ? `context ${contextId}` : `org ${organizationId}`;
+      console.debug(
+        `[CatchupProcessor] Integrity: ${entityType} in ${scope} count mismatch — cached=${cachedTotal}, server=${serverCount} → invalidated`,
+      );
     }
   }
 }
 
 /**
- * Get the total count from the first matching cached list query for an entity type scoped to an org.
+ * Get the total count from the first matching cached list query for an entity type.
+ * When contextId is provided, scopes the lookup to that specific context (e.g., project).
  * Returns null if no cached data exists.
  */
-function getCachedListTotal(keys: ReturnType<typeof getEntityQueryKeys>, orgId: string): number | null {
-  const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
+function getCachedListTotal(
+  keys: ReturnType<typeof getEntityQueryKeys>,
+  organizationId: string,
+  contextId?: string,
+): number | null {
+  const queryKey = contextId ? keys.list.scope(organizationId, contextId) : keys.list.org(organizationId);
+  const queries = queryClient.getQueriesData({ queryKey });
 
-  for (const [queryKey, data] of queries) {
+  for (const [, data] of queries) {
     if (!data) continue;
-
-    // Check if this query is scoped to the target org
-    const filters = queryKey[2];
-    if (
-      filters &&
-      typeof filters === 'object' &&
-      'orgId' in filters &&
-      (filters as { orgId: string }).orgId !== orgId
-    ) {
-      continue;
-    }
 
     // Extract total from either infinite or standard query data
     if (isInfiniteQueryData(data)) {
@@ -188,27 +251,35 @@ function getCachedListTotal(keys: ReturnType<typeof getEntityQueryKeys>, orgId: 
 }
 
 /**
- * Process public stream catchup response.
- *
- * For each entityType:
- * 1. Remove deletedIds from cache
- * 2. Compare serverSeq (from counts JSONB) with stored clientSeq
- * 3. If creates/updates detected, delta fetch via afterSeq (falls back to invalidation)
- * 4. Update stored seq
+ * Process public stream catchup response. Removes deleted entities, then uses the server vs
+ * stored seq delta to delta-fetch creates/updates via `seqCursor` (falls back to full list
+ * invalidation on first session or when delta fetch is unavailable).
  */
-export async function processPublicCatchup(response: PostPublicCatchupResponse): Promise<void> {
+export async function processPublicCatchup(response: PostPublicCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes } = response;
   const syncStore = useSyncStore.getState();
   const scopes = Object.keys(changes);
 
   if (scopes.length === 0) return;
 
+  // Baseline mode: store seqs only, skip delta/invalidation
+  if (baselineOnly) {
+    for (const [entityType, scope] of Object.entries(changes)) {
+      if (scope.entitySeqs?.[entityType]) {
+        syncStore.setPublicSeq(entityType, scope.entitySeqs[entityType]);
+      }
+    }
+    console.debug(`[CatchupProcessor] Public baseline: stored seqs for ${scopes.length} entity types`);
+    return;
+  }
+
   console.debug(`[CatchupProcessor] Public catchup: ${scopes.length} entity types`);
 
   for (const entityType of scopes) {
-    const { deletedIds, entitySeqs } = changes[entityType];
+    const { deletedByType, entitySeqs } = changes[entityType];
+    const deletedIds = deletedByType[entityType] ?? [];
     const serverSeq = entitySeqs?.[entityType] ?? 0;
-    const clientSeq = syncStore.getSeq(entityType);
+    const clientSeq = syncStore.getPublicSeq(entityType);
     const delta = serverSeq - clientSeq;
 
     if (!hasEntityQueryKeys(entityType)) continue;
@@ -216,7 +287,7 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse):
 
     // Phase 1: Remove deleted entities from cache
     for (const entityId of deletedIds) {
-      cacheOps.removeEntityFromCache(entityType, entityId);
+      cacheOps.removeEntity(entityType, entityId);
     }
 
     // Phase 2: Determine if creates/updates happened
@@ -226,7 +297,8 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse):
         cacheOps.invalidateEntityList(keys, 'all');
         console.debug(`[CatchupProcessor] Public ${entityType}: first session → full refetch`);
       } else {
-        const patched = await cacheOps.deltaFetchAndPatchList(entityType, null, clientSeq, keys);
+        const seqCursor = String(clientSeq + 1);
+        const patched = await cacheOps.fetchRangeAndPatch(entityType, null, null, seqCursor, keys);
         if (!patched) {
           cacheOps.invalidateEntityList(keys, 'all');
         }
@@ -241,6 +313,6 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse):
     }
 
     // Phase 3: Update stored seq
-    syncStore.setSeq(entityType, serverSeq);
+    syncStore.setPublicSeq(entityType, serverSeq);
   }
 }

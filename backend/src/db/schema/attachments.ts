@@ -1,5 +1,5 @@
-import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { orgScopedCrudPolicies } from '#/db/rls-helpers';
+import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { maxLength } from '#/db/utils/constraints';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
@@ -8,13 +8,13 @@ import { productEntityColumns } from '#/db/utils/product-entity-columns';
  * Attachments table to store file metadata and relations.
  * Each attachment belongs to exactly one tenant and organization (RLS isolation boundary).
  */
-export const attachmentsTable = pgTable(
+export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productEntityColumns('attachment'),
     public: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
-    groupId: varchar({ length: maxLength.id }),
+    groupId: uuid(),
     filename: varchar({ length: maxLength.field }).notNull(),
     contentType: varchar({ length: maxLength.field }).notNull(),
     convertedContentType: varchar({ length: maxLength.field }),
@@ -22,19 +22,20 @@ export const attachmentsTable = pgTable(
     originalKey: varchar({ length: maxLength.url }).notNull(),
     convertedKey: varchar({ length: maxLength.url }),
     thumbnailKey: varchar({ length: maxLength.url }),
-    organizationId: varchar({ length: maxLength.id })
-      .notNull()
-      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    organizationId: uuid().notNull(),
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
-    index('attachments_org_seq_at_index').on(table.organizationId, table.seqAt),
     index('attachments_tenant_id_index').on(table.tenantId),
+    index('attachments_created_by_index').on(table.createdBy),
+    index('attachments_updated_by_index').on(table.updatedBy),
+    index('attachments_group_id_index').on(table.groupId),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
     }).onDelete('cascade'),
-    ...orgScopedCrudPolicies('attachments', table),
+    tenantSelectPolicy('attachments', table),
+    ...writeThroughPolicies('attachments'),
   ],
 );
 

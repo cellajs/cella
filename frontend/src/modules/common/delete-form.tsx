@@ -13,19 +13,19 @@ export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = f
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <SubmitButton
         variant="destructive"
+        icon={<TrashIcon size={16} />}
         allowOfflineDelete={allowOfflineDelete}
         onClick={onDelete}
         aria-label="Delete"
         loading={pending}
       >
-        <TrashIcon size={16} className="mr-2" />
-        {t('common:delete')}
+        {t('c:delete')}
       </SubmitButton>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
-        {t('common:cancel')}
+        {t('c:cancel')}
       </Button>
     </div>
   );

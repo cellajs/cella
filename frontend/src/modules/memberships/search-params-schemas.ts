@@ -1,9 +1,9 @@
+import { zGetMembersQuery } from 'sdk/zod.gen';
 import z from 'zod';
-import { zGetMembersData } from '~/api.gen/zod.gen';
 
 /**
  * Search params schema for members route.
  */
-export const membersRouteSearchParamsSchema = zGetMembersData.shape.query
+export const membersRouteSearchParamsSchema = zGetMembersQuery
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ userSheetId: z.string().optional() });

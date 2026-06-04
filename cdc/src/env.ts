@@ -5,7 +5,6 @@ import { z } from 'zod';
 // Load .env from backend directory (same .env file, shared across monorepo)
 dotenv({
   root: '../backend',
-  verbose: appConfig.debug,
   files: ['.env'],
 });
 
@@ -13,29 +12,19 @@ dotenv({
  * Zod schema for CDC Worker environment variables.
  */
 const envSchema = z.object({
-  // CDC database URL (cdc_role with REPLICATION + INSERT on activities/counters)
-  // Used for both replication stream and activity writes
-  // Enforces append-only access - cdc_role cannot UPDATE/DELETE activities
   DATABASE_CDC_URL: z.url(),
 
-  // API WebSocket URL for sending activities (derived from appConfig backend port)
   API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),
+  CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
+  CDC_HEALTH_PORT: z.coerce.number().default(4001),
+  MAPLE_API_KEY: z.string().optional(),
 
-  // Shared secret for WebSocket authentication (required for security)
-  CDC_INTERNAL_SECRET: z.string().min(16, 'CDC_INTERNAL_SECRET must be at least 16 characters'),
-
-  // Development mode
-  DEV_MODE: z.enum(['basic', 'core', 'full']).default('core'),
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
-
-  // Debug mode (from backend)
+  PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   DEBUG: z
     .string()
     .default('false')
     .transform((v) => v === 'true'),
-
-  // Health server port (derived from appConfig backend port + 1)
-  CDC_HEALTH_PORT: z.coerce.number().default(Number(new URL(appConfig.backendUrl).port) + 1),
 });
 
 /**

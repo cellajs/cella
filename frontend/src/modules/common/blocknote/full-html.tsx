@@ -2,26 +2,20 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
+import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import type { CarouselItemData } from '~/modules/attachment/carousel';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/helpers';
-import { getFileUrl } from '~/modules/attachment/helpers';
-import { findAttachmentInListCache } from '~/modules/attachment/query';
-import type { CheckboxEntry } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import {
-  getHeadlessEditor,
-  getParsedContent,
-  setHeadlessCheckboxes,
-} from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { getFileUrl } from '~/modules/attachment/file-url';
+import { findAttachmentInCache } from '~/modules/attachment/query';
+import { getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface BlockNoteFullHtmlProps {
   id: string;
   defaultValue: string;
-  checkboxes?: CheckboxEntry[];
   className?: string;
   dense?: boolean;
   clickOpensPreview?: boolean;
@@ -74,7 +68,6 @@ async function processBlocks(
 function BlockNoteFullHtml({
   id,
   defaultValue,
-  checkboxes,
   className = '',
   dense = false,
   clickOpensPreview = false,
@@ -84,11 +77,15 @@ function BlockNoteFullHtml({
 }: BlockNoteFullHtmlProps) {
   const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>({
     html: '',
     mediaItems: [],
   });
 
+  // blocksToFullHTML internally calls flushSync, which cannot run during render
+  // or during React's commit phase (useLayoutEffect). We use useEffect + queueMicrotask
+  // to ensure it runs fully outside React's lifecycle.
   useEffect(() => {
     const blocks = getParsedContent(defaultValue);
     if (!blocks) {
@@ -96,10 +93,17 @@ function BlockNoteFullHtml({
       return;
     }
 
-    // Build a lookup map for checkbox checked state
     let cancelled = false;
 
-    async function render(blocks: CustomBlock[]) {
+    // Produce initial HTML via microtask to escape React's commit phase
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const html = getHeadlessEditor().blocksToFullHTML(blocks);
+      setRenderState({ html, mediaItems: [] });
+    });
+
+    // Then resolve file URLs asynchronously for the final render
+    async function resolveUrls(blocks: CustomBlock[]) {
       const resolveUrl = async (key: string): Promise<string> => {
         if (!key.length) return '';
 
@@ -109,7 +113,7 @@ function BlockNoteFullHtml({
           if (localResult) return localResult.url;
         }
 
-        const cachedAttachment = isAttachmentId ? findAttachmentInListCache(key) : null;
+        const cachedAttachment = isAttachmentId ? findAttachmentInCache(key) : null;
         const tenantId = cachedAttachment?.tenantId ?? propTenantId;
         const organizationId = cachedAttachment?.organizationId ?? propOrganizationId;
 
@@ -120,31 +124,17 @@ function BlockNoteFullHtml({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      // Sync checkbox state into the headless editor's extension store before rendering
-      setHeadlessCheckboxes(checkboxes ?? []);
       setRenderState({ html: getHeadlessEditor().blocksToFullHTML(resolved), mediaItems: media });
     }
 
-    render(blocks);
+    resolveUrls(blocks);
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, publicFiles, checkboxes]);
+  }, [defaultValue, publicFiles]);
 
   const handleClick: MouseEventHandler = (event) => {
     const target = event.target as HTMLElement;
-
-    // Handle checkbox click via event delegation
-    const checkbox = target.closest('input[data-checkbox-id]') as HTMLInputElement | null;
-    if (checkbox) {
-      const checkboxId = checkbox.dataset.checkboxId;
-      if (checkboxId) {
-        // Browser already toggled the checkbox before the click bubbles here,
-        // so checkbox.checked is the new desired value
-        dispatchCustomEvent('toggleCheckbox', { checkboxId, checked: checkbox.checked });
-      }
-      return;
-    }
 
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
@@ -165,16 +155,25 @@ function BlockNoteFullHtml({
     });
   };
 
+  // Mirror the live editor's DOM (bn-container > bn-editor.bn-default-styles) so that
+  // descendant CSS overrides in styles.css (font-family, dense line-height) actually match.
   return (
     <div
       id={id}
       ref={containerRef}
       role="presentation"
-      className={`bn-container bn-shadcn bn-default-styles ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
+      className={`bn-container bn-shadcn ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
       data-color-scheme={mode}
       onClick={handleClick}
-      dangerouslySetInnerHTML={{ __html: renderState.html }}
-    />
+    >
+      <div
+        // select-text: opt static (read-only) content into text selection — it sits inside a focusable,
+        // click-to-expand task Card, so without this the user can't highlight/copy the text.
+        className="bn-editor bn-default-styles select-text"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html) }}
+      />
+    </div>
   );
 }
 

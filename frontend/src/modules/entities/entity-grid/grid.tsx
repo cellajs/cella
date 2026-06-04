@@ -1,7 +1,6 @@
 import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
-
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
@@ -65,13 +64,13 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     return isFiltered ? (
       <ContentPlaceholder
         icon={SearchIcon}
-        title="common:no_resource_found"
+        title="c:no_resource_found"
         titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
       />
     ) : (
       <ContentPlaceholder
         icon={BirdIcon}
-        title="common:no_resource_yet"
+        title="c:no_resource_yet"
         titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }}
       />
     );
@@ -83,16 +82,16 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
 
   return (
     <div className="mb-12">
-      <div className="grid gap-3 md:gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
         {visibleEntities.map((entity) => (
           <TileComponent key={entity.id} entity={entity} />
         ))}
       </div>
 
       {isLimited ? (
-        <div className="flex justify-center mt-4">
+        <div className="mt-4 flex justify-center">
           <Button variant="ghost" onClick={onExpand}>
-            {t('common:show_all')}
+            {t('c:show_all')}
           </Button>
         </div>
       ) : (

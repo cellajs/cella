@@ -9,43 +9,43 @@ import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-effect disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.05rem] disabled:opacity-50 shadow-xs',
+  'focus-effect inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50 [&:not(.absolute)]:active:translate-y-[.05rem]',
   {
     variants: {
       variant: {
-        default: '[--intent-color:var(--primary)] bg-primary text-primary-foreground hover:bg-primary/80',
-        brand: '[--intent-color:var(--brand)] bg-brand text-brand-foreground hover:bg-brand/80',
+        default: 'bg-primary text-primary-foreground [--intent-color:var(--primary)] hover:bg-primary/80',
+        brand: 'bg-brand text-brand-foreground [--intent-color:var(--brand)] hover:bg-brand/80',
         destructive:
-          '[--intent-color:var(--destructive)] bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        success: '[--intent-color:var(--success)] bg-success text-success-foreground hover:bg-success/80',
+          'bg-destructive text-destructive-foreground [--intent-color:var(--destructive)] hover:bg-destructive/80',
+        success: 'bg-success text-success-foreground [--intent-color:var(--success)] hover:bg-success/80',
         secondary:
-          '[--intent-color:var(--secondary)] bg-secondary border border-transparent text-secondary-foreground hover:bg-secondary/80',
+          'border border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] hover:bg-secondary/80',
         outline:
           'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 shadow-none',
+        ghost: 'shadow-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         outlineGhost:
-          'border border-foreground/20 bg-background/20 hover:bg-background/40 hover:border-foreground/30 hover:text-accent-foreground shadow-none',
-        link: 'text-primary underline-offset-4 hover:underline shadow-none',
-        cell: 'group text-regular underline-offset-4 focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100 shadow-none w-full flex gap-2 font-normal justify-start',
-        plain: 'text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:border-primary/30',
+          'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 shadow-none hover:underline',
+        cell: 'group flex w-full justify-start gap-2 font-normal text-regular underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        plain: 'border border-primary/20 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10',
         input:
-          'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
-        warning: '[--intent-color:var(--warning)] bg-warning text-warning-foreground hover:bg-warning/80',
-        none: 'bg-transparent border-none shadow-none',
+          'hover:transparent border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&:not(.absolute)]:active:translate-y-0',
+        warning: 'bg-warning text-warning-foreground [--intent-color:var(--warning)] hover:bg-warning/80',
+        none: 'border-none bg-transparent shadow-none',
       },
       soft: {
-        true: 'bg-(--intent-color)/10 text-(--intent-color) border border-(--intent-color)/20 hover:bg-(--intent-color)/15 shadow-none',
+        true: 'soft-bg soft-border hover:soft-bg-hover border text-(--intent-color) shadow-none',
         false: '',
       },
       size: {
         default: 'h-10 px-3 py-2',
-        micro: 'h-6 p-1 rounded-md text-xs',
-        xs: 'h-8 px-2 rounded-md',
+        micro: 'h-6 rounded-md p-1 text-xs',
+        xs: 'h-8 rounded-md px-2',
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',
         icon: 'h-10 w-10',
         cell: 'h-full px-0 py-0',
-        xl: 'h-14 rounded-lg text-lg px-6',
+        xl: 'h-14 rounded-lg px-6 text-lg',
         auto: 'h-auto',
       },
     },
@@ -61,7 +61,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
-  asChild?: boolean;
+  render?: React.ReactElement;
 }
 
 export function Button({
@@ -69,20 +69,33 @@ export function Button({
   variant,
   soft,
   size,
-  asChild = false,
+  render,
   loading: _loading,
+  children,
   ...props
 }: React.ComponentProps<'button'> & ButtonProps) {
-  const Comp = asChild ? Slot : 'button';
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, soft, size, className }))} {...props} />;
+  const computedProps = {
+    'data-slot': 'button',
+    className: cn(buttonVariants({ variant, soft, size, className })),
+    ...props,
+  };
+
+  if (render) {
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+  }
+
+  return <button {...computedProps}>{children}</button>;
 }
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
   allowOfflineDelete?: boolean;
+  icon?: React.ReactNode;
 };
 
 /**
  * Submit button for forms that warns when offline.
+ * When `icon` is provided, it swaps to a spinner on loading.
+ * Without `icon`, loading overlays a spinner on the entire button content.
  */
 export function SubmitButton({
   onClick,
@@ -90,37 +103,65 @@ export function SubmitButton({
   allowOfflineDelete = false,
   loading,
   disabled,
+  icon,
+  className,
   ...props
 }: SubmitButtonProps) {
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
 
   const isDisabled = disabled || loading;
+  const showOfflineWarning = !allowOfflineDelete && !isOnline;
 
   const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     if (isDisabled) {
       e.preventDefault();
       return;
     }
-    if (!allowOfflineDelete && !isOnline) {
+    if (showOfflineWarning) {
       e.preventDefault();
-      return toaster(t('common:action.offline.text'), 'warning');
+      return toaster(t('c:action.offline.text'), 'warning');
     }
     onClick?.(e);
   };
 
+  const resolvedIcon = loading ? (
+    <Loader2Icon className="animate-spin" size={16} />
+  ) : showOfflineWarning ? (
+    <TriangleAlertIcon size={16} />
+  ) : (
+    icon
+  );
+
   const buttonContent = (
-    <Button type="submit" onClick={handleClick} disabled={isDisabled} aria-busy={loading || undefined} {...props}>
-      {loading ? (
-        <Loader2Icon className="mr-2 animate-spin" size={16} />
+    <Button
+      type="submit"
+      onClick={handleClick}
+      disabled={isDisabled}
+      aria-busy={loading || undefined}
+      className={cn(icon && 'gap-2', className)}
+      {...props}
+    >
+      {icon ? (
+        <>
+          {resolvedIcon}
+          {children}
+        </>
+      ) : loading ? (
+        <span className="relative inline-flex items-center">
+          <span className="invisible">{children}</span>
+          <Loader2Icon className="absolute inset-0 m-auto animate-spin" size={16} />
+        </span>
       ) : (
-        !allowOfflineDelete && !isOnline && <TriangleAlertIcon className="mr-2" size={16} />
+        <>
+          {showOfflineWarning && <TriangleAlertIcon className="mr-2" size={16} />}
+          {children}
+        </>
       )}
-      {children}
     </Button>
   );
 
-  return !allowOfflineDelete && !isOnline ? (
-    <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>
+  return showOfflineWarning ? (
+    <TooltipButton toolTipContent={t('c:offline.text_with_info')}>{buttonContent}</TooltipButton>
   ) : (
     buttonContent
   );

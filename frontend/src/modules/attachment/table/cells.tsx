@@ -4,16 +4,16 @@ import { AlertCircleIcon, CloudOffIcon, DownloadIcon, LoaderIcon, TrashIcon, Upl
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
-import type { Attachment } from '~/api.gen';
-import { AttachmentPreview } from '~/modules/attachment/attachment-preview';
+import type { Attachment } from 'sdk';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
-import { getFileUrl } from '~/modules/attachment/helpers';
+import { getFileUrl } from '~/modules/attachment/file-url';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -51,7 +51,7 @@ export const ThumbnailCell = ({ row, tabIndex }: ThumbnailCellProps) => {
     });
   };
 
-  const preview = <AttachmentPreview name={filename} url={url ?? undefined} contentType={contentType} />;
+  const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;
   const badge = <SyncStatusBadge attachmentId={id} />;
 
   return (
@@ -73,24 +73,24 @@ const SyncStatusBadge = ({ attachmentId }: { attachmentId: string }) => {
   let tooltip: string;
 
   if (isUploading) {
-    icon = <LoaderIcon className="text-background animate-spin" size={10} />;
-    tooltip = t('common:uploading');
+    icon = <LoaderIcon className="animate-spin text-background" size={10} />;
+    tooltip = t('c:uploading');
   } else if (isPending) {
     icon = <UploadCloudIcon className="text-background" size={10} />;
-    tooltip = t('common:pending_sync');
+    tooltip = t('c:pending_sync');
   } else if (isFailed) {
     icon = <AlertCircleIcon className="text-background" size={10} />;
-    tooltip = t('common:upload_failed');
+    tooltip = t('c:upload_failed');
   } else if (isLocalOnly) {
     icon = <CloudOffIcon className="text-background" size={10} />;
-    tooltip = t('common:local_only');
+    tooltip = t('c:local_only');
   } else {
     return null;
   }
 
   return (
     <div
-      className={`absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ${isFailed ? 'bg-destructive' : 'bg-muted-foreground'}`}
+      className={`absolute -right-0.5 -bottom-0.5 rounded-full p-0.5 ${isFailed ? 'bg-destructive' : 'bg-muted-foreground'}`}
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >
@@ -112,7 +112,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
   const { isUploaded, hasLocalBlob } = useBlobUploadStatus(row.id);
   const canDownload = !hasLocalBlob || isUploaded;
 
-  if (!canDownload) return <div className="text-muted text-center w-full">-</div>;
+  if (!canDownload) return <div className="w-full text-center text-muted">-</div>;
 
   return (
     <Button
@@ -123,7 +123,7 @@ export const DownloadCell = ({ row, tabIndex }: DownloadCellProps) => {
       className="justify-center"
       aria-label="Download"
       data-tooltip="true"
-      data-tooltip-content={t('common:download')}
+      data-tooltip-content={t('c:download')}
       onClick={() =>
         getFileUrl(row.originalKey, row.public, row.tenantId, row.organizationId)
           .then((url) => download(url, row.filename))
@@ -143,14 +143,14 @@ interface EllipsisCellProps {
 export const EllipsisCell = ({ row, tabIndex }: EllipsisCellProps) => {
   const ellipsisOptions: EllipsisOption<Attachment>[] = [
     {
-      label: i18n.t('common:delete'),
+      label: i18n.t('c:delete'),
       icon: TrashIcon,
       onSelect: (row) => {
         const { update, remove } = useDropdowner.getState();
 
         update({
           content: (
-            <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+            <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
               <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />
             </PopConfirm>
           ),

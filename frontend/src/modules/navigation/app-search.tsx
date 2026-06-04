@@ -3,23 +3,46 @@ import { useNavigate } from '@tanstack/react-router';
 import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { UserBase } from 'sdk';
 import { appConfig } from 'shared';
-import type { UserBase } from '~/api.gen';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
+import { getContextEntityTypeToListQueries } from '~/list-queries-config';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import {
+  Combobox,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxSearchInput,
+} from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
-import { getContextEntityTypeToListQueries } from '~/offline-config';
-import { getContextEntityRoute } from '~/routes-resolver';
-import { useNavigationStore } from '~/store/navigation';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 
 // Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.contextEntityTypes] as const;
+
+const SearchResultsSkeleton = () => (
+  <div className="flex flex-col gap-4 p-4">
+    {Array.from({ length: 3 }).map((_, i) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
+      <div key={i} className="flex items-center gap-3 py-1.5">
+        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="h-4 w-48" />
+      </div>
+    ))}
+  </div>
+);
+
+type HistoryEntry = { kind: 'history'; value: string };
+type SearchSelection = EnrichedContextEntity | UserBase | HistoryEntry;
 
 /**
  * Application search component.
@@ -33,7 +56,7 @@ export const AppSearch = () => {
 
   const { recentSearches } = useNavigationStore();
 
-  const { focusRef, setFocus } = useFocusByRef();
+  const { focusRef } = useFocusByRef();
 
   const deleteItemFromList = (item: string) => {
     useNavigationStore.setState((state) => {
@@ -74,16 +97,13 @@ export const AppSearch = () => {
   const contextEntityResults = Object.fromEntries(
     Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
       entityType,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useInfiniteQuery({
+        // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.
         ...(queryOptions as any)({ q: searchValue }),
         enabled: searchValue.length > 0,
       }),
     ]),
   );
-
-  const ready =
-    (userQ.isSuccess || userQ.isError) && Object.values(contextEntityResults).every((q) => q.isSuccess || q.isError);
 
   const users = searchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
   const contextEntityData = Object.fromEntries(
@@ -97,6 +117,8 @@ export const AppSearch = () => {
   const data: Record<string, (EnrichedContextEntity | UserBase)[]> = { user: users, ...contextEntityData };
   const notFound = users.length === 0 && Object.values(contextEntityData).every((items) => items.length === 0);
   const isFetching = userQ.isFetching || Object.values(contextEntityResults).some((q) => q.isFetching);
+  const isLoading =
+    searchValue.length > 0 && (userQ.isLoading || Object.values(contextEntityResults).some((q) => q.isLoading));
 
   const onSelectItem = (item: EnrichedContextEntity | UserBase) => {
     // Update recent searches with the search value
@@ -114,76 +136,90 @@ export const AppSearch = () => {
   };
 
   return (
-    <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
-      <CommandInput
-        value={searchValue}
-        ref={focusRef}
-        clearValue={() => {
-          setSearchValue('');
-          setFocus();
-        }}
-        className="h-12 text-lg"
-        isSearching={isFetching}
-        wrapClassName="h-12 text-lg"
-        placeholder={t('common:placeholder.search')}
-        onValueChange={(searchValue) => {
-          const historyIndexes = recentSearches.map((_, index) => index);
-          if (historyIndexes.includes(Number.parseInt(searchValue, 10))) {
-            setSearchValue(recentSearches[+searchValue]);
-            return;
-          }
-          setSearchValue(searchValue);
-        }}
-      />
-      <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
-        <CommandList className="h-full">
-          <CommandEmpty className="h-full sm:h-[36vh]" isLoading={isFetching}>
-            <ContentPlaceholder
-              icon={SearchIcon}
-              title={searchValue.length ? 'common:no_resource_found' : 'common:global_search.text'}
-              titleProps={{ resource: t('common:results').toLowerCase(), appName: appConfig.name }}
-            />
-          </CommandEmpty>
-          {notFound && !searchValue.length && !!recentSearches.length && (
-            <CommandGroup>
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
-                {t('common:history')}
-              </div>
-              {recentSearches.map((search, index) => (
-                <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
-                  <div className="flex gap-2 items-center outline-0 ring-0 group">
-                    <HistoryIcon className="h-5 w-5" />
-                    <span className="underline-offset-4 truncate font-medium">{search}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="p-0 h-6 w-6"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        deleteItemFromList(search);
-                      }}
-                    >
-                      <XIcon className="h-5 w-5 opacity-70 hover:opacity-100" />
-                    </Button>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          {ready &&
-            searchableEntityTypes.map((entityType) => (
-              <SearchResultBlock
-                key={entityType}
-                results={data[entityType] ?? []}
-                entityType={entityType}
-                onSelect={onSelectItem}
-              />
-            ))}
-        </CommandList>
-      </ScrollArea>
-    </Command>
+    <Combobox<SearchSelection>
+      inline
+      openOnInputClick={false}
+      value={null}
+      onValueChange={(selection) => {
+        if (!selection) return;
+        if ('kind' in selection && selection.kind === 'history') {
+          setSearchValue(selection.value);
+          return;
+        }
+        onSelectItem(selection as EnrichedContextEntity | UserBase);
+      }}
+      inputValue={searchValue}
+      onInputValueChange={(value) => {
+        const historyIndexes = recentSearches.map((_, index) => index);
+        if (historyIndexes.includes(Number.parseInt(value, 10))) {
+          setSearchValue(recentSearches[+value]);
+          return;
+        }
+        setSearchValue(value);
+      }}
+      filter={() => true}
+    >
+      <div className="rounded-lg shadow-2xl">
+        <ComboboxSearchInput
+          ref={focusRef}
+          value={searchValue}
+          isSearching={isFetching}
+          className="h-12 text-lg"
+          wrapClassName="h-12 text-lg"
+          placeholder={t('c:placeholder.search')}
+        />
+        <ScrollArea id={'item-search'} ref={scrollAreaRef} className="overflow-y-auto sm:h-[40vh]">
+          <ComboboxList className="h-full">
+            {!isLoading && (
+              <ComboboxEmpty className="h-full sm:h-[36vh]">
+                <ContentPlaceholder
+                  icon={SearchIcon}
+                  title={searchValue.length ? 'c:no_resource_found' : 'c:global_search.text'}
+                  titleProps={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
+                />
+              </ComboboxEmpty>
+            )}
+            {notFound && !searchValue.length && !!recentSearches.length && (
+              <ComboboxGroup>
+                <div className="bg-popover px-2 py-2 font-medium text-muted-foreground text-xs">{t('c:history')}</div>
+                {recentSearches.map((search, index) => (
+                  <ComboboxItem
+                    key={search}
+                    value={{ kind: 'history', value: search } as HistoryEntry}
+                    className="justify-between"
+                  >
+                    <div className="group flex items-center gap-2 outline-0 ring-0">
+                      <HistoryIcon className="h-5 w-5" />
+                      <span className="truncate font-medium underline-offset-4">{search}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="mx-3 text-xs opacity-50 max-sm:hidden">{index}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 p-0"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteItemFromList(search);
+                        }}
+                      >
+                        <XIcon className="h-5 w-5 opacity-70 hover:opacity-100" />
+                      </Button>
+                    </div>
+                  </ComboboxItem>
+                ))}
+              </ComboboxGroup>
+            )}
+            {isLoading ? (
+              <SearchResultsSkeleton />
+            ) : (
+              searchableEntityTypes.map((entityType) => (
+                <SearchResultBlock key={entityType} results={data[entityType] ?? []} entityType={entityType} />
+              ))
+            )}
+          </ComboboxList>
+        </ScrollArea>
+      </div>
+    </Combobox>
   );
 };

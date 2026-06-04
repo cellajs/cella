@@ -1,38 +1,58 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
-import type { EntityType, Severity } from 'shared';
+import type { ApiError as ApiErrorPayload } from 'sdk';
 
 export const clientConfig = {
-  fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, credentials: 'include' }),
+  // hey-api passes a Request object as the sole argument to fetch.
+  // OTel FetchInstrumentation drops the second arg when the first is a Request,
+  // so credentials must be on the Request itself, not as an init override.
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+    if (input instanceof Request) {
+      return fetch(new Request(input, { ...init, credentials: 'include' }));
+    }
+    return fetch(input, { ...init, credentials: 'include' });
+  },
 };
 
-// Custom error class to handle API errors
-export class ApiError extends Error {
-  name: string;
+/**
+ * Init shape for {@link ApiError}.
+ *
+ * Derived from the generated SDK `ApiError` payload (see `sdk/gen/types.gen.ts`),
+ * with one adjustment: `status` is narrowed to Hono's branded HTTP error codes
+ * for stricter typing. Everything except `status` is optional so client-synthesized
+ * errors stay terse.
+ */
+export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & {
   status: ClientErrorStatusCode | ServerErrorStatusCode;
+};
+
+/** Custom error class to handle API errors */
+export class ApiError extends Error implements ApiErrorInit {
+  name: string;
+  status: ApiErrorInit['status'];
   type?: string;
-  entityType?: EntityType;
-  severity?: Severity;
+  entityType?: ApiErrorPayload['entityType'];
+  severity?: ApiErrorPayload['severity'];
   logId?: string;
   path?: string;
   method?: string;
   timestamp?: string;
   userId?: string;
   organizationId?: string;
-  meta?: { readonly [key: string]: number | string | boolean | null };
+  meta?: ApiErrorPayload['meta'];
 
-  constructor(error: ApiError) {
-    super(error.message);
-    this.name = error.name;
-    this.status = error.status;
-    this.type = error.type;
-    this.entityType = error.entityType;
-    this.severity = error.severity;
-    this.logId = error.logId;
-    this.path = error.path;
-    this.method = error.method;
-    this.timestamp = error.timestamp;
-    this.userId = error.userId;
-    this.organizationId = error.organizationId;
-    this.meta = error.meta;
+  constructor(init: ApiErrorInit) {
+    super(init.message ?? init.type ?? init.name ?? `HTTP ${init.status}`);
+    this.name = init.name ?? init.type ?? 'ApiError';
+    this.status = init.status;
+    this.type = init.type;
+    this.entityType = init.entityType;
+    this.severity = init.severity;
+    this.logId = init.logId;
+    this.path = init.path;
+    this.method = init.method;
+    this.timestamp = init.timestamp;
+    this.userId = init.userId;
+    this.organizationId = init.organizationId;
+    this.meta = init.meta;
   }
 }

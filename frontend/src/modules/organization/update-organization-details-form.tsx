@@ -2,13 +2,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { lazy, Suspense } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
+import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import type { Organization } from '~/api.gen';
-import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import type BlockNoteContentFormFieldType from '~/modules/common/form-fields/blocknote';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -17,9 +18,11 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
-const BlockNoteContentFormField = lazy(() => import('~/modules/common/form-fields/blocknote'));
+const BlockNoteContentFormField = lazy(
+  () => import('~/modules/common/form-fields/blocknote'),
+) as unknown as typeof BlockNoteContentFormFieldType;
 
-const formSchema = zUpdateOrganizationData.shape.body.unwrap();
+const formSchema = zUpdateOrganizationBody;
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
@@ -52,7 +55,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(body);
-          toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+          toaster(t('c:success.update_resource', { resource: t('c:organization') }), 'success');
           callback?.({ data: updatedOrganization, status: 'success' });
         },
       },
@@ -74,7 +77,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
           <BlockNoteContentFormField
             control={form.control}
             name="welcomeText"
-            label={t('common:introduction')}
+            label={t('c:introduction')}
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
@@ -85,9 +88,9 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
           />
         </Suspense>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!isDirty()} loading={isPending}>
-            {t('common:save_changes')}
+            {t('c:save_changes')}
           </SubmitButton>
           <Button
             type="reset"
@@ -95,7 +98,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
             onClick={() => form.reset()}
             className={isDirty() ? '' : 'invisible'}
           >
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
         </div>
       </form>

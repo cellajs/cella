@@ -3,6 +3,7 @@ export type {
   AccessPolicyCallback,
   AccessPolicyConfiguration,
   AccessPolicyEntry,
+  ActionPermissionState,
   ContextPolicyBuilder,
   EntityActionPermissions,
   PermissionValue,
@@ -10,7 +11,7 @@ export type {
 } from './types';
 
 export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } from './access-policies';
-export { allActionsAllowed, allActionsDenied, createActionRecord, resolvePermission } from './action-helpers';
+export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
 export { computeCan } from './compute-can';
-export type { ActionPermissionState, EntityCanMap } from './compute-can';
-export { accessPolicies } from '../../permissions-config';
+export type { EntityCanMap } from './compute-can';
+export { accessPolicies } from '../../config/permissions-config';

@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ChevronDownIcon, PencilIcon } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
@@ -6,24 +6,24 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
+import { PagesSidebar } from '~/modules/docs/sidebar/pages-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import { pagesListQueryOptions } from '~/modules/page/query';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarMenu,
   SidebarMenuItem,
 } from '~/modules/ui/sidebar';
+import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { UserTheme } from '../../me/user-theme';
@@ -42,7 +42,7 @@ function OpenApiJsonActions() {
       smallMode
       data={data}
       filename="openapi.json"
-      resourceName={t('common:docs.openapi_json')}
+      resourceName={t('c:docs.openapi_json')}
       viewerUrl="/docs/overview"
     />
   );
@@ -89,13 +89,6 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         : null,
   );
 
-  // Query for pages - using React Query instead of useLiveQuery
-  // Only show published pages in sidebar
-  const { data: pages } = useInfiniteQuery({
-    ...pagesListQueryOptions({}),
-    select: ({ pages }) => pages.flatMap(({ items }) => items).filter((page) => page.status === 'published'),
-  });
-
   const closeSheet = () => {
     if (!isMobile) return;
     useSheeter.getState().remove();
@@ -113,12 +106,13 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   const isOperationsActive = isOperationsRoute || isOperationsTableRoute;
 
   return (
-    <SidebarContent className="pt-4 pb-12 bg-card min-h-screen">
+    <SidebarContent className="min-h-screen bg-card pt-4 pb-12">
       {/* Logo */}
-      <div className="px-4 my-2 flex justify-center">
+      <div className="my-2 flex justify-center px-4">
         <Link
           to="/about"
-          className="inline-block transition-transform hover:scale-105 active:scale-100 focus-effect rounded-md"
+          draggable={false}
+          className="focus-effect inline-block rounded-md transition-transform hover:scale-105 active:scale-100"
           aria-label="Go to homepage"
           onClick={closeSheet}
         >
@@ -127,19 +121,37 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       </div>
 
       {/* API spec action buttons and user theme */}
+      {!isMobile && (
+        <SidebarGroup>
+          <div className="flex items-center justify-center gap-2">
+            <Suspense fallback={<div className="h-8 w-48 rounded-md border border-input bg-background/50" />}>
+              <OpenApiJsonActions />
+            </Suspense>
+          </div>
+        </SidebarGroup>
+      )}
+
+      {/* Theme & sign in */}
       <SidebarGroup>
-        <div className="flex justify-center items-center gap-2 pb-3">
-          <Suspense fallback={<div className="h-7 w-60 rounded-md border border-input bg-background/50" />}>
-            <OpenApiJsonActions />
-            <UserTheme />
-          </Suspense>
+        <div className="flex items-center justify-center gap-4">
+          <Button
+            size="xs"
+            draggable={false}
+            variant="ghost"
+            className="h-8"
+            render={<Link to="/auth/authenticate" preload={false} />}
+          >
+            {t('c:sign_in')}
+          </Button>
+
+          <UserTheme buttonClassName="size-8" />
         </div>
       </SidebarGroup>
 
       {/* API reference */}
       <SidebarGroup>
-        <div className="flex items-center gap-3 px-4 pb-1 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:docs.api_reference')}</SidebarGroupLabel>
+        <div className="flex items-center gap-3 px-4 pr-1 pb-1">
+          <SidebarGroupLabel className="p-0 lowercase opacity-75">{t('c:docs.api_reference')}</SidebarGroupLabel>
         </div>
 
         <SidebarGroupContent>
@@ -154,6 +166,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                       search={(prev) => prev}
                       onMouseEnter={prefetchOperations}
                       onFocus={prefetchOperations}
+                      draggable={false}
                       onClick={(e) => {
                         // If already on operations list route, toggle collapse
                         if (isOperationsRoute) {
@@ -166,21 +179,21 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                       }}
                       className={cn(
                         buttonVariants({ variant: 'ghost' }),
-                        'w-full justify-start font-normal items-center group px-3 lowercase',
-                        isOperationsActive && 'font-medium bg-accent',
+                        'group w-full items-center justify-start px-3 font-medium lowercase',
+                        isOperationsActive && 'bg-accent',
                       )}
                     />
                   }
                 >
-                  <span>{t('common:operation', { count: 2 })}</span>
+                  <span>{t('c:operation', { count: 2 })}</span>
                   {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">
+                    <span className="ml-2 text-muted-foreground/90 text-xs">
                       {tags.reduce((sum, tag) => sum + tag.count, 0)}
                     </span>
                   )}
                   <ChevronDownIcon
                     className={cn(
-                      'size-4 ml-auto transition-transform duration-200 opacity-40',
+                      'ml-auto size-4 opacity-40 transition-transform duration-200',
                       isListMode &&
                         expandedSection === 'operations' &&
                         forcedCollapsed !== 'operations' &&
@@ -189,7 +202,12 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                   />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+              <CollapsibleContent
+                className={cn(
+                  'overflow-hidden',
+                  !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down',
+                )}
+              >
                 <SidebarGroupContent>
                   {/* Operation tags sidebar */}
                   <Suspense fallback={null}>
@@ -209,6 +227,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                     <Link
                       to="/docs/schemas"
                       search={(prev) => prev}
+                      draggable={false}
                       onClick={(e) => {
                         if (isSchemasRoute) {
                           e.preventDefault();
@@ -220,25 +239,30 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
                       }}
                       className={cn(
                         buttonVariants({ variant: 'ghost' }),
-                        'w-full justify-start font-normal group px-3 lowercase',
-                        isSchemasRoute && 'font-medium bg-accent',
+                        'group w-full justify-start px-3 font-medium lowercase',
+                        isSchemasRoute && 'bg-accent',
                       )}
                     />
                   }
                 >
-                  <span>{t('common:schema', { count: 2 })}</span>
+                  <span>{t('c:schema', { count: 2 })}</span>
                   {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                    <span className="ml-2 text-xs text-muted-foreground/90 font-light">{schemas.length}</span>
+                    <span className="ml-2 text-muted-foreground/90 text-xs">{schemas.length}</span>
                   )}
                   <ChevronDownIcon
                     className={cn(
-                      'size-4 ml-auto transition-transform duration-200 opacity-40',
+                      'ml-auto size-4 opacity-40 transition-transform duration-200',
                       expandedSection === 'schemas' && forcedCollapsed !== 'schemas' && 'rotate-180',
                     )}
                   />
                 </CollapsibleTrigger>
               </SidebarMenuItem>
-              <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+              <CollapsibleContent
+                className={cn(
+                  'overflow-hidden',
+                  !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down',
+                )}
+              >
                 <SidebarGroupContent>
                   {/* Schemas tags list */}
                   <Suspense fallback={null}>
@@ -254,46 +278,28 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       {/* Pages */}
       <SidebarGroup>
         <div className="flex items-center gap-3 px-4 pr-1">
-          <SidebarGroupLabel className="opacity-75 p-0 lowercase">{t('common:pages')}</SidebarGroupLabel>
+          <SidebarGroupLabel className="p-0 lowercase opacity-75">{t('c:documentation')}</SidebarGroupLabel>
           {/* Edit pages */}
           {isSystemAdmin && (
-            <Link
-              to="/docs/pages"
-              onClick={closeSheet}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'xs' }), 'h-7 w-8 p-0')}
-              aria-label="Manage pages"
-            >
-              <PencilIcon size={14} />
-            </Link>
+            <TooltipButton toolTipContent={t('c:manage_pages')} side="right">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-7 w-8 p-0"
+                render={<Link to="/docs/pages" onClick={closeSheet} aria-label={t('c:manage_pages')} />}
+              >
+                <PencilIcon size={14} />
+              </Button>
+            </TooltipButton>
           )}
         </div>
         {/* List of pages */}
         <SidebarGroupContent>
-          <SidebarMenu>
-            {pages && pages.length > 0 ? (
-              pages.map((page) => (
-                <SidebarMenuItem key={page.id}>
-                  <Link
-                    to="/docs/page/$id"
-                    params={{ id: page.id }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start font-normal group px-3 lowercase',
-                    )}
-                    onClick={closeSheet}
-                  >
-                    <span className="truncate">{page.name}</span>
-                  </Link>
-                </SidebarMenuItem>
-              ))
-            ) : (
-              <SidebarMenuItem>
-                <span className="px-3 py-2 text-sm text-muted-foreground lowercase">
-                  {t('common:docs.no_pages_yet')}
-                </span>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
+          {/* Inner SidebarGroup mirrors the operations/schemas wrappers so tier-1 bullets
+              and guideline align with the API reference section (their p-1 adds 4px left). */}
+          <SidebarGroup className="p-1 pt-0">
+            <PagesSidebar onClose={closeSheet} />
+          </SidebarGroup>
         </SidebarGroupContent>
       </SidebarGroup>
 

@@ -1,17 +1,18 @@
 import { ErrorBoundary } from 'react-error-boundary';
+import { DownAlert } from '~/alerter/down-alert';
+import { AttachmentDialogHandler } from '~/modules/attachment/dialog/handler';
 import { AppContent } from '~/modules/common/app/app-content';
-import { AppSheets } from '~/modules/common/app/app-sheets';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { TabCoordinator } from '~/modules/common/tab-coordinator';
 import { Uploader } from '~/modules/common/uploader/uploader';
 import { AppNav } from '~/modules/navigation/app-nav';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
+import { UserSheetHandler } from '~/modules/user/user-sheet-handler';
 import { AppStream } from '~/query/realtime';
+import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 
 /**
  * Main application layout component.
@@ -21,7 +22,7 @@ import { AppStream } from '~/query/realtime';
  */
 function AppLayout() {
   return (
-    <div id="appLayout" className="max-sm:mb-16 in-[.floating-nav]:mb-0">
+    <div id="appLayout" className="in-[.floating-nav]:mb-0 max-sm:mb-16">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => (
           <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
@@ -36,7 +37,8 @@ function AppLayout() {
         <SeenTracker />
         <Uploader />
         <Dialoger />
-        <AppSheets />
+        <UserSheetHandler />
+        <AttachmentDialogHandler />
         <Sheeter />
         <DownAlert />
         <Dropdowner />

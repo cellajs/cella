@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { getSignedUrlFromKey } from '#/lib/signed-url';
+import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 
 export const replaceSignedSrcs = async (content: string): Promise<string> => {
   // Regex to match src="..." or src='...'

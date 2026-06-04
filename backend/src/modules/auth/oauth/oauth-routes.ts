@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
@@ -13,8 +13,8 @@ const authOAuthRoutes = {
     operationId: 'github',
     method: 'get',
     path: '/github',
-    xGuard: publicGuard,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    tags: ['auth', 'cella'],
     summary: 'Authenticate with GitHub',
     description:
       'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -34,9 +34,9 @@ const authOAuthRoutes = {
     operationId: 'githubCallback',
     method: 'get',
     path: '/github/callback',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('github'),
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('github')],
+    tags: ['auth', 'cella'],
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: {
@@ -61,8 +61,8 @@ const authOAuthRoutes = {
     operationId: 'google',
     method: 'get',
     path: '/google',
-    xGuard: publicGuard,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    tags: ['auth', 'cella'],
     summary: 'Authenticate with Google',
     description:
       'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -82,9 +82,9 @@ const authOAuthRoutes = {
     operationId: 'googleCallback',
     method: 'get',
     path: '/google/callback',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('google'),
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('google')],
+    tags: ['auth', 'cella'],
     summary: 'Callback for Google',
     description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
     request: { query: oauthCallbackQuerySchema },
@@ -103,8 +103,8 @@ const authOAuthRoutes = {
     operationId: 'microsoft',
     method: 'get',
     path: '/microsoft',
-    xGuard: publicGuard,
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    tags: ['auth', 'cella'],
     summary: 'Authenticate with Microsoft',
     description:
       'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -124,9 +124,9 @@ const authOAuthRoutes = {
     operationId: 'microsoftCallback',
     method: 'get',
     path: '/microsoft/callback',
-    xGuard: publicGuard,
-    xRateLimiter: tokenLimiter('microsoft'),
-    tags: ['auth'],
+    xGuard: [publicGuard],
+    xRateLimiter: [tokenLimiter('microsoft')],
+    tags: ['auth', 'cella'],
     summary: 'Callback for Microsoft',
     description:
       'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',

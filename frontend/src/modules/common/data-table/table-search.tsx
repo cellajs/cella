@@ -22,7 +22,7 @@ interface TableSearchProps {
  */
 export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
+  const isOnline = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
   const tableFetchingCount = useIsFetching();
 
@@ -47,12 +47,12 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
       <InputGroupInput
         className="pl-0!"
         disabled={!isOnline && !allowOfflineSearch}
-        placeholder={t('common:placeholder.search')}
+        placeholder={t('c:placeholder.search')}
         name={name}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}
-        aria-label={t('common:placeholder.search')}
+        aria-label={t('c:placeholder.search')}
       />
 
       {/* Search Spinner */}
@@ -61,10 +61,10 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
       </InputGroupAddon>
 
       {/* Clear Button */}
-      <InputGroupAddon className="max-sm:hidden pr-2" align="inline-end">
+      <InputGroupAddon className="pr-2 max-sm:hidden" align="inline-end">
         <XCircleIcon
           size={16}
-          className={cn('opacity-70 hover:opacity-100 cursor-pointer', inputValue.length ? 'visible' : 'invisible')}
+          className={cn('cursor-pointer opacity-70 hover:opacity-100', inputValue.length ? 'visible' : 'invisible')}
           onClick={() => {
             setInputValue('');
             setQuery('');

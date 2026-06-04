@@ -2,6 +2,7 @@ import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
 import { AboutCards } from '~/modules/marketing/about/cards';
 // import { Counters } from '~/modules/marketing/about/counters';
@@ -27,7 +28,7 @@ export function AboutPage() {
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  const { scrollToSection } = useScrollSpy(aboutSectionIds);
+  useScrollSpy(aboutSectionIds);
 
   return (
     <>
@@ -36,14 +37,14 @@ export function AboutPage() {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero key={'hero'} title="" badgeText="about:prerelease" subtitle="about:hero.subtitle" text="about:hero.text">
-          <div className="glow-button mb-8 relative max-xs:hidden">
+          <div className="glow-button relative mb-8 max-xs:hidden">
             <Input
               readOnly
               value="pnpm create @cellajs/cella"
-              className="block w-80 sm:w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20"
+              className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
             />
             {copied && (
-              <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">
+              <div className="absolute top-2.5 right-2 left-8 rounded-full bg-background py-2 text-left font-mono text-sm">
                 copied! bon voyage 🚀
               </div>
             )}
@@ -52,7 +53,7 @@ export function AboutPage() {
               onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
               size="icon"
               variant="ghost"
-              className="rounded-full absolute right-2 top-2"
+              className="absolute top-2 right-2 rounded-full"
             >
               {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
             </Button>
@@ -61,7 +62,7 @@ export function AboutPage() {
             variant="ghost"
             size="lg"
             className="group"
-            onClick={() => scrollToSection('why')}
+            onClick={() => scrollToSectionById('why')}
             aria-label="Read more"
           >
             <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>

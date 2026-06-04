@@ -1,12 +1,12 @@
 import { InfoIcon, TrashIcon, UploadIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
+import { AlertBanner } from '~/alerter/alert-banner';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/helpers';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
-import { AlertWrap } from '~/modules/common/alert-wrap';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -16,14 +16,9 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
-type AttachmentsTableBarProps = AttachmentsTableProps &
-  Omit<BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>, 'queryKey'> & {
-    isCompact: boolean;
-    setIsCompact: (isCompact: boolean) => void;
-    total: number;
-  };
+type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
 
 export const AttachmentsTableBar = ({
   contextEntity,
@@ -32,18 +27,18 @@ export const AttachmentsTableBar = ({
   setSearch,
   columns,
   setColumns,
-  isCompact,
-  setIsCompact,
   clearSelection,
   isSheet = false,
   canUpload = true,
-  total,
+  queryKey,
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog(contextEntity.tenantId, contextEntity.id);
 
   const deleteButtonRef = useRef(null);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const { q } = searchVars;
 
@@ -66,10 +61,10 @@ export const AttachmentsTableBar = ({
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-      description: t('common:confirm.delete_counted_resource', {
+      title: t('c:remove_resource', { resource: t('c:attachments').toLowerCase() }),
+      description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
+        resource: selected.length > 1 ? t('c:attachments').toLowerCase() : t('c:attachment').toLowerCase(),
       }),
     });
   };
@@ -89,21 +84,16 @@ export const AttachmentsTableBar = ({
                   className="relative"
                   badge={selected.length}
                   icon={TrashIcon}
-                  label="common:delete"
+                  label="c:delete"
                 />
 
-                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
               </>
             ) : (
-              showUpload && <TableBarButton icon={UploadIcon} label="common:upload" onClick={() => open()} />
+              showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />
             )}
             {selected.length === 0 && (
-              <TableCount
-                count={total}
-                label="common:attachment"
-                isFiltered={isFiltered}
-                onResetFilters={onResetFilters}
-              />
+              <TableCount count={total} label="c:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
           <div className="sm:grow" />
@@ -113,15 +103,7 @@ export const AttachmentsTableBar = ({
         </TableFilterBar>
 
         {/* Columns view */}
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
-          <DropdownMenuCheckboxItem
-            className="min-h-8"
-            checked={isCompact}
-            onCheckedChange={() => setIsCompact(!isCompact)}
-          >
-            {t('common:compact_view')}
-          </DropdownMenuCheckboxItem>
-        </ColumnsView>
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
@@ -129,9 +111,9 @@ export const AttachmentsTableBar = ({
 
       {/* Explainer alert box */}
       {!!total && (
-        <AlertWrap id="edit_attachment" variant="plain" className="mb-4" icon={InfoIcon} animate>
-          {t('common:edit_attachment.text')}
-        </AlertWrap>
+        <AlertBanner id="edit_attachment" variant="plain" className="mb-4" icon={InfoIcon} animate>
+          {t('c:edit_attachment.text')}
+        </AlertBanner>
       )}
     </>
   );

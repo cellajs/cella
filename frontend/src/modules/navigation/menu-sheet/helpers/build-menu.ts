@@ -1,14 +1,14 @@
-import { appConfig, ContextEntityType, type MenuSection } from 'shared';
-import { UserMenuItem } from '~/modules/me/types';
+import { appConfig, type ContextEntityType, type MenuSection } from 'shared';
+import type { UserMenuItem } from '~/modules/me/types';
 
 // Build initial menu state based on the provided menu structure.
 function buildInitialMenu<const T extends readonly { entityType: ContextEntityType }[]>(
   structure: T,
 ): { [K in T[number]['entityType']]: UserMenuItem[] } {
-  return structure.reduce((acc, { entityType }) => {
-    (acc as any)[entityType] = [];
-    return acc;
-  }, {} as any);
+  type Key = T[number]['entityType'];
+  const acc = {} as { [K in Key]: UserMenuItem[] };
+  for (const { entityType } of structure) acc[entityType as Key] = [];
+  return acc;
 }
 
 // Base menu

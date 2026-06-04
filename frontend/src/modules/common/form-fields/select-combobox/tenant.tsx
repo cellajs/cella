@@ -1,19 +1,16 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { type FieldValues, useController, useFormContext } from 'react-hook-form';
-import { appConfig } from 'shared';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { tenantsListQueryOptions } from '~/modules/tenants/query';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { useUserStore } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic';
-import { useUserStore } from '~/store/user';
 
 type SelectTenantProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   options?: ComboboxSelectProps['options'];
-  /** When true, auto-selects and hides the field if only one tenant is available */
-  autoHide?: boolean;
 };
 
 /**
@@ -28,7 +25,6 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   options: opts,
   required,
   disabled,
-  autoHide,
 }: SelectTenantProps<TFieldValues>) => {
   const isSystemAdmin = useUserStore((s) => s.isSystemAdmin);
 
@@ -50,10 +46,7 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
   }, [membershipsQuery.data]);
 
   // System admins see all tenants with names; regular users see their membership tenants
-  // Always exclude the public tenant (reserved for platform-wide content)
-  const filteredTenants = (isSystemAdmin ? allTenants : memberTenants).filter(
-    (t) => t.id !== appConfig.publicTenant.id,
-  );
+  const filteredTenants = isSystemAdmin ? allTenants : memberTenants;
 
   const options =
     opts ??
@@ -73,12 +66,7 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
     }
   }, [hasSingleOption, options, field.value]);
 
-  // When autoHide is enabled, render nothing until data loads (prevents flash),
-  // then nothing if ≤1 option, or an animated expand if multiple options
-  const isLoading = isSystemAdmin ? tenantsQuery.isLoading : membershipsQuery.isLoading;
-  if (autoHide && (isLoading || options.length <= 1)) return null;
-
-  const fieldElement = (
+  return (
     <FormField
       control={control}
       name={name}
@@ -94,11 +82,12 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
             value={value}
             onChange={onChange}
             disabled={disabled}
+            searchableTrigger
             placeholders={{
-              trigger: 'common:select_resource',
-              search: 'common:placeholder.search',
-              notFound: 'common:no_resource_found',
-              resource: 'common:tenant',
+              trigger: 'c:select_resource',
+              search: 'c:placeholder.search',
+              notFound: 'c:no_resource_found',
+              resource: 'c:tenant',
             }}
           />
 
@@ -107,10 +96,4 @@ export const SelectTenantFormField = <TFieldValues extends FieldValues>({
       )}
     />
   );
-
-  if (autoHide) {
-    return <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">{fieldElement}</div>;
-  }
-
-  return fieldElement;
 };

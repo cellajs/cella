@@ -28,18 +28,27 @@ dist-ssr
 .env
 .env.*
 !.env.example
+.envrc
+.pulumi/
+infra/.apply-in-progress.*.lock
 
 # Cache
 *.tsbuildinfo
-.sentryclirc
 .million
 .db
 .rendered
 backend/openapi.cache.json
-backend/.openapi-manifest.json
+backend/openapi.manifest.json
 frontend/vite/temp-api-gen-*
 frontend/vite/temp-docs-gen-*
 frontend/vite/.generate-client.lock
+sdk/src/temp-api-gen-*
+sdk/src/temp-docs-gen-*
+sdk/src/.generate-client.lock
+sdk/src/.spec-hash
+
+# Migration scripts
+scripts/migration/
 
 # Other
 .netlify
@@ -53,6 +62,9 @@ frontend/stats.html
 storybook-static
 .locales-cache
 
+# GeoIP databases (downloaded at build/dev time, not committed)
+backend/geoip/*.mmdb
+
 
 # Terraform
 *.tfvars
@@ -61,3 +73,8 @@ terraform.tfstate*
 .terraform/
 .terraform.lock.hcl
 *.tfplan
+
+# Test coverage output
+coverage/
+*.lcov
+.nyc_output/

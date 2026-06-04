@@ -16,7 +16,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
 
   if (type === 'popover') {
     return (
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-4 flex items-center gap-2">
         {children}
         <Popover>
           <PopoverTrigger
@@ -30,7 +30,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
           >
             <HelpCircleIcon size={16} />
           </PopoverTrigger>
-          <PopoverContent className="w-80 text-sm text-muted-foreground" align="start" side="top">
+          <PopoverContent className="w-80 text-muted-foreground text-sm" align="start" side="top">
             {content}
           </PopoverContent>
         </Popover>
@@ -39,7 +39,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
   }
 
   return (
-    <div className={cn('flex flex-col mb-4', className)}>
+    <div className={cn('mb-4 flex flex-col', className)}>
       <div className="flex items-center gap-2">
         {children}
         <Button
@@ -53,7 +53,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
           {!collapsed && <ChevronUpIcon size={16} />}
         </Button>
       </div>
-      <div className="font-light text-sm text-muted-foreground">{!collapsed && <span>{content}</span>}</div>
+      <div className="text-muted-foreground text-sm">{!collapsed && <span>{content}</span>}</div>
     </div>
   );
 }

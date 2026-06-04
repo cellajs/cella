@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { collectedData, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
 import { LegalSection } from '~/modules/marketing/legal/legal-section';
-import { SharedDataTypes } from '~/modules/marketing/legal/shared-data-types';
+import { ProcessedDataTypes } from '~/modules/marketing/legal/processed-data-types';
 import { Subprocessors } from '~/modules/marketing/legal/subprocessors';
 
 const sections = legalConfig.privacy.sections;
@@ -19,7 +19,7 @@ function PrivacyText() {
   return (
     <div id="privacy-content">
       <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="italic mb-2 pt-8">Last updated: {lastUpdated}</p>
+        <p className="mb-2 pt-8 italic">Last updated: {lastUpdated}</p>
         <p>Questions about this policy? Contact us.</p>
         <LegalContact className="mt-8" />
       </LegalSection>
@@ -61,7 +61,7 @@ function PrivacyText() {
         <p>We do not sell your data or use it for advertising.</p>
       </LegalSection>
 
-      <LegalSection id={s('data-sharing').id} label={s('data-sharing').label}>
+      <LegalSection id={s('data-processing').id} label={s('data-processing').label}>
         <p>We do not rent or sell personal information. We may share data only in these circumstances:</p>
         <ul className="my-2">
           <li>
@@ -138,8 +138,8 @@ function PrivacyText() {
         <Subprocessors />
       </LegalSection>
 
-      <LegalSection id={s('shared-data-types').id} label={s('shared-data-types').label}>
-        <SharedDataTypes />
+      <LegalSection id={s('processed-data-types').id} label={s('processed-data-types').label}>
+        <ProcessedDataTypes />
       </LegalSection>
     </div>
   );

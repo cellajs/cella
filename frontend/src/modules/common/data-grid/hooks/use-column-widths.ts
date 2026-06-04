@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { DataGridProps } from '../data-grid';
-import type { CalculatedColumn, ColumnWidth, ColumnWidths, ResizedWidth } from '../types';
+import type { CalculatedColumn, ColumnWidth, ColumnWidths, Maybe, ResizedWidth } from '../types';
 import { clampColumnWidth, max, min } from '../utils/grid-utils';
 
 interface ResizeSnapshot<R, SR> {
@@ -39,7 +38,7 @@ export function useColumnWidths<R, SR>(
   gridRef: React.RefObject<HTMLDivElement | null>,
   columnWidths: ColumnWidths,
   onColumnWidthsChange: (columnWidths: ColumnWidths) => void,
-  onColumnResize: DataGridProps<R, SR>['onColumnResize'],
+  onColumnResize: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>,
   setColumnResizing: (isColumnResizing: boolean) => void,
 ) {
   const [columnToAutoResize, setColumnToAutoResize] = useState<{

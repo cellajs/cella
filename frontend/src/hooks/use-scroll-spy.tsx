@@ -1,14 +1,9 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import {
-  getSection,
-  registerSections,
-  scrollToSectionById,
-  subscribeSection,
-  unregisterSections,
-} from './use-scroll-spy-store';
+import { getSection, registerSections, subscribeSection, unregisterSections } from './use-scroll-spy-store';
 
 /**
  * Register sections for scroll spy tracking. Hash is auto-written by the store.
+ * For programmatic scrolling, import `scrollToSectionById` from `use-scroll-spy-store` directly.
  *
  * @example
  * useScrollSpy(['intro', 'features']);
@@ -21,9 +16,10 @@ export const useScrollSpy = (sectionIds?: string[]) => {
       return () => unregisterSections(sectionIds);
     }
   }, [sectionIds]);
-
-  return { scrollToSection: scrollToSectionById };
 };
 
-/** Subscribe to the current scroll-spy section. Rerenders only when the active section changes. */
-export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection, getSection);
+/**
+ * Subscribe to the current scroll-spy section.
+ * Updates after scrolling settles (150ms idle) or immediately on explicit actions.
+ */
+export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection);

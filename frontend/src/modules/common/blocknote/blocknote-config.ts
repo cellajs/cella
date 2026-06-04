@@ -1,6 +1,6 @@
 import { codeBlockOptions } from '@blocknote/code-block';
-import { BlockNoteSchema, CodeBlockOptions, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
-import { DefaultSuggestionItem } from '@blocknote/core/extensions';
+import { BlockNoteSchema, type CodeBlockOptions, createCodeBlockSpec, type Dictionary } from '@blocknote/core';
+import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import {
   checklistItemBlock,

@@ -1,48 +1,53 @@
-import { UserIcon } from 'lucide-react';
+import { ChevronDownIcon, UserIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, ContextEntityType } from 'shared';
-import type { UserBase } from '~/api.gen';
+import type { UserBase } from 'sdk';
+import { appConfig, type ContextEntityType } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
-import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
+import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
 
 type SearchBlockResult = EnrichedContextEntity | UserBase;
 
 type SearchBlockProps = {
   results: SearchBlockResult[];
   entityType: ContextEntityType | 'user';
-  onSelect: (item: SearchBlockResult) => void;
 };
 
 const contextEntities: readonly string[] = appConfig.contextEntityTypes;
-export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlockProps) => {
+
+export const SearchResultBlock = ({ results, entityType }: SearchBlockProps) => {
   const { t } = useTranslation();
   const isContext = contextEntities.includes(entityType);
+  const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;
 
   return (
-    <div key={entityType} className="flex flex-col gap-1 w-full">
-      <CommandSeparator />
-      <CommandGroup className="">
-        <div className="sticky top-0 z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
-          {t(entityType, {
-            ns: ['app', 'common'],
-            defaultValue: entityType,
-          })}
-        </div>
+    <div key={entityType} className="flex w-full flex-col gap-1">
+      <ComboboxSeparator />
+      <ComboboxGroup>
+        <button
+          type="button"
+          className="sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-3 py-2 font-medium text-muted-foreground text-sm backdrop-blur-sm hover:text-foreground"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {t(entityType)}
+          {collapsed && <span className="ml-3 opacity-70">{results.length}</span>}
+          <span className="grow" />
+          <ChevronDownIcon className={`size-4 transition-transform ${!collapsed && 'rotate-180'}`} />
+        </button>
         {results.map((item: SearchBlockResult) => {
           return (
-            <CommandItem
-              data-already-member={isContext && 'membership' in item && item.membership !== null}
+            <ComboboxItem
               key={item.id}
+              value={item}
               disabled={isContext && 'membership' in item && item.membership === null}
-              className="w-full justify-between group"
-              onSelect={() => onSelect(item)}
+              data-already-member={isContext && 'membership' in item && item.membership !== null}
+              className={`group w-full justify-between ${collapsed && 'hidden'}`}
             >
-              <div className="flex space-x-2 items-center outline-0 ring-0 group">
+              <div className="group flex items-center space-x-2 outline-0 ring-0">
                 <EntityAvatar
                   type={entityType}
                   className="h-8 w-8"
@@ -50,21 +55,21 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlock
                   name={item.name}
                   url={item.thumbnailUrl}
                 />
-                <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
+                <span className="truncate font-medium underline-offset-4 group-data-[already-member=true]:hover:underline">
                   {item.name}
                 </span>
               </div>
 
               <div className="flex items-center">
-                <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
+                <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
                   <UserIcon size={14} />
-                  <span className="max-sm:hidden font-light">{t('common:member')}</span>
+                  <span className="max-sm:hidden">{t('c:member')}</span>
                 </Badge>
               </div>
-            </CommandItem>
+            </ComboboxItem>
           );
         })}
-      </CommandGroup>
+      </ComboboxGroup>
     </div>
   );
 };

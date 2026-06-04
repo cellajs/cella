@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 
 /**
@@ -54,20 +53,20 @@ export const ShouldOnlyOpenOne: Story = {
     const canvas = within(canvasElement);
     const accordions = await canvas.getAllByRole('button');
 
-    // Open the tabs one at a time
+    // Open the tabs one at a time. base-ui keeps panels mounted; assert via [data-open].
     for (const trigger of accordions) {
       await userEvent.click(trigger);
-      await waitFor(async () => {
-        const content = await canvas.findAllByRole('region');
-        return expect(content.length).toBe(1);
+      await waitFor(() => {
+        const open = canvasElement.querySelectorAll('[role="region"][data-open]');
+        return expect(open.length).toBe(1);
       });
     }
 
     // Close the last opened tab
     await userEvent.click(accordions[accordions.length - 1]);
-    await waitFor(async () => {
-      const content = await canvas.queryByRole('region');
-      return expect(content).toBeFalsy();
+    await waitFor(() => {
+      const open = canvasElement.querySelectorAll('[role="region"][data-open]');
+      return expect(open.length).toBe(0);
     });
   },
 };
@@ -82,29 +81,29 @@ export const ShouldOpenAll: Story = {
     const canvas = within(canvasElement);
     const accordions = await canvas.getAllByRole('button');
 
-    // Open all tabs one at a time
+    // Open all tabs one at a time. base-ui keeps panels mounted; assert via [data-open].
     for (let i = 0; i < accordions.length; i++) {
       await userEvent.click(accordions[i]);
-      await waitFor(async () => {
-        const content = await canvas.findAllByRole('region');
-        return expect(content.length).toBe(i + 1);
+      await waitFor(() => {
+        const open = canvasElement.querySelectorAll('[role="region"][data-open]');
+        return expect(open.length).toBe(i + 1);
       });
     }
 
     // Close all tabs one at a time
     for (let i = accordions.length - 1; i > 0; i--) {
       await userEvent.click(accordions[i]);
-      await waitFor(async () => {
-        const content = await canvas.findAllByRole('region');
-        return expect(content.length).toBe(i);
+      await waitFor(() => {
+        const open = canvasElement.querySelectorAll('[role="region"][data-open]');
+        return expect(open.length).toBe(i);
       });
     }
 
     // Close the last opened tab
     await userEvent.click(accordions[0]);
-    await waitFor(async () => {
-      const content = await canvas.queryByRole('region');
-      return expect(content).toBeFalsy();
+    await waitFor(() => {
+      const open = canvasElement.querySelectorAll('[role="region"][data-open]');
+      return expect(open.length).toBe(0);
     });
   },
 };

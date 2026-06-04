@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import process from 'node:process';
 import {
   createPrompt,
   isDownKey,
@@ -20,10 +21,9 @@ import {
   usePagination,
   useState,
 } from '@inquirer/core';
-import pc from 'picocolors';
 import type { AnalyzedFile, RuntimeConfig } from '../config/types';
-import { createSpinner, DIVIDER, showDiffInPager, spinnerSuccess, spinnerText } from '../utils/display';
-import { pushContribBranch } from './contribute';
+import pc from '../utils/colors';
+import { createSpinner, DIVIDER, showDiffInPager, spinnerSuccess, spinnerText, warningMark } from '../utils/display';
 import { runMergeEngine } from './merge-engine';
 
 /** Track temp directories for cleanup on process exit */
@@ -133,7 +133,7 @@ function pinSingleFile(file: AnalyzedFile, config: RuntimeConfig): boolean {
 
 /**
  * Single-screen inspect prompt with inline key actions.
- * Returns paths of files checked (☑) for upstream contribution.
+ * Returns paths of files checked (☑) by the user.
  */
 const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done) => {
   const { pageSize = 20, runtimeConfig } = config;
@@ -203,7 +203,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
       return;
     }
 
-    // Space = toggle selection for contribute batch
+    // Space = toggle selection
     if (isSpaceKey(key)) {
       setItems(items.map((item, i) => (i === active ? { ...item, checked: !item.checked } : item)));
       return;
@@ -246,7 +246,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
   if (promptStatus === 'done') {
     const checked = items.filter((i) => i.checked);
     if (checked.length > 0) {
-      return `${pc.green('✓')} ${checked.length} files selected for contribution`;
+      return `${pc.green('✓')} ${checked.length} files selected`;
     }
     return `${pc.green('✓')} done`;
   }
@@ -276,7 +276,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
   // Header with file count and selection info
   const countInfo =
     checkedCount > 0 ? `${items.length} files, ${pc.green(`${checkedCount} selected`)}` : `${items.length} files`;
-  const header = `${pc.yellow('⚠')} ${config.message} ${pc.dim(`(${countInfo})`)}`;
+  const header = `${warningMark} ${config.message} ${pc.dim(`(${countInfo})`)}`;
 
   // Keyboard shortcuts help
   const keys: [string, string][] = [
@@ -285,7 +285,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
     ['t', 'terminal diff'],
     ['p', 'pin'],
     ['space', 'select'],
-    ['⏎', 'contribute'],
+    ['⏎', 'done'],
     ['q', 'quit'],
   ];
   const helpLine = keys.map(([k, a]) => `${pc.bold(k)} ${pc.dim(a)}`).join(pc.dim(' · '));
@@ -303,7 +303,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
  * Run the inspect service.
  *
  * Analyzes the fork for drifted files and presents a single-screen interactive
- * prompt with inline key actions for reviewing, diffing, pinning, and contributing.
+ * prompt with inline key actions for reviewing, diffing, and pinning.
  */
 export async function runInspect(config: RuntimeConfig): Promise<void> {
   createSpinner('analyzing drift...');
@@ -347,10 +347,8 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
     pageSize: 20,
   });
 
-  // Push selected files to contrib branch
   if (selectedPaths.length > 0) {
-    const selectedFiles = driftedFiles.filter((f) => selectedPaths.includes(f.path));
-    await pushContribBranch(selectedFiles, config);
+    console.info(pc.dim(`  ${selectedPaths.length} file(s) selected`));
   }
 
   console.info();

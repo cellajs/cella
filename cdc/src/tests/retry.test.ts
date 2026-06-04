@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isTransientError, getErrorCode, withRetry } from '../lib/retry';
+
+import { isTransientError, getErrorCode, withRetry } from '../services/retry';
 
 describe('retry utility', () => {
   beforeEach(() => {

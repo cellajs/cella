@@ -1,4 +1,4 @@
-import type { MembershipBase } from '~/api.gen';
+import type { MembershipBase } from 'sdk';
 import { findMembership } from '~/query/enrichment/helpers';
 import type { EnrichableEntity } from '~/query/enrichment/types';
 

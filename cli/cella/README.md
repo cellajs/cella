@@ -19,12 +19,12 @@ pnpm cella
 | Service | Description |
 |---------|-------------|
 | `analyze` | Dry run to see what would change on sync |
-| `inspect` | Review drifted files, view diffs, pin or contribute upstream |
+| `inspect` | Review drifted files, view diffs, pin files |
 | `sync` | Merge upstream changes into your app |
 | `packages` | Sync package.json keys with upstream |
 | `audit` | Check for outdated packages & vulnerabilities |
 | `forks` * | Sync downstream to local fork repositories |
-| `contributions` * | Review and accept file contributions from forks |
+| `contributions` * | Pull and adopt changes from local forks |
 
 \* `forks` and `contributions` only appear in the menu when you have `forks` configured in `cella.config.ts`. These are for upstream template developers who maintain multiple downstream forks.
 
@@ -37,8 +37,7 @@ pnpm cella [options]
 | Flag | Description |
 |------|-------------|
 | `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks`, `contributions` |
-| `--fork <name>` | Sync a specific fork directly (skips interactive menu) |
-| `--contribute` | Push drifted files to `contrib/<fork>` branch in upstream (non-interactive) |
+| `--fork <name>` | Sync/select a specific fork directly (skips interactive menu) |
 | `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting) |
 | `--log` | Write complete file list to `cella-sync.log` |
 | `-V, --verbose` | Show detailed output during operations |
@@ -84,7 +83,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 
 ### Tips
 
-- Run `pnpm cella --sync-service analyze` first to preview changes without applying
+- Run `pnpm cella --service analyze` first to preview changes without applying
 - Use `pinned` for files you fully control (modify, keep, or delete)
 - Use `ignored` for app-specific docs, assets, or config you fully own
 
@@ -140,36 +139,33 @@ mergeStrategy: 'merge' // default
 - Cleaner commit history (one commit per sync)
 - When you prefer manual conflict resolution
 
-## Contributions (bidirectional sync)
+## Contributions (pull from forks)
 
-Forks can push modifications back to upstream via **contrib branches**. This enables a lightweight contribution flow without pull requests.
+Upstream can pull modifications from local forks and selectively adopt them. This
+enables a lightweight contribution flow without pull requests, driven entirely
+from the upstream side.
 
-### Fork side
+### Configuration
 
-Add to your fork's `cella.config.ts`:
+List your local forks in `cella.config.ts`:
 
 ```typescript
-settings: {
-  upstreamLocalPath: '../cella', // Path to local upstream clone
-  autoContribute: true,          // Auto-push drifted files after sync/analyze
-}
+forks: [
+  {
+    name: 'raak',
+    localPath: '../raak',     // Path to the local fork clone
+    pullBranch: 'development', // Branch cella pulls contributions FROM
+    pushBranch: 'development', // Branch cella syncs changes INTO (forks service)
+  },
+],
 ```
 
-With `autoContribute` enabled, any **drifted** files (fork modified, upstream didn't) are automatically pushed to a `contrib/<fork-name>` branch in the upstream repo after every sync or analyze run.
+### Pulling contributions
 
-Alternatively, use the **inspect** service to selectively contribute: review drifted files, select with `space`, and press `enter` to push.
-
-For a quick non-interactive push, use:
-
-```bash
-pnpm cella --contribute
-```
-
-This runs a lightweight analysis, pushes all drifted files to `contrib/<fork-name>`, and updates the `upstream/pinned` branch — no prompts, no menu.
-
-### Upstream side
-
-Run `pnpm cella` and choose **contributions** (or `--service contributions`). This fetches all `contrib/*` branches and presents an interactive TUI:
+Run `pnpm cella` and choose **contributions** (or `--service contributions`).
+Select one or more forks; cella fetches each fork's `pullBranch`, builds a clean
+local `contrib/<fork>` branch containing only that fork's contributed files, and
+presents an interactive TUI:
 
 | Key | Action |
 |-----|--------|

@@ -1,5 +1,5 @@
 # =============================================================================
-# Cella CDC Worker - Production Dockerfile
+# CDC Worker - Production Dockerfile
 # =============================================================================
 # Lightweight Node.js 24 container for CDC (Change Data Capture) worker
 # Connects to PostgreSQL logical replication and forwards to backend WebSocket
@@ -10,10 +10,8 @@
 # -----------------------------------------------------------------------------
 FROM node:24-alpine AS base
 
-# Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
-# Set working directory
 WORKDIR /app
 
 # -----------------------------------------------------------------------------
@@ -24,13 +22,15 @@ FROM base AS deps
 # Copy workspace configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY cdc/package.json ./cdc/
-COPY config/package.json ./config/
+COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
-COPY packages/tracing/package.json ./packages/tracing/
+COPY sdk/package.json ./sdk/
+COPY locales/package.json ./locales/
 COPY patches/ ./patches/
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter @cella/cdc...
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --prod --ignore-scripts --filter cdc...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -40,20 +40,23 @@ FROM base AS builder
 # Copy workspace configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY cdc/package.json ./cdc/
-COPY config/package.json ./config/
+COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
-COPY packages/tracing/package.json ./packages/tracing/
+COPY sdk/package.json ./sdk/
+COPY locales/package.json ./locales/
 COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter @cella/cdc...
+# Install cdc and shared deps; backend deps needed for bundling backend/src imports
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts --filter cdc... --filter backend...
 
 # Copy source code
 COPY cdc/ ./cdc/
 COPY backend/src ./backend/src
-COPY config/ ./config/
 COPY shared/ ./shared/
-COPY packages/tracing/ ./packages/tracing/
+COPY sdk/ ./sdk/
+COPY locales/ ./locales/
 
 # Build CDC worker (bundles backend imports via tsup)
 WORKDIR /app/cdc
@@ -64,8 +67,8 @@ RUN pnpm build
 # -----------------------------------------------------------------------------
 FROM node:24-alpine AS production
 
-RUN addgroup --system --gid 1001 cella && \
-  adduser --system --uid 1001 cella
+RUN addgroup --system --gid 1001 app && \
+    adduser --system --uid 1001 app
 
 WORKDIR /app
 
@@ -78,21 +81,18 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/cdc/node_modules ./cdc/node_modules
 
 # Set ownership
-RUN chown -R cella:cella /app
+RUN chown -R app:app /app
 
 # Switch to non-root user
-USER cella
+USER app
+
+# Build-time release identifier (Git SHA from CI). Surfaced at runtime via
+# `/health` so the deploy verifier can confirm the new code is actually live.
+ARG RELEASE_SHA=unknown
+ENV RELEASE_SHA=${RELEASE_SHA}
 
 # Environment variables
 ENV NODE_ENV=production
-ENV CDC_HEALTH_PORT=4001
-
-# Expose health port
-EXPOSE 4001
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4001/health || exit 1
 
 # Start the CDC worker
 WORKDIR /app/cdc

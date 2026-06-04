@@ -1,11 +1,10 @@
-import * as Sentry from '@sentry/react';
 import { t } from 'i18next';
 import { createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
- * Handles invalid form submissions. Extracting and displaying error messages, and reporting them to Sentry.
+ * Handles invalid form submissions. Extracting and displaying error messages, and logging them.
  */
 export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>) => {
   const messages = processErrors(errors);
@@ -21,7 +20,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
     ),
   });
 
-  Sentry.captureException(new Error('Form validation failed'), { extra: errors });
+  console.error('Form validation failed', errors);
 };
 
 // Recursively build a list of readable error message from FieldErrors object
@@ -60,15 +59,15 @@ const processErrors = <TFieldValues extends FieldValues>(
   return messages;
 };
 
-// Resolve a camelCase field name to a translated label via common:{snake_case} convention
+// Resolve a camelCase field name to a translated label via c:{snake_case} convention
 const resolveFieldLabel = (fieldName: string): string => {
   // Take the last segment (e.g. 'nested.shortName' → 'shortName')
   const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
   // Convert camelCase to snake_case (e.g. 'shortName' → 'short_name')
   const key = leaf.replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`);
-  const translated = t(`common:${key}`);
+  const translated = t(`c:${key}`);
   // If i18next returns the key itself, fall back to the raw field name
-  return translated !== key && translated !== `common:${key}` ? translated : fieldName;
+  return translated !== key && translated !== `c:${key}` ? translated : fieldName;
 };
 
 // Resolves a user-friendly error message from a validation type.

@@ -1,13 +1,11 @@
 import type { z } from '@hono/zod-openapi';
 import { and, desc, eq, getColumns } from 'drizzle-orm';
 import type { Context } from 'hono';
-import type { DbOrTx } from '#/db/db';
+import type { DbContext, Env } from '#/core/context';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { passwordsTable } from '#/db/schema/passwords';
 import { sessionsTable } from '#/db/schema/sessions';
 import { totpsTable } from '#/db/schema/totps';
-import { Env } from '#/lib/context';
 import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
 import type { sessionSchema } from '#/modules/me/me-schema';
 
@@ -16,19 +14,17 @@ import type { sessionSchema } from '#/modules/me/me-schema';
  *
  * This includes:
  * - Passkeys (excluding sensitive fields like credentialId & publicKey)
- * - Password (limited to one, if set)
  * - TOTP entries
  * - Verified OAuth accounts
  *
  * @param db - Database connection
  * @param userId - ID of the user to fetch auth data for
- * @returns An object containing arrays of passkeys, password, TOTP entries, and OAuth providers
+ * @returns An object containing arrays of passkeys, TOTP entries, and OAuth providers
  */
-export const getAuthInfo = async (db: DbOrTx, userId: string) => {
+export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }) => {
+  const { db } = ctx.var;
   const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
   const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, userId));
-
-  const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, userId)).limit(1);
 
   const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
 
@@ -38,8 +34,8 @@ export const getAuthInfo = async (db: DbOrTx, userId: string) => {
     .from(oauthAccountsTable)
     .where(and(eq(oauthAccountsTable.userId, userId), eq(oauthAccountsTable.verified, true)));
 
-  const [password, passkeys, totps, oauth] = await Promise.all([getPassword, getPasskeys, getTotp, getOAuth]);
-  return { hasPassword: !!password.length, passkeys, hasTotp: !!totps.length, oauth };
+  const [passkeys, totps, oauth] = await Promise.all([getPasskeys, getTotp, getOAuth]);
+  return { passkeys, hasTotp: !!totps.length, oauth };
 };
 
 /**

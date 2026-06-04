@@ -93,7 +93,7 @@ function StepIconBase(props: StepIconProps, ref: React.ForwardedRef<HTMLDivEleme
       );
     }
     return (
-      <span ref={ref} key="label" className={cn('font-medium text-center text-md')}>
+      <span ref={ref} key="label" className={cn('text-center font-medium text-md')}>
         {(index || 0) + 1}
       </span>
     );

@@ -1,20 +1,77 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import type * as React from 'react';
+import { createContext, useContext, useEffect, useRef, useSyncExternalStore } from 'react';
 import { cn } from '~/utils/cn';
+
+// Context to pass the current value from Select to SelectItem for reliable checkmarks.
+// Works around a Base UI timing issue where ItemIndicator can show stale selection state.
+const SelectValueContext = createContext<string | null | undefined>(undefined);
+
+// Registry that lets SelectItem children register their displayed label so SelectValue
+// can render the label (e.g. "Banana") instead of the raw value ("banana").
+type LabelRegistry = {
+  register: (value: string, label: React.ReactNode) => () => void;
+  getLabel: (value: string | null) => React.ReactNode;
+  subscribe: (listener: () => void) => () => void;
+  getVersion: () => number;
+};
+const SelectLabelRegistryContext = createContext<LabelRegistry | null>(null);
+
+function useLabelRegistry(): LabelRegistry {
+  // Stable registry object so context value identity never changes (avoids infinite re-renders).
+  const ref = useRef<LabelRegistry | null>(null);
+  if (ref.current === null) {
+    const labels = new Map<string, React.ReactNode>();
+    const listeners = new Set<() => void>();
+    let version = 0;
+    const notify = () => {
+      version += 1;
+      listeners.forEach((l) => {
+        l();
+      });
+    };
+    ref.current = {
+      register(value, label) {
+        labels.set(value, label);
+        notify();
+        return () => {
+          labels.delete(value);
+          notify();
+        };
+      },
+      getLabel(value) {
+        if (value == null) return null;
+        return labels.has(value) ? labels.get(value) : value;
+      },
+      subscribe(listener) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+      getVersion: () => version,
+    };
+  }
+  return ref.current;
+}
 
 // Override onValueChange to narrow Base UI's (string | null) to string for all consumers
 type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & {
   onValueChange?: (value: string) => void;
 };
 
-function Select({ onValueChange, ...props }: SelectProps) {
+function Select({ onValueChange, value, ...props }: SelectProps) {
+  const registry = useLabelRegistry();
   return (
-    <SelectPrimitive.Root
-      data-slot="select"
-      onValueChange={onValueChange as SelectPrimitive.Root.Props<string>['onValueChange']}
-      {...props}
-    />
+    <SelectValueContext.Provider value={value}>
+      <SelectLabelRegistryContext.Provider value={registry}>
+        <SelectPrimitive.Root
+          data-slot="select"
+          value={value}
+          onValueChange={onValueChange as SelectPrimitive.Root.Props<string>['onValueChange']}
+          {...props}
+        />
+      </SelectLabelRegistryContext.Provider>
+    </SelectValueContext.Provider>
   );
 }
 
@@ -29,9 +86,18 @@ function SelectValue({
   React.RefAttributes<HTMLSpanElement> & {
     placeholder?: string;
   }) {
+  const registry = useContext(SelectLabelRegistryContext);
+  // Subscribe so SelectValue re-renders when items register/unregister labels.
+  useSyncExternalStore(
+    registry?.subscribe ?? (() => () => {}),
+    registry?.getVersion ?? (() => 0),
+    registry?.getVersion ?? (() => 0),
+  );
   return (
     <>
-      <SelectPrimitive.Value data-slot="select-value" {...props} />
+      <SelectPrimitive.Value data-slot="select-value" {...props}>
+        {registry ? (value: string | null) => registry.getLabel(value) : undefined}
+      </SelectPrimitive.Value>
       {placeholder && <span className="hidden [[data-placeholder]_&]:inline">{placeholder}</span>}
     </>
   );
@@ -51,7 +117,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-effect aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex w-fit items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-10 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus-effect flex w-fit items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[size=default]:h-10 data-[size=sm]:h-8 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -95,7 +161,7 @@ export function SelectContentNoPortal({
       <SelectPrimitive.Popup
         data-slot="select-content"
         className={cn(
-          'bg-popover text-popover-foreground data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md',
+          'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-closed:animate-out data-open:animate-in',
           className,
         )}
         {...props}
@@ -124,7 +190,7 @@ function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props &
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn('text-muted-foreground px-2 py-1.5 text-xs', className)}
+      className={cn('px-2 py-1.5 text-muted-foreground text-xs', className)}
       {...props}
     />
   );
@@ -135,19 +201,27 @@ function SelectItem({
   children,
   ...props
 }: SelectPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
+  const selectValue = useContext(SelectValueContext);
+  const registry = useContext(SelectLabelRegistryContext);
+  const isSelected = selectValue !== undefined && props.value !== undefined && selectValue === props.value;
+
+  // Register this item's label so SelectValue can display it for the selected value.
+  useEffect(() => {
+    if (!registry || typeof props.value !== 'string') return;
+    return registry.register(props.value, children);
+  }, [registry, props.value, children]);
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4 text-success" />
-        </SelectPrimitive.ItemIndicator>
+        {isSelected && <CheckIcon className="size-4 text-success" />}
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
@@ -161,7 +235,7 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn('bg-border pointer-events-none -mx-1 my-1 h-px', className)}
+      className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)}
       {...props}
     />
   );

@@ -1,82 +1,36 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getAuthHealth } from 'sdk';
 import { appConfig } from 'shared';
-import { getAuthHealth, type SignInWithPasskeyData, signInWithPasskey } from '~/api.gen';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import {
-  type ConditionalMediationResult,
-  isConditionalMediationAvailable,
-  startConditionalMediation,
-} from '~/modules/auth/passkey-credentials';
-import { CheckEmailStep, InviteOnlyStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
-import type { AuthStep } from '~/modules/auth/types';
+  CheckEmailStep,
+  InviteOnlyStep,
+  MagicLinkSentStep,
+  SignInStep,
+  SignUpStep,
+  WaitlistStep,
+} from '~/modules/auth/steps';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { useAuthStore } from '~/store/auth';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
-function shouldShowDivider(step: AuthStep): boolean {
-  // Get enabled authentication strategies
-  const isOAuthEnabled = enabledStrategies.includes('oauth');
-  const isPasswordEnabled = enabledStrategies.includes('password');
-  const isPasskeyEnabled = enabledStrategies.includes('passkey');
-
-  return (
-    // Case 1: Password is enabled with either (passkey + user hasPasskey) or OAuth
-    (isPasswordEnabled && (isPasskeyEnabled || isOAuthEnabled)) ||
-    // Case 2: OAuth are enabled, and the current step is 'check'
-    (isOAuthEnabled && step === 'checkEmail')
-  );
+function shouldShowDivider(): boolean {
+  return enabledStrategies.includes('oauth');
 }
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const { lastUser } = useUserStore();
-  const { step, setStep, restrictedMode, setRestrictedMode, signedIn, setSignedIn } = useAuthStore();
-
-  // Conditional mediation: passkey autofill on checkEmail and signIn steps
-  const abortRef = useRef<AbortController | null>(null);
-  const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
-
-  // Check if conditional mediation is available
-  useEffect(() => {
-    if (!enabledStrategies.includes('passkey')) return;
-    isConditionalMediationAvailable().then(setConditionalMediationSupported);
-  }, []);
-
-  // Start conditional mediation when on checkEmail or signIn step
-  useEffect(() => {
-    if (!conditionalMediationSupported || (step !== 'checkEmail' && step !== 'signIn')) return;
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const handleCredential = async (data: ConditionalMediationResult) => {
-      try {
-        const body: NonNullable<SignInWithPasskeyData['body']> = data;
-        await signInWithPasskey({ body });
-        setSignedIn(true);
-        navigate({ to: appConfig.defaultRedirectPath, replace: true });
-      } catch {
-        toaster(t('error:passkey_verification_failed'), 'error');
-      }
-    };
-
-    startConditionalMediation(handleCredential, controller.signal).catch(() => {
-      // Aborted or no credential selected — expected on navigation away
-    });
-
-    return () => controller.abort();
-  }, [conditionalMediationSupported, step, navigate, setSignedIn]);
+  const { step, setStep, restrictedMode, setRestrictedMode, signedIn } = useAuthStore();
 
   const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
 
@@ -99,6 +53,9 @@ export function AuthenticatePage() {
   // If token, proceed to sign up with token. If last user and no token, use last user as email
   // In restricted mode with no token/lastUser, go directly to signIn step
   useEffect(() => {
+    // Don't override terminal steps (e.g. magicLinkSent)
+    if (step === 'magicLinkSent') return;
+
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
     if (!tokenData?.email) {
@@ -124,13 +81,14 @@ export function AuthenticatePage() {
 
       {step === 'waitlist' && <WaitlistStep />}
       {step === 'inviteOnly' && <InviteOnlyStep />}
+      {step === 'magicLinkSent' && <MagicLinkSentStep />}
 
       {/* Show passkey and oauth options conditionally */}
       {['checkEmail', 'signIn', 'signUp'].includes(step) && (
         <>
-          {shouldShowDivider(step) && (
+          {shouldShowDivider() && (
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="text-muted-foreground px-2">{t('common:or')}</span>
+              <span className="px-2 text-muted-foreground">{t('c:or')}</span>
             </div>
           )}
           {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}

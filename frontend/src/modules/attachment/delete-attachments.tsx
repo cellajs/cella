@@ -1,6 +1,5 @@
 import React from 'react';
-import type { Attachment } from '~/api.gen';
-import { ApiError } from '~/lib/api';
+import type { Attachment } from 'sdk';
 import { useAttachmentDeleteMutation } from '~/modules/attachment/query';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
@@ -26,7 +25,7 @@ export function DeleteAttachments({ attachments, callback, dialog: isDialog, onC
       await deleteAttachments.mutateAsync(attachments);
       callback?.({ data: attachments, status: 'success' });
     } catch (error) {
-      if (error instanceof Error || error instanceof ApiError) callback?.({ status: 'fail', error });
+      if (error instanceof Error) callback?.({ status: 'fail', error });
     } finally {
       callback?.({ status: 'settle' });
       if (isDialog) removeDialog();

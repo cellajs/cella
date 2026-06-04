@@ -1,5 +1,5 @@
-import { index, pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from 'shared/nanoid';
+import { index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { generateId } from 'shared/entity-id';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -10,11 +10,11 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
  * PARTITIONING: Partitioned by createdAt via pg_partman (monthly, 90-day retention).
  * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
  */
-export const unsubscribeTokensTable = pgTable(
+export const unsubscribeTokensTable = snakeCase.table(
   'unsubscribe_tokens',
   {
-    id: varchar({ length: maxLength.id }).notNull().$defaultFn(nanoid),
-    userId: varchar({ length: maxLength.id })
+    id: uuid().notNull().$defaultFn(generateId),
+    userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     secret: varchar({ length: maxLength.field }).notNull(),

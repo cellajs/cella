@@ -1,6 +1,6 @@
 import { AlertCircleIcon, CloudIcon, CloudOffIcon, LoaderIcon, UploadCloudIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Attachment } from '~/api.gen';
+import type { Attachment } from 'sdk';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-sync-status';
 
 interface SyncStatusCellProps {
@@ -21,9 +21,9 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   if (!hasLocalBlob || isUploaded) {
     return (
       <div
-        className="flex justify-center items-center h-full w-full"
+        className="flex h-full w-full items-center justify-center"
         data-tooltip="true"
-        data-tooltip-content={t('common:synced')}
+        data-tooltip-content={t('c:synced')}
       >
         <CloudIcon className="text-success" size={16} />
       </div>
@@ -34,11 +34,11 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   if (isUploading) {
     return (
       <div
-        className="flex justify-center items-center h-full w-full"
+        className="flex h-full w-full items-center justify-center"
         data-tooltip="true"
-        data-tooltip-content={t('common:uploading')}
+        data-tooltip-content={t('c:uploading')}
       >
-        <LoaderIcon className="text-muted-foreground animate-spin" size={16} />
+        <LoaderIcon className="animate-spin text-muted-foreground" size={16} />
       </div>
     );
   }
@@ -47,9 +47,9 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   if (isPending) {
     return (
       <div
-        className="flex justify-center items-center h-full w-full"
+        className="flex h-full w-full items-center justify-center"
         data-tooltip="true"
-        data-tooltip-content={t('common:pending_sync')}
+        data-tooltip-content={t('c:pending_sync')}
       >
         <UploadCloudIcon className="text-muted-foreground" size={16} />
       </div>
@@ -60,9 +60,9 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   if (isFailed) {
     return (
       <div
-        className="flex justify-center items-center h-full w-full"
+        className="flex h-full w-full items-center justify-center"
         data-tooltip="true"
-        data-tooltip-content={t('common:upload_failed')}
+        data-tooltip-content={t('c:upload_failed')}
       >
         <AlertCircleIcon className="text-destructive" size={16} />
       </div>
@@ -73,9 +73,9 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   if (isLocalOnly) {
     return (
       <div
-        className="flex justify-center items-center h-full w-full"
+        className="flex h-full w-full items-center justify-center"
         data-tooltip="true"
-        data-tooltip-content={t('common:local_only')}
+        data-tooltip-content={t('c:local_only')}
       >
         <CloudOffIcon className="text-muted-foreground" size={16} />
       </div>
@@ -85,9 +85,9 @@ export const SyncStatusCell = ({ row }: SyncStatusCellProps) => {
   // Fallback (shouldn't happen)
   return (
     <div
-      className="flex justify-center items-center h-full w-full"
+      className="flex h-full w-full items-center justify-center"
       data-tooltip="true"
-      data-tooltip-content={uploadStatus || t('common:unknown')}
+      data-tooltip-content={uploadStatus || t('c:unknown')}
     >
       <CloudIcon className="text-muted-foreground" size={16} />
     </div>

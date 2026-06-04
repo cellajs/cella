@@ -9,8 +9,8 @@ import nlError from '../../../locales/nl/error.json';
  * Configure the locales you need in backend.
  */
 const locales = {
-  en: { backend: enBackend, common: enCommon, error: enError },
-  nl: { backend: nlBackend, common: nlCommon, error: nlError },
+  en: { backend: enBackend, c: enCommon, error: enError },
+  nl: { backend: nlBackend, c: nlCommon, error: nlError },
 };
 
 export default locales;

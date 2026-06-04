@@ -19,14 +19,14 @@ export function SelectRoleRadio({ onChange, value, className }: Props) {
     <RadioGroup
       value={value}
       onValueChange={(v) => onChange(v as string)}
-      className={cn('inline-flex gap-4 items-center', className)}
+      className={cn('inline-flex items-center gap-4', className)}
     >
       {roles.all.map((role) => (
         // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
-        <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
+        <label key={role} className="inline-flex cursor-pointer items-center gap-2">
           <RadioGroupItem key={role} value={role} />
-          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {t(role, { ns: ['app', 'common'] })}
+          <span className="font-normal text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {t(role)}
           </span>
         </label>
       ))}

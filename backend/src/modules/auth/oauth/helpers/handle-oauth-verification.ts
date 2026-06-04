@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { appConfig } from 'shared';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { TokenModel } from '#/db/schema/tokens';
-import { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
+import type { TokenModel } from '#/db/schema/tokens';
 
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId and oauthAccountId

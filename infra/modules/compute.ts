@@ -1,0 +1,372 @@
+/**
+ * Compute — one Docker Compose VM per backend service (backend, cdc, yjs, ai).
+ *
+ * Each VM has a fully-closed inbound security group and is reachable only over the
+ * main private network from the load balancer and database. Cloud-init installs
+ * Docker, logs into the container registry, writes the shared compose.yml + .env,
+ * and starts the service-specific compose profile.
+ *
+ * Replacement model: any change to image tag or userdata triggers a full VM
+ * replacement; LB health checks bridge the cutover. CDC uses deleteBeforeReplace
+ * because it is a singleton — two replication slots must not run concurrently.
+ *
+ * Known limitation: Scaleway has no instance-attached IAM identities, so app
+ * secrets and the registry-login credential are necessarily embedded in cloud-init
+ * userdata. Anyone with `InstancesReadOnly` on the project can read them.
+ * Break-glass access is the Scaleway serial console (no SSH listener is opened).
+ */
+import * as pulumi from '@pulumi/pulumi'
+import * as scaleway from '@pulumiverse/scaleway'
+import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig } from '../helpers'
+import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index.js'
+import { renderCloudInit } from './cloud-init'
+import { deployTagsBucketName } from './deploy-tags'
+import { privateNetworkId } from './network'
+import { registryEndpoint } from './registry'
+import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
+import { frontendBucketName } from './storage'
+
+// ---------------------------------------------------------------------------
+// Secrets from stack config
+// ---------------------------------------------------------------------------
+
+const cookieSecret = infraConfig.requireSecret('cookieSecret')
+const unsubscribeSecret = infraConfig.requireSecret('unsubscribeSecret')
+const cdcSecret = infraConfig.requireSecret('cdcSecret')
+const yjsSecret = infraConfig.requireSecret('yjsSecret')
+const piiHashSecret = infraConfig.requireSecret('piiHashSecret')
+const brevoApiKey = infraConfig.requireSecret('brevoApiKey')
+const scwAiApiKey = infraConfig.requireSecret('scwAiApiKey')
+const adminEmail = infraConfig.requireSecret('adminEmail')
+const scwSecretKey = new pulumi.Config('scaleway').requireSecret('secretKey')
+const scwAccessKey = new pulumi.Config('scaleway').requireSecret('accessKey')
+
+// ---------------------------------------------------------------------------
+// Security Group — fully closed inbound; LB reaches VMs via private network.
+// Break-glass access is via Scaleway's serial console (no SSH on the public
+// internet). See infra/README.md → "Emergency access".
+// ---------------------------------------------------------------------------
+
+const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
+  name: naming.resource('compute-sg'),
+  inboundDefaultPolicy: 'drop',
+  outboundDefaultPolicy: 'accept',
+  inboundRules: [],
+  zone,
+  tags,
+})
+
+// ---------------------------------------------------------------------------
+// Shared .env content (all secrets, all DB URLs)
+// ---------------------------------------------------------------------------
+
+const dotEnv = pulumi.all([
+  connectionStringRuntime,
+  connectionStringAdmin,
+  connectionStringCdc,
+  cookieSecret,
+  unsubscribeSecret,
+  cdcSecret,
+  yjsSecret,
+  piiHashSecret,
+  brevoApiKey,
+  scwAiApiKey,
+  adminEmail,
+]).apply(([dbUrl, dbAdminUrl, dbCdcUrl, cookie, unsub, cdc, yjs, pii, brevo, aiApiKey, admin]) =>
+  [
+    `DATABASE_URL=${dbUrl}`,
+    `DATABASE_ADMIN_URL=${dbAdminUrl}`,
+    `DATABASE_CDC_URL=${dbCdcUrl}`,
+    `COOKIE_SECRET=${cookie}`,
+    `UNSUBSCRIBE_SECRET=${unsub}`,
+    `CDC_SECRET=${cdc}`,
+    `YJS_SECRET=${yjs}`,
+    `PII_HASH_SECRET=${pii}`,
+    `BREVO_API_KEY=${brevo}`,
+    `SCW_AI_API_KEY=${aiApiKey}`,
+    `ADMIN_EMAIL=${admin}`,
+  ].join('\n'),
+)
+
+// ---------------------------------------------------------------------------
+// Compose file content (read from deploy/compose.yml at deploy time)
+// ---------------------------------------------------------------------------
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+const composeContent = fs.readFileSync(
+  path.resolve(import.meta.dirname, '../compose.yml'),
+  'utf-8',
+)
+
+// Per-VM ingress reverse-proxy config. Mounted into the `ingress` container so
+// the app container can roll without dropping the LB-facing host listener.
+const ingressContent = fs.readFileSync(
+  path.resolve(import.meta.dirname, '../ingress.Caddyfile'),
+  'utf-8',
+)
+
+// ---------------------------------------------------------------------------
+// Cloud-init template
+// ---------------------------------------------------------------------------
+
+interface ServiceConfig {
+  name: string
+  profile: string
+  /** App container's internal port; also the host port the ingress publishes. */
+  port: number
+  /** Extra compose env vars (REGISTRY, URLs, tags) */
+  composeEnv: Record<string, pulumi.Input<string>>
+}
+
+function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
+  const envLines = pulumi.all(
+    Object.entries(service.composeEnv).map(([k, v]) =>
+      pulumi.output(v).apply((val) => `${k}=${val}`),
+    ),
+  )
+
+  return pulumi.all([dotEnv, envLines, scwSecretKey, scwAccessKey, registryEndpoint, deployTagsBucketName]).apply(
+    ([secrets, env, secretKey, accessKey, registry, tagBucket]) => {
+      const allEnv = [...env, '', '# Secrets', secrets].join('\n')
+
+      // Reconciler env file — single source of truth for the per-VM watcher.
+      // Reuses the existing Pulumi-owned creds in PR1; PR2 will scope these
+      // down to s3:GetObject on deploy/<service>.tag only.
+      const reconcilerEnvFile = buildReconcilerEnv({
+        service: service.name as ReconcilerService,
+        tagBucket,
+        region,
+        registry,
+        stateBucket: naming.pulumiStateBucket,
+        awsAccessKeyId: accessKey,
+        awsSecretAccessKey: secretKey,
+      })
+      const installReconcilerSnippet = buildInstallSnippet()
+
+      return renderCloudInit({
+        service: service.name,
+        bootService: bootSlotService(service.name),
+        profile: service.profile,
+        envFileContent: allEnv,
+        reconcilerEnvFile,
+        installReconcilerSnippet,
+        composeContent,
+        ingressContent,
+        registry,
+        secretKey,
+        accessKey,
+        stateBucket: naming.pulumiStateBucket,
+        region,
+      })
+    },
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Service definitions
+// ---------------------------------------------------------------------------
+
+const backendUrl = hasDomain ? appUrls.backend : 'http://localhost:4000'
+const frontendUrl = appUrls.frontend
+const aiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
+
+// CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
+// path. The backend rejects sources outside loopback or the VPC /24 (see
+// backend/src/lib/cdc-websocket.ts), so we route over the private network
+// directly to the backend VM instead of through the public LB.
+// Computed lazily after the backend VM is created, below.
+let cdcWsUrl: pulumi.Input<string> = 'ws://localhost:4000/internal/cdc'
+
+const services: ServiceConfig[] = [
+  {
+    name: 'backend',
+    profile: 'backend',
+    port: 4000,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      FRONTEND_URL: frontendUrl,
+      BACKEND_URL: backendUrl,
+    },
+  },
+  {
+    name: 'cdc',
+    profile: 'cdc',
+    port: 4001,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      get API_WS_URL() { return cdcWsUrl },
+      BACKEND_URL: backendUrl,
+    },
+  },
+  {
+    name: 'yjs',
+    profile: 'yjs',
+    port: 4002,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      BACKEND_URL: backendUrl,
+    },
+  },
+  {
+    name: 'ai',
+    profile: 'ai',
+    port: 4003,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      FRONTEND_URL: frontendUrl,
+      BACKEND_URL: backendUrl,
+      AI_API_URL: aiUrl,
+    },
+  },
+  {
+    // Reverse-proxy in front of the S3 frontend bucket. Adds the security
+    // headers Edge Services + S3 can't (HSTS, X-Frame-Options, etc.) and
+    // rewrites 404s to /index.html so SPA deep links resolve. Image is built
+    // per release with RELEASE_SHA baked in so X-App-Version drives the
+    // reconciler's cutover assertion the same way the other services do.
+    //
+    // Deliberately excludes every app secret from .env — the .env file is
+    // still mounted (compose env_file: .env) but this profile reads nothing
+    // from it. Lives on its own VM with no DB or registry credentials beyond
+    // what cloud-init already needs to pull the image.
+    name: 'frontend',
+    profile: 'frontend',
+    port: 80,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      // S3 REST hostname Caddy reverse-proxies to. Bucket name is whatever
+      // `naming.frontendBucket` resolves to (e.g. `<slug>-frontend`).
+      ORIGIN_HOST: pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
+    },
+  },
+]
+
+// Ingress wiring — every VM runs a Caddy `ingress` container that publishes the
+// host port and forwards to the app container by its compose-network name. This
+// is what lets the reconciler roll the app (`up -d --no-deps <service>`) without
+// the LB ever losing its backend. INGRESS_PORT == the app's published port
+// historically; UPSTREAM_HOST is the compose service name; UPSTREAM_PORT is the
+// app's internal port. See infra/ingress.Caddyfile.
+//
+// Backend uses blue-green slots (backend-blue / backend-green); its ingress
+// starts pointing at the initial active slot (blue), and the reconciler flips
+// the upstream between slots on each deploy. Every other service is a single
+// container named after the service. See infra/INFRA_ARCHITECTURE.md.
+const bootSlotService = (name: string): string => (name === 'backend' ? 'backend-blue' : name)
+
+for (const service of services) {
+  service.composeEnv.INGRESS_PORT = String(service.port)
+  service.composeEnv.UPSTREAM_HOST = bootSlotService(service.name)
+  service.composeEnv.UPSTREAM_PORT = String(service.port)
+}
+
+// ---------------------------------------------------------------------------
+// Create VMs
+// ---------------------------------------------------------------------------
+
+export interface ComputeInstance {
+  name: string
+  server: scaleway.instance.Server
+  privateIp: pulumi.Output<string>
+}
+
+const instances: ComputeInstance[] = []
+
+function createVm(service: ServiceConfig): ComputeInstance {
+  // Each VM needs a public IP for internet access (package install, image pull)
+  const ip = new scaleway.instance.Ip(`ip-${service.name}`, {
+    zone,
+    tags,
+  })
+
+  // Reserve a stable private IP from IPAM up front. Decoupling the IP from the
+  // instance lifecycle means it survives VM replacement (deleteBeforeReplace)
+  // and is known at plan-time, so LB backends can reference it deterministically
+  // instead of reading an auto-assigned DHCP address off the server after
+  // create (which the provider returns empty at create-time).
+  const reservedIp = new scaleway.ipam.Ip(`ipam-${service.name}`, {
+    sources: [{ privateNetworkId }],
+    isIpv6: false,
+    region,
+    tags,
+  })
+
+  const server = new scaleway.instance.Server(`vm-${service.name}`, {
+    name: naming.resource(service.name),
+    type: infra.instanceTypeFor(service.name),
+    image: 'ubuntu_noble',
+    zone,
+    tags,
+    securityGroupId: securityGroup.id,
+    cloudInit: buildCloudInit(service),
+    ipIds: [ip.id],
+  }, {
+    // cloud-init only runs on first boot; in-place updates would never apply
+    // new env/scripts to running VMs. Since the image tag is no longer baked
+    // into cloud-init (the on-VM reconciler pulls it from S3), this replace
+    // trigger now only fires for genuine cloud-init edits (reconciler script
+    // update, package install change, etc.) — not every release. That is the
+    // whole point of the tag-out-of-cloud-init refactor.
+    replaceOnChanges: ['cloudInit'],
+    // Delete old VM before creating new (IP can only be attached to one server)
+    // CDC is additionally a singleton — must not run two at once.
+    deleteBeforeReplace: true,
+  })
+
+  // Attach the VM to the private network with the reserved IPAM IP pinned.
+  // The inline `privateNetworks` on the server does not support pinning an
+  // IPAM IP, so a dedicated PrivateNic resource is used. It is recreated with
+  // the server (depends on serverId) but always reclaims the same reserved IP.
+  new scaleway.instance.PrivateNic(`pnic-${service.name}`, {
+    serverId: server.id,
+    privateNetworkId,
+    ipamIpIds: [reservedIp.id],
+    zone,
+    tags,
+  }, {
+    deleteBeforeReplace: true,
+  })
+
+  // The reserved IP address is stable and known at plan-time. Strip any CIDR
+  // suffix the provider may include (e.g. "10.0.0.9/22" → "10.0.0.9").
+  const privateIp = reservedIp.address.apply((addr) => addr.split('/')[0])
+
+  const inst = { name: service.name, server, privateIp }
+  instances.push(inst)
+  return inst
+}
+
+if (infra.computeEnabled) {
+  // Create backend first so we can wire CDC's API_WS_URL to its private IP.
+  const backendService = services.find((s) => s.name === 'backend')!
+  const backend = createVm(backendService)
+  cdcWsUrl = backend.privateIp.apply((ip) => `ws://${ip}:4000/internal/cdc`)
+
+  // Create remaining services (cdc reads cdcWsUrl via the getter on composeEnv).
+  for (const service of services) {
+    if (service.name === 'backend') continue
+    createVm(service)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+/** All compute instances */
+export const computeInstances = instances
+
+/** Get a specific instance's private IP (for LB backend targets) */
+export function getInstanceIp(name: string): pulumi.Output<string> {
+  const inst = instances.find((i) => i.name === name)
+  if (!inst) return pulumi.output('')
+  // Stable reserved IPAM IP, decoupled from the VM lifecycle.
+  return inst.privateIp
+}

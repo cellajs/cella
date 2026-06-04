@@ -1,5 +1,5 @@
-import { Section } from 'jsx-email';
 import type { JSX } from 'react';
+import { Section } from './primitives';
 
 /**
  * Email body component to wrap content with consistent padding and styling.
@@ -17,6 +17,7 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
   >
     <div
       style={{
+        backgroundColor: '#ffffff',
         color: '#404040',
         borderRadius: '.75rem',
         borderStyle: 'solid',

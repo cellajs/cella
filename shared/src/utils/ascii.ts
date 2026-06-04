@@ -1,5 +1,5 @@
 /**
- * Renders the Cella ASCII art logo to the console.
+ * Renders the ASCII art logo to the console.
  */
 export const renderAscii = () => {
   console.info(

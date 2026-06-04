@@ -2,16 +2,16 @@ import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
-import { migrationDb } from '#/db/db';
+import { seedDb } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
-import { mockNanoid, mockStx, setMockContext, withFakerSeed } from '../../mocks/utils';
+import { mockStx, mockUuid, setMockContext, withFakerSeed } from '../../mocks/utils';
 import { defaultAdminUser } from '../fixtures';
 
-// Seed scripts use admin connection (migrationDb) for privileged operations
-const db = migrationDb;
+// Seed scripts use admin connection for privileged operations
+const db = seedDb;
 
-// Set mock context for seed script - IDs will get 'gen-' prefix
+// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');
 
 /**
@@ -27,7 +27,6 @@ const SEED_FILES = [
 ];
 
 const isAttachmentSeeded = async () => {
-  if (!db) return true;
   const rows = await db.select().from(attachmentsTable).limit(1);
   return rows.length > 0;
 };
@@ -38,11 +37,6 @@ const isAttachmentSeeded = async () => {
  */
 export const attachmentsSeed = async () => {
   const spinner = startSpinner('Seeding attachments...');
-
-  if (!db) {
-    spinner.fail('DATABASE_ADMIN_URL required for seeding');
-    return;
-  }
 
   if (await isAttachmentSeeded()) {
     warnSpinner('Attachments table not empty → skip seeding');
@@ -64,14 +58,14 @@ export const attachmentsSeed = async () => {
       withFakerSeed(`attachment:seed:${org.id}:${i}`, () => {
         const createdAt = faker.date.past({ refDate: new Date('2025-01-01') }).toISOString();
         return {
-          id: mockNanoid(),
+          id: mockUuid(),
           entityType: 'attachment' as const,
           tenantId: org.tenantId,
           organizationId: org.id,
           createdAt,
-          modifiedAt: createdAt,
+          updatedAt: createdAt,
           createdBy: defaultAdminUser.id,
-          modifiedBy: defaultAdminUser.id,
+          updatedBy: defaultAdminUser.id,
           stx: mockStx(),
           description: null,
           keywords: faker.lorem.words(3),

@@ -7,14 +7,14 @@
  */
 
 import { faker } from '@faker-js/faker';
-import { mockNanoid, mockTimestamps, withFakerSeed } from './utils';
+import { mockNanoid, mockTimestamps, mockUuid, withFakerSeed } from './utils';
 
 /**
  * Core fields shared by all entities (id + timestamps).
  * Must be called within withFakerSeed() for deterministic output.
  */
 const mockEntityCore = () => ({
-  id: mockNanoid(),
+  id: mockUuid(),
   ...mockTimestamps(),
 });
 
@@ -38,33 +38,32 @@ export const mockContextEntityBase = (key = 'context-entity:default') =>
 
 /**
  * Generates a mock ProductEntityBase response.
- * Product entities are content-related with createdBy/modifiedBy.
+ * Product entities are content-related with createdBy/updatedBy.
  */
 export const mockProductEntityBase = (key = 'product-entity:default') =>
   withFakerSeed(key, () => ({
     ...mockEntityCore(),
     name: faker.lorem.sentence({ min: 2, max: 5 }),
     description: faker.lorem.paragraph(),
-    createdBy: mockUserMinimalBase(`${key}:createdBy`),
-    modifiedBy: mockUserMinimalBase(`${key}:modifiedBy`),
-    entityType: 'page' as const,
     keywords: faker.lorem.words(3),
+    createdBy: mockUserMinimalBase(`${key}:createdBy`),
+    updatedBy: mockUserMinimalBase(`${key}:updatedBy`),
+    entityType: 'page' as const,
   }));
 
 /**
  * Generates a mock UserMinimalBase response.
- * Minimal user data for references (e.g. createdBy, modifiedBy).
+ * Minimal user data for references (e.g. createdBy, updatedBy).
  */
 export const mockUserMinimalBase = (key = 'user-minimal:default') =>
   withFakerSeed(key, () => {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
     return {
-      id: mockNanoid(),
+      id: mockUuid(),
       name: `${firstName} ${lastName}`,
       slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
       thumbnailUrl: null,
-      email: faker.internet.email({ firstName, lastName }).toLowerCase(),
       entityType: 'user' as const,
     };
   });
@@ -92,12 +91,12 @@ export const mockUserBase = (key = 'user-base:default') =>
   });
 
 /**
- * Generates a mock Request response.
+ * Generates a mock Request base response for schema examples.
  * Requests are contact/waitlist submissions.
  */
-export const mockRequestResponse = (key = 'request:default') =>
+export const mockRequestBaseResponse = (key = 'request:default') =>
   withFakerSeed(key, () => ({
-    id: mockNanoid(),
+    id: mockUuid(),
     email: faker.internet.email().toLowerCase(),
     type: faker.helpers.arrayElement(['contact', 'waitlist'] as const),
     message: faker.lorem.sentence(),
@@ -106,14 +105,14 @@ export const mockRequestResponse = (key = 'request:default') =>
   }));
 
 /**
- * Generates a mock StxRequest example.
- * Used for sync transaction requests.
+ * Generates a mock StxBase example.
+ * Used for sync transaction metadata in OpenAPI examples.
  */
-export const mockStxRequest = (key = 'stx-request:default') =>
+export const mockStxBase = (key = 'stx-base:default') =>
   withFakerSeed(key, () => ({
-    mutationId: mockNanoid(),
-    sourceId: mockNanoid(),
-    lastReadVersion: 0,
+    mutationId: mockUuid(),
+    sourceId: mockUuid(),
+    fieldTimestamps: {},
   }));
 
 /**
@@ -122,20 +121,8 @@ export const mockStxRequest = (key = 'stx-request:default') =>
  */
 export const mockStxResponse = (key = 'stx-response:default') =>
   withFakerSeed(key, () => ({
-    mutationId: mockNanoid(),
-    version: faker.number.int({ min: 1, max: 10 }),
-  }));
-
-/**
- * Generates a mock StxBase example.
- * Used for sync transaction base metadata on entities.
- */
-export const mockStxBase = (key = 'stx-base:default') =>
-  withFakerSeed(key, () => ({
-    mutationId: mockNanoid(),
-    sourceId: mockNanoid(),
-    version: faker.number.int({ min: 1, max: 5 }),
-    fieldVersions: { name: 1 },
+    mutationId: mockUuid(),
+    droppedFields: [],
   }));
 
 /**
@@ -152,12 +139,17 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
     entityType: faker.helpers.arrayElement(['page', 'attachment'] as const),
     resourceType: null,
-    entityId: mockNanoid(),
-    organizationId: mockNanoid(),
+    subjectId: mockUuid(),
+    organizationId: mockUuid(),
+    tenantId: mockNanoid(),
     contextType: null,
-    seqAt: faker.number.int({ min: 1, max: 500 }),
+    contextId: mockUuid(),
+    seq: faker.number.int({ min: 1, max: 500 }),
     // Generate cacheToken BEFORE stx to ensure deterministic output
     // (stx uses nested withFakerSeed which resets the seed after)
     cacheToken: faker.string.alphanumeric(32),
     stx: mockStxBase(`${key}:stx`),
+    batchUntilSeq: null,
+    deletedIds: null,
+    propagation: null,
   }));

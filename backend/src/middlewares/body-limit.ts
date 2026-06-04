@@ -2,8 +2,8 @@ import type { MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createMiddleware } from 'hono/factory';
 import { appConfig } from 'shared';
-import type { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 
 /**
  * Middleware to apply dynamic body size limits based on Content-Type.

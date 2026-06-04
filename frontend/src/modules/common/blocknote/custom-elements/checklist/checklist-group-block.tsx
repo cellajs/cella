@@ -5,29 +5,28 @@ import { CheckSquareIcon } from 'lucide-react';
 import { ChecklistGroupRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
 
-export const checklistGroupBlock = createReactBlockSpec(
-  {
-    type: 'checklistGroup' as const,
-    propSchema: {
-      textAlignment: defaultProps.textAlignment,
-      title: { default: '' },
-      collapsed: { default: false },
-    },
-    content: 'none',
+export const checklistGroupConfig = {
+  type: 'checklistGroup' as const,
+  propSchema: {
+    textAlignment: defaultProps.textAlignment,
+    title: { default: '' as string },
+    collapsed: { default: false as boolean },
   },
-  {
-    render: (props) => <ChecklistGroupRender {...props} />,
-    toExternalHTML: ({ block }) => {
-      return (
-        <div className="checklist-group">
-          <div className="checklist-group-header">
-            <strong>{block.props.title || 'Todos'}</strong>
-          </div>
+  content: 'none' as const,
+};
+
+export const checklistGroupBlock = createReactBlockSpec(checklistGroupConfig, {
+  render: (props) => <ChecklistGroupRender {...props} />,
+  toExternalHTML: ({ block }) => {
+    return (
+      <div className="checklist-group">
+        <div className="checklist-group-header">
+          <strong>{block.props.title || 'Todos'}</strong>
         </div>
-      );
-    },
+      </div>
+    );
   },
-);
+});
 
 // Slash menu item to insert a checklistItem
 export const getChecklistItemSlashItem = (editor: CustomBlockNoteEditor) => ({
@@ -35,7 +34,7 @@ export const getChecklistItemSlashItem = (editor: CustomBlockNoteEditor) => ({
   key: 'checklistItem',
   onItemClick: () => {
     insertOrUpdateBlockForSlashMenu(editor, {
-      type: 'checklistItem' as any,
+      type: 'checklistItem' as const,
     });
   },
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check'],
@@ -49,7 +48,8 @@ export const getChecklistGroupSlashItem = (editor: CustomBlockNoteEditor) => ({
   key: 'checklistGroup',
   onItemClick: () => {
     insertOrUpdateBlockForSlashMenu(editor, {
-      type: 'checklistGroup' as any,
+      // checklistGroup is not yet registered in the global custom schema; cast at the boundary.
+      type: 'checklistGroup' as never,
     });
   },
   aliases: ['checklist group', 'task group', 'checkbox group'],
@@ -60,6 +60,6 @@ export const getChecklistGroupSlashItem = (editor: CustomBlockNoteEditor) => ({
 // Side menu item for checklist item
 export const insertSideChecklistItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Checklist Item',
-  type: 'checklistItem' as any,
+  type: 'checklistItem' as const,
   icon: CheckSquareIcon as unknown as IconType,
 });

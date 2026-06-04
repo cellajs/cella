@@ -1,4 +1,4 @@
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { activityListQuerySchema, activitySchema } from '#/modules/activities/activities-schema';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
@@ -13,7 +13,7 @@ const activityRoutes = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    tags: ['activities'],
+    tags: ['activities', 'cella'],
     summary: 'Get list of activities',
     description:
       'Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.',

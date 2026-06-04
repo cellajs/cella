@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { validateProjectName } from '#/utils/validate-project-name';
 
 describe('validateProjectName', () => {

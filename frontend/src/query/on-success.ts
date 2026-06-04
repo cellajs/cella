@@ -1,10 +1,9 @@
-import { useAlertStore } from '~/store/alert';
+import { useAlertStore } from '~/alerter/alert-store';
 
 /**
- * onSuccess handler for queryClient.
- * Currently limited to clearing any down alerts when the query cache is successfully restored.
+ * onSuccess handler for the queryClient \u2014 clears any active "down" alerts when the query
+ * cache is successfully restored.
  */
 export const onSuccess = () => {
-  // Clear down alerts
   useAlertStore.getState().setDownAlert(null);
 };

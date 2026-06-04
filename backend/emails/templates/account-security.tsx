@@ -1,14 +1,12 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailHeader, EmailLogo, Footer, Text } from '../components';
+import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
 import i18n from '../i18n';
-import type { BasicTemplateType } from '../types';
+import { defineEmailTemplate } from '../types';
 
 type AccountSecurityType =
   | 'mfa-enabled'
   | 'mfa-disabled'
-  | 'wrong-password-lockout'
   | 'totp-lockout'
-  | 'password-changed'
   | 'sysadmin-fail'
   | 'sysadmin-signin'
   | 'impersonation-started'
@@ -18,45 +16,42 @@ type AccountSecurityType =
   | 'totp-removed'
   | 'tenant-created';
 
-interface AccountSecurityProps extends BasicTemplateType {
+interface AccountSecurityStatic {
   name: string;
   type: AccountSecurityType;
-  details?: Record<string, string | number>; // Optional extra details for dynamic messages
+  details?: Record<string, string | number>;
 }
 
 /**
  * Email template for account security notifications.
  */
-export const AccountSecurity = ({ lng, name, type, details }: AccountSecurityProps) => {
-  // Base properties for all i18n calls
-  const baseProps = { lng, appName: appConfig.name };
-
-  const previewText = i18n.t(`backend:email.account_security.preview`, { ...baseProps, name });
-
-  const headerText = i18n.t(`backend:email.account_security.${type}.title`, baseProps);
-  const bodyText = i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details });
-
-  return (
-    <EmailContainer previewText={previewText}>
-      <EmailHeader headerText={headerText} />
-      <EmailBody>
-        <Text>
-          <span dangerouslySetInnerHTML={{ __html: bodyText }} />
-        </Text>
-      </EmailBody>
-      <EmailLogo />
-      <Footer />
-    </EmailContainer>
-  );
-};
-
-// Template export
-export const Template = AccountSecurity;
-
-// Preview props for jsx-email CLI
-export const previewProps = {
-  lng: 'en',
-  subject: 'Account security alert',
-  name: 'Emily',
-  type: 'password-changed',
-} satisfies AccountSecurityProps;
+export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
+  translate(lng, { name, type, details }) {
+    const baseProps = { lng, appName: appConfig.name };
+    return {
+      subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details }),
+      previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name }),
+      headerText: i18n.t(`backend:email.account_security.${type}.title`, baseProps),
+      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details }),
+      supportText: i18n.t('backend:email.support_email', { lng }),
+    };
+  },
+  component({ previewText, headerText, bodyHtml, supportText }) {
+    return (
+      <EmailContainer previewText={previewText}>
+        <EmailHeader headerText={headerText} />
+        <EmailBody>
+          <EmailText>
+            <SafeHtml html={bodyHtml} policy="inline" />
+          </EmailText>
+        </EmailBody>
+        <EmailLogo />
+        <EmailFooter supportText={supportText} />
+      </EmailContainer>
+    );
+  },
+  preview: {
+    statics: { name: 'Emily', type: 'totp-lockout' },
+    recipient: {},
+  },
+});

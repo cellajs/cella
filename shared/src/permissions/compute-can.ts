@@ -1,10 +1,10 @@
-import { appConfig } from '../../app-config';
-import { hierarchy } from '../../hierarchy-config';
+import { appConfig } from '../config-builder/app-config';
+import { hierarchy } from '../../config/hierarchy-config';
 import type { ContextEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
-import { recordFromKeys } from '../builder/utils';
+import { recordFromKeys } from '../config-builder/utils';
 import { getPolicyPermissions, getSubjectPolicies } from './access-policies';
 import { allActionsDenied } from './action-helpers';
-import type { AccessPolicies } from './types';
+import type { AccessPolicies, ActionPermissionState } from './types';
 
 /**
  * Per-action permission state for a single entity type.
@@ -18,7 +18,6 @@ import type { AccessPolicies } from './types';
  * This three-state model preserves the Zanzibar-style relation semantics at the UI layer,
  * making it straightforward to later introduce explicit relation tuples.
  */
-export type ActionPermissionState = boolean | 'own';
 type ActionStates = Record<EntityActionType, ActionPermissionState>;
 
 /** Entity-type-keyed permission map: context entity + its descendant types */

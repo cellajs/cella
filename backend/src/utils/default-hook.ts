@@ -1,7 +1,7 @@
 import type { Hook } from '@hono/zod-openapi';
 import { ZodError } from 'zod';
-import type { Env } from '#/lib/context';
-import { AppError, type ErrorKey } from '#/lib/error';
+import type { Env } from '#/core/context';
+import { AppError, type ErrorKey } from '#/core/error';
 
 /**
  * Default validation hook for zod-openapi routes.
@@ -9,17 +9,17 @@ import { AppError, type ErrorKey } from '#/lib/error';
  */
 export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
-    const issue = result.error.issues[0];
+    // Prefer a typed issue (one carrying `params.type` from refineWithType) when
+    // present — built-in checks like `.regex` may fire alongside our typed
+    // superRefine; the typed message is the user-facing one we want.
+    const typedIssue = result.error.issues.find(
+      (i) => 'params' in i && (i as { params?: { type?: unknown } }).params?.type,
+    );
+    const issue = typedIssue ?? result.error.issues[0];
     const { message, code } = issue;
 
-    // Extract custom type from params if available (for superRefine with refineWithType)
-    // Otherwise fall back to generic form.{code} type
-    let type: ErrorKey;
-    if (code === 'custom' && 'params' in issue && issue.params?.type) {
-      type = issue.params.type as ErrorKey;
-    } else {
-      type = `form.${code}` as ErrorKey;
-    }
+    const paramsType = 'params' in issue ? (issue as { params?: { type?: unknown } }).params?.type : undefined;
+    const type: ErrorKey = typeof paramsType === 'string' ? (paramsType as ErrorKey) : (`form.${code}` as ErrorKey);
 
     throw new AppError(403, type, 'error', { message, originalError: result.error });
   }

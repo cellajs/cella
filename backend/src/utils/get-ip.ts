@@ -1,9 +1,15 @@
 import type { Context } from 'hono';
 
 /**
- * Get IP address from socket remote address. You can change this
- * function to get the IP address from a request header
+ * Get client IP address from proxy headers or socket.
+ * Priority: X-Forwarded-For (first entry) → X-Real-IP → socket remote address.
+ * Relies on Traefik being configured with trusted proxy IPs to prevent spoofing.
  */
 export const getIp = (ctx: Context) => {
-  return ctx.req.header('x-forwarded-for')?.split(',')[0] || ctx.env.incoming.socket.remoteAddress || null;
+  return (
+    ctx.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+    ctx.req.header('x-real-ip') ||
+    ctx.env.incoming.socket.remoteAddress ||
+    null
+  );
 };

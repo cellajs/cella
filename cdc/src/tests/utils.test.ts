@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { snakeToCamel } from '../utils/snake-to-camel';
 import { convertRowKeys } from '../utils/convert-row-keys';
-import { getChangedKeys } from '../utils/get-changed-keys';
+import { getChangedFields } from '../utils/get-changed-fields';
 import { extractRowData } from '../utils/extract-row-data';
 import { extractStxData } from '../utils/extract-stx-data';
-import { actionToVerb } from '../utils/action-to-verb';
+import { actionToVerb } from 'shared';
 
 describe('snakeToCamel', () => {
   it('should convert snake_case to camelCase', () => {
@@ -34,13 +34,13 @@ describe('snakeToCamel', () => {
 
 describe('convertRowKeys', () => {
   it('should convert all keys from snake_case to camelCase', () => {
-    const row = { user_id: '123', organization_id: '456', created_at: '2024-01-01' };
+    const row = { id: 'abc', user_id: '123', organization_id: '456', created_at: '2024-01-01' };
     const result = convertRowKeys(row);
-    expect(result).toEqual({ userId: '123', organizationId: '456', createdAt: '2024-01-01' });
+    expect(result).toEqual({ id: 'abc', userId: '123', organizationId: '456', createdAt: '2024-01-01' });
   });
 
-  it('should handle empty object', () => {
-    expect(convertRowKeys({})).toEqual({});
+  it('should throw on missing id', () => {
+    expect(() => convertRowKeys({})).toThrow('row missing "id"');
   });
 
   it('should preserve values', () => {
@@ -50,40 +50,40 @@ describe('convertRowKeys', () => {
   });
 });
 
-describe('getChangedKeys', () => {
-  it('should detect changed keys between old and new rows', () => {
+describe('getChangedFields', () => {
+  it('should detect changed fields between old and new rows', () => {
     const oldRow = { id: '1', name: 'old', email: 'a@b.com' };
     const newRow = { id: '1', name: 'new', email: 'a@b.com' };
-    expect(getChangedKeys(oldRow, newRow)).toEqual(['name']);
+    expect(getChangedFields(oldRow, newRow)).toEqual(['name']);
   });
 
   it('should return empty array when no changes', () => {
     const row = { id: '1', name: 'same' };
-    expect(getChangedKeys(row, row)).toEqual([]);
+    expect(getChangedFields(row, row)).toEqual([]);
   });
 
-  it('should skip modifiedAt column', () => {
-    const oldRow = { id: '1', name: 'old', modifiedAt: '2024-01-01' };
-    const newRow = { id: '1', name: 'old', modifiedAt: '2024-01-02' };
-    expect(getChangedKeys(oldRow, newRow)).toEqual([]);
+  it('should skip updatedAt column', () => {
+    const oldRow = { id: '1', name: 'old', updatedAt: '2024-01-01' };
+    const newRow = { id: '1', name: 'old', updatedAt: '2024-01-02' };
+    expect(getChangedFields(oldRow, newRow)).toEqual([]);
   });
 
   it('should detect changes in nested objects via JSON comparison', () => {
     const oldRow = { id: '1', data: { a: 1 } };
     const newRow = { id: '1', data: { a: 2 } };
-    expect(getChangedKeys(oldRow, newRow)).toEqual(['data']);
+    expect(getChangedFields(oldRow, newRow)).toEqual(['data']);
   });
 
-  it('should return keys already in camelCase', () => {
+  it('should return fields already in camelCase', () => {
     const oldRow = { userId: '1', organizationId: 'old' };
     const newRow = { userId: '1', organizationId: 'new' };
-    expect(getChangedKeys(oldRow, newRow)).toEqual(['organizationId']);
+    expect(getChangedFields(oldRow, newRow)).toEqual(['organizationId']);
   });
 
-  it('should detect multiple changed keys', () => {
+  it('should detect multiple changed fields', () => {
     const oldRow = { id: '1', name: 'old', email: 'old@b.com', status: 'active' };
     const newRow = { id: '1', name: 'new', email: 'new@b.com', status: 'active' };
-    expect(getChangedKeys(oldRow, newRow)).toEqual(['name', 'email']);
+    expect(getChangedFields(oldRow, newRow)).toEqual(['name', 'email']);
   });
 });
 
@@ -97,26 +97,17 @@ describe('extractRowData', () => {
     expect(extractRowData(null as any)).toEqual({});
     expect(extractRowData(undefined as any)).toEqual({});
   });
-
-  it('should handle array format (legacy fallback)', () => {
-    const row = [
-      { name: 'id', value: '1' },
-      { name: 'name', value: 'test' },
-    ];
-    expect(extractRowData(row as any)).toEqual({ id: '1', name: 'test' });
-  });
 });
 
 describe('extractStxData', () => {
   it('should extract valid stx data', () => {
     const row = {
-      stx: { mutationId: 'mut-1', sourceId: 'src-1', version: 1, fieldVersions: { name: 1 } },
+      stx: { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaa' } },
     };
     expect(extractStxData(row)).toEqual({
       mutationId: 'mut-1',
       sourceId: 'src-1',
-      version: 1,
-      fieldVersions: { name: 1 },
+      fieldTimestamps: { name: '100:0001:aaa' },
     });
   });
 
@@ -132,12 +123,12 @@ describe('extractStxData', () => {
     expect(extractStxData({ stx: { mutationId: 123 } })).toBeNull();
   });
 
-  it('should default fieldVersions to empty object', () => {
+  it('should default fieldTimestamps to empty object', () => {
     const row = {
-      stx: { mutationId: 'mut-1', sourceId: 'src-1', version: 1 },
+      stx: { mutationId: 'mut-1', sourceId: 'src-1' },
     };
     const result = extractStxData(row);
-    expect(result?.fieldVersions).toEqual({});
+    expect(result?.fieldTimestamps).toEqual({});
   });
 });
 

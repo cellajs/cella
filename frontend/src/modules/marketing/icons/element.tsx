@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const ElementIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
@@ -8,6 +8,8 @@ export const ElementIcon = ({ className, ...props }: React.SVGProps<SVGSVGElemen
     height="24"
     viewBox="0 0 24 24"
     className={cn('size-6', className)}
+    role="img"
+    aria-label="Element"
     {...props}
   >
     <path

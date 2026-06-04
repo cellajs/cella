@@ -27,7 +27,7 @@ export const DataTableSkeleton = ({
 
   return (
     <div
-      className={`w-full space-y-3 overflow-auto duration-500 transition-opacity ${hasMounted ? 'opacity-100' : 'opacity-0'}`}
+      className={`w-full space-y-3 overflow-auto transition-opacity duration-500 ${hasMounted ? 'opacity-100' : 'opacity-0'}`}
     >
       <Table>
         <TableHeader>
@@ -41,7 +41,7 @@ export const DataTableSkeleton = ({
                     minWidth: shrinkTable ? cellsWidths[j] : 'auto',
                   }}
                 >
-                  <Skeleton className={'w-full mb-2 mt-2'} style={{ height: `${renderCellHeight}px` }} />
+                  <Skeleton className={'mt-2 mb-2 w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableHead>
               ))}
             </TableRow>

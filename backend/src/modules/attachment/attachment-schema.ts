@@ -1,16 +1,10 @@
 import { z } from '@hono/zod-openapi';
+import { schemaTags } from '#/core/openapi-helpers';
+import { createUpdateSchema } from '#/core/stx';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import {
-  batchResponseSchema,
-  maxLength,
-  paginationQuerySchema,
-  stxBaseSchema,
-  stxRequestSchema,
-  validNanoidSchema,
-} from '#/schemas';
+import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { createUpdateSchema } from '#/sync';
 import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
@@ -20,16 +14,17 @@ export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
     createdBy: userMinimalBaseSchema.nullable(),
-    modifiedBy: userMinimalBaseSchema.nullable(),
+    updatedBy: userMinimalBaseSchema.nullable(),
     stx: stxBaseSchema,
     viewCount: z.number().int().min(0).optional(),
   })
   .openapi('Attachment', {
-    description: 'A file attachment belonging to an organization.',
+    description: 'A product entity for file attachment metadata.',
     example: mockAttachmentResponse(),
+    'x-tags': schemaTags('data', 'attachments', 'cella'),
   });
 
-export const attachmentCreateBodySchema = attachmentInsertSchema
+const attachmentCreateBodySchema = attachmentInsertSchema
   .pick({
     id: true,
     name: true,
@@ -45,19 +40,22 @@ export const attachmentCreateBodySchema = attachmentInsertSchema
     thumbnailKey: true,
   })
   .extend({
-    id: validNanoidSchema.optional(),
+    id: validUuidSchema,
   });
 
 /** Create body with stx for single attachment creation */
-export const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({ stx: stxRequestSchema });
+const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({ stx: stxBaseSchema });
 
 /** Array schema for batch creates (1-50 attachments per request), each with own stx */
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
-/** Update body using key/data pattern for single-field updates with conflict detection */
-export const attachmentUpdateStxBodySchema = createUpdateSchema([z.literal('name'), z.literal('originalKey')]);
+/** Update body using fields pattern for single or multi-field updates with conflict detection */
+export const attachmentUpdateStxBodySchema = createUpdateSchema({
+  name: z.string().max(maxLength.field),
+  originalKey: z.string(),
+});
 
-// Response schemas: batch operations use { data, rejectedItemIds }, single returns entity directly
+// Response schemas: batch operations use { data, rejectedIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);

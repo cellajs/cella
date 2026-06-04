@@ -1,11 +1,12 @@
+import { useAlertStore } from '~/alerter/alert-store';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import type { MeUser } from '~/modules/me/types';
+import { useSeenStore } from '~/modules/seen/seen-store';
+import { useUIStore } from '~/modules/ui/ui-store';
+import { useUserStore } from '~/modules/user/user-store';
 import { persister, sessionPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
-import { useAlertStore } from '~/store/alert';
-import { useDraftStore } from '~/store/draft';
-import { useSeenStore } from '~/store/seen';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
 
 /**
  * Flushes sensitive stores and resets the application state.
@@ -21,6 +22,9 @@ export const flushStores = (removeAccount?: boolean) => {
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useUIStore.getState().setImpersonating(false);
+
+  // Clear attachment blobs and download queue from IDB
+  attachmentStorage.clearAll();
 
   if (!removeAccount) return;
   // Clear below on remove account

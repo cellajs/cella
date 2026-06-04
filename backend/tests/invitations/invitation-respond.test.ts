@@ -1,60 +1,46 @@
 import { eq } from 'drizzle-orm';
-import { testClient } from 'hono/testing';
+import { handleMembershipInvitation } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { defaultHeaders } from '../fixtures';
-import { createPasswordUser, createTestOrganization } from '../helpers';
-import { clearDatabase, mockFetchRequest, mockRateLimiter, setTestConfig } from '../test-utils';
+import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { createAppClient } from '../test-client';
+import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createMembershipInvitationToken } from './helpers';
 
 setTestConfig({
-  enabledAuthStrategies: ['password'],
-  registrationEnabled: true,
+  enabledAuthStrategies: ['passkey'],
+  selfRegistration: true,
 });
 
 beforeAll(async () => {
   mockFetchRequest();
-  mockRateLimiter();
 });
 
 afterEach(async () => await clearDatabase());
 
 describe('Invitation response', async () => {
-  const { default: app } = await import('#/routes');
-  const client = testClient(app) as any;
+  const call = await createAppClient();
 
   async function createOrg() {
     return await createTestOrganization();
   }
 
-  async function signInUser(email: string, password: string) {
-    const signInRes = await client['auth']['sign-in'].$post({ json: { email, password } }, { headers: defaultHeaders });
-    return signInRes.headers.get('set-cookie') || '';
-  }
-
-  async function respondToInvitation(
-    tenantId: string,
-    organizationId: string,
-    inactiveMembershipId: string,
-    action: 'accept' | 'reject',
-    sessionCookie: string,
-  ) {
-    return await (client as any)[tenantId][organizationId]['memberships'][inactiveMembershipId][action].$post(
-      {},
-      {
-        headers: {
-          ...defaultHeaders,
-          Cookie: sessionCookie,
-        },
+  async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'reject', sessionCookie: string) {
+    return await call(handleMembershipInvitation, {
+      path: { id: inactiveMembershipId, acceptOrReject: action },
+      headers: {
+        ...defaultHeaders,
+        Cookie: sessionCookie,
       },
-    );
+    });
   }
 
-  it('accept for existing user', async () => {
+  it('should accept for existing user', async () => {
     const organization = await createOrg();
-    const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
+    const invitedUser = await createTestUser('invited@example.com');
 
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
@@ -62,15 +48,9 @@ describe('Invitation response', async () => {
       'member',
       organization.tenantId,
     );
-    const sessionCookie = await signInUser('invited@cella.com', 'password123!');
+    const sessionCookie = await createTestSession(invitedUser);
 
-    const res = await respondToInvitation(
-      organization.tenantId,
-      organization.id,
-      inactiveMembership.id!,
-      'accept',
-      sessionCookie,
-    );
+    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
 
     expect(res.status).toBe(200);
 
@@ -86,9 +66,9 @@ describe('Invitation response', async () => {
     expect(remainingInactive).toHaveLength(0);
   });
 
-  it('accept with admin role', async () => {
+  it('should accept with admin role', async () => {
     const organization = await createOrg();
-    const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
+    const invitedUser = await createTestUser('invited@example.com');
 
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
@@ -96,15 +76,9 @@ describe('Invitation response', async () => {
       'admin',
       organization.tenantId,
     );
-    const sessionCookie = await signInUser('invited@cella.com', 'password123!');
+    const sessionCookie = await createTestSession(invitedUser);
 
-    const res = await respondToInvitation(
-      organization.tenantId,
-      organization.id,
-      inactiveMembership.id!,
-      'accept',
-      sessionCookie,
-    );
+    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
 
     expect(res.status).toBe(200);
 
@@ -113,9 +87,9 @@ describe('Invitation response', async () => {
     expect(memberships[0].role).toBe('admin');
   });
 
-  it('reject', async () => {
+  it('should reject invitation', async () => {
     const organization = await createOrg();
-    const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
+    const invitedUser = await createTestUser('invited@example.com');
 
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
@@ -123,15 +97,9 @@ describe('Invitation response', async () => {
       'member',
       organization.tenantId,
     );
-    const sessionCookie = await signInUser('invited@cella.com', 'password123!');
+    const sessionCookie = await createTestSession(invitedUser);
 
-    const res = await respondToInvitation(
-      organization.tenantId,
-      organization.id,
-      inactiveMembership.id!,
-      'reject',
-      sessionCookie,
-    );
+    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'reject', sessionCookie);
 
     expect(res.status).toBe(200);
 
@@ -148,27 +116,25 @@ describe('Invitation response', async () => {
   });
 
   it('should reject for non-existent invitation', async () => {
-    const organization = await createOrg();
-    await createPasswordUser('user@cella.com', 'password123!');
+    await createOrg();
+    const user = await createTestUser('user@example.com');
 
-    const sessionCookie = await signInUser('user@cella.com', 'password123!');
+    const sessionCookie = await createTestSession(user);
 
-    const res = await client[organization.tenantId][organization.id]['memberships']['non-existent-id']['accept'].$post(
-      {},
-      {
-        headers: {
-          ...defaultHeaders,
-          Cookie: sessionCookie,
-        },
+    const { response: res } = await call(handleMembershipInvitation, {
+      path: { id: '00000000-0000-0000-0000-000000000000', acceptOrReject: 'accept' },
+      headers: {
+        ...defaultHeaders,
+        Cookie: sessionCookie,
       },
-    );
+    });
 
     expect(res.status).toBe(404);
   });
 
   it('should reject for already processed invitation', async () => {
     const organization = await createOrg();
-    const invitedUser = await createPasswordUser('invited@cella.com', 'password123!');
+    const invitedUser = await createTestUser('invited@example.com');
 
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
@@ -176,24 +142,12 @@ describe('Invitation response', async () => {
       'member',
       organization.tenantId,
     );
-    const sessionCookie = await signInUser('invited@cella.com', 'password123!');
+    const sessionCookie = await createTestSession(invitedUser);
 
-    const firstRes = await respondToInvitation(
-      organization.tenantId,
-      organization.id,
-      inactiveMembership.id!,
-      'accept',
-      sessionCookie,
-    );
+    const { response: firstRes } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
     expect(firstRes.status).toBe(200);
 
-    const secondRes = await respondToInvitation(
-      organization.tenantId,
-      organization.id,
-      inactiveMembership.id!,
-      'accept',
-      sessionCookie,
-    );
+    const { response: secondRes } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
     expect(secondRes.status).toBe(404);
   });
 });

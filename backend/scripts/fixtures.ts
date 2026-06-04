@@ -1,8 +1,7 @@
 /**
- * Default admin user credentials used for seeding development environments.
+ * Default admin user used for seeding development environments.
  */
 export const defaultAdminUser = {
-  password: '12345678',
   email: 'admin-test@cellajs.com',
-  id: 'admin12345678',
+  id: '00000000-0000-4000-8000-000000000001',
 };

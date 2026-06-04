@@ -10,7 +10,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -20,11 +20,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             },
             "invitesSentCount": { "type": "number", "required": true }
           },
@@ -32,7 +28,7 @@
         },
         "example": {
           "data": [],
-          "rejectedItemIds": [],
+          "rejectedIds": [],
           "invitesSentCount": 2
         }
       },
@@ -62,6 +58,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -101,7 +104,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -111,11 +114,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -147,6 +146,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -188,30 +194,18 @@
           "description": "A user with profile data and activity timestamps.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["user"]
             },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
             "description": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -222,11 +216,7 @@
               "required": true,
               "maxLength": 2048
             },
-            "email": {
-              "type": "string",
-              "required": true,
-              "format": "email"
-            },
+            "email": { "type": "string", "required": true, "format": "email" },
             "mfaRequired": { "type": "boolean", "required": true },
             "firstName": {
               "type": ["string", "null"],
@@ -251,14 +241,14 @@
                 "finishedOnboarding": { "type": "boolean", "required": true }
               }
             },
-            "modifiedAt": {
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["string", "null"],
               "required": true,
-              "maxLength": 50
+              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -277,13 +267,13 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "7sfzetbhjls7m9dg1xzavv78",
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
-          "name": "Cecilia Hodkiewicz",
-          "firstName": "Cecilia",
+          "name": "Cathy Hodkiewicz",
+          "firstName": "Cathy",
           "lastName": "Hodkiewicz",
-          "email": "cecilia.hodkiewicz@hotmail.com",
-          "slug": "ceciliahodkiewicz17",
+          "email": "cathy.hodkiewicz@hotmail.com",
+          "slug": "cathyhodkiewicz17",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
@@ -292,8 +282,8 @@
           "mfaRequired": false,
           "userFlags": {},
           "createdAt": "2024-12-13T11:17:23.643Z",
-          "modifiedAt": "2024-12-13T11:17:23.643Z",
-          "modifiedBy": null,
+          "updatedAt": "2024-12-13T11:17:23.643Z",
+          "updatedBy": null,
           "lastStartedAt": "2024-12-13T11:17:23.643Z",
           "lastSignInAt": "2024-12-13T11:17:23.643Z",
           "lastSeenAt": "2024-12-13T11:17:23.643Z"
@@ -328,6 +318,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -338,11 +335,7 @@
     "request": {
       "path": {
         "properties": {
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -389,54 +382,6 @@
     }
   },
   {
-    "operationId": "paddleWebhook",
-    "responses": [
-      { "status": 204, "description": "Paddle webhook received" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "required": false,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
     "operationId": "sendNewsletter",
     "responses": [
       { "status": 204, "description": "Newsletter sent" },
@@ -466,6 +411,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -504,16 +456,8 @@
             "itemType": "string",
             "enum": ["admin", "member"]
           },
-          "subject": {
-            "type": "string",
-            "required": true,
-            "maxLength": 255
-          },
-          "content": {
-            "type": "string",
-            "required": true,
-            "maxLength": 1000000
-          }
+          "subject": { "type": "string", "required": true, "maxLength": 255 },
+          "content": { "type": "string", "required": true, "maxLength": 1000000 }
         },
         "required": true,
         "contentType": "application/json"

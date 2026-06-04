@@ -1,29 +1,17 @@
-import type { BlockNoteEditor } from '@blocknote/core';
-import { useExtensionState } from '@blocknote/react';
+import type { ReactCustomBlockRenderProps } from '@blocknote/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { checkboxesExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import type { checklistGroupConfig } from '~/modules/common/blocknote/custom-elements/checklist/checklist-group-block';
 
-interface ChecklistGroupRenderProps {
-  block: {
-    props: {
-      title: string;
-      collapsed: boolean;
-    };
-    children: Array<{ type: string; props: Record<string, any> }>;
-  };
-  editor: BlockNoteEditor<any, any, any>;
-}
+type ChecklistGroupRenderProps = ReactCustomBlockRenderProps<typeof checklistGroupConfig>;
 
 export function ChecklistGroupRender({ block, editor }: ChecklistGroupRenderProps) {
-  const { checkboxes } = useExtensionState(checkboxesExtension, { editor });
-
-  // Count checked children
-  const childItems = block.children?.filter((c) => c.type === 'checklistItem') ?? [];
-  const checkedCount = childItems.filter((c) => checkboxes?.find((cb) => cb.id === c.props.checkboxId)?.checked).length;
+  // Count checked children directly from block props
+  const childItems = block.children?.filter((c) => (c.type as string) === 'checklistItem') ?? [];
+  const checkedCount = childItems.filter((c) => (c.props as { checked?: boolean }).checked).length;
   const totalCount = childItems.length;
 
   const toggleCollapsed = () => {
-    (editor as any).updateBlock(block as any, {
+    editor.updateBlock(block, {
       props: { collapsed: !block.props.collapsed },
     });
   };
@@ -31,7 +19,7 @@ export function ChecklistGroupRender({ block, editor }: ChecklistGroupRenderProp
   const handleTitleChange = (e: React.FocusEvent<HTMLSpanElement>) => {
     const newTitle = e.currentTarget.textContent ?? '';
     if (newTitle !== block.props.title) {
-      (editor as any).updateBlock(block as any, {
+      editor.updateBlock(block, {
         props: { title: newTitle },
       });
     }

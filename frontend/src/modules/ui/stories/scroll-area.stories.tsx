@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
 /**

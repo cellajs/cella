@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '../..');
 
 // Load .env variables from the parent directory
-dotenv.config({ path: resolve(parentDir, '.env') });
+dotenv.config({ path: resolve(parentDir, '.env'), quiet: true });
 
 /**
  * Start Drizzle Studio programmatically.

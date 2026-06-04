@@ -1,23 +1,12 @@
 /**
  * Console Utilities
  *
- * Shared console output helpers for consistent logging.
+ * Re-exports shared console marks and provides backend-specific spinner utilities.
  */
 
 import ora, { type Ora } from 'ora';
-import pc from 'picocolors';
 
-/** Green checkmark prefix for success messages */
-export const checkMark = pc.bold(pc.greenBright('✔'));
-
-/** Cross mark for error messages */
-export const crossMark = pc.bold(pc.redBright('✖'));
-
-/** Pencil mark for change notifications */
-export const changeMark = pc.bold(pc.yellowBright('✎'));
-
-/** Loading spinner for ongoing operations (static fallback) */
-export const loadingMark = pc.bold(pc.cyan('↻'));
+export { changeMark, checkMark, crossMark, loadingMark, tildeMark, timestamp, warningMark } from 'shared/console';
 
 // ============================================================================
 // Spinner Utilities
@@ -64,18 +53,4 @@ export function warnSpinner(message?: string): void {
     activeSpinner.warn(message);
     activeSpinner = null;
   }
-}
-
-/**
- * Update the active spinner text.
- */
-export function updateSpinner(message: string): void {
-  if (activeSpinner) activeSpinner.text = message;
-}
-
-/**
- * Log a success message with a green checkmark prefix.
- */
-export function logSuccess(message: string): void {
-  console.info(`${checkMark} ${message}`);
 }

@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
+import type { ContextEntityBase } from 'sdk';
 import type { EntityType } from 'shared';
-import type { ContextEntityBase } from '~/api.gen';
 import type {
   ArbitraryEntityQueryData,
   EntityIdAndType,
@@ -13,10 +13,7 @@ import { queryClient } from '~/query/query-client';
 import { getQueryKeySortOrder } from './get-query-key-sort-order';
 
 /**
- * Determines if the given data matches the structure of ArbitraryEntityQueryData.
- *
- * @param data - The data to check.
- * @returns True if the data is ArbitraryEntityQueryData, false otherwise.
+ * Type guard for ArbitraryEntityQueryData (an object whose values are entity refs or arrays of entity refs).
  */
 export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQueryData => {
   if (typeof data !== 'object' || data === null) return false;
@@ -31,17 +28,21 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
 };
 
 /**
- * Updates the infinite query data based on the specified action.
- *
- * @param queryKey - Query key.
- * @param items - items to update.
- * @param action - `"create" | "update" | "remove"`
+ * Apply a `create | update | remove` action to all pages of an infinite query for `queryKey`.
  */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   const { order: insertOrder } = getQueryKeySortOrder(queryKey);
 
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;
+
+    // Bail out early if none of the items exist in this query — returning the
+    // same reference prevents React Query from notifying observers.
+    if (action === 'update' || action === 'remove') {
+      const updateIds = new Set(items.map((i) => i.id));
+      const hasMatch = data.pages.some((page) => page.items.some((item) => updateIds.has(item.id)));
+      if (!hasMatch) return data;
+    }
 
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
@@ -57,15 +58,18 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
 };
 
 /**
- * Updates the query data based on the specified action.
- *
- * @param queryKey - Query key.
- * @param items - items to update.
- * @param action - `"create" | "update" | "remove"`
+ * Apply a `create | update | remove` action to a standard (non-infinite) query for `queryKey`.
  */
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
     if (!data) return;
+
+    // Bail out early if none of the items exist in this query — returning the
+    // same reference prevents React Query from notifying observers.
+    if (action === 'update' || action === 'remove') {
+      const updateIds = new Set(items.map((i) => i.id));
+      if (!data.items.some((existing) => updateIds.has(existing.id))) return data;
+    }
 
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
@@ -79,13 +83,9 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
 };
 
 /**
- * Updates arbitrary query data based on the specified action.
- *
- * @param queryKey - Query key.
- * @param items - items to update.
- * @param action - `"create" | "update" | "remove"`
- * @param entityType - Entity type to update the data for.
- * @param keyToOperateIn - Optional key to specify which part of the data to update.
+ * Apply a `create | update | remove` action to arbitrary query data, scoped by `entityType`.
+ * When `keyToOperateIn` is provided, only that key is updated; otherwise all matching
+ * entries (by `entityType`) across the data shape are updated.
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
@@ -125,14 +125,7 @@ export const changeArbitraryQueryData = (
   });
 };
 
-/**
- * Helper function to update an array of items based on the action.
- *
- * @param items - Current items to update.
- * @param dataItems - Items to merge into current items.
- * @param action - `"create" | "update" | "remove"`
- * @returns The updated array of items.
- */
+// Apply create/update/remove to an items array, optionally inserting new items in `insertOrder`.
 const updateArrayItems = <T extends ItemData>(
   items: T[],
   dataItems: T[],
@@ -143,20 +136,21 @@ const updateArrayItems = <T extends ItemData>(
   switch (action) {
     case 'create': {
       // Filter out already existing items based on their IDs
-      const existingIds = items.map(({ id }) => id);
-      const newItems = dataItems.filter((i) => !existingIds.includes(i.id));
+      const existingIds = new Set(items.map(({ id }) => id));
+      const newItems = dataItems.filter((i) => !existingIds.has(i.id));
       // Concatenate to add only new entries
       return insertOrder === 'asc' ? [...items, ...newItems] : [...newItems, ...items];
     }
 
-    case 'update':
-      // update existing items in dataItems
-      return items.map((item) => dataItems.find((i) => i.id === item.id) ?? item);
+    case 'update': {
+      const updates = new Map(dataItems.map((i) => [i.id, i]));
+      return items.map((item) => updates.get(item.id) ?? item);
+    }
 
     case 'remove': {
       // Exclude items matching IDs in dataItems
-      const deleteIds = dataItems.map(({ id }) => id);
-      return items.filter((item) => !deleteIds.includes(item.id));
+      const deleteIds = new Set(dataItems.map(({ id }) => id));
+      return items.filter((item) => !deleteIds.has(item.id));
     }
 
     default:
@@ -165,14 +159,7 @@ const updateArrayItems = <T extends ItemData>(
   }
 };
 
-/**
- * Helper function to update a single item based on the action.
- *
- * @param prevItem - Previous item to update.
- * @param newItem - New item to merge.
- * @param action - `"create" | "update" | "remove"`
- * @returns The updated item.
- */
+// Apply an action to a single item: merges fields on update, returns prev item otherwise.
 const updateItem = <T extends ItemData>(prevItem: T, newItem: T, action: QueryDataActions) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {

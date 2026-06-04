@@ -1,4 +1,4 @@
-import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/carousel';
+import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import router from '~/routes/router';
 
@@ -14,7 +14,7 @@ interface OpenAttachmentDialogParams {
  */
 export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef }: OpenAttachmentDialogParams) => {
   useDialoger.getState().create(
-    <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
+    <div className="relative -z-1 flex h-screen grow flex-wrap justify-center p-2">
       <AttachmentsCarousel items={attachments} isDialog itemIndex={attachmentIndex} saveInSearchParams={false} />
     </div>,
     {
@@ -23,7 +23,7 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
         current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
       },
       drawerOnMobile: false,
-      className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
+      className: 'min-w-full h-dvh max-sm:max-h-[100dvh] border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
     },
   );

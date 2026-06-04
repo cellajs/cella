@@ -23,6 +23,8 @@ export interface GenExtensionDefinition {
   id: string;
   /** Description of the extension's purpose */
   description: string;
+  /** Whether this extension is middleware or metadata */
+  kind: 'middleware' | 'metadata';
   /** Optional metadata for each value (e.g., each limiter's description) */
   values?: Record<string, GenExtensionValueMetadata>;
 }
@@ -47,6 +49,8 @@ export interface GenOperationSummary {
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */
   extensions: Record<string, string[]>;
+  /** Tags grouped by their kind (e.g., { module: ['tasks'], ownership: ['app'] }) */
+  tagsByKind: Record<string, string[]>;
   /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */
   entityType?: string;
 }
@@ -58,6 +62,7 @@ export interface GenTagSummary {
   name: string;
   description?: string;
   count: number;
+  kind?: string;
 }
 
 /**
@@ -78,7 +83,7 @@ export interface GenInfoSummary {
  */
 export interface GenSchemaProperty {
   /** Property type (string, number, boolean, object, array, or array for nullable like ['string', 'null']). Omitted when anyOf/oneOf is present. */
-  type?: string | string[];
+  type?: string | readonly string[];
   /** Property description from OpenAPI spec */
   description?: string;
   /** Whether this property is required (inline, not in separate array). Omitted for array items. */
@@ -86,7 +91,7 @@ export interface GenSchemaProperty {
   /** Format constraint (e.g., 'email', 'date-time') */
   format?: string;
   /** Enum values if this is an enum type (can include null for nullable enums) */
-  enum?: (string | number | boolean | null)[];
+  enum?: readonly (string | number | boolean | null)[];
   /** Minimum value for numbers */
   minimum?: number;
   /** Maximum value for numbers */
@@ -104,7 +109,7 @@ export interface GenSchemaProperty {
   /** Value schema for record/map types (from OpenAPI additionalProperties) */
   additionalProperties?: GenSchemaProperty;
   /** Item type for array types (unwrapped from items.type) */
-  itemType?: string | string[];
+  itemType?: string | readonly string[];
   /** Items schema for array types (only for complex nested objects/arrays) */
   items?: GenSchemaProperty;
   /** Reference path if this was dereferenced (e.g., '#/components/schemas/User') */
@@ -127,7 +132,7 @@ export interface GenSchemaProperty {
  */
 export interface GenSchema {
   /** Schema type (object, array, string, etc.). Omitted when anyOf/oneOf is present. */
-  type?: string | string[];
+  type?: string | readonly string[];
   /** Schema description from OpenAPI spec */
   description?: string;
   /** Original reference path if dereferenced */
@@ -151,11 +156,11 @@ export interface GenSchema {
   /** Value schema for record/map types (from OpenAPI additionalProperties) */
   additionalProperties?: GenSchemaProperty;
   /** Item type for array types (unwrapped from items.type) */
-  itemType?: string | string[];
+  itemType?: string | readonly string[];
   /** Items schema for array types (only for complex nested objects/arrays) */
   items?: GenSchemaProperty;
   /** Enum values if this is an enum type (can include null for nullable enums) */
-  enum?: (string | number | boolean | null)[];
+  enum?: readonly (string | number | boolean | null)[];
   /** Minimum items for arrays */
   minItems?: number;
   /** Maximum items for arrays */
@@ -197,7 +202,7 @@ export interface GenRequestSection {
   /** Content type for body (e.g., 'application/json') */
   contentType?: string;
   /** Schema type (for array/object body types) */
-  type?: string | string[];
+  type?: string | readonly string[];
   /** Schema description from OpenAPI spec */
   description?: string;
   /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
@@ -217,9 +222,9 @@ export interface GenRequestSection {
   /** Items schema for array body types */
   items?: GenSchemaProperty;
   /** Item type for array body types */
-  itemType?: string | string[];
+  itemType?: string | readonly string[];
   /** Enum values for body */
-  enum?: (string | number | boolean | null)[];
+  enum?: readonly (string | number | boolean | null)[];
   /** Minimum items for arrays */
   minItems?: number;
   /** Maximum items for arrays */
@@ -261,20 +266,13 @@ export interface GenOperationDetail {
 }
 
 /**
- * Schema tag for categorizing schemas in the docs UI.
- * - base: Base schemas with fundamental entity fields (name contains 'Base')
- * - errors: Error response schemas (name contains 'Error')
- * - data: All other data schemas for API responses and requests
- */
-export type SchemaTag = 'base' | 'data' | 'errors';
-
-/**
  * Schema tag summary with description and count.
+ * Schema tags are configured backend-side as registered tags with `kind: 'schema'`.
  * Used for schema tag navigation and filtering.
  */
 export interface GenSchemaTagSummary {
-  /** Tag name identifier */
-  name: SchemaTag;
+  /** Tag name identifier (e.g. 'base', 'data', 'errors') */
+  name: string;
   /** Description of what schemas this tag contains */
   description: string;
   /** Number of schemas with this tag */
@@ -293,13 +291,15 @@ export interface GenComponentSchema {
   /** Schema description if available */
   description?: string;
   /** Schema type (object, array, string, etc.). Omitted when anyOf/oneOf is present. */
-  type?: string | string[];
+  type?: string | readonly string[];
   /** Resolved schema with full property details */
   schema: GenSchema;
   /** Whether this schema extends another via allOf */
   extendsRef?: string;
-  /** Schema tag for categorization (base, data, errors) */
-  schemaTag: SchemaTag;
+  /** Schema tag for categorization — name of a backend-registered `kind: 'schema'` tag. */
+  schemaTag: string;
+  /** Tags grouped by their kind (e.g., { module: ['pages'], ownership: ['cella'], schema: ['data'] }). */
+  tagsByKind: Record<string, string[]>;
   /** References to this schema from operations (operationIds that use it) */
   usedBy?: string[];
   /** Example value from OpenAPI spec */

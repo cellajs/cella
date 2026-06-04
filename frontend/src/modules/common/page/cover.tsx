@@ -32,7 +32,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
 
   // Open upload dialog
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
     upload.create({
       id: 'page-cover',
       isPublic: true,
@@ -46,13 +46,13 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
           upload.remove();
         },
       },
-      title: t('common:upload_item', { item: t('common:cover').toLowerCase() }),
+      title: t('c:upload_item', { item: t('c:cover').toLowerCase() }),
     });
   };
   return (
     <div
       data-url={!!url}
-      className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
+      className={`relative flex h-32 bg-center bg-cover ${numberToColorClass(id)} min-h-40 data-[url=true]:h-[20vw] sm:min-w-52`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (
@@ -60,11 +60,11 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
           ref={uploadButtonRef}
           variant="secondary"
           size="sm"
-          className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"
+          className="relative top-3 mx-auto opacity-50 hover:bg-secondary hover:opacity-80"
           onClick={openUploadDialog}
         >
           <UploadIcon size={16} className="mr-2" />
-          <span>{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>
+          <span>{t('c:upload_item', { item: t('c:cover').toLowerCase() })}</span>
         </Button>
       )}
     </div>

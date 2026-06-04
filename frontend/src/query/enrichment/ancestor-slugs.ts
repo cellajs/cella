@@ -1,24 +1,11 @@
+import type { MembershipBase } from 'sdk';
 import { appConfig, type ContextEntityType } from 'shared';
-import type { MembershipBase } from '~/api.gen';
 import type { AncestorSlugs } from '~/modules/entities/types';
-import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { getField } from '~/query/enrichment/helpers';
-import type { EnrichableEntity, InfiniteData } from '~/query/enrichment/types';
-import { queryClient } from '~/query/query-client';
+import type { EnrichableEntity } from '~/query/enrichment/types';
+import { getField } from '~/utils/get-field';
 
-/** Find an entity's slug by scanning list caches for that entity type */
-function findEntitySlugInCache(entityType: ContextEntityType, entityId: string): string | null {
-  const keys = getEntityQueryKeys(entityType);
-
-  for (const [, data] of queryClient.getQueriesData<InfiniteData>({ queryKey: keys.list.base })) {
-    if (!data?.pages) continue;
-    for (const page of data.pages) {
-      const found = page.items?.find((item) => item.id === entityId);
-      if (found?.slug) return found.slug;
-    }
-  }
-  return null;
-}
+/** entityType → entityId → slug */
+export type SlugIndex = Map<string, Map<string, string>>;
 
 /** Check if ancestor slugs maps differ */
 function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | null): boolean {
@@ -30,13 +17,14 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
 }
 
 /**
- * Enrich an item with ancestor slugs by walking up the hierarchy config.
- * Falls back to ancestor ID when slug isn't cached — rewriteUrlToSlug corrects the URL later.
+ * Enrich an item with ancestor slugs using a pre-built slug index.
+ * Falls back to ancestor ID when slug isn't indexed — rewriteUrlToSlug corrects the URL later.
  * Returns the original reference when nothing changed.
  */
 export function enrichWithAncestorSlugs(
   item: EnrichableEntity,
   ancestors: readonly ContextEntityType[],
+  slugIndex: SlugIndex,
 ): EnrichableEntity {
   if (ancestors.length === 0) return item;
 
@@ -49,7 +37,7 @@ export function enrichWithAncestorSlugs(
     if (!idKey) continue;
     const ancestorId = getField(membership, idKey) ?? getField(item, idKey);
     if (typeof ancestorId !== 'string') continue;
-    slugs[ancestorType] = findEntitySlugInCache(ancestorType, ancestorId) ?? ancestorId;
+    slugs[ancestorType] = slugIndex.get(ancestorType)?.get(ancestorId) ?? ancestorId;
     found = true;
   }
 

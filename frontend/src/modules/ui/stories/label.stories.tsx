@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { Label } from '~/modules/ui/label';
 
 /**

@@ -183,7 +183,7 @@ export const FullFeatured: Story = {
 
     return (
       <div className="w-full max-w-md space-y-4">
-        <div className="text-sm text-muted-foreground">Full-featured tag input with all options enabled</div>
+        <div className="text-muted-foreground text-sm">Full-featured tag input with all options enabled</div>
         <TagInput
           tags={tags}
           setTags={setTags}
@@ -203,7 +203,7 @@ export const FullFeatured: Story = {
           onTagClick={handleTagClick}
           validateTag={(tag) => !tag.includes('invalid') && tag.length >= 2}
         />
-        <div className="text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-xs">
           <div>• Type and press Enter to add</div>
           <div>• Click tags to interact</div>
           <div>• Paste comma-separated values</div>

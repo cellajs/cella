@@ -1,5 +1,5 @@
 import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog';
-import * as React from 'react';
+import type * as React from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -20,7 +20,7 @@ function AlertDialogOverlay({ className, ...props }: React.ComponentProps<'div'>
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-50 bg-black/50 data-closed:animate-out data-open:animate-in',
         className,
       )}
       {...props}
@@ -43,7 +43,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          'group/alert-dialog-content bg-background data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg',
+          'group/alert-dialog-content data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 focus-visible:outline-none data-[size=sm]:max-w-xs data-closed:animate-out data-open:animate-in data-[size=default]:sm:max-w-lg',
           className,
         )}
         {...props}
@@ -82,7 +82,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn('text-lg font-semibold', className)}
+      className={cn('font-semibold text-lg', className)}
       {...props}
     />
   );
@@ -124,9 +124,12 @@ function AlertDialogAction({
   size?: 'default' | 'sm' | 'lg';
 }) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Close data-slot="alert-dialog-action" className={cn(className)} {...props} />
-    </Button>
+    <Button
+      variant={variant}
+      size={size}
+      render={<AlertDialogPrimitive.Close data-slot="alert-dialog-action" className={cn(className)} />}
+      {...props}
+    />
   );
 }
 
@@ -140,20 +143,23 @@ function AlertDialogCancel({
   size?: 'default' | 'sm' | 'lg';
 }) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" className={cn(className)} {...props} />
-    </Button>
+    <Button
+      variant={variant}
+      size={size}
+      render={<AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" className={cn(className)} />}
+      {...props}
+    />
   );
 }
 
 export {
   AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 };

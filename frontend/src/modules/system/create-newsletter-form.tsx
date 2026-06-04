@@ -4,15 +4,16 @@ import { InfoIcon, SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+// biome-ignore lint/style/noRestrictedImports: colocated mutation — single-use admin newsletter send.
+import { type SendNewsletterData, type SendNewsletterResponse, sendNewsletter } from 'sdk';
+import { zSendNewsletterBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { type SendNewsletterData, SendNewsletterResponse, sendNewsletter } from '~/api.gen';
-import { zSendNewsletterData } from '~/api.gen/zod.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { AlertBanner } from '~/alerter/alert-banner';
 import type { ApiError } from '~/lib/api';
-import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import BlockNoteContentFormField from '~/modules/common/form-fields/blocknote';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
@@ -24,7 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import type { MutationData } from '~/query/types';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
-const formSchema = zSendNewsletterData.shape.body;
+const formSchema = zSendNewsletterBody;
 
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
@@ -56,9 +57,9 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
       return await sendNewsletter({ body, query });
     },
     onSuccess: () => {
-      if (testOnly) return toaster(t('common:success.test_email'), 'success');
+      if (testOnly) return toaster(t('c:success.test_email'), 'success');
       form.reset();
-      toaster(t('common:success.create_newsletter'), 'success');
+      toaster(t('c:success.create_newsletter'), 'success');
       useSheeter.getState().remove(formContainerId);
       callback?.({ status: 'success' });
     },
@@ -92,20 +93,20 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="space-y-6 pb-8 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="h-max space-y-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"
           name="subject"
-          placeholder={t('common:placeholder.subject')}
-          label={t('common:subject')}
+          placeholder={t('c:placeholder.subject')}
+          label={t('c:subject')}
           required
         />
 
         <BlockNoteContentFormField
           control={form.control}
           name="content"
-          label={t('common:message')}
+          label={t('c:message')}
           required
           autoFocus
           baseBlockNoteProps={{
@@ -113,7 +114,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
             trailingBlock: false,
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
-            baseFilePanelProps: { isPublic: true, tenantId: 'public', organizationId: 'adminPreview' },
+            baseFilePanelProps: { isPublic: true, organizationId: 'adminPreview' },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
         />
@@ -124,7 +125,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                {t('common:roles')}
+                {t('c:roles')}
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
               <FormControl>
@@ -136,34 +137,33 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" icon={InfoIcon} animate>
-            {t('common:test_email.text')}
-          </AlertWrap>
+          <AlertBanner id="test-email" variant="plain" icon={InfoIcon} animate>
+            {t('c:test_email.text')}
+          </AlertBanner>
         )}
 
-        <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
-          <SubmitButton disabled={!canSend()} loading={isPending}>
-            <SendIcon size={16} className="mr-2" />
-            {testOnly ? t('common:send_test_email') : t('common:send')}
+        <div className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
+          <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon size={16} />}>
+            {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
           <Button
             type="reset"
             variant="secondary"
             className={isDirty() ? '' : 'invisible'}
-            aria-label={t('common:cancel')}
+            aria-label={t('c:cancel')}
             onClick={cancel}
           >
-            {t('common:cancel')}
+            {t('c:cancel')}
           </Button>
-          <div className="max-sm:mt-2 flex gap-2 items-center">
+          <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox
               id="testOnly"
               checked={testOnly}
               onCheckedChange={(value) => setTestOnly(value)}
-              className="size-4 ml-4"
+              className="ml-4 size-4"
             />
             <label htmlFor="testOnly" className="items-center text-sm">
-              {t('common:test_email')}
+              {t('c:test_email')}
             </label>
           </div>
         </div>

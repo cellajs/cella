@@ -8,31 +8,21 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import pc from 'picocolors';
+import process from 'node:process';
 import { parseCli } from './cli';
-import type { MergeResult, RuntimeConfig } from './config/types';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
-import { pushContribBranch, pushPinnedBranch } from './services/contribute';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
 import { runInspect } from './services/inspect';
 import { runPackages } from './services/packages';
+import { runStats } from './services/stats';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
+import pc from './utils/colors';
 import { loadConfig } from './utils/config';
+import { warningMark } from './utils/display';
 import { getCurrentBranch, isClean } from './utils/git';
-
-/**
- * Auto-contribute drifted and diverged files if enabled in config.
- */
-async function autoContribute(result: MergeResult, config: RuntimeConfig): Promise<void> {
-  if (!config.settings.autoContribute) return;
-  const contributable = result.files.filter((f) => f.status === 'drifted' || f.status === 'diverged');
-  if (contributable.length > 0) {
-    await pushContribBranch(contributable, config);
-  }
-}
 
 /**
  * Determine the fork path.
@@ -68,7 +58,7 @@ function getForkPath(): string {
  */
 async function preflight(
   forkPath: string,
-  forkBranch: string,
+  workingBranch: string,
   options: { skipCleanCheck?: boolean; warnOnBranch?: boolean } = {},
 ): Promise<void> {
   // Check we're in a git repository
@@ -78,13 +68,13 @@ async function preflight(
 
   // Check we're on the correct branch
   const currentBranch = await getCurrentBranch(forkPath);
-  if (currentBranch !== forkBranch) {
+  if (currentBranch !== workingBranch) {
     if (options.warnOnBranch) {
       console.warn(
-        `${pc.yellow('⚠')} not on branch '${forkBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
+        `${warningMark} not on branch '${workingBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
       );
     } else {
-      throw new Error(`must be on branch '${forkBranch}' to sync. currently on '${currentBranch}'.`);
+      throw new Error(`must be on branch '${workingBranch}' to sync. currently on '${currentBranch}'.`);
     }
   }
 
@@ -114,48 +104,10 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // --contribute flag: quick non-interactive push of drifted files
-    if (config.contribute) {
-      if (!config.settings.upstreamLocalPath) {
-        throw new Error('upstreamLocalPath is required in cella.config.ts to use --contribute');
-      }
-      await preflight(forkPath, userConfig.settings.forkBranch, { skipCleanCheck: true, warnOnBranch: true });
-
-      const { basename } = await import('node:path');
-      const forkName = basename(forkPath);
-      console.info(
-        pc.cyan(`contributing: analyze → update contrib/${forkName} in upstream and upstream/pinned in repo`),
-      );
-      console.info();
-
-      const { runMergeEngine } = await import('./services/merge-engine');
-      const { createSpinner, spinnerSuccess, spinnerText } = await import('./utils/display');
-
-      createSpinner('analyzing drifts...');
-      const result = await runMergeEngine(config, {
-        apply: false,
-        onProgress: (msg) => spinnerText(msg),
-        onStep: (label, detail) => {
-          spinnerSuccess(label, detail);
-          createSpinner('...');
-        },
-      });
-      spinnerSuccess();
-
-      const contributable = result.files.filter((f) => f.status === 'drifted' || f.status === 'diverged');
-      if (contributable.length > 0) {
-        await pushContribBranch(contributable, config);
-      } else {
-        console.info(pc.dim('no drifted or diverged files to contribute.'));
-      }
-      await pushPinnedBranch(config);
-      return;
-    }
-
-    // Run preflight checks (except for packages/audit/forks/contributions which don't need clean working dir)
-    if (!['packages', 'audit', 'forks', 'contributions'].includes(config.service)) {
+    // Run preflight checks (except for packages/audit/forks/contributions/stats which don't need clean working dir)
+    if (!['packages', 'audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze' || config.service === 'inspect';
-      await preflight(forkPath, userConfig.settings.forkBranch, {
+      await preflight(forkPath, userConfig.settings.workingBranch, {
         skipCleanCheck: isReadOnly,
         warnOnBranch: isReadOnly,
       });
@@ -164,9 +116,7 @@ async function main(): Promise<void> {
     // Route to service
     switch (config.service) {
       case 'analyze': {
-        const analyzeResult = await runAnalyze(config);
-        await autoContribute(analyzeResult, config);
-        await pushPinnedBranch(config);
+        await runAnalyze(config);
         break;
       }
 
@@ -179,8 +129,6 @@ async function main(): Promise<void> {
         if (config.settings.syncWithPackages !== false && result.success) {
           await runPackages(config);
         }
-        await autoContribute(result, config);
-        await pushPinnedBranch(config);
         break;
       }
 
@@ -189,7 +137,7 @@ async function main(): Promise<void> {
         break;
 
       case 'audit':
-        await runAudit(config, { force: config.force });
+        await runAudit(config, { force: config.force, checkOverrides: config.checkOverrides });
         break;
 
       case 'forks':
@@ -198,6 +146,10 @@ async function main(): Promise<void> {
 
       case 'contributions':
         await runContributions(config);
+        break;
+
+      case 'stats':
+        await runStats(config.forkPath, { verbose: config.verbose, refreshCoverage: config.coverage });
         break;
     }
 

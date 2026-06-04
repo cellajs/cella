@@ -1,32 +1,18 @@
-import { t } from 'i18next';
-import { SquirrelIcon } from 'lucide-react';
-import { UserBase } from '~/api.gen';
-import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import type { UserBase } from 'sdk';
 import { OrganizationsGrid } from '~/modules/organization/organizations-grid';
 
 interface Props {
   user: UserBase;
-  orgId?: string;
+  organizationId?: string;
   isSheet?: boolean;
 }
 
 /**
  * This is a placeholder component for the user profile content
  **/
-function UserProfileContent({ isSheet, user, orgId }: Props) {
-  const hasOrgContext = !!orgId;
-
-  if (!hasOrgContext)
-    return (
-      <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
-    );
-
+function UserProfileContent({ isSheet, user }: Props) {
   return (
-    <ContentPlaceholder
-      icon={SquirrelIcon}
-      title="common:no_resource_yet"
-      titleProps={{ resource: t('common:organizations').toLowerCase() }}
-    />
+    <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
   );
 }
 

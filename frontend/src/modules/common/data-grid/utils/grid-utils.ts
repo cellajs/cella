@@ -23,14 +23,14 @@ export function assertIsValidKeyGetter<R, K extends React.Key>(
 }
 
 export function clampColumnWidth<R, SR>(width: number, { minWidth, maxWidth }: CalculatedColumn<R, SR>): number {
-  width = max(width, minWidth);
+  const clampedWidth = max(width, minWidth);
 
   // ignore maxWidth if it less than minWidth
   if (typeof maxWidth === 'number' && maxWidth >= minWidth) {
-    return min(width, maxWidth);
+    return min(clampedWidth, maxWidth);
   }
 
-  return width;
+  return clampedWidth;
 }
 
 export function getHeaderCellRowSpan<R, SR>(column: CalculatedColumnOrColumnGroup<R, SR>, rowIdx: number) {

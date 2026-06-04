@@ -9,9 +9,9 @@ export function Spinner({ className = '', noDelay = false }) {
     <div
       data-started={hasStarted}
       data-delay={noDelay}
-      className="duration-300 transition-all data-[started=false]:data-[delay=false]:opacity-0 group"
+      className="group transition-all duration-300 data-[started=false]:data-[delay=false]:opacity-0"
     >
-      <Loader2Icon className={cn('opacity-50 text-foreground mx-auto h-6 w-6 animate-spin', className)} />
+      <Loader2Icon className={cn('mx-auto h-6 w-6 animate-spin text-foreground opacity-50', className)} />
     </div>
   );
 }

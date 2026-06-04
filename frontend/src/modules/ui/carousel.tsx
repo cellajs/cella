@@ -1,4 +1,4 @@
-import { cva, VariantProps } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import * as React from 'react';
@@ -148,7 +148,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<'div'>) {
   const { carouselRef, orientation } = useCarousel();
 
   return (
-    <div ref={carouselRef} className="overflow-hidden h-full" data-slot="carousel-content">
+    <div ref={carouselRef} className="h-full overflow-hidden" data-slot="carousel-content">
       <div className={cn('flex', orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col', className)} {...props} />
     </div>
   );
@@ -265,7 +265,7 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   }, [api]);
 
   return (
-    <div role="tablist" className={cn('mx-2 flex justify-center cursor-default', className)} {...props}>
+    <div role="tablist" className={cn('mx-2 flex cursor-default justify-center', className)} {...props}>
       {Array.from({ length }).map((_, index) => (
         <button
           type="button"
@@ -279,7 +279,7 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
           onClick={() => api?.scrollTo(index)}
           className={cn(
             dotsVariants({ size, gap, className }),
-            'cursor-pointer leading-3 focus-effect',
+            'focus-effect cursor-pointer leading-3',
             current === index ? 'text-foreground' : 'text-muted',
           )}
         >

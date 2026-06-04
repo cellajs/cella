@@ -7,7 +7,6 @@ import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachme
 export const FileOpenPreviewButton = () => {
   const ref = useRef(null);
   const editor = useBlockNoteEditor(customSchema);
-  // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
 
   const selectedBlocks = useSelectedBlocks(editor);

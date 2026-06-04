@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
+import { getTokenData } from 'sdk';
 import type { TokenType } from 'shared';
-import { getTokenData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 

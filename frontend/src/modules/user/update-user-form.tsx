@@ -1,13 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { User } from 'sdk';
+import { zUpdateUserBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import type { User } from '~/api.gen';
-import { zUpdateUserData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
@@ -22,9 +22,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUserUpdateMutation } from '~/modules/user/query';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
-const formSchema = zUpdateUserData.shape.body.unwrap();
+const formSchema = zUpdateUserBody;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -65,9 +65,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
     if (!user) return;
 
     const onSuccess = (updatedUser: User) => {
-      const message = isSelf
-        ? t('common:success.profile_updated')
-        : t('common:success.update_item', { item: t('common:user') });
+      const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_item', { item: t('c:user') });
       toaster(message, 'success');
 
       form.reset(updatedUser);
@@ -89,29 +87,29 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
         <AvatarFormField
           form={form}
-          label={children ? '' : t('common:profile_picture')}
+          label={children ? '' : t('c:profile_picture')}
           type="user"
           name="thumbnailUrl"
           entity={user}
         />
         {/* Personal fields only shown for self — admins edit avatar/slug only */}
         {isSelf && (
-          <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
+          <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
             <InputFormField
               inputClassName="border"
               control={form.control}
               name="firstName"
-              label={t('common:first_name')}
+              label={t('c:first_name')}
               required
             />
             <InputFormField
               inputClassName="border"
               control={form.control}
               name="lastName"
-              label={t('common:last_name')}
+              label={t('c:last_name')}
               required
             />
           </div>
@@ -122,15 +120,15 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
             <SlugFormField
               control={form.control}
               entityType="user"
-              label={t('common:resource_handle', { resource: t('common:user') })}
-              description={t('common:user_handle.text')}
+              label={t('c:resource_handle', { resource: t('c:user') })}
+              description={t('c:user_handle.text')}
               previousSlug={user.slug}
             />
 
             {isSelf && (
               <>
-                <div className="flex-col flex gap-2">
-                  <Label>{t('common:email')}</Label>
+                <div className="flex flex-col gap-2">
+                  <Label>{t('c:email')}</Label>
                   <Input value={currentUser.email} autoComplete="off" disabled />
                 </div>
 
@@ -140,16 +138,14 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
                   render={({ field }) => (
                     <FormItem name="language">
                       <FormLabel>
-                        {t('common:language')}
+                        {t('c:language')}
                         <span className="ml-1 opacity-50">*</span>
                       </FormLabel>
-                      <FormControl>
-                        <SelectLanguage
-                          options={[...appConfig.languages]}
-                          value={field.value ?? appConfig.defaultLanguage}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
+                      <SelectLanguage
+                        options={[...appConfig.languages]}
+                        value={field.value ?? appConfig.defaultLanguage}
+                        onChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -163,7 +159,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel>{t('common:newsletter')}</FormLabel>
+                      <FormLabel>{t('c:newsletter')}</FormLabel>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -173,12 +169,12 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
           </>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton
             disabled={!compact && (!form.isDirty || Object.keys(form.formState.errors).length > 0)}
             loading={isPending}
           >
-            {t(`common:${compact ? 'continue' : 'save_changes'}`)}
+            {t(`c:${compact ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (
             <Button
@@ -187,7 +183,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
               onClick={() => form.reset()}
               className={form.isDirty ? '' : 'invisible'}
             >
-              {t('common:cancel')}
+              {t('c:cancel')}
             </Button>
           )}
           {children}

@@ -1,0 +1,196 @@
+# Docker Compose for backend services.
+#
+# Usage (one service per VM, driven by Pulumi cloud-init):
+#     docker compose --profile backend up -d
+#     docker compose --profile cdc up -d
+#     docker compose --profile yjs up -d
+#     docker compose --profile ai up -d
+#
+# Zero-downtime: an `ingress` proxy owns the host port and forwards to the app
+# container by its compose-network name. The reconciler rolls only the app
+# container (`up -d --no-deps <service>`); the proxy holds the LB-facing
+# listener open and retries across the brief restart gap, so a deploy never
+# drops the LB backend. App services therefore publish NO host port — they are
+# reached over the compose network by `ingress`. See infra/ingress.Caddyfile
+# and infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
+
+services:
+  # Per-VM ingress reverse proxy. Started once at boot and left running; the
+  # reconciler never recreates it. INGRESS_PORT / UPSTREAM_HOST / UPSTREAM_PORT
+  # come from /opt/app/.env (written per-VM by cloud-init).
+  ingress:
+    image: caddy:2-alpine
+    profiles: [backend, cdc, yjs, ai, frontend]
+    restart: unless-stopped
+    ports:
+      - '${INGRESS_PORT}:${INGRESS_PORT}'
+    environment:
+      INGRESS_PORT: ${INGRESS_PORT}
+      UPSTREAM_HOST: ${UPSTREAM_HOST}
+      UPSTREAM_PORT: ${UPSTREAM_PORT}
+    volumes:
+      - ./ingress.Caddyfile:/etc/caddy/Caddyfile:ro
+      - ingress_data:/data
+      - ingress_config:/config
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${INGRESS_PORT}/__ingress/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Backend runs as two named slots (blue/green) for zero-downtime blue-green
+  # rollover. Only ONE slot serves at a time: the ingress upstream points at the
+  # ACTIVE slot, and the reconciler brings the IDLE slot up on the new tag,
+  # gates it on an identity health check, then flips the ingress to it via
+  # `caddy reload` before retiring the old slot. Both slots share ${BACKEND_TAG}
+  # — the reconciler only ever (re)creates ONE slot at a time, so the other
+  # keeps its running image until explicitly rolled. See
+  # infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
+  backend-blue: &backend-slot
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend]
+    restart: unless-stopped
+    # No host port — reached via `ingress`.
+    expose:
+      - '4000'
+    # Give in-flight requests time to drain on SIGTERM during a rollover.
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+      # Migrations no longer run on boot in production — the reconciler runs the
+      # one-shot `migrate` service (below) BEFORE rolling the idle slot, so the
+      # health window is pure boot time. See infra/INFRA_ARCHITECTURE.md.
+      RUN_MIGRATIONS_ON_BOOT: 'false'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Green slot — identical to backend-blue via YAML merge. Started only when the
+  # reconciler needs the idle slot; never both slots serve simultaneously except
+  # during the brief blue-green drain window.
+  backend-green:
+    <<: *backend-slot
+
+  # One-shot schema migrator. Same image as `backend`, selected via MODE=migrate
+  # so it applies pending migrations + ensures DB roles, then exits. Run by the
+  # reconciler with `docker compose run --rm migrate` before the app rolls; it
+  # is gated on exit 0. Has no host/exposed port and no healthcheck — it is not
+  # a long-running service. restart: "no" so a failed run does not loop.
+  migrate:
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend]
+    restart: 'no'
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: migrate
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      # Required by the shared env schema (src/env.ts) even though the one-shot
+      # migrator never serves traffic; mirror the backend slot's literal value.
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+
+  cdc:
+    image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
+    profiles: [cdc]
+    restart: unless-stopped
+    expose:
+      - '4001'
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      API_WS_URL: ${API_WS_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      CDC_HEALTH_PORT: '4001'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  yjs:
+    image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
+    profiles: [yjs]
+    restart: unless-stopped
+    expose:
+      - '4002'
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      BACKEND_URL: ${BACKEND_URL}
+      YJS_PORT: '4002'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ai:
+    image: ${REGISTRY}/backend:${AI_TAG:-latest}
+    profiles: [ai]
+    restart: unless-stopped
+    expose:
+      - '4003'
+    stop_grace_period: 30s
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: ai-worker
+      PORT: '4003'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      AI_API_URL: ${AI_API_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Production-only frontend reverse proxy.
+  # Image is built per release from infra/caddy/Dockerfile and tagged like
+  # the other per-release images (REGISTRY/frontend:<sha>). Caddyfile is baked
+  # into the image; the only runtime knob is ORIGIN_HOST (the S3 REST host of
+  # the bucket Pulumi creates as naming.frontendBucket).
+  frontend:
+    image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
+    profiles: [frontend]
+    restart: unless-stopped
+    expose:
+      - '80'
+    stop_grace_period: 30s
+    environment:
+      ORIGIN_HOST: ${ORIGIN_HOST}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:80/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  ingress_data:
+  ingress_config:

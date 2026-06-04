@@ -57,7 +57,7 @@ const handleList = <T extends WithId, M extends MutationType>(
     };
   }
 
-  const limit = null; // grab
+  const limit: number | null = null; // grab
   const pageLimit = limit ?? (cached.pages.length > 1 ? cached.pages[0].items.length : null);
 
   // Dump everything in one page if no limit
@@ -160,7 +160,7 @@ export const useTableMutation = <N extends `${EntityType}s`, M extends MutationT
     onError: (_error, _variables, onMutateResult, context) => {
       // maybe vary result based on if offline?
       console.error(_error);
-      toaster(t(`error:${type}_resource`, { resource: t(`common:${table}`) }), 'error');
+      toaster(t(`error:${type}_resource`, { resource: t(`c:${table}`) }), 'error');
 
       if (!onMutateResult?.length) {
         return;

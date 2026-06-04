@@ -1,9 +1,9 @@
-import { ChevronDownIcon, LockIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
-import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
 
 /**
  * Renders the waitlist request step, including:
@@ -18,28 +18,17 @@ export function WaitlistStep() {
 
   return (
     <>
-      <>
-        <div className="text-2xl text-center">
-          <h1 className="text-xxl">{t('common:request_access')}</h1>
-          {email.length > 0 && (
-            <Button
-              variant="ghost"
-              onClick={resetSteps}
-              className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
-            >
-              <span className="truncate">{email}</span>
-              <ChevronDownIcon size={16} className="ml-1" />
-            </Button>
-          )}
-        </div>
-        <LegalNotice email={email} mode="waitlist" />
-      </>
+      <div className="text-center text-2xl">
+        <h1 className="text-xxl">{t('c:request_access')}</h1>
+        {email.length > 0 && <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />}
+      </div>
+      <LegalNotice email={email} mode="waitlist" />
       <WaitlistForm
         email={email}
         buttonContent={
           <>
-            <LockIcon size={16} className="mr-2" />
-            <span className="text-base">{t('common:request_access')}</span>
+            <span className="text-base">{t('c:request_access')}</span>
+            <ArrowRightIcon size={16} className="ml-2" />
           </>
         }
       />

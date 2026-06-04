@@ -1,21 +1,21 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type Language } from 'shared';
-import { nanoid } from 'shared/nanoid';
 import slugify from 'slugify';
 import type { InsertOrganizationModel, OrganizationModel } from '#/db/schema/organizations';
 import type { AuthStrategy } from '#/db/schema/sessions';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { mockBatchResponse } from './mock-common';
 import { mockMembershipBase } from './mock-membership';
 import {
   generateMockFullCounts,
+  MOCK_REF_DATE,
   type MockEntityCounts,
   type MockMembershipCounts,
-  mockNanoid,
+  mockBatchResponse,
   mockPaginated,
+  mockPastIsoDate,
   mockTenantId,
-  pastIsoDate,
+  mockUuid,
   withFakerSeed,
 } from './utils';
 
@@ -58,12 +58,12 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
     bannerUrl: null,
     websiteUrl: `https://${slug}.example`,
     welcomeText: `Welcome to ${name}!`,
-    authStrategies: ['password'] as AuthStrategy[],
+    authStrategies: ['passkey'] as AuthStrategy[],
     chatSupport: faker.datatype.boolean(),
     createdAt,
     createdBy: null,
-    modifiedAt: createdAt,
-    modifiedBy: null,
+    updatedAt: createdAt,
+    updatedBy: null,
   };
 };
 
@@ -74,7 +74,7 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
  */
 export const mockOrganization = (): InsertOrganizationModel => {
   const name = organizationName.enforce(() => faker.company.name());
-  return generateOrganizationBase(nanoid(), mockTenantId(), name, pastIsoDate());
+  return generateOrganizationBase(mockUuid(), mockTenantId(), name, mockPastIsoDate());
 };
 
 /**
@@ -93,17 +93,17 @@ export const mockOrganizationResponse = (
   };
 } =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
-    const orgId = mockNanoid();
+    const organizationId = mockUuid();
     const tenantId = mockTenantId();
 
     // Generate base organization fields
-    const base = generateOrganizationBase(orgId, tenantId, faker.company.name(), createdAt);
+    const base = generateOrganizationBase(organizationId, tenantId, faker.company.name(), createdAt);
 
     // Generate membership base with the organization ID
     const membership = mockMembershipBase(`${key}:membership`);
-    membership.organizationId = orgId;
+    membership.organizationId = organizationId;
 
     return {
       ...base,

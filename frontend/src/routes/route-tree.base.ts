@@ -2,19 +2,23 @@
  * Base route segments - upstream owned.
  * Forks should NOT modify this file. Instead, spread these in route-tree.tsx.
  */
-import { NavItemId } from '~/modules/navigation/types';
+import type { NavItemId } from '~/modules/navigation/types';
 import {
   AuthErrorRoute,
   AuthenticateRoute,
   AuthLayoutRoute,
-  CreatePasswordWithTokenRoute,
   EmailVerificationRoute,
   MfaRoute,
-  RequestPasswordRoute,
   SignOutRoute,
   UnsubscribedRoute,
 } from '~/routes/auth-routes';
-import { AppLayoutRoute, ErrorNoticeRoute, PublicLayoutRoute, RootRoute } from '~/routes/base-routes';
+import {
+  AppLayoutRoute,
+  ErrorNoticeRoute,
+  PublicContentLayoutRoute,
+  PublicLayoutRoute,
+  RootRoute,
+} from '~/routes/base-routes';
 import {
   DocsLayoutRoute,
   DocsOperationsRoute,
@@ -35,7 +39,6 @@ import {
   OrganizationSettingsRoute,
 } from '~/routes/organization-routes';
 import {
-  MetricsRoute,
   OrganizationsTableRoute,
   RequestsTableRoute,
   SystemRoute,
@@ -43,24 +46,25 @@ import {
   UsersTableRoute,
 } from '~/routes/system-routes';
 import { UserAccountRoute } from '~/routes/user-routes';
-import { BoundaryType } from './types';
+import type { BoundaryType } from './types';
 
 // Re-export layout routes and individual routes for fork extensions
 export {
-  // Layouts
-  RootRoute,
-  PublicLayoutRoute,
   AppLayoutRoute,
   AuthLayoutRoute,
-  OrganizationLayoutRoute,
-  OrganizationRoute,
-  SystemRoute,
   DocsLayoutRoute,
+  HomeAliasRoute,
   // Individual routes forks might need
   HomeRoute,
-  HomeAliasRoute,
-  WelcomeRoute,
+  OrganizationLayoutRoute,
+  OrganizationRoute,
+  PublicContentLayoutRoute,
+  PublicLayoutRoute,
+  // Layouts
+  RootRoute,
+  SystemRoute,
   UserAccountRoute,
+  WelcomeRoute,
 };
 
 /** Base public children (marketing pages, without auth/docs layouts) */
@@ -78,8 +82,6 @@ export const basePublicChildren = [
 export const baseAuthChildren = [
   AuthenticateRoute,
   MfaRoute,
-  RequestPasswordRoute,
-  CreatePasswordWithTokenRoute,
   EmailVerificationRoute,
   UnsubscribedRoute,
   AuthErrorRoute,
@@ -108,7 +110,6 @@ export const baseSystemChildren = [
   UsersTableRoute,
   OrganizationsTableRoute,
   RequestsTableRoute,
-  MetricsRoute,
   TenantsTableRoute,
 ] as const;
 

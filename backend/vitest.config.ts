@@ -4,34 +4,22 @@ import { defineConfig } from 'vitest/config';
 /**
  * Vitest configuration for backend tests.
  *
- * Supports three test modes via TEST_MODE env variable:
- * - `basic`: Fast unit tests only (no database), no Docker required
- * - `core`: Full tests with PostgreSQL container, excludes integration tests
- * - `full`: Complete suite with PostgreSQL, includes integration (CDC) tests
+ * Supports two test modes via TEST_MODE env variable:
+ * - `core`: Excludes CDC integration tests (default)
+ * - `full`: Complete suite including CDC integration tests
  *
  * @example
  * ```bash
- * TEST_MODE=basic pnpm test    # Fast unit tests only
  * TEST_MODE=core pnpm test     # Standard, PostgreSQL (default)
  * TEST_MODE=full pnpm test     # Complete suite with integration tests
  * ```
- *
- * @link https://vitest.dev/config/
  */
 
 const testMode = process.env.TEST_MODE || 'core';
-const isBasic = testMode === 'basic';
-const isCore = testMode === 'core';
-const isFull = testMode === 'full';
 
-// Include patterns based on mode
-const includePatterns = ['src/**/*.test.ts'];
-if (isCore || isFull) includePatterns.push('tests/**/*.test.ts', 'mocks/**/*.test.ts');
-
-// Exclude patterns if not in full mode
+const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts', 'mocks/**/*.test.ts'];
 const excludePatterns = ['**/node_modules/**'];
-if (isBasic || isCore) excludePatterns.push('tests/integration/**');
-
+if (testMode === 'core') excludePatterns.push('tests/integration/**');
 
 export default defineConfig({
   resolve: {
@@ -40,11 +28,11 @@ export default defineConfig({
       '#json': path.resolve(__dirname, '../json'),
     },
   },
-  // Suppress "Sourcemap" warnings from node_modules with broken sourcemaps
   logLevel: 'error',
   test: {
-    // Only use global setup for modes that need PostgreSQL
-    globalSetup: isBasic ? undefined : './tests/global-setup.ts',
+    name: 'backend',
+    globalSetup: './tests/global-setup.ts',
+    setupFiles: ['./tests/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
     fileParallelism: false,
@@ -54,16 +42,12 @@ export default defineConfig({
     env: {
       PINO_LOG_LEVEL: 'silent',
       NODE_ENV: 'test',
-      // Test secrets (safe dummy values for unit tests)
-      ARGON_SECRET: 'test-argon-secret-for-unit-tests',
       COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',
       UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
+      YJS_SECRET: 'test-yjs-secret-min16',
+      PII_HASH_SECRET: 'test-pii-hash-secret-min16',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
-      // basic mode: skip database connection entirely
-      // core/full: use PostgreSQL test container
-      ...(isBasic
-        ? { DEV_MODE: 'none' }
-        : { DATABASE_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres' }),
+      DATABASE_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres',
     },
   },
 });

@@ -1,8 +1,16 @@
-import { useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
-import type { HeaderRowProps } from './header-row';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { dropTargetForElements, draggable as makeDraggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
+import {
+  attachClosestEdge,
+  type Edge,
+  extractClosestEdge,
+} from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { DropIndicator } from '~/modules/common/drop-indicator';
 import { useRovingTabIndex } from './hooks';
-import type { CalculatedColumn, SortColumn } from './types';
+import type { CalculatedColumn, Maybe, Position, ResizedWidth, SortColumn } from './types';
 import {
   clampColumnWidth,
   getCellClassname,
@@ -15,26 +23,27 @@ import {
 
 const resizeHandleClassname =
   'cursor-col-resize absolute inset-y-0 end-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:end-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
-const dragImageClassname = 'rounded w-fit outline-2 outline-[hsl(207,100%,50%)] -outline-offset-2';
 
-type SharedHeaderRowProps<R, SR> = Pick<
-  HeaderRowProps<R, SR, React.Key>,
-  | 'sortColumns'
-  | 'onSortColumnsChange'
-  | 'selectCell'
-  | 'onColumnResize'
-  | 'onColumnResizeEnd'
-  | 'shouldFocusGrid'
-  | 'onColumnsReorder'
->;
+const draggableColumnType = 'grid-column';
+type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
 
-interface HeaderCellProps<R, SR> extends SharedHeaderRowProps<R, SR> {
+function isColumnDragData(data: Record<string, unknown>): data is ColumnDragData {
+  return data.type === draggableColumnType;
+}
+
+interface HeaderCellProps<R, SR> {
+  sortColumns?: Maybe<readonly SortColumn[]>;
+  onSortColumnsChange?: Maybe<(sortColumns: SortColumn[]) => void>;
+  selectCell: (position: Position) => void;
+  onColumnResize: (column: CalculatedColumn<R, SR>, width: ResizedWidth) => void;
+  onColumnResizeEnd: () => void;
+  shouldFocusGrid: boolean;
+  isCellSelectionEnabled: boolean;
+  onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
   column: CalculatedColumn<R, SR>;
   colSpan: number | undefined;
   rowIdx: number;
   isCellSelected: boolean;
-  draggedColumnKey: string | undefined;
-  setDraggedColumnKey: (draggedColumnKey: string | undefined) => void;
 }
 
 export function HeaderCell<R, SR>({
@@ -42,6 +51,7 @@ export function HeaderCell<R, SR>({
   colSpan,
   rowIdx,
   isCellSelected,
+  isCellSelectionEnabled,
   onColumnResize,
   onColumnResizeEnd,
   onColumnsReorder,
@@ -49,15 +59,19 @@ export function HeaderCell<R, SR>({
   onSortColumnsChange,
   selectCell,
   shouldFocusGrid,
-  draggedColumnKey,
-  setDraggedColumnKey,
 }: HeaderCellProps<R, SR>) {
-  const [isOver, setIsOver] = useState(false);
-  const dragImageRef = useRef<HTMLDivElement>(null);
-  const isDragging = draggedColumnKey === column.key;
+  const cellRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+  const [preview, setPreview] = useState<{ container: HTMLElement } | null>(null);
   const rowSpan = getHeaderCellRowSpan(column, rowIdx);
   // set the tabIndex to 0 when there is no selected cell so grid can receive focus
-  const { tabIndex, childTabIndex, onFocus } = useRovingTabIndex(shouldFocusGrid || isCellSelected);
+  const roving = useRovingTabIndex(shouldFocusGrid || isCellSelected);
+  // When cell selection is disabled, every header cell stays in the natural tab order
+  // so sortable headers remain reachable by keyboard.
+  const tabIndex = isCellSelectionEnabled ? roving.tabIndex : 0;
+  const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
+  const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
   const sortIndex = sortColumns?.findIndex((sort) => sort.columnKey === column.key);
   const sortColumn = sortIndex !== undefined && sortIndex > -1 ? sortColumns![sortIndex] : undefined;
   const sortDirection = sortColumn?.direction;
@@ -65,11 +79,64 @@ export function HeaderCell<R, SR>({
   const ariaSort = sortDirection && !priority ? (sortDirection === 'ASC' ? 'ascending' : 'descending') : undefined;
   const { sortable, resizable, draggable } = column;
 
-  const className = getCellClassname(column, column.headerCellClass, {
-    'cursor-pointer': sortable,
-    'touch-action-none': resizable,
-    'bg-muted': isDragging || isOver,
-  });
+  const className = getCellClassname(
+    column,
+    'border-t-0',
+    column.headerCellClass,
+    {
+      'cursor-pointer': sortable,
+      'touch-action-none': resizable,
+      'opacity-40': isDragging,
+      'z-3': column.frozen,
+    },
+    // When cell selection is disabled, header cells stay in the natural tab order;
+    // render the focus affordance via :focus-visible since aria-selected is never true.
+    !isCellSelectionEnabled &&
+      'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
+  );
+
+  // Pragmatic DnD for column reordering
+  useEffect(() => {
+    const el = cellRef.current;
+    if (!el || !draggable || !onColumnsReorder) return;
+
+    return combine(
+      makeDraggable({
+        element: el,
+        getInitialData: (): ColumnDragData => ({ type: draggableColumnType, columnKey: column.key }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          setCustomNativeDragPreview({
+            nativeSetDragImage,
+            getOffset: () => ({ x: 16, y: 16 }),
+            render: ({ container }) => setPreview({ container }),
+          });
+        },
+        onDragStart: () => setIsDragging(true),
+        onDrop: () => {
+          setIsDragging(false);
+          setPreview(null);
+        },
+      }),
+      dropTargetForElements({
+        element: el,
+        canDrop: ({ source }) => isColumnDragData(source.data) && source.data.columnKey !== column.key,
+        getData: ({ input }) =>
+          attachClosestEdge({ type: draggableColumnType, columnKey: column.key } satisfies ColumnDragData, {
+            element: el,
+            input,
+            allowedEdges: ['left', 'right'],
+          }),
+        onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
+        onDragLeave: () => setClosestEdge(null),
+        onDrop: ({ source }) => {
+          setClosestEdge(null);
+          if (isColumnDragData(source.data)) {
+            onColumnsReorder(source.data.columnKey, column.key);
+          }
+        },
+      }),
+    );
+  }, [column.key, draggable, onColumnsReorder]);
 
   function onSort(ctrlClick: boolean) {
     if (onSortColumnsChange == null) return;
@@ -144,63 +211,6 @@ export function HeaderCell<R, SR>({
     }
   }
 
-  function onDragStart(event: React.DragEvent<HTMLDivElement>) {
-    // need flushSync to make sure the drag image is rendered before the drag starts
-    flushSync(() => {
-      setDraggedColumnKey(column.key);
-    });
-    event.dataTransfer.setDragImage(dragImageRef.current!, 0, 0);
-    event.dataTransfer.dropEffect = 'move';
-  }
-
-  function onDragEnd() {
-    setDraggedColumnKey(undefined);
-  }
-
-  function onDragOver(event: React.DragEvent<HTMLDivElement>) {
-    // prevent default to allow drop
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }
-
-  function onDrop(event: React.DragEvent<HTMLDivElement>) {
-    setIsOver(false);
-    // prevent the browser from redirecting in some cases
-    event.preventDefault();
-    onColumnsReorder?.(draggedColumnKey!, column.key);
-  }
-
-  function onDragEnter(event: React.DragEvent<HTMLDivElement>) {
-    if (isEventPertinent(event)) {
-      setIsOver(true);
-    }
-  }
-
-  function onDragLeave(event: React.DragEvent<HTMLDivElement>) {
-    if (isEventPertinent(event)) {
-      setIsOver(false);
-    }
-  }
-
-  let dragTargetProps: React.ComponentProps<'div'> | undefined;
-  let dropTargetProps: React.ComponentProps<'div'> | undefined;
-  if (draggable) {
-    dragTargetProps = {
-      draggable: true,
-      onDragStart,
-      onDragEnd,
-    };
-
-    if (draggedColumnKey !== undefined && draggedColumnKey !== column.key) {
-      dropTargetProps = {
-        onDragOver,
-        onDragEnter,
-        onDragLeave,
-        onDrop,
-      };
-    }
-  }
-
   const style: React.CSSProperties = {
     ...getHeaderCellStyle(column, rowIdx, rowSpan),
     ...getCellStyle(column, colSpan),
@@ -215,16 +225,8 @@ export function HeaderCell<R, SR>({
 
   return (
     <>
-      {isDragging && (
-        <div
-          ref={dragImageRef}
-          style={style}
-          className={getCellClassname(column, column.headerCellClass, dragImageClassname)}
-        >
-          {content}
-        </div>
-      )}
       <div
+        ref={cellRef}
         role="columnheader"
         aria-colindex={column.idx + 1}
         aria-colspan={colSpan}
@@ -238,8 +240,6 @@ export function HeaderCell<R, SR>({
         onFocus={handleFocus}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        {...dragTargetProps}
-        {...dropTargetProps}
       >
         {content}
 
@@ -247,6 +247,12 @@ export function HeaderCell<R, SR>({
           <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />
         )}
       </div>
+      {closestEdge && <DropIndicator edge={closestEdge} gap={0} />}
+      {preview &&
+        createPortal(
+          <div className="rounded border bg-background px-3 py-1.5 text-sm shadow-lg">{column.name}</div>,
+          preview.container,
+        )}
     </>
   );
 }
@@ -309,13 +315,4 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
       onDoubleClick={onDoubleClick}
     />
   );
-}
-
-// only accept pertinent drag events:
-// - ignore drag events going from the container to an element inside the container
-// - ignore drag events going from an element inside the container to the container
-function isEventPertinent(event: React.DragEvent) {
-  const relatedTarget = event.relatedTarget as HTMLElement | null;
-
-  return !event.currentTarget.contains(relatedTarget);
 }

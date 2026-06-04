@@ -1,7 +1,20 @@
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
-import { setupSeenBeaconFlush, useSeenStore } from '~/store/seen';
+import { setupSeenBeaconFlush, useSeenStore } from '~/modules/seen/seen-store';
 import { useTotalUnseenCount } from './use-unseen-count';
+
+// Periodic Background Sync API (Chromium-only) and dev-only window helper.
+interface PeriodicSyncManager {
+  register(tag: string, options?: { minInterval?: number }): Promise<void>;
+}
+declare global {
+  interface ServiceWorkerRegistration {
+    readonly periodicSync?: PeriodicSyncManager;
+  }
+  interface Window {
+    __flushSeen?: () => void;
+  }
+}
 
 /**
  * Invisible component that initializes the seen-tracking system.
@@ -22,7 +35,7 @@ export function SeenTracker() {
 
     // Expose manual flush in dev for debugging
     if (isDev) {
-      (window as any).__flushSeen = flush;
+      window.__flushSeen = flush;
       console.debug('[SeenTracker] initialized — call window.__flushSeen() to flush manually');
     }
 
@@ -30,7 +43,7 @@ export function SeenTracker() {
       stopFlushInterval();
       cleanupBeacon();
       if (isDev) {
-        delete (window as any).__flushSeen;
+        delete window.__flushSeen;
       }
     };
   }, []);
@@ -73,13 +86,13 @@ function useAppBadge() {
 async function registerPeriodicBadgeSync() {
   try {
     const registration = await navigator.serviceWorker?.ready;
-    if (!registration || !('periodicSync' in registration)) return;
+    if (!registration?.periodicSync) return;
 
     // Check if permission is granted
     const status = await navigator.permissions.query({ name: 'periodic-background-sync' as PermissionName });
     if (status.state !== 'granted') return;
 
-    await (registration as any).periodicSync.register('unseen-badge-sync', {
+    await registration.periodicSync.register('unseen-badge-sync', {
       minInterval: 60 * 60 * 1000, // Hint: 1 hour (browser decides actual interval)
     });
   } catch {

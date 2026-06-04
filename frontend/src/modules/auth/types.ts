@@ -1,4 +1,4 @@
-import type { GeneratePasskeyChallengeData, GetTokenDataResponse } from '~/api.gen';
+import type { GeneratePasskeyChallengeData, GetTokenDataResponse } from 'sdk';
 
 type PasskeyChallengeType = NonNullable<GeneratePasskeyChallengeData['body']>['type'];
 
@@ -9,4 +9,4 @@ export interface PasskeyCredentialProps {
 
 export type TokenData = GetTokenDataResponse;
 
-export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'mfa';
+export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'mfa' | 'magicLinkSent';

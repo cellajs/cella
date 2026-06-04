@@ -1,24 +1,16 @@
-import * as Sentry from '@sentry/react';
-import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { CheckIcon, SendIcon, TrashIcon } from 'lucide-react';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
+import { CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
-import {
-  type ApiError,
-  type RequestPasswordData,
-  type RequestPasswordResponse,
-  requestPassword,
-  User,
-} from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
-
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteSelf } from '~/modules/me/delete-self';
@@ -30,15 +22,15 @@ import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const tabs = [
-  { id: 'general', label: 'common:general' },
-  { id: 'sessions', label: 'common:sessions' },
-  { id: 'authentication', label: 'common:authentication' },
-  { id: 'delete-account', label: 'common:delete_account' },
+  { id: 'general', label: 'c:general' },
+  { id: 'sessions', label: 'c:sessions' },
+  { id: 'authentication', label: 'c:authentication' },
+  { id: 'delete-account', label: 'c:delete_account' },
 ];
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
@@ -52,28 +44,9 @@ function UserAccountPage() {
 
   const deleteButtonRef = useRef(null);
 
-  const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
   const invertClass = mode === 'dark' ? 'invert' : '';
-
-  const { mutate: requestPasswordChange } = useMutation<
-    RequestPasswordResponse,
-    ApiError | Error,
-    NonNullable<RequestPasswordData['body']>
-  >({
-    mutationFn: async (body) => await requestPassword({ body }),
-    onSuccess: () => toaster(t('common:success.reset_password_email', { email: user.email }), 'success'),
-    onSettled: () => setTimeout(() => setDisabledResetPassword(false), 60000),
-  });
-
-  // Request a password reset email
-  const requestResetPasswordClick = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-
-    setDisabledResetPassword(true);
-    requestPasswordChange({ email: user.email });
-  };
 
   // Delete account
   const openDeleteDialog = () => {
@@ -81,22 +54,21 @@ function UserAccountPage() {
       <DeleteSelf
         dialog
         callback={({ status }: CallbackArgs<User>) => {
-          if (status === 'success')
-            toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
+          if (status === 'success') toaster(t('c:success.delete_resource', { resource: t('c:account') }), 'success');
         }}
       />,
       {
         id: 'delete-account',
         triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
-        title: t('common:delete_account'),
-        description: t('common:confirm.delete_account', { email: user.email, appName: appConfig.name }),
+        title: t('c:delete_account'),
+        description: t('c:confirm.delete_account', { email: user.email, appName: appConfig.name }),
       },
     );
   };
 
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
     try {
@@ -111,27 +83,27 @@ function UserAccountPage() {
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
     } catch (error) {
-      Sentry.captureException(error);
-      toaster(t('common:url_malformed'), 'error');
+      console.error('Failed to build OAuth URL:', error);
+      toaster(t('c:url_malformed'), 'error');
       setLoadingProvider(null);
     }
   };
 
   return (
-    <div className="container md:flex md:flex-row my-4 md:mt-8 gap-4 ">
-      <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
-        <div className="sticky top-3 z-10 max-md:block! group">
-          <SimpleHeader className="p-3" heading="common:my_account" text="common:my_account.text" collapseText />
+    <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
+      <div className="mx-auto max-md:hidden md:mt-3 md:w-[30%] md:min-w-48">
+        <div className="max-md:block! group sticky top-3 z-10">
+          <SimpleHeader className="p-3" heading="c:my_account" text="c:my_account.text" collapseText />
           <PageAside tabs={tabs} className="py-2" setFocus />
         </div>
       </div>
 
-      <div className="md:w-[70%] flex flex-col gap-8">
+      <div className="flex flex-col gap-8 md:w-[70%]">
         <AsideAnchor id="general">
           <Card className="mx-auto sm:w-full" id="update-user">
             <CardHeader>
               <CardTitle>
-                <UnsavedBadge title={t('common:general')} />
+                <UnsavedBadge title={t('c:general')} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -143,8 +115,8 @@ function UserAccountPage() {
         <AsideAnchor id="sessions">
           <Card className="mx-auto sm:w-full">
             <CardHeader>
-              <CardTitle>{t('common:sessions')}</CardTitle>
-              <CardDescription>{t('common:sessions.text')}</CardDescription>
+              <CardTitle>{t('c:sessions')}</CardTitle>
+              <CardDescription>{t('c:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
               <SessionsList />
@@ -155,24 +127,24 @@ function UserAccountPage() {
         <AsideAnchor id="authentication">
           <Card className="mx-auto sm:w-full">
             <CardHeader>
-              <CardTitle>{t('common:authentication')}</CardTitle>
-              <CardDescription>{t('common:authentication.text')}</CardDescription>
+              <CardTitle>{t('c:authentication')}</CardTitle>
+              <CardDescription>{t('c:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
               {
                 /* MFA */
                 enabledStrategies.includes('passkey') && enabledStrategies.includes('totp') && (
                   <>
-                    <HelpText content={t('common:mfa.text')}>
+                    <HelpText content={t('c:mfa.text')}>
                       <div className="flex items-center">
-                        <p className="font-semibold">{t('common:mfa')}</p>
+                        <p className="font-semibold">{t('c:mfa')}</p>
                         {!user.mfaRequired && (
                           <Badge
                             size="xs"
                             variant="outline"
-                            className="max-sm:hidden ml-2 text-green-600 border-green-600"
+                            className="ml-2 border-green-600 text-green-600 max-sm:hidden"
                           >
-                            {t('common:recommended')}
+                            {t('c:recommended')}
                           </Badge>
                         )}
                       </div>
@@ -185,8 +157,8 @@ function UserAccountPage() {
                 /* Passkeys */
                 enabledStrategies.includes('passkey') && (
                   <>
-                    <HelpText content={t('common:passkey.text')}>
-                      <p className="font-semibold">{t('common:passkeys')}</p>
+                    <HelpText content={t('c:passkey.text')}>
+                      <p className="font-semibold">{t('c:passkeys')}</p>
                     </HelpText>
                     <PasskeysList />
                   </>
@@ -197,8 +169,8 @@ function UserAccountPage() {
                 /* TOTP */
                 enabledStrategies.includes('totp') && (
                   <>
-                    <HelpText content={t('common:totp.text')}>
-                      <p className="font-semibold">{t('common:totp')}</p>
+                    <HelpText content={t('c:totp.text')}>
+                      <p className="font-semibold">{t('c:totp')}</p>
                     </HelpText>
                     <Totp />
                   </>
@@ -209,25 +181,25 @@ function UserAccountPage() {
                 /* OAuth */
                 enabledStrategies.includes('oauth') && (
                   <>
-                    <HelpText content={t('common:oauth.text')}>
-                      <p className="font-semibold">{t('common:oauth')}</p>
+                    <HelpText content={t('c:oauth.text')}>
+                      <p className="font-semibold">{t('c:oauth')}</p>
                     </HelpText>
 
-                    <div className="flex flex-col sm:items-start gap-3 mb-6">
+                    <div className="mb-6 flex flex-col gap-3 sm:items-start">
                       {appConfig.enabledOAuthProviders.map((id) => {
                         const provider = mapOAuthProviders.find((provider) => provider.id === id);
                         if (!provider) return null;
                         if (enabledOAuth.includes(id)) {
                           return (
-                            <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
+                            <div key={provider.id} className="flex items-center justify-center gap-2 px-3 py-2">
                               <img
                                 src={`/static/images/${provider.id}-icon.svg`}
                                 alt={provider.id}
-                                className={`size-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                                className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
                                 loading="lazy"
                               />
                               <CheckIcon size={18} strokeWidth={3} className="text-success" />
-                              {`${t('common:already_connected_to')} ${provider.name}`}
+                              {`${t('c:already_connected_to')} ${provider.name}`}
                             </div>
                           );
                         }
@@ -243,40 +215,13 @@ function UserAccountPage() {
                             <img
                               src={`/static/images/${provider.id}-icon.svg`}
                               alt={provider.id}
-                              className={`size-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
+                              className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
                               loading="lazy"
                             />
-                            {`${t('common:add')} ${provider.name} ${t('common:account').toLowerCase()}`}
+                            {`${t('c:add')} ${provider.name} ${t('c:account').toLowerCase()}`}
                           </Button>
                         );
                       })}
-                    </div>
-                  </>
-                )
-              }
-
-              {
-                /* Password reset */
-                enabledStrategies.includes('password') && (
-                  <>
-                    <HelpText content={t('common:request_password.text')}>
-                      <p className="font-semibold">
-                        {t('common:reset_resource', { resource: t('common:password').toLowerCase() })}
-                      </p>{' '}
-                    </HelpText>
-                    <div className="mb-6">
-                      <Button
-                        className="w-full sm:w-auto"
-                        variant="plain"
-                        disabled={disabledResetPassword}
-                        onClick={requestResetPasswordClick}
-                      >
-                        <SendIcon size={16} className="mr-2" />
-                        {t('common:send_reset_link')}
-                      </Button>
-                      {disabledResetPassword && (
-                        <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>
-                      )}
                     </div>
                   </>
                 )
@@ -288,8 +233,8 @@ function UserAccountPage() {
         <AsideAnchor id="delete-account">
           <Card className="mx-auto sm:w-full">
             <CardHeader>
-              <CardTitle>{t('common:delete_account')}</CardTitle>
-              <CardDescription>{t('common:delete_account.text', { appName: appConfig.name })}</CardDescription>
+              <CardTitle>{t('c:delete_account')}</CardTitle>
+              <CardDescription>{t('c:delete_account.text', { appName: appConfig.name })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
@@ -299,7 +244,7 @@ function UserAccountPage() {
                 onClick={openDeleteDialog}
               >
                 <TrashIcon size={16} className="mr-2" />
-                {t('common:delete_account')}
+                {t('c:delete_account')}
               </Button>
             </CardContent>
           </Card>

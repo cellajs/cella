@@ -1,7 +1,8 @@
 import { RateLimiterRes } from 'rate-limiter-flexible';
-import { xMiddleware } from '#/docs/x-middleware';
-import { AppError } from '#/lib/error';
+import { AppError } from '#/core/error';
+import { xMiddleware } from '#/core/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
+import { syncFromDb, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import type {
   RateLimiterHandler,
   RateLimiterOpts,
@@ -71,6 +72,9 @@ export const rateLimiter = (
       if (identifiers.includes('ip') && !extractedIdentifiers.ip) {
         throw new AppError(400, 'invalid_request', 'warn');
       }
+      if (identifiers.includes('email') && !extractedIdentifiers.email) {
+        throw new AppError(400, 'invalid_request', 'warn');
+      }
 
       // Generate rate limit key with fallback logic
       let rateLimitKey = '';
@@ -99,6 +103,21 @@ export const rateLimiter = (
         }
       }
 
+      // ── Fast path for `limit` mode (pointsLimiter) ──
+      // Uses an in-process LRU counter to skip DB when the key is well under budget.
+      // Auth limiters (failseries, success, fail) always take the DB path for accuracy.
+      if (mode === 'limit' && getPointsBudget) {
+        const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
+        const budget = getPointsBudget(ctx);
+
+        const decision = tryFastConsume(rateLimitKey, consumePoints, budget);
+        if (decision === 'allow') {
+          await next();
+          return;
+        }
+        // 'check-db' falls through to the standard DB path below
+      }
+
       const limitState = await limiter.get(rateLimitKey);
       const slowLimitState = await slowLimiter.get(rateLimitKey);
 
@@ -107,7 +126,7 @@ export const rateLimiter = (
         try {
           onBlock?.(rateLimitKey);
         } catch (err) {
-          logEvent('warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+          logEvent(ctx, 'warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
         }
         return rateLimitError(ctx, limitState, rateLimitKey);
       }
@@ -117,7 +136,7 @@ export const rateLimiter = (
         try {
           onBlock?.(rateLimitKey);
         } catch (err) {
-          logEvent('warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
+          logEvent(ctx, 'warn', 'Rate limit onBlock callback failed', { rateLimitKey, err: String(err) });
         }
         return rateLimitError(ctx, slowLimitState, rateLimitKey);
       }
@@ -135,7 +154,9 @@ export const rateLimiter = (
         }
 
         try {
-          await limiter.consume(rateLimitKey, consumePoints);
+          const consumeResult = await limiter.consume(rateLimitKey, consumePoints);
+          // Sync the LRU cache with the authoritative DB count
+          if (getPointsBudget) syncFromDb(rateLimitKey, consumeResult.consumedPoints);
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
           throw rlRejected;
@@ -155,7 +176,7 @@ export const rateLimiter = (
           try {
             await limiter.consume(rateLimitKey);
           } catch (err) {
-            logEvent('warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+            logEvent(ctx, 'warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
           }
           // If the mode is 'failseries', delete the rate limit on successful request
         } else if (mode === 'failseries') {
@@ -176,14 +197,11 @@ export const rateLimiter = (
         try {
           await limiter.consume(rateLimitKey);
         } catch (err) {
-          logEvent('warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
+          logEvent(ctx, 'warn', 'Rate limit consume failed', { rateLimitKey, err: String(err) });
         }
       }
     },
-  ) as unknown as RateLimiterHandler;
+  );
 
-  handler.keyPrefix = keyPrefix;
-  handler.points = config.points;
-
-  return handler;
+  return Object.assign(handler, { keyPrefix, points: config.points });
 };

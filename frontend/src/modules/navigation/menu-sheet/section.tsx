@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityType } from 'shared';
+import { AlertBanner } from '~/alerter/alert-banner';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { AlertWrap } from '~/modules/common/alert-wrap';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
 import { collectContextIds } from '~/modules/navigation/menu-sheet/helpers/collect-context-ids';
@@ -12,7 +12,7 @@ import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-l
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
-import { navigationStore, useNavigationStore } from '~/store/navigation';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 
 export type MenuSectionOptions = {
   label: string;
@@ -57,7 +57,7 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const archiveToggleClick = () => toggleSection(archivedSectionType);
 
   return (
-    <div className="group/menuSection" data-visible={isSectionVisible}>
+    <div className="group/menuSection px-3" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
         contextIds={activeContextIds}
@@ -80,9 +80,9 @@ export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="menu_management" variant="plain" icon={InfoIcon} animate>
-              {t('common:configure_menu.text')}
-            </AlertWrap>
+            <AlertBanner id="menu_management" variant="plain" icon={InfoIcon} animate>
+              {t('c:configure_menu.text')}
+            </AlertBanner>
           </motion.div>
         )}
       </AnimatePresence>

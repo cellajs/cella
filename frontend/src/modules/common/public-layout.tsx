@@ -1,15 +1,16 @@
 import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import { Alerter } from '~/modules/common/alerter';
+import { Alerter } from '~/alerter/alerter';
+import { DownAlert } from '~/alerter/down-alert';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { DownAlert } from '~/modules/common/down-alert';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { PublicStream } from '~/query/realtime/public-stream';
 
 /**
  * This is the layout for all public routes, for users without authentication. Marketing, auth pages and more.
+ * The public SSE stream is mounted by `PublicContentLayout` (a sublayout) only on routes that actually
+ * render synced public entities, so auth/sign-out/error/marketing routes don't open a stream connection.
  */
 export function PublicLayout() {
   return (
@@ -23,7 +24,6 @@ export function PublicLayout() {
         <Dialoger />
         <Dropdowner />
         <Sheeter />
-        <PublicStream />
 
         <DownAlert />
         <Outlet />

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent } from 'storybook/test';
-
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
 /**
@@ -18,10 +17,9 @@ const meta: Meta<typeof Carousel> = {
     <Carousel {...args}>
       <CarouselContent>
         {Array.from({ length: 5 }).map((_, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: testing purposes
           <CarouselItem key={index}>
-            <div className="bg-card flex aspect-square items-center justify-center rounded border p-6">
-              <span className="text-4xl font-semibold">{index + 1}</span>
+            <div className="flex aspect-square items-center justify-center rounded border bg-card p-6">
+              <span className="font-semibold text-4xl">{index + 1}</span>
             </div>
           </CarouselItem>
         ))}
@@ -52,10 +50,9 @@ export const Size: Story = {
     <Carousel {...args} className="mx-12 w-full max-w-xs">
       <CarouselContent>
         {Array.from({ length: 5 }).map((_, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: testing purposes
           <CarouselItem key={index} className="basis-1/3">
-            <div className="bg-card flex aspect-square items-center justify-center rounded border p-6">
-              <span className="text-4xl font-semibold">{index + 1}</span>
+            <div className="flex aspect-square items-center justify-center rounded border bg-card p-6">
+              <span className="font-semibold text-4xl">{index + 1}</span>
             </div>
           </CarouselItem>
         ))}

@@ -8,6 +8,7 @@ type TestMembership = {
   id: string;
   tenantId: string;
   contextType: ContextEntityType;
+  contextId: string;
   userId: string;
   role: EntityRole;
   displayOrder: number;
@@ -52,6 +53,7 @@ const createMemberships = (count: number): TestMembership[] =>
     id: `mem${i}`,
     tenantId: 'test01',
     contextType: 'organization' as const,
+    contextId: `org${i}`,
     userId: `user${i}`,
     organizationId: `org${i}`,
     role: i % 3 === 0 ? ('admin' as const) : ('member' as const),

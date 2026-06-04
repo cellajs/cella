@@ -25,7 +25,7 @@ function FooterLinks() {
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
-            <div className="font-display text-sm font-semibold tracking-wider text-white/40">{t(section.title)}</div>
+            <div className="font-display font-semibold text-sm text-white/40 tracking-wider">{t(section.title)}</div>
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
@@ -35,7 +35,7 @@ function FooterLinks() {
                     <Link
                       to={link.href}
                       target={target}
-                      className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect"
+                      className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline"
                     >
                       {t(link.title)}
                     </Link>
@@ -56,7 +56,7 @@ const Credits = ({ className }: { className?: string }) => {
   return (
     <div className={clsx('pb-12 text-center text-xs', className)}>
       <p>
-        © {currentYear}. {productName} {t('common:is_built_by', { companyName })}.
+        © {currentYear}. {productName} {t('c:is_built_by', { companyName })}.
       </p>
     </div>
   );
@@ -70,16 +70,14 @@ export const MarketingFooter = () => {
     <div className="relative">
       <section className={sectionClass}>
         <BackgroundCurve position="top" />
-        <div className="container flex max-w-5xl pt-8 px-8 flex-col items-center gap-4">
+        <div className="container flex max-w-5xl flex-col items-center gap-4 px-8 pt-8">
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
-              <div className="font-display text-sm font-semibold tracking-wider text-white/50">
-                {t('common:request_info')}
+              <div className="font-display font-semibold text-sm text-white/50 tracking-wider">
+                {t('c:request_info')}
               </div>
-              <div className="mt-4 text-sm text-white/90">
-                {t('common:request_info.text', { appName: appConfig.name })}
-              </div>
+              <div className="mt-4 text-sm text-white/90">{t('c:request_info.text', { appName: appConfig.name })}</div>
               <SubscribeNewsletterForm />
             </div>
           </div>
@@ -88,22 +86,22 @@ export const MarketingFooter = () => {
             to="/about"
             replace={location.pathname === '/about'}
             hash=""
-            draggable="false"
+            draggable={false}
             onClick={() => {
               scrollTo(0, 0);
             }}
-            className="mt-12 hover:opacity-90 active:scale-95 rounded-sm p-1 focus-effect"
+            className="focus-effect mt-12 rounded-sm p-1 hover:opacity-90 active:scale-95"
           >
             <Logo textColor="white" iconColor="#793f599e" />
           </Link>
 
-          <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-4 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
+          <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
             {legalLinks.map((link) => (
               <li key={link.title}>
                 <Link
                   to={link.href}
-                  draggable="false"
-                  className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect"
+                  draggable={false}
+                  className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline"
                 >
                   {t(link.title)}
                 </Link>

@@ -16,7 +16,7 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
 
   const selectOptions = options.map((lang) => ({
     value: lang,
-    label: t(`common:${lang}`),
+    label: t(`c:${lang}`),
   }));
 
   return (
@@ -24,7 +24,7 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
       options={selectOptions}
       value={value}
       onChange={(val) => onChange(val as Language)}
-      placeholder={t('common:placeholder.select_language')}
+      placeholder={t('c:placeholder.select_language')}
       disabled={appConfig.languages.length < 2}
       className="w-full"
     />

@@ -6,8 +6,5 @@ export const CheckboxColumn: Column<any> & {
 } = {
   ...SelectColumn,
   key: 'checkbox-column',
-  frozen: false,
   minBreakpoint: 'sm',
-  headerCellClass: 'flex items-center justify-center',
-  cellClass: 'flex items-center justify-center',
 };

@@ -1,9 +1,15 @@
 import { useMemo } from 'react';
-import { renderValue } from '../cellRenderers';
+import { renderValue } from '../cell-renderers';
 import { SELECT_COLUMN_KEY } from '../columns';
-import type { DataGridProps } from '../data-grid';
 import { renderHeaderCell } from '../render-header-cell';
-import type { BreakpointKey, CalculatedColumn, CalculatedColumnParent, ColumnOrColumnGroup, Omit } from '../types';
+import type {
+  BreakpointKey,
+  CalculatedColumn,
+  CalculatedColumnParent,
+  ColumnOrColumnGroup,
+  DefaultColumnOptions,
+  Omit,
+} from '../types';
 import { breakpointOrder, clampColumnWidth } from '../utils/grid-utils';
 
 type Mutable<T> = {
@@ -27,7 +33,7 @@ const DEFAULT_COLUMN_MIN_WIDTH = 50;
 
 interface CalculatedColumnsArgs<R, SR> {
   rawColumns: readonly ColumnOrColumnGroup<R, SR>[];
-  defaultColumnOptions: DataGridProps<R, SR>['defaultColumnOptions'];
+  defaultColumnOptions: DefaultColumnOptions<R, SR> | undefined | null;
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
   /** Current breakpoint for responsive column visibility */
   currentBreakpoint?: BreakpointKey;
@@ -218,7 +224,7 @@ export function useCalculatedColumns<R, SR>({
 
     for (let i = 0; i <= lastFrozenColumnIndex; i++) {
       const column = columns[i];
-      layoutCssVars[`--rdg-frozen-left-${column.idx}`] = `${columnMetrics.get(column)!.left}px`;
+      layoutCssVars[`--rdg-frozen-left-${column.idx}`] = `${columnMetrics.get(column)?.left}px`;
     }
 
     return { templateColumns, layoutCssVars, totalFrozenColumnWidth };

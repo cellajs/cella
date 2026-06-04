@@ -1,0 +1,51 @@
+{
+  "name": "yjs",
+  "version": "0.0.1",
+  "description": "Yjs WebSocket relay for collaborative editing and document persistence",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node dist/yjs-worker.js",
+    "start:dev": "tsx src/yjs-worker.ts",
+    "dev": "cross-env NODE_ENV=development node --import ../shared/scripts/register.mjs --env-file=../backend/.env --watch src/yjs-worker.ts",
+    "build": "cross-env NODE_ENV=production tsup",
+    "ts": "tsgo --pretty",
+    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@dotenv-run/core": "^1.3.8",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.218.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.218.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
+    "@opentelemetry/resources": "^2.7.1",
+    "@opentelemetry/sdk-logs": "^0.218.0",
+    "@opentelemetry/sdk-metrics": "^2.7.1",
+    "@opentelemetry/sdk-node": "^0.218.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
+    "lib0": "^0.2.117",
+    "pg": "^8.21.0",
+    "pino": "^10.3.1",
+    "pino-opentelemetry-transport": "^3.0.0",
+    "pino-pretty": "^13.1.3",
+    "rate-limiter-flexible": "^11.1.0",
+    "shared": "workspace:*",
+    "ws": "^8.21.0",
+    "yjs": "^13.6.31",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.13",
+    "@types/pg": "^8.20.0",
+    "@types/ws": "^8.18.1",
+    "cross-env": "^10.1.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

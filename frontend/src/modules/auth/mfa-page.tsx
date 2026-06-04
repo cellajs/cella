@@ -1,16 +1,14 @@
-import * as Sentry from '@sentry/react';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { signOut } from '~/api.gen';
+import { signOut } from 'sdk';
+import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 /**
  * Handles multifactor authentication in the authentication flows.
@@ -27,9 +25,8 @@ export function MfaPage() {
   const handleCancelMfa = async () => {
     try {
       await signOut();
-      toaster(t('common:success.cancel_mfa'), 'success');
+      toaster(t('c:success.cancel_mfa'), 'success');
     } catch (error) {
-      Sentry.captureException(error);
       console.error('Failed to retrieve data:', error);
     } finally {
       clearUserStore();
@@ -43,23 +40,16 @@ export function MfaPage() {
   // If somehow undefined return to authenticate
   if (!lastUser?.email) {
     navigate({ to: '/auth/authenticate', replace: true });
-    return <></>;
+    return null;
   }
 
   return (
     <>
-      <h1 className="text-2xl text-center">{t('common:mfa_header')}</h1>
+      <h1 className="text-center text-2xl">{t('c:mfa_header')}</h1>
 
-      <Button
-        variant="ghost"
-        onClick={handleCancelMfa}
-        className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10"
-      >
-        <span className="truncate">{lastUser.email}</span>
-        <ChevronDownIcon size={16} className="ml-1" />
-      </Button>
+      <AuthEmailButton email={lastUser.email} onClick={handleCancelMfa} />
 
-      <p className="font-light text-center space-x-1">{t('common:mfa_subheader.text')}</p>
+      <p className="space-x-1 text-center">{t('c:mfa_subheader.text')}</p>
 
       {!isActive && <PasskeyStrategy type="mfa" />}
       <TotpStrategy isActive={isActive} setIsActive={setIsActive} />

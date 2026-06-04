@@ -119,7 +119,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
               ) : (
                 <span className={`font-medium ${theme.key}`}>{showKeyQuotes ? `"${keyName}"` : keyName}</span>
               ))}
-            {keyName !== false && <span className="opacity-70 mr-1">:</span>}
+            {keyName !== false && <span className="mr-1 opacity-70">:</span>}
             <CustomComponent value={value} path={path} />
           </div>
         );
@@ -155,7 +155,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return (
         <div className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
-          {keyName !== false && <span className="opacity-70 mr-1">:</span>}
+          {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <PrimitiveValue
             value={value}
             type={valueType}
@@ -164,7 +164,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
             searchText={searchText}
             openapiMode={openapiMode}
           />
-          {displayDataTypes && <span className="text-sm opacity-50 ml-2">{getTypeLabel(value, valueType)}</span>}
+          {displayDataTypes && <span className="ml-2 text-sm opacity-50">{getTypeLabel(value, valueType)}</span>}
         </div>
       );
     }
@@ -225,6 +225,14 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return Object.keys(c).length > 0 ? c : null;
     })();
 
+    // Extract additionalProperties for dictionary/map rendering (shown as synthetic [key] entry)
+    const additionalPropsSchema = (() => {
+      if (openapiMode !== 'schema' || isArray || isInsideProperties) return null;
+      if (typeof value !== 'object' || value === null) return null;
+      const ap = (value as Record<string, unknown>).additionalProperties;
+      return ap && typeof ap === 'object' ? ap : null;
+    })();
+
     // Check if this is an array schema (has type: 'array') - used to hoist items.properties
     const isArraySchema =
       openapiMode === 'schema' &&
@@ -251,7 +259,8 @@ export const JsonNode: FC<JsonNodeProps> = memo(
               key !== 'minLength' &&
               key !== 'maximum' &&
               key !== 'minimum' &&
-              (isInsideProperties || (key !== 'type' && key !== 'ref' && key !== 'contentType')) &&
+              (isInsideProperties ||
+                (key !== 'type' && key !== 'ref' && key !== 'contentType' && key !== 'additionalProperties')) &&
               !(isArraySchema && key === 'items'),
           )
         : rawEntries;
@@ -283,6 +292,11 @@ export const JsonNode: FC<JsonNodeProps> = memo(
           })
         : filteredEntries;
 
+    // Append synthetic dictionary entry for additionalProperties (renders as [key]: <value type>)
+    if (additionalPropsSchema) {
+      entries.push(['[key]', additionalPropsSchema] as [string, unknown]);
+    }
+
     // In schema mode, compute the count of hoisted properties (what users see as children)
     const schemaPropertiesCount = (() => {
       if (openapiMode !== 'schema' || isArray) return entries.length;
@@ -313,7 +327,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return (
         <div className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
-          {keyName !== false && <span className="opacity-70 mr-1">:</span>}
+          {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <span className={bracketClass}>{openBracket}</span>
           <SchemaLabels
             typeValue={typeValue}
@@ -341,9 +355,10 @@ export const JsonNode: FC<JsonNodeProps> = memo(
       return (
         <div className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
-          {keyName !== false && <span className="opacity-70 mr-1">:</span>}
+          {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <span className={bracketClass}>[</span>
           {items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: rendering an inline primitive array; items have no stable id.
             <span key={index}>
               <InlinePrimitiveValue value={item} theme={theme} searchText={searchText} />
               {index < items.length - 1 && <span className="opacity-70">, </span>}
@@ -355,7 +370,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     }
 
     // Count search matches in collapsed node (to show indicator with count)
-    const hiddenMatchCount = !isExpanded && !!searchText ? countSearchMatchesInValue(value, searchText) : 0;
+    const hiddenMatchCount = !isExpanded && searchText ? countSearchMatchesInValue(value, searchText) : 0;
 
     // In schema mode, objects without nested object children are not expandable
     const isExpandable = hasNestedObjects;
@@ -367,8 +382,9 @@ export const JsonNode: FC<JsonNodeProps> = memo(
     return (
       <div data-properties-node={isFlattenedNode || undefined}>
         {!hideExpandHeader && (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON tree viewer; expand/collapse is a visual affordance for mouse users.
           <div
-            className={`group/node inline-flex items-center gap-0.5 rounded py-px px-1 -my-px -mx-1 ${isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none'}`}
+            className={`group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px ${isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none'}`}
             style={{ paddingLeft }}
             onClick={
               isExpandable
@@ -386,12 +402,12 @@ export const JsonNode: FC<JsonNodeProps> = memo(
             }
           >
             <span
-              className={`inline-flex items-center justify-center w-4 h-4 shrink-0 ${isExpandable ? 'opacity-60' : 'opacity-0 -ml-3.5'}`}
+              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0'}`}
             >
               <ChevronRightIcon size={14} className={`transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
             </span>
             <KeyRenderer {...keyProps} />
-            {keyName !== false && <span className="opacity-70 mr-1">:</span>}
+            {keyName !== false && <span className="mr-1 opacity-70">:</span>}
             <span className={bracketClass}>{openBracket}</span>
             <SchemaLabels
               typeValue={typeValue}
@@ -399,6 +415,7 @@ export const JsonNode: FC<JsonNodeProps> = memo(
               contentTypeValue={contentTypeValue}
               hasAnyOf={hasAnyOf}
               hasOneOf={hasOneOf}
+              constraints={constraints}
               theme={theme}
             />
             {!isExpanded && isExpandable && (

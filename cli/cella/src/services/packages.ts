@@ -10,9 +10,8 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import pc from 'picocolors';
-import * as semver from 'semver';
 import type { PackageJsonSyncKey, RuntimeConfig } from '../config/types';
+import pc from '../utils/colors';
 import { createSpinner, spinnerSuccess, spinnerText } from '../utils/display';
 
 /** Package.json structure */
@@ -36,6 +35,50 @@ interface PackageJson {
   [key: string]: unknown;
 }
 
+interface ComparableVersion {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
+function parseComparableVersion(version: string): ComparableVersion | null {
+  const trimmed = version.trim();
+
+  if (
+    trimmed === '' ||
+    trimmed === '*' ||
+    trimmed.includes('workspace:') ||
+    trimmed.includes('catalog:') ||
+    trimmed.includes('file:') ||
+    trimmed.includes('link:') ||
+    trimmed.includes('git+') ||
+    trimmed.includes('github:') ||
+    trimmed.includes('http://') ||
+    trimmed.includes('https://') ||
+    trimmed.includes('||')
+  ) {
+    return null;
+  }
+
+  const match = trimmed.match(
+    /^(?:\^|~|>=|<=|>|<|=)?\s*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/,
+  );
+
+  if (!match) return null;
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2] ?? 0),
+    patch: Number(match[3] ?? 0),
+  };
+}
+
+function compareVersions(left: ComparableVersion, right: ComparableVersion): number {
+  if (left.major !== right.major) return left.major - right.major;
+  if (left.minor !== right.minor) return left.minor - right.minor;
+  return left.patch - right.patch;
+}
+
 /**
  * Check if upstream version is higher than fork version.
  * Returns true only if upstream is strictly higher — never downgrades.
@@ -44,13 +87,12 @@ interface PackageJson {
 function isHigherVersion(upstreamVersion: string, forkVersion: string): boolean {
   if (upstreamVersion === forkVersion) return false;
 
-  // Extract the version part, stripping range prefixes
-  const upCoerced = semver.coerce(upstreamVersion);
-  const forkCoerced = semver.coerce(forkVersion);
+  const upCoerced = parseComparableVersion(upstreamVersion);
+  const forkCoerced = parseComparableVersion(forkVersion);
 
   if (!upCoerced || !forkCoerced) return false;
 
-  return semver.gt(upCoerced, forkCoerced);
+  return compareVersions(upCoerced, forkCoerced) > 0;
 }
 
 /**
@@ -181,7 +223,7 @@ function readPackageJson(filePath: string): PackageJson | null {
  * Write a package.json file (pretty-printed).
  */
 function writePackageJson(filePath: string, data: PackageJson): void {
-  writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+  writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf-8');
 }
 
 /**

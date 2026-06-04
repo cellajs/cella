@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 export function Totp() {
   const { t } = useTranslation();
@@ -27,8 +27,8 @@ export function Totp() {
       </Suspense>,
       {
         id: 'setup-totp',
-        title: t('common:totp_qr.title'),
-        description: t('common:totp_qr.description'),
+        title: t('c:totp_qr.title'),
+        description: t('c:totp_qr.description'),
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
@@ -37,19 +37,19 @@ export function Totp() {
   };
 
   const handleDeleteTOTP = () => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    if (user.mfaRequired) return toaster(t('common:unlink_mfa_last', { method: 'TOTP' }), 'info');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    if (user.mfaRequired) return toaster(t('c:unlink_mfa_last', { method: 'TOTP' }), 'info');
 
     deleteTotp();
   };
 
   return (
-    <div className="flex max-sm:flex-col gap-2 mb-6">
+    <div className="mb-6 flex gap-2 max-sm:flex-col">
       {hasTotp && (
         <div className="flex items-center gap-2 px-3">
-          <RotateCcwKeyIcon className="size-4 mr-2" />
+          <RotateCcwKeyIcon className="mr-2 size-4" />
           <CheckIcon size={18} strokeWidth={3} className="text-success" />
-          <span>{t('common:totp_activated')}</span>
+          <span>{t('c:totp_activated')}</span>
         </div>
       )}
       {hasTotp ? (
@@ -61,13 +61,13 @@ export function Totp() {
           disabled={user.mfaRequired}
           onClick={handleDeleteTOTP}
         >
-          <UnlinkIcon className="size-4 mr-2" />
-          <span>{t('common:unlink')}</span>
+          <UnlinkIcon className="mr-2 size-4" />
+          <span>{t('c:unlink')}</span>
         </Button>
       ) : (
         <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
-          <RotateCcwKeyIcon className="size-4 mr-2" />
-          <span>{t('common:totp_setup')}</span>
+          <RotateCcwKeyIcon className="mr-2 size-4" />
+          <span>{t('c:totp_setup')}</span>
         </Button>
       )}
     </div>

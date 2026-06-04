@@ -1,9 +1,15 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'shared';
+import { actionToVerb, activityActions, appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
-import { activityActions } from '#/sync/activity-actions';
-import { entityTableNames } from '#/table-config';
-import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTenantId, withFakerSeed } from './utils';
+import { entityTableNames } from '#/tables';
+import {
+  generateMockContextEntityIdColumns,
+  MOCK_REF_DATE,
+  mockPaginated,
+  mockTenantId,
+  mockUuid,
+  withFakerSeed,
+} from './utils';
 
 /**
  * Generates a mock activity with all fields populated. Currently hardcoded
@@ -13,34 +19,33 @@ import { generateMockContextEntityIdColumns, mockNanoid, mockPaginated, mockTena
  * Context entity ID columns are generated dynamically based on relatable context entity types.
  * Used for DB seeding, tests, and API response examples.
  */
-export const mockActivity = (key = 'activity:default'): ActivityModel =>
+export const mockActivity = (key = 'activity:default', overrides?: Partial<ActivityModel>): ActivityModel =>
   withFakerSeed(key, () => {
-    const refDate = new Date('2025-01-01T00:00:00.000Z');
+    const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const tableName = faker.helpers.arrayElement(entityTableNames);
     const action = faker.helpers.arrayElement([...activityActions]);
-    const singularName = tableName.replace(/s$/, '');
-    const verb = action === 'create' ? 'created' : action === 'update' ? 'updated' : 'deleted';
+    const trackedType = faker.helpers.arrayElement([...appConfig.entityTypes, ...appConfig.resourceTypes]);
+    const verb = actionToVerb(action);
 
     return {
-      id: mockNanoid(),
+      id: mockUuid(),
       tenantId: mockTenantId(),
-      userId: mockNanoid(),
+      userId: mockUuid(),
       entityType: faker.helpers.arrayElement([...appConfig.entityTypes, null]),
       resourceType: null,
       action,
       tableName,
-      type: `${singularName}.${verb}`,
-      entityId: mockNanoid(),
+      type: `${trackedType}.${verb}`,
+      subjectId: mockUuid(),
       createdAt,
-      changedKeys:
+      changedFields:
         action === 'update'
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
       stx: null,
-      // Dead letter error info (null for successfully processed activities)
-      error: null,
       ...generateMockContextEntityIdColumns('relatable'),
+      ...overrides,
     };
   });
 

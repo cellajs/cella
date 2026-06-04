@@ -1,12 +1,12 @@
-import type { ContextEntityType } from 'shared';
-import type z from 'zod';
 import type {
   DeleteMembershipsData,
   GetMembersResponse,
   GetPendingMembershipsResponse,
   MembershipInviteData,
   UpdateMembershipData,
-} from '~/api.gen';
+} from 'sdk';
+import type { ContextEntityType } from 'shared';
+import type z from 'zod';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { membersRouteSearchParamsSchema } from '~/modules/memberships/search-params-schemas';
 import type { ContextQueryProp, InfiniteQueryData, MutationData, QueryData } from '~/query/types';

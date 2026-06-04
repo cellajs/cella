@@ -3,7 +3,7 @@ import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import type { AboutCard } from '~/modules/marketing/about/cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
-import { ShowcaseItem } from '~/modules/marketing/about/showcase';
+import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { ElementIcon } from '~/modules/marketing/icons/element';
 import { GithubIcon } from '~/modules/marketing/icons/github';
 
@@ -29,24 +29,24 @@ export const socials = [
 
 export const footerSections = [
   {
-    title: 'common:product',
+    title: 'c:product',
     links: [
-      { title: 'common:about', href: '/about' },
-      { title: 'common:sign_up', href: '/auth/authenticate' },
+      { title: 'c:about', href: '/about' },
+      { title: 'c:sign_up', href: '/auth/authenticate' },
     ],
   },
   {
-    title: 'common:documentation',
+    title: 'c:documentation',
     hideOnMobile: true,
     links: [
-      { title: 'common:api_docs', href: `/docs` },
-      { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
+      { title: 'c:api_docs', href: '/docs' },
+      { title: 'c:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
+      { title: 'c:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],
   },
   {
-    title: 'common:connect',
-    links: [{ title: 'common:contact_us', href: '/contact' }, ...socials],
+    title: 'c:connect',
+    links: [{ title: 'c:contact_us', href: '/contact' }, ...socials],
   },
 ];
 
@@ -55,8 +55,8 @@ export const footerSections = [
  ************************************************************************************************/
 
 export const legalLinks = [
-  { title: 'common:legal', href: '/legal' },
-  { title: 'common:accessibility', href: '/accessibility' },
+  { title: 'c:legal', href: '/legal' },
+  { title: 'c:accessibility', href: '/accessibility' },
 ];
 
 /*************************************************************************************************
@@ -121,8 +121,8 @@ export const faqsData = [
  ************************************************************************************************/
 
 export const counts = [
-  { id: 'user', title: 'common:users', icon: UsersIcon },
-  { id: 'organization', title: 'common:organizations', icon: Building2Icon },
+  { id: 'user', title: 'c:users', icon: UsersIcon },
+  { id: 'organization', title: 'c:organizations', icon: Building2Icon },
 ] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
 
 /*************************************************************************************************

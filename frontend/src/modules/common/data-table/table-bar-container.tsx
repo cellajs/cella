@@ -1,19 +1,24 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useScrollReset } from '~/modules/common/scroll-reset';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 import { StickyBox } from '../sticky-box';
 
 interface TableBarContainerProps {
   children: ReactNode;
   className?: string;
-  /** Sticky offset (px) when not in focus view. Use 36 to account for PageNav. */
+  enableSticky?: boolean;
   offsetTop?: number;
-  /** When provided, scroll the table area into view on any search/filter change */
   searchVars?: Record<string, unknown>;
 }
 
-export const TableBarContainer = ({ children, className, offsetTop, searchVars }: TableBarContainerProps) => {
+export const TableBarContainer = ({
+  children,
+  className,
+  enableSticky = false,
+  offsetTop,
+  searchVars,
+}: TableBarContainerProps) => {
   const focusView = useUIStore((state) => state.focusView);
   const scrollToReset = useScrollReset();
 
@@ -31,11 +36,12 @@ export const TableBarContainer = ({ children, className, offsetTop, searchVars }
 
   return (
     <StickyBox
-      className="group/sticky z-10 bg-background/60 backdrop-blur-xs max-sm:static! max-sm:top-auto!"
+      enabled={enableSticky}
+      className="group/sticky max-sm:static! z-10 bg-background/60 backdrop-blur-xs max-sm:top-auto!"
       offsetTop={focusView ? 0 : offsetTop}
       hideWhenOutOfView
     >
-      <div className={cn('flex items-center max-sm:justify-between md:gap-2 py-2', className)}>{children}</div>
+      <div className={cn('flex items-center py-2 max-sm:justify-between md:gap-2', className)}>{children}</div>
     </StickyBox>
   );
 };

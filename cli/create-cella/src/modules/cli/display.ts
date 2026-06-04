@@ -1,5 +1,4 @@
 import pc from 'picocolors';
-
 import { DESCRIPTION, DIVIDER, getHeaderLine } from '#/constants';
 
 /** ASCII art logo for the CLI welcome screen. */

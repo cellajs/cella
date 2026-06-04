@@ -40,13 +40,13 @@ export function StepButtonContainer({
       tabIndex={currentStepClickable ? 0 : -1}
       className={cn(
         'stepper__step-button-container',
-        'rounded-full p-0 pointer-events-none',
-        'w-(--step-icon-size) h-(--step-icon-size)',
-        'border-2 flex rounded-full justify-center items-center',
+        'pointer-events-none rounded-full p-0',
+        'h-(--step-icon-size) w-(--step-icon-size)',
+        'flex items-center justify-center rounded-full border-2',
         'data-[clickable=true]:pointer-events-auto',
-        'data-[active=true]:bg-primary data-[active=true]:border-primary data-[active=true]:text-primary-foreground',
+        'data-[active=true]:border-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground',
         'data-[current=true]:border-primary data-[current=true]:bg-secondary',
-        'data-[invalid=true]:bg-destructive data-[invalid=true]:border-destructive data-[invalid=true]:text-destructive-foreground',
+        'data-[invalid=true]:border-destructive data-[invalid=true]:bg-destructive data-[invalid=true]:text-destructive-foreground',
         styles?.['step-button-container'],
       )}
       aria-current={isCurrentStep ? 'step' : undefined}

@@ -48,7 +48,7 @@ export async function create({
       // Check if target is inside source (would cause EINVAL)
       if (targetFolder.startsWith(sourcePath)) {
         throw new Error(
-          `Cannot create project inside the template directory.\n` +
+          'Cannot create project inside the template directory.\n' +
             `  Run from outside: cd ~ && pnpm create @cellajs/cella ${projectName} --template ${templateUrl}`,
         );
       }

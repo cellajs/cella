@@ -137,13 +137,13 @@ describe('create-cella e2e', () => {
 
   describe('placeholder config', () => {
     it('should have interpolated default-config.ts without __tokens__', () => {
-      const configPath = join(targetFolder, 'shared', 'default-config.ts');
+      const configPath = join(targetFolder, 'shared', 'config', 'config.default.ts');
       const content = readFileSync(configPath, 'utf-8');
       expect(content).not.toContain('__project_name__');
       expect(content).not.toContain('__project_slug__');
     });
 
-    it('should produce no TypeScript errors in shared/default-config.ts', () => {
+    it('should produce no TypeScript errors in shared/config/config.default.ts', () => {
       // Run tsc via the backend tsconfig which includes ../shared/*
       execSync('npx tsc --noEmit', { cwd: join(targetFolder, 'backend'), stdio: 'pipe' });
     });
@@ -152,19 +152,19 @@ describe('create-cella e2e', () => {
   describe('generated env configs', () => {
     it('should have generated all env config files', () => {
       for (const mode of ['development', 'staging', 'tunnel', 'test', 'production']) {
-        expect(existsSync(join(targetFolder, 'shared', `${mode}-config.ts`))).toBe(true);
+        expect(existsSync(join(targetFolder, 'shared', 'config', `config.${mode}.ts`))).toBe(true);
       }
     });
 
     it('should contain correct mode and project name', () => {
-      const content = readFileSync(join(targetFolder, 'shared', 'production-config.ts'), 'utf-8');
+      const content = readFileSync(join(targetFolder, 'shared', 'config', 'config.production.ts'), 'utf-8');
       expect(content).toContain("mode: 'production'");
       expect(content).toContain('satisfies DeepPartial<typeof _default>');
       expect(content).not.toContain('Cella');
     });
 
     it('should have project-specific values in development config', () => {
-      const content = readFileSync(join(targetFolder, 'shared', 'development-config.ts'), 'utf-8');
+      const content = readFileSync(join(targetFolder, 'shared', 'config', 'config.development.ts'), 'utf-8');
       expect(content).toContain("mode: 'development'");
       expect(content).toContain("'http://localhost:3000'");
       expect(content).toContain("'http://localhost:4000'");
@@ -172,7 +172,7 @@ describe('create-cella e2e', () => {
     });
 
     it('should have test config deriving from development', () => {
-      const content = readFileSync(join(targetFolder, 'shared', 'test-config.ts'), 'utf-8');
+      const content = readFileSync(join(targetFolder, 'shared', 'config', 'config.test.ts'), 'utf-8');
       expect(content).toContain("mode: 'test'");
       expect(content).toContain('development.frontendUrl');
       expect(content).toContain('development.backendUrl');

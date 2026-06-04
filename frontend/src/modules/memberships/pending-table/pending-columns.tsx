@@ -11,8 +11,8 @@ export const useColumns = () => {
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
     {
       key: 'email',
-      name: t('common:email'),
-      sortable: false,
+      name: t('c:email'),
+
       minWidth: 140,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) => {
@@ -21,7 +21,7 @@ export const useColumns = () => {
           <a
             href={`mailto:${row.email}`}
             tabIndex={tabIndex}
-            className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light"
+            className="truncate underline-offset-4 outline-0 ring-0 hover:underline"
           >
             {row.email}
           </a>
@@ -30,20 +30,18 @@ export const useColumns = () => {
     },
     {
       key: 'role',
-      name: t('common:role'),
-      sortable: false,
+      name: t('c:role'),
+
       width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) =>
         row.role ? (
-          <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {t(row.role, { ns: ['app', 'common'] })}
-          </div>
+          <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.role)}</div>
         ) : null,
     },
     {
       key: 'createdAt',
-      name: t('common:invited_at'),
+      name: t('c:invited_at'),
       sortable: true,
       minBreakpoint: 'md',
       placeholderValue: '-',
@@ -52,8 +50,8 @@ export const useColumns = () => {
     },
     {
       key: 'createdBy',
-      name: t('common:invited_by'),
-      sortable: false,
+      name: t('c:invited_by'),
+
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',

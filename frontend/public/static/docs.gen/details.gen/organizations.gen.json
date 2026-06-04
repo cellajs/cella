@@ -15,38 +15,22 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "An organization with membership context.",
+                "description": "The main context entity is an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "slug": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "slug": { "type": "string", "required": true, "maxLength": 255 },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
                     "required": true,
@@ -60,7 +44,7 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -68,11 +52,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -82,10 +61,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -93,11 +72,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -163,7 +137,7 @@
                     "type": "array",
                     "required": true,
                     "itemType": "string",
-                    "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                   },
                   "chatSupport": { "type": "boolean", "required": true },
                   "included": {
@@ -175,26 +149,15 @@
                         "required": true,
                         "description": "Core membership fields shared across active and inactive memberships.",
                         "properties": {
-                          "id": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          },
-                          "tenantId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 24
-                          },
+                          "id": { "type": "string", "required": true, "format": "uuid" },
+                          "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                           "contextType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "userId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          },
+                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "userId": { "type": "string", "required": true, "format": "uuid" },
                           "role": {
                             "type": "string",
                             "required": true,
@@ -208,11 +171,7 @@
                             "minimum": -140737488355328,
                             "maximum": 140737488355327
                           },
-                          "organizationId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          }
+                          "organizationId": { "type": "string", "required": true, "format": "uuid" }
                         },
                         "ref": "#/components/schemas/MembershipBase"
                       },
@@ -234,8 +193,7 @@
                             "type": "object",
                             "required": true,
                             "properties": {
-                              "attachment": { "type": "number", "required": true },
-                              "page": { "type": "number", "required": true }
+                              "attachment": { "type": "number", "required": true }
                             }
                           }
                         }
@@ -246,7 +204,7 @@
                 "extendsRef": "#/components/schemas/Organization"
               }
             },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -256,11 +214,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -268,39 +222,40 @@
         "example": {
           "data": [
             {
-              "id": "kzmv5qbhdcqeiuvwlosan0fc",
-              "tenantId": "wgpaj0",
+              "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "tenantId": "fyc7n2",
               "entityType": "organization",
-              "name": "Kessler and Sons",
-              "slug": "kessler-and-sons",
-              "description": "Future-proofed contextually-based moderator",
-              "shortName": "Kessler",
-              "country": "Azerbaijan",
-              "timezone": "Europe/Kyiv",
+              "name": "Conroy, Kerluke and Rowe",
+              "slug": "conroy-kerluke-and-rowe",
+              "description": "Sharable maximized support",
+              "shortName": "Conroy,",
+              "country": "Slovakia",
+              "timezone": "Asia/Kabul",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@kessler-and-sons.example",
-              "color": "#ce39f9",
+              "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
+              "color": "#bc1f77",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://kessler-and-sons.example",
-              "welcomeText": "Welcome to Kessler and Sons!",
-              "authStrategies": ["password"],
+              "websiteUrl": "https://conroy-kerluke-and-rowe.example",
+              "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
+              "authStrategies": ["passkey"],
               "chatSupport": false,
               "createdAt": "2024-04-19T14:04:35.773Z",
               "createdBy": null,
-              "modifiedAt": "2024-04-19T14:04:35.773Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedBy": null,
               "included": {
                 "membership": {
-                  "id": "3y6ee6h5lc8sjfv4trxwe3yb",
-                  "tenantId": "89fjn2",
+                  "id": "1f366272-953c-486d-81dc-ee61f43478a1",
+                  "tenantId": "t4n7co",
                   "contextType": "organization",
-                  "userId": "1t4n7coocr6ixfzcb6x5wab0",
-                  "organizationId": "kzmv5qbhdcqeiuvwlosan0fc",
-                  "role": "member",
-                  "displayOrder": 95,
+                  "contextId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
+                  "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
+                  "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                  "role": "admin",
+                  "displayOrder": 98,
                   "muted": false,
                   "archived": false
                 },
@@ -316,39 +271,40 @@
               }
             },
             {
-              "id": "p3t0ygxx0aa83en3sk1fs1we",
-              "tenantId": "74l758",
+              "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "tenantId": "dwpxxb",
               "entityType": "organization",
-              "name": "Howell - Ullrich",
-              "slug": "howell-ullrich",
-              "description": "Quality-focused uniform throughput",
-              "shortName": "Howell",
-              "country": "French Polynesia",
-              "timezone": "Australia/Brisbane",
+              "name": "Lemke, Bode and Reichel-Klocko",
+              "slug": "lemke-bode-and-reichel-klocko",
+              "description": "Progressive coherent artificial intelligence",
+              "shortName": "Lemke,",
+              "country": "Romania",
+              "timezone": "Indian/Reunion",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@howell-ullrich.example",
-              "color": "#88b531",
+              "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
+              "color": "#39ae6d",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://howell-ullrich.example",
-              "welcomeText": "Welcome to Howell - Ullrich!",
-              "authStrategies": ["password"],
-              "chatSupport": true,
+              "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
+              "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
+              "authStrategies": ["passkey"],
+              "chatSupport": false,
               "createdAt": "2024-02-25T13:01:35.301Z",
               "createdBy": null,
-              "modifiedAt": "2024-02-25T13:01:35.301Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedBy": null,
               "included": {
                 "membership": {
-                  "id": "ry5f7szmj5jhp0ad93klgj3e",
-                  "tenantId": "j6ly81",
+                  "id": "cf273cfa-8287-4b04-b641-897816829f30",
+                  "tenantId": "4oy2u1",
                   "contextType": "organization",
-                  "userId": "u4oy2u1m55abgsmrl1zezeoj",
-                  "organizationId": "p3t0ygxx0aa83en3sk1fs1we",
+                  "contextId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
+                  "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
+                  "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                   "role": "admin",
-                  "displayOrder": 20,
+                  "displayOrder": 83,
                   "muted": false,
                   "archived": false
                 },
@@ -364,7 +320,7 @@
               }
             }
           ],
-          "rejectedItemIds": []
+          "rejectedIds": []
         }
       },
       {
@@ -396,6 +352,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -406,11 +369,7 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -420,11 +379,7 @@
           "type": "object",
           "required": true,
           "properties": {
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "maxLength": 50 },
             "name": {
               "type": "string",
               "required": true,
@@ -457,7 +412,7 @@
           "type": "object",
           "properties": {
             "data": { "type": "array", "required": true },
-            "rejectedItemIds": {
+            "rejectedIds": {
               "type": "array",
               "required": true,
               "description": "Identifiers of items that could not be processed",
@@ -467,11 +422,7 @@
               "type": "object",
               "required": false,
               "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": {
-                "type": "array",
-                "required": false,
-                "itemType": "string"
-              }
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
             }
           },
           "contentType": "application/json"
@@ -503,6 +454,13 @@
         "description": "Not found: resource does not exist.",
         "name": "NotFoundError",
         "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
         "contentType": "application/json"
       },
       {
@@ -516,11 +474,7 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -533,354 +487,6 @@
             "maxItems": 50,
             "itemType": "string"
           }
-        },
-        "required": true,
-        "contentType": "application/json"
-      }
-    }
-  },
-  {
-    "operationId": "autoCreateOrganization",
-    "responses": [
-      {
-        "status": 201,
-        "description": "Organization was created",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "description": "An organization with membership context.",
-          "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["organization"]
-            },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 2048
-            },
-            "bannerUrl": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 2048
-            },
-            "createdBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
-            },
-            "modifiedBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
-              "properties": {
-                "id": { "type": "string", "required": true },
-                "name": { "type": "string", "required": true },
-                "slug": { "type": "string", "required": true },
-                "thumbnailUrl": {
-                  "type": ["string", "null"],
-                  "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
-                },
-                "entityType": {
-                  "type": "string",
-                  "required": true,
-                  "enum": ["user"]
-                }
-              },
-              "extendsRef": "#/components/schemas/UserMinimalBase"
-            },
-            "shortName": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "country": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "timezone": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "defaultLanguage": {
-              "type": "string",
-              "required": true,
-              "enum": ["en", "nl"]
-            },
-            "languages": {
-              "type": "array",
-              "required": true,
-              "minItems": 1,
-              "itemType": "string",
-              "enum": ["en", "nl"]
-            },
-            "notificationEmail": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "color": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "logoUrl": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 2048
-            },
-            "websiteUrl": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 2048
-            },
-            "welcomeText": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 1000000
-            },
-            "authStrategies": {
-              "type": "array",
-              "required": true,
-              "itemType": "string",
-              "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
-            },
-            "chatSupport": { "type": "boolean", "required": true },
-            "included": {
-              "type": "object",
-              "required": true,
-              "properties": {
-                "membership": {
-                  "type": "object",
-                  "required": true,
-                  "description": "Core membership fields shared across active and inactive memberships.",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 24
-                    },
-                    "contextType": {
-                      "type": "string",
-                      "required": true,
-                      "enum": ["organization"]
-                    },
-                    "userId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
-                    "role": {
-                      "type": "string",
-                      "required": true,
-                      "enum": ["admin", "member"]
-                    },
-                    "archived": { "type": "boolean", "required": true },
-                    "muted": { "type": "boolean", "required": true },
-                    "displayOrder": {
-                      "type": "number",
-                      "required": true,
-                      "minimum": -140737488355328,
-                      "maximum": 140737488355327
-                    },
-                    "organizationId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    }
-                  },
-                  "ref": "#/components/schemas/MembershipBase"
-                },
-                "counts": {
-                  "type": "object",
-                  "required": false,
-                  "properties": {
-                    "membership": {
-                      "type": "object",
-                      "required": true,
-                      "properties": {
-                        "admin": { "type": "number", "required": true },
-                        "member": { "type": "number", "required": true },
-                        "pending": { "type": "number", "required": true },
-                        "total": { "type": "number", "required": true }
-                      }
-                    },
-                    "entities": {
-                      "type": "object",
-                      "required": true,
-                      "properties": {
-                        "attachment": { "type": "number", "required": true },
-                        "page": { "type": "number", "required": true }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "extendsRef": "#/components/schemas/Organization",
-          "contentType": "application/json"
-        },
-        "example": {
-          "id": "hmo9fwr239kqavr3yur671kl",
-          "tenantId": "vk6xht",
-          "entityType": "organization",
-          "name": "Hills, Bauch and Monahan",
-          "slug": "hills-bauch-and-monahan",
-          "description": "Multi-tiered zero trust firmware",
-          "shortName": "Hills,",
-          "country": "Turks and Caicos Islands",
-          "timezone": "America/Argentina/Buenos_Aires",
-          "defaultLanguage": "en",
-          "languages": ["en"],
-          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "color": "#ecfdfe",
-          "thumbnailUrl": null,
-          "logoUrl": null,
-          "bannerUrl": null,
-          "websiteUrl": "https://hills-bauch-and-monahan.example",
-          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-          "authStrategies": ["password"],
-          "chatSupport": true,
-          "createdAt": "2024-12-25T15:29:47.111Z",
-          "createdBy": null,
-          "modifiedAt": "2024-12-25T15:29:47.111Z",
-          "modifiedBy": null,
-          "included": {
-            "membership": {
-              "id": "kaba9fpc90mgtzmtjipw2v8s",
-              "tenantId": "w4hg40",
-              "contextType": "organization",
-              "userId": "36vxzq0rzt4pucvepsu63uw1",
-              "organizationId": "hmo9fwr239kqavr3yur671kl",
-              "role": "admin",
-              "displayOrder": 69,
-              "muted": false,
-              "archived": false
-            },
-            "counts": {
-              "membership": {
-                "admin": 30,
-                "member": 63,
-                "pending": 13,
-                "total": 93
-              },
-              "entities": { "attachment": 178, "page": 257 }
-            }
-          }
-        }
-      },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "body": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "required": true,
-            "minLength": 2,
-            "maxLength": 255
-          },
-          "slug": {
-            "type": "string",
-            "required": true,
-            "minLength": 2,
-            "maxLength": 255
-          },
-          "createNewTenant": { "type": "boolean", "required": false }
         },
         "required": true,
         "contentType": "application/json"
@@ -904,38 +510,22 @@
               "ref": "#/components/schemas/Organization",
               "items": {
                 "type": "object",
-                "description": "An organization with membership context.",
+                "description": "The main context entity is an organization.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
-                  "id": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 50
-                  },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
                     "required": true,
                     "enum": ["organization"]
                   },
-                  "tenantId": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 24
-                  },
-                  "name": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
-                  "modifiedAt": {
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "slug": {
-                    "type": "string",
-                    "required": true,
-                    "maxLength": 255
-                  },
+                  "slug": { "type": "string", "required": true, "maxLength": 255 },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
                     "required": true,
@@ -949,7 +539,7 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -957,11 +547,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -971,10 +556,10 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
-                  "modifiedBy": {
+                  "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+                    "description": "Minimal user data for references.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -982,11 +567,6 @@
                       "thumbnailUrl": {
                         "type": ["string", "null"],
                         "required": true
-                      },
-                      "email": {
-                        "type": "string",
-                        "required": true,
-                        "format": "email"
                       },
                       "entityType": {
                         "type": "string",
@@ -1052,7 +632,7 @@
                     "type": "array",
                     "required": true,
                     "itemType": "string",
-                    "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                   },
                   "chatSupport": { "type": "boolean", "required": true },
                   "included": {
@@ -1064,26 +644,15 @@
                         "required": false,
                         "description": "Core membership fields shared across active and inactive memberships.",
                         "properties": {
-                          "id": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          },
-                          "tenantId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 24
-                          },
+                          "id": { "type": "string", "required": true, "format": "uuid" },
+                          "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                           "contextType": {
                             "type": "string",
                             "required": true,
                             "enum": ["organization"]
                           },
-                          "userId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          },
+                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "userId": { "type": "string", "required": true, "format": "uuid" },
                           "role": {
                             "type": "string",
                             "required": true,
@@ -1097,11 +666,7 @@
                             "minimum": -140737488355328,
                             "maximum": 140737488355327
                           },
-                          "organizationId": {
-                            "type": "string",
-                            "required": true,
-                            "maxLength": 50
-                          }
+                          "organizationId": { "type": "string", "required": true, "format": "uuid" }
                         },
                         "ref": "#/components/schemas/MembershipBase"
                       },
@@ -1123,8 +688,7 @@
                             "type": "object",
                             "required": true,
                             "properties": {
-                              "attachment": { "type": "number", "required": true },
-                              "page": { "type": "number", "required": true }
+                              "attachment": { "type": "number", "required": true }
                             }
                           }
                         }
@@ -1142,39 +706,40 @@
         "example": {
           "items": [
             {
-              "id": "qqp8d07imsvjbtqtl3rtjgxd",
-              "tenantId": "9xn03u",
+              "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "tenantId": "6eo7z7",
               "entityType": "organization",
-              "name": "Dicki - Jacobi",
-              "slug": "dicki-jacobi",
-              "description": "Public-key context-sensitive website",
-              "shortName": "Dicki",
-              "country": "Comoros",
-              "timezone": "Africa/Conakry",
+              "name": "Anderson - Ferry",
+              "slug": "anderson-ferry",
+              "description": "Business-focused explicit support",
+              "shortName": "Anderson",
+              "country": "Portugal",
+              "timezone": "Pacific/Efate",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@dicki-jacobi.example",
-              "color": "#f40655",
+              "notificationEmail": "notifications@anderson-ferry.example",
+              "color": "#b6e6ee",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://dicki-jacobi.example",
-              "welcomeText": "Welcome to Dicki - Jacobi!",
-              "authStrategies": ["password"],
-              "chatSupport": true,
+              "websiteUrl": "https://anderson-ferry.example",
+              "welcomeText": "Welcome to Anderson - Ferry!",
+              "authStrategies": ["passkey"],
+              "chatSupport": false,
               "createdAt": "2024-11-21T04:00:59.122Z",
               "createdBy": null,
-              "modifiedAt": "2024-11-21T04:00:59.122Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-11-21T04:00:59.122Z",
+              "updatedBy": null,
               "included": {
                 "membership": {
-                  "id": "300jor4orrvsgezqoyxfckg3",
-                  "tenantId": "ifex0a",
+                  "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                  "tenantId": "u87zf2",
                   "contextType": "organization",
-                  "userId": "gu87zf240qkfh0faoqjip69q",
-                  "organizationId": "qqp8d07imsvjbtqtl3rtjgxd",
-                  "role": "member",
-                  "displayOrder": 38,
+                  "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                  "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
+                  "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                  "role": "admin",
+                  "displayOrder": 83,
                   "muted": false,
                   "archived": false
                 },
@@ -1190,39 +755,40 @@
               }
             },
             {
-              "id": "hg5ogh3yr2b2dbwf7b9eckaj",
-              "tenantId": "clxs8v",
+              "id": "772a771f-c150-465e-9635-46594859fc3d",
+              "tenantId": "yzrul7",
               "entityType": "organization",
-              "name": "Witting - Wuckert",
-              "slug": "witting-wuckert",
-              "description": "Reverse-engineered sustainable matrix",
-              "shortName": "Witting",
-              "country": "Costa Rica",
-              "timezone": "Europe/Ulyanovsk",
+              "name": "Wiegand, Harber and Stark-Abshire",
+              "slug": "wiegand-harber-and-stark-abshire",
+              "description": "Automated responsive portal",
+              "shortName": "Wiegand,",
+              "country": "Chile",
+              "timezone": "Europe/Samara",
               "defaultLanguage": "en",
               "languages": ["en"],
-              "notificationEmail": "notifications@witting-wuckert.example",
-              "color": "#d9e6a7",
+              "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
+              "color": "#b87a1e",
               "thumbnailUrl": null,
               "logoUrl": null,
               "bannerUrl": null,
-              "websiteUrl": "https://witting-wuckert.example",
-              "welcomeText": "Welcome to Witting - Wuckert!",
-              "authStrategies": ["password"],
+              "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
+              "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
+              "authStrategies": ["passkey"],
               "chatSupport": true,
               "createdAt": "2024-10-29T08:46:20.790Z",
               "createdBy": null,
-              "modifiedAt": "2024-10-29T08:46:20.790Z",
-              "modifiedBy": null,
+              "updatedAt": "2024-10-29T08:46:20.790Z",
+              "updatedBy": null,
               "included": {
                 "membership": {
-                  "id": "1u44cckbz5av195r4h3wiruz",
-                  "tenantId": "44b7wk",
+                  "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                  "tenantId": "lwj64z",
                   "contextType": "organization",
-                  "userId": "ilwj64zmkwsnsmrzo2zxd2hr",
-                  "organizationId": "hg5ogh3yr2b2dbwf7b9eckaj",
-                  "role": "admin",
-                  "displayOrder": 7,
+                  "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                  "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
+                  "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
+                  "role": "member",
+                  "displayOrder": 73,
                   "muted": false,
                   "archived": false
                 },
@@ -1270,6 +836,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1280,15 +853,11 @@
     "request": {
       "query": {
         "properties": {
-          "q": {
-            "type": "string",
-            "required": false,
-            "maxLength": 255
-          },
+          "q": { "type": "string", "required": false, "maxLength": 255 },
           "sort": {
             "type": "string",
             "required": false,
-            "enum": ["id", "name", "createdAt"]
+            "enum": ["id", "name", "createdAt", "displayOrder"]
           },
           "order": {
             "type": "string",
@@ -1297,12 +866,8 @@
           },
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
-          "afterSeq": { "type": "string", "required": false },
-          "relatableUserId": {
-            "type": "string",
-            "required": false,
-            "maxLength": 50
-          },
+          "seqCursor": { "type": "string", "required": false },
+          "relatableUserId": { "type": "string", "required": false, "maxLength": 50 },
           "role": {
             "type": "string",
             "required": false,
@@ -1329,38 +894,22 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "An organization with membership context.",
+          "description": "The main context entity is an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -1374,7 +923,7 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1382,11 +931,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1396,10 +940,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1407,11 +951,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1477,7 +1016,7 @@
               "type": "array",
               "required": true,
               "itemType": "string",
-              "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
             },
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
@@ -1489,26 +1028,15 @@
                   "required": false,
                   "description": "Core membership fields shared across active and inactive memberships.",
                   "properties": {
-                    "id": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 24
-                    },
+                    "id": { "type": "string", "required": true, "format": "uuid" },
+                    "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                     "contextType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "userId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
+                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "userId": { "type": "string", "required": true, "format": "uuid" },
                     "role": {
                       "type": "string",
                       "required": true,
@@ -1522,11 +1050,7 @@
                       "minimum": -140737488355328,
                       "maximum": 140737488355327
                     },
-                    "organizationId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    }
+                    "organizationId": { "type": "string", "required": true, "format": "uuid" }
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
@@ -1548,8 +1072,7 @@
                       "type": "object",
                       "required": true,
                       "properties": {
-                        "attachment": { "type": "number", "required": true },
-                        "page": { "type": "number", "required": true }
+                        "attachment": { "type": "number", "required": true }
                       }
                     }
                   }
@@ -1561,39 +1084,40 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "hmo9fwr239kqavr3yur671kl",
-          "tenantId": "vk6xht",
+          "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
           "entityType": "organization",
-          "name": "Hills, Bauch and Monahan",
-          "slug": "hills-bauch-and-monahan",
-          "description": "Multi-tiered zero trust firmware",
-          "shortName": "Hills,",
-          "country": "Turks and Caicos Islands",
-          "timezone": "America/Argentina/Buenos_Aires",
+          "name": "Spencer, Pouros and Bergnaum",
+          "slug": "spencer-pouros-and-bergnaum",
+          "description": "Sustainable systematic software",
+          "shortName": "Spencer,",
+          "country": "Tajikistan",
+          "timezone": "Antarctica/Syowa",
           "defaultLanguage": "en",
           "languages": ["en"],
-          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "color": "#ecfdfe",
+          "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+          "color": "#6af7b9",
           "thumbnailUrl": null,
           "logoUrl": null,
           "bannerUrl": null,
-          "websiteUrl": "https://hills-bauch-and-monahan.example",
-          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-          "authStrategies": ["password"],
-          "chatSupport": true,
+          "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+          "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+          "authStrategies": ["passkey"],
+          "chatSupport": false,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
-          "modifiedAt": "2024-12-25T15:29:47.111Z",
-          "modifiedBy": null,
+          "updatedAt": "2024-12-25T15:29:47.111Z",
+          "updatedBy": null,
           "included": {
             "membership": {
-              "id": "kaba9fpc90mgtzmtjipw2v8s",
-              "tenantId": "w4hg40",
+              "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+              "tenantId": "6vxzq0",
               "contextType": "organization",
-              "userId": "36vxzq0rzt4pucvepsu63uw1",
-              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
               "role": "admin",
-              "displayOrder": 69,
+              "displayOrder": 2,
               "muted": false,
               "archived": false
             },
@@ -1638,6 +1162,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -1648,16 +1179,8 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "query": {
@@ -1685,38 +1208,22 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "An organization with membership context.",
+          "description": "The main context entity is an organization.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
-            "id": {
-              "type": "string",
-              "required": true,
-              "maxLength": 50
-            },
+            "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
               "required": true,
               "enum": ["organization"]
             },
-            "tenantId": {
-              "type": "string",
-              "required": true,
-              "maxLength": 24
-            },
-            "name": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
-            "modifiedAt": {
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
-            "slug": {
-              "type": "string",
-              "required": true,
-              "maxLength": 255
-            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
             "thumbnailUrl": {
               "type": ["string", "null"],
               "required": true,
@@ -1730,7 +1237,7 @@
             "createdBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1738,11 +1245,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1752,10 +1254,10 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
-            "modifiedBy": {
+            "updatedBy": {
               "type": ["object", "null"],
               "required": true,
-              "description": "Minimal user data for references (e.g. createdBy, modifiedBy).",
+              "description": "Minimal user data for references.",
               "properties": {
                 "id": { "type": "string", "required": true },
                 "name": { "type": "string", "required": true },
@@ -1763,11 +1265,6 @@
                 "thumbnailUrl": {
                   "type": ["string", "null"],
                   "required": true
-                },
-                "email": {
-                  "type": "string",
-                  "required": true,
-                  "format": "email"
                 },
                 "entityType": {
                   "type": "string",
@@ -1833,7 +1330,7 @@
               "type": "array",
               "required": true,
               "itemType": "string",
-              "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
             },
             "chatSupport": { "type": "boolean", "required": true },
             "included": {
@@ -1845,26 +1342,15 @@
                   "required": false,
                   "description": "Core membership fields shared across active and inactive memberships.",
                   "properties": {
-                    "id": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 24
-                    },
+                    "id": { "type": "string", "required": true, "format": "uuid" },
+                    "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                     "contextType": {
                       "type": "string",
                       "required": true,
                       "enum": ["organization"]
                     },
-                    "userId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    },
+                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "userId": { "type": "string", "required": true, "format": "uuid" },
                     "role": {
                       "type": "string",
                       "required": true,
@@ -1878,11 +1364,7 @@
                       "minimum": -140737488355328,
                       "maximum": 140737488355327
                     },
-                    "organizationId": {
-                      "type": "string",
-                      "required": true,
-                      "maxLength": 50
-                    }
+                    "organizationId": { "type": "string", "required": true, "format": "uuid" }
                   },
                   "ref": "#/components/schemas/MembershipBase"
                 },
@@ -1904,8 +1386,7 @@
                       "type": "object",
                       "required": true,
                       "properties": {
-                        "attachment": { "type": "number", "required": true },
-                        "page": { "type": "number", "required": true }
+                        "attachment": { "type": "number", "required": true }
                       }
                     }
                   }
@@ -1917,39 +1398,40 @@
           "contentType": "application/json"
         },
         "example": {
-          "id": "hmo9fwr239kqavr3yur671kl",
-          "tenantId": "vk6xht",
+          "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
           "entityType": "organization",
-          "name": "Hills, Bauch and Monahan",
-          "slug": "hills-bauch-and-monahan",
-          "description": "Multi-tiered zero trust firmware",
-          "shortName": "Hills,",
-          "country": "Turks and Caicos Islands",
-          "timezone": "America/Argentina/Buenos_Aires",
+          "name": "Spencer, Pouros and Bergnaum",
+          "slug": "spencer-pouros-and-bergnaum",
+          "description": "Sustainable systematic software",
+          "shortName": "Spencer,",
+          "country": "Tajikistan",
+          "timezone": "Antarctica/Syowa",
           "defaultLanguage": "en",
           "languages": ["en"],
-          "notificationEmail": "notifications@hills-bauch-and-monahan.example",
-          "color": "#ecfdfe",
+          "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+          "color": "#6af7b9",
           "thumbnailUrl": null,
           "logoUrl": null,
           "bannerUrl": null,
-          "websiteUrl": "https://hills-bauch-and-monahan.example",
-          "welcomeText": "Welcome to Hills, Bauch and Monahan!",
-          "authStrategies": ["password"],
-          "chatSupport": true,
+          "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+          "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+          "authStrategies": ["passkey"],
+          "chatSupport": false,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
-          "modifiedAt": "2024-12-25T15:29:47.111Z",
-          "modifiedBy": null,
+          "updatedAt": "2024-12-25T15:29:47.111Z",
+          "updatedBy": null,
           "included": {
             "membership": {
-              "id": "kaba9fpc90mgtzmtjipw2v8s",
-              "tenantId": "w4hg40",
+              "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+              "tenantId": "6vxzq0",
               "contextType": "organization",
-              "userId": "36vxzq0rzt4pucvepsu63uw1",
-              "organizationId": "hmo9fwr239kqavr3yur671kl",
+              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
               "role": "admin",
-              "displayOrder": 69,
+              "displayOrder": 2,
               "muted": false,
               "archived": false
             },
@@ -1994,6 +1476,13 @@
         "contentType": "application/json"
       },
       {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
         "status": 429,
         "description": "Rate limit: too many requests.",
         "name": "TooManyRequestsError",
@@ -2004,16 +1493,8 @@
     "request": {
       "path": {
         "properties": {
-          "tenantId": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          },
-          "id": {
-            "type": "string",
-            "required": true,
-            "maxLength": 50
-          }
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
         }
       },
       "body": {
@@ -2098,7 +1579,7 @@
             "type": "array",
             "required": false,
             "itemType": "string",
-            "enum": ["github", "google", "microsoft", "password", "passkey", "totp", "email"]
+            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
           },
           "chatSupport": { "type": "boolean", "required": false }
         },

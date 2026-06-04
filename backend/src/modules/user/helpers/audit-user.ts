@@ -3,77 +3,50 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import type { DbOrTx } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
-import { pickColumns } from '#/db/utils/pick-columns';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import type { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { pick } from '#/utils/pick';
 
 export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;
 
-// Aliases for audit user joins (createdBy / modifiedBy)
+// Aliases for audit user joins (createdBy / updatedBy)
 export const createdByUser = alias(usersTable, 'created_by_user');
-export const modifiedByUser = alias(usersTable, 'modified_by_user');
+export const updatedByUser = alias(usersTable, 'updated_by_user');
 
-// Derive select keys from the Zod schema, excluding entityType (added as SQL literal)
-type SelectKeys = Exclude<keyof typeof userMinimalBaseSchema.shape, 'entityType'>;
-const selectKeys = (Object.keys(userMinimalBaseSchema.shape) as (keyof typeof userMinimalBaseSchema.shape)[]).filter(
-  (k): k is SelectKeys => k !== 'entityType',
-);
+// Column keys to select for audit users (entityType is added as a SQL literal)
+const selectKeys = ['id', 'name', 'slug', 'thumbnailUrl'] as const;
 
 /**
  * Build minimal user select columns from an aliased users table.
  * entityType is a SQL literal 'user' to preserve the literal type.
  */
-const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof modifiedByUser) => ({
-  ...pickColumns(getColumns(aliasedTable), selectKeys),
+const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof updatedByUser) => ({
+  ...pick(getColumns(aliasedTable), selectKeys),
   entityType: sql<'user'>`'user'`,
 });
 
 /**
  * Pre-built audit user select shapes for LEFT JOINs.
- *
- * Usage in list queries:
- * ```
- * const { createdBy: _cb, modifiedBy: _mb, ...cols } = getColumns(table);
- * const items = db.select({ ...cols, ...auditUserSelect })
- *   .from(table)
- *   .leftJoin(createdByUser, eq(createdByUser.id, table.createdBy))
- *   .leftJoin(modifiedByUser, eq(modifiedByUser.id, table.modifiedBy));
- * return coalesceAuditUsers(items);
- * ```
  */
 export const auditUserSelect = {
   createdBy: buildAuditUserSelect(createdByUser),
-  modifiedBy: buildAuditUserSelect(modifiedByUser),
+  updatedBy: buildAuditUserSelect(updatedByUser),
 };
 
-/**
- * Coalesce nullable LEFT JOIN audit user fields into UserMinimalBase | null.
- * LEFT JOINs make all selected columns nullable (e.g., `id: string | null`);
- * this maps them to a proper `UserMinimalBase | null` shape.
- */
-type NullableUser = {
-  id: string | null;
-  name: string | null;
-  slug: string | null;
-  thumbnailUrl: string | null;
-  email: string | null;
-  entityType: 'user' | null;
+/** Accepts both nullable (LEFT JOIN) and non-nullable shapes for audit user fields. */
+type LooseAuditUser = { [K in keyof UserMinimalBase]: UserMinimalBase[K] | null };
+type RawAuditRow = { createdBy: LooseAuditUser; updatedBy: LooseAuditUser };
+
+/** Entity with audit user fields resolved to full objects (or null). */
+type WithAuditUsers<T> = Omit<T, 'createdBy' | 'updatedBy'> & {
+  createdBy: UserMinimalBase | null;
+  updatedBy: UserMinimalBase | null;
 };
 
-/**
- * Accept audit rows where each audit user field may have nullable or non-nullable sub-fields.
- * Drizzle LEFT JOINs make columns nullable, but `sql<'user'>` keeps entityType as `'user'`.
- * We accept both shapes to avoid `as any` at every call-site.
- */
-type CompatibleNullableUser = { [K in keyof NullableUser]: NullableUser[K] | NonNullable<NullableUser[K]> };
-type RawAuditRow = { createdBy: CompatibleNullableUser; modifiedBy: CompatibleNullableUser };
-
-export function coalesceAuditUsers<T extends RawAuditRow>(
-  rows: T[],
-): (Omit<T, 'createdBy' | 'modifiedBy'> & { createdBy: UserMinimalBase | null; modifiedBy: UserMinimalBase | null })[] {
-  return rows.map(({ createdBy, modifiedBy, ...rest }) => ({
-    ...(rest as Omit<T, 'createdBy' | 'modifiedBy'>),
+export function coalesceAuditUsers<T extends RawAuditRow>(rows: T[]): WithAuditUsers<T>[] {
+  return rows.map(({ createdBy, updatedBy, ...rest }) => ({
+    ...(rest as Omit<T, 'createdBy' | 'updatedBy'>),
     createdBy: createdBy?.id ? (createdBy as UserMinimalBase) : null,
-    modifiedBy: modifiedBy?.id ? (modifiedBy as UserMinimalBase) : null,
+    updatedBy: updatedBy?.id ? (updatedBy as UserMinimalBase) : null,
   }));
 }
 
@@ -81,45 +54,28 @@ export function coalesceAuditUsers<T extends RawAuditRow>(
  * Extract minimal user fields from a full user object.
  * Useful for CUD responses where the current user is known.
  */
-export const toUserMinimalBase = (user: {
-  id: string;
-  name: string;
-  slug: string;
-  thumbnailUrl: string | null;
-  email: string;
-}): UserMinimalBase => ({
-  id: user.id,
-  name: user.name,
-  slug: user.slug,
-  thumbnailUrl: user.thumbnailUrl,
-  email: user.email,
+export const toUserMinimalBase = (
+  user: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
+): UserMinimalBase => ({
+  ...user,
   entityType: 'user',
 });
 
-/** Input for the `knownUsers` parameter: a pre-built Map or a user-like object (auto-converted via toUserMinimalBase). */
 type KnownUsersInput =
   | Map<string, UserMinimalBase>
-  | { id: string; name: string; slug: string; thumbnailUrl: string | null; email: string };
+  | { id: string; name: string; slug: string; thumbnailUrl: string | null };
 
 /**
- * Populate createdBy/modifiedBy string IDs with UserMinimalBase objects.
- * Pass a user object (or Map) to avoid unnecessary DB lookups for the current user.
- *
- * Usage in CUD handlers:
- * ```
- * const items = await withAuditUsers(rawItems, tenantDb, user);
- * ```
+ * Populate createdBy/updatedBy string IDs with UserMinimalBase objects.
  */
-export async function withAuditUsers<T extends { createdBy: string | null; modifiedBy?: string | null }>(
+export async function withAuditUsers<T extends { createdBy: string | null; updatedBy?: string | null }>(
+  { var: { db } }: { var: { db: DbOrTx } },
   entities: T[],
-  db: DbOrTx,
-  knownUsersInput: KnownUsersInput = new Map(),
-): Promise<
-  (Omit<T, 'createdBy' | 'modifiedBy'> & { createdBy: UserMinimalBase | null; modifiedBy: UserMinimalBase | null })[]
-> {
-  // Normalize input: accept a user object or a pre-built Map
-  const knownUsers =
-    knownUsersInput instanceof Map
+  knownUsersInput?: KnownUsersInput,
+): Promise<WithAuditUsers<T>[]> {
+  const knownUsers = !knownUsersInput
+    ? new Map<string, UserMinimalBase>()
+    : knownUsersInput instanceof Map
       ? knownUsersInput
       : new Map([[knownUsersInput.id, toUserMinimalBase(knownUsersInput)]]);
 
@@ -127,18 +83,18 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
   const unknownIds = new Set<string>();
   for (const entity of entities) {
     if (entity.createdBy && !knownUsers.has(entity.createdBy)) unknownIds.add(entity.createdBy);
-    if (entity.modifiedBy && !knownUsers.has(entity.modifiedBy)) unknownIds.add(entity.modifiedBy);
+    if (entity.updatedBy && !knownUsers.has(entity.updatedBy)) unknownIds.add(entity.updatedBy);
   }
 
   // Fetch unknown users in one query
   if (unknownIds.size > 0) {
+    // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm union-table inference fails with DbOrTx (issue #4367).
     const users = await (db as any)
       .select({
         id: usersTable.id,
         name: usersTable.name,
         slug: usersTable.slug,
         thumbnailUrl: usersTable.thumbnailUrl,
-        email: usersTable.email,
       })
       .from(usersTable)
       .where(inArray(usersTable.id, [...unknownIds]));
@@ -148,22 +104,38 @@ export async function withAuditUsers<T extends { createdBy: string | null; modif
     }
   }
 
-  return entities.map(({ createdBy, modifiedBy = null, ...rest }) => ({
-    ...(rest as Omit<T, 'createdBy' | 'modifiedBy'>),
+  return entities.map(({ createdBy, updatedBy = null, ...rest }) => ({
+    ...(rest as Omit<T, 'createdBy' | 'updatedBy'>),
     createdBy: createdBy ? (knownUsers.get(createdBy) ?? null) : null,
-    modifiedBy: modifiedBy ? (knownUsers.get(modifiedBy) ?? null) : null,
+    updatedBy: updatedBy ? (knownUsers.get(updatedBy) ?? null) : null,
   }));
 }
 
 /**
  * Single-entity convenience wrapper around withAuditUsers.
- * Avoids the `[entity]` / destructure-`[0]` boilerplate.
  */
-export async function withAuditUser<T extends { createdBy: string | null; modifiedBy?: string | null }>(
+export async function withAuditUser<T extends { createdBy: string | null; updatedBy?: string | null }>(
+  ctx: { var: { db: DbOrTx } },
   entity: T,
-  db: DbOrTx,
   knownUsersInput?: KnownUsersInput,
 ) {
-  const [result] = await withAuditUsers([entity], db, knownUsersInput);
+  const [result] = await withAuditUsers(ctx, [entity], knownUsersInput);
   return result;
+}
+
+/**
+ * Lightweight audit-user hydration that skips DB queries entirely.
+ * Uses the current user for updatedBy, stubs createdBy as null.
+ * For use when the caller (e.g. frontend) already has the full cached entity
+ * and only needs scalar fields + updatedBy from the response.
+ */
+export function withAuditUserLite<T extends { createdBy: string | null; updatedBy?: string | null }>(
+  entity: T,
+  currentUser: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
+): WithAuditUsers<T> {
+  return {
+    ...(entity as Omit<T, 'createdBy' | 'updatedBy'>),
+    createdBy: null,
+    updatedBy: toUserMinimalBase(currentUser),
+  } as WithAuditUsers<T>;
 }

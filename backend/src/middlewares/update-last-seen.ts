@@ -1,28 +1,33 @@
 import { baseDb as db } from '#/db/db';
-import { userActivityTable } from '#/db/schema/user-activity';
+import { userCountersTable } from '#/db/schema/user-counters';
 import { getIsoDate } from '#/utils/iso-date';
-import { TimeSpan } from '#/utils/time-span';
+
+const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
+
+/** In-memory throttle: tracks last DB write timestamp per user */
+const lastSeenMemory = new Map<string, number>();
 
 /**
  * Update lastSeenAt if more than 5 minutes have passed.
- * Returns true if updated, false if skipped.
+ * Uses an in-memory timestamp check to avoid DB reads for throttle logic.
+ * The DB write is fire-and-forget (not awaited) since it's non-critical.
  */
-export const updateLastSeenAt = async (userId: string, currentLastSeenAt: string | null): Promise<boolean> => {
-  const now = new Date();
-  const shouldUpdate =
-    !currentLastSeenAt || new Date(currentLastSeenAt).getTime() < now.getTime() - new TimeSpan(5, 'm').milliseconds();
+export const updateLastSeenAt = (userId: string): void => {
+  const now = Date.now();
+  const last = lastSeenMemory.get(userId) ?? 0;
+  if (now - last < THROTTLE_MS) return;
 
-  if (shouldUpdate) {
-    const timestamp = getIsoDate();
-    await db
-      .insert(userActivityTable)
-      .values({ userId, lastSeenAt: timestamp })
-      .onConflictDoUpdate({
-        target: userActivityTable.userId,
-        set: { lastSeenAt: timestamp },
-      });
-    return true;
-  }
+  lastSeenMemory.set(userId, now);
 
-  return false;
+  const timestamp = getIsoDate();
+  db.insert(userCountersTable)
+    .values({ userId, lastSeenAt: timestamp })
+    .onConflictDoUpdate({
+      target: userCountersTable.userId,
+      set: { lastSeenAt: timestamp },
+    })
+    .catch(() => {
+      // Reset memory on failure so next request retries
+      lastSeenMemory.delete(userId);
+    });
 };

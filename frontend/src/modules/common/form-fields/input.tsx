@@ -70,7 +70,7 @@ export const InputFormField = <TFieldValues extends FieldValues>({
                 type="button"
                 tabIndex={-1}
                 onClick={iconClick}
-                className="absolute font-light left-3 text-xs"
+                className="absolute left-3 text-xs"
                 style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
               >
                 {icon}

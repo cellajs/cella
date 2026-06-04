@@ -13,11 +13,6 @@
     border-color: var(--color-gray-200, currentColor);
   }
 
-  button:not(:disabled),
-  [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
-
   @font-face {
     font-family: "Open Sans";
     src:
@@ -95,18 +90,22 @@
   }
 }
 
+/* Opaque soft intent colors using color-mix (no transparency) */
+@utility soft-bg {
+  background-color: color-mix(in srgb, var(--intent-color) 10%, var(--background));
+}
+
+@utility soft-bg-hover {
+  background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
+}
+
+@utility soft-border {
+  border-color: color-mix(in srgb, var(--intent-color) 20%, var(--background));
+}
+
 @layer components {
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  }
-
-  /* Disable focus outline on overlay content panels */
-  /* TODO review this */
-  [data-slot="drawer-content"],
-  [data-slot="dialog-content"],
-  [data-slot="sheet-content"],
-  [data-slot="alert-dialog-content"] {
-    @apply focus-visible:outline-none;
   }
 }
 
@@ -130,8 +129,8 @@
     --accent-foreground: oklch(0.2067 0.01 285.49);
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
-    --border: oklch(0.9372 0.004 285.71);
-    --input: oklch(0.9483 0.0032 285.75);
+    --border: oklch(0.92 0.004 285.75);
+    --input: oklch(0.88 0.005 285.75);
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
     --success: oklch(0.5917 0.2014 142.5);
@@ -169,8 +168,8 @@
     --accent-foreground: oklch(0.9851 0 0);
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
-    --border: oklch(0.3138 0.0102 285.63);
-    --input: oklch(0.3138 0.0102 285.63);
+    --border: oklch(0.36 0.011 285.63);
+    --input: oklch(0.42 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
     --success: oklch(0.5917 0.2014 142.5);
     --success-foreground: oklch(0.9851 0 0);
@@ -191,8 +190,9 @@
 }
 
 @layer base {
+  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   html {
-    @apply font-sans overscroll-none;
+    @apply font-sans overscroll-none max-sm:text-[19px];
   }
 
   * {
@@ -207,13 +207,6 @@
     @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
   }
 
-  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
-  @media (max-width: 639px) {
-    html {
-      font-size: 19px;
-    }
-  }
-
   /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */
   .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
     display: none !important;
@@ -225,13 +218,8 @@
     display: none !important;
   }
 
-  /* Read-only mode styles */
-  .read-only-mode .read-only-restrict-hide {
-    display: none !important;
-  }
-
-  .read-only-mode .read-only-restrict-disabled {
-    opacity: 0.6 !important;
-    pointer-events: none !important;
+  /* Hide create-task button when board is empty (no projects) */
+  body:has([data-board-empty]) #create-task {
+    display: none;
   }
 }

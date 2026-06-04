@@ -25,7 +25,7 @@ export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
             <DrawerDescription>Select an option</DrawerDescription>
           </span>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 p-4">{content}</div>
+        <div className="flex flex-col gap-2 p-4">{content}</div>
       </DrawerContent>
     </Drawer>
   );

@@ -3,7 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Tenant } from '~/api.gen';
+import type { Tenant } from 'sdk';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -15,7 +15,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateTenantForm } from '~/modules/tenants/create-tenant-form';
-import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schema';
+import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 
 interface TenantsTableBarProps {
@@ -57,10 +57,8 @@ export const TenantsTableBar = ({ queryKey, searchVars, setSearch, columns, setC
         id: 'create-tenant',
         triggerRef: createButtonRef,
         className: 'md:max-w-xl',
-        title: t('common:create_resource', { resource: t('common:tenant').toLowerCase() }),
-        titleContent: (
-          <UnsavedBadge title={t('common:create_resource', { resource: t('common:tenant').toLowerCase() })} />
-        ),
+        title: t('c:create_resource', { resource: t('c:tenant').toLowerCase() }),
+        titleContent: <UnsavedBadge title={t('c:create_resource', { resource: t('c:tenant').toLowerCase() })} />,
       },
     );
   };
@@ -70,9 +68,9 @@ export const TenantsTableBar = ({ queryKey, searchVars, setSearch, columns, setC
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {!isFiltered && (
-            <TableBarButton className="mr-1" label="common:create" icon={PlusIcon} onClick={openCreateDialog} />
+            <TableBarButton className="mr-1" label="c:create" icon={PlusIcon} onClick={openCreateDialog} />
           )}
-          <TableCount count={total} label="common:tenant" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={total} label="c:tenant" isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
 
         <div className="sm:grow" />

@@ -1,5 +1,5 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export function Slider({
@@ -20,7 +20,7 @@ export function Slider({
       min={min}
       max={max}
       className={cn(
-        'relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
+        'relative flex w-full touch-none select-none items-center data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col data-disabled:opacity-50',
         className,
       )}
       {...props}
@@ -29,21 +29,22 @@ export function Slider({
         <SliderPrimitive.Track
           data-slot="slider-track"
           className={cn(
-            'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5',
+            'relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-1.5',
           )}
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
             className={cn(
-              'bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
+              'absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
             )}
           />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
+            // biome-ignore lint/suspicious/noArrayIndexKey: slider thumbs are positional and never reordered.
             key={index}
-            className="border-primary ring-ring block size-4 shrink-0 rounded-full border bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+            className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring transition-[color,box-shadow] hover:ring-4 focus-visible:outline-hidden focus-visible:ring-4 data-disabled:pointer-events-none data-disabled:opacity-50"
           />
         ))}
       </SliderPrimitive.Control>

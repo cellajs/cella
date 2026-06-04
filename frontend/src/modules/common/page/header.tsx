@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, ContextEntityType } from 'shared';
-import type { ContextEntityBase, MembershipBase, UserBase } from '~/api.gen';
+import type { ContextEntityBase, MembershipBase, UserBase } from 'sdk';
+import { appConfig } from 'shared';
 import { useScrollTo } from '~/hooks/use-scroll-to';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
@@ -15,13 +15,12 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { useFindEntityInListCache } from '~/query/basic/find-in-list-cache';
-import { getContextEntityRoute } from '~/routes-resolver';
+import { getContextEntityRoute } from '~/utils/context-entity-route';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: (ContextEntityBase | UserBase) & { membership?: MembershipBase | null };
   panel?: React.ReactNode;
-  parent?: { entityId: string; entityType: ContextEntityType | 'user' };
+  parent?: ContextEntityBase;
   disableScroll?: boolean;
 };
 
@@ -32,22 +31,17 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
   // Use enriched membership from entity data (baked in via cache enrichment)
   const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
 
-  // Find parent entity from cache
-  const parentData = useFindEntityInListCache<ContextEntityBase>(parent ? [parent.entityType] : [], (item) =>
-    parent ? item.id === parent.entityId || item.slug === parent.entityId : false,
-  );
-
   // Scroll to page header on load
   useScrollTo(disableScroll ? null : scrollToRef);
 
   // Get parent route using app-specific resolver (handles hierarchy differences per fork)
-  const parentRoute = parentData ? getContextEntityRoute(parentData) : null;
+  const parentRoute = parent ? getContextEntityRoute(parent) : null;
 
   return (
-    <div className="w-full relative">
+    <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div className="absolute flex bottom-0 w-full h-18 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
+      <div className="absolute bottom-0 flex h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs" ref={scrollToRef}>
         <EntityAvatar
           id={entity.id}
           name={entity.name}
@@ -55,20 +49,20 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
           url={entity.thumbnailUrl}
           className={
             entity.entityType === 'user'
-              ? 'h-26 w-26 -mt-13 text-4xl mx-3 shadow-[0_0_0_4px_rgba(0,0,0,0.1)] rounded-full'
-              : 'm-2 text-xl h-12 w-12'
+              ? 'mx-3 -mt-13 h-26 w-26 rounded-full text-4xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]'
+              : 'm-2 h-12 w-12 text-xl'
           }
         />
 
-        <div className="flex py-1.5 flex-col truncate pl-1">
+        <div className="flex flex-col truncate py-1.5 pl-1">
           {/* Page title */}
-          <h1 className="md:text-xl truncate font-semibold leading-6 mb-1">{entity.name}</h1>
+          <h1 className="mb-1 truncate font-semibold leading-6 md:text-xl">{entity.name}</h1>
 
           <div className="flex items-center gap-2 text-sm">
             {/* Role */}
             {membership && (
               <>
-                <Badge variant="plain">{t(membership.role, { ns: ['app', 'common'] })}</Badge>
+                <Badge variant="plain">{t(membership.role)}</Badge>
                 <div className="opacity-70 max-sm:invisible max-sm:w-0">&middot;</div>
               </>
             )}
@@ -77,22 +71,24 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink className="p-0.5 text-foreground/70" asChild>
-                    <Link to={appConfig.defaultRedirectPath}>
-                      <HomeIcon size={14} />
-                    </Link>
+                  <BreadcrumbLink
+                    className="p-0.5 text-foreground/70"
+                    render={<Link to={appConfig.defaultRedirectPath} />}
+                  >
+                    <HomeIcon size={14} />
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="text-foreground/50">
                   <ChevronRightIcon size={12} />
                 </BreadcrumbSeparator>
-                {parentData && parentRoute && (
+                {parent && parentRoute && (
                   <>
                     <BreadcrumbItem>
-                      <BreadcrumbLink className="flex items-center text-foreground/70" asChild>
-                        <Link to={parentRoute.to} params={parentRoute.params}>
-                          <span className="truncate max-sm:max-w-24">{parentData.name}</span>
-                        </Link>
+                      <BreadcrumbLink
+                        className="flex items-center text-foreground/70"
+                        render={<Link to={parentRoute.to} params={parentRoute.params} />}
+                      >
+                        <span className="truncate max-sm:max-w-24">{parent.name}</span>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="text-foreground/50">
@@ -103,14 +99,14 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
                 <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{entity.entityType}</span>
                   {appConfig.mode === 'development' && (
-                    <span className="max-sm:hidden ml-2 text-foreground/50">{entity.id}</span>
+                    <span className="ml-2 text-foreground/40 text-xs max-sm:hidden">{entity.id}</span>
                   )}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </div>
-        <div className="flex ml-auto items-center">{panel}</div>
+        <div className="ml-auto flex items-center">{panel}</div>
       </div>
     </div>
   );

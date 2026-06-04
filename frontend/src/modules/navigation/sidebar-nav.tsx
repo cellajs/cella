@@ -7,6 +7,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { NavButton } from '~/modules/navigation/nav-buttons';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import {
@@ -18,7 +19,6 @@ import {
   SidebarMenu,
 } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
-import { useNavigationStore } from '~/store/navigation';
 
 const DebugDropdown =
   appConfig.mode !== 'production' ? lazy(() => import('~/modules/common/debug-dropdown')) : () => null;
@@ -92,7 +92,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="relative bg-transparent w-(--spacer-w) data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out group-[.focus-view]/body:hidden"
+        className="relative w-(--spacer-w) bg-transparent group-[.focus-view]/body:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
       />
       {/* Fixed sidebar */}
       <Sidebar
@@ -101,13 +101,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 linear border-r-0 group-[.focus-view]/body:hidden focus:outline-none
-          data-[started=false]:-translate-x-full"
+        className="linear fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 focus:outline-none group-[.focus-view]/body:hidden data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
-        <div className="flex flex-row h-full relative">
+        <div className="relative flex h-full flex-row">
           {/* Icon bar */}
-          <div className="flex flex-col h-full w-(--icon-bar-w) transition-[width] duration-200 linear overflow-hidden">
+          <div className="linear flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
@@ -125,7 +124,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-0 gap-2">
+            <SidebarFooter className="gap-2 p-0">
               <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
               <SidebarMenu className="gap-1">
                 <StopImpersonation isCollapsed={!isExpanded} />

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { GenOperationSummary } from '~/modules/docs/types';
@@ -18,18 +18,18 @@ interface TagOperationsTableProps {
  */
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const navigate = useNavigate();
-  const { scrollToSection } = useScrollSpy();
 
-  // Handle operation click necessary to expand tag if not already expanded
+  // Click handler: enqueue scroll (store retries until target is laid out), then navigate.
+  // The <Link>'s default navigation also works for keyboard / middle-click; this path is for
+  // primary-button clicks where we want the scroll queued before navigation re-renders.
   const handleOperationClick = (hash: string) => {
+    scrollToSectionById(hash);
     navigate({
       to: '.',
       search: (prev) => ({ ...prev, operationTag: tagName }),
       hash,
       replace: true,
       resetScroll: false,
-    }).finally(() => {
-      scrollToSection(hash);
     });
   };
 
@@ -37,12 +37,12 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
     {
       key: 'method',
       name: '',
-      sortable: false,
+
       width: 80,
       renderCell: ({ row }) => (
         <Badge
           variant="secondary"
-          className={`font-mono uppercase text-xs bg-transparent shadow-none ${getMethodColor(row.method)}`}
+          className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}
         >
           {row.method.toUpperCase()}
         </Badge>
@@ -52,7 +52,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       key: 'path',
       name: '',
       minWidth: 200,
-      sortable: false,
+
       renderCell: ({ row, tabIndex }) => (
         <Link
           to="."
@@ -67,9 +67,11 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
           resetScroll={false}
           draggable={false}
           tabIndex={tabIndex}
-          className="font-mono text-sm truncate hover:underline underline-offset-3 decoration-foreground/30"
+          title={row.path}
+          dir="rtl"
+          className="truncate text-left font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline"
         >
-          {row.path}
+          &lrm;{row.path}
         </Link>
       ),
     },
@@ -77,9 +79,9 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       key: 'id',
       name: '',
       minBreakpoint: 'md',
-      sortable: false,
+
       width: 200,
-      renderCell: ({ row }) => <code className="text-xs truncate text-muted-foreground font-mono">{row.id}</code>,
+      renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground text-xs">{row.id}</code>,
     },
   ];
 }

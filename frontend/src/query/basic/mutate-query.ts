@@ -1,28 +1,17 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
-import type { BaseQueryItem, BaseQueryResponce, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
+import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
 /**
- * Extracts the items from a query, handling both paginated (infinite) and non-paginated query data.
- * @param prevItems - The previous query data, which can be either QueryData or InfiniteQueryData.
- * @returns - An array of items from the query.
+ * Returns the items array from a query, supporting both standard and infinite (paginated) query data.
  */
 export const getQueryItems = <TItem>(prevItems: BaseQueryItem<TItem>) =>
   isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap(({ items }) => items);
 
 /**
- * Formats the updated data by preserving the structure of prev data and inserting new items in chunks.
- * Handles both regular query data and infinite query data formats.
- *
- * For infinite queries, it assumes **standard page parameters** of the shape:
- * `{ page: number; offset: number }`, and will generate new pageParams accordingly
- * if items are split into multiple pages.
- *
- * @param prevData - Previous query data, which can be either QueryData or InfiniteQueryData.
- * @param updatedData - New items to replace the previous data.
- * @param limit - Optional limit for chunk size when splitting the updated data (only used for InfiniteQueryData).
- * @param addToTotal - Optional total count to add to prev total.
- * @returns - The updated query data formatted in the appropriate structure.
+ * Replaces the items in a query while preserving the structure of the previous data, splitting
+ * into chunks for infinite queries. Optionally adjusts the cached `total` via `addToTotal`.
+ * Infinite queries assume **standard page parameters** of shape `{ page: number; offset: number }`.
  */
 export function formatUpdatedCacheData<TItem>(
   prevData: BaseQueryItem<TItem>,
@@ -86,25 +75,10 @@ export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQuery
 };
 
 /**
- * Retrieves query data for a given query key.
- *
- * @param passedQueryKey - Query key to search for similar queries.
- * @returns An array with query key and its corresponding data.
- */
-export const getExactQuery = <TItem, TPageParam = PageParams>(
-  passedQueryKey: QueryKey,
-): BaseQueryResponce<TItem, TPageParam> => {
-  return [passedQueryKey, queryClient.getQueryData<BaseQueryItem<TItem, TPageParam>>(passedQueryKey)];
-};
-
-/**
- * Retrieves queries similar to the given query key.
- *
- * @param passedQueryKey - Query key to search for similar queries.
- * @returns An array of matching query keys and their corresponding data.
+ * Returns queries whose key is similar to (i.e. matches a prefix of) `passedQueryKey`.
  */
 export const getSimilarQueries = <TItem, TPageParam = PageParams>(
   passedQueryKey: QueryKey,
-): BaseQueryResponce<TItem, TPageParam>[] => {
+): BaseQueryResponse<TItem, TPageParam>[] => {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
 };

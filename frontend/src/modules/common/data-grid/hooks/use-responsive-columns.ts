@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import { appConfig } from 'shared';
-
 import { useEventListener } from '~/hooks/use-event-listener';
 import type { Column, ColumnOrColumnGroup } from '../types';
 
@@ -66,7 +65,7 @@ function isColumnVisible<R, SR>(
   breakpoints: Record<ResponsiveBreakpoint, number>,
 ): boolean {
   const minWidth = column.minBreakpoint ? breakpoints[column.minBreakpoint] : 0;
-  const maxWidth = column.maxBreakpoint ? breakpoints[column.maxBreakpoint] : Infinity;
+  const maxWidth = column.maxBreakpoint ? breakpoints[column.maxBreakpoint] : Number.POSITIVE_INFINITY;
   const currentWidth = breakpoints[currentBreakpoint];
 
   return currentWidth >= minWidth && currentWidth <= maxWidth;

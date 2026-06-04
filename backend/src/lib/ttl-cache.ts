@@ -35,7 +35,7 @@ export class TTLCache<T> {
     this.cache = new BaseTTLCache<string, T>({
       max: options.maxSize,
       ttl: options.defaultTtl,
-      dispose: options.onDispose ? (value, key, reason) => options.onDispose!(key, value, reason) : undefined,
+      dispose: options.onDispose ? (value, key, reason) => options.onDispose?.(key, value, reason) : undefined,
     });
   }
 

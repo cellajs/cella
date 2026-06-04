@@ -3,7 +3,7 @@ import { isEmail } from '~/utils/is-email';
 
 interface SelectEmailsProps extends Omit<TagInputProps, 'tags' | 'setTags' | 'validateTag' | 'delimiter' | 'onChange'> {
   emails?: string[];
-  onChange?: (emails: string[]) => void;
+  onValueChange?: (emails: string[]) => void;
   /** Allow display name format like "Name <email@example.com>" */
   allowDisplayName?: boolean;
   /** Extract just the email from display name format */
@@ -32,7 +32,7 @@ const extractEmail = (value: string, stripDisplayName: boolean): string => {
  */
 export const SelectEmails = ({
   emails,
-  onChange,
+  onValueChange,
   allowDisplayName = false,
   stripDisplayName = false,
   allowDuplicate = false,
@@ -65,7 +65,7 @@ export const SelectEmails = ({
       });
     }
 
-    onChange?.(processedTags);
+    onValueChange?.(processedTags);
   };
 
   return (

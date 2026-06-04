@@ -5,8 +5,8 @@ import type { ContextEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
@@ -27,14 +27,14 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
       <div className="flex items-center">
         <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
           <PlusIcon size={14} />
-          <span className="ml-1 text-sm text-light">
-            {t('common:create_your_first')} {t(type).toLowerCase()}
+          <span className="ml-1 text-light text-sm">
+            {t('c:create_your_first')} {t(type).toLowerCase()}
           </span>
         </Button>
       </div>
     ) : (
-      <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(type).toLowerCase() })}
+      <li className="py-2 text-center text-light text-muted-foreground text-sm">
+        {t('c:no_resource_yet', { resource: t(type).toLowerCase() })}
       </li>
     );
 
@@ -45,7 +45,7 @@ export const MenuSheetItems = ({ data, type, isArchived, options, className }: M
     return (
       <>
         {filteredItems.map((item) => (
-          <li className={item.submenu?.length && detailedMenu ? 'relative submenu-section my-1' : 'my-1'} key={item.id}>
+          <li className={item.submenu?.length && detailedMenu ? 'submenu-section relative my-1' : 'my-1'} key={item.id}>
             <MenuSheetItem item={item} className={className} icon={options?.icon} />
             {/* Submenu below */}
             {!item.membership.archived && !!item.submenu?.length && detailedMenu && (

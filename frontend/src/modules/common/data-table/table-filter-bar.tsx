@@ -65,14 +65,14 @@ export const FilterBarSearch = ({ children, className = '' }: FilterBarChildProp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className={cn('sm:hidden flex items-center gap-2 absolute inset-y-0 left-0 right-12 z-10', className)}
+            className={cn('absolute inset-y-0 right-12 left-0 z-10 flex items-center gap-2 sm:hidden', className)}
           >
             {children}
           </motion.div>
         )}
       </AnimatePresence>
       {/* Desktop: always visible */}
-      <div className={cn('hidden sm:flex items-center gap-2', className)}>{children}</div>
+      <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
 };
@@ -95,14 +95,14 @@ export const FilterBarFilters = ({ children, className = '' }: FilterBarChildPro
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.15 }}
-            className={cn('sm:hidden flex items-center gap-2 absolute inset-y-0 right-12 z-20', className)}
+            className={cn('absolute inset-y-0 right-12 z-20 flex items-center gap-2 sm:hidden', className)}
           >
             {children}
           </motion.div>
         )}
       </AnimatePresence>
       {/* Desktop: always visible */}
-      <div className={cn('hidden sm:flex items-center gap-2', className)}>{children}</div>
+      <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
 };
@@ -135,7 +135,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
   };
 
   return (
-    <div className="flex items-center max-sm:relative max-sm:flex-1 gap-2 w-full">
+    <div className="flex w-full items-center gap-2 max-sm:relative max-sm:flex-1">
       <TableFilterBarContext.Provider value={{ isFilterActive: effectiveFilterActive, setFilterActive }}>
         {children}
       </TableFilterBarContext.Provider>
@@ -145,8 +145,8 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
         variant="secondary"
         size="icon"
         onClick={toggleFilter}
-        aria-label={isFilterActive ? t('common:cancel') : t('common:search')}
-        className="sm:hidden size-10 relative ml-auto"
+        aria-label={isFilterActive ? t('c:cancel') : t('c:search')}
+        className="relative ml-auto size-10 sm:hidden"
       >
         <AnimatePresence mode="wait">
           {isFilterActive ? (

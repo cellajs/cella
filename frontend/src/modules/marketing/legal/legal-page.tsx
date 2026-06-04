@@ -8,7 +8,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
-import { objectEntries } from '~/utils/object';
+import { objectEntries } from '~/utils/object-entries';
 
 /**
  * Legal page showing core legal texts (privacy policy, terms of use) with sidebar navigation.
@@ -42,17 +42,17 @@ export function LegalPage() {
   usePreloadLazyComponents(lazyComponents);
 
   return (
-    <MarketingLayout title={t('common:legal')}>
-      <div className="container md:flex md:flex-row my-4 md:mt-8 gap-4">
-        <div className="mx-auto md:min-w-48 md:w-[25%] md:mt-3">
-          <div className="sticky top-3 z-10 group">
-            <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} collapseText />
+    <MarketingLayout title={t('c:legal')}>
+      <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
+        <div className="mx-auto md:mt-3 md:w-[25%] md:min-w-48">
+          <div className="group sticky top-3 z-10">
+            <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} collapseText />
             <LegalAside subjects={subjects} currentSubject={currentSubject} className="py-2" />
           </div>
         </div>
 
         {/* Main legal content */}
-        <div className="md:w-[75%] flex flex-col gap-8 min-h-screen">
+        <div className="flex min-h-screen flex-col gap-8 md:w-[75%]">
           {subjects.map(({ id }) => {
             const isActive = id === currentSubject;
             const Component = legalConfig[id].component;
@@ -60,9 +60,9 @@ export function LegalPage() {
               isActive && (
                 <div
                   key={id}
-                  className="mx-auto max-w-full lg:max-w-4xl pt-4 antialiased px-4 md:px-8 bg-background min-h-screen mb-40 prose dark:prose-invert max-w-none text-foreground"
+                  className="prose dark:prose-invert mb-40 min-h-screen max-w-full bg-background px-4 pt-4 text-foreground antialiased md:px-8 lg:mx-auto lg:max-w-4xl"
                 >
-                  <h2 className="text-2xl font-bold pt-8 pb-4">{t(legalConfig[id].label)}</h2>
+                  <h2 className="pt-8 pb-4 font-bold text-2xl">{t(legalConfig[id].label)}</h2>
                   <Component />
                 </div>
               )

@@ -17,7 +17,7 @@ interface Props {
  * Opens the update user sheet anchored to the given button ref.
  */
 export function openUpdateUserSheet(user: BaseUser, buttonRef: RefObject<HTMLButtonElement | null>) {
-  const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
+  const title = i18n.t('c:edit_resource', { resource: i18n.t('c:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;
 
   createSheet(
@@ -50,7 +50,7 @@ export function UpdateRow({ user, tabIndex }: Props) {
       tabIndex={tabIndex}
       className="justify-center"
       data-tooltip="true"
-      data-tooltip-content={i18n.t('common:edit')}
+      data-tooltip-content={i18n.t('c:edit')}
       onClick={() => openUpdateUserSheet(user, buttonRef)}
     >
       <PencilIcon size={16} />

@@ -1,8 +1,8 @@
 import { PlusIcon, TrashIcon, XSquareIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Page } from 'sdk';
 import { appConfig } from 'shared';
-import { getPages, type Page } from '~/api.gen';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -10,20 +10,18 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { fetchPagesForExport } from '~/modules/page/query';
+import type { PageTreeRow } from '~/modules/page/table/page-tree-config';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
-import { DropdownMenuCheckboxItem } from '~/modules/ui/dropdown-menu';
+import { useInfiniteQueryTotal } from '~/query/basic/use-infinite-query-total';
 import { CreatePageForm } from '../create-page-form';
 import { DeletePages } from '../delete-pages';
 
-interface PagesTableBarProps extends Omit<BaseTableBarProps<Page, PagesRouteSearchParams>, 'queryKey'> {
-  isCompact: boolean;
-  setIsCompact: (isCompact: boolean) => void;
-  total: number;
-}
+interface PagesTableBarProps extends BaseTableBarProps<PageTreeRow, PagesRouteSearchParams> {}
 
 export const PagesTableBar = ({
   searchVars,
@@ -32,9 +30,7 @@ export const PagesTableBar = ({
   setColumns,
   selected,
   clearSelection,
-  isCompact,
-  setIsCompact,
-  total,
+  queryKey,
 }: PagesTableBarProps) => {
   const { t } = useTranslation();
 
@@ -43,6 +39,8 @@ export const PagesTableBar = ({
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const { q } = searchVars;
 
@@ -72,19 +70,16 @@ export const PagesTableBar = ({
       id: 'delete-pages',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
-      title: t('common:delete'),
-      description: t('common:confirm.delete_counted_resource', {
+      title: t('c:delete'),
+      description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:pages').toLowerCase() : t('common:page').toLowerCase(),
+        resource: selected.length > 1 ? t('c:pages').toLowerCase() : t('c:page').toLowerCase(),
       }),
     });
   };
 
   const fetchExport = async (limit: number) => {
-    const response = await getPages({
-      query: { limit: String(limit), q, offset: '0' },
-    });
-    return response.items;
+    return fetchPagesForExport({ limit, q });
   };
 
   return (
@@ -95,27 +90,27 @@ export const PagesTableBar = ({
             <>
               <TableBarButton
                 variant="destructive"
-                label="common:remove"
+                label="c:remove"
                 icon={TrashIcon}
                 className="relative"
                 badge={selected.length}
                 onClick={openDeleteDialog}
               />
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="common:clear" />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquareIcon} label="c:clear" />
             </>
           ) : (
             !isFiltered && (
               <TableBarButton
-                label="common:create"
+                label="c:create"
                 icon={PlusIcon}
                 onClick={() => {
                   createDialog(<CreatePageForm callback={onCreatePage} />, {
                     id: 'create-page',
                     triggerRef: createButtonRef,
                     className: 'md:max-w-2xl',
-                    title: t('common:create_resource', { resource: t('common:page').toLowerCase() }),
+                    title: t('c:create_resource', { resource: t('c:page').toLowerCase() }),
                     titleContent: (
-                      <UnsavedBadge title={t('common:create_resource', { resource: t('common:page').toLowerCase() })} />
+                      <UnsavedBadge title={t('c:create_resource', { resource: t('c:page').toLowerCase() })} />
                     ),
                   });
                 }}
@@ -123,7 +118,7 @@ export const PagesTableBar = ({
             )
           )}
           {selected.length === 0 && (
-            <TableCount count={total} label="common:page" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            <TableCount count={total} label="c:page" isFiltered={isFiltered} onResetFilters={onResetFilters} />
           )}
         </FilterBarActions>
 
@@ -134,20 +129,12 @@ export const PagesTableBar = ({
         </FilterBarSearch>
       </TableFilterBar>
 
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns}>
-        <DropdownMenuCheckboxItem
-          className="min-h-8"
-          checked={isCompact}
-          onCheckedChange={() => setIsCompact(!isCompact)}
-        >
-          {t('common:compact_view')}
-        </DropdownMenuCheckboxItem>
-      </ColumnsView>
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
       <Export
         className="max-lg:hidden"
         filename={`${appConfig.slug}-pages`}
-        columns={columns}
-        selectedRows={selected}
+        columns={columns as ColumnOrColumnGroup<Page>[]}
+        selectedRows={selected as Page[]}
         fetchRows={fetchExport}
       />
       <FocusView iconOnly />

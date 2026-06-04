@@ -1,8 +1,10 @@
 /**
  * Hook to get blob upload status from Dexie storage.
- * Returns upload status for attachments stored in IndexedDB.
+ *
+ * Uses Dexie's `useLiveQuery` so the UI updates reactively whenever the underlying
+ * blob row changes (no polling, no cache invalidation needed).
  */
-import { useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   type AttachmentBlob,
   attachmentsDb,
@@ -50,42 +52,20 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
     isFailed: primaryBlob.uploadStatus === 'failed',
     isPending: primaryBlob.uploadStatus === 'pending',
     isLocalOnly: primaryBlob.uploadStatus === 'local-only',
-    lastError: primaryBlob.lastError,
+    lastError: primaryBlob.lastError ?? null,
   };
 }
 
 /**
- * Get upload status for an attachment. Polls for changes while mounted.
+ * Get upload status for an attachment, reactively.
+ * Returns the default ("uploaded") info while no attachmentId is provided or no blob exists.
  */
 export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
-  const [uploadInfo, setUploadInfo] = useState<BlobUploadInfo>(defaultUploadInfo);
+  const blobs = useLiveQuery(
+    () => (attachmentId ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : []),
+    [attachmentId],
+    [] as AttachmentBlob[],
+  );
 
-  useEffect(() => {
-    if (!attachmentId) {
-      setUploadInfo(defaultUploadInfo);
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchStatus = async () => {
-      try {
-        const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
-        if (!cancelled) setUploadInfo(blobsToUploadInfo(blobs));
-      } catch (error) {
-        console.error('Failed to get blob upload status:', error);
-        if (!cancelled) setUploadInfo(defaultUploadInfo);
-      }
-    };
-
-    fetchStatus();
-    const intervalId = setInterval(fetchStatus, 2000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, [attachmentId]);
-
-  return uploadInfo;
+  return blobsToUploadInfo(blobs);
 }

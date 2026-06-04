@@ -4,10 +4,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { zCreateRequestBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { zCreateRequestData } from '~/api.gen/zod.gen';
-import { CallbackArgs } from '~/modules/common/data-table/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
@@ -17,7 +17,7 @@ import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = zCreateRequestData.shape.body;
+const formSchema = zCreateRequestBody;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -56,12 +56,12 @@ export const WaitlistForm = ({
   });
 
   const onSubmit = (body: FormValues) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
 
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
-        toaster(t('common:success.waitlist_request', { appName: appConfig.name }), 'success');
+        toaster(t('c:success.waitlist_request', { appName: appConfig.name }), 'success');
 
         if (isDialog) useDialoger.getState().remove();
         callback?.({ status: 'success' });
@@ -79,13 +79,13 @@ export const WaitlistForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)}
-        className={cn('max-xs:min-w-full flex max-sm:flex-col items-end gap-4', className)}
+        className={cn('flex items-end gap-4 max-sm:flex-col max-xs:min-w-full', className)}
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${!email ? '' : 'hidden'} grow gap-0 w-full`}>
+            <FormItem className={`${!email ? '' : 'hidden'} w-full grow gap-0`}>
               <FormControl>
                 <Input
                   {...field}
@@ -94,7 +94,7 @@ export const WaitlistForm = ({
                   autoFocus={!isMobile}
                   disabled={!!email}
                   readOnly={!!email}
-                  placeholder={t('common:email')}
+                  placeholder={t('c:email')}
                 />
               </FormControl>
               <FormMessage className="mt-2" />
@@ -106,7 +106,7 @@ export const WaitlistForm = ({
             buttonContent
           ) : (
             <>
-              {t('common:join')}
+              {t('c:join')}
               <ArrowRightIcon size={16} className="ml-2" />
             </>
           )}

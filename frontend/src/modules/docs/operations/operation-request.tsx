@@ -1,9 +1,8 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import { cn } from '~/utils/cn';
 import {
   getTypeCodeForRequest,
   getZodCodeForRequest,
@@ -23,7 +22,6 @@ interface OperationRequestProps {
  */
 export const OperationRequest = ({ detail }: OperationRequestProps) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
   const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
@@ -34,17 +32,16 @@ export const OperationRequest = ({ detail }: OperationRequestProps) => {
   if (!request) return null;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-8">
-      <CollapsibleTrigger className="flex items-center gap-2 group w-full text-left">
-        <h4 className="text-sm font-medium">{t('common:docs.request')}</h4>
-        <ChevronDownIcon
-          className={cn(
-            'size-4 transition-transform duration-200 opacity-40 group-hover:opacity-70',
-            isOpen && 'rotate-180',
-          )}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[open]:animate-collapsible-down data-[closed]:animate-collapsible-up">
+    <Collapsible defaultOpen className="mt-8">
+      <CollapsibleTrigger
+        render={
+          <Button variant="ghost" size="sm" className="group w-full justify-start gap-2">
+            <span className="font-medium text-sm">{t('c:docs.request')}</span>
+            <ChevronDownIcon className="size-4 opacity-40 transition-transform duration-200 group-hover:opacity-70 group-data-panel-open:rotate-180" />
+          </Button>
+        }
+      />
+      <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
         <div className="mt-4">
           <ViewerGroup
             schema={request}

@@ -18,7 +18,7 @@ export const SelectCountry = <TFieldValues extends FieldValues>({
   const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
   const renderCountryOption: ComboboxSelectProps['renderOption'] = ({ value, label }) => (
-    <div className="flex items-center flex-nowrap truncate">
+    <div className="flex flex-nowrap items-center truncate">
       <CountryFlag countryCode={value} imgType="png" className="mr-2 shrink-0" />
       <span className="truncate">{label}</span>
     </div>
@@ -40,11 +40,13 @@ export const SelectCountry = <TFieldValues extends FieldValues>({
             value={value}
             onChange={onChange}
             renderOption={renderCountryOption}
+            clearable
+            searchableTrigger
             placeholders={{
-              trigger: 'common:placeholder.select_country',
-              search: 'common:placeholder.search_country',
-              notFound: 'common:no_resource_found',
-              resource: 'common:country',
+              trigger: 'c:placeholder.select_country',
+              search: 'c:placeholder.search_country',
+              notFound: 'c:no_resource_found',
+              resource: 'c:country',
             }}
           />
 

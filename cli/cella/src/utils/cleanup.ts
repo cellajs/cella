@@ -8,7 +8,9 @@
 import { existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import pc from 'picocolors';
+import process from 'node:process';
+import pc from './colors';
+import { warningMark } from './display';
 import { listWorktrees, mergeAbort, removeWorktree } from './git';
 
 /** Worktree directory prefix in system temp */
@@ -91,7 +93,7 @@ export async function cleanupLeftoverWorktrees(repoPath: string): Promise<void> 
  */
 async function handleAbort(signal: string): Promise<void> {
   console.info();
-  console.info(`${pc.yellow('⚠')} Interrupted (${signal}) - cleaning up...`);
+  console.info(`${warningMark} Interrupted (${signal}) - cleaning up...`);
 
   if (currentRepoPath && currentWorktreePath) {
     try {

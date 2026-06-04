@@ -1,0 +1,85 @@
+# Caddyfile for the production `frontend` profile.
+#
+# This Caddy instance runs on its own VM behind the load balancer and acts as
+# the public origin for the SPA. The actual static bundle still lives in the
+# frontend S3 bucket; Caddy reverse-proxies to it, adds the security headers
+# Edge Services + S3 cannot, and rewrites any 404 to /index.html so SPA deep
+# links resolve.
+#
+# The image is rebuilt per release (see infra/caddy/Dockerfile) so that
+# `RELEASE_SHA` is baked in and surfaces as `X-App-Version` — that is what
+# the on-VM reconciler asserts after each cutover.
+#
+# Configurable env (set in infra/compose.yml `frontend` profile):
+#   RELEASE_SHA  — bound to X-App-Version (defaulted to "dev" in Dockerfile)
+#   ORIGIN_HOST  — S3 REST hostname for the frontend bucket
+
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2
+	}
+}
+
+:80 {
+	log {
+		output stderr
+		format console
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		X-App-Version "{$RELEASE_SHA}"
+		-Server
+	}
+
+	# Health endpoint — LB + reconciler probe this. Returns 200 with X-App-Version
+	# from the outer header block above, which is what the rollout verifier asserts.
+	handle /health {
+		respond "ok" 200
+	}
+
+	# Long-cache versioned assets. The frontend build hashes filenames under
+	# /assets/ and /static/, so a year cache is safe.
+	@assets path /assets/* /static/*
+	handle @assets {
+		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy https://{$ORIGIN_HOST} {
+			header_up Host {$ORIGIN_HOST}
+		}
+	}
+
+	# Root path maps to an empty S3 object key, which the REST endpoint answers
+	# with 403 (not 404), so the deep-link fallback below never triggers. Serve
+	# index.html directly for "/".
+	@root path /
+	handle @root {
+		header Cache-Control "no-cache"
+		rewrite * /index.html
+		reverse_proxy https://{$ORIGIN_HOST} {
+			header_up Host {$ORIGIN_HOST}
+		}
+	}
+
+	# Default: proxy to S3; on a 404 from origin (deep link to a client-side
+	# route), rewrite to /index.html and re-proxy so the SPA can take over.
+	handle {
+		header Cache-Control "no-cache"
+		reverse_proxy https://{$ORIGIN_HOST} {
+			header_up Host {$ORIGIN_HOST}
+			@notfound status 404
+			handle_response @notfound {
+				rewrite * /index.html
+				reverse_proxy https://{$ORIGIN_HOST} {
+					header_up Host {$ORIGIN_HOST}
+				}
+			}
+		}
+	}
+}

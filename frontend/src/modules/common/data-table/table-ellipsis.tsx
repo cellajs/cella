@@ -30,18 +30,17 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     const isMobile = window.innerWidth < 640;
 
     create(
-      <div role="menu" className="flex-col flex gap-2 p-1">
-        {options.map(({ label, icon: Icon, onSelect }) => (
-          <DropdownActionItem key={label} isMobile={isMobile} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
-            {label}
-          </DropdownActionItem>
-        ))}
-      </div>,
+      options.map(({ label, icon: Icon, onSelect }) => (
+        <DropdownActionItem key={label} isMobile={isMobile} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
+          {label}
+        </DropdownActionItem>
+      )),
       {
         id: 'row-dropdown',
         triggerId: `ellipsis-${row.id}`,
         triggerRef,
         align: 'end',
+        kind: 'menu',
       },
     );
   };

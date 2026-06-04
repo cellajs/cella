@@ -1,19 +1,17 @@
-import { SearchParamError, useRouterState } from '@tanstack/react-router';
-import i18n from 'i18next';
+import { useRouterState } from '@tanstack/react-router';
 import { ChevronUpIcon, HomeIcon, MessageCircleQuestionIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app/app-footer';
-import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
+import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import router from '~/routes/router';
 import type { BoundaryType } from '~/routes/types';
 
-export type ErrorNoticeError = ApiError | Error | null;
+export type { ErrorNoticeError } from '~/modules/common/error-helpers';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
@@ -22,54 +20,6 @@ interface ErrorNoticeProps {
   resetErrorBoundary?: () => void;
   homePath?: string;
 }
-
-export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
-  if (!window.Gleap) return contactFormHandler(ref);
-  window.Gleap.openConversations();
-};
-
-/**
- * Returns a locale key string based on the error type or query.
- */
-function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): string {
-  if (errorFromQuery) return errorFromQuery;
-  if (!error) return 'error';
-
-  if (error instanceof SearchParamError) return 'invalid_param';
-
-  if (error instanceof ApiError)
-    return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
-
-  return error.name;
-}
-
-/**
- * Returns localized error info (title and message) for a given error.
- */
-export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeError; errorFromQuery?: string }) => {
-  const localeKey = getErrorLocaleKey(error, errorFromQuery);
-
-  const translationOptions = {
-    ns: ['appError', 'error'],
-    ...(error instanceof ApiError && error.entityType
-      ? { resource: i18n.t(error.entityType), resourceLowerCase: i18n.t(error.entityType).toLowerCase() }
-      : {}),
-  };
-
-  const defaultTitle = error?.name || i18n.t('error:error');
-  const defaultMessage = error?.message || '';
-
-  // Title translation
-  const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
-
-  // Message translation with severity check (type-safe)
-  const message =
-    error && 'severity' in error && error.severity === 'info'
-      ? error.message
-      : i18n.t(`${localeKey}.text`, { ...translationOptions, defaultValue: defaultMessage });
-
-  return { title, message };
-};
 
 /**
  * Error can be shown in multiple levels
@@ -113,29 +63,29 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   return (
     <>
       {boundary === 'root' && <Dialoger />}
-      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center error-notice">
+      <div className="error-notice container flex min-h-[calc(100vh-10rem)] flex-col items-center">
         <div className="mx-auto my-auto">
-          <Card className="max-w-[80vw] w-[80vw] sm:w-160 mt-8 bg-transparent border-none">
-            <CardHeader className="text-center p-0">
-              <CardTitle className="text-2xl font-normal mb-2 justify-center">{title}</CardTitle>
-              <CardDescription className="text-base text-foreground flex-col gap-2 p-0">
+          <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
+            <CardHeader className="p-0 text-center">
+              <CardTitle className="mb-2 justify-center font-normal text-2xl">{title}</CardTitle>
+              <CardDescription className="flex-col gap-2 p-0 text-base text-foreground">
                 <span className="block">{message}</span>
-                <span className="block mt-2 font-light">
+                <span className="mt-2 block">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
                   <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
                 </span>
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap text-red-600 font-mono px-0 py-4">
+              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-red-600">
                 {error.type && (
                   <Button
                     variant="link"
                     size="sm"
                     onClick={() => setShowError((prev) => !prev)}
-                    className="whitespace-pre-wrap w-full text-red-600 flex items-center"
+                    className="flex w-full items-center whitespace-pre-wrap text-red-600"
                   >
-                    <span>{showError ? t('common:hide_details') : t('common:show_details')}</span>
+                    <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
                     {
                       <ChevronUpIcon
                         size={16}
@@ -154,24 +104,24 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <div className="grid gap-1 grid-cols-[1fr_1fr] text-sm place-items-start pb-4">
-                        <div className="font-medium pr-4 place-self-end">Log ID</div>
+                      <div className="grid grid-cols-[1fr_1fr] place-items-start gap-1 pb-4 text-sm">
+                        <div className="place-self-end pr-4 font-medium">Log ID</div>
                         <div>{error.logId || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">Timestamp</div>
+                        <div className="place-self-end pr-4 font-medium">Timestamp</div>
                         <div>{dateNow}</div>
-                        <div className="font-medium pr-4 place-self-end">Message</div>
+                        <div className="place-self-end pr-4 font-medium">Message</div>
                         <div>{error.message || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">Type</div>
+                        <div className="place-self-end pr-4 font-medium">Type</div>
                         <div>{error.type || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">Resource type</div>
+                        <div className="place-self-end pr-4 font-medium">Resource type</div>
                         <div>{error.entityType || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">HTTP status</div>
+                        <div className="place-self-end pr-4 font-medium">HTTP status</div>
                         <div>{error.status || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">Severity</div>
+                        <div className="place-self-end pr-4 font-medium">Severity</div>
                         <div>{error.severity || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">User ID</div>
+                        <div className="place-self-end pr-4 font-medium">User ID</div>
                         <div>{error.userId || 'na'}</div>
-                        <div className="font-medium pr-4 place-self-end">Organization ID</div>
+                        <div className="place-self-end pr-4 font-medium">Organization ID</div>
                         <div>{error.organizationId || 'na'}</div>
                       </div>
                     </motion.div>
@@ -179,19 +129,19 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-8 p-0 justify-center">
+            <CardFooter className="mt-8 flex flex-wrap justify-center gap-2 p-0 max-sm:flex-col max-sm:items-stretch">
               {children ? (
                 children
               ) : (
                 <>
                   <Button onClick={handleGoToHome} variant="secondary">
                     <HomeIcon size={16} className="mr-2" />
-                    {t('common:home')}
+                    {t('c:home')}
                   </Button>
                   {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
                       <RefreshCwIcon size={16} className="mr-2" />
-                      {t('common:reload')}
+                      {t('c:reload')}
                     </Button>
                   )}
                 </>
@@ -199,12 +149,12 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
                   <MessageCircleQuestionIcon size={16} className="mr-2" />
-                  {t('common:contact_support')}
+                  {t('c:contact_support')}
                 </Button>
               )}
             </CardFooter>
           </Card>
-          {boundary !== 'app' && <AppFooter className="items-center mt-10" />}
+          {boundary !== 'app' && <AppFooter className="mt-10 items-center" />}
         </div>
       </div>
     </>

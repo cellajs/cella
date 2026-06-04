@@ -3,18 +3,18 @@ import { MailIcon, MessageSquareIcon, SendIcon, UserIcon } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { zCreateRequestBody } from 'sdk/zod.gen';
 import { z } from 'zod';
-import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
-import { useUserStore } from '~/store/user';
+import { useUserStore } from '~/modules/user/user-store';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
@@ -24,7 +24,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpointAbove('lg');
 
-  const formSchema = zCreateRequestData.shape.body.extend({ name: z.string().min(2, t('error:name_required')) });
+  const formSchema = zCreateRequestBody.extend({ name: z.string().min(2, t('error:name_required')) });
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -44,7 +44,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
       onSuccess: () => {
-        toaster(t('common:message_sent.text'), 'success');
+        toaster(t('c:message_sent.text'), 'success');
 
         if (isDialog) useDialoger.getState().remove();
         form.reset();
@@ -62,14 +62,14 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
           <InputFormField
             control={form.control}
             name="name"
-            label={t('common:name')}
+            label={t('c:name')}
             icon={<UserIcon size={16} />}
             required
           />
           <InputFormField
             control={form.control}
             name="email"
-            label={t('common:email')}
+            label={t('c:email')}
             type="email"
             icon={<MailIcon size={16} />}
             required
@@ -77,24 +77,23 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
           <InputFormField
             control={form.control}
             name="message"
-            label={t('common:message')}
+            label={t('c:message')}
             type="textarea"
             icon={<MessageSquareIcon size={16} />}
           />
-          <div className="flex flex-col sm:flex-row gap-2">
-            <SubmitButton loading={isPending}>
-              <SendIcon size={16} className="mr-2" />
-              {t('common:send')}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <SubmitButton loading={isPending} icon={<SendIcon size={16} />}>
+              {t('c:send')}
             </SubmitButton>
             <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>
-              {t('common:cancel')}
+              {t('c:cancel')}
             </Button>
           </div>
         </form>
       </Form>
-      {!isMediumScreen && <LegalContact className="w-full my-6 sm:my-0" addressOnly />}
+      {!isMediumScreen && <LegalContact className="my-6 w-full sm:my-0" addressOnly />}
       {isMediumScreen && (
-        <div className="w-full rounded-md overflow-hidden bg-accent md:mb-12">
+        <div className="w-full overflow-hidden rounded-md bg-accent md:mb-12">
           <Suspense>
             <ContactFormMap />
           </Suspense>

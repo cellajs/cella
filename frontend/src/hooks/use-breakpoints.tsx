@@ -11,8 +11,6 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
 // Returns the largest breakpoint whose threshold is ≤ the current width,
 // aligning with CSS min-width media queries.
 function getMatchedBreakpoints() {
-  if (typeof window === 'undefined') return sortedBreakpoints[0];
-
   const width = window.innerWidth;
   let matched = sortedBreakpoints[0]; // Default to smallest breakpoint
 
@@ -42,9 +40,7 @@ function updateGlobalBreakpoint() {
 }
 
 // Attach the listener once per app lifecycle
-if (typeof window !== 'undefined') {
-  window.addEventListener('resize', updateGlobalBreakpoint);
-}
+window.addEventListener('resize', updateGlobalBreakpoint);
 
 /**
  * Subscribe to breakpoint changes (works outside React components).
@@ -94,11 +90,7 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   // Handle 'xs' case when breakpoint is smaller than 'sm'
   const smIndex = sortedBreakpoints.indexOf('sm');
   const currentIndex = sortedBreakpoints.indexOf(breakpointState);
-  if (
-    currentIndex <= smIndex &&
-    typeof window !== 'undefined' &&
-    window.innerWidth < Number.parseInt(breakpoints.sm, 10)
-  ) {
+  if (currentIndex <= smIndex && window.innerWidth < Number.parseInt(breakpoints.sm, 10)) {
     return 'xs';
   }
   return breakpointState as BreakpointKey;

@@ -23,28 +23,25 @@ export function OverviewTable() {
 
   // Transform info object into rows for the table
   const rows: InfoRow[] = [
-    { key: 'title', label: t('common:title'), value: info.title },
-    { key: 'version', label: t('common:version'), value: info.version },
-    { key: 'description', label: t('common:description'), value: info.description },
-    { key: 'openapiVersion', label: t('common:docs.openapi_version'), value: info.openapiVersion },
+    { key: 'title', label: t('c:title'), value: info.title },
+    { key: 'version', label: t('c:version'), value: info.version },
+    { key: 'description', label: t('c:description'), value: info.description },
+    { key: 'openapiVersion', label: t('c:docs.openapi_version'), value: info.openapiVersion },
   ];
 
   const columns: ColumnOrColumnGroup<InfoRow>[] = [
     {
       key: 'label',
       name: '',
-      sortable: false,
-      resizable: false,
       width: 160,
       renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
     },
     {
       key: 'value',
       name: '',
-      sortable: false,
       resizable: true,
       wrapText: 5,
-      renderCell: ({ row }) => <div className="leading-5 text-muted-foreground">{row.value}</div>,
+      renderCell: ({ row }) => <div className="text-muted-foreground leading-5">{row.value}</div>,
     },
   ];
 
@@ -52,7 +49,7 @@ export function OverviewTable() {
     <Card className="mb-12 border-0">
       <CardContent className="rdg-readonly">
         <DataTable<InfoRow>
-          className="mb-0 pb-0 border-b"
+          className="mb-0 border-b pb-0"
           hideHeader
           columns={columns}
           rows={rows}

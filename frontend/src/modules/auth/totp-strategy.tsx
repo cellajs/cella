@@ -3,13 +3,13 @@ import { useNavigate } from '@tanstack/react-router';
 import { SmartphoneIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
-import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 export const TotpStrategy = ({
   isActive,
@@ -50,17 +50,13 @@ export const TotpStrategy = ({
         >
           <SmartphoneIcon size={16} />
           <span className="truncate">
-            {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
+            {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
           </span>
         </Button>
       )}
 
       {isActive && (
-        <TotpConfirmationForm
-          onSubmit={totpSignIn}
-          onCancel={() => setIsActive(false)}
-          label={t('common:totp_verify')}
-        />
+        <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('c:totp_verify')} />
       )}
     </div>
   );

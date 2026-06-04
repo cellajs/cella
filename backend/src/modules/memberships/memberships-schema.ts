@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { roles } from 'shared';
+import { schemaTags } from '#/core/openapi-helpers';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
@@ -12,7 +13,7 @@ import {
 } from '../../../mocks/mock-membership';
 
 /** Schema for entity roles enum - uses literal types from appConfig */
-export const entityRoleSchema = z.enum(roles.all);
+const entityRoleSchema = z.enum(roles.all);
 
 export const membershipSchema = z
   .object({
@@ -24,6 +25,7 @@ export const membershipSchema = z
   .openapi('Membership', {
     description: "A user's membership in a context entity, including role and activity data.",
     example: mockMembershipResponse(),
+    'x-tags': schemaTags('data', 'memberships', 'cella'),
   });
 
 export const inactiveMembershipSchema = z
@@ -37,18 +39,20 @@ export const inactiveMembershipSchema = z
   .openapi('InactiveMembership', {
     description: 'A membership record for a user who has not yet accepted an invitation.',
     example: mockInactiveMembershipResponse(),
+    'x-tags': schemaTags('data', 'memberships', 'cella'),
   });
 
 export const membershipBaseSchema = membershipSchema
   .omit({
     createdAt: true,
     createdBy: true,
-    modifiedAt: true,
-    modifiedBy: true,
+    updatedAt: true,
+    updatedBy: true,
   })
   .openapi('MembershipBase', {
     description: 'Core membership fields shared across active and inactive memberships.',
     example: mockMembershipBase(),
+    'x-tags': schemaTags('base', 'memberships', 'cella'),
   });
 
 export const membershipCreateBodySchema = z.object({

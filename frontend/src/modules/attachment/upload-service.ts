@@ -1,3 +1,11 @@
+import { onlineManager } from '@tanstack/react-query';
+import { Uppy } from '@uppy/core';
+import Transloadit from '@uppy/transloadit';
+// biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback — not eligible for a React Query hook.
+import { getUploadToken } from 'sdk';
+import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+
 /**
  * Upload Service
  *
@@ -10,13 +18,6 @@
  * - Lazy token fetching per upload (never expires mid-upload)
  * - Assembly completion waiting with internal polling
  */
-import { onlineManager } from '@tanstack/react-query';
-import { Uppy } from '@uppy/core';
-import Transloadit from '@uppy/transloadit';
-import { getUploadToken } from '~/api.gen';
-import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-
 class AttachmentUploadService {
   private processing = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;

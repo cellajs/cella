@@ -1,4 +1,4 @@
-import { createXRoute } from '#/docs/x-routes';
+import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -14,10 +14,10 @@ const requestRoutes = {
     operationId: 'createRequest',
     method: 'post',
     path: '/',
-    xGuard: publicGuard,
+    xGuard: [publicGuard],
     xRateLimiter: [emailEnumLimiter, spamLimiter],
     middleware: [isNoBot],
-    tags: ['requests'],
+    tags: ['requests', 'cella'],
     summary: 'Create request',
     description:
       'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
@@ -43,7 +43,7 @@ const requestRoutes = {
     method: 'get',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    tags: ['requests'],
+    tags: ['requests', 'cella'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
     request: { query: requestListQuerySchema },
@@ -68,8 +68,8 @@ const requestRoutes = {
     method: 'delete',
     path: '/',
     xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: bulkPointsLimiter,
-    tags: ['requests'],
+    xRateLimiter: [bulkPointsLimiter],
+    tags: ['requests', 'cella'],
     summary: 'Delete requests',
     description: 'Deletes one or more *requests* from the system by their IDs.',
     request: {

@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 
 interface GridDimensions {
   viewportHeight: number;
@@ -46,15 +46,32 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
  * breakpoints. Only viewportHeight and scroll positions are tracked
  * (needed for row virtualization).
  *
- * ResizeObserver tracks only horizontalScrollbarHeight (rare changes).
- * All updates are rAF-throttled to stay cheap.
+ * Backed by `useSyncExternalStore` to avoid tearing under concurrent
+ * rendering (mirrors upstream PR #3968). All updates are rAF-throttled
+ * to stay cheap. ResizeObserver tracks horizontalScrollbarHeight.
  */
 export function useGridDimensions(
   scrollContainerRef?: RefObject<HTMLElement | null>,
   enableRowVirtualization = true,
 ): GridDimensionsResult {
   const gridRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState<GridDimensions>(initialDimensions);
+  const snapshotRef = useRef<GridDimensions>(initialDimensions);
+  // Latest React notifier registered via useSyncExternalStore's subscribe.
+  // Stored in a ref so the layout effect below can call it without re-running
+  // when subscribe is re-invoked (e.g. StrictMode double-mount in dev).
+  const notifyRef = useRef<() => void>(() => {});
+
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    notifyRef.current = onStoreChange;
+    return () => {
+      notifyRef.current = () => {};
+    };
+  }, []);
+
+  const getSnapshot = useCallback(() => snapshotRef.current, []);
+  const getServerSnapshot = useCallback(() => initialDimensions, []);
+
+  const dimensions = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useLayoutEffect(() => {
     const { ResizeObserver } = window;
@@ -67,6 +84,16 @@ export function useGridDimensions(
     // Determine the scroll container: explicit ref → auto-detect → window
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
     const isWindowScroll = scrollContainer === null;
+
+    // Commit a new snapshot only if it differs from the cached one. Mutating
+    // snapshotRef + calling the React notifier triggers a re-read via
+    // getSnapshot — useSyncExternalStore handles the bailout when the
+    // returned reference is identical.
+    const commit = (next: GridDimensions) => {
+      if (next === snapshotRef.current) return;
+      snapshotRef.current = next;
+      notifyRef.current();
+    };
 
     // rAF throttle — coalesces rapid scroll / resize calls into one frame
     let rafId = 0;
@@ -110,24 +137,23 @@ export function useGridDimensions(
     const { clientHeight, offsetHeight } = grid;
     const initialHScrollbar = offsetHeight - clientHeight;
 
-    const initial: GridDimensions = measureScroll({
-      ...initialDimensions,
-      horizontalScrollbarHeight: initialHScrollbar,
-    });
-    setDimensions(initial);
+    commit(
+      measureScroll({
+        ...initialDimensions,
+        horizontalScrollbarHeight: initialHScrollbar,
+      }),
+    );
 
     // --- ResizeObserver: rAF-throttled for scrollbar height detection ---
-    // No flushSync needed — column sizing is handled by CSS grid natively.
     // Only horizontalScrollbarHeight is tracked (changes when scrollbar appears/disappears).
     const resizeObserver = new ResizeObserver(() => {
       const { clientHeight, offsetHeight } = grid;
       const newHScrollbar = offsetHeight - clientHeight;
 
       scheduleUpdate(() => {
-        setDimensions((prev) => {
-          if (prev.horizontalScrollbarHeight === newHScrollbar) return prev;
-          return { ...prev, horizontalScrollbarHeight: newHScrollbar };
-        });
+        const prev = snapshotRef.current;
+        if (prev.horizontalScrollbarHeight === newHScrollbar) return;
+        commit({ ...prev, horizontalScrollbarHeight: newHScrollbar });
       });
     });
     resizeObserver.observe(grid);
@@ -135,14 +161,14 @@ export function useGridDimensions(
     // --- Scroll handler (rAF-throttled) — only needed for row virtualization ---
     const handleScroll = () => {
       scheduleUpdate(() => {
-        setDimensions((prev) => measureScroll(prev));
+        commit(measureScroll(snapshotRef.current));
       });
     };
 
     // Window resize — viewport height changed (rAF-throttled)
     const handleResize = () => {
       scheduleUpdate(() => {
-        setDimensions((prev) => measureScroll(prev));
+        commit(measureScroll(snapshotRef.current));
       });
     };
 

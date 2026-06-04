@@ -152,7 +152,7 @@ export const DifferentButtonVariants: Story = {
     return (
       <div className="space-y-4">
         <div>
-          <h3 className="text-sm font-medium mb-2">Default buttons</h3>
+          <h3 className="mb-2 font-medium text-sm">Default buttons</h3>
           <Calendar
             {...args}
             mode="single"
@@ -163,7 +163,7 @@ export const DifferentButtonVariants: Story = {
           />
         </div>
         <div>
-          <h3 className="text-sm font-medium mb-2">Outline buttons</h3>
+          <h3 className="mb-2 font-medium text-sm">Outline buttons</h3>
           <Calendar
             {...args}
             mode="single"
@@ -174,7 +174,7 @@ export const DifferentButtonVariants: Story = {
           />
         </div>
         <div>
-          <h3 className="text-sm font-medium mb-2">Secondary buttons</h3>
+          <h3 className="mb-2 font-medium text-sm">Secondary buttons</h3>
           <Calendar
             {...args}
             mode="single"

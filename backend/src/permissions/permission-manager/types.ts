@@ -2,7 +2,7 @@ import type { ContextEntityType, EntityActionType, EntityIdColumnKeys, ProductEn
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 export type ContextEntityIdColumns = {
-  [K in ContextEntityType as EntityIdColumnKeys[K]]?: string | null;
+  [K in ContextEntityType as EntityIdColumnKeys[K]]: string | null;
 };
 
 /**
@@ -20,7 +20,7 @@ export type SubjectForPermission = {
   id?: string;
   /** The user who created this entity. Enables implicit "owner" relation for `'own'` policies. */
   createdBy?: string | null;
-} & ContextEntityIdColumns;
+} & Partial<ContextEntityIdColumns>;
 
 /** Source that granted an action — either a context membership or an implicit relation. */
 export type GrantSource =

@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { appConfig } from 'shared';
-import type { MembershipBase } from '~/api.gen';
+import type { MembershipBase } from 'sdk';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 
-/** Get the context entity ID from a membership based on its contextType */
-const getMembershipContextId = (m: MembershipBase) =>
-  String(m[appConfig.entityIdColumnKeys[m.contextType] as keyof MembershipBase]);
+/** Get the context entity ID from a membership */
+const getMembershipContextId = (m: MembershipBase) => m.contextId;
 
 /** Sum all product entity type counts for a single context entity */
 const sumCounts = (counts: Record<string, number> | undefined) => {
@@ -19,16 +17,22 @@ const sumCounts = (counts: Record<string, number> | undefined) => {
 
 /**
  * Hook to get unseen count for one or more context entity IDs.
+ * Uses `select` so the component only re-renders when its derived count actually changes.
  */
 export function useUnseenCount(contextEntityIds: string | string[] | undefined) {
-  const { data } = useQuery(unseenCountsQueryOptions());
+  const ids = !contextEntityIds ? [] : Array.isArray(contextEntityIds) ? contextEntityIds : [contextEntityIds];
 
-  if (!contextEntityIds || !data) return 0;
+  const { data } = useQuery({
+    ...unseenCountsQueryOptions(),
+    select: (raw) => {
+      if (ids.length === 0) return 0;
+      let total = 0;
+      for (const id of ids) total += sumCounts(raw[id]);
+      return total;
+    },
+  });
 
-  const ids = Array.isArray(contextEntityIds) ? contextEntityIds : [contextEntityIds];
-  let total = 0;
-  for (const id of ids) total += sumCounts(data[id]);
-  return total;
+  return data ?? 0;
 }
 
 /**

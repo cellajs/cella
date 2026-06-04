@@ -193,7 +193,7 @@ export const WithError: Story = {
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-      <p className="text-sm text-destructive">Please enter a valid email address</p>
+      <p className="text-destructive text-sm">Please enter a valid email address</p>
     </div>
   ),
 };
@@ -352,7 +352,7 @@ export const ComplexForm: Story = {
   render: () => (
     <div className="w-full max-w-md space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Personal Information</label>
+        <label className="font-medium text-sm">Personal Information</label>
         <InputGroup>
           <InputGroupAddon align="inline-start">
             <InputGroupText>
@@ -371,7 +371,7 @@ export const ComplexForm: Story = {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Account Details</label>
+        <label className="font-medium text-sm">Account Details</label>
         <InputGroup>
           <InputGroupAddon align="block-start">
             <InputGroupText>Username</InputGroupText>
@@ -393,7 +393,7 @@ export const ComplexForm: Story = {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Bio</label>
+        <label className="font-medium text-sm">Bio</label>
         <InputGroup>
           <InputGroupAddon align="block-start">
             <InputGroupText>About you</InputGroupText>

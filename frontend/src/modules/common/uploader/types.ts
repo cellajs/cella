@@ -1,7 +1,7 @@
 import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'shared';
-import type { uploadTemplates } from 'shared/upload-templates';
+import type { uploadTemplates } from 'shared/transloadit-config';
 
 type UppyBody = Record<string, unknown>;
 type UppyMeta = { public: boolean; bucketName: string; offlineUploaded: boolean };

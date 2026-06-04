@@ -8,7 +8,7 @@ export const PendingMembershipsTableBar = ({ queryKey }: { queryKey: QueryKey })
 
   return (
     <TableBarContainer offsetTop={0}>
-      <TableCount count={total} label="common:pending_invitation" />
+      <TableCount count={total} label="c:pending_invitation" />
     </TableBarContainer>
   );
 };

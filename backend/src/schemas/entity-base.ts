@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { schemaTags } from '#/core/openapi-helpers';
 import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
@@ -10,7 +11,7 @@ const entityCoreShape = {
   id: z.string(),
   name: z.string(),
   createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
 };
 
 /**
@@ -18,7 +19,7 @@ const entityCoreShape = {
  */
 const auditShape = {
   createdBy: userMinimalBaseSchema.nullable(),
-  modifiedBy: userMinimalBaseSchema.nullable(),
+  updatedBy: userMinimalBaseSchema.nullable(),
 };
 
 /**
@@ -41,6 +42,7 @@ export const contextEntityBaseSchema = z
   .openapi('ContextEntityBase', {
     description: 'Base schema for entities with memberships (e.g. organization).',
     example: mockContextEntityBase(),
+    'x-tags': schemaTags('base', 'entities', 'cella'),
   });
 
 /**
@@ -57,4 +59,5 @@ export const productEntityBaseSchema = z
   .openapi('ProductEntityBase', {
     description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
     example: mockProductEntityBase(),
+    'x-tags': schemaTags('base', 'entities', 'cella'),
   });

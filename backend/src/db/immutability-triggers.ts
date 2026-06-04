@@ -1,68 +1,61 @@
 /**
  * Immutability triggers for identity columns.
  *
- * These triggers prevent modification of identity columns (id, tenant_id, organization_id, etc.)
- * after row creation. They provide defense-in-depth protection against accidental or malicious
- * column modifications, even if someone uses admin bypass or adds a sloppy RLS policy.
+ * Prevents modification of identity columns (id, tenant_id, organization_id, etc.)
+ * after row creation. Defense-in-depth: catches bugs even if someone bypasses RLS or
+ * the guard chain.
  *
+ * Uses BEFORE UPDATE plpgsql triggers that check `NEW.col IS DISTINCT FROM OLD.col`
+ * and raise an exception. One shared function per column-set, one trigger per table.
+ * Table configs are derived from appConfig, so new entity types are auto-protected.
  */
 
 import { getTableName } from 'drizzle-orm';
-import { appConfig } from 'shared';
-import { entityTables } from '#/table-config';
+import { appConfig, hierarchy } from 'shared';
+import { entityTables } from '#/tables';
 
-// ============================================================================
-// Immutable Column Sets by Entity Category
-// ============================================================================
+// ─── Immutable column sets ──────────────────────────────────────────────────
 
-/** Base immutable columns shared by all entity types */
-const baseEntityImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
+const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
+const PARENTLESS_ENTITY_COLUMNS = ['id', 'entity_type', 'created_at', 'created_by'] as const;
+const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'organization_id', 'context_id', 'context_type'] as const;
 
-/** Base immutable columns for membership tables */
-const baseMembershipImmutableColumns = ['tenant_id', 'organization_id'] as const;
+/** Product entities with a parent org (tasks, labels, attachments) */
+export const productEntityImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
 
-/** Context entities (e.g., organizations) - use base columns */
-export const contextEntityImmutableColumns = baseEntityImmutableColumns;
+/** Active memberships — includes user_id */
+export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'] as const;
 
-/** Product entities with parent (e.g., attachments) - base + organization_id */
-export const productEntityImmutableColumns = [...baseEntityImmutableColumns, 'organization_id'] as const;
+/** Inactive memberships — user_id is mutable (re-assignable invitations) */
+export const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
 
-/** Parentless product entities (e.g., pages) - same as context (no organization_id) */
-export const parentlessProductEntityImmutableColumns = baseEntityImmutableColumns;
+// ─── SQL builders ───────────────────────────────────────────────────────────
 
-/** Memberships - base membership + user_id */
-export const membershipImmutableColumns = [...baseMembershipImmutableColumns, 'user_id'] as const;
-
-/** Inactive memberships - base membership columns only */
-export const inactiveMembershipImmutableColumns = baseMembershipImmutableColumns;
-
-// ============================================================================
-// Generic Trigger SQL Builders
-// ============================================================================
+interface TableImmutabilityConfig {
+  tableName: string;
+  functionName: string;
+}
 
 /**
- * Build SQL for a generic immutability trigger function.
- * The function checks if any of the specified columns changed and raises an exception if so.
+ * Generates a plpgsql function that raises an exception when any of the given
+ * columns change. Uses `IS DISTINCT FROM` so NULL → value transitions are caught.
  */
-function buildImmutabilityFunctionSQL(functionName: string, columns: readonly string[]): string {
-  const conditions = columns.map((col) => `NEW.${col} IS DISTINCT FROM OLD.${col}`).join('\n       OR ');
-  const columnList = columns.join(', ');
+function buildFunctionSQL(functionName: string, columns: readonly string[]): string {
+  const guard = columns.map((col) => `NEW.${col} IS DISTINCT FROM OLD.${col}`).join('\n       OR ');
 
   return `
 CREATE OR REPLACE FUNCTION ${functionName}() RETURNS TRIGGER AS $$
 BEGIN
-  IF ${conditions} THEN
-    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', '${columnList}', TG_TABLE_NAME;
+  IF ${guard} THEN
+    RAISE EXCEPTION 'Cannot modify immutable columns (%) on %', '${columns.join(', ')}', TG_TABLE_NAME;
   END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;`;
 }
 
-/**
- * Build SQL to create/replace immutability trigger on a table.
- */
-function buildImmutabilityTriggerSQL(tableName: string, functionName: string): string {
+/** Attaches (or replaces) a BEFORE UPDATE trigger that calls `functionName`. */
+function buildTriggerSQL(tableName: string, functionName: string): string {
   const triggerName = `${tableName}_immutable_keys_trigger`;
   return `
 DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};
@@ -71,38 +64,34 @@ CREATE TRIGGER ${triggerName}
   FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
 }
 
-// ============================================================================
-// Pre-built Functions for Each Entity Category
-// ============================================================================
+// ─── Pre-built trigger functions ────────────────────────────────────────────
 
-/**
- * Immutability function for base entity types (context entities + parentless products).
- * Both share the same columns: id, tenant_id, entity_type, created_at, created_by.
- */
-export const baseEntityImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
-  'base_entity_immutable_keys',
-  baseEntityImmutableColumns,
+/** Shared by context entities (has tenant_id) */
+export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
+
+/** Parentless product entities (no tenant_id) */
+export const parentlessEntityImmutabilityFunctionSQL = buildFunctionSQL(
+  'parentless_entity_immutable_keys',
+  PARENTLESS_ENTITY_COLUMNS,
 );
 
-/** Immutability function for product entities with parent (attachments, etc.) - adds organization_id */
-export const productEntityImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
+/** Product entities with parent — adds organization_id */
+export const productEntityImmutabilityFunctionSQL = buildFunctionSQL(
   'product_entity_immutable_keys',
   productEntityImmutableColumns,
 );
 
-/** Immutability function for memberships */
-export const membershipImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
+export const membershipImmutabilityFunctionSQL = buildFunctionSQL(
   'membership_immutable_keys',
   membershipImmutableColumns,
 );
 
-/** Immutability function for inactive memberships */
-export const inactiveMembershipImmutabilityFunctionSQL = buildImmutabilityFunctionSQL(
+export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL(
   'inactive_membership_immutable_keys',
   inactiveMembershipImmutableColumns,
 );
 
-/** Immutability function for append-only tables (e.g., activities) - blocks ALL updates */
+/** Blocks ALL updates — for audit/append-only tables */
 export const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
 BEGIN
@@ -110,84 +99,63 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
-// ============================================================================
-// Table Configuration - Derived from appConfig
-// ============================================================================
+// ─── Table → function mapping (derived from appConfig) ──────────────────────
 
-/** Configuration for applying immutability triggers to tables */
-interface TableImmutabilityConfig {
-  tableName: string;
-  functionName: string;
-}
+const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
 
-/** Parentless product types (from hierarchy config) */
-const parentlessProductTypes = new Set<string>(appConfig.parentlessProductEntityTypes);
-
-/** Context entity tables - use base_entity function */
-const contextEntityTableConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((entityType) => ({
-  tableName: getTableName(entityTables[entityType]),
+const contextEntityConfigs: TableImmutabilityConfig[] = appConfig.contextEntityTypes.map((t) => ({
+  tableName: getTableName(entityTables[t]),
   functionName: 'base_entity_immutable_keys',
 }));
 
-/** Parentless product entity tables - also use base_entity function (same columns) */
-const parentlessProductEntityTableConfigs: TableImmutabilityConfig[] = appConfig.parentlessProductEntityTypes.map(
-  (entityType) => ({
-    tableName: getTableName(entityTables[entityType]),
-    functionName: 'base_entity_immutable_keys',
-  }),
-);
+const parentlessProductConfigs: TableImmutabilityConfig[] = hierarchy.parentlessProductTypes.map((t) => ({
+  tableName: getTableName(entityTables[t]),
+  functionName: 'parentless_entity_immutable_keys',
+}));
 
-/** Product entity tables with parent (have organization_id) */
-const productEntityTableConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes
-  .filter((entityType) => !parentlessProductTypes.has(entityType))
-  .map((entityType) => ({
-    tableName: getTableName(entityTables[entityType]),
+const productWithParentConfigs: TableImmutabilityConfig[] = appConfig.productEntityTypes
+  .filter((t) => !parentlessTypes.has(t))
+  .map((t) => ({
+    tableName: getTableName(entityTables[t]),
     functionName: 'product_entity_immutable_keys',
   }));
 
-/** Membership tables - these are fixed (not entity types) */
-const membershipTableConfigs: TableImmutabilityConfig[] = [
+const membershipConfigs: TableImmutabilityConfig[] = [
   { tableName: 'memberships', functionName: 'membership_immutable_keys' },
   { tableName: 'inactive_memberships', functionName: 'inactive_membership_immutable_keys' },
 ];
 
-/** Append-only tables - block all updates */
-const appendOnlyTableConfigs: TableImmutabilityConfig[] = [
+const appendOnlyConfigs: TableImmutabilityConfig[] = [
   { tableName: 'activities', functionName: 'append_only_immutable_row' },
 ];
 
-/** All tables with immutability triggers */
-export const allImmutabilityTables = [
-  ...contextEntityTableConfigs,
-  ...parentlessProductEntityTableConfigs,
-  ...productEntityTableConfigs,
-  ...membershipTableConfigs,
-  ...appendOnlyTableConfigs,
+/** Every table that has an immutability trigger */
+export const allImmutabilityTables: TableImmutabilityConfig[] = [
+  ...contextEntityConfigs,
+  ...parentlessProductConfigs,
+  ...productWithParentConfigs,
+  ...membershipConfigs,
+  ...appendOnlyConfigs,
 ];
 
-// ============================================================================
-// Combined SQL for All Triggers
-// ============================================================================
+// ─── Combined SQL output ────────────────────────────────────────────────────
 
-/** Tables using base entity function (context + parentless products) */
-const baseEntityTables = [...contextEntityTableConfigs, ...parentlessProductEntityTableConfigs];
-
-/** Tables using product entity function (with organization_id) */
-const productWithParentTables = productEntityTableConfigs;
+const baseEntityTables = contextEntityConfigs;
+const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
 
 /**
- * Complete SQL to create all immutability functions and triggers.
- * Run this after migrations to ensure protection is in place.
+ * Complete SQL to create all immutability functions + triggers.
+ * Run after migrations to ensure protection is in place.
  */
 export const immutabilityTriggersSQL = `
--- ==========================================================================
--- Immutability Trigger Functions (${3 + membershipTableConfigs.length} functions)
--- ==========================================================================
-
--- Base entities: context + parentless products (${baseEntityTables.map((t) => t.tableName).join(', ')})
+-- Functions (6)
+-- Base entities: ${names(baseEntityTables)}
 ${baseEntityImmutabilityFunctionSQL}
 
--- Product entities with parent (${productWithParentTables.map((t) => t.tableName).join(', ') || 'none'})
+-- Parentless product entities: ${names(parentlessProductConfigs) || 'none'}
+${parentlessEntityImmutabilityFunctionSQL}
+
+-- Product entities with parent: ${names(productWithParentConfigs) || 'none'}
 ${productEntityImmutabilityFunctionSQL}
 
 -- Memberships
@@ -196,31 +164,11 @@ ${membershipImmutabilityFunctionSQL}
 -- Inactive memberships
 ${inactiveMembershipImmutabilityFunctionSQL}
 
--- Append-only tables (${appendOnlyTableConfigs.map((t) => t.tableName).join(', ')})
+-- Append-only: ${names(appendOnlyConfigs)}
 ${appendOnlyImmutabilityFunctionSQL}
 
--- ==========================================================================
--- Apply Triggers to Tables (${allImmutabilityTables.length} tables)
--- ==========================================================================
-
-${allImmutabilityTables.map((t) => buildImmutabilityTriggerSQL(t.tableName, t.functionName)).join('\n')}
+-- Triggers (${allImmutabilityTables.length} tables)
+${allImmutabilityTables.map((t) => buildTriggerSQL(t.tableName, t.functionName)).join('\n')}
 `;
 
-// ============================================================================
-// Custom Trigger Builders (for non-standard tables)
-// ============================================================================
-
-/**
- * Create a custom immutability function for tables with non-standard columns.
- * Returns the function SQL - you must execute it separately.
- */
-export function buildCustomImmutabilityFunction(functionName: string, columns: string[]): string {
-  return buildImmutabilityFunctionSQL(functionName, columns);
-}
-
-/**
- * Build trigger SQL for a custom table/function combination.
- */
-export function buildCustomImmutabilityTrigger(tableName: string, functionName: string): string {
-  return buildImmutabilityTriggerSQL(tableName, functionName);
-}
+// ─── Custom builders (for non-standard tables) ──────────────────────────────

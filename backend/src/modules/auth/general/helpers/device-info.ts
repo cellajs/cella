@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { UAParser } from 'ua-parser-js';
-import type { Env } from '#/lib/context';
+import type { Env } from '#/core/context';
 
 /**
  * Extracts device, OS, and browser information from the User-Agent header.

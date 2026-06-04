@@ -62,7 +62,7 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
                 }}
                 maxLength={100}
                 minLength={4}
-                placeholder={t('common:placeholder.email_domains')}
+                placeholder={t('c:placeholder.email_domains')}
                 tags={domains}
                 setTags={(newTags) => {
                   if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag));

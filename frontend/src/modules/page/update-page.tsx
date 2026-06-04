@@ -16,7 +16,7 @@ function UpdatePage({ pageId }: UpdatePageProps) {
 
   if (!page) {
     return (
-      <div className="my-4 md:mt-8 mx-auto flex justify-center">
+      <div className="mx-auto my-4 flex justify-center md:mt-8">
         <Spinner className="my-16 h-6 w-6" />
       </div>
     );

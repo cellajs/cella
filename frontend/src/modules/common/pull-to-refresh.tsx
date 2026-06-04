@@ -1,6 +1,6 @@
 import { CircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 const refreshTimeout = 5000;
 
@@ -148,7 +148,7 @@ export function PullToRefresh({
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || isDisabled) return;
+    if (isDisabled) return;
 
     const options = { passive: false }; // important!
 
@@ -187,39 +187,37 @@ export function PullToRefresh({
   if (!isPulling && !isRefreshing) return null;
 
   return (
-    <>
-      <div
+    <div
+      style={{
+        top: isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120),
+        opacity: isRefreshing || pullPosition > 0 ? 1 : 0,
+        transition: isDraggingRef.current ? 'none' : 'top 0.3s ease-out, opacity 0.3s ease-out',
+      }}
+      className="fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
+    >
+      <CircleIcon className="absolute size-8 text-muted-foreground/50" strokeWidth={4} />
+      <svg
+        className={`h-8 w-8 ${isRefreshing ? 'animate-spin' : ''}`}
+        viewBox="0 0 40 40"
         style={{
-          top: isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120),
-          opacity: isRefreshing || pullPosition > 0 ? 1 : 0,
-          transition: isDraggingRef.current ? 'none' : 'top 0.3s ease-out, opacity 0.3s ease-out',
+          transform: isRefreshing ? undefined : `rotate(${pullPosition * 2}deg)`,
+          transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
         }}
-        className="bg-base-100 fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2"
       >
-        <CircleIcon className="absolute size-8 text-muted-foreground/50" strokeWidth={4} />
-        <svg
-          className={`h-8 w-8 ${isRefreshing ? 'animate-spin' : ''}`}
-          viewBox="0 0 40 40"
-          style={{
-            transform: isRefreshing ? undefined : `rotate(${pullPosition * 2}deg)`,
-            transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
-          }}
-        >
-          <title>Pull to refresh</title>
-          <circle
-            cx="20"
-            cy="20"
-            r={radius}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={stroke}
-            strokeDasharray={circumference}
-            strokeDashoffset={isRefreshing ? 0 : strokeDashoffset}
-            strokeLinecap="round"
-            className="text-foreground"
-          />
-        </svg>
-      </div>
-    </>
+        <title>Pull to refresh</title>
+        <circle
+          cx="20"
+          cy="20"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={isRefreshing ? 0 : strokeDashoffset}
+          strokeLinecap="round"
+          className="text-foreground"
+        />
+      </svg>
+    </div>
   );
 }

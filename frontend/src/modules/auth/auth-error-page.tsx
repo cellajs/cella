@@ -1,10 +1,10 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { LogInIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import { Button } from '~/modules/ui/button';
-import { useAuthStore } from '~/store/auth';
 
 /**
  * Displays an error notice in authentication layout.
@@ -24,11 +24,9 @@ export function AuthErrorPage() {
     <ErrorNotice error={error} boundary="public">
       {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
 
-      <Button variant={showResendButton ? 'plain' : 'default'} asChild>
-        <Link to="/auth/authenticate" replace>
-          <LogInIcon size={16} className="mr-2" />
-          {t('common:sign_in')}
-        </Link>
+      <Button variant={showResendButton ? 'plain' : 'default'} render={<Link to="/auth/authenticate" replace />}>
+        <LogInIcon size={16} className="mr-2" />
+        {t('c:sign_in')}
       </Button>
     </ErrorNotice>
   );

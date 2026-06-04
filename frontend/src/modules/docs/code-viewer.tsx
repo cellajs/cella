@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
   code: string;
@@ -39,12 +39,12 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
   }, [code, language, mode]);
 
   if (state.isLoading) {
-    return <div className="animate-pulse bg-muted rounded h-24" />;
+    return <div className="h-24 animate-pulse rounded bg-muted" />;
   }
 
   return (
     <div
-      className="text-sm [&_pre]:bg-transparent! [&_code]:bg-transparent!"
+      className="text-sm [&_code]:bg-transparent! [&_pre]:bg-transparent!"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is safe
       dangerouslySetInnerHTML={{ __html: state.html }}
     />

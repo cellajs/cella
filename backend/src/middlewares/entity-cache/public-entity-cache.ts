@@ -10,10 +10,11 @@
  * 2. On miss: fetch from DB, cache result
  * 3. On entity change: ActivityBus event invalidates cache entry
  *
- * Public entities are determined by hierarchy.publicActionsTypes (entities with publicActions configured).
+ * Public entities are determined by hierarchy.publicStreamTypes (parentless products with publicRead).
  */
 
 import { LRUCache } from '#/lib/lru-cache';
+import { logEvent } from '#/utils/logger';
 
 /** Cache configuration */
 const cacheConfig = {
@@ -49,7 +50,7 @@ const cache = new LRUCache<Record<string, unknown>>({
   onDispose: (key, _value, reason) => {
     if (reason === 'evict') {
       const parsed = parseKey(key);
-      console.debug('[publicEntityCache] DISPOSE', { ...parsed, reason });
+      logEvent(null, 'debug', 'Public entity cache evicted', { ...parsed, reason });
     }
   },
 });
@@ -108,7 +109,7 @@ export const publicEntityCache = {
     const stats = cache.stats;
     if (stats.size > 0) {
       cache.clear();
-      console.debug('[publicEntityCache] Cleared all entries (type filter requested)', { entityType });
+      logEvent(null, 'debug', 'Public entity cache cleared by type', { entityType });
     }
   },
 

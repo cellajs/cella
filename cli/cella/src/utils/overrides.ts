@@ -7,60 +7,30 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import pc from 'picocolors';
 import type { CellaCliConfig } from '../config/types';
+import { warningMark } from './display';
 
 /**
- * Check if a pattern contains glob characters.
- */
-export function isGlobPattern(pattern: string): boolean {
-  return pattern.includes('*') || pattern.includes('?');
-}
-
-/**
- * Match a file path against a glob-like pattern.
+ * Check if a file path is owned by any of the given folders.
  *
- * Supported patterns:
- * - Exact match: 'path/to/file.ts'
- * - Wildcard: 'path/to/*' matches any file in that directory
- * - Deep wildcard: 'path/**' matches all files recursively
+ * Folders are directory prefixes (not globs): an entry matches the file when
+ * the path equals the entry exactly or is nested under `entry + '/'`.
  *
  * @param filePath - The file path to test
- * @param pattern - The pattern to match against
- * @returns True if the file matches the pattern
+ * @param folders - Folder prefixes (or exact paths) to match against
  */
-export function matchPattern(filePath: string, pattern: string): boolean {
-  // Limit pattern length to prevent ReDoS (CWE-1333)
-  if (pattern.length > 500) return false;
-
-  // Exact match (no glob characters)
-  if (!isGlobPattern(pattern)) {
-    return filePath === pattern;
-  }
-
-  // Convert glob pattern to regex
-  // Escape special regex characters except * and ?
-  let regexPattern = pattern.replace(/[-/\\^$+.()|[\]{}]/g, '\\$&');
-
-  // Handle ** (recursive match)
-  regexPattern = regexPattern.replace(/\*\*/g, '<<<DOUBLE_STAR>>>');
-  // Handle * (single level match)
-  regexPattern = regexPattern.replace(/\*/g, '[^/]*');
-  // Restore ** as match-all
-  regexPattern = regexPattern.replace(/<<<DOUBLE_STAR>>>/g, '.*');
-  // Handle ?
-  regexPattern = regexPattern.replace(/\?/g, '.');
-
-  const regex = new RegExp(`^${regexPattern}$`);
-  return regex.test(filePath);
+export function isUnderAnyFolder(filePath: string, folders: string[]): boolean {
+  return folders.some((folder) => {
+    const entry = folder.replace(/\/+$/, '');
+    return filePath === entry || filePath.startsWith(`${entry}/`);
+  });
 }
 
 /**
- * Check if a file is in the ignored list.
+ * Check if a file is inside an ignored folder.
  */
 export function isIgnored(filePath: string, config: CellaCliConfig): boolean {
-  const patterns = config.overrides?.ignored || [];
-  return patterns.some((pattern) => matchPattern(filePath, pattern));
+  return isUnderAnyFolder(filePath, config.overrides?.ignoredFolders || []);
 }
 
 /**
@@ -77,92 +47,71 @@ export function isPackageJson(filePath: string): boolean {
  */
 export function isPinned(filePath: string, config: CellaCliConfig): boolean {
   if (isPackageJson(filePath)) return true;
-  const patterns = config.overrides?.pinned || [];
-  return patterns.some((pattern) => matchPattern(filePath, pattern));
+  const files = config.overrides?.pinnedFiles || [];
+  return files.includes(filePath);
 }
 
 /** Validation warning */
 interface ConfigWarning {
-  type: 'pinned-glob' | 'pinned-not-found' | 'ignored-no-match' | 'single-level-glob';
+  type: 'pinned-glob' | 'pinned-not-found' | 'ignored-not-found';
   pattern: string;
   message: string;
 }
 
 /**
- * Check if pattern uses single-level wildcard that likely should be recursive.
- * Patterns like 'dir/*' should probably be 'dir/**' for recursive matching.
+ * Check if an entry contains glob characters (no longer supported).
  */
-function shouldWarnSingleLevelGlob(pattern: string): boolean {
-  return pattern.endsWith('/*') && !pattern.endsWith('/**');
+function hasGlobChars(entry: string): boolean {
+  return entry.includes('*') || entry.includes('?');
 }
 
 /**
  * Validate config overrides and return warnings.
  *
  * Checks for:
- * - Pinned paths with glob patterns (should use ignored)
- * - Pinned paths that don't exist in fork
- * - Ignored patterns that don't match any files
+ * - Pinned files using glob patterns (no longer supported)
+ * - Pinned files that don't exist in fork
+ * - Ignored folders that don't exist in fork
  *
  * @param config - The sync config to validate
  * @param forkPath - Path to the fork repository
- * @param forkFiles - List of files in the fork (optional, for validation)
- * @param upstreamFiles - List of files in upstream (optional, for validation)
  */
-export function validateOverrides(
-  config: CellaCliConfig,
-  forkPath: string,
-  forkFiles?: string[],
-  upstreamFiles?: string[],
-): ConfigWarning[] {
+export function validateOverrides(config: CellaCliConfig, forkPath: string): ConfigWarning[] {
   const warnings: ConfigWarning[] = [];
 
-  // Check pinned paths
-  const pinned = config.overrides?.pinned || [];
-  for (const pattern of pinned) {
-    // Warn if pinned contains glob pattern
-    if (isGlobPattern(pattern)) {
+  // Check pinned files
+  const pinnedFiles = config.overrides?.pinnedFiles || [];
+  for (const entry of pinnedFiles) {
+    if (hasGlobChars(entry)) {
       warnings.push({
         type: 'pinned-glob',
-        pattern,
-        message: `pin contains glob pattern (use ignored): ${pattern}`,
+        pattern: entry,
+        message: `pin uses glob (not supported, use exact path): ${entry}`,
       });
-    } else {
-      // Check if path exists in fork
-      const fullPath = join(forkPath, pattern);
-      if (!existsSync(fullPath)) {
-        warnings.push({
-          type: 'pinned-not-found',
-          pattern,
-          message: `pin not found: ${pattern}`,
-        });
-      }
+    } else if (!existsSync(join(forkPath, entry))) {
+      warnings.push({
+        type: 'pinned-not-found',
+        pattern: entry,
+        message: `pin not found: ${entry}`,
+      });
     }
   }
 
-  // Check ignored patterns
-  const ignored = config.overrides?.ignored || [];
-  for (const pattern of ignored) {
-    // Warn if pattern uses /* instead of /** for recursive matching
-    if (shouldWarnSingleLevelGlob(pattern)) {
+  // Check ignored folders
+  const ignoredFolders = config.overrides?.ignoredFolders || [];
+  for (const entry of ignoredFolders) {
+    if (hasGlobChars(entry)) {
       warnings.push({
-        type: 'single-level-glob',
-        pattern,
-        message: `pattern uses "/*" (single level) - use "/**" for recursive: ${pattern}`,
+        type: 'ignored-not-found',
+        pattern: entry,
+        message: `ignored folder uses glob (not supported, use a folder path): ${entry}`,
       });
-    }
-
-    // Check if pattern matches any files (only if we have file lists)
-    if (forkFiles && upstreamFiles) {
-      const allFiles = new Set([...forkFiles, ...upstreamFiles]);
-      const hasMatch = Array.from(allFiles).some((file) => matchPattern(file, pattern));
-      if (!hasMatch) {
-        warnings.push({
-          type: 'ignored-no-match',
-          pattern,
-          message: `no ignored match found: ${pattern}`,
-        });
-      }
+    } else if (!existsSync(join(forkPath, entry.replace(/\/+$/, '')))) {
+      warnings.push({
+        type: 'ignored-not-found',
+        pattern: entry,
+        message: `ignored folder not found: ${entry}`,
+      });
     }
   }
 
@@ -174,7 +123,7 @@ export function validateOverrides(
  */
 export function printWarnings(warnings: ConfigWarning[]): void {
   for (const warning of warnings) {
-    console.info(`${pc.yellow('⚠')} ${warning.message}`);
+    console.info(`${warningMark} ${warning.message}`);
   }
 }
 

@@ -35,12 +35,35 @@ export function ScrollArea({
     });
   }, [autoScrollOnDrag, viewportRef]);
 
+  // TODO: revisit once Base UI observes content subtree (https://github.com/mui/base-ui).
+  // Base UI's ScrollArea only ResizeObserves the viewport, so scrollbar visibility doesn't
+  // recompute when inner content grows/shrinks (e.g. sheeter content swap, accordion toggles).
+  // Workaround: on subtree mutations, toggle a 1px viewport min-height delta to wake it.
+  React.useEffect(() => {
+    const viewport = viewportRef.current;
+    if (typeof MutationObserver === 'undefined' || !viewport) return;
+    let toggle = false;
+    let frame = 0;
+    const mo = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        toggle = !toggle;
+        viewport.style.minHeight = toggle ? 'calc(100% + 1px)' : '100%';
+      });
+    });
+    mo.observe(viewport, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      mo.disconnect();
+    };
+  }, [viewportRef]);
+
   return (
     <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn('relative', className)} {...props}>
       <ScrollAreaPrimitive.Viewport
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
-        className={cn('h-full w-full rounded-[inherit] touch-manipulation focus:outline-none', viewportClassName)}
+        className={cn('h-full w-full touch-manipulation rounded-[inherit] focus:outline-none', viewportClassName)}
       >
         <ScrollAreaPrimitive.Content
           style={{
@@ -70,7 +93,7 @@ export function ScrollBar({
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       className={cn(
-        'z-20 flex p-px transition-colors select-none',
+        'z-20 flex select-none p-px transition-colors',
         orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent',
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         disableTrackClick && 'pointer-events-none',
@@ -80,7 +103,7 @@ export function ScrollBar({
     >
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className={cn('bg-border relative flex-1 rounded-full', disableTrackClick && 'pointer-events-auto')}
+        className={cn('relative flex-1 rounded-full bg-border', disableTrackClick && 'pointer-events-auto')}
       />
     </ScrollAreaPrimitive.Scrollbar>
   );

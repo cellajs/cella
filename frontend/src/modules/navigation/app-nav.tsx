@@ -5,15 +5,11 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
-import { useNavigationStore } from '~/store/navigation';
-import { useUIStore } from '~/store/ui';
-
-// Sheet class for nav sheets - positioned next to sidebar icon bar on sm+, pushes content when keepNavOpen
-export const navSheetClassName =
-  'sm:left-16 sm:z-90 xs:max-w-80 sm:w-80 sm:group-[.keep-nav-open]/body:shadow-none sm:group-[.keep-nav-open]/body:border-r max-sm:shadow-[0_0_2px_5px_rgba(0,0,0,0.1)] dark:max-sm:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]';
 
 /** Application navigation component.
  * - Renders floating, sidebar, or bottom bar nav.
@@ -43,7 +39,6 @@ export function AppNav() {
       return;
     }
 
-    // biome-ignore lint/style/noNonNullAssertion: searched strict by existing ids
     const navItem: NavItem = navItems.find((item) => item.id === id)!;
 
     // If it has an action, trigger it
@@ -67,8 +62,10 @@ export function AppNav() {
         id: 'nav-sheet',
         triggerRef,
         side: sheetSide as 'left' | 'right',
-        modal: false,
-        disablePointerDismissal: true,
+        modal: 'trap-focus',
+        // Outside-press handling is gated by `keepNavOpen` inside the sheeter's onOpenChange,
+        // so don't disable it at the Base UI level — that would suppress the event entirely.
+        disablePointerDismissal: false,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
         contentKey: navItem.id,
@@ -85,14 +82,6 @@ export function AppNav() {
     ['Shift + H', () => triggerNavItem('home')],
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
-
-  // Auto-open menu on desktop when keepOpen preference is enabled (skip in focus view)
-  const focusView = useUIStore((state) => state.focusView);
-  useEffect(() => {
-    if (isDesktop && keepOpenPreference && !navSheetOpen && !focusView) {
-      triggerNavItem('menu', undefined, { skipAnimation: true });
-    }
-  }, [isDesktop, keepOpenPreference, focusView]);
 
   // Sync keepNavOpen: pinned only when desktop + preference + a sheet is open
   useEffect(() => {

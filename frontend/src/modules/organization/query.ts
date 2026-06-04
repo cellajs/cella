@@ -1,8 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { appConfig } from 'shared';
 import {
-  type AutoCreateOrganizationData,
-  autoCreateOrganization,
   type CreateOrganizationsData,
   createOrganizations,
   type DeleteOrganizationsData,
@@ -13,18 +10,20 @@ import {
   type Organization,
   type UpdateOrganizationData,
   updateOrganization,
-} from '~/api.gen';
-import type { ApiError } from '~/lib/api';
+} from 'sdk';
+import { appConfig } from 'shared';
+import { ApiError } from '~/lib/api';
+import { addMyMembershipCache } from '~/modules/memberships/query-mutations';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import {
   baseInfiniteQueryOptions,
+  createCacheFinder,
   createEntityKeys,
-  findEntityInListCache,
   invalidateIfLastMutation,
   preserveIncluded,
   registerEntityQueryKeys,
 } from '~/query/basic';
-import { useMutateQueryData } from '~/query/basic/use-mutate-query-data';
+import { cacheCreate, cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import type { MutationData } from '~/query/types';
 
 type OrganizationFilters = Omit<GetOrganizationsData['query'], 'limit' | 'offset'>;
@@ -39,9 +38,11 @@ registerEntityQueryKeys('organization', keys);
  */
 export const organizationQueryKeys = keys;
 
-/** Find an organization in the list cache by id or slug. */
-export const findOrganizationInListCache = (idOrSlug: string) =>
-  findEntityInListCache<Organization>('organization', (org) => org.id === idOrSlug || org.slug === idOrSlug);
+const findOrganizationInCache = createCacheFinder<Organization>('organization');
+
+/** Find an organization in cache by id or slug. Slug matches are scoped to the given tenant. */
+export const findOrganizationByIdOrSlug = (idOrSlug: string, tenantId: string) =>
+  findOrganizationInCache((org) => org.id === idOrSlug || (org.slug === idOrSlug && org.tenantId === tenantId));
 
 /**
  * Query options for a single organization by ID.
@@ -50,8 +51,9 @@ export const findOrganizationInListCache = (idOrSlug: string) =>
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () => getOrganization({ path: { tenantId, id }, query: { include: 'counts' } }),
-    placeholderData: () => findOrganizationInListCache(id),
+    queryFn: async () =>
+      (await getOrganization({ path: { tenantId, id }, query: { include: 'counts' } })) as EnrichedOrganization,
+    placeholderData: () => findOrganizationByIdOrSlug(id, tenantId) as EnrichedOrganization | undefined,
     structuralSharing: preserveIncluded,
   });
 
@@ -67,8 +69,8 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
 export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {
     q = '',
-    sort = 'createdAt',
-    order = 'desc',
+    sort = 'displayOrder',
+    order = sort === 'displayOrder' ? 'asc' : 'desc',
     relatableUserId,
     excludeArchived,
     role,
@@ -89,10 +91,12 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset ?? (page ?? 0) * Number(limit));
 
-      return getOrganizations({
+      const result = await getOrganizations({
         query: { ...baseQuery, offset },
         signal,
       });
+      // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
+      return result as { items: EnrichedOrganization[]; total: number };
     },
     ...baseInfiniteQueryOptions,
     refetchOnMount: true,
@@ -104,7 +108,7 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
  */
 export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
+  const listKey = keys.list.base;
 
   return useMutation<EnrichedOrganization, ApiError, MutationData<CreateOrganizationsData>>({
     mutationKey: keys.create,
@@ -115,42 +119,20 @@ export const useOrganizationCreateMutation = () => {
       if (!result.data.length) {
         const reasons = result.rejectionReasons ? Object.keys(result.rejectionReasons) : [];
         if (reasons.includes('org_limit_reached')) {
-          throw new Error('org_limit_reached');
+          throw new ApiError({ status: 422, type: 'org_limit_reached' });
         }
-        throw new Error('create_resource');
+        throw new ApiError({ status: 422, type: 'create_resource' });
       }
 
       // Return the first created organization (currently only single creation supported)
       return result.data[0] as EnrichedOrganization;
     },
     onSuccess: (createdOrganization) => {
-      mutateCache.create([createdOrganization]);
+      if (createdOrganization.included?.membership) addMyMembershipCache(createdOrganization.included.membership);
+      cacheCreate(listKey, [createdOrganization]);
     },
     onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
-    },
-  });
-};
-
-/**
- * Mutation hook for creating an organization with auto-tenant creation.
- * Used by new users who don't have a tenant yet.
- */
-export const useOrganizationAutoCreateMutation = () => {
-  const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base);
-
-  return useMutation<EnrichedOrganization, ApiError, AutoCreateOrganizationData['body']>({
-    mutationKey: [...keys.create, 'auto'],
-    mutationFn: async (body) => {
-      const result = await autoCreateOrganization({ body });
-      return result as EnrichedOrganization;
-    },
-    onSuccess: (createdOrganization) => {
-      mutateCache.create([createdOrganization]);
-    },
-    onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
     },
   });
 };
@@ -160,18 +142,19 @@ export const useOrganizationAutoCreateMutation = () => {
  */
 export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, () => keys.detail.base, ['update']);
+  const listKey = keys.list.base;
 
   return useMutation<Organization, ApiError, MutationData<UpdateOrganizationData>>({
     mutationKey: keys.update,
     mutationFn: ({ path, body }) => updateOrganization({ path, body }),
     onSuccess: (updatedOrganization) => {
-      mutateCache.update([updatedOrganization]);
+      cacheUpdate(listKey, [updatedOrganization]);
+      queryClient.invalidateQueries({ queryKey: keys.detail.base });
       // Directly update detail cache so beforeLoad doesn't use stale slug for URL rewrite
       queryClient.setQueryData(keys.detail.byId(updatedOrganization.id), updatedOrganization);
     },
     onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
     },
   });
 };
@@ -181,7 +164,7 @@ export const useOrganizationUpdateMutation = () => {
  */
 export const useOrganizationDeleteMutation = () => {
   const queryClient = useQueryClient();
-  const mutateCache = useMutateQueryData(keys.list.base, (org) => keys.detail.byId(org.id), ['remove']);
+  const listKey = keys.list.base;
 
   return useMutation<void, ApiError, MutationData<DeleteOrganizationsData> & { organizations: Organization[] }>({
     mutationKey: keys.delete,
@@ -189,10 +172,25 @@ export const useOrganizationDeleteMutation = () => {
       await deleteOrganizations({ path, body });
     },
     onSuccess: (_, { organizations }) => {
-      mutateCache.remove(organizations);
+      cacheRemove(listKey, organizations);
+      for (const org of organizations) queryClient.removeQueries({ queryKey: keys.detail.byId(org.id) });
     },
     onSettled: () => {
-      invalidateIfLastMutation(queryClient, keys.all, keys.list.base);
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
     },
   });
+};
+
+/** Fetch organizations for table export. Bypasses cache; returns flat items. */
+export const fetchOrganizationsForExport = async (params: {
+  limit: number;
+  q?: string;
+  sort?: NonNullable<GetOrganizationsData['query']>['sort'];
+  order?: NonNullable<GetOrganizationsData['query']>['order'];
+}) => {
+  const { limit, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const response = await getOrganizations({
+    query: { limit: String(limit), q, sort, order, offset: '0' },
+  });
+  return response.items;
 };

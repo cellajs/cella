@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { nanoid } from 'shared/nanoid';
+import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
-import { Env } from '#/lib/context';
-import { AppError } from '#/lib/error';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -24,7 +24,7 @@ type BaseProps = {
  * @param ctx - Hono context.
  * @param token The token string to validate.
  * @param invokeToken (optional) Whether to create a single-use token after invoking/consuming the primary `token`.
- * @param tokenType The required type of the token (e.g., 'password-reset', 'email-verification').
+ * @param tokenType The required type of the token (e.g., 'email-verification').
  * @returns The valid token record from the database.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
@@ -33,7 +33,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
   const hashedToken = encodeLowerCased(token);
 
   // Get token record that matches (possibly invoked) token
-  let [tokenRecord] = await db
+  const [tokenRecord] = await db
     .select()
     .from(tokensTable)
     .where(and(eq(tokensTable.secret, hashedToken), eq(tokensTable.type, tokenType)))

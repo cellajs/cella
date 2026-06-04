@@ -1,4 +1,7 @@
+import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy, type ProductEntityType } from 'shared';
+import { queryClient } from '~/query/query-client';
+import { useSyncStore } from '~/query/realtime/sync-store';
 import router from '~/routes/router';
 
 type SyncPriority = 'high' | 'medium' | 'low';
@@ -29,6 +32,18 @@ export function getRouteTenantId(): string | null {
     }
   }
   return null;
+}
+
+/** Resolve tenantId for an organizationId. Checks sync store first (persisted, instant), then query cache. */
+export function getTenantIdForOrg(organizationId: string): string | null {
+  // Sync store is persisted to localStorage — available before query cache hydration
+  const fromStore = useSyncStore.getState().getOrgTenantId(organizationId);
+  if (fromStore) return fromStore;
+
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
+  if (!data?.items) return null;
+  const membership = data.items.find((m) => m.organizationId === organizationId);
+  return membership?.tenantId ?? null;
 }
 
 /**

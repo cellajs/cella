@@ -24,11 +24,11 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props &
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
       className={cn(
-        'fixed inset-0 z-117 group-has-data-[overlay=dialog]/drawer-portal:z-125 group-has-data-[overlay=dropdown]/drawer-portal:z-299 bg-black/50 transition-opacity transition-discrete duration-300',
-        'data-open:opacity-100 data-closed:opacity-0',
+        'fixed inset-0 z-117 bg-black/50 transition-discrete transition-opacity duration-300 group-has-data-[overlay=dialog]/drawer-portal:z-125 group-has-data-[overlay=dropdown]/drawer-portal:z-299',
+        'data-closed:opacity-0 data-open:opacity-100',
         'starting:opacity-0 data-starting-style:opacity-0',
         'data-ending-style:opacity-0',
-        'data-swiping:transition-none data-swiping:opacity-[calc(1-var(--drawer-swipe-progress,0))]',
+        'data-swiping:opacity-[calc(1-var(--drawer-swipe-progress,0))] data-swiping:transition-none',
         className,
       )}
       {...props}
@@ -59,11 +59,11 @@ function DrawerContent({
 
   return (
     <DrawerPortal>
-      <div className="contents group/drawer-portal">
+      <div className="group/drawer-portal contents">
         <DrawerOverlay />
         <DrawerPrimitive.Viewport
           className={cn(
-            'fixed inset-0 z-118 group-has-data-[overlay=dialog]/drawer-portal:z-126 group-has-data-[overlay=dropdown]/drawer-portal:z-300 flex',
+            'fixed inset-0 z-118 flex group-has-data-[overlay=dialog]/drawer-portal:z-126 group-has-data-[overlay=dropdown]/drawer-portal:z-300',
             // Viewport handles Popup positioning via flex alignment, using :has() to detect swipe direction
             'has-data-[swipe-direction=down]:items-end has-data-[swipe-direction=down]:justify-center',
             'has-data-[swipe-direction=up]:items-start has-data-[swipe-direction=up]:justify-center',
@@ -76,12 +76,12 @@ function DrawerContent({
             data-slot="drawer-content"
             className={cn(
               // Popup is a flex child of Viewport — NOT position:fixed. Scrolls via overflow-y-auto.
-              'group/drawer-content bg-background flex flex-col overflow-y-auto overscroll-contain touch-auto',
-              'will-change-transform transition-transform transition-discrete duration-300 ease-out',
-              'data-swiping:transition-none! data-swiping:select-none',
+              'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-none',
+              'transition-discrete transition-transform duration-300 ease-out will-change-transform',
+              'data-swiping:select-none data-swiping:transition-none!',
               // Sizing by swipe direction (Viewport flex handles placement)
-              'data-[swipe-direction=down]:w-full data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=down]:rounded-t-lg',
-              'data-[swipe-direction=up]:w-full data-[swipe-direction=up]:max-h-[80vh] data-[swipe-direction=up]:rounded-b-lg',
+              'data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=down]:w-full data-[swipe-direction=down]:rounded-t-lg',
+              'data-[swipe-direction=up]:max-h-[80vh] data-[swipe-direction=up]:w-full data-[swipe-direction=up]:rounded-b-lg',
               'data-[swipe-direction=right]:w-[95vw] data-[swipe-direction=right]:lg:max-w-4xl',
               'data-[swipe-direction=left]:w-[95vw] data-[swipe-direction=left]:lg:max-w-4xl',
               // Swipe transforms - idle position using CSS vars
@@ -110,13 +110,13 @@ function DrawerContent({
             {/* Drag handle — outside Content (no data-swipe-ignore) so mouse/pointer swipe works here. Hidden on left/right. */}
             <div
               className={cn(
-                'sticky top-0 z-10 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing',
+                'sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing',
                 'group-data-[swipe-direction=down]/drawer-content:py-2',
-                'group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=up]/drawer-content:py-2',
+                'group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=up]/drawer-content:py-2',
                 'group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden',
               )}
             >
-              <div className="bg-muted h-1 w-20 rounded-full" />
+              <div className="h-1 w-20 rounded-full bg-muted" />
             </div>
             {/* shrink-0 prevents flex from collapsing Content — children grow naturally, Popup scrolls when overflow */}
             <DrawerPrimitive.Content className="shrink-0">{children}</DrawerPrimitive.Content>
@@ -133,7 +133,7 @@ function DrawerHeader({ className, sticky, ...props }: React.ComponentProps<'div
       data-slot="drawer-header"
       className={cn(
         'flex flex-col gap-0.5 p-4 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-1.5 md:text-left',
-        sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
+        sticky && 'sticky top-0 z-20 bg-background/70 backdrop-blur-xs',
         className,
       )}
       {...props}
@@ -149,7 +149,7 @@ function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn('text-foreground font-semibold', className)}
+      className={cn('font-semibold text-foreground', className)}
       {...props}
     />
   );

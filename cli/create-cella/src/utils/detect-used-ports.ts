@@ -10,7 +10,7 @@ interface UsedPorts {
 
 /**
  * Scan sibling directories for existing cella forks and extract their dev ports.
- * Looks for `shared/development-config.ts` to identify cella-based projects.
+ * Looks for `shared/config/config.development.ts` to identify cella-based projects.
  */
 export async function detectUsedPorts(targetFolder: string): Promise<UsedPorts[]> {
   const parentDir = dirname(targetFolder);
@@ -24,7 +24,7 @@ export async function detectUsedPorts(targetFolder: string): Promise<UsedPorts[]
   }
 
   for (const name of siblings) {
-    const configPath = join(parentDir, name, 'shared/development-config.ts');
+    const configPath = join(parentDir, name, 'shared/config/config.development.ts');
     try {
       const content = await readFile(configPath, 'utf8');
       const feMatch = content.match(/frontendUrl:\s*'http:\/\/localhost:(\d+)'/);

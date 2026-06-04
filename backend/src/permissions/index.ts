@@ -1,5 +1,6 @@
-export { canAccessEntity } from './can-access';
+export { buildSubject } from './build-subject';
 export { canCreateEntity } from './can-create';
+export { canPerEntityType } from './can-per-entity-type';
 export {
   type BatchPermissionResult,
   checkPermission,
@@ -8,3 +9,4 @@ export {
 export { getValidContextEntity, type ValidContextEntityResult } from './get-context-entity';
 export { getValidProductEntity, type ValidProductEntityResult } from './get-product-entity';
 export { splitByPermission } from './split-by-permission';
+export { validateAncestorScope } from './validate-ancestor-scope';

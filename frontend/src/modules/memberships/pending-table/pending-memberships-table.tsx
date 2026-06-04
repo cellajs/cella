@@ -2,9 +2,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { zGetPendingMembershipsQuery } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { zGetPendingMembershipsData } from '~/api.gen/zod.gen';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -22,7 +22,7 @@ function rowKeyGetter(row: PendingMembership) {
   return row.id;
 }
 
-const pendingMembershipsSearchSchema = zGetPendingMembershipsData.shape.query.pick({ sort: true, order: true });
+const pendingMembershipsSearchSchema = zGetPendingMembershipsQuery.pick({ sort: true, order: true });
 
 type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
 
@@ -51,7 +51,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
     entityId: contextEntity.id,
     entityType: contextEntity.entityType,
     tenantId: contextEntity.tenantId,
-    orgId: contextEntity.organizationId || contextEntity.id,
+    organizationId: contextEntity.organizationId || contextEntity.id,
     ...search,
     limit,
   });
@@ -76,7 +76,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
   };
 
   return (
-    <div className="flex flex-col pt-4 gap-2 h-full">
+    <div className="flex h-full flex-col gap-2 pt-4">
       <PendingMembershipsTableBar queryKey={queryOptions.queryKey} />
       <DataTable<PendingMembership>
         {...{
@@ -96,8 +96,8 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
           NoRowsComponent: (
             <ContentPlaceholder
               icon={BirdIcon}
-              title="common:no_resource_yet"
-              titleProps={{ resource: t('common:invites').toLowerCase() }}
+              title="c:no_resource_yet"
+              titleProps={{ resource: t('c:invites').toLowerCase() }}
             />
           ),
         }}

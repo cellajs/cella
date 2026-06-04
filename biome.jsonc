@@ -1,0 +1,406 @@
+{
+  "files": {
+    "includes": [
+      "backend/src/**",
+      "backend/tests/**",
+      "backend/mocks/**",
+      "backend/emails/**",
+      "frontend/src/**",
+      "frontend/storybook/**",
+      "frontend/vite/**",
+      "cli/cella/src/**",
+      "cli/cella/tests/**",
+      "cli/create-cella/src/**",
+      "cli/create-cella/tests/**",
+      "packages/data-grid/src/**",
+      "sdk/gen/**",
+      "sdk/src/**",
+      "locales",
+      "sdk/openapi-ts.config.ts"
+    ]
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [":PACKAGE_WITH_PROTOCOL:", ":PACKAGE:"],
+              ["shared", "shared/**", "sdk", "sdk/**", "locales", "locales/**"],
+              ["~/**", "#/**", "#json/**"],
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "includes": ["**", "!frontend/src/api.gen/**", "!sdk/gen/**"],
+    "enabled": true,
+    "domains": {
+      "react": "recommended"
+    },
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "noUnusedVariables": "off",
+        "useHookAtTopLevel": "off",
+        "useUniqueElementIds": "off",
+        "noNestedComponentDefinitions": "warn",
+        "noProcessGlobal": "warn"
+      },
+      "performance": {
+        "noDynamicNamespaceImportAccess": "off"
+      },
+      "suspicious": {
+        "noTemplateCurlyInString": "info",
+        "noUnknownAtRules": "off",
+        "noEvolvingTypes": "warn"
+      },
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useSemanticElements": "info",
+        "useAriaPropsSupportedByRole": "info"
+      },
+      "complexity": {
+        "noUselessFragments": "warn",
+        "noImportantStyles": "off"
+      },
+      "style": {
+        "useEnumInitializers": "warn",
+        "noParameterAssign": "warn",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error",
+        "noDescendingSpecificity": "off",
+        "useNodejsImportProtocol": "error",
+        "noProcessEnv": "warn",
+        "noNestedTernary": "off",
+        "noNonNullAssertion": "off",
+        "useExportsLast": "off"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "options": {
+            "attributes": ["className", "classList"],
+            "functions": ["clsx", "cva", "cn", "tw"]
+          }
+        }
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "lineWidth": 120,
+    "bracketSpacing": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "json": {
+    "parser": {
+      "allowComments": true
+    }
+  },
+  "overrides": [
+    {
+      // Frontend boundary rules:
+      // - paths: ban cross-package imports (backend, cdc, infra)
+      // - patterns: ban direct SDK operation calls (camelCase imports from `sdk`).
+      //   Type imports (PascalCase) are always allowed.
+      // The rule applies to all frontend files; legitimate SDK callers (query
+      // layer, api-client, route loaders, auth flows, tests) disable the
+      // patterns rule via the next override.
+      "includes": ["frontend/src/**", "frontend/storybook/**", "frontend/vite/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
+                  "cdc": "Frontend cannot import CDC worker code.",
+                  "infra": "Frontend cannot import infra code."
+                },
+                "patterns": [
+                  {
+                    "group": ["sdk"],
+                    "importNamePattern": "[A-Z].*",
+                    "invertImportNamePattern": true,
+                    "message": "Don't call SDK operations directly. Wrap them in a React Query hook in `query.ts` and consume the hook here."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      // Allow direct SDK operation calls in query layer, api-client, route
+      // loaders, auth flows, and tests. Cross-package paths still banned.
+      "includes": [
+        "frontend/src/api-client.ts",
+        "frontend/src/query/**",
+        "frontend/src/**/query.ts",
+        "frontend/src/**/query-mutations.ts",
+        "frontend/src/**/public-query.ts",
+        "frontend/src/routes/**",
+        "frontend/src/modules/auth/**",
+        "frontend/src/modules/me/**",
+        "frontend/src/**/*.test.ts",
+        "frontend/src/**/*.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "backend": "Frontend cannot import backend code. Use the SDK or move shared types to `shared/`.",
+                  "cdc": "Frontend cannot import CDC worker code.",
+                  "infra": "Frontend cannot import infra code."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["backend/src/**", "backend/mocks/**", "backend/emails/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
+                  "cdc": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
+                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
+                  "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["shared/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "backend": "`shared` must stay a leaf package.",
+                  "frontend": "`shared` must stay a leaf package.",
+                  "cdc": "`shared` must stay a leaf package.",
+                  "sdk": "`shared` must stay a leaf package.",
+                  "infra": "`shared` must stay a leaf package."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["sdk/src/**", "sdk/gen/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "backend": "SDK cannot import backend; it is generated from the OpenAPI spec.",
+                  "frontend": "SDK cannot import frontend code."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["cdc/**", "yjs/**", "ai/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "backend": "Workers cannot import backend internals. Use `shared` for contracts.",
+                  "frontend": "Workers cannot import frontend code."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      // Storybook stories often use loose row/arg shapes for demonstration.
+      // a11y is also relaxed because stories demonstrate components in isolation
+      // (no labels, no surrounding semantic context, dummy click handlers).
+      "includes": ["**/*.stories.ts", "**/*.stories.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noArrayIndexKey": "off"
+          },
+          "a11y": {
+            "noLabelWithoutControl": "off",
+            "noNoninteractiveTabindex": "off",
+            "useAnchorContent": "off",
+            "useButtonType": "off",
+            "useKeyWithClickEvents": "off",
+            "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      // react-data-grid imposes its own ARIA grid pattern (role="grid"/"row"/"gridcell").
+      // Suppress a11y rules that conflict with the library's design.
+      "includes": ["frontend/src/modules/common/data-grid/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "useFocusableInteractive": "off",
+            "useKeyWithClickEvents": "off",
+            "useAriaPropsSupportedByRole": "off",
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
+    },
+    {
+      // Shadcn-derived UI primitives intentionally use ARIA roles
+      // (role="region", "group", "presentation") on <div> wrappers instead of
+      // semantic elements, matching upstream shadcn/Radix patterns.
+      "includes": [
+        "frontend/src/modules/ui/breadcrumb.tsx",
+        "frontend/src/modules/ui/button-group.tsx",
+        "frontend/src/modules/ui/carousel.tsx",
+        "frontend/src/modules/ui/field.tsx",
+        "frontend/src/modules/ui/input-group.tsx",
+        "frontend/src/modules/ui/tag-input.tsx",
+        "frontend/src/modules/common/resizable-panels/resizable-panels.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      // Allow direct `process.env` / `process` global usage in places that
+      // legitimately need them: env loaders (env.ts files in workers, the
+      // shared config-builder), bootstrap entrypoints that set env before
+      // imports, infra / scripts / *.config.ts build-time tooling, vite
+      // plugins (process.cwd) and CLI runtime.
+      "includes": [
+        "shared/src/config-builder/app-config.ts",
+        "infra/**",
+        "**/scripts/**",
+        "**/*.config.ts",
+        "frontend/vite/**",
+        "frontend/vite.config.ts",
+        "cdc/src/env.ts",
+        "yjs/src/env.ts",
+        "ai/src/ai-worker.ts",
+        "cli/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noProcessEnv": "off"
+          },
+          "correctness": {
+            "noProcessGlobal": "off"
+          }
+        }
+      }
+    },
+    {
+      // Tests: relax rules that are intentionally common in test code.
+      // - `noExplicitAny`: tests often stub partial shapes or generic helpers.
+      // - `noProcessEnv` / `noProcessGlobal`: tests sometimes read env directly.
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/tests/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "style": {
+            "noProcessEnv": "off"
+          },
+          "correctness": {
+            "noProcessGlobal": "off"
+          }
+        }
+      }
+    },
+    {
+      // Vendored from jsx-email v3.2.1 (MIT). The renderer internals (a JSX
+      // stringifier, style/rehype helpers) and the email primitives keep their
+      // upstream shapes so the fork stays behavior-preserving and easy to
+      // re-sync. They legitimately use `dangerouslySetInnerHTML` (raw email
+      // HTML), loose `any`/banned types in the stringifier, and a few perf/style
+      // patterns Biome flags. Formatting and all other rules still apply.
+      "includes": ["backend/emails/renderer/**", "backend/emails/components/primitives/**"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noEvolvingTypes": "off",
+            "noImplicitAnyLet": "off",
+            "noShadowRestrictedNames": "off",
+            "noGlobalIsNan": "off",
+            "noAssignInExpressions": "off"
+          },
+          "complexity": {
+            "noBannedTypes": "off"
+          },
+          "performance": {
+            "noAccumulatingSpread": "off"
+          }
+        }
+      }
+    }
+  ]
+}

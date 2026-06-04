@@ -1,5 +1,5 @@
 import type { Key, KeyboardEvent } from 'react';
-import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useCurrentBreakpoint } from '~/hooks/use-breakpoints';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
@@ -14,14 +14,15 @@ import {
   RowSelectionChangeContext,
   useCalculatedColumns,
   useColumnWidths,
+  useDragAutoScroll,
   useGridDimensions,
+  useInfiniteScroll,
   useViewportRows,
 } from './hooks';
+import type { RowsEndApproachingArgs } from './hooks/use-infinite-scroll';
+import { useStickyHeader } from './hooks/use-sticky-header';
 import { defaultRenderRow } from './row';
-import type { PartialPosition } from './scroll-to-cell';
-import { ScrollToCell } from './scroll-to-cell';
-import { focusSinkClassname, focusSinkHeaderAndSummaryClassname, rootClassname } from './style/core';
-import { rowSelected, rowSelectedWithFrozenCell } from './style/row';
+import { RowDragCell, type RowDragConfig } from './row-drag-cell';
 import type {
   CalculatedColumn,
   CellClipboardEvent,
@@ -32,30 +33,31 @@ import type {
   CellNavigationMode,
   CellPasteArgs,
   CellRange,
+  CellRendererProps,
   CellSelectArgs,
-  Column,
+  CellSelectionMode,
   ColumnOrColumnGroup,
   ColumnWidths,
+  DefaultColumnOptions,
   Maybe,
   Position,
   Renderers,
+  RowSelectionMode,
   RowsChangeData,
   SelectCellOptions,
   SelectedCellRangeChangeArgs,
   SelectHeaderRowEvent,
-  SelectionMode,
   SelectRowEvent,
   SortColumn,
-  TouchModeConfig,
 } from './types';
 import {
   assertIsValidKeyGetter,
   canExitGrid,
+  cellValueToText,
   cn,
   computeWrapTextRowHeight,
   createCellEvent,
   createRange,
-  evaluateTouchMode,
   getColSpan,
   getLeftRightKey,
   getNextSelectedCellPosition,
@@ -63,8 +65,11 @@ import {
   isCtrlKeyHeldDown,
   isDefaultCellInput,
   isSelectedCellEditable,
+  normalizeCellRange,
   renderMeasuringCells,
   scrollIntoView,
+  serializeCellsToHTML,
+  serializeCellsToTSV,
   sign,
 } from './utils/grid-utils';
 
@@ -78,41 +83,14 @@ interface EditCellState<R> extends Position {
   readonly originalRow: R;
 }
 
-/** Arguments passed to onRowsEndApproaching callback */
-export interface RowsEndApproachingArgs {
-  /** Index of the last row being rendered (with overscan) */
-  rowOverscanEndIdx: number;
-  /** Total number of rows in the dataset */
-  totalRows: number;
-  /** Number of rows remaining until the end */
-  rowsRemaining: number;
-}
-
-export type DefaultColumnOptions<R, SR> = Pick<
-  Column<R, SR>,
-  'renderCell' | 'renderHeaderCell' | 'width' | 'minWidth' | 'maxWidth' | 'resizable' | 'sortable' | 'draggable'
->;
-
-export interface DataGridHandle {
-  element: HTMLDivElement | null;
-  scrollToCell: (position: PartialPosition) => void;
-  selectCell: (position: Position, options?: SelectCellOptions) => void;
-}
+export type { RowsEndApproachingArgs };
 
 type SharedDivProps = Pick<
   React.ComponentProps<'div'>,
-  | 'role'
-  | 'aria-label'
-  | 'aria-labelledby'
-  | 'aria-description'
-  | 'aria-describedby'
-  | 'aria-rowcount'
-  | 'className'
-  | 'style'
+  'role' | 'aria-label' | 'aria-labelledby' | 'aria-description' | 'aria-describedby' | 'aria-rowcount' | 'className'
 >;
 
 export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends SharedDivProps {
-  ref?: Maybe<React.Ref<DataGridHandle>>;
   /**
    * Grid and data Props
    */
@@ -184,6 +162,34 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   onColumnResize?: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>;
   /** Callback triggered when columns are reordered */
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
+  /**
+   * Enable row drag-and-drop reordering. The cells of the column flagged
+   * `rowDragHandle: true` become drag sources; every cell becomes a drop
+   * target with top/bottom drop indicators.
+   * Pair with `enableDragAutoScroll` for long, scrollable lists.
+   */
+  onRowReorder?: Maybe<(fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void>;
+  /**
+   * Optional: when provided, the middle 50% of each row becomes a "reparent"
+   * drop zone. Use for tree-structured data (e.g. drop a row onto another to
+   * make it a child).
+   */
+  onRowReparent?: Maybe<(fromIdx: number, toIdx: number) => void>;
+  /**
+   * Optional per-zone drop validation. Called on every drag move; must be fast.
+   * If the cursor's natural zone is blocked but another zone is allowed, the
+   * drop indicator falls back to the nearest allowed zone. If all three zones
+   * are blocked, no indicator is shown and `onDrop` is suppressed.
+   *
+   * Use this for tree-structured constraints (max depth, cycle prevention)
+   * without coupling the grid to your row shape.
+   */
+  canDropRow?: Maybe<(args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean>;
+  /**
+   * Optional content rendered inside the native drag preview while a row is
+   * being dragged. Defaults to a generic preview.
+   */
+  renderRowDragPreview?: Maybe<(row: NoInfer<R>) => React.ReactNode>;
 
   /**
    * Toggles and modes
@@ -196,15 +202,34 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    */
   enableRowVirtualization?: Maybe<boolean>;
   /**
-   * Selection mode for cells and rows
-   * - 'none': Selection is disabled
-   * - 'cell': Single cell selection only
-   * - 'cell-range': Multi-cell range selection with shift+click/arrow
-   * - 'row': Single row selection
-   * - 'row-multi': Multiple row selection (default)
-   * @default 'row-multi'
+   * Pin header rows to the viewport top when the grid scrolls out of view.
+   * Opt-in: most embedded/static tables don't want this.
+   * @default false
    */
-  selectionMode?: Maybe<SelectionMode>;
+  enableStickyHeader?: Maybe<boolean>;
+  /**
+   * Enable vertical auto-scroll of the grid viewport during pragmatic-dnd drag operations.
+   * Opt-in: only useful for tables that wire up row drag-and-drop.
+   * @default false
+   */
+  enableDragAutoScroll?: Maybe<boolean>;
+  /**
+   * Cell selection mode (focus + range).
+   * - 'none': no cell focus
+   * - 'cell': single cell focus (default)
+   * - 'cell-range': multi-cell range with Shift+Click/Arrow
+   * @default 'cell'
+   */
+  cellSelectionMode?: Maybe<CellSelectionMode>;
+  /**
+   * Row selection mode for clicking the row body.
+   * The checkbox column (if present) always operates as multi-select regardless of this prop.
+   * - 'none': clicking a row body does not change row selection (default)
+   * - 'single': clicking a row body selects only that row
+   * - 'multi': clicking a row body toggles it; Shift+click extends a range
+   * @default 'none'
+   */
+  rowSelectionMode?: Maybe<RowSelectionMode>;
   /**
    * Currently selected cell range (for 'cell-range' selection mode)
    * Use with onSelectedCellRangeChange for controlled selection
@@ -214,15 +239,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * Callback triggered when the selected cell range changes
    */
   onSelectedCellRangeChange?: Maybe<(args: SelectedCellRangeChangeArgs<NoInfer<R>, NoInfer<SR>>) => void>;
-  /**
-   * Enable touch-friendly mode with larger touch targets
-   * - true: Always enabled
-   * - false: Always disabled
-   * - { max: breakpoint }: Enable below breakpoint
-   * - { min: breakpoint }: Enable at or above breakpoint
-   * @default false
-   */
-  touchMode?: Maybe<TouchModeConfig>;
 
   /**
    * Infinite scroll support
@@ -255,6 +271,10 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
    * @default false
    */
   isCompact?: Maybe<boolean>;
+  /** Hide the header row entirely */
+  hideHeader?: Maybe<boolean>;
+  /** Mark grid as read-only — suppresses selection outlines and edit affordances */
+  readOnly?: Maybe<boolean>;
   'data-testid'?: Maybe<string>;
   'data-cy'?: Maybe<string>;
 }
@@ -268,7 +288,6 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
  */
 export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridProps<R, SR, K>) {
   const {
-    ref,
     // Grid and data Props
     columns: rawColumns,
     rows,
@@ -296,22 +315,27 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     onScroll,
     onColumnResize,
     onColumnsReorder,
+    onRowReorder,
+    onRowReparent,
+    canDropRow,
+    renderRowDragPreview,
     onCellCopy,
     onCellPaste,
     // Toggles and modes
     enableVirtualization: rawEnableVirtualization,
     enableRowVirtualization: rawEnableRowVirtualization,
-    selectionMode: rawSelectionMode,
+    enableStickyHeader: rawEnableStickyHeader,
+    enableDragAutoScroll: rawEnableDragAutoScroll,
+    cellSelectionMode: rawCellSelectionMode,
+    rowSelectionMode: rawRowSelectionMode,
     selectedCellRange: selectedCellRangeProp,
     onSelectedCellRangeChange,
-    touchMode: rawTouchMode,
     // Infinite scroll
     onRowsEndApproaching,
     rowsEndApproachingThreshold: rawRowsEndApproachingThreshold,
     // Miscellaneous
     renderers,
     className,
-    style,
     rowClass,
     headerRowClass,
     // ARIA
@@ -322,6 +346,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     'aria-describedby': ariaDescribedBy,
     'aria-rowcount': rawAriaRowCount,
     isCompact,
+    hideHeader,
+    readOnly,
     'data-testid': testId,
     'data-cy': dataCy,
   } = props;
@@ -331,36 +357,83 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
    */
   const role = rawRole ?? 'grid';
   const baseRowHeight = rawRowHeight ?? 35;
-  const headerRowHeight = rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35);
+  // When hideHeader is true, collapse the reserved header grid track to 0 so it doesn't leave empty space.
+  const headerRowHeight = hideHeader
+    ? 0
+    : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
   const renderRow = renderers?.renderRow ?? defaultRenderRow;
-  const renderCell = renderers?.renderCell ?? defaultRenderCell;
+  const userRenderCell = renderers?.renderCell ?? defaultRenderCell;
+  // Wrap the row-DnD callbacks in latest-refs so consumers can pass plain
+  // (non-memoized) functions without invalidating `rowDragConfig` (and, by
+  // extension, `renderCell` → every `Row.memo` → every `RowDragCell`) on each
+  // parent render. The grid does the same for cell mouse handlers below.
+  const onRowReorderLatest = useLatestCallback(onRowReorder ?? (() => {}));
+  const onRowReparentLatest = useLatestCallback(onRowReparent ?? (() => {}));
+  const canDropRowLatest = useLatestCallback(canDropRow ?? (() => true));
+  const renderRowDragPreviewLatest = useLatestCallback(renderRowDragPreview ?? (() => null));
+  // When row reorder is enabled, wrap the active renderCell with row-DnD
+  // wiring. Identity is keyed only on whether features are enabled, so it
+  // stays stable across renders even when consumer callbacks aren't memoized.
+  const rowDragEnabled = onRowReorder != null;
+  const reparentEnabled = onRowReparent != null;
+  const canDropRowEnabled = canDropRow != null;
+  const dragPreviewEnabled = renderRowDragPreview != null;
+  const rowDragConfig = useMemo<RowDragConfig<R> | null>(
+    () =>
+      rowDragEnabled
+        ? {
+            onRowReorder: onRowReorderLatest,
+            onRowReparent: reparentEnabled ? onRowReparentLatest : undefined,
+            canDropRow: canDropRowEnabled ? canDropRowLatest : undefined,
+            renderRowDragPreview: dragPreviewEnabled ? renderRowDragPreviewLatest : undefined,
+          }
+        : null,
+    [
+      rowDragEnabled,
+      reparentEnabled,
+      canDropRowEnabled,
+      dragPreviewEnabled,
+      onRowReorderLatest,
+      onRowReparentLatest,
+      canDropRowLatest,
+      renderRowDragPreviewLatest,
+    ],
+  );
+  const renderCell = useMemo(() => {
+    if (!rowDragConfig) return userRenderCell;
+    const config = rowDragConfig as RowDragConfig<unknown>;
+    return (key: Key, props: Parameters<typeof userRenderCell>[1]) => (
+      <RowDragCell key={key} {...(props as CellRendererProps<unknown, SR>)} config={config} />
+    );
+  }, [rowDragConfig, userRenderCell]);
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
-  const selectionMode: SelectionMode = rawSelectionMode ?? 'row-multi';
-  const isCellSelectionEnabled = selectionMode !== 'none';
-  // Default threshold: 25% of rows, minimum 10, maximum 50
-  const rowsEndApproachingThreshold =
-    rawRowsEndApproachingThreshold ?? Math.min(50, Math.max(10, Math.floor(rows.length * 0.25)));
+  const enableStickyHeader = rawEnableStickyHeader ?? false;
+  const enableDragAutoScroll = rawEnableDragAutoScroll ?? false;
+  const cellSelectionMode: CellSelectionMode = rawCellSelectionMode ?? 'cell';
+  const rowSelectionMode: RowSelectionMode = rawRowSelectionMode ?? 'none';
+  const isCellSelectionEnabled = cellSelectionMode !== 'none';
 
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
-  // Disable row selection on mobile breakpoints (xs, sm)
-  const isMobileBreakpoint = currentBreakpoint === 'xs' || currentBreakpoint === 'sm';
+  // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
+  const isMobileBreakpoint = currentBreakpoint === 'xs';
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
-
-  // Evaluate touch mode based on current breakpoint
-  const isTouchModeActive = evaluateTouchMode(rawTouchMode ?? false, currentBreakpoint);
 
   /**
    * states
    */
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());
   const [isColumnResizing, setColumnResizing] = useState(false);
-  const [scrollToPosition, setScrollToPosition] = useState<PartialPosition | null>(null);
-  const [shouldFocusCell, setShouldFocusCell] = useState(false);
+  const shouldFocusCellRef = useRef(false);
+  // When true, the next focus effect should skip scrollIntoView. Set on EDIT→SELECT
+  // close, where the cell hasn't moved — calling scrollIntoView there would honor
+  // `scroll-mt-32` and visibly jump the page after the editor closes near the
+  // viewport edge.
+  const skipScrollOnFocusRef = useRef(false);
   const [previousRowIdx, setPreviousRowIdx] = useState(-1);
   const [selectedCellRangeInternal, setSelectedCellRangeInternal] = useState<CellRange | null>(null);
   const [cellRangeAnchor, setCellRangeAnchor] = useState<Position | null>(null);
@@ -395,6 +468,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     undefined,
     enableRowVirtualization,
   );
+
   const {
     columns,
     colSpanColumns,
@@ -410,6 +484,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     currentBreakpoint,
     isCompact: isCompact ?? false,
   });
+
+  // Pin header row(s) to viewport top when grid scrolls out of view
+  useStickyHeader(gridRef, headerRowsCount, headerRowHeight, enableStickyHeader);
+
+  // Auto-scroll the nearest vertically-scrollable ancestor (or the window)
+  // while a pragmatic-dnd drag is in progress.
+  useDragAutoScroll(gridRef, enableDragAutoScroll);
 
   // Compute effective rowHeight, wrapping baseRowHeight with wrapText-aware logic
   // when any column has wrapText enabled. This turns a fixed height into a per-row
@@ -450,8 +531,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const ariaRowCount = rawAriaRowCount ?? headerRowsCount + rows.length;
 
   const headerSelectionValue = useMemo((): HeaderRowSelectionContextValue => {
-    // Only 'row-multi' mode supports header selection (select all)
-    if (selectionMode !== 'row-multi') {
+    // Header "select all" only meaningful when row selection is provided
+    if (!isSelectable) {
       return {
         isRowSelected: false,
         isIndeterminate: false,
@@ -478,7 +559,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       isRowSelected: hasSelectedRow && !hasUnselectedRow,
       isIndeterminate: hasSelectedRow && hasUnselectedRow,
     };
-  }, [rows, effectiveSelectedRows, rowKeyGetter, selectionMode]);
+  }, [rows, effectiveSelectedRows, rowKeyGetter, isSelectable]);
 
   const {
     rowOverscanStartIdx,
@@ -527,10 +608,18 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       const row = rows[position.rowIdx];
       setSelectedPosition({ ...position, mode: 'EDIT', row, originalRow: row });
     } else if (samePosition) {
-      // Avoid re-renders if the selected cell state is the same
-      scrollIntoView(getCellToScroll(gridRef.current!));
+      // Avoid re-renders if the selected cell state is the same.
+      // Only scroll into view when a caller explicitly asked for cell focus
+      // (keyboard / programmatic paths). Mouse callers (Cell.handleMouseDown)
+      // omit `shouldFocusCell` because the cell was just clicked — it is by
+      // definition under the cursor, and our cells have `scroll-mt-32` for
+      // sticky-header avoidance, which would otherwise jump the page on every
+      // re-click of an already-selected cell near the viewport edge.
+      if (options?.shouldFocusCell === true) {
+        scrollIntoView(getCellToScroll(gridRef.current!));
+      }
     } else {
-      setShouldFocusCell(options?.shouldFocusCell === true);
+      shouldFocusCellRef.current = options?.shouldFocusCell === true;
       setSelectedPosition({ ...position, mode: 'SELECT' });
     }
 
@@ -542,7 +631,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       });
     }
 
-    if (selectionMode === 'cell-range') {
+    if (cellSelectionMode === 'cell-range') {
       const shouldExtendSelection = options?.extendSelection === true;
       const fallbackAnchor = isDataCellPosition(selectedPosition) ? selectedPosition : position;
       const anchor = shouldExtendSelection ? (cellRangeAnchor ?? fallbackAnchor) : position;
@@ -553,6 +642,30 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       } else {
         setSelectedCellRange(null);
         setCellRangeAnchor(null);
+      }
+    }
+
+    // Bridge cell click to row selection when rowSelectionMode is enabled.
+    // The checkbox column also bridges here so clicks that land on the cell
+    // padding (around the checkbox) still toggle the row. The checkbox button
+    // itself stops mousedown propagation to avoid a double-toggle race.
+    if (rowSelectionMode !== 'none' && effectiveOnSelectedRowsChange && isDataCellPosition(position)) {
+      const row = rows[position.rowIdx];
+      if (row !== undefined && isRowSelectionDisabled?.(row) !== true) {
+        assertIsValidKeyGetter<R, K>(rowKeyGetter);
+        const rowKey = rowKeyGetter(row);
+        if (rowSelectionMode === 'single') {
+          // Replace selection with this single row
+          const isOnlySelected = effectiveSelectedRows?.size === 1 && effectiveSelectedRows.has(rowKey);
+          if (!isOnlySelected) {
+            effectiveOnSelectedRowsChange(new Set([rowKey]));
+          }
+        } else {
+          // 'multi' — toggle, with shift extending range
+          const isShiftClick = options?.extendSelection === true;
+          const isSelected = effectiveSelectedRows?.has(rowKey) === true;
+          selectRow({ row, checked: !isSelected, isShiftClick });
+        }
       }
     }
   }
@@ -596,16 +709,21 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
    * effects
    */
   useLayoutEffect(() => {
-    if (shouldFocusCell) {
-      if (focusSinkRef.current !== null && selectedPosition.idx === -1) {
-        focusSinkRef.current.focus({ preventScroll: true });
-        scrollIntoView(focusSinkRef.current);
-      } else {
-        focusCell();
-      }
-      setShouldFocusCell(false);
+    if (!shouldFocusCellRef.current) return;
+    shouldFocusCellRef.current = false;
+    const shouldScroll = !skipScrollOnFocusRef.current;
+    skipScrollOnFocusRef.current = false;
+    if (focusSinkRef.current !== null && selectedPosition.idx === -1) {
+      focusSinkRef.current.focus({ preventScroll: true });
+      if (shouldScroll) scrollIntoView(focusSinkRef.current);
+    } else {
+      focusCell(shouldScroll);
     }
-  }, [shouldFocusCell, focusCell, selectedPosition.idx]);
+    // `selectedPosition.mode` is included so EDIT → SELECT transitions on the
+    // same cell (e.g. the dropdowner-based enum select editor closing) restore
+    // focus to the cell. Without it, the deps would compare equal and no
+    // focusCell() would run, leaving the grid unfocused after edit.
+  }, [focusCell, selectedPosition.idx, selectedPosition.rowIdx, selectedPosition.mode]);
 
   useEffect(() => {
     if (!isCellSelectionEnabled) {
@@ -631,7 +749,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       return;
     }
 
-    if (selectionMode !== 'cell-range') {
+    if (cellSelectionMode !== 'cell-range') {
       if (isSelectedCellRangeControlled) {
         if (selectedCellRangeProp != null) {
           onSelectedCellRangeChange?.({ range: null });
@@ -650,7 +768,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     isSelectedCellRangeControlled,
     minRowIdx,
     onSelectedCellRangeChange,
-    selectionMode,
+    cellSelectionMode,
     selectedCellRangeInternal,
     selectedCellRangeProp,
   ]);
@@ -663,56 +781,22 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }, [selectedPosition.mode]);
 
-  /**
-   * Infinite scroll: fires onRowsEndApproaching when user scrolls near the end of data.
-   * Uses rowOverscanEndIdx from virtualization to detect scroll position.
-   * Tracks lastFiredForRowsLength to prevent re-triggering after new data loads.
-   */
-  const lastFiredForRowsLengthRef = useRef(0);
-
-  useEffect(() => {
-    if (!onRowsEndApproaching || rows.length === 0) return;
-
-    // Skip when clientHeight is 0 (layout not yet computed, all rows appear "visible")
-    if (clientHeight === 0) return;
-
-    const isApproachingEnd = rowOverscanEndIdx >= rows.length - rowsEndApproachingThreshold;
-
-    // Fire callback when approaching end, but only once per rows.length
-    // (prevents re-triggering immediately after new data arrives)
-    if (isApproachingEnd && lastFiredForRowsLengthRef.current !== rows.length) {
-      lastFiredForRowsLengthRef.current = rows.length;
-      onRowsEndApproaching({
-        rowOverscanEndIdx,
-        totalRows: rows.length,
-        rowsRemaining: rows.length - 1 - rowOverscanEndIdx,
-      });
-    }
-  }, [onRowsEndApproaching, rowOverscanEndIdx, rows.length, rowsEndApproachingThreshold, clientHeight]);
-
-  useImperativeHandle(
-    ref,
-    (): DataGridHandle => ({
-      element: gridRef.current,
-      scrollToCell({ idx, rowIdx }) {
-        const scrollToIdx = idx !== undefined && idx > lastFrozenColumnIndex && idx < columns.length ? idx : undefined;
-        const scrollToRowIdx = rowIdx !== undefined && isRowIdxWithinViewportBounds(rowIdx) ? rowIdx : undefined;
-
-        if (scrollToIdx !== undefined || scrollToRowIdx !== undefined) {
-          setScrollToPosition({ idx: scrollToIdx, rowIdx: scrollToRowIdx });
-        }
-      },
-      selectCell,
-    }),
-  );
+  // Infinite scroll: fires onRowsEndApproaching when the rendered viewport
+  // approaches the end of the dataset. Tracks lastFiredForRowsLength internally
+  // to prevent re-triggering immediately after new data arrives.
+  useInfiniteScroll({
+    totalRows: rows.length,
+    rowOverscanEndIdx,
+    clientHeight,
+    onRowsEndApproaching,
+    threshold: rawRowsEndApproachingThreshold,
+  });
 
   /**
    * event handlers
    */
   function selectHeaderRow(args: SelectHeaderRowEvent) {
     if (!effectiveOnSelectedRowsChange) return;
-    // Only 'row-multi' mode supports header selection (select all)
-    if (selectionMode !== 'row-multi') return;
 
     assertIsValidKeyGetter<R, K>(rowKeyGetter);
 
@@ -731,22 +815,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   function selectRow(args: SelectRowEvent<R>) {
     if (!effectiveOnSelectedRowsChange) return;
-    // Row selection only works in 'row' and 'row-multi' modes
-    if (selectionMode !== 'row' && selectionMode !== 'row-multi') return;
 
     assertIsValidKeyGetter<R, K>(rowKeyGetter);
     const { row, checked, isShiftClick } = args;
     if (isRowSelectionDisabled?.(row) === true) return;
 
-    // In 'row' mode, only allow one row to be selected
-    if (selectionMode === 'row') {
-      const rowKey = rowKeyGetter(row);
-      const newSelectedRows = checked ? new Set([rowKey]) : new Set<K>();
-      effectiveOnSelectedRowsChange(newSelectedRows);
-      return;
-    }
-
-    // 'row-multi' mode - default behavior
     const newSelectedRows = new Set(effectiveSelectedRows);
     const rowKey = rowKeyGetter(row);
     const rowIdx = rows.indexOf(row);
@@ -818,8 +891,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   }
 
   function handleScroll(event: React.UIEvent<HTMLDivElement>) {
-    // Scroll state is now managed by useGridDimensions hook
-    // This handler only passes the event to the consumer
+    const el = event.currentTarget;
+    // Toggle data attribute so CSS can scope frozen-column shadow to scrolled state
+    el.toggleAttribute('data-scrolled-left', el.scrollLeft > 0);
     onScroll?.(event);
   }
 
@@ -842,11 +916,30 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   function handleCellCopy(event: CellClipboardEvent) {
     if (!selectedCellIsWithinViewportBounds) return;
+
+    // Multi-cell range copy
+    if (selectedCellRange) {
+      const normalized = normalizeCellRange(selectedCellRange);
+      const textValue = serializeCellsToTSV(normalized, rows, columns);
+      const htmlValue = serializeCellsToHTML(normalized, rows, columns);
+      event.clipboardData.setData('text/plain', textValue);
+      event.clipboardData.setData('text/html', htmlValue);
+      event.preventDefault();
+      return;
+    }
+
+    // Single cell copy
     const { idx, rowIdx } = selectedPosition;
     const column = columns[idx];
     const row = rows[rowIdx];
     const value = row[column.key as keyof R];
     onCellCopy?.({ row, column, rowIdx, value }, event);
+
+    // Write cell value to clipboard if the callback didn't already handle it
+    if (!event.defaultPrevented) {
+      event.clipboardData.setData('text/plain', cellValueToText(value));
+      event.preventDefault();
+    }
   }
 
   function handleCellPaste(event: CellClipboardEvent) {
@@ -1013,7 +1106,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     selectCell(nextSelectedCellPosition, {
       shouldFocusCell: true,
-      extendSelection: selectionMode === 'cell-range' && shiftKey,
+      extendSelection: cellSelectionMode === 'cell-range' && shiftKey,
     });
   }
 
@@ -1032,26 +1125,34 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     const closeOnExternalRowChange = column.editorOptions?.closeOnExternalRowChange ?? true;
 
     const closeEditor = (shouldFocusCell: boolean) => {
-      setShouldFocusCell(shouldFocusCell);
+      shouldFocusCellRef.current = shouldFocusCell;
+      // The cell didn't move while the editor was open, so suppress the scroll
+      // half of the focus effect. Without this, closing the editor near the
+      // viewport edge re-runs scrollIntoView on the cell and the page jumps
+      // (the cell's `scroll-mt-32` for sticky-header avoidance is honored).
+      skipScrollOnFocusRef.current = true;
       setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'SELECT' }));
     };
 
-    const onRowChange = async (row: R, commitChanges: boolean, shouldFocusCell: boolean) => {
+    const onRowChange = (row: R, commitChanges: boolean, shouldFocusCell: boolean) => {
       if (commitChanges) {
         // Guard: if commitEditorChanges already committed this edit (e.g. via selectCell
         // on click), skip to avoid firing onRowsChange twice for the same edit.
         if (editCommittedRef.current) return;
         editCommittedRef.current = true;
-        // Prevents two issues when editor is closed by clicking on a different cell
+        // flushSync so `onRowsChange` runs (and any optimistic cache update inside
+        // it) before we close the editor — without it, `commitEditorChanges` could
+        // be called before the cell state flips to SELECT and `onRowChange` fires
+        // a second time.
         //
-        // Otherwise commitEditorChanges may be called before the cell state is changed to
-        // SELECT and this results in onRowChange getting called twice.
+        // Closing in the same flush keeps the editor lifecycle deterministic: no
+        // arbitrary timer to "wait for the parent to re-render" (TanStack Query's
+        // optimistic updates notify subscribers synchronously, so the parent's
+        // next render already sees the committed row).
         flushSync(() => {
           updateRow(column, selectedPosition.rowIdx, row);
+          closeEditor(shouldFocusCell);
         });
-        // Brief delay allows optimistic updates to propagate to cache before editor closes
-        await new Promise((r) => setTimeout(r, 200));
-        closeEditor(shouldFocusCell);
       } else {
         setSelectedPosition((position) => ({ ...position, row }));
       }
@@ -1128,6 +1229,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           onCellClick: onCellClickLatest,
           onCellDoubleClick: onCellDoubleClickLatest,
           onCellContextMenu: onCellContextMenuLatest,
+          isCellSelectionEnabled,
           rowClass,
           gridRowStart,
           selectedCellIdx: selectedRowIdx === rowIdx ? selectedIdx : undefined,
@@ -1175,23 +1277,20 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       // whereas they are always focusable in Firefox. We need to set tabIndex to have a consistent behavior across browsers.
       tabIndex={-1}
       className={cn(
-        rootClassname,
+        'rdg grid h-full overflow-x-auto text-foreground text-sm accent-primary [contain:style]',
         {
-          'rdg-touch-mode': isTouchModeActive,
+          'rdg-readonly': readOnly,
+          // When row body clicks select rows, suppress per-cell selection outline
+          // (the row provides the visual feedback).
+          'rdg-row-selection [&_.rdg-cell]:aria-selected:outline-none': rowSelectionMode !== 'none',
         },
         className,
       )}
       style={{
-        ...style,
         // set scrollPadding to correctly position non-sticky cells after scrolling
         scrollPaddingInlineStart:
-          selectedPosition.idx > lastFrozenColumnIndex || scrollToPosition?.idx !== undefined
-            ? `${totalFrozenColumnWidth}px`
-            : undefined,
-        scrollPaddingBlock:
-          isRowIdxWithinViewportBounds(selectedPosition.rowIdx) || scrollToPosition?.rowIdx !== undefined
-            ? `${headerRowsHeight}px`
-            : undefined,
+          selectedPosition.idx > lastFrozenColumnIndex ? `${totalFrozenColumnWidth}px` : undefined,
+        scrollPaddingBlock: isRowIdxWithinViewportBounds(selectedPosition.rowIdx) ? `${headerRowsHeight}px` : undefined,
         gridTemplateColumns,
         gridTemplateRows: templateRows,
         '--rdg-header-row-height': `${headerRowHeight}px`,
@@ -1208,34 +1307,39 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       data-cy={dataCy}
       data-is-compact={isCompact || undefined}
     >
-      <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>
-        <HeaderRowSelectionContext value={headerSelectionValue}>
-          {Array.from({ length: groupedColumnHeaderRowsCount }, (_, index) => (
-            <GroupedColumnHeaderRow
-              key={index}
-              rowIdx={index + 1}
-              level={-groupedColumnHeaderRowsCount + index}
+      {!hideHeader && (
+        <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>
+          <HeaderRowSelectionContext value={headerSelectionValue}>
+            {Array.from({ length: groupedColumnHeaderRowsCount }, (_, index) => (
+              <GroupedColumnHeaderRow
+                // biome-ignore lint/suspicious/noArrayIndexKey: header rows are fixed-length and never reordered.
+                key={index}
+                rowIdx={index + 1}
+                level={-groupedColumnHeaderRowsCount + index}
+                columns={columns}
+                selectedCellIdx={selectedPosition.rowIdx === minRowIdx + index ? selectedPosition.idx : undefined}
+                selectCell={selectHeaderCellLatest}
+                isCellSelectionEnabled={isCellSelectionEnabled}
+              />
+            ))}
+            <HeaderRow
+              headerRowClass={headerRowClass}
+              rowIdx={headerRowsCount}
               columns={columns}
-              selectedCellIdx={selectedPosition.rowIdx === minRowIdx + index ? selectedPosition.idx : undefined}
+              onColumnResize={handleColumnResizeLatest}
+              onColumnResizeEnd={handleColumnResizeEndLatest}
+              onColumnsReorder={onColumnsReorderLastest}
+              sortColumns={sortColumns}
+              onSortColumnsChange={onSortColumnsChangeLatest}
+              lastFrozenColumnIndex={lastFrozenColumnIndex}
+              selectedCellIdx={selectedPosition.rowIdx === mainHeaderRowIdx ? selectedPosition.idx : undefined}
               selectCell={selectHeaderCellLatest}
+              shouldFocusGrid={isCellSelectionEnabled && !selectedCellIsWithinSelectionBounds}
+              isCellSelectionEnabled={isCellSelectionEnabled}
             />
-          ))}
-          <HeaderRow
-            headerRowClass={headerRowClass}
-            rowIdx={headerRowsCount}
-            columns={columns}
-            onColumnResize={handleColumnResizeLatest}
-            onColumnResizeEnd={handleColumnResizeEndLatest}
-            onColumnsReorder={onColumnsReorderLastest}
-            sortColumns={sortColumns}
-            onSortColumnsChange={onSortColumnsChangeLatest}
-            lastFrozenColumnIndex={lastFrozenColumnIndex}
-            selectedCellIdx={selectedPosition.rowIdx === mainHeaderRowIdx ? selectedPosition.idx : undefined}
-            selectCell={selectHeaderCellLatest}
-            shouldFocusGrid={isCellSelectionEnabled && !selectedCellIsWithinSelectionBounds}
-          />
-        </HeaderRowSelectionContext>
-      </HeaderRowSelectionChangeContext>
+          </HeaderRowSelectionContext>
+        </HeaderRowSelectionChangeContext>
+      )}
       {rows.length === 0 && noRowsFallback ? (
         noRowsFallback
       ) : (
@@ -1250,22 +1354,13 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         <div
           ref={focusSinkRef}
           tabIndex={isGroupRowFocused ? 0 : -1}
-          className={cn(focusSinkClassname, {
-            [focusSinkHeaderAndSummaryClassname]: !isRowIdxWithinViewportBounds(selectedPosition.rowIdx),
-            [rowSelected]: isGroupRowFocused,
-            [rowSelectedWithFrozenCell]: isGroupRowFocused && lastFrozenColumnIndex !== -1,
+          className={cn('rdg-focus-sink pointer-events-none z-2 col-span-full', {
+            'rdg-focus-sink-header-summary z-3': !isRowIdxWithinViewportBounds(selectedPosition.rowIdx),
+            'outline-2 outline-primary outline-solid -outline-offset-2': isGroupRowFocused,
           })}
           style={{
             gridRowStart: selectedPosition.rowIdx + headerRowsCount + 1,
           }}
-        />
-      )}
-
-      {scrollToPosition !== null && (
-        <ScrollToCell
-          scrollToPosition={scrollToPosition}
-          setScrollToCellPosition={setScrollToPosition}
-          gridRef={gridRef}
         />
       )}
     </div>

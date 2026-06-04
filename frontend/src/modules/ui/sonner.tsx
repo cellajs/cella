@@ -1,5 +1,5 @@
 import { Toaster as Sonner } from 'sonner';
-import { useUIStore } from '~/store/ui';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -9,7 +9,7 @@ export function Toaster({ ...props }: ToasterProps) {
   return (
     <Sonner
       theme={mode}
-      className="toaster z-500 pointer-events-auto group"
+      className="toaster group pointer-events-auto z-500 md:[--width:460px]"
       toastOptions={{
         classNames: {
           toast:
