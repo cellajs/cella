@@ -19,54 +19,51 @@ const serviceDescriptions: Record<SyncService, string> = {
   sync: 'merge upstream changes',
   packages: 'sync package.json keys with upstream',
   audit: 'check for outdated packages & vulnerabilities',
-  contribute: 'create a PR with fork changes for upstream',
   forks: 'sync downstream to local fork repositories',
-  contributions: 'review and accept file contributions from forks',
+  contributions: 'pull and adopt changes from forks',
   stats: 'count files by category and workspace package',
 };
 
 /**
  * Build service menu choices, conditionally including optional services.
  */
-function buildServiceChoices(hasForks: boolean, hasUpstreamLocal: boolean, syncWithPackages: boolean) {
+function buildServiceChoices(hasForks: boolean, syncWithPackages: boolean) {
+  // Pad service labels to align descriptions (longest label is 'contributions').
+  const label = (name: string) => name.padEnd(14);
+
   const baseChoices = [
-    { value: 'analyze' as SyncService, name: `analyze    ${pc.dim(serviceDescriptions.analyze)}` },
-    { value: 'inspect' as SyncService, name: `inspect    ${pc.dim(serviceDescriptions.inspect)}` },
+    { value: 'analyze' as SyncService, name: `${label('analyze')}${pc.dim(serviceDescriptions.analyze)}` },
+    { value: 'inspect' as SyncService, name: `${label('inspect')}${pc.dim(serviceDescriptions.inspect)}` },
     {
       value: 'sync' as SyncService,
-      name: `sync       ${pc.dim(syncWithPackages ? 'merge upstream changes + sync packages' : serviceDescriptions.sync)}`,
+      name: `${label('sync')}${pc.dim(syncWithPackages ? 'merge upstream changes + sync packages' : serviceDescriptions.sync)}`,
     },
   ];
 
   // Show packages as separate service only when syncWithPackages is disabled
   if (!syncWithPackages) {
-    baseChoices.push({ value: 'packages' as SyncService, name: `packages   ${pc.dim(serviceDescriptions.packages)}` });
-  }
-
-  baseChoices.push({ value: 'audit' as SyncService, name: `audit      ${pc.dim(serviceDescriptions.audit)}` });
-  baseChoices.push({ value: 'stats' as SyncService, name: `stats      ${pc.dim(serviceDescriptions.stats)}` });
-
-  // Add contribute option for forks with upstreamLocalPath
-  if (hasUpstreamLocal) {
     baseChoices.push({
-      value: 'contribute' as SyncService,
-      name: `contribute ${pc.dim(serviceDescriptions.contribute)}`,
+      value: 'packages' as SyncService,
+      name: `${label('packages')}${pc.dim(serviceDescriptions.packages)}`,
     });
   }
 
+  baseChoices.push({ value: 'audit' as SyncService, name: `${label('audit')}${pc.dim(serviceDescriptions.audit)}` });
+  baseChoices.push({ value: 'stats' as SyncService, name: `${label('stats')}${pc.dim(serviceDescriptions.stats)}` });
+
   // Add forks option if configured
   if (hasForks) {
-    baseChoices.push({ value: 'forks' as SyncService, name: `forks      ${pc.dim(serviceDescriptions.forks)}` });
+    baseChoices.push({ value: 'forks' as SyncService, name: `${label('forks')}${pc.dim(serviceDescriptions.forks)}` });
     baseChoices.push({
       value: 'contributions' as SyncService,
-      name: `contrib    ${pc.dim(serviceDescriptions.contributions)}`,
+      name: `${label('contributions')}${pc.dim(serviceDescriptions.contributions)}`,
     });
   }
 
   return [
     ...baseChoices,
     { type: 'separator' as const, separator: '─'.repeat(40) },
-    { value: 'exit' as const, name: pc.red(`exit       ${pc.dim('quit without doing anything')}`) },
+    { value: 'exit' as const, name: pc.red(`${label('exit')}${pc.dim('quit without doing anything')}`) },
   ];
 }
 
@@ -85,23 +82,11 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .helpOption('-h, --help', 'display this help message')
     .option(
       '--service <name>',
-      'service to run: analyze, inspect, sync, packages, audit, contribute, forks, contributions, stats',
+      'service to run: analyze, inspect, sync, packages, audit, forks, contributions, stats',
       (value) => {
-        if (
-          ![
-            'analyze',
-            'inspect',
-            'sync',
-            'packages',
-            'audit',
-            'contribute',
-            'forks',
-            'contributions',
-            'stats',
-          ].includes(value)
-        ) {
+        if (!['analyze', 'inspect', 'sync', 'packages', 'audit', 'forks', 'contributions', 'stats'].includes(value)) {
           console.error(
-            `invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, contribute, forks, contributions, stats`,
+            `invalid service: ${value}. must be one of: analyze, inspect, sync, packages, audit, forks, contributions, stats`,
           );
           process.exit(1);
         }
@@ -139,11 +124,10 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   const opts = program.opts();
   if (!service) {
     const hasForks = (userConfig.forks?.length ?? 0) > 0;
-    const hasUpstreamLocal = !!userConfig.settings.upstreamLocalPath;
     const syncWithPackages = userConfig.settings.syncWithPackages !== false;
     const selected = await select<SyncService | 'exit'>({
       message: 'choose a service:',
-      choices: buildServiceChoices(hasForks, hasUpstreamLocal, syncWithPackages),
+      choices: buildServiceChoices(hasForks, syncWithPackages),
       loop: false,
     });
 

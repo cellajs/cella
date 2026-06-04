@@ -12,7 +12,7 @@
     "./*": "./src/utils/*.ts",
     "./cli-utils/*": "./src/cli-utils/*.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
-    "./transloadit-config": "./transloadit-config.ts",
+    "./transloadit-config": "./config/transloadit-config.ts",
     "./tracing": "./src/tracing/tracing.ts",
     "./otel": "./src/otel.ts",
     "./config-builder": "./src/config-builder/index.ts",

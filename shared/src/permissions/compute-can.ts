@@ -1,5 +1,5 @@
 import { appConfig } from '../config-builder/app-config';
-import { hierarchy } from '../../hierarchy-config';
+import { hierarchy } from '../../config/hierarchy-config';
 import type { ContextEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
 import { recordFromKeys } from '../config-builder/utils';
 import { getPolicyPermissions, getSubjectPolicies } from './access-policies';

@@ -1,5 +1,5 @@
-import { appConfig } from './src/config-builder/app-config';
-import { configureAccessPolicies } from './src/permissions/access-policies';
+import { appConfig } from '../src/config-builder/app-config';
+import { configureAccessPolicies } from '../src/permissions/access-policies';
 
 /**
  * Access policies for each entity type.

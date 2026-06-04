@@ -2,7 +2,7 @@
  * App-specific types derived from the merged configuration and entity hierarchy.
  * These types narrow the generic builder types to the concrete app setup.
  */
-import { hierarchy, roles } from './default-config';
+import { hierarchy, roles } from './config/config.default';
 import { appConfig } from './src/config-builder/app-config';
 
 /******************************************************************************

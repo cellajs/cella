@@ -1,9 +1,10 @@
 /**
  * Contributions service for sync CLI.
  *
- * Upstream-side: fetches `contrib/*` branches pushed by forks,
- * shows an interactive TUI to review and accept individual files.
- * Forks push via `pushContribBranch()` in contribute.ts.
+ * Upstream-side (cella): based on the configured `forks`, lets the user select
+ * one or more forks, pulls each fork's `pullBranch` and builds a clean local
+ * `contrib/<fork>` branch with only that fork's contributed files. Then shows
+ * an interactive TUI to review and adopt individual files into the working tree.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -18,20 +19,25 @@ import {
   usePagination,
   useState,
 } from '@inquirer/core';
+import { checkbox } from '@inquirer/prompts';
 import type { RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess } from '../utils/display';
 import { git } from '../utils/git';
+import { buildContribBranch, countDetection, detectContributableFiles } from './contrib-core';
+import { printNoForksHint, type ValidatedFork, validateForkPath } from './fork-utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface ContribItem {
   /** File path relative to repo root */
   path: string;
-  /** Fork name (extracted from branch name) */
+  /** Fork name */
   fork: string;
-  /** Full remote branch ref (e.g., origin/contrib/myfork) */
+  /** Local contrib branch ref (e.g., contrib/myfork) */
   ref: string;
+  /** True if adopting this means deleting the file in cella */
+  deleted: boolean;
   /** Whether file is selected for acceptance */
   checked: boolean;
 }
@@ -39,51 +45,20 @@ interface ContribItem {
 interface ContribPromptConfig {
   message: string;
   items: ContribItem[];
-  runtimeConfig: RuntimeConfig;
+  /** Base ref the contrib branches were built on (for diffing) */
+  baseRef: string;
+  /** Repo path where contrib branches live */
+  cwd: string;
   pageSize?: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Fetch origin and list all contrib/* branches.
- * Returns array of { fork, ref } objects.
- */
-async function listContribBranches(cwd: string): Promise<{ fork: string; ref: string }[]> {
-  await git(['fetch', 'origin'], cwd, { ignoreErrors: true });
-
-  const output = await git(['branch', '-r', '--list', 'origin/contrib/*'], cwd);
-  if (!output) return [];
-
-  return output
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((ref) => {
-      // ref is like "origin/contrib/myfork"
-      const fork = ref.replace('origin/contrib/', '');
-      return { fork, ref };
-    });
-}
-
-/**
- * Get changed files for a contrib branch relative to the upstream branch.
- */
-async function getContribFiles(ref: string, upstreamBranch: string, cwd: string): Promise<string[]> {
-  const output = await git(['diff', '--name-only', `origin/${upstreamBranch}...${ref}`], cwd, { ignoreErrors: true });
-  if (!output) return [];
-  return output.split('\n').filter(Boolean);
-}
-
-/**
  * Show diff in terminal for a contrib file using a pager.
  */
-function showContribDiff(item: ContribItem, upstreamBranch: string, cwd: string): void {
-  const diffResult = spawnSync(
-    'git',
-    ['diff', '--color=always', `origin/${upstreamBranch}...${item.ref}`, '--', item.path],
-    { cwd },
-  );
+function showContribDiff(item: ContribItem, baseRef: string, cwd: string): void {
+  const diffResult = spawnSync('git', ['diff', '--color=always', `${baseRef}..${item.ref}`, '--', item.path], { cwd });
 
   showDiffInPager(diffResult.stdout);
 }
@@ -95,8 +70,7 @@ function showContribDiff(item: ContribItem, upstreamBranch: string, cwd: string)
  * Returns items selected for acceptance.
  */
 const contribPrompt = createPrompt<ContribItem[], ContribPromptConfig>((config, done) => {
-  const { pageSize = 20, runtimeConfig } = config;
-  const upstreamBranch = runtimeConfig.settings.upstreamBranch;
+  const { pageSize = 20, baseRef, cwd } = config;
 
   const [items, setItems] = useState<ContribItem[]>(config.items);
   const [active, setActive] = useState(0);
@@ -166,7 +140,7 @@ const contribPrompt = createPrompt<ContribItem[], ContribPromptConfig>((config, 
 
     // d = show diff in terminal (blocks until pager exits)
     if (key.name === 'd') {
-      showContribDiff(items[active], upstreamBranch, runtimeConfig.forkPath);
+      showContribDiff(items[active], baseRef, cwd);
       setStatusMsg(`viewed ${items[active].path}`);
       return;
     }
@@ -205,7 +179,8 @@ const contribPrompt = createPrompt<ContribItem[], ContribPromptConfig>((config, 
       const checkbox = item.checked ? pc.green('●') : pc.dim('○');
       const cursor = isActive ? pc.cyan('❯') : ' ';
       const forkLabel = pc.dim(` (${item.fork})`);
-      const line = `${cursor} ${checkbox} ${item.path}${forkLabel}`;
+      const delLabel = item.deleted ? pc.yellow(' [del]') : '';
+      const line = `${cursor} ${checkbox} ${item.path}${delLabel}${forkLabel}`;
       return isActive ? pc.cyan(line) : line;
     },
     pageSize,
@@ -234,38 +209,107 @@ const contribPrompt = createPrompt<ContribItem[], ContribPromptConfig>((config, 
   return `${lines}\x1B[?25l`;
 });
 
+// ── Fork pulling ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch a fork's pullBranch into cella's object store and return the commit sha.
+ */
+async function fetchForkBranch(cellaPath: string, forkPath: string, pullBranch: string): Promise<string> {
+  await git(['fetch', forkPath, pullBranch], cellaPath);
+  return git(['rev-parse', 'FETCH_HEAD'], cellaPath);
+}
+
 // ── Main entry ───────────────────────────────────────────────────────────────
 
 /**
  * Run the contributions service.
  *
- * Fetches contrib/* branches from origin, aggregates contributed files,
- * and presents an interactive TUI for reviewing and accepting changes.
+ * Based on the configured `forks`, lets the user select one or more forks,
+ * pulls each fork's `pullBranch`, builds clean local `contrib/<fork>` branches,
+ * then presents an interactive TUI to review and adopt individual files.
  */
 export async function runContributions(config: RuntimeConfig): Promise<void> {
-  createSpinner('fetching contributions...');
+  const forks = config.forks ?? [];
 
-  const branches = await listContribBranches(config.forkPath);
-
-  if (branches.length === 0) {
-    spinnerSuccess('no contrib branches found');
-    console.info();
-    console.info(pc.dim('  forks push contributions via the contribute service'));
+  if (forks.length === 0) {
+    printNoForksHint('add forks to pull contributions from:');
     return;
   }
 
-  // Gather files from each contrib branch
-  const allItems: ContribItem[] = [];
+  const baseRef = config.settings.workingBranch;
+  const validated = forks.map((fork) => validateForkPath(fork, config.forkPath));
 
-  for (const { fork, ref } of branches) {
-    const files = await getContribFiles(ref, config.settings.upstreamBranch, config.forkPath);
-    for (const path of files) {
-      allItems.push({ path, fork, ref, checked: false });
+  // Select which forks to pull from
+  let selectedForks: ValidatedFork[];
+  if (config.fork) {
+    const match = validated.find((v) => v.fork.name === config.fork);
+    if (!match?.valid) {
+      console.error(pc.red(`fork '${config.fork}' not found or invalid in config`));
+      return;
+    }
+    selectedForks = [match];
+  } else if (config.list) {
+    // Non-interactive: pull from all valid forks
+    selectedForks = validated.filter((v) => v.valid);
+  } else {
+    const choices = validated.map((v) => ({
+      value: v.fork.name,
+      name: v.valid
+        ? `${v.fork.name}  ${pc.dim(`[${v.fork.pullBranch}] ${v.fork.localPath}`)}`
+        : `${v.fork.name}  ${pc.dim(v.fork.localPath)}`,
+      disabled: v.valid ? false : (v.error ?? 'invalid'),
+      checked: v.valid,
+    }));
+    const picked = await checkbox<string>({
+      message: 'select forks to pull contributions from:',
+      choices,
+      loop: false,
+    });
+    if (picked.length === 0) {
+      console.info(pc.dim('no forks selected.'));
+      return;
+    }
+    selectedForks = validated.filter((v) => v.valid && picked.includes(v.fork.name));
+  }
+
+  // Pull each fork and build a clean contrib/<fork> branch
+  createSpinner('pulling fork contributions...');
+  const allItems: ContribItem[] = [];
+  const buildErrors: string[] = [];
+
+  for (const { fork, resolvedPath } of selectedForks) {
+    try {
+      const forkRef = await fetchForkBranch(config.forkPath, resolvedPath, fork.pullBranch);
+      const detection = await detectContributableFiles(config.forkPath, baseRef, forkRef, config);
+      if (countDetection(detection) === 0) continue;
+
+      const { branch, appliedFiles } = await buildContribBranch(
+        config.forkPath,
+        baseRef,
+        forkRef,
+        detection,
+        fork.name,
+      );
+      if (appliedFiles.length === 0) continue;
+
+      for (const path of [...detection.modified, ...detection.created]) {
+        allItems.push({ path, fork: fork.name, ref: branch, deleted: false, checked: false });
+      }
+      for (const path of detection.deleted) {
+        allItems.push({ path, fork: fork.name, ref: branch, deleted: true, checked: false });
+      }
+    } catch (error) {
+      buildErrors.push(`${fork.name}: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
   }
 
+  if (buildErrors.length > 0) {
+    spinnerFail(`failed to pull ${buildErrors.length} fork(s)`);
+    for (const e of buildErrors) console.info(pc.red(`  ✗ ${e}`));
+  }
+
   if (allItems.length === 0) {
-    spinnerSuccess('contrib branches found but no file changes');
+    spinnerSuccess('no contributions found');
     return;
   }
 
@@ -290,7 +334,8 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   const selected = await contribPrompt({
     message: 'contributions from forks',
     items: allItems,
-    runtimeConfig: config,
+    baseRef,
+    cwd: config.forkPath,
     pageSize: 20,
   });
 
@@ -299,7 +344,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
     return;
   }
 
-  // Apply selected files: checkout from contrib branch into working tree
+  // Apply selected files into the working tree
   createSpinner(`applying ${selected.length} files...`);
 
   let applied = 0;
@@ -312,7 +357,11 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
         errors.push(`${item.path}: rejected (path traversal)`);
         continue;
       }
-      await git(['checkout', item.ref, '--', item.path], config.forkPath);
+      if (item.deleted) {
+        await git(['rm', '-f', '--', item.path], config.forkPath, { ignoreErrors: true });
+      } else {
+        await git(['checkout', item.ref, '--', item.path], config.forkPath);
+      }
       applied++;
     } catch (error) {
       errors.push(`${item.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
@@ -333,7 +382,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   const byFork = new Map<string, string[]>();
   for (const item of selected) {
     const existing = byFork.get(item.fork) || [];
-    existing.push(item.path);
+    existing.push(item.deleted ? `(deleted) ${item.path}` : item.path);
     byFork.set(item.fork, existing);
   }
 

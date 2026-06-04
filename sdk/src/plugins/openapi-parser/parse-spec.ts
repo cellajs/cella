@@ -16,7 +16,7 @@ import type {
   GenSchemaTagSummary,
   GenTagSummary,
 } from '../../../../frontend/src/modules/docs/types';
-import { config } from '../../../../shared/default-config';
+import { config } from '../../../../shared/config/config.default';
 import { generateOperationHash } from './file-generators';
 import { resolveSchema, resolveSchemaProperty } from './schema-resolvers';
 import type { OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag } from './types';

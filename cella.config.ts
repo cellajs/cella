@@ -12,7 +12,7 @@ export default defineConfig({
     // is set to defend against a compromised upstream branch.
     upstreamPinnedSha: '7ec622f8ea864b392daf9b176966f78ab29d7f82',
     upstreamRemoteName: 'cella-upstream',
-    forkBranch: 'development',
+    workingBranch: 'development',
     syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
@@ -21,10 +21,11 @@ export default defineConfig({
     // upstreamRepo: 'cellajs/cella',
   },
 
-  // Local forks to sync to (for upstream template development)
-  // Uncomment and configure when running from upstream cella repo
+  // Downstream forks cella interacts with (for upstream template development).
+  // - pullBranch: branch cella pulls contributions from (contributions service)
+  // - pushBranch: branch cella syncs changes into (forks service)
   forks: [
-    { name: 'raak', path: '../raak' },
+    { name: 'raak', localPath: '../raak', pullBranch: 'development', pushBranch: 'development' },
   ],
 
   // File overrides
@@ -34,6 +35,7 @@ export default defineConfig({
     ignored: [
       "README.md",
       "bench/**",
+      "shared/config/**",
       "infra/Pulumi.*.yaml",
       "frontend/public/static/docs.gen/**",
       "frontend/public/static/icons/**",
@@ -49,14 +51,6 @@ export default defineConfig({
       "pnpm-lock.yaml",
       "backend/compose.yaml",
       "cella.config.ts",
-      "shared/default-config.ts",
-      "shared/development-config.ts",
-      "shared/staging-config.ts",
-      "shared/test-config.ts",
-      "shared/production-config.ts",
-      "shared/tunnel-config.ts",
-      "shared/hierarchy-config.ts",
-      "shared/permissions-config.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",

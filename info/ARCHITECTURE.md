@@ -98,7 +98,7 @@ Both frontend and backend have business logic split in modules. Most of them are
 
 ### Entity hierarchy builder
 
-The entity taxonomy is defined using `createEntityHierarchy()` (in `shared/src/config-builder/`). Forks customize their entity setup in `shared/hierarchy-config.ts`.
+The entity taxonomy is defined using `createEntityHierarchy()` (in `shared/src/config-builder/`). Forks customize their entity setup in `shared/config/hierarchy-config.ts`.
 
 ```
 createEntityHierarchy(roles).user().context('organization', ...).product('attachment', ...).build()
@@ -245,11 +245,11 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 ### Permission manager
 
-`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/permissions-config.ts`). Policies support three values: `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId` — an implicit "owner" relation inspired by Zanzibar). Grant attribution tracks whether access was granted via a membership or an owner relation. System admins bypass all checks.
+`getAllDecisions()` resolves permissions by walking the entity hierarchy (most-specific context → root), matching memberships against access policies defined in `configureAccessPolicies()` (`shared/config/permissions-config.ts`). Policies support three values: `1` (allowed), `0` (denied), and `'own'` (allowed only when `entity.createdBy === userId` — an implicit "owner" relation inspired by Zanzibar). Grant attribution tracks whether access was granted via a membership or an owner relation. System admins bypass all checks.
 
 ### Fork contract
 
-> Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities require `tenant_id` only. The entity hierarchy config (`shared/hierarchy-config.ts`) determines which pattern applies.
+> Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities require `tenant_id` only. The entity hierarchy config (`shared/config/hierarchy-config.ts`) determines which pattern applies.
 
 ## Observability
 

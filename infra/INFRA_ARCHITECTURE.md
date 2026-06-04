@@ -71,8 +71,8 @@ Every roll also broadcasts a **status object** to `s3://<deploy-tags-bucket>/sta
 ## How config flows
 
 ```
-shared/default-config.ts          → appConfig (slug, domain, URLs, S3 settings)
-shared/production-config.ts       → overrides for production mode
+shared/config/config.default.ts   → appConfig (slug, domain, URLs, S3 settings)
+shared/config/config.production.ts → overrides for production mode
         ↓
 infra/helpers.ts                  → derives all naming, domains, regions
         ↓

@@ -1,7 +1,7 @@
 /**
  * Placeholder default config for new forks created by `create-cella`.
  *
- * This file replaces `shared/default-config.ts` during project creation.
+ * This file replaces `shared/config/config.default.ts` during project creation.
  * Tokens `__project_name__` and `__project_slug__` are interpolated with the
  * project name chosen by the user. All Cella-specific branding, URLs, tokens
  * and company details are replaced with safe placeholder values.

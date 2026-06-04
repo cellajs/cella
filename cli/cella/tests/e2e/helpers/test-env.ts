@@ -188,7 +188,7 @@ export function buildRuntimeConfig(
     settings: {
       upstreamUrl: env.upstreamPath,
       upstreamBranch: 'main',
-      forkBranch: 'main',
+      workingBranch: 'main',
       mergeStrategy,
     },
     overrides: {

@@ -21,7 +21,7 @@ function buildConfig(overrides: { pinned?: string[]; ignored?: string[] }): Cell
     settings: {
       upstreamUrl: 'test',
       upstreamBranch: 'main',
-      forkBranch: 'main',
+      workingBranch: 'main',
       mergeStrategy: 'squash',
     },
     overrides: {
@@ -142,7 +142,7 @@ describe('overrides', () => {
         settings: {
           upstreamUrl: 'test',
           upstreamBranch: 'main',
-          forkBranch: 'main',
+          workingBranch: 'main',
           mergeStrategy: 'squash',
         },
       };

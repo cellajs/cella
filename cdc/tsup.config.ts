@@ -17,7 +17,7 @@ export default defineConfig({
       // Without these, tsup/esbuild can't follow the package.json "exports" map
       // because noExternal inlines the package but doesn't resolve subpath exports.
       'shared/nanoid': '../shared/src/utils/nanoid.ts',
-      'shared/transloadit-config': '../shared/transloadit-config.ts',
+      'shared/transloadit-config': '../shared/config/transloadit-config.ts',
       'shared/tracing': '../shared/src/tracing/tracing.ts',
       'shared/config-builder': '../shared/src/config-builder/index.ts',
       'shared/blocknote': '../shared/src/utils/text-from-block.ts',

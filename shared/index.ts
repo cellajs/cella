@@ -9,7 +9,7 @@ export { appConfig } from './src/config-builder/app-config';
 export type { ConfigMode } from './src/config-builder/types';
 
 // Entity hierarchy & roles
-export { hierarchy, roles } from './default-config';
+export { hierarchy, roles } from './config/config.default';
 
 // Entity hierarchy types and builder functions
 export type {

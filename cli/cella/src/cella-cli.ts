@@ -12,7 +12,6 @@ import process from 'node:process';
 import { parseCli } from './cli';
 import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
-import { runContribute } from './services/contribute';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
 import { runInspect } from './services/inspect';
@@ -59,7 +58,7 @@ function getForkPath(): string {
  */
 async function preflight(
   forkPath: string,
-  forkBranch: string,
+  workingBranch: string,
   options: { skipCleanCheck?: boolean; warnOnBranch?: boolean } = {},
 ): Promise<void> {
   // Check we're in a git repository
@@ -69,13 +68,13 @@ async function preflight(
 
   // Check we're on the correct branch
   const currentBranch = await getCurrentBranch(forkPath);
-  if (currentBranch !== forkBranch) {
+  if (currentBranch !== workingBranch) {
     if (options.warnOnBranch) {
       console.warn(
-        `${warningMark} not on branch '${forkBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
+        `${warningMark} not on branch '${workingBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
       );
     } else {
-      throw new Error(`must be on branch '${forkBranch}' to sync. currently on '${currentBranch}'.`);
+      throw new Error(`must be on branch '${workingBranch}' to sync. currently on '${currentBranch}'.`);
     }
   }
 
@@ -105,10 +104,10 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for packages/audit/forks/contributions/contribute/stats which don't need clean working dir)
-    if (!['packages', 'audit', 'forks', 'contributions', 'contribute', 'stats'].includes(config.service)) {
+    // Run preflight checks (except for packages/audit/forks/contributions/stats which don't need clean working dir)
+    if (!['packages', 'audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze' || config.service === 'inspect';
-      await preflight(forkPath, userConfig.settings.forkBranch, {
+      await preflight(forkPath, userConfig.settings.workingBranch, {
         skipCleanCheck: isReadOnly,
         warnOnBranch: isReadOnly,
       });
@@ -139,10 +138,6 @@ async function main(): Promise<void> {
 
       case 'audit':
         await runAudit(config, { force: config.force, checkOverrides: config.checkOverrides });
-        break;
-
-      case 'contribute':
-        await runContribute(config);
         break;
 
       case 'forks':

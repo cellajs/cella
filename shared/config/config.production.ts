@@ -1,5 +1,5 @@
-import type { DeepPartial } from './src/config-builder/types';
-import type _default from './default-config';
+import type { DeepPartial } from '../src/config-builder/types';
+import type _default from './config.default';
 
 export default {
   mode: 'production',

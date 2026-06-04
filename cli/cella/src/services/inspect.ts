@@ -133,7 +133,7 @@ function pinSingleFile(file: AnalyzedFile, config: RuntimeConfig): boolean {
 
 /**
  * Single-screen inspect prompt with inline key actions.
- * Returns paths of files checked (☑) for upstream contribution.
+ * Returns paths of files checked (☑) by the user.
  */
 const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done) => {
   const { pageSize = 20, runtimeConfig } = config;
@@ -203,7 +203,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
       return;
     }
 
-    // Space = toggle selection for contribute batch
+    // Space = toggle selection
     if (isSpaceKey(key)) {
       setItems(items.map((item, i) => (i === active ? { ...item, checked: !item.checked } : item)));
       return;
@@ -246,7 +246,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
   if (promptStatus === 'done') {
     const checked = items.filter((i) => i.checked);
     if (checked.length > 0) {
-      return `${pc.green('✓')} ${checked.length} files selected for contribution`;
+      return `${pc.green('✓')} ${checked.length} files selected`;
     }
     return `${pc.green('✓')} done`;
   }
@@ -285,7 +285,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
     ['t', 'terminal diff'],
     ['p', 'pin'],
     ['space', 'select'],
-    ['⏎', 'contribute'],
+    ['⏎', 'done'],
     ['q', 'quit'],
   ];
   const helpLine = keys.map(([k, a]) => `${pc.bold(k)} ${pc.dim(a)}`).join(pc.dim(' · '));
@@ -303,7 +303,7 @@ const inspectPrompt = createPrompt<string[], InspectPromptConfig>((config, done)
  * Run the inspect service.
  *
  * Analyzes the fork for drifted files and presents a single-screen interactive
- * prompt with inline key actions for reviewing, diffing, pinning, and contributing.
+ * prompt with inline key actions for reviewing, diffing, and pinning.
  */
 export async function runInspect(config: RuntimeConfig): Promise<void> {
   createSpinner('analyzing drift...');
@@ -348,7 +348,7 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
   });
 
   if (selectedPaths.length > 0) {
-    console.info(pc.dim(`  ${selectedPaths.length} file(s) selected — use the contribute service to create a PR`));
+    console.info(pc.dim(`  ${selectedPaths.length} file(s) selected`));
   }
 
   console.info();

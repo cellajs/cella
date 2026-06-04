@@ -38,7 +38,7 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
     if (name === 'BucketAlreadyOwnedByYou') return 'exists'
     if (name === 'BucketAlreadyExists') {
       throw new Error(
-        `Bucket name "${bucketName}" is taken by another account. Pick a different slug or rename in shared/default-config.ts.`,
+        `Bucket name "${bucketName}" is taken by another account. Pick a different slug or rename in shared/config/config.default.ts.`,
       )
     }
     throw err

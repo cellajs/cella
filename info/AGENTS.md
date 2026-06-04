@@ -3,7 +3,7 @@
 ## Project summary
 Cella is a TypeScript template to build web apps with sync engine for offline and realtime use. Postgres, openapi & react-query are foundational layers. 
 
-Cella is an implementation-ready template with quite some modules and a default entity config, see [shared/default-config.ts](../shared/default-config.ts) and [shared/hierarchy-config.ts](../shared/hierarchy-config.ts). Each fork will extend and change the entity config and its hierarchy, so its important to write entity-agnostic code.
+Cella is an implementation-ready template with quite some modules and a default entity config, see [shared/config/config.default.ts](../shared/config/config.default.ts) and [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Each fork will extend and change the entity config and its hierarchy, so its important to write entity-agnostic code.
 
 ## Architecture & tech stack
 See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
@@ -40,7 +40,7 @@ Route-level guards in `backend/src/middlewares/guard/` control auth and tenant i
 Auth is split into five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, verification emails), `passwords/`, `oauth/`, `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Session management lives in `general/helpers/session.ts`; cookie handling in `general/helpers/cookie.ts`.
 
 ## Permissions
-The permission system (in `backend/src/permissions/`) provides: `checkPermission` (membership + role checks with hierarchy traversal), `canAccessEntityType`, `canCreateEntity`, `getValidContextEntity`, `getValidProductEntity` (fetch + permission check), `splitByPermission` (batch filtering). Access policies are defined using `configureAccessPolicies()` in `shared/permissions-config.ts` with three values: `1` (allowed), `0` (denied), `'own'` (allowed only for the entity's creator — implicit owner relation). The engine checks `entity.createdBy === userId` for `'own'` policies. On the frontend, `computeCan()` produces a three-state map (`true | false | 'own'`); use `resolvePermission()` from `shared` to resolve `'own'` per-entity. Guards invoke these functions; see ARCHITECTURE.md for defense-in-depth layers (Permission Manager → RLS → composite FKs).
+The permission system (in `backend/src/permissions/`) provides: `checkPermission` (membership + role checks with hierarchy traversal), `canAccessEntityType`, `canCreateEntity`, `getValidContextEntity`, `getValidProductEntity` (fetch + permission check), `splitByPermission` (batch filtering). Access policies are defined using `configureAccessPolicies()` in `shared/config/permissions-config.ts` with three values: `1` (allowed), `0` (denied), `'own'` (allowed only for the entity's creator — implicit owner relation). The engine checks `entity.createdBy === userId` for `'own'` policies. On the frontend, `computeCan()` produces a three-state map (`true | false | 'own'`); use `resolvePermission()` from `shared` to resolve `'own'` per-entity. Guards invoke these functions; see ARCHITECTURE.md for defense-in-depth layers (Permission Manager → RLS → composite FKs).
 
 ## State management & API
 - **Server state**: TanStack Query (`offlineFirst` network mode, IndexedDB persistence via `PersistQueryClientProvider`). Query options/keys/mutations in `frontend/src/modules/<module>/query.ts`. Paused mutations resume after reload via mutation registry (`frontend/src/query/mutation-registry.ts`). See ARCHITECTURE.md "Query layer" section for full architecture.
@@ -86,7 +86,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 
 ## Coding patterns
 - **Entities**: `ContextEntityType` (has memberships) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md`.
-- **Configuration**: `shared/default-config.ts` defines the base config (validated against `RequiredConfig`). Per-deploy overrides (e.g. `shared/development-config.ts`) deep-merge over it, selected by `NODE_ENV` in `shared/app-config.ts`. Check `.env` for secrets and environment variables.
+- **Configuration**: `shared/config/config.default.ts` defines the base config (validated against `RequiredConfig`). Per-deploy overrides (e.g. `shared/config/config.development.ts`) deep-merge over it, selected by `NODE_ENV` in `shared/app-config.ts`. Check `.env` for secrets and environment variables.
 - **Debug mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env`.
 - **OpenAPI nullable**: Use `z.union([schema, z.null()])` instead of `schema.nullable()` for named schemas.
 - **OpenAPI schema naming**: Only register schemas as named components (`.openapi('Name')`) for whole entity responses or crucial shared base types. Inline enums and request body schemas. Share a single schema when shape is identical across contexts.

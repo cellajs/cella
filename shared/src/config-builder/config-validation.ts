@@ -9,7 +9,7 @@ import type {
   ProductEntityType,
 } from '../../types';
 import { appConfig } from './app-config';
-import { hierarchy } from '../../default-config';
+import { hierarchy } from '../../config/config.default';
 import type { RequiredConfig } from './types';
 
 // Validate that Config satisfies RequiredConfig (compile-time only).

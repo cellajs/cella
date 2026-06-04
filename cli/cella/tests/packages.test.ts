@@ -76,7 +76,7 @@ describe('packages merge', () => {
       settings: {
         upstreamUrl: upstreamPath,
         upstreamBranch: 'main',
-        forkBranch: 'main',
+        workingBranch: 'main',
         mergeStrategy: 'squash',
         ...(options?.packageJsonSync ? { packageJsonSync: options.packageJsonSync } : {}),
       },

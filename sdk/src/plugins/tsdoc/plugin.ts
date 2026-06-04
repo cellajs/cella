@@ -1,4 +1,4 @@
-import { config } from '../../../../shared/default-config';
+import { config } from '../../../../shared/config/config.default';
 import type { TsdocPlugin } from './types';
 
 /**

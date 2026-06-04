@@ -17,7 +17,7 @@ pnpm check
 
 ## Customize & contribute
 
-1. Customize your config in `shared/default-config.ts`, `shared/hierarchy-config.ts`, `shared/permissions-config.ts`
+1. Customize your config in `shared/config/config.default.ts`, `shared/config/hierarchy-config.ts`, `shared/config/permissions-config.ts`
 2. Update package.json with your own metadata
 3. Look at your `.env` file to understand what is required, for example to send emails.
 4. Explore readmes and config files that start with `-config.ts`.

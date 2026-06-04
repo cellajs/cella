@@ -1,4 +1,4 @@
-import type { ConfigMode, RequiredConfig } from './src/config-builder/types';
+import type { ConfigMode, RequiredConfig } from '../src/config-builder/types';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';

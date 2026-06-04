@@ -48,8 +48,8 @@ export interface SyncSettings {
   /** Git remote name for upstream (default: 'cella-upstream') */
   upstreamRemoteName?: string;
 
-  /** Your fork's working branch (e.g., 'development') */
-  forkBranch: string;
+  /** This repo's working branch that upstream changes are synced into (e.g., 'development') */
+  workingBranch: string;
 
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
@@ -73,7 +73,7 @@ export interface SyncSettings {
 
   /**
    * GitHub repo identifier for the upstream repository (e.g., 'cellajs/cella').
-   * Used by the contribute service to create PRs via `gh pr create --repo`.
+   * Used for building links to upstream files/commits in CLI output.
    */
   upstreamRepo?: string;
 
@@ -93,13 +93,21 @@ export interface SyncSettings {
 }
 
 /**
- * Configuration for a local fork repository.
+ * Configuration for a downstream fork repository that cella interacts with.
+ *
+ * Cella is the upstream/source-of-truth. For each fork it can:
+ * - pull contributions FROM the fork's `pullBranch` (contributions service)
+ * - sync changes INTO the fork's `pushBranch` (forks service)
  */
 export interface ForkConfig {
-  /** Display name for the fork (shown in CLI menu) */
+  /** Display name for the fork (also used as the contrib/<name> branch slug) */
   name: string;
-  /** Path to the fork repository (relative to this config or absolute) */
-  path: string;
+  /** Local path to the fork repository (relative to this config or absolute) */
+  localPath: string;
+  /** Fork branch that cella pulls contributions from (contributions service) */
+  pullBranch: string;
+  /** Fork branch that cella syncs changes into (forks service) */
+  pushBranch: string;
 }
 
 /**
@@ -131,9 +139,8 @@ export interface CellaCliConfig {
   };
 
   /**
-   * Local fork repositories to sync to (for upstream template repos).
-   * When configured, a 'forks' service option appears in the CLI menu.
-   * Each fork should have its own cella.config.ts with overrides.
+   * Downstream fork repositories that cella interacts with (for upstream template repos).
+   * When configured, the 'forks' and 'contributions' services appear in the CLI menu.
    */
   forks?: ForkConfig[];
 }
@@ -150,16 +157,7 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService =
-  | 'analyze'
-  | 'inspect'
-  | 'sync'
-  | 'packages'
-  | 'audit'
-  | 'contribute'
-  | 'forks'
-  | 'contributions'
-  | 'stats';
+export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions' | 'stats';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {

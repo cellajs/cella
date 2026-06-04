@@ -1,9 +1,9 @@
-import _default from '../../default-config';
-import development from '../../development-config';
-import production from '../../production-config';
-import staging from '../../staging-config';
-import test from '../../test-config';
-import tunnel from '../../tunnel-config';
+import _default from '../../config/config.default';
+import development from '../../config/config.development';
+import production from '../../config/config.production';
+import staging from '../../config/config.staging';
+import test from '../../config/config.test';
+import tunnel from '../../config/config.tunnel';
 import type { S3Config } from './types';
 import { mergeDeep } from './utils';
 

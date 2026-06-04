@@ -5,7 +5,6 @@
  * Selecting a fork immediately runs sync (+ packages if enabled), then returns to selection.
  */
 
-import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import process from 'node:process';
 import { Separator, select } from '@inquirer/prompts';
@@ -13,35 +12,7 @@ import type { ForkConfig, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { loadConfig } from '../utils/config';
 import { getCommitInfo, getCurrentBranch, getStoredSyncRef, git, isClean } from '../utils/git';
-
-/**
- * Validate a fork path exists and is a git repository.
- */
-function validateForkPath(
-  fork: ForkConfig,
-  basePath: string,
-): { valid: boolean; resolvedPath: string; error?: string } {
-  const resolvedPath = resolve(basePath, fork.path);
-
-  // Validate resolved path doesn't escape base directory via traversal (CWE-22)
-  if (!resolvedPath.startsWith(resolve(basePath, '..'))) {
-    return { valid: false, resolvedPath, error: 'path resolves outside parent directory' };
-  }
-
-  if (!existsSync(resolvedPath)) {
-    return { valid: false, resolvedPath, error: 'path does not exist' };
-  }
-
-  if (!existsSync(`${resolvedPath}/.git`)) {
-    return { valid: false, resolvedPath, error: 'not a git repository' };
-  }
-
-  if (!existsSync(`${resolvedPath}/cella.config.ts`)) {
-    return { valid: false, resolvedPath, error: 'missing cella.config.ts' };
-  }
-
-  return { valid: true, resolvedPath };
-}
+import { printNoForksHint, validateForkPath } from './fork-utils';
 
 /**
  * Run preflight checks for the selected fork.
@@ -127,17 +98,15 @@ async function buildForkChoices(
   forks: ForkConfig[],
   basePath: string,
 ): Promise<Array<{ value: string; name: string; disabled?: string }>> {
-  const validated = forks.map((fork) => ({ fork, ...validateForkPath(fork, basePath) }));
+  const validated = forks.map((fork) => validateForkPath(fork, basePath, true));
 
   // Gather status for all valid forks in parallel
   const statusEntries = await Promise.all(
     validated
       .filter((v) => v.valid)
       .map(async (v) => {
-        const config = await loadConfig(v.resolvedPath).catch(() => null);
-        const expectedBranch = config?.settings.forkBranch ?? 'development';
-        const status = await gatherForkStatus(v.resolvedPath, expectedBranch);
-        return { path: v.fork.path, status };
+        const status = await gatherForkStatus(v.resolvedPath, v.fork.pushBranch);
+        return { path: v.fork.localPath, status };
       }),
   );
   const statusMap = new Map(statusEntries.map((e) => [e.path, e.status]));
@@ -145,14 +114,14 @@ async function buildForkChoices(
   return validated.map((v) => {
     if (!v.valid) {
       return {
-        value: v.fork.path,
-        name: `${v.fork.name}  ${pc.dim(v.fork.path)}`,
+        value: v.fork.localPath,
+        name: `${v.fork.name}  ${pc.dim(v.fork.localPath)}`,
         disabled: v.error,
       };
     }
     return {
-      value: v.fork.path,
-      name: formatForkChoice(v.fork.name, statusMap.get(v.fork.path) ?? null),
+      value: v.fork.localPath,
+      name: formatForkChoice(v.fork.name, statusMap.get(v.fork.localPath) ?? null),
     };
   });
 }
@@ -160,7 +129,7 @@ async function buildForkChoices(
 /**
  * Sync a single fork: preflight, sync, and optionally run packages.
  */
-async function syncFork(config: RuntimeConfig, forkPath: string, forkName: string): Promise<void> {
+async function syncFork(config: RuntimeConfig, forkPath: string, forkName: string, pushBranch: string): Promise<void> {
   console.info();
   console.info(pc.cyan(`syncing to ${forkName}...`));
   console.info(pc.dim(`path: ${forkPath}`));
@@ -169,7 +138,7 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
   const forkConfig = await loadConfig(forkPath);
 
   // Preflight
-  await preflightFork(forkPath, forkConfig.settings.forkBranch);
+  await preflightFork(forkPath, pushBranch);
 
   // Build runtime config for the fork
   const remoteName = forkConfig.settings.upstreamRemoteName || 'cella-upstream';
@@ -207,9 +176,7 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
   const forks = config.forks ?? [];
 
   if (forks.length === 0) {
-    console.info(pc.yellow('no forks configured in cella.config.ts'));
-    console.info(pc.dim('add forks to your config:'));
-    console.info(pc.dim(`  forks: [{ name: 'my-app', path: '../my-app' }]`));
+    printNoForksHint('add forks to your config:');
     return;
   }
 
@@ -220,8 +187,8 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
       console.error(pc.red(`fork '${config.fork}' not found in config`));
       return;
     }
-    const resolvedPath = resolve(config.forkPath, match.path);
-    await syncFork(config, resolvedPath, match.name);
+    const resolvedPath = resolve(config.forkPath, match.localPath);
+    await syncFork(config, resolvedPath, match.name, match.pushBranch);
     return;
   }
 
@@ -242,9 +209,11 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
     }
 
     const resolvedForkPath = resolve(config.forkPath, selectedPath);
-    const forkName = forks.find((f) => f.path === selectedPath)?.name ?? basename(resolvedForkPath);
+    const selectedFork = forks.find((f) => f.localPath === selectedPath);
+    const forkName = selectedFork?.name ?? basename(resolvedForkPath);
+    const pushBranch = selectedFork?.pushBranch ?? config.settings.workingBranch;
 
-    await syncFork(config, resolvedForkPath, forkName);
+    await syncFork(config, resolvedForkPath, forkName, pushBranch);
 
     console.info();
   }

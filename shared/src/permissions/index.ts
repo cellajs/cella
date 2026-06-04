@@ -14,4 +14,4 @@ export { configureAccessPolicies, getPolicyPermissions, getSubjectPolicies } fro
 export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalPermission, resolvePermission } from './action-helpers';
 export { computeCan } from './compute-can';
 export type { EntityCanMap } from './compute-can';
-export { accessPolicies } from '../../permissions-config';
+export { accessPolicies } from '../../config/permissions-config';

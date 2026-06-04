@@ -46,7 +46,7 @@ export async function cleanTemplate({
           await copyFile(srcAbsolutePath, destAbsolutePath);
         }
 
-        // Replace default-config.ts with interpolated placeholder config
+        // Replace config.default.ts with interpolated placeholder config
         await applyPlaceholderConfig(targetFolder, projectName);
 
         // Generate root .env from .env.example (single source of truth for ports)
@@ -163,13 +163,13 @@ export async function copyFile(src: string, dest: string): Promise<void> {
 
 /**
  * Read the placeholder config template, interpolate project tokens, and
- * write it as `shared/default-config.ts` — replacing the original.
+ * write it as `shared/config/config.default.ts` — replacing the original.
  */
 async function applyPlaceholderConfig(targetFolder: string, projectName: string): Promise<void> {
   const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   const src = path.resolve(targetFolder, PLACEHOLDER_CONFIG);
-  const dest = path.resolve(targetFolder, './shared/default-config.ts');
+  const dest = path.resolve(targetFolder, './shared/config/config.default.ts');
 
   try {
     let content = await fs.readFile(src, 'utf8');
