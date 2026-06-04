@@ -1,22 +1,11 @@
 /// <reference types="vite/client" />
 
-import { render } from 'jsx-email';
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
-import {
-  accountSecurityEmail,
-  emailVerificationEmail,
-  memberAddedEmail,
-  memberInviteEmail,
-  memberInviteWithTokenEmail,
-  newsletterEmail,
-  oauthVerificationEmail,
-  requestInfoEmail,
-  requestResponseEmail,
-  systemInviteEmail,
-} from '../../emails';
 import i18n from '../../emails/i18n';
+import { type EmailPreviewFixture, emailPreviewFixtures } from '../../emails/preview-fixtures';
+import { render } from '../../emails/renderer/render';
 
 // Collect all email.* keys from English (source of truth)
 const enEmailKeys = Object.keys(enBackend).filter((k) => k.startsWith('email.'));
@@ -43,74 +32,30 @@ describe('email translation fallback', () => {
   }
 });
 
-// Template definitions with sample static props for rendering tests
-const templateEntries = [
-  {
-    name: 'account-security',
-    def: accountSecurityEmail,
-    statics: { name: 'Emily', type: 'totp-lockout' as const },
-  },
-  {
-    name: 'email-verification',
-    def: emailVerificationEmail,
-    statics: { verificationLink: 'https://example.com/verify', name: 'Emily' },
-  },
-  {
-    name: 'oauth-verification',
-    def: oauthVerificationEmail,
-    statics: {
-      verificationLink: 'https://example.com/verify',
-      name: 'Emily',
-      providerEmail: 'jane@gmail.com',
-      providerName: 'Google',
-    },
-  },
-  { name: 'system-invite', def: systemInviteEmail, statics: { senderName: 'John', senderThumbnailUrl: null } },
-  {
-    name: 'member-invite',
-    def: memberInviteEmail,
-    statics: { senderName: 'John', senderThumbnailUrl: null, entityName: 'Acme', role: 'member' as const },
-  },
-  {
-    name: 'member-invite-with-token',
-    def: memberInviteWithTokenEmail,
-    statics: { senderName: 'John', senderThumbnailUrl: null, entityName: 'Acme', role: 'member' as const },
-  },
-  {
-    name: 'member-added',
-    def: memberAddedEmail,
-    statics: { senderName: 'John', senderThumbnailUrl: null, entityName: 'Acme', role: 'member' as const },
-  },
-  {
-    name: 'newsletter',
-    def: newsletterEmail,
-    statics: { content: '<p>Test content</p>', subject: 'Monthly newsletter', testEmail: false },
-  },
-  { name: 'request-was-sent', def: requestResponseEmail, statics: { type: 'contact' as const, message: null } },
-  {
-    name: 'request-was-sent-admin',
-    def: requestInfoEmail,
-    statics: { type: 'contact' as const, email: 'test@example.com', message: 'Hello', subject: 'New contact request' },
-  },
-];
+// Sample render data is shared with the dev preview route via `preview-fixtures`.
+// Cast to the loose fixture type so the heterogeneous defs don't collapse
+// `translate`'s parameter to `never` across the union.
+const templateEntries = (Object.entries(emailPreviewFixtures) as [string, EmailPreviewFixture][]).map(
+  ([name, { def, statics, recipient }]) => ({ name, def, statics, recipient }),
+);
 
 /**
  * Render every email template via translate() + component() for each language.
  * Catches broken components, runtime errors, and keys missing from ALL languages.
  */
 describe('email template rendering', () => {
-  for (const { name, def, statics } of templateEntries) {
+  for (const { name, def, statics, recipient } of templateEntries) {
     for (const lng of appConfig.languages) {
       it(`${name} renders without error in ${lng}`, async () => {
-        const translated = def.translate(lng, statics as any);
-        const html = await render(def.component(translated));
+        const translated = def.translate(lng, statics);
+        const html = await render(def.component({ ...translated, ...recipient }));
         expect(html).toBeTruthy();
         expect(html.length).toBeGreaterThan(100);
       });
 
       it(`${name} contains no raw translation keys in ${lng}`, async () => {
-        const translated = def.translate(lng, statics as any);
-        const html = await render(def.component(translated));
+        const translated = def.translate(lng, statics);
+        const html = await render(def.component({ ...translated, ...recipient }));
         // i18next returns the key string as-is when it can't resolve it.
         // Raw keys look like "backend:email.foo.bar" or just "email.foo.bar"
         const rawKeyPattern = /(?:backend|common|error):email\.[a-z_.-]+/;

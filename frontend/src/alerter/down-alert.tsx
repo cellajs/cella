@@ -3,6 +3,7 @@ import { AlertTriangleIcon, ClockAlertIcon, CloudOffIcon, ConstructionIcon } fro
 import { useEffect, useState } from 'react';
 import { Trans } from 'react-i18next';
 import { type AlertKeys, useAlertStore } from '~/alerter/alert-store';
+import { useUiOffline } from '~/alerter/use-ui-offline';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -59,13 +60,13 @@ const downAlertConfig = {
   },
 } as const;
 
-// Delay before showing offline alert to avoid flashes when returning to tab
-const offlineAlertDelay = 2000;
-
 export const DownAlert = () => {
   const isOnline = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
+
+  // Derives the debounced UI offline state from the logic state (onlineManager).
+  useUiOffline();
 
   const dismissAlert = () => {
     if (!downAlert) return;
@@ -73,16 +74,9 @@ export const DownAlert = () => {
     setDownAlert(null);
   };
 
-  // Manage offline alert based on network status (priority handled by store)
+  // Allow the offline alert to surface again once connectivity returns.
   useEffect(() => {
-    if (isOnline) {
-      if (downAlert === 'offline') setDownAlert(null);
-      setDismissedAlerts((prev) => ({ ...prev, offline: false }));
-      return;
-    }
-
-    const timer = setTimeout(() => setDownAlert('offline'), offlineAlertDelay);
-    return () => clearTimeout(timer);
+    if (isOnline) setDismissedAlerts((prev) => ({ ...prev, offline: false }));
   }, [isOnline]);
 
   if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null; // Nothing to show

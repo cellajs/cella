@@ -38,6 +38,7 @@ infra/.apply-in-progress.*.lock
 .db
 .rendered
 backend/openapi.cache.json
+backend/openapi.manifest.json
 frontend/vite/temp-api-gen-*
 frontend/vite/temp-docs-gen-*
 frontend/vite/.generate-client.lock
@@ -64,6 +65,7 @@ storybook-static
 # GeoIP databases (downloaded at build/dev time, not committed)
 backend/geoip/*.mmdb
 
+
 # Terraform
 *.tfvars
 !*.tfvars.example
@@ -71,3 +73,8 @@ terraform.tfstate*
 .terraform/
 .terraform.lock.hcl
 *.tfplan
+
+# Test coverage output
+coverage/
+*.lcov
+.nyc_output/

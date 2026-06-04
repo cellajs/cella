@@ -21,6 +21,12 @@ export default defineConfig({
     // upstreamRepo: 'cellajs/cella',
   },
 
+  // Local forks to sync to (for upstream template development)
+  // Uncomment and configure when running from upstream cella repo
+  forks: [
+    { name: 'raak', path: '../raak' },
+  ],
+
   // File overrides
   overrides: {
     // TODO consier only suppor directories for clarity: ignoredFolders and pinnedFiles?
@@ -64,9 +70,11 @@ export default defineConfig({
       "frontend/src/routes/route-tree.tsx",
       "frontend/src/routes/marketing-routes.ts",
       "frontend/src/routes/organization-components.tsx",
+      // TODO move logo out of common, thats confusing
       "frontend/src/modules/common/logo.tsx",
       "frontend/src/modules/home/home-page.tsx",
       "frontend/src/modules/home/onboarding/onboarding-config.ts",
+      "frontend/src/modules/home/onboarding/onboarding-seed.ts",
       "frontend/src/modules/marketing/marketing-config.tsx",
       "frontend/src/modules/marketing/about/about-page.tsx",
       "frontend/src/modules/user/user-profile-content.tsx",

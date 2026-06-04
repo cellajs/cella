@@ -1,4 +1,4 @@
-import type { ContextEntityBase, MembershipBase } from 'sdk';
+import type { ContextEntityBase, MembershipBase, Project } from 'sdk';
 import type { ContextEntityType, EntityCanMap } from 'shared';
 
 /** Ancestor context entity slugs for URL building — populated via cache enrichment */
@@ -34,3 +34,6 @@ export type EntityEnrichment = {
  * Use `ContextEntityBase` from `~/api.gen` when you only need the base fields.
  */
 export type EnrichedContextEntity = ContextEntityBase & EntityEnrichment;
+
+/** Frontend-enriched project type — Project with client-side cache enrichment fields */
+export type EnrichedProject = Project & EntityEnrichment;

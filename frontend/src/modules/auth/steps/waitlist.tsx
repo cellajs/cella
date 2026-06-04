@@ -1,4 +1,4 @@
-import { LockIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
@@ -27,8 +27,8 @@ export function WaitlistStep() {
         email={email}
         buttonContent={
           <>
-            <LockIcon size={16} className="mr-2" />
             <span className="text-base">{t('c:request_access')}</span>
+            <ArrowRightIcon size={16} className="ml-2" />
           </>
         }
       />

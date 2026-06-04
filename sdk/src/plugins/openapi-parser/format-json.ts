@@ -8,7 +8,7 @@ const isPrimitive = (v: unknown): boolean => v === null || typeof v !== 'object'
 /**
  * Format JSON with collapsed primitive arrays and simple objects.
  * - Arrays with only primitives → single line: ["a", "b", "c"]
- * - Objects with ≤2 primitive values → single line: { "type": "string", "required": true }
+ * - Objects with ≤3 primitive values → single line: { "type": "string", "required": true }
  * - Everything else → multi-line with indentation
  */
 export function formatJson(data: unknown, indent = 2): string {

@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.1",
-    "axios": "^1.13.6",
+    "axios": "^1.17.0",
     "commander": "^15.0.0",
     "giget": "^3.1.2",
     "nano-spawn": "^2.0.0",
@@ -52,6 +52,6 @@
     "@types/node": "24.10.13",
     "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.5.1",
-    "tsx": "^4.22.3"
+    "tsx": "^4.22.4"
   }
 }

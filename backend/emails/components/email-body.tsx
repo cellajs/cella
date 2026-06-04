@@ -1,5 +1,5 @@
-import { Section } from 'jsx-email';
 import type { JSX } from 'react';
+import { Section } from './primitives';
 
 /**
  * Email body component to wrap content with consistent padding and styling.

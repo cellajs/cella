@@ -1,10 +1,7 @@
-import type { ContextEntityType } from 'shared';
 import { appConfig } from 'shared';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { entityRouteConfig } from '~/routes-config';
-
-type SubitemConfig = { entityType: ContextEntityType; searchParam: string };
 
 /**
  * Config-driven entity path resolver
@@ -20,7 +17,7 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
   const config = entityRouteConfig[entityType];
-  let to: string = config.path;
+  let to = config.path;
   const params: Record<string, string> = { tenantId };
   const search: Record<string, string> = {};
 
@@ -34,8 +31,7 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
   }
 
   // Subitem: navigate to parent route with entity slug as search param
-  const subitemConfig: SubitemConfig | false =
-    isSubitem && 'subitemOf' in config ? ((config as { subitemOf?: SubitemConfig }).subitemOf ?? false) : false;
+  const subitemConfig = isSubitem && 'subitemOf' in config && config.subitemOf;
   if (subitemConfig) {
     const parentSlug = ancestorSlugs[subitemConfig.entityType];
     if (parentSlug) {
@@ -46,5 +42,5 @@ export const getContextEntityRoute = (item: EnrichedContextEntity, isSubitem?: b
     }
   }
 
-  return { to, params, search } as EntityRoute;
+  return { to, params, search };
 };

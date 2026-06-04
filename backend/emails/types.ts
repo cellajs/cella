@@ -2,6 +2,26 @@
 export type EmailRecipient = { email: string; lng: string };
 
 /**
+ * Per-recipient display props a component reads (the values the mailer turns
+ * into Brevo `{{params.x}}` placeholders at send time). Derived from the
+ * recipient type minus the always-present `EmailRecipient` base fields.
+ */
+export type RecipientProps<TRecipient extends EmailRecipient> = {
+  [K in Exclude<keyof TRecipient, keyof EmailRecipient>]: string;
+};
+
+/**
+ * Sample data to render a template in previews and tests — co-located with the
+ * template so it stays type-checked against the template's own props.
+ */
+export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = EmailRecipient> {
+  /** Props shared across all recipients (passed to `translate`). */
+  statics: TStatic;
+  /** Per-recipient display props the component reads. */
+  recipient: RecipientProps<TRecipient>;
+}
+
+/**
  * Email template definition (runtime contract used by the mailer).
  *
  * @template TStatic     - Props shared across all recipients (e.g. senderName, entityName)
@@ -12,6 +32,8 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
   translate(lng: string, statics: TStatic): { subject: string } & Record<string, unknown>;
   /** Dumb React shell — receives translate() output + per-recipient display props. No i18n calls. */
   component(props: Record<string, unknown>): React.ReactElement;
+  /** Sample data to render this template in previews and tests. */
+  preview: EmailPreviewData<TStatic, TRecipient>;
   /** Phantom field to carry recipient type — not set at runtime */
   _recipientType?: TRecipient;
 }
@@ -33,15 +55,15 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
  * export const fooEmail = defineEmailTemplate<FooStatic, FooRecipient>()({
  *   translate(lng, statics) { return { subject: '…', bar: '…' }; },
  *   component({ bar }) { … },
+ *   preview: { statics: { … }, recipient: { … } },
  * });
  * ```
  */
 export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient = EmailRecipient>() {
   return <TTranslated extends { subject: string }>(def: {
     translate(lng: string, statics: TStatic): TTranslated;
-    component(
-      props: TTranslated & { [K in Exclude<keyof TRecipient, keyof EmailRecipient>]: string },
-    ): React.ReactElement;
+    component(props: TTranslated & RecipientProps<TRecipient>): React.ReactElement;
+    preview: EmailPreviewData<TStatic, TRecipient>;
   }): EmailTemplateDef<TStatic, TRecipient> => {
     return def as EmailTemplateDef<TStatic, TRecipient>;
   };

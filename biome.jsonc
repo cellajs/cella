@@ -371,6 +371,36 @@
           }
         }
       }
+    },
+    {
+      // Vendored from jsx-email v3.2.1 (MIT). The renderer internals (a JSX
+      // stringifier, style/rehype helpers) and the email primitives keep their
+      // upstream shapes so the fork stays behavior-preserving and easy to
+      // re-sync. They legitimately use `dangerouslySetInnerHTML` (raw email
+      // HTML), loose `any`/banned types in the stringifier, and a few perf/style
+      // patterns Biome flags. Formatting and all other rules still apply.
+      "includes": ["backend/emails/renderer/**", "backend/emails/components/primitives/**"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noEvolvingTypes": "off",
+            "noImplicitAnyLet": "off",
+            "noShadowRestrictedNames": "off",
+            "noGlobalIsNan": "off",
+            "noAssignInExpressions": "off"
+          },
+          "complexity": {
+            "noBannedTypes": "off"
+          },
+          "performance": {
+            "noAccumulatingSpread": "off"
+          }
+        }
+      }
     }
   ]
 }

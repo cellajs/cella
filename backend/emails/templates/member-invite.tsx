@@ -1,4 +1,3 @@
-import { Column, Row } from 'jsx-email';
 import { appConfig, type EntityRole } from 'shared';
 import {
   EmailAvatar,
@@ -11,6 +10,7 @@ import {
   EmailText,
   SafeHtml,
 } from '../components';
+import { Column, Row } from '../components/primitives';
 import i18n from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
@@ -78,5 +78,9 @@ export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberI
         <EmailFooter supportText={supportText} />
       </EmailContainer>
     );
+  },
+  preview: {
+    statics: { senderName: 'John', senderThumbnailUrl: null, entityName: 'Acme', role: 'member' },
+    recipient: { name: 'Emily', memberInviteLink: 'https://example.com/invite' },
   },
 });

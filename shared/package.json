@@ -19,7 +19,7 @@
     "./pino": "./src/pino.ts"
   },
   "dependencies": {
-    "@blocknote/core": "^0.51.3",
+    "@blocknote/core": "^0.51.4",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.76.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.218.0",
@@ -38,7 +38,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260527.2",
+    "@typescript/native-preview": "7.0.0-dev.20260603.1",
     "strip-json-comments": "^5.0.3",
     "typescript": "^6.0.3"
   }

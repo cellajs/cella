@@ -36,6 +36,18 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    # Logical replication so CDC integration tests can create slots (matches `db`).
+    command:
+      - -c
+      - wal_level=logical
+      - -c
+      - max_connections=500
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_slot_wal_keep_size=2GB
     ports:
       - ${DB_TEST_PORT}:5432
     profiles:
@@ -48,3 +60,18 @@ services:
       timeout: 5s
       retries: 15
       start_period: 5s
+
+  ai-worker:
+    container_name: ${PROJECT_SLUG}_ai_worker
+    build: .
+    environment:
+      MODE: ai-worker
+      PORT: '4003'
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      SCW_AI_API_KEY: ${SCW_AI_API_KEY}
+    ports:
+      - '4003:4003'
+    depends_on:
+      - db
+    profiles:
+      - ai

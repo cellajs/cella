@@ -1,5 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
@@ -9,6 +9,7 @@ const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
 
 export function ReloadPrompt() {
   const { t } = useTranslation();
+  const [reloading, setReloading] = useState(false);
 
   // replaced dynamically
   const buildDate = '__DATE__';
@@ -49,10 +50,12 @@ export function ReloadPrompt() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  // Attempt SW-driven reload, fall back to hard reload after timeout
+  // Attempt SW-driven reload, force a hard reload if nothing happens after 5s
   const reload = useCallback(() => {
-    const timeout = setTimeout(() => window.location.reload(), 3000);
-    updateServiceWorker(true).then(() => clearTimeout(timeout));
+    setReloading(true);
+    // Guaranteed fallback: if the SW update doesn't trigger a reload, force one
+    setTimeout(() => window.location.reload(), 5000);
+    updateServiceWorker(true);
   }, [updateServiceWorker]);
 
   const close = () => {
@@ -67,7 +70,11 @@ export function ReloadPrompt() {
             <span>{t('c:refresh_pwa_app.text')}</span>
           </div>
           <div className="space-x-2">
-            {needRefresh && <Button onClick={reload}>{t('c:reload')}</Button>}
+            {needRefresh && (
+              <Button onClick={reload} loading={reloading}>
+                {t('c:reload')}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => close()}>
               {t('c:close')}
             </Button>

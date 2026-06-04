@@ -2,7 +2,8 @@ import i18n from 'i18next';
 import type { StepItem } from '~/modules/common/stepper/types';
 
 /**
- * Define the onboarding steps
+ * Ordered list of onboarding steps shown by the welcome stepper.
+ * All steps are optional so users can skip ahead at any point.
  */
 export const onboardingSteps: StepItem[] = [
   { id: 'profile', label: i18n.t('c:tune_profile'), optional: true },
@@ -13,6 +14,3 @@ export const onboardingSteps: StepItem[] = [
   },
   { id: 'invitation', label: i18n.t('c:invite_others'), optional: true },
 ];
-
-// Add the options you want to execute when onboarding is finished
-export const onboardingFinishCallback = () => {};

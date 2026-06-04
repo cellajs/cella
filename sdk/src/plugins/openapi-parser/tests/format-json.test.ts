@@ -3,14 +3,18 @@
  * Verifies that formatJson produces valid, parseable JSON.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { formatJson } from '../format-json';
 import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec } from '../types';
 
-const BACKEND_SPEC = resolve(__dirname, '../../../../backend/openapi.cache.json');
+// Prefer the committed public spec (always present on a clean checkout);
+// fall back to the gitignored backend cache (present after `pnpm sdk`).
+const PUBLIC_SPEC = resolve(__dirname, '../../../../../frontend/public/static/openapi.json');
+const CACHE_SPEC = resolve(__dirname, '../../../../../backend/openapi.cache.json');
+const BACKEND_SPEC = existsSync(PUBLIC_SPEC) ? PUBLIC_SPEC : CACHE_SPEC;
 
 describe('formatJson', () => {
   it('produces valid JSON for primitive values', () => {
@@ -62,13 +66,13 @@ describe('formatJson', () => {
     expect(output.split('\n').length).toBeLessThan(5);
   });
 
-  it('collapses simple objects (≤2 keys) to single line', () => {
+  it('collapses simple objects (≤3 keys) to single line', () => {
     const output = formatJson({ prop: { type: 'string', required: true } });
     expect(output).toContain('{ "type": "string", "required": true }');
   });
 
-  it('does not collapse objects with >2 keys', () => {
-    const output = formatJson({ a: 1, b: 2, c: 3 });
+  it('does not collapse objects with >3 keys', () => {
+    const output = formatJson({ a: 1, b: 2, c: 3, d: 4 });
     expect(output.split('\n').length).toBeGreaterThan(1);
   });
 

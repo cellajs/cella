@@ -55,4 +55,8 @@ export const emailVerificationEmail = defineEmailTemplate<
       </EmailContainer>
     );
   },
+  preview: {
+    statics: { verificationLink: 'https://example.com/verify', name: 'Emily' },
+    recipient: {},
+  },
 });

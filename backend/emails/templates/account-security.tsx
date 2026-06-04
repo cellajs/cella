@@ -50,4 +50,8 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
       </EmailContainer>
     );
   },
+  preview: {
+    statics: { name: 'Emily', type: 'totp-lockout' },
+    recipient: {},
+  },
 });

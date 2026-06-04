@@ -44,6 +44,7 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
         <input
           type="checkbox"
           checked={isChecked}
+          disabled={!persisted}
           onChange={handleToggle}
           data-checkbox-id={block.props.checkboxId}
           className="checklist-checkbox"

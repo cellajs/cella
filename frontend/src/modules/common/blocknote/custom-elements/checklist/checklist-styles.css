@@ -31,6 +31,10 @@
     border-color 0.15s;
 }
 
+.checklist-checkbox:disabled {
+  cursor: not-allowed;
+}
+
 .checklist-checkbox:checked {
   background-color: var(--success);
   border-color: var(--success);

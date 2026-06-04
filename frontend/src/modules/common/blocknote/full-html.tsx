@@ -155,17 +155,25 @@ function BlockNoteFullHtml({
     });
   };
 
+  // Mirror the live editor's DOM (bn-container > bn-editor.bn-default-styles) so that
+  // descendant CSS overrides in styles.css (font-family, dense line-height) actually match.
   return (
     <div
       id={id}
       ref={containerRef}
       role="presentation"
-      className={`bn-container bn-shadcn bn-default-styles ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
+      className={`bn-container bn-shadcn ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
       data-color-scheme={mode}
       onClick={handleClick}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html) }}
-    />
+    >
+      <div
+        // select-text: opt static (read-only) content into text selection — it sits inside a focusable,
+        // click-to-expand task Card, so without this the user can't highlight/copy the text.
+        className="bn-editor bn-default-styles select-text"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html) }}
+      />
+    </div>
   );
 }
 

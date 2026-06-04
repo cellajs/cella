@@ -39,4 +39,8 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
       </EmailContainer>
     );
   },
+  preview: {
+    statics: { type: 'contact', email: 'test@example.com', message: 'Hello', subject: 'New contact request' },
+    recipient: {},
+  },
 });

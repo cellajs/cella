@@ -47,7 +47,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const resetDraftForm = useDraftStore((state) => state.resetForm);
   const setFormDirty = useDraftStore((state) => state.setFormDirty);
 
-  const form = useForm<TFieldValues, TContext, TFieldValues>({ mode: 'onTouched', ...formOptions });
+  const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
 
   const [loading, setLoading] = useState(true);
   const isResetting = useRef(false);

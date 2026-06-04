@@ -10,7 +10,7 @@
     "db:up": "docker compose -f ../backend/compose.yaml up db -d && echo 'Waiting for Postgres...' && until pg_isready -h 0.0.0.0 -p 5433 -U postgres -q 2>/dev/null; do sleep 0.5; done && echo 'Postgres ready.' && pnpm db:seed"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.4.2",
+    "@inquirer/prompts": "^8.5.2",
     "nanoid": "^5.1.11",
     "ora": "^9.4.0",
     "pg": "^8.21.0",
@@ -22,7 +22,7 @@
     "@types/pg": "^8.20.0",
     "artillery": "^2.0.31",
     "artillery-plugin-ensure": "^1.25.0",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
 }

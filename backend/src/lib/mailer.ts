@@ -1,9 +1,9 @@
 import { BrevoClient } from '@getbrevo/brevo';
-import { render } from 'jsx-email';
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { logEvent } from '#/utils/logger';
 import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
+import { render } from '../../emails/renderer/render';
 import type { EmailRecipient, EmailTemplateDef } from '../../emails/types';
 
 const brevoClient = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : undefined;

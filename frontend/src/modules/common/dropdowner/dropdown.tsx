@@ -1,19 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { Menu } from '@base-ui/react/menu';
+import { useEffect, useLayoutEffect } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useMenuKeyNav } from '~/modules/common/dropdowner/use-menu-key-nav';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 
 export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown }) => {
   const triggerEl = dropdown.triggerRef?.current;
 
-  const triggerFocusRef = useLatestRef(triggerEl ?? null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Adds WAI-ARIA menu navigation (arrows, Home/End, typeahead) when content
-  // contains [role="menuitem"]. No-op for non-menu popovers (date pickers, etc.).
-  useMenuKeyNav(contentRef);
+  // Popover content mounts in a portal at <body>. When inner content auto-focuses
+  // (e.g. base-ui Combobox focusing its input) before the positioner has placed
+  // the popup, the browser scrolls the document to reveal the focus target —
+  // jumping the page. Snapshot scroll on mount and restore it next frame.
+  useLayoutEffect(() => {
+    const scroller = document.scrollingElement ?? document.documentElement;
+    const { scrollTop, scrollLeft } = scroller;
+    const raf = requestAnimationFrame(() => {
+      scroller.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'instant' as ScrollBehavior });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Watch for trigger removal from DOM
   useEffect(() => {
@@ -31,6 +37,36 @@ export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown })
 
   if (!triggerEl) return null;
 
+  if (dropdown.kind === 'menu') return <MenuDropdown dropdown={dropdown} triggerEl={triggerEl} />;
+  return <PanelDropdown dropdown={dropdown} triggerEl={triggerEl} />;
+};
+
+const MenuDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) => {
+  const triggerFocusRef = useLatestRef(triggerEl);
+
+  const onOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) useDropdowner.getState().remove();
+  };
+
+  return (
+    <Menu.Root key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
+      <Menu.Portal>
+        <Menu.Positioner anchor={triggerEl} align={dropdown.align} sideOffset={4} className="z-301">
+          <Menu.Popup
+            className="min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden"
+            finalFocus={triggerFocusRef}
+          >
+            {dropdown.content}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+};
+
+const PanelDropdown = ({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) => {
+  const triggerFocusRef = useLatestRef(triggerEl);
+
   const onOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) useDropdowner.getState().remove();
   };
@@ -39,9 +75,7 @@ export const DropdownerDropdown = ({ dropdown }: { dropdown: InternalDropdown })
     <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
       <PopoverContent anchor={triggerEl} align={dropdown.align} className="z-301 p-0" finalFocus={triggerFocusRef}>
         <FocusTrap active initialFocus returnFocus containFocus>
-          <div ref={contentRef} style={{ display: 'contents' }}>
-            {dropdown.content}
-          </div>
+          <div style={{ display: 'contents' }}>{dropdown.content}</div>
         </FocusTrap>
       </PopoverContent>
     </Popover>

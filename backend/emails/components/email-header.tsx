@@ -1,5 +1,5 @@
-import { Heading } from 'jsx-email';
 import type { JSX } from 'react';
+import { Heading } from './primitives';
 
 /**
  * Email header component to display a centered heading with consistent styling.

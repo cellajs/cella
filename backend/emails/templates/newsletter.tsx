@@ -1,5 +1,5 @@
-import { Link } from 'jsx-email';
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
+import { Link } from '../components/primitives';
 import i18n from '../i18n';
 import { newsletterContentStyles, smallTextStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
@@ -50,5 +50,9 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
         <EmailFooter supportText={supportText} />
       </EmailContainer>
     );
+  },
+  preview: {
+    statics: { content: '<p>Test content</p>', subject: 'Monthly newsletter', testEmail: false },
+    recipient: { unsubscribeLink: 'https://example.com/unsubscribe', orgName: 'Acme' },
   },
 });

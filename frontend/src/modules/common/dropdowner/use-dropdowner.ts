@@ -1,12 +1,20 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
+export type DropdownKind = 'menu' | 'panel';
+
 export type DropdownData = {
   id: number | string;
   triggerId: string;
   triggerRef: RefObject<HTMLButtonElement | null>;
   align?: 'start' | 'center' | 'end';
   modal?: boolean;
+  /**
+   * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead).
+   * 'panel' uses a Popover with a focus trap for arbitrary content (forms,
+   * comboboxes, date pickers). Defaults to 'panel'.
+   */
+  kind?: DropdownKind;
   /**
    * Bypass the 300ms "reopen with same triggerId" guard. Set this for
    * programmatic openers (e.g. data-grid edit cells) where there's no race
@@ -20,6 +28,7 @@ export type InternalDropdown = DropdownData & {
   content: ReactNode;
   align: 'start' | 'center' | 'end';
   modal: boolean;
+  kind: DropdownKind;
 };
 
 interface DropdownStoreState {
@@ -69,7 +78,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
     set({
-      dropdown: { content, align: 'start', modal: true, ...data, key: Date.now() },
+      dropdown: { content, align: 'start', modal: true, kind: 'panel', ...data, key: Date.now() },
     });
 
     return data.id;

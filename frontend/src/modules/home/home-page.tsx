@@ -1,37 +1,25 @@
-import { Link } from '@tanstack/react-router';
-import { ShieldAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AlertBanner } from '~/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
-import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { useUserStore } from '~/modules/user/user-store';
+import { WorkspacesGrid } from '~/modules/workspace/workspaces-grid';
 
+/**
+ * Home page to be customized by the app.
+ */
 export function HomePage() {
   const { t } = useTranslation();
-  const { user, isSystemAdmin } = useUserStore();
-
-  const showMfaAlert = isSystemAdmin && !user.mfaRequired;
 
   return (
-    <div className="container">
+    <>
       <SimpleHeader
         heading={t('c:home')}
         text={t('c:home.text', { appName: appConfig.name })}
-        className="pt-4 md:pt-6"
+        className="container pt-4 md:pt-6"
       />
-      {showMfaAlert && (
-        <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
-          <p>{t('c:require_mfa.text')}</p>
-          <Button size="sm" className="mt-2" render={<Link to="/account" hash="authentication" />}>
-            {t('c:setup_resource', { resource: t('c:authentication').toLowerCase() })}
-          </Button>
-        </AlertBanner>
-      )}
-      <div className="mt-6 mb-24 hidden has-[div[role='grid']]:block">
-        <Card className="pb-0">
+      <div className="container mt-6 mb-24 hidden has-[div[role='grid']]:block">
+        <Card>
           <CardHeader>
             <CardTitle>{t('c:pending_invitations')}</CardTitle>
           </CardHeader>
@@ -40,6 +28,9 @@ export function HomePage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      <div className="container py-4 md:py-6">
+        <WorkspacesGrid saveDataInSearch={false} focusView={false} />
+      </div>
+    </>
   );
 }

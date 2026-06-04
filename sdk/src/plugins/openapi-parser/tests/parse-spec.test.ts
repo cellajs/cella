@@ -4,13 +4,17 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec } from '../types';
 
-const BACKEND_SPEC = resolve(__dirname, '../../../../backend/openapi.cache.json');
+// Prefer the committed public spec (always present on a clean checkout);
+// fall back to the gitignored backend cache (present after `pnpm sdk`).
+const PUBLIC_SPEC = resolve(__dirname, '../../../../../frontend/public/static/openapi.json');
+const CACHE_SPEC = resolve(__dirname, '../../../../../backend/openapi.cache.json');
+const BACKEND_SPEC = existsSync(PUBLIC_SPEC) ? PUBLIC_SPEC : CACHE_SPEC;
 
 /**
  * Helper to convert Map to object for snapshot comparison.

@@ -23,7 +23,6 @@ export default defineConfig({
       exclude: [
         'admin_role',
         'runtime_role',
-        'cdc_role',
         'postgres',
         'pg_checkpoint',
         'pg_create_subscription',

@@ -24,6 +24,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
+COPY locales/package.json ./locales/
+COPY patches/ ./patches/
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -39,6 +41,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
+COPY locales/package.json ./locales/
+COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -100,6 +104,11 @@ RUN chown -R app:app /app
 
 # Switch to non-root user
 USER app
+
+# Build-time release identifier (Git SHA from CI). Surfaced at runtime via
+# `/health` so the deploy verifier can confirm the new code is actually live.
+ARG RELEASE_SHA=unknown
+ENV RELEASE_SHA=${RELEASE_SHA}
 
 # Environment variables
 ENV NODE_ENV=production

@@ -1,4 +1,4 @@
-import { Text as JsxText } from 'jsx-email';
+import { Text as JsxText } from './primitives';
 
 /**
  * EmailText wrapper that overrides jsx-email's default styles (14px/24px/16px margin)

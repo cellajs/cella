@@ -10,6 +10,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
+import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -70,19 +71,19 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="flex min-h-screen w-full flex-col gap-3 bg-card p-3">
+    <div ref={buttonWrapper} className="group/menu flex min-h-screen w-full flex-col bg-card">
       <FocusTarget target="sheet" />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
       <button
         type="button"
         tabIndex={-1}
         onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
-        className="relative w-full"
+        className="relative mt-3 w-full"
       >
         <div
-          className={`relative -mx-3 h-32 bg-center bg-cover bg-opacity-80 shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-mx-10 hover:bg-opacity-50 ${
+          className={`relative h-32 bg-center bg-cover bg-opacity-80 shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 hover:bg-opacity-50 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
           }`}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
@@ -103,7 +104,7 @@ export const AccountSheet = () => {
           </motion.div>
         </div>
       </button>
-      <div className="flex grow flex-col gap-1 max-sm:mt-4">
+      <div className="mt-3 flex flex-col gap-1 px-3 max-sm:mt-4">
         <Button
           variant="ghost"
           size="lg"
@@ -144,8 +145,11 @@ export const AccountSheet = () => {
         />
       </div>
 
+      <span className="mt-10" />
+      <MenuSheetPanels />
+
       {/* Keyboard-only skip links at end of sheet */}
-      <div className="mt-auto flex flex-col">
+      <div className="flex flex-col focus-within:p-3">
         <FocusBridge direction="to-content" className="focus:relative" />
         <FocusBridge direction="to-sidebar" className="focus:relative" />
       </div>

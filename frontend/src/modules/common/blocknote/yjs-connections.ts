@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
+import { toWsUrl } from 'shared/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
@@ -63,7 +64,7 @@ function acquireConnection(editSessionId: string, entityType: string, tenantId: 
     return existing;
   }
 
-  const serverUrl = appConfig.yjsUrl!;
+  const serverUrl = toWsUrl(appConfig.yjsUrl!);
   const tokenKey = yjsTokenKey(entityType, tenantId);
   const token = useUserStore.getState().yjsTokens[tokenKey];
   if (!token) throw new Error(`[yjs] No token available for ${tokenKey}`);

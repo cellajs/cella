@@ -8,7 +8,7 @@ export type JsonValue = null | string | number | boolean | JsonValue[] | { [key:
 /**
  * Replacer that converts non-JSON values (bigint, Date, etc.) to safe substitutes.
  */
-export const queryKeyJsonReplacer = (_key: string, value: unknown) => {
+export const queryKeyJsonReplacer = (_key: string, value: unknown): unknown | undefined => {
   if (value === undefined || typeof value === 'function' || typeof value === 'symbol') {
     return undefined;
   }

@@ -1,4 +1,4 @@
-import { Button, Section } from 'jsx-email';
+import { Button, Section } from './primitives';
 
 /**
  * Email button component for call-to-action links with consistent styling.

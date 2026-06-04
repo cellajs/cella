@@ -37,7 +37,10 @@ vi.mock('yjs', () => {
 });
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: vi.fn() }));
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
-vi.mock('shared', () => ({ appConfig: { yjsUrl: 'ws://localhost:1234' } }));
+vi.mock('shared', () => ({
+  appConfig: { yjsUrl: 'http://localhost:1234' },
+  toWsUrl: (u: string) => u.replace(/^http/, 'ws'),
+}));
 vi.mock('@tanstack/react-query', () => ({
   onlineManager: { isOnline: () => true, subscribe: () => () => {} },
 }));

@@ -50,9 +50,29 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     // lands on the first item rather than skipping all -1 elements.
     applyRovingTabindex(initialItems, 0);
 
+    // Pull focus to the first menuitem after both FocusTrap and FloatingFocusManager
+    // have run their own focus effects. Without this, focus stays on the popup
+    // wrapper (Base UI's default initial focus target) and arrow keys do nothing
+    // because nothing in the menu has focus to receive them.
+    const focusTimer = window.setTimeout(() => {
+      const items = getMenuItems(container);
+      if (items.length > 0 && !items.includes(document.activeElement as HTMLElement)) {
+        focusItem(items, 0);
+      }
+    }, 0);
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+      // Skip typing contexts. Only one dropdowner menu can be open at a time,
+      // so we don't need to gate by focus location — if a text field is the
+      // target the user is typing into it, not navigating the menu.
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
 
       const items = getMenuItems(container);
       if (items.length === 0) return;
@@ -116,10 +136,14 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
       if (idx >= 0) applyRovingTabindex(items, idx);
     };
 
-    container.addEventListener('keydown', onKeyDown);
     container.addEventListener('focusin', onFocusIn);
+    // Document-level keydown in CAPTURE phase so neither the Base UI popup nor
+    // FocusTrap can stopPropagation on us before we see the key. Only one
+    // dropdowner menu is open at a time, so this is safe.
+    document.addEventListener('keydown', onKeyDown, true);
     return () => {
-      container.removeEventListener('keydown', onKeyDown);
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown, true);
       container.removeEventListener('focusin', onFocusIn);
       window.clearTimeout(typeaheadRef.current.timer);
     };

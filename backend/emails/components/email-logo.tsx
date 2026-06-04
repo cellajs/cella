@@ -1,6 +1,6 @@
-import { Img } from 'jsx-email';
 import type { JSX } from 'react';
 import { appConfig } from 'shared';
+import { Img } from './primitives';
 
 const logoUrl = `${appConfig.productionUrl}/static/logo/logo.png`;
 

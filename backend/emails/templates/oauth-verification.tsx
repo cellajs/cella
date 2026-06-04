@@ -64,4 +64,13 @@ export const oauthVerificationEmail = defineEmailTemplate<
       </EmailContainer>
     );
   },
+  preview: {
+    statics: {
+      verificationLink: 'https://example.com/verify',
+      name: 'Emily',
+      providerEmail: 'jane@gmail.com',
+      providerName: 'Google',
+    },
+    recipient: {},
+  },
 });

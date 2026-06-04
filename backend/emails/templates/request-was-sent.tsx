@@ -38,4 +38,8 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
       </EmailContainer>
     );
   },
+  preview: {
+    statics: { type: 'contact', message: null },
+    recipient: {},
+  },
 });

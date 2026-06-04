@@ -135,7 +135,7 @@ function BlockNote({
 
     extensions: [checkedExtension(), ...(extensions ?? [])],
     resolveFileUrl: createResolveFileUrl({ publicFiles, baseFilePanelProps }),
-  }) as unknown as CustomBlockNoteEditor;
+  });
 
   // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.
   useYjsUndoManagerFix(editor, collaborative);

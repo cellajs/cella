@@ -1,7 +1,7 @@
-import { Link } from 'jsx-email';
 import { appConfig } from 'shared';
 import { smallTextStyle } from '../styles';
 import { EmailText } from './email-text';
+import { Link } from './primitives';
 
 /**
  * EmailFooter component with company address and support email link.
