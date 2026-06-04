@@ -22,7 +22,7 @@ import {
 import { checkbox } from '@inquirer/prompts';
 import type { RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess } from '../utils/display';
+import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess, warningMark } from '../utils/display';
 import { getCurrentBranch, git } from '../utils/git';
 import { buildContribBranch, countDetection, detectContributableFiles } from './contrib-core';
 import { printNoForksHint, type ValidatedFork, validateForkPath } from './fork-utils';
@@ -239,6 +239,16 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   // Compare forks against cella's currently checked-out branch, not a fixed
   // configured branch, so contributions reflect the branch you're working on.
   const baseRef = await getCurrentBranch(config.forkPath);
+
+  // Warn when not on the regular working branch, since the comparison base differs.
+  const workingBranch = config.settings.workingBranch;
+  if (baseRef !== workingBranch) {
+    console.info(
+      `${warningMark} ${pc.yellow(`not on working branch '${workingBranch}'`)} ${pc.dim(`comparing forks against '${baseRef}'`)}`,
+    );
+    console.info('');
+  }
+
   const validated = forks.map((fork) => validateForkPath(fork, config.forkPath));
 
   // Select which forks to pull from
