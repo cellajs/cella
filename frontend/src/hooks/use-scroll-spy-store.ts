@@ -1,3 +1,11 @@
+// NOTE: The docs page scrolls inside <main class="overflow-auto"> (docs-layout.tsx), NOT the window.
+// TanStack Router's `scrollRestoration: true` (routes/router.ts) auto-tracks nested scroll containers
+// and restores their scrollTop on every location change — including our hash replaceState in
+// performScroll. That async restoration would snap the scroller back to its cached position right
+// after we scroll, which manifested as the "first click does nothing, second click works" bug
+// (the 2nd click doesn't change the hash, so no restoration fires). performScroll therefore drives
+// the real scroll container directly and re-asserts the scroll across a couple frames to win the race.
+
 /** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */
 const SPY_PREFIX = 'spy-';
 
@@ -203,23 +211,49 @@ export const unregisterSections = (ids: string[]) => {
   }
 };
 
+/** Find the nearest scrollable ancestor (overflow-y auto/scroll with actual overflow), else the document scroller. */
+const findScrollParent = (el: HTMLElement): HTMLElement => {
+  let node = el.parentElement;
+  while (node) {
+    const cs = getComputedStyle(node);
+    if (/(auto|scroll)/.test(cs.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
+    node = node.parentElement;
+  }
+  return (document.scrollingElement as HTMLElement) ?? document.documentElement;
+};
+
 /** Scroll to element and update hash/state */
 const performScroll = (el: HTMLElement, id: string) => {
-  const distance = Math.abs(el.getBoundingClientRect().top);
-  const smooth = distance < window.innerHeight * 2;
+  // The docs page scrolls inside <main class="overflow-auto">, not the window, so scrollIntoView()
+  // doesn't help — drive the real container directly.
+  const scroller = findScrollParent(el);
+  const delta = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+  const targetTop = scroller.scrollTop + delta - 16;
+  const smooth = Math.abs(delta) < window.innerHeight * 2;
 
   blockHashWrites(smooth ? 1200 : 500);
-  if (currentSection !== id) {
-    currentSection = id;
-    syncActiveDOM();
-    notify();
-  }
 
   if (location.hash !== `#${id}`) {
     history.replaceState(null, '', `#${id}`);
   }
 
-  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' });
+  // TanStack Router's scrollRestoration auto-tracks nested scroll containers and restores the
+  // scroller's cached scrollTop whenever the location changes — including our hash replaceState
+  // above. That restoration runs async after the history change and would snap us back to the
+  // previous position (the "first click does nothing, second works" bug: the 2nd click doesn't
+  // change the hash, so no restoration fires). Re-assert the scroll for a couple frames so we win.
+  const applyScroll = () => scroller.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'instant' });
+  applyScroll();
+  requestAnimationFrame(() => {
+    applyScroll();
+    requestAnimationFrame(applyScroll);
+  });
+
+  if (currentSection !== id) {
+    currentSection = id;
+    syncActiveDOM();
+    notify();
+  }
 };
 
 /** Element is in the DOM AND has real layout (not display:none, content-visibility:hidden, height:0).
@@ -261,14 +295,7 @@ const tryFlushPendingScroll = () => {
  *  If the target isn't in the DOM yet — or is mounted but not laid out (collapsed / prerendered with
  *  content-visibility:hidden) — queues the scroll and retries each frame until it's ready. */
 export const scrollToSectionById = (id: string) => {
-  const el = document.getElementById(`${SPY_PREFIX}${id}`);
-  if (!el || !isLaidOut(el)) {
-    pendingScrollTarget = id;
-    pendingFrameAttempts = 0;
-    requestAnimationFrame(tryFlushPendingScroll);
-    return;
-  }
-
-  pendingScrollTarget = null;
-  performScroll(el, id);
+  pendingScrollTarget = id;
+  pendingFrameAttempts = 0;
+  requestAnimationFrame(tryFlushPendingScroll);
 };

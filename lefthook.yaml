@@ -1,20 +1,20 @@
-# ---
-# pre-commit:
-#   parallel: true
-#   commands:
-#     biome:
-#       glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
-#       run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
-#     no-bootstrap-marker:
-#       glob: 'infra/Pulumi.*.yaml'
-#       run: |
-#         if grep -lE '^[[:space:]]*bootstrap:applyInProgress:' {staged_files} >/dev/null 2>&1; then
-#           echo "✗ refusing to commit: 'bootstrap:applyInProgress' marker present in $(grep -lE '^[[:space:]]*bootstrap:applyInProgress:' {staged_files})"
-#           echo "  An infra Apply run is in progress or was interrupted. Re-run bootstrap → Rotate CI to restore."
-#           exit 1
-#         fi
-#     # validate-config:
-#     #   run: pnpm --filter @cellajs/sync validate
-#     typescript:
-#       priority: 1
-#       run: pnpm sdk && pnpm ts
+---
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
+      run: pnpm biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+    no-bootstrap-marker:
+      glob: 'infra/Pulumi.*.yaml'
+      run: |
+        if grep -lE '^[[:space:]]*bootstrap:applyInProgress:' {staged_files} >/dev/null 2>&1; then
+          echo "✗ refusing to commit: 'bootstrap:applyInProgress' marker present in $(grep -lE '^[[:space:]]*bootstrap:applyInProgress:' {staged_files})"
+          echo "  An infra Apply run is in progress or was interrupted. Re-run bootstrap → Rotate CI to restore."
+          exit 1
+        fi
+    # validate-config:
+    #   run: pnpm --filter @cellajs/sync validate
+    typescript:
+      priority: 1
+      run: pnpm sdk && pnpm ts
