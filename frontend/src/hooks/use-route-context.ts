@@ -1,10 +1,10 @@
-import { getRouteApi, useRouterState } from '@tanstack/react-router';
+import { useRouterState } from '@tanstack/react-router';
 import type { Organization } from 'sdk';
+
+// TODO review this pattern
 
 // These hooks use getRouteApi with string route IDs instead of importing route objects directly.
 // This avoids circular imports between route files and component modules, which cause Vite HMR failures.
-
-const workspaceApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/workspace/$slug');
 
 type OrganizationLayoutContext = { organization: Organization; tenantId: string };
 
@@ -27,5 +27,3 @@ export const useOrganizationLayoutContext = (): OrganizationLayoutContext => {
 
   throw new Error('useOrganizationLayoutContext must be used within a route that provides organization context');
 };
-
-export const useWorkspaceContext = () => workspaceApi.useRouteContext();

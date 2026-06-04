@@ -1,4 +1,4 @@
-import type { ContextEntityType } from 'shared';
+import type { ContextEntityType, EntityRole } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { getMembersList } from '#/modules/memberships/memberships-queries';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -11,7 +11,7 @@ interface GetMembersInput {
   order?: 'asc' | 'desc';
   offset: number;
   limit: number;
-  role?: 'admin' | 'member';
+  role?: EntityRole;
   userIds?: string;
 }
 

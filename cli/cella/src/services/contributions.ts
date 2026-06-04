@@ -247,11 +247,17 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   // configured branch, so contributions reflect the branch you're working on.
   const baseRef = await getCurrentBranch(config.forkPath);
 
-  // Warn when not on the regular working branch, since the comparison base differs.
+  // Warn when not on the regular working branch. The comparison is a 3-way
+  // analysis against merge-base(baseRef, fork), so a long-lived feature branch
+  // has an older merge-base than '<workingBranch>' and may surface extra
+  // 'diverged' files that would show clean from the working branch.
   const workingBranch = config.settings.workingBranch;
   if (baseRef !== workingBranch) {
     console.info(
       `${warningMark} ${pc.yellow(`not on working branch '${workingBranch}'`)} ${pc.dim(`comparing forks against '${baseRef}'`)}`,
+    );
+    console.info(
+      `  ${pc.dim(`older merge-base may show extra 'diverged' files; switch to '${workingBranch}' for the cleanest result`)}`,
     );
     console.info('');
   }

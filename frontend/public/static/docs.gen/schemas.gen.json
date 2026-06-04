@@ -275,7 +275,7 @@
         "entityType": {
           "type": "string",
           "required": true,
-          "enum": ["attachment", "page"]
+          "enum": ["attachment", "page", "chat", "message"]
         },
         "keywords": { "type": "string", "required": true }
       }
@@ -326,7 +326,7 @@
         "entityType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": ["attachment", "page", null]
+          "enum": ["attachment", "page", "chat", "message", null]
         },
         "resourceType": {
           "type": ["string", "null"],
@@ -1160,7 +1160,9 @@
                   "type": "object",
                   "required": true,
                   "properties": {
-                    "attachment": { "type": "number", "required": true }
+                    "attachment": { "type": "number", "required": true },
+                    "chat": { "type": "number", "required": true },
+                    "message": { "type": "number", "required": true }
                   }
                 }
               }
@@ -1221,7 +1223,12 @@
             "pending": 13,
             "total": 93
           },
-          "entities": { "attachment": 178, "page": 257 }
+          "entities": {
+            "attachment": 178,
+            "page": 257,
+            "chat": 47,
+            "message": 21
+          }
         }
       }
     }
@@ -1716,7 +1723,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1778,7 +1785,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1842,7 +1849,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1906,7 +1913,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1970,7 +1977,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -2073,7 +2080,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -2137,7 +2144,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment", "page", "chat", "message"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },

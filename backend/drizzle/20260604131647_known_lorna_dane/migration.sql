@@ -48,6 +48,26 @@ CREATE TABLE "context_counters" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "chats" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY,
+	"entity_type" varchar DEFAULT 'chat' NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
+	"name" varchar(255) DEFAULT 'New chat' NOT NULL,
+	"updated_at" timestamp,
+	"stx" jsonb NOT NULL,
+	"description" varchar(1000000) DEFAULT '',
+	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
+	"created_by" uuid,
+	"updated_by" uuid,
+	"seq" bigint DEFAULT 0 NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"user_id" uuid,
+	"model" varchar(255) DEFAULT '' NOT NULL,
+	"archived_at" timestamp
+);
+--> statement-breakpoint
+ALTER TABLE "chats" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "domains" (
 	"id" uuid PRIMARY KEY,
 	"tenant_id" varchar(24) NOT NULL,
@@ -103,6 +123,31 @@ CREATE TABLE "memberships" (
 	CONSTRAINT "memberships_unique_context" UNIQUE("tenant_id","user_id","context_id")
 );
 --> statement-breakpoint
+CREATE TABLE "messages" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" uuid PRIMARY KEY,
+	"entity_type" varchar DEFAULT 'message' NOT NULL,
+	"tenant_id" varchar(24) NOT NULL,
+	"name" varchar(255) DEFAULT 'New message' NOT NULL,
+	"updated_at" timestamp,
+	"stx" jsonb NOT NULL,
+	"description" varchar(1000000) DEFAULT '',
+	"keywords" varchar(1000000) DEFAULT '' NOT NULL,
+	"created_by" uuid,
+	"updated_by" uuid,
+	"seq" bigint DEFAULT 0 NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"chat_id" uuid NOT NULL,
+	"user_id" uuid,
+	"role" varchar(255) NOT NULL,
+	"parts" jsonb DEFAULT '[]' NOT NULL,
+	"model" varchar(255),
+	"status" varchar(255) DEFAULT 'pending' NOT NULL,
+	"usage" jsonb,
+	"error" text
+);
+--> statement-breakpoint
+ALTER TABLE "messages" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "oauth_accounts" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" uuid PRIMARY KEY,
@@ -248,7 +293,7 @@ CREATE TABLE "tenants" (
 	"id" varchar(24) PRIMARY KEY,
 	"name" varchar(255) NOT NULL,
 	"status" varchar DEFAULT 'active' NOT NULL,
-	"restrictions" json DEFAULT '{"quotas":{"user":1000,"organization":5,"attachment":100,"page":0},"rateLimits":{"apiPointsPerHour":1000}}' NOT NULL,
+	"restrictions" json DEFAULT '{"quotas":{"user":1000,"organization":5,"attachment":100,"page":0,"chat":0,"message":0},"rateLimits":{"apiPointsPerHour":1000}}' NOT NULL,
 	"created_by" uuid,
 	"subscription_id" varchar(255),
 	"subscription_status" varchar DEFAULT 'none' NOT NULL,
@@ -335,6 +380,11 @@ CREATE INDEX "attachments_tenant_id_index" ON "attachments" ("tenant_id");--> st
 CREATE INDEX "attachments_created_by_index" ON "attachments" ("created_by");--> statement-breakpoint
 CREATE INDEX "attachments_updated_by_index" ON "attachments" ("updated_by");--> statement-breakpoint
 CREATE INDEX "attachments_group_id_index" ON "attachments" ("group_id");--> statement-breakpoint
+CREATE INDEX "chats_organization_id_index" ON "chats" ("organization_id");--> statement-breakpoint
+CREATE INDEX "chats_user_id_index" ON "chats" ("user_id");--> statement-breakpoint
+CREATE INDEX "chats_tenant_id_index" ON "chats" ("tenant_id");--> statement-breakpoint
+CREATE INDEX "chats_created_by_index" ON "chats" ("created_by");--> statement-breakpoint
+CREATE INDEX "chats_updated_by_index" ON "chats" ("updated_by");--> statement-breakpoint
 CREATE INDEX "domains_tenant_id_idx" ON "domains" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "domains_domain_idx" ON "domains" ("domain");--> statement-breakpoint
 CREATE INDEX "emails_user_id_idx" ON "emails" ("user_id");--> statement-breakpoint
@@ -349,6 +399,12 @@ CREATE INDEX "memberships_updated_by_idx" ON "memberships" ("updated_by");--> st
 CREATE INDEX "memberships_tenant_id_idx" ON "memberships" ("tenant_id");--> statement-breakpoint
 CREATE INDEX "memberships_context_org_role_idx" ON "memberships" ("context_type","organization_id","role");--> statement-breakpoint
 CREATE INDEX "memberships_org_user_tenant_idx" ON "memberships" ("organization_id","user_id","tenant_id");--> statement-breakpoint
+CREATE INDEX "messages_organization_id_index" ON "messages" ("organization_id");--> statement-breakpoint
+CREATE INDEX "messages_chat_id_index" ON "messages" ("chat_id");--> statement-breakpoint
+CREATE INDEX "messages_user_id_index" ON "messages" ("user_id");--> statement-breakpoint
+CREATE INDEX "messages_tenant_id_index" ON "messages" ("tenant_id");--> statement-breakpoint
+CREATE INDEX "messages_created_by_index" ON "messages" ("created_by");--> statement-breakpoint
+CREATE INDEX "messages_updated_by_index" ON "messages" ("updated_by");--> statement-breakpoint
 CREATE INDEX "oauth_accounts_user_id_idx" ON "oauth_accounts" ("user_id");--> statement-breakpoint
 CREATE INDEX "organizations_name_index" ON "organizations" ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_created_at_index" ON "organizations" ("created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -389,6 +445,11 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_tenant_id_tenants_id_fkey"
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_updated_by_users_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_Ytb3N4m0pWsH_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_updated_by_users_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "chats" ADD CONSTRAINT "chats_tenant_id_organization_id_organizations_tenant_id_id_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "domains" ADD CONSTRAINT "domains_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "emails" ADD CONSTRAINT "emails_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "inactive_memberships" ADD CONSTRAINT "inactive_memberships_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
@@ -400,6 +461,12 @@ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fkey" FOR
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_updated_by_users_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_Yta3VHtyCTj4_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_updated_by_users_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_chat_id_chats_id_fkey" FOREIGN KEY ("chat_id") REFERENCES "chats"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_UVK9MHuyHLrZ_fkey" FOREIGN KEY ("tenant_id","organization_id") REFERENCES "organizations"("tenant_id","id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_tenant_id_tenants_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id");--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;--> statement-breakpoint
@@ -429,6 +496,24 @@ CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SEL
 CREATE POLICY "attachments_insert_policy" ON "attachments" AS PERMISSIVE FOR INSERT TO public WITH CHECK (true);--> statement-breakpoint
 CREATE POLICY "attachments_update_policy" ON "attachments" AS PERMISSIVE FOR UPDATE TO public USING (true);--> statement-breakpoint
 CREATE POLICY "attachments_delete_policy" ON "attachments" AS PERMISSIVE FOR DELETE TO public USING (true);--> statement-breakpoint
+CREATE POLICY "chats_select_policy" ON "chats" AS PERMISSIVE FOR SELECT TO public USING (
+  
+  COALESCE(current_setting('app.tenant_id', true), '') != ''
+  AND "chats"."tenant_id" = current_setting('app.tenant_id', true)::text
+
+);--> statement-breakpoint
+CREATE POLICY "chats_insert_policy" ON "chats" AS PERMISSIVE FOR INSERT TO public WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "chats_update_policy" ON "chats" AS PERMISSIVE FOR UPDATE TO public USING (true);--> statement-breakpoint
+CREATE POLICY "chats_delete_policy" ON "chats" AS PERMISSIVE FOR DELETE TO public USING (true);--> statement-breakpoint
+CREATE POLICY "messages_select_policy" ON "messages" AS PERMISSIVE FOR SELECT TO public USING (
+  
+  COALESCE(current_setting('app.tenant_id', true), '') != ''
+  AND "messages"."tenant_id" = current_setting('app.tenant_id', true)::text
+
+);--> statement-breakpoint
+CREATE POLICY "messages_insert_policy" ON "messages" AS PERMISSIVE FOR INSERT TO public WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "messages_update_policy" ON "messages" AS PERMISSIVE FOR UPDATE TO public USING (true);--> statement-breakpoint
+CREATE POLICY "messages_delete_policy" ON "messages" AS PERMISSIVE FOR DELETE TO public USING (true);--> statement-breakpoint
 CREATE POLICY "yjs_documents_select_policy" ON "yjs_documents" AS PERMISSIVE FOR SELECT TO public USING (
   
   COALESCE(current_setting('app.tenant_id', true), '') != ''

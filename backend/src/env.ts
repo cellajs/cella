@@ -20,7 +20,10 @@ dotenv({
  */
 export const env = createEnv({
   server: {
-    DEV_MODE: z.enum(['none', 'core', 'full']).default('core'),
+    NODB: z
+      .string()
+      .default('false')
+      .transform((v) => v === 'true'),
     DEBUG: z
       .string()
       .default('false')
@@ -81,9 +84,28 @@ export const env = createEnv({
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
 
+    SCW_AI_API_KEY: z.string().optional(),
+    AI_SECRET: z.string().min(16).optional(),
+    MODE: z.enum(['api', 'ai-worker', 'migrate']).default('api'),
+
+    // When true, the API server applies pending migrations + ensures DB roles
+    // on boot, before binding the port. Production sets this to 'false' so the
+    // serve path stays fast and migrations run as a separate one-shot
+    // (MODE=migrate) before the app rolls. Defaults to 'true' so local dev and
+    // tests keep their single-command boot behaviour.
+    RUN_MIGRATIONS_ON_BOOT: z
+      .string()
+      .default('true')
+      .transform((v) => v === 'true'),
+
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
+
+    // Build-time release identifier (git SHA from CI), baked into the image
+    // as an ENV. Surfaced via `/health` so the deploy verifier can confirm
+    // the running container matches the SHA CI just pushed.
+    RELEASE_SHA: z.string().default('unknown'),
   },
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   runtimeEnv: process.env,

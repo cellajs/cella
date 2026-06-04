@@ -80,6 +80,10 @@ BEGIN
     EXECUTE 'CREATE TRIGGER pages_immutable_keys_trigger BEFORE UPDATE ON pages FOR EACH ROW EXECUTE FUNCTION parentless_entity_immutable_keys()';
     EXECUTE 'DROP TRIGGER IF EXISTS attachments_immutable_keys_trigger ON attachments';
     EXECUTE 'CREATE TRIGGER attachments_immutable_keys_trigger BEFORE UPDATE ON attachments FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS chats_immutable_keys_trigger ON chats';
+    EXECUTE 'CREATE TRIGGER chats_immutable_keys_trigger BEFORE UPDATE ON chats FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys()';
+    EXECUTE 'DROP TRIGGER IF EXISTS messages_immutable_keys_trigger ON messages';
+    EXECUTE 'CREATE TRIGGER messages_immutable_keys_trigger BEFORE UPDATE ON messages FOR EACH ROW EXECUTE FUNCTION product_entity_immutable_keys()';
     EXECUTE 'DROP TRIGGER IF EXISTS memberships_immutable_keys_trigger ON memberships';
     EXECUTE 'CREATE TRIGGER memberships_immutable_keys_trigger BEFORE UPDATE ON memberships FOR EACH ROW EXECUTE FUNCTION membership_immutable_keys()';
     EXECUTE 'DROP TRIGGER IF EXISTS inactive_memberships_immutable_keys_trigger ON inactive_memberships';

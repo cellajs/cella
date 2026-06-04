@@ -55,7 +55,7 @@ export const zProductEntityBase = z.object({
   description: z.string().nullable(),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   updatedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
-  entityType: z.enum(['attachment', 'page']),
+  entityType: z.enum(['attachment', 'page', 'chat', 'message']),
   keywords: z.string(),
 });
 
@@ -89,7 +89,7 @@ export const zStxBase = z.object({
  */
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
-  entityType: z.enum(['attachment', 'page']).nullable(),
+  entityType: z.enum(['attachment', 'page', 'chat', 'message']).nullable(),
   resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),
@@ -121,7 +121,7 @@ export const zApiError = z.object({
   type: z.string(),
   status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
+  entityType: z.enum(['user', 'organization', 'attachment', 'page', 'chat', 'message']).optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
@@ -369,6 +369,8 @@ export const zOrganization = z.object({
         }),
         entities: z.object({
           attachment: z.number(),
+          chat: z.number(),
+          message: z.number(),
         }),
       })
       .optional(),
@@ -1187,6 +1189,8 @@ export const zGetPublicCountsResponse = z.object({
   organization: z.number(),
   attachment: z.number(),
   page: z.number(),
+  chat: z.number(),
+  message: z.number(),
 });
 
 export const zDeleteOrganizationsBody = z.object({
@@ -1252,6 +1256,8 @@ export const zCreateOrganizationsResponse = z.object({
                 }),
                 entities: z.object({
                   attachment: z.number(),
+                  chat: z.number(),
+                  message: z.number(),
                 }),
               })
               .optional(),
@@ -1763,7 +1769,7 @@ export const zGetPendingMembershipsResponse = z.object({
 
 export const zMarkSeenBody = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500),
-  entityType: z.enum(['attachment', 'page']),
+  entityType: z.enum(['attachment', 'page', 'chat', 'message']),
 });
 
 export const zMarkSeenPath = z.object({

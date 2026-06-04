@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
@@ -11,7 +11,7 @@ interface SendNewsletterInput {
   organizationIds: string[];
   subject: string;
   content: string;
-  roles: ('admin' | 'member')[];
+  roles: EntityRole[];
   toSelf?: boolean;
 }
 

@@ -17,3 +17,11 @@ export async function getPgBoss(): Promise<PgBoss> {
 export async function stopPgBoss(): Promise<void> {
   if (boss) await boss.stop({ graceful: true });
 }
+
+/** Total queued (not yet started) jobs across the worker's queues, for health reporting. */
+export async function getQueueDepth(): Promise<number> {
+  if (!boss) return 0;
+  const queues = ['ai-yjs', 'chat-retry'];
+  const sizes = await Promise.all(queues.map((name) => boss?.getQueue(name).then((q) => q?.queuedCount ?? 0)));
+  return sizes.reduce<number>((sum, n) => sum + (n ?? 0), 0);
+}

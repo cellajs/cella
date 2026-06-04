@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
-import { appConfig } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { generateId } from 'shared/entity-id';
 import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
@@ -166,7 +166,7 @@ export async function createSystemAdminUser(email: string, verified = true) {
 export async function createOrganizationAdminUser(
   email: string,
   organizationId?: string,
-  role: 'admin' | 'member' = 'admin',
+  role: EntityRole = 'admin',
   verified = true,
   tenantId = 'test01', // Default test tenant
 ) {

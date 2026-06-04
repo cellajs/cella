@@ -146,7 +146,7 @@
             "type": "string",
             "required": true,
             "description": "Entity type for all IDs in this batch",
-            "enum": ["attachment", "page"]
+            "enum": ["attachment", "page", "chat", "message"]
           }
         },
         "required": true,

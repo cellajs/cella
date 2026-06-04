@@ -1,6 +1,6 @@
 import type { ContextEntityType } from 'shared';
 
-type EntityRouteEntry = {
+export type EntityRouteEntry = {
   /** Route path template for this entity */
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */

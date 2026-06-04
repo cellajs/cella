@@ -37,7 +37,7 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   let instance: RateLimiterDrizzle | RateLimiterMemory;
 
   // Use in-memory rate limiter when no database is configured
-  if (env.DEV_MODE === 'none') {
+  if (env.NODB) {
     instance = new RateLimiterMemory(enforcedOptions);
   } else {
     instance = new RateLimiterDrizzle({

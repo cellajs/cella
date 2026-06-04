@@ -1,3 +1,5 @@
+import { appConfig } from 'shared';
+import { aiHandlers } from '#/modules/ai/ai-handlers';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';
@@ -18,6 +20,7 @@ import { tenantHandlers } from '#/modules/tenants/tenants-handlers';
 import { userHandlers } from '#/modules/user/user-handlers';
 import { yjsHandlers } from '#/modules/yjs/yjs-handlers';
 import baseApp from '#/server';
+import { emailPreviewHandlers } from '../emails/preview-route';
 
 // Define backend routes of your app
 baseApp.route('/auth/', authGeneralHandlers);
@@ -36,10 +39,16 @@ baseApp.route('/metrics', metricHandlers);
 baseApp.route('/', organizationHandlers);
 baseApp.route('/', pageHandlers);
 baseApp.route('/users', userHandlers);
+// Cross-tenant list routes
 // Tenant-scoped routes: /:tenantId/:organizationId/...
+baseApp.route('/:tenantId/:organizationId/chats', aiHandlers);
 baseApp.route('/:tenantId/:organizationId/attachments', attachmentHandlers);
 baseApp.route('/:tenantId/:organizationId/memberships', membershipHandlers);
 baseApp.route('/:tenantId/:organizationId/seen', seenHandlers);
 baseApp.route('/yjs', yjsHandlers);
+
+// TODO review
+// Dev-only email preview (local authoring + Storybook email stories)
+if (appConfig.mode !== 'production') baseApp.route('/dev/emails', emailPreviewHandlers);
 
 export default baseApp;

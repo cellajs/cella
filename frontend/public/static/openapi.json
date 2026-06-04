@@ -569,7 +569,9 @@
             "type": "string",
             "enum": [
               "attachment",
-              "page"
+              "page",
+              "chat",
+              "message"
             ]
           },
           "keywords": {
@@ -752,6 +754,8 @@
             "enum": [
               "attachment",
               "page",
+              "chat",
+              "message",
               null
             ]
           },
@@ -1000,7 +1004,9 @@
               "user",
               "organization",
               "attachment",
-              "page"
+              "page",
+              "chat",
+              "message"
             ]
           },
           "logId": {
@@ -2231,10 +2237,18 @@
                     "properties": {
                       "attachment": {
                         "type": "number"
+                      },
+                      "chat": {
+                        "type": "number"
+                      },
+                      "message": {
+                        "type": "number"
                       }
                     },
                     "required": [
-                      "attachment"
+                      "attachment",
+                      "chat",
+                      "message"
                     ]
                   }
                 },
@@ -2324,7 +2338,9 @@
               },
               "entities": {
                 "attachment": 178,
-                "page": 257
+                "page": 257,
+                "chat": 47,
+                "message": 21
               }
             }
           }
@@ -7983,13 +7999,21 @@
                     },
                     "page": {
                       "type": "number"
+                    },
+                    "chat": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "number"
                     }
                   },
                   "required": [
                     "user",
                     "organization",
                     "attachment",
-                    "page"
+                    "page",
+                    "chat",
+                    "message"
                   ]
                 },
                 "example": {
@@ -8149,10 +8173,18 @@
                                         "properties": {
                                           "attachment": {
                                             "type": "number"
+                                          },
+                                          "chat": {
+                                            "type": "number"
+                                          },
+                                          "message": {
+                                            "type": "number"
                                           }
                                         },
                                         "required": [
-                                          "attachment"
+                                          "attachment",
+                                          "chat",
+                                          "message"
                                         ]
                                       }
                                     },
@@ -8221,7 +8253,9 @@
                               },
                               "entities": {
                                 "attachment": 178,
-                                "page": 257
+                                "page": 257,
+                                "chat": 47,
+                                "message": 21
                               }
                             }
                           }
@@ -8309,7 +8343,9 @@
                           },
                           "entities": {
                             "attachment": 294,
-                            "page": 327
+                            "page": 327,
+                            "chat": 491,
+                            "message": 182
                           }
                         }
                       }
@@ -8365,7 +8401,9 @@
                           },
                           "entities": {
                             "attachment": 321,
-                            "page": 94
+                            "page": 94,
+                            "chat": 122,
+                            "message": 493
                           }
                         }
                       }
@@ -8713,7 +8751,9 @@
                           },
                           "entities": {
                             "attachment": 188,
-                            "page": 390
+                            "page": 390,
+                            "chat": 423,
+                            "message": 413
                           }
                         }
                       }
@@ -8769,7 +8809,9 @@
                           },
                           "entities": {
                             "attachment": 1,
-                            "page": 272
+                            "page": 272,
+                            "chat": 153,
+                            "message": 264
                           }
                         }
                       }
@@ -8925,7 +8967,9 @@
                       },
                       "entities": {
                         "attachment": 178,
-                        "page": 257
+                        "page": 257,
+                        "chat": 47,
+                        "message": 21
                       }
                     }
                   }
@@ -9185,7 +9229,9 @@
                       },
                       "entities": {
                         "attachment": 178,
-                        "page": 257
+                        "page": 257,
+                        "chat": 47,
+                        "message": 21
                       }
                     }
                   }
@@ -12640,7 +12686,9 @@
                     "type": "string",
                     "enum": [
                       "attachment",
-                      "page"
+                      "page",
+                      "chat",
+                      "message"
                     ],
                     "description": "Entity type for all IDs in this batch"
                   }
@@ -12864,6 +12912,6 @@
     }
   },
   "webhooks": {},
-  "x-diff-hash": "e3b0c44298fc1c14",
-  "x-generated-at": "2026-06-04T10:15:31.548Z"
+  "x-diff-hash": "8e33a5b04baa6446",
+  "x-generated-at": "2026-06-04T13:26:12.891Z"
 }

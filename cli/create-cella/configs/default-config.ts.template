@@ -7,9 +7,9 @@
  * and company details are replaced with safe placeholder values.
  *
  * NOTE: This file is NOT compiled or imported — it is copied and interpolated
- * as plain text. The import path below is relative to `shared/` (its destination).
+ * as plain text. The import path below is relative to `shared/config/` (its destination).
  */
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from './src/builder/types';
+import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from '../src/builder/types';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';

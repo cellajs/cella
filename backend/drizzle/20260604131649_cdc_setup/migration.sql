@@ -19,12 +19,12 @@ BEGIN
   -- 1. Create or update publication
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
-      CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, pages, requests, memberships, inactive_memberships, tenants;
+      CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, pages, chats, messages, requests, memberships, inactive_memberships, tenants;
       RAISE NOTICE 'Created publication cdc_pub';
     ELSE
       -- Publication exists — replace with current table list
       RAISE NOTICE 'Publication cdc_pub already exists, syncing tables...';
-      ALTER PUBLICATION cdc_pub SET TABLE users, organizations, attachments, pages, requests, memberships, inactive_memberships, tenants;
+      ALTER PUBLICATION cdc_pub SET TABLE users, organizations, attachments, pages, chats, messages, requests, memberships, inactive_memberships, tenants;
       RAISE NOTICE 'Publication tables synced';
     END IF;
   EXCEPTION WHEN OTHERS THEN
@@ -37,6 +37,8 @@ BEGIN
     ALTER TABLE organizations REPLICA IDENTITY FULL;
     ALTER TABLE attachments REPLICA IDENTITY FULL;
     ALTER TABLE pages REPLICA IDENTITY FULL;
+    ALTER TABLE chats REPLICA IDENTITY FULL;
+    ALTER TABLE messages REPLICA IDENTITY FULL;
     ALTER TABLE requests REPLICA IDENTITY FULL;
     ALTER TABLE memberships REPLICA IDENTITY FULL;
     ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;

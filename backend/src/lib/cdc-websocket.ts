@@ -56,6 +56,64 @@ const IDLE_TIMEOUT_MS = 90_000;
 /** Ping interval in ms */
 const PING_INTERVAL_MS = 30_000;
 
+/** Strip an IPv4-mapped IPv6 prefix (e.g. `::ffff:10.0.0.9` → `10.0.0.9`). */
+function normalizeIp(ip: string): string {
+  return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+}
+
+/** Loopback — co-located deploys (standalone Compose / single pod). */
+function isLoopbackIp(ip: string): boolean {
+  return ip === '127.0.0.1' || ip === '::1';
+}
+
+/** Scaleway VPC subnet 10.0.0.0/24 (infra/modules/network.ts). */
+function isVpcIp(ip: string): boolean {
+  return /^10\.0\.0\.\d{1,3}$/.test(ip);
+}
+
+/**
+ * Docker bridge private ranges (172.16.0.0/12, 192.168.0.0/16) — the network
+ * the per-VM Caddy `ingress` container runs on. The local ingress is the only
+ * thing that can be the direct TCP peer when a request is proxied.
+ */
+function isDockerBridgeIp(ip: string): boolean {
+  return /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(ip) || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip);
+}
+
+/**
+ * Allowed CDC Worker source IPs in production.
+ *
+ * Topology: the CDC worker runs on its own VM and connects over the Scaleway
+ * VPC (10.0.0.0/24) to the backend VM, where a per-VM Caddy `ingress` proxy
+ * owns host port 4000 and reverse-proxies to the backend app container (see
+ * infra/compose.yml + infra/ingress.Caddyfile). The app therefore sees the
+ * ingress container's Docker-bridge IP as the direct TCP peer, NOT the worker's
+ * VPC IP — so when the peer is the trusted local proxy we read the real client
+ * IP from `X-Forwarded-For` (set by our own ingress; Caddy's default empty
+ * `trusted_proxies` means it overwrites any client-supplied value, so it can't
+ * be spoofed). The mandatory `x-cdc-secret` shared secret remains the primary
+ * authentication; this IP check is defense-in-depth.
+ */
+function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string | string[] | undefined): boolean {
+  if (!remoteIp) return false;
+  const peer = normalizeIp(remoteIp);
+
+  // Direct connection, no proxy in between (co-located Compose over loopback,
+  // or a direct VPC dial): the peer IS the worker.
+  if (isLoopbackIp(peer) || isVpcIp(peer)) return true;
+
+  // Behind the per-VM ingress proxy: the direct peer is the local Caddy on the
+  // Docker bridge. Trust X-Forwarded-For and validate the real client IP it
+  // reports is a loopback/VPC address.
+  if (isDockerBridgeIp(peer)) {
+    const xff = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+    const client = normalizeIp(xff?.split(',')[0]?.trim() ?? '');
+    return isLoopbackIp(client) || isVpcIp(client);
+  }
+
+  return false;
+}
+
 /**
  * CDC WebSocket Server — INTERNAL SERVICE ONLY.
  *
@@ -67,10 +125,28 @@ const PING_INTERVAL_MS = 30_000;
  * Security layers:
  * - Path-locked to `/internal/cdc` (all other paths → 404)
  * - Shared secret via `x-cdc-secret` header (min 16 chars, validated at startup)
- * - Loopback-only in production (rejects non-localhost connections)
+ * - Source-IP restricted in production: loopback or the Scaleway VPC /24,
+ *   read from X-Forwarded-For when reached through the per-VM Caddy ingress
+ *   (see `isAllowedCdcSource`)
  * - Single connection at a time (new connections replace existing ones)
  * - Idle timeout (90s) auto-closes stale connections
  */
+
+/** Self-reported CDC worker health payload pushed over the WS control channel. */
+export interface CdcWorkerHealth {
+  replicationStatus: string;
+  lastLsn: string | null;
+  messagesSent: number;
+  /** Whether PostgreSQL reports the replication slot as active (real WAL data-plane signal). */
+  slotActive?: boolean | null;
+  /** WAL bytes between the current LSN and the slot's confirmed flush LSN. */
+  lagBytes?: number | null;
+  /** ISO timestamp of the last applied DML change. */
+  lastEventAt?: string | null;
+  /** Whether the worker is currently replaying backlogged WAL. */
+  catchingUp?: boolean;
+}
+
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;
@@ -82,6 +158,7 @@ class CdcWebSocketServer {
   private _lastMessageAt: Date | null = null;
   private _messagesReceived = 0;
   private _parseErrors = 0;
+  private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
 
   /**
    * Attach WebSocket server to an existing HTTP server.
@@ -100,16 +177,17 @@ class CdcWebSocketServer {
         return;
       }
 
-      // In production, reject connections from non-loopback addresses.
-      // CDC Worker must be co-located (same host / same pod).
+      // In production, restrict to loopback (co-located: Compose / single pod)
+      // or the Scaleway VPC subnet (10.0.0.0/24) used by the multi-VM
+      // production infra — see infra/modules/network.ts. The worker reaches the
+      // app through the per-VM Caddy ingress, so the real client IP arrives in
+      // X-Forwarded-For while the socket peer is the local proxy.
       const remoteIp = request.socket.remoteAddress;
-      if (
-        env.NODE_ENV === 'production' &&
-        remoteIp !== '127.0.0.1' &&
-        remoteIp !== '::1' &&
-        remoteIp !== '::ffff:127.0.0.1'
-      ) {
-        logEvent(null, 'warn', 'CDC WebSocket rejected non-loopback connection', { ip: remoteIp });
+      if (env.NODE_ENV === 'production' && !isAllowedCdcSource(remoteIp, request.headers['x-forwarded-for'])) {
+        logEvent(null, 'warn', 'CDC WebSocket rejected disallowed source', {
+          ip: remoteIp,
+          forwardedFor: request.headers['x-forwarded-for'],
+        });
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
         socket.destroy();
         return;
@@ -278,6 +356,14 @@ class CdcWebSocketServer {
       return;
     }
 
+    if (message._control === 'health') {
+      const payload = message.payload as CdcWorkerHealth | undefined;
+      if (payload?.replicationStatus) {
+        this._workerHealth = { payload, receivedAt: new Date() };
+      }
+      return;
+    }
+
     logEvent(null, 'warn', 'Unknown CDC control message', { control: message._control });
   }
 
@@ -319,6 +405,12 @@ class CdcWebSocketServer {
     }
     this.currentConnection = null;
     this._cdcConnected = false;
+    this._workerHealth = null;
+  }
+
+  /** Latest CDC worker self-report received over the WS control channel. */
+  getWorkerHealth(): { payload: CdcWorkerHealth; receivedAt: Date } | null {
+    return this._workerHealth;
   }
 
   /**
@@ -344,11 +436,11 @@ class CdcWebSocketServer {
       } else {
         status = 'healthy'; // Just connected, no messages yet is OK
       }
-    } else if (env.DEV_MODE === 'full' || env.NODE_ENV === 'production') {
+    } else if (!env.NODB) {
       // CDC expected but not connected
       status = 'degraded';
     }
-    // In basic/core mode without CDC, status remains 'unknown' (not applicable)
+    // In NODB mode without CDC, status remains 'unknown' (not applicable)
 
     return {
       cdcConnected: this._cdcConnected,

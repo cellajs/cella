@@ -10,18 +10,16 @@ export default defineConfig({
     // Pin to a reviewed upstream commit. Bump via PR after reviewing the diff
     // (https://github.com/cellajs/cella/compare/<old>...<new>). CI enforces this
     // is set to defend against a compromised upstream branch.
-    upstreamPinnedSha: '7ec622f8ea864b392daf9b176966f78ab29d7f82',
-    upstreamRemoteName: 'cella-upstream',
+    // upstreamPinnedSha: '7ec622f8ea864b392daf9b176966f78ab29d7f82',
     workingBranch: 'development',
     syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
     fileLinkMode: 'file',
     // upstreamLocalPath: '../cella',
-    // upstreamRepo: 'cellajs/cella',
   },
 
-  // Downstream forks cella interacts with (for upstream template development).
+  // Top-down interaction with forks.
   // - pullBranch: branch cella pulls contributions from (contributions service)
   // - pushBranch: branch cella syncs changes into (forks service)
   forks: [

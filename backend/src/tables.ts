@@ -1,8 +1,10 @@
 import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { chatsTable } from '#/db/schema/chats';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
 import { membershipsTable } from '#/db/schema/memberships';
+import { messagesTable } from '#/db/schema/messages';
 import { organizationsTable } from '#/db/schema/organizations';
 import { pagesTable } from '#/db/schema/pages';
 import { requestsTable } from '#/db/schema/requests';
@@ -20,6 +22,8 @@ export const entityTables = {
   organization: organizationsTable,
   attachment: attachmentsTable,
   page: pagesTable,
+  chat: chatsTable,
+  message: messagesTable,
 } as const satisfies Record<string, ResolvableTable>;
 
 /** Resource types that are not entities but have activities logged. */

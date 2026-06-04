@@ -6,6 +6,7 @@
  */
 
 import { sql } from 'drizzle-orm';
+import type { EntityRole } from 'shared';
 import { baseDb as db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { mockOrganization } from '../../mocks/mock-organization';
@@ -67,7 +68,7 @@ export async function createOrgUser(
   tenantId: string,
   organizationId: string,
   label: string,
-  role: 'admin' | 'member' = 'member',
+  role: EntityRole = 'member',
 ) {
   const email = `${label}-user@security-test.com`;
 

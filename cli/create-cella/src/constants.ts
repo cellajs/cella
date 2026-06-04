@@ -101,7 +101,7 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
   const be = 4000 + portOffset;
 
   const header =
-    "import type { DeepPartial } from './src/builder/types';\nimport type _default from './config.default';\n";
+    "import type { DeepPartial } from '../src/builder/types';\nimport type _default from './config.default';\n";
 
   // Per-environment specs: optional imports + object props (= prefix → raw TS expression)
   const envs: Record<string, { imports?: string; props: Record<string, string | boolean> }> = {

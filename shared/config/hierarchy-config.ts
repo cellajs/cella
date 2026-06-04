@@ -33,4 +33,6 @@ export const hierarchy = createEntityHierarchy(roles)
   .context('organization', { parent: null, roles: roles.all })
   .product('attachment', { parent: 'organization' })
   .product('page', { parent: null, publicRead: 'always' })
+  .product('chat', { parent: 'organization' })
+  .product('message', { parent: 'organization' })
   .build();

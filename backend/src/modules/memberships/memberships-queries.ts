@@ -1,6 +1,6 @@
 import { and, count, eq, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { ContextEntityType } from 'shared';
+import type { ContextEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { emailsTable } from '#/db/schema/emails';
 import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
@@ -216,7 +216,7 @@ interface GetMembersListOpts {
   order?: 'asc' | 'desc';
   offset: number;
   limit: number;
-  role?: 'admin' | 'member';
+  role?: EntityRole;
   userIds?: string;
 }
 

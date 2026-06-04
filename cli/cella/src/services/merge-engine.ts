@@ -21,6 +21,7 @@ import {
   getWorktreePath,
   registerWorktree,
 } from '../utils/cleanup';
+import { resolveUpstream } from '../utils/config';
 import {
   batchGitRm,
   batchRestoreToHead,
@@ -391,7 +392,7 @@ export async function runMergeEngine(
   try {
     // Setup upstream remote
     onProgress?.('setting up upstream remote...');
-    const remoteName = config.settings.upstreamRemoteName || 'cella-upstream';
+    const { remoteName, pinnedSha } = resolveUpstream(config.settings);
     await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
     onStep?.('remote configured', `${upstreamRef} → ${config.settings.upstreamUrl}`);
 
@@ -401,7 +402,6 @@ export async function runMergeEngine(
 
     // When pinned, also fetch the exact SHA so it's guaranteed reachable even
     // if it predates a shallow branch fetch, then verify the ref resolves to it.
-    const pinnedSha = config.settings.upstreamPinnedSha;
     if (pinnedSha) {
       await fetchSha(forkPath, remoteName, pinnedSha);
       const resolved = await getCommitInfo(forkPath, upstreamRef);

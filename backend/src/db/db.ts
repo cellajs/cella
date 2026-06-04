@@ -28,7 +28,7 @@ const createPgConnection = (connectionString: string, max: number): PgDB =>
   });
 
 const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
-  if (env.DEV_MODE === 'none') {
+  if (env.NODB) {
     return { db: {} as unknown as DB };
   }
 

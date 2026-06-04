@@ -28,7 +28,7 @@ await initDocs(app);
 
 const main = async () => {
   const port = Number(env.PORT ?? '4000');
-  console.info(`${timestamp()} [startup] mode=${appConfig.mode} devMode=${env.DEV_MODE} port=${port}`);
+  console.info(`${timestamp()} [startup] mode=${appConfig.mode} nodb=${env.NODB} port=${port}`);
 
   if (!migrationDb) {
     throw new Error('DATABASE_ADMIN_URL required for migrations');
@@ -42,12 +42,17 @@ const main = async () => {
   }
 
   const { createDbRoles } = await import('../scripts/db/create-db-roles');
-  await createDbRoles();
 
-  console.info(`${timestamp()} [startup] Running migrations...`);
-  await pgMigrate(migrationDb, migrateConfig);
+  if (env.RUN_MIGRATIONS_ON_BOOT) {
+    await createDbRoles();
 
-  console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
+    console.info(`${timestamp()} [startup] Running migrations...`);
+    await pgMigrate(migrationDb, migrateConfig);
+
+    console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
+  } else {
+    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false — skipping migrations (run as MODE=migrate)`);
+  }
 
   registerCacheInvalidation();
 

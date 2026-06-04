@@ -19,14 +19,20 @@ BEGIN
   BEGIN
     -- Table ownership and FORCE RLS
     ALTER TABLE attachments OWNER TO admin_role;
+    ALTER TABLE chats OWNER TO admin_role;
+    ALTER TABLE messages OWNER TO admin_role;
     ALTER TABLE yjs_documents OWNER TO admin_role;
     ALTER TABLE activities OWNER TO admin_role;
 
     ALTER TABLE attachments FORCE ROW LEVEL SECURITY;
+    ALTER TABLE chats FORCE ROW LEVEL SECURITY;
+    ALTER TABLE messages FORCE ROW LEVEL SECURITY;
     ALTER TABLE yjs_documents FORCE ROW LEVEL SECURITY;
 
     -- Grants: runtime_role (subject to RLS)
     GRANT SELECT, INSERT, UPDATE, DELETE ON attachments TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON chats TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON messages TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON yjs_documents TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON organizations TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON memberships TO runtime_role;
@@ -58,6 +64,8 @@ BEGIN
     GRANT SELECT ON organizations TO cdc_role;
       GRANT SELECT (id, stx), UPDATE (seq, stx) ON attachments TO cdc_role;
     GRANT SELECT (id, stx), UPDATE (seq, stx) ON pages TO cdc_role;
+    GRANT SELECT (id, stx), UPDATE (seq, stx) ON chats TO cdc_role;
+    GRANT SELECT (id, stx), UPDATE (seq, stx) ON messages TO cdc_role;
 
 
     -- Grants: admin_role (full access)

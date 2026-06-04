@@ -1,4 +1,5 @@
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import type { EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { contextCountersTable } from '#/db/schema/context-counters';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -64,7 +65,7 @@ interface GetOrganizationsListOpts {
   offset: number;
   limit: number;
   excludeArchived?: boolean;
-  role?: 'admin' | 'member';
+  role?: EntityRole;
   includeCounts: boolean;
 }
 

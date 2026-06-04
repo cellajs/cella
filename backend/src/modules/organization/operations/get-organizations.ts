@@ -1,3 +1,4 @@
+import type { EntityRole } from 'shared';
 import type { AuthContext } from '#/core/context';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
@@ -11,7 +12,7 @@ interface GetOrganizationsInput {
   offset: number;
   limit: number;
   relatableUserId?: string;
-  role?: 'admin' | 'member';
+  role?: EntityRole;
   excludeArchived?: boolean;
   include: string[];
 }

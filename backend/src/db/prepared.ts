@@ -5,7 +5,7 @@
  * Only suitable for queries with a fixed shape that always run on baseDb
  * (not inside transactions).
  *
- * Skipped when DEV_MODE='none' (e.g. OpenAPI generation) where baseDb is a stub.
+ * Skipped when NODB is set (e.g. OpenAPI generation) where baseDb is a stub.
  */
 
 import { eq, sql } from 'drizzle-orm';

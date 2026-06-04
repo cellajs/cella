@@ -72,12 +72,6 @@ export interface SyncSettings {
   syncWithPackages?: boolean;
 
   /**
-   * GitHub repo identifier for the upstream repository (e.g., 'cellajs/cella').
-   * Used for building links to upstream files/commits in CLI output.
-   */
-  upstreamRepo?: string;
-
-  /**
    * How to link files in CLI output.
    * - 'commit' (default): Link to the commit that changed the file on GitHub.
    * - 'file': Link to the file in the repo at the upstream branch on GitHub.

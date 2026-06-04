@@ -73,7 +73,6 @@ terraform.tfstate*
 .terraform/
 .terraform.lock.hcl
 *.tfplan
-
 # Test coverage output
 coverage/
 *.lcov

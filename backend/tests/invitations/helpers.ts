@@ -1,3 +1,4 @@
+import type { EntityRole } from 'shared';
 import { generateId } from 'shared/entity-id';
 import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
@@ -12,7 +13,7 @@ import { mockPastIsoDate } from '../../mocks/utils';
 export async function createMembershipInvitationToken(
   user: UserModel,
   organizationId: string,
-  role: 'admin' | 'member',
+  role: EntityRole,
   tenantId: string,
 ) {
   // Create inactive membership first

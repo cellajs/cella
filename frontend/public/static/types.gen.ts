@@ -63,7 +63,7 @@ export type ProductEntityBase = {
     ({
       [key: string]: unknown;
     } | null);
-  entityType: 'attachment' | 'page';
+  entityType: 'attachment' | 'page' | 'chat' | 'message';
   keywords: string;
 };
 
@@ -108,7 +108,7 @@ export type StxBase = {
  */
 export type StreamNotification = {
   action: 'create' | 'update' | 'delete';
-  entityType: 'attachment' | 'page' | null;
+  entityType: 'attachment' | 'page' | 'chat' | 'message' | null;
   resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | null;
   subjectId: string | null;
   organizationId: string | null;
@@ -184,7 +184,7 @@ export type ApiError = {
   type: string;
   status: number;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  entityType?: 'user' | 'organization' | 'attachment' | 'page';
+  entityType?: 'user' | 'organization' | 'attachment' | 'page' | 'chat' | 'message';
   logId?: string;
   path?: string;
   method?: string;
@@ -432,6 +432,8 @@ export type Organization = {
       };
       entities: {
         attachment: number;
+        chat: number;
+        message: number;
       };
     };
   };
@@ -3461,6 +3463,8 @@ export type GetPublicCountsResponses = {
     organization: number;
     attachment: number;
     page: number;
+    chat: number;
+    message: number;
   };
 };
 
@@ -3590,6 +3594,8 @@ export type CreateOrganizationsResponses = {
             };
             entities: {
               attachment: number;
+              chat: number;
+              message: number;
             };
           };
         };
@@ -4958,7 +4964,7 @@ export type MarkSeenData = {
     /**
      * Entity type for all IDs in this batch
      */
-    entityType: 'attachment' | 'page';
+    entityType: 'attachment' | 'page' | 'chat' | 'message';
   };
   path: {
     tenantId: string;

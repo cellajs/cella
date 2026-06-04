@@ -12,7 +12,9 @@
             "user": { "type": "number", "required": true },
             "organization": { "type": "number", "required": true },
             "attachment": { "type": "number", "required": true },
-            "page": { "type": "number", "required": true }
+            "page": { "type": "number", "required": true },
+            "chat": { "type": "number", "required": true },
+            "message": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         },

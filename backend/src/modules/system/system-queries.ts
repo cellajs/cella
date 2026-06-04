@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
+import type { EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -108,7 +109,7 @@ export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts)
 
 interface FindNewsletterRecipientsOpts {
   organizationIds: string[];
-  roles: ('admin' | 'member')[];
+  roles: EntityRole[];
 }
 
 /** Find distinct newsletter recipients across organizations with matching roles. */

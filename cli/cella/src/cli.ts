@@ -9,6 +9,7 @@ import { select } from '@inquirer/prompts';
 import { Command } from 'commander';
 import type { CellaCliConfig, RuntimeConfig, SyncService } from './config/types';
 import pc from './utils/colors';
+import { resolveUpstream } from './utils/config';
 import { NAME, printHeader, VERSION } from './utils/display';
 import { printWarnings, validateOverrides } from './utils/overrides';
 
@@ -142,11 +143,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   }
 
   // Build runtime config
-  const remoteName = userConfig.settings.upstreamRemoteName || 'cella-upstream';
-  // If pinned, analyze/sync use the exact SHA. Otherwise track the branch tip.
-  const upstreamRef = userConfig.settings.upstreamPinnedSha
-    ? userConfig.settings.upstreamPinnedSha
-    : `${remoteName}/${userConfig.settings.upstreamBranch}`;
+  const { upstreamRef } = resolveUpstream(userConfig.settings);
 
   return {
     ...userConfig,

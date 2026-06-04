@@ -1,72 +1,110 @@
 import process from 'node:process';
 import { sql } from 'drizzle-orm';
-import { baseDb as db } from '#/db/db';
+import { getEventLoopLagMs } from 'shared/event-loop-monitor';
+import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
+import {
+  type HealthComponent,
+  type HealthResponse,
+  type HealthStatus,
+  mapApiComponent,
+  mapCdcComponent,
+  mapDatabaseComponent,
+  mapProbeComponent,
+  rollupStatus,
+} from '#/lib/health-helpers';
+import { extractAiDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
 
-export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
+export type { HealthResponse, HealthStatus };
 
-interface CdcHealthStatus {
-  cdcConnected: boolean;
-  lastMessageAt: string | null;
-  messagesReceived: number;
-  parseErrors: number;
-  status: 'healthy' | 'degraded' | 'unknown';
+/** Components that reflect the backend's own ability to serve; only these can drive an `unhealthy` rollup (503). */
+const CRITICAL_COMPONENTS = new Set(['api', 'database']);
+
+/** Check database connectivity with a timed `SELECT 1`. */
+async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
+  // No DB when NODB is set
+  if (env.NODB) return { connected: false, latencyMs: null };
+
+  const startedAt = Date.now();
+  try {
+    await baseDb.execute(sql`SELECT 1`);
+    return { connected: true, latencyMs: Date.now() - startedAt };
+  } catch {
+    return { connected: false, latencyMs: null };
+  }
 }
 
-interface HealthResponse {
-  status: HealthStatus;
-  uptime: number;
-  database: 'connected' | 'disconnected';
-  cdc: CdcHealthStatus;
-  memory: {
-    heapUsed: number;
-    heapTotal: number;
-    rss: number;
-  };
+/** Build the CDC component from the backend-side socket snapshot + the worker's pushed self-report. */
+function buildCdcComponent(): HealthComponent {
+  const socket = cdcWebSocketServer.getHealthStatus();
+  const report = cdcWebSocketServer.getWorkerHealth();
+  const worker = report
+    ? {
+        ...report.payload,
+        receivedAt: report.receivedAt.toISOString(),
+        ageMs: Date.now() - report.receivedAt.getTime(),
+      }
+    : null;
+  return mapCdcComponent(
+    {
+      cdcConnected: socket.cdcConnected,
+      lastMessageAt: socket.lastMessageAt,
+      messagesReceived: socket.messagesReceived,
+      parseErrors: socket.parseErrors,
+    },
+    worker,
+  );
 }
 
-/**
- * Check database connectivity with a simple SELECT 1 query.
- */
-async function checkDatabase(): Promise<boolean> {
-  // No DB in DEV_MODE=none
-  if (env.DEV_MODE === 'none') return false;
+/** Build the ai worker's own component (self-check) when this process IS the ai worker. */
+async function buildAiSelfComponent(): Promise<HealthComponent> {
+  const mode = env.SCW_AI_API_KEY ? 'active' : 'noop';
+  if (mode === 'noop') return { status: 'healthy', checkedVia: 'local', details: { mode, queueDepth: 0 } };
 
   try {
-    await db.execute(sql`SELECT 1`);
-    return true;
+    const { getQueueDepth } = await import('#/lib/pg-boss');
+    const queueDepth = await getQueueDepth();
+    return { status: 'healthy', checkedVia: 'local', details: { mode, queueDepth } };
   } catch {
-    return false;
+    return {
+      status: 'degraded',
+      checkedVia: 'local',
+      reason: 'queue_unavailable',
+      details: { mode, queueDepth: null },
+    };
   }
 }
 
 /**
- * Get backend health status with database connectivity and process metrics.
- * Similar to CDC health endpoint for consistency across services.
+ * Aggregate a structured, wide health report.
+ *
+ * Every dependency and sibling worker is a uniform `component` keyed by name.
+ * The api process grades its own runtime (`api`), checks the database, watches
+ * the pushed CDC report, and actively probes the yjs/ai workers. The ai worker
+ * process reports its own queue depth instead of probing itself.
  */
 export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
-  const dbConnected = await checkDatabase();
-  const memoryUsage = process.memoryUsage();
-  const cdc = cdcWebSocketServer.getHealthStatus();
+  const components: Record<string, HealthComponent> = {};
 
-  // Degraded if CDC is degraded, unhealthy if DB is down
-  let status: HealthStatus = 'healthy';
-  if (!dbConnected) status = 'unhealthy';
-  else if (cdc.status === 'degraded') status = 'degraded';
+  const dbCheck = await checkDatabase();
+  components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
+  components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
 
-  const response: HealthResponse = {
-    status,
-    uptime: Math.floor(process.uptime()),
-    database: dbConnected ? 'connected' : 'disconnected',
-    cdc,
-    memory: {
-      heapUsed: memoryUsage.heapUsed,
-      heapTotal: memoryUsage.heapTotal,
-      rss: memoryUsage.rss,
-    },
-  };
+  if (env.MODE === 'ai-worker') {
+    components.ai = await buildAiSelfComponent();
+  } else {
+    components.cdc = buildCdcComponent();
+    const [yjs, ai] = await Promise.all([
+      probeWorker(workerUrls.yjs).then((r) => mapProbeComponent(r, extractYjsDetails)),
+      probeWorker(workerUrls.ai).then((r) => mapProbeComponent(r, extractAiDetails)),
+    ]);
+    components.yjs = yjs;
+    components.ai = ai;
+  }
 
+  const status = rollupStatus(components, CRITICAL_COMPONENTS);
+  const response: HealthResponse = { status, uptime: Math.floor(process.uptime()), components };
   const httpStatus = status === 'unhealthy' ? 503 : 200;
   return { response, httpStatus };
 }
