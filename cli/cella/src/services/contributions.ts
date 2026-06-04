@@ -20,8 +20,9 @@ import {
   useState,
 } from '@inquirer/core';
 import { checkbox } from '@inquirer/prompts';
-import type { RuntimeConfig } from '../config/types';
+import type { FileStatus, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
+import { loadConfig } from '../utils/config';
 import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess, warningMark } from '../utils/display';
 import { getCurrentBranch, git } from '../utils/git';
 import { buildContribBranch, countDetection, detectContributableFiles } from './contrib-core';
@@ -38,6 +39,10 @@ interface ContribItem {
   ref: string;
   /** True if adopting this means deleting the file in cella */
   deleted: boolean;
+  /** Analyzer status from cella's POV (behind = fork ahead, diverged = both changed) */
+  status?: FileStatus;
+  /** Relative date of the fork's change (e.g. '3 days ago') */
+  changedAt?: string;
   /** Whether file is selected for acceptance */
   checked: boolean;
 }
@@ -180,7 +185,9 @@ const contribPrompt = createPrompt<ContribItem[], ContribPromptConfig>((config, 
       const cursor = isActive ? pc.cyan('❯') : ' ';
       const forkLabel = pc.dim(` (${item.fork})`);
       const delLabel = item.deleted ? pc.yellow(' [del]') : '';
-      const line = `${cursor} ${checkbox} ${item.path}${delLabel}${forkLabel}`;
+      const statusTag = item.status === 'diverged' ? pc.yellow(' ⚠ diverged') : '';
+      const dateLabel = item.changedAt ? pc.dim(` · ${item.changedAt}`) : '';
+      const line = `${cursor} ${checkbox} ${item.path}${delLabel}${statusTag}${forkLabel}${dateLabel}`;
       return isActive ? pc.cyan(line) : line;
     },
     pageSize,
@@ -292,7 +299,17 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   for (const { fork, resolvedPath } of selectedForks) {
     try {
       const forkRef = await fetchForkBranch(config.forkPath, resolvedPath, fork.pullBranch);
-      const detection = await detectContributableFiles(config.forkPath, baseRef, forkRef, config);
+
+      // Read the fork's own owned folders so its fork-specific modules aren't offered back
+      let forkTerritory: string[] = [];
+      try {
+        const forkConfig = await loadConfig(resolvedPath);
+        forkTerritory = forkConfig.overrides?.ignoredFolders ?? [];
+      } catch {
+        // Fork may not have a cella.config.ts — no extra territory to exclude
+      }
+
+      const detection = await detectContributableFiles(config.forkPath, baseRef, forkRef, config, forkTerritory);
       if (countDetection(detection) === 0) continue;
 
       const { branch, appliedFiles } = await buildContribBranch(
@@ -304,11 +321,30 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
       );
       if (appliedFiles.length === 0) continue;
 
+      const metaByPath = new Map(detection.files.map((f) => [f.path, f]));
       for (const path of [...detection.modified, ...detection.created]) {
-        allItems.push({ path, fork: fork.name, ref: branch, deleted: false, checked: false });
+        const meta = metaByPath.get(path);
+        allItems.push({
+          path,
+          fork: fork.name,
+          ref: branch,
+          deleted: false,
+          status: meta?.status,
+          changedAt: meta?.changedAt,
+          checked: false,
+        });
       }
       for (const path of detection.deleted) {
-        allItems.push({ path, fork: fork.name, ref: branch, deleted: true, checked: false });
+        const meta = metaByPath.get(path);
+        allItems.push({
+          path,
+          fork: fork.name,
+          ref: branch,
+          deleted: true,
+          status: meta?.status,
+          changedAt: meta?.changedAt,
+          checked: false,
+        });
       }
     } catch (error) {
       buildErrors.push(`${fork.name}: ${error instanceof Error ? error.message : 'unknown error'}`);

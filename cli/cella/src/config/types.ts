@@ -119,23 +119,24 @@ export interface CellaCliConfig {
   settings: SyncSettings;
 
   /**
-   * File overrides for controlling sync behavior per file/pattern.
+   * File overrides for controlling sync behavior per folder/file.
    */
   overrides?: {
     /**
-     * Files ignored entirely during sync — never synced (existing or new).
-     * Supports glob patterns (e.g., 'frontend/public/static/*').
-     * Local territory: upstream cannot add, modify, or delete these.
+     * Folders (or exact paths) the fork fully owns — never synced (existing or new).
+     * Directory prefixes, not globs: 'bench' matches 'bench/' and everything under it,
+     * 'README.md' matches that exact file.
+     * Local territory: upstream cannot add, modify, or delete anything under these.
      */
-    ignored?: string[];
+    ignoredFolders?: string[];
 
     /**
-     * Files pinned to fork — fork wins on conflicts.
-     * Exact paths only (no wildcards - use ignored for patterns).
+     * Exact files pinned to fork — fork wins on conflicts.
+     * Exact paths only (no wildcards - use ignoredFolders for whole folders).
      * Non-conflicting upstream changes merge normally.
      * If fork deleted a pinned file, deletion is respected.
      */
-    pinned?: string[];
+    pinnedFiles?: string[];
   };
 
   /**

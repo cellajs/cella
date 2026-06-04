@@ -30,23 +30,22 @@ export default defineConfig({
 
   // File overrides
   overrides: {
-    // TODO consier only suppor directories for clarity: ignoredFolders and pinnedFiles?
-    // Files and directories to be fully ignored during sync
-    ignored: [
+    // Folders (or exact paths) the fork fully owns — never synced (existing or new)
+    ignoredFolders: [
       "README.md",
-      "bench/**",
-      "shared/config/**",
-      "infra/Pulumi.*.yaml",
-      "frontend/public/static/docs.gen/**",
-      "frontend/public/static/icons/**",
-      "frontend/public/static/images/**",
-      "frontend/public/static/logo/**",
-      "frontend/public/static/screenshots/**",
-      "frontend/src/modules/common/bg-animation/**",
-      "backend/drizzle/**",
+      "bench",
+      "sdk/gen",
+      "shared/config",
+      "frontend/public/static/docs.gen",
+      "frontend/public/static/icons",
+      "frontend/public/static/images",
+      "frontend/public/static/logo",
+      "frontend/public/static/screenshots",
+      "frontend/src/modules/common/bg-animation",
+      "backend/drizzle",
     ],
-    // Files and directories pinned to fork; prefer fork version during merge conflicts
-    pinned: [
+    // Exact files pinned to fork; prefer fork version during merge conflicts
+    pinnedFiles: [
       "package.json",
       "pnpm-lock.yaml",
       "backend/compose.yaml",

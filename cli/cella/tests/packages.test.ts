@@ -80,7 +80,7 @@ describe('packages merge', () => {
         mergeStrategy: 'squash',
         ...(options?.packageJsonSync ? { packageJsonSync: options.packageJsonSync } : {}),
       },
-      overrides: { pinned: [], ignored: [] },
+      overrides: { pinnedFiles: [], ignoredFolders: [] },
       forkPath,
       upstreamRef: 'cella-upstream/main',
       service: 'packages',
