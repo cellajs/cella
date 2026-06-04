@@ -40,7 +40,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
     <div className="relative flex min-h-0 flex-1 flex-col">
       <ScrollArea className="min-h-0 flex-1" viewportRef={bridgedViewportRef}>
         <div ref={contentRef} className="flex min-h-full flex-col space-y-4 px-3 py-4">
-          {messages.length === 0 && !isLoading && <ContentPlaceholder icon={BotIcon} title="c:ai_manage_tasks.text" />}
+          {messages.length === 0 && !isLoading && <ContentPlaceholder icon={BotIcon} title="c:ai_empty_conversation" />}
 
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />

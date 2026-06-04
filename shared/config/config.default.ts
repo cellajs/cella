@@ -163,6 +163,8 @@ export const config = {
     attachments: 40,
     pages: 100,
     pendingMemberships: 20,
+    chats: 40,
+    messages: 100,
   },
 
   jsonBodyLimit: 1 * 1024 * 1024,

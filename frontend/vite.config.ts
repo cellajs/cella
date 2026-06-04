@@ -1,0 +1,211 @@
+import reactScan from '@react-scan/vite-plugin-react-scan';
+import terser from '@rollup/plugin-terser';
+import tailwindcss from '@tailwindcss/vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import path from 'node:path';
+// import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig, Plugin, type UserConfig } from 'vite';
+import { createHtmlPlugin } from 'vite-plugin-html';
+import { VitePWA } from 'vite-plugin-pwa';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { appConfig } from '../shared';
+// import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+
+import { sdkWatch } from './vite/sdk-watch';
+import { localesHMR } from './vite/locales-hmr';
+
+const isStorybook = process.env.STORYBOOK === 'true';
+const isDev = appConfig.mode === 'development';
+const frontendUrl = new URL(appConfig.frontendUrl);
+
+// Content Security Policy — emitted as <meta http-equiv> into index.html.
+// Note: frame-ancestors/X-Frame-Options/HSTS cannot be set via meta and remain a
+// platform-level gap on Edge Services + S3 (documented in infra/README.md).
+const cspOrigins = {
+  api: new URL(appConfig.backendUrl).origin,
+  yjs: new URL(appConfig.yjsUrl).origin.replace(/^http/, 'ws'),
+  ai: new URL(appConfig.aiUrl).origin,
+  s3: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
+};
+const csp = [
+  `default-src 'self'`,
+  `script-src 'self' *.gleap.io`,
+  `style-src 'self' 'unsafe-inline'`,
+  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3} *.gleap.io wss://ws.gleap.io`,
+  `img-src 'self' blob: https: data:`,
+  `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io`,
+  `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
+  `font-src 'self' data:`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+].join('; ').replace(/\s+/g, ' ').trim();
+
+const viteConfig = {
+  logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
+  server: {
+    host: '0.0.0.0',
+    port: Number(frontendUrl.port),
+    strictPort: true,
+    watch: {
+      ignored: ['**/backend/**', '**/sdk/**'],
+    },
+  },
+  preview: {
+    port: Number(frontendUrl.port),
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        codeSplitting: {
+          minSize: 50 * 1024, // Minimum chunk size of 50 Kb
+        },
+        manualChunks(id) {
+          if (id.includes('shiki')) {
+            return 'shiki'; // Ensures all shiki-related modules go into one chunk
+          }
+        },
+      },
+    },
+    sourcemap: isDev ? false : true,
+    manifest: true,
+    minify: isDev ? false : 'esbuild',
+  },
+  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
+  optimizeDeps: {
+    exclude: ['sdk'],
+  },
+  clearScreen: false,
+  plugins: [
+    // TanStackRouterVite(),
+    react(),
+    babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
+    tailwindcss(),
+    viteStaticCopy({
+      targets: [
+        { src: '../locales/**/*', dest: 'locales' },
+        { src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', dest: '' },
+      ],
+    }),
+    createHtmlPlugin({
+      template: './index.html',
+      inject: {
+        data: {
+          title: appConfig.name,
+          description: appConfig.description,
+          keywords: appConfig.keywords,
+          author: appConfig.company.name,
+          color: appConfig.themeColor,
+          url: appConfig.frontendUrl,
+          apiUrl: appConfig.backendUrl,
+          csp,
+        },
+      },
+    }),
+    // Terser removes console.debug — skip in dev for faster builds
+    ...(isDev
+      ? []
+      : [
+          terser({
+            compress: {
+              pure_funcs: ['console.debug'],
+            },
+          }) as Plugin,
+        ]),
+    // visualizer({ open: true, gzipSize: true }),
+  ],
+  resolve: {
+    dedupe: ['yjs'],
+    alias: {
+      '#json': path.resolve(__dirname, '../json'),
+      '~': path.resolve(__dirname, './src'),
+    },
+  },
+  define: {
+    'process.env': {
+      NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+    },
+    // Injected into sw.ts for periodic badge sync
+    '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
+  },
+} satisfies UserConfig;
+
+// Setup PWA with custom service worker (injectManifest) for periodic badge sync
+viteConfig.plugins?.push(
+  VitePWA({
+    disable: !appConfig.has.pwa,
+    strategies: 'injectManifest',
+    srcDir: 'src',
+    filename: 'sw.ts',
+    devOptions: {
+      enabled: false,
+      navigateFallback: 'index.html',
+      suppressWarnings: true,
+    },
+    manifest: {
+      name: appConfig.name,
+      short_name: appConfig.name,
+      description: appConfig.description,
+      theme_color: '#222222',
+      icons: [
+        {
+          src: '/static/icons/icon-192x192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: '/static/icons/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any',
+        },
+        {
+          src: '/static/icons/icon-512x512.svg',
+          sizes: '512x512',
+          type: 'image/svg+xml',
+          purpose: 'any',
+        },
+        {
+          src: '/static/icons/maskable-icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    },
+    injectManifest: {
+      globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
+      globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
+      maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
+    },
+  })
+);
+
+// Enable HTTPS in development if the frontend URL uses it
+if (appConfig.frontendUrl.includes('https')) {
+  viteConfig.plugins?.push(basicSsl());
+}
+
+// Enable additional plugins only in development mode
+if (appConfig.mode === 'development' && !isStorybook) {
+  viteConfig.plugins?.push(
+    localesHMR({
+      srcDir: path.resolve(__dirname, '../locales'),
+      outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
+      merge: { target: 'common', sources: ['app'] },
+      verbose: false,
+    }),
+    sdkWatch(),
+    reactScan({
+      enable: false,
+      scanOptions: {
+        showToolbar: false,
+      },
+    })
+  );
+}
+
+// https://vitejs.dev/config/
+export default defineConfig(viteConfig);

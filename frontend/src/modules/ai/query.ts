@@ -59,11 +59,9 @@ export const chatsListQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   archived = 'false',
-  workspaceId,
-  projectId,
   limit = chatsLimit,
 }: ChatsListParams) => {
-  const filters = { q, sort, order, archived, workspaceId, projectId };
+  const filters = { q, sort, order, archived };
 
   return queryOptions({
     queryKey: chatKeys.list.filtered(organizationId, filters),
@@ -76,8 +74,6 @@ export const chatsListQueryOptions = ({
           sort,
           order,
           archived,
-          workspaceId,
-          projectId,
           limit: String(limit),
         },
       });

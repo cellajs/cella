@@ -119,6 +119,38 @@ export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
 /** Entity ID column key for a specific entity type */
 export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
+/******************************************************************************
+ * CONTEXT RELATION TYPES
+ * Derived from the hierarchy's phantom parent/related maps. Used to generate
+ * context-entity id columns on product/context tables in a fork-agnostic way.
+ ******************************************************************************/
+
+/** Type-level map of each entity to its strict parent (null = root). */
+type HierarchyParentMap = typeof hierarchy._parentMap;
+
+/** Type-level map of each entity to the union of its related (non-ancestor) contexts. */
+type HierarchyRelatedMap = typeof hierarchy._relatedMap;
+
+/**
+ * Strict ancestor context chain for an entity, resolved recursively via the parent map.
+ * Example: `AncestorContextType<'task'>` → `'project' | 'organization'`.
+ */
+export type AncestorContextType<E extends string> = E extends keyof HierarchyParentMap
+  ? HierarchyParentMap[E] extends infer P
+    ? P extends string
+      ? P | AncestorContextType<P>
+      : never
+    : never
+  : never;
+
+/**
+ * Related (non-ancestor) context types declared for an entity via `relatedContexts`.
+ * Example (Raak): `RelatedContextType<'chat'>` → `'workspace' | 'project'`.
+ */
+export type RelatedContextType<E extends string> = E extends keyof HierarchyRelatedMap
+  ? HierarchyRelatedMap[E]
+  : never;
+
 /** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 

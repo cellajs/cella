@@ -17,8 +17,6 @@ export const findChatsByUser = async (
     limit: number;
     offset: number;
     order: 'asc' | 'desc';
-    workspaceId?: string;
-    projectId?: string;
   },
 ) => {
   const { db, organizationId } = ctx.var;
@@ -28,8 +26,6 @@ export const findChatsByUser = async (
     eq(chatsTable.organizationId, organizationId),
     eq(chatsTable.userId, opts.userId),
     opts.archived ? undefined : isNull(chatsTable.archivedAt),
-    opts.workspaceId ? eq(chatsTable.workspaceId, opts.workspaceId) : undefined,
-    opts.projectId ? eq(chatsTable.projectId, opts.projectId) : undefined,
   );
 
   const [items, [{ total }]] = await Promise.all([

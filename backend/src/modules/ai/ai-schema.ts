@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { chatsTable } from '#/db/schema/chats';
 import { messagesTable } from '#/db/schema/messages';
+import { relatedContextShape } from '#/db/utils/context-relation-schema';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { maxLength, paginationQuerySchema, stxBaseSchema } from '#/schemas';
 
@@ -30,8 +31,7 @@ export const messageSchema = z
 
 export const chatCreateBodySchema = z.object({
   content: z.string().min(1).max(maxLength.html),
-  workspaceId: z.string().uuid().optional(),
-  projectId: z.string().uuid().optional(),
+  ...relatedContextShape('chat'),
 });
 
 export const messageCreateBodySchema = z.object({
@@ -47,8 +47,7 @@ export const chatListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt', 'updatedAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('desc').optional(),
   archived: z.enum(['true', 'false']).default('false').optional(),
-  workspaceId: z.string().uuid().optional(),
-  projectId: z.string().uuid().optional(),
+  ...relatedContextShape('chat'),
 });
 
 export const messageListQuerySchema = paginationQuerySchema.extend({

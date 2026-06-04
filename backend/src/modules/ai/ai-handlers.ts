@@ -16,13 +16,11 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 // biome-ignore lint/suspicious/noExplicitAny: SSE streaming bypasses Hono typed response
 app.openapi(aiRoutes.createChat, async (ctx): Promise<any> => {
-  const { content, workspaceId, projectId } = ctx.req.valid('json');
-  const result = await createChatOp(ctx, { content, workspaceId, projectId });
+  const { content } = ctx.req.valid('json');
+  const result = await createChatOp(ctx, { content });
   assertSuccess(result, 'chat');
   return streamChatResponse(ctx, result.data.chatId, {
     emitChatCreated: true,
-    workspaceId,
-    projectId,
   });
 });
 
@@ -45,10 +43,7 @@ app.openapi(aiRoutes.sendMessage, async (ctx): Promise<any> => {
   const chatId = ctx.req.param('id');
   const result = await sendMessageOp(ctx, chatId, { content });
   assertSuccess(result, 'message');
-  return streamChatResponse(ctx, chatId, {
-    workspaceId: result.data.workspaceId ?? undefined,
-    projectId: result.data.projectId ?? undefined,
-  });
+  return streamChatResponse(ctx, chatId);
 });
 
 app.openapi(aiRoutes.updateChat, async (ctx) => {

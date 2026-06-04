@@ -468,6 +468,67 @@ export type Page = {
 };
 
 /**
+ * An AI chat session scoped to a user within an organization.
+ */
+export type Chat = {
+  createdAt: string;
+  id: string;
+  entityType: 'chat';
+  tenantId: string;
+  name: string;
+  updatedAt: string | null;
+  description: string | null;
+  keywords: string;
+  seq: number;
+  organizationId: string;
+  userId: string | null;
+  model: string;
+  archivedAt: string | null;
+  stx: StxBase;
+};
+
+/**
+ * A single message within a chat session.
+ */
+export type Message = {
+  createdAt: string;
+  id: string;
+  entityType: 'message';
+  tenantId: string;
+  name: string;
+  updatedAt: string | null;
+  description: string | null;
+  keywords: string;
+  seq: number;
+  organizationId: string;
+  chatId: string;
+  userId: string | null;
+  role: string;
+  parts:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
+  model: string | null;
+  status: string;
+  usage:
+    | string
+    | number
+    | boolean
+    | null
+    | {
+        [key: string]: unknown;
+      }
+    | Array<unknown>;
+  error: string | null;
+  stx: StxBase;
+};
+
+/**
  * A product entity for file attachment metadata.
  */
 export type Attachment = {
@@ -4209,6 +4270,335 @@ export type GetUserResponses = {
 };
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+
+export type DeleteChatsData = {
+  body?: {
+    ids: Array<string>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/chats';
+};
+
+export type DeleteChatsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteChatsError = DeleteChatsErrors[keyof DeleteChatsErrors];
+
+export type DeleteChatsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type DeleteChatsResponse = DeleteChatsResponses[keyof DeleteChatsResponses];
+
+export type GetChatsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    q?: string;
+    sort?: 'createdAt' | 'updatedAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    seqCursor?: string;
+    archived?: 'true' | 'false';
+  };
+  url: '/{tenantId}/{organizationId}/chats';
+};
+
+export type GetChatsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetChatsError = GetChatsErrors[keyof GetChatsErrors];
+
+export type GetChatsResponses = {
+  /**
+   * Chats
+   */
+  200: {
+    items: Array<Chat>;
+    total: number;
+  };
+};
+
+export type GetChatsResponse = GetChatsResponses[keyof GetChatsResponses];
+
+export type CreateChatData = {
+  body: {
+    content: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/chats';
+};
+
+export type CreateChatErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateChatError = CreateChatErrors[keyof CreateChatErrors];
+
+export type CreateChatResponses = {
+  /**
+   * SSE stream with assistant response
+   */
+  200: unknown;
+};
+
+export type GetMessagesData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: {
+    q?: string;
+    sort?: 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    seqCursor?: string;
+  };
+  url: '/{tenantId}/{organizationId}/chats/{id}/messages';
+};
+
+export type GetMessagesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetMessagesError = GetMessagesErrors[keyof GetMessagesErrors];
+
+export type GetMessagesResponses = {
+  /**
+   * Messages
+   */
+  200: {
+    items: Array<Message>;
+    total: number;
+  };
+};
+
+export type GetMessagesResponse = GetMessagesResponses[keyof GetMessagesResponses];
+
+export type SendMessageData = {
+  body: {
+    content: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/chats/{id}/messages';
+};
+
+export type SendMessageErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SendMessageError = SendMessageErrors[keyof SendMessageErrors];
+
+export type SendMessageResponses = {
+  /**
+   * SSE stream with assistant response
+   */
+  200: unknown;
+};
+
+export type UpdateChatData = {
+  body: {
+    name?: string;
+    archived?: boolean;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/chats/{id}';
+};
+
+export type UpdateChatErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateChatError = UpdateChatErrors[keyof UpdateChatErrors];
+
+export type UpdateChatResponses = {
+  /**
+   * Chat updated
+   */
+  200: Chat;
+};
+
+export type UpdateChatResponse = UpdateChatResponses[keyof UpdateChatResponses];
 
 export type DeleteAttachmentsData = {
   body: {

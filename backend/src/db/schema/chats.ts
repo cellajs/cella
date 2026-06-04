@@ -3,6 +3,7 @@ import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
+import { contextRelationColumns } from '#/db/utils/context-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
 /**
@@ -14,7 +15,7 @@ export const chatsTable = snakeCase.table(
   'chats',
   {
     ...productEntityColumns('chat'),
-    organizationId: uuid().notNull(),
+    ...contextRelationColumns('chat'),
     userId: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
     model: varchar({ length: maxLength.field }).notNull().default(''),
     archivedAt: timestamp('archived_at', { mode: 'string' }),

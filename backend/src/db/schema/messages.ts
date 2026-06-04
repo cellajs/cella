@@ -4,6 +4,7 @@ import { chatsTable } from '#/db/schema/chats';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
+import { contextRelationColumns } from '#/db/utils/context-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
 /**
@@ -17,7 +18,7 @@ export const messagesTable = snakeCase.table(
   'messages',
   {
     ...productEntityColumns('message'),
-    organizationId: uuid().notNull(),
+    ...contextRelationColumns('message'),
     chatId: uuid()
       .notNull()
       .references(() => chatsTable.id, { onDelete: 'cascade' }),

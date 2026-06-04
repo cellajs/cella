@@ -41,11 +41,15 @@ interface ContextEntry<R extends string = string> {
   parent: string | null;
   roles: readonly R[];
   publicRead?: ContextPublicReadMode;
+  /** Non-ancestor context entities referenced as optional denormalized columns. */
+  relatedContexts?: readonly string[];
 }
 interface ProductEntry {
   kind: 'product';
   parent: string | null;
   publicRead?: PublicReadMode;
+  /** Non-ancestor context entities referenced as optional denormalized columns. */
+  relatedContexts?: readonly string[];
 }
 type EntityEntry = UserEntry | ContextEntry | ProductEntry;
 
@@ -54,12 +58,14 @@ export interface ContextEntityView<R extends string = string> {
   readonly parent: string | null;
   readonly roles: readonly R[];
   readonly publicRead?: ContextPublicReadMode;
+  readonly relatedContexts?: readonly string[];
 }
 
 export interface ProductEntityView {
   readonly kind: 'product';
   readonly parent: string | null;
   readonly publicRead?: PublicReadMode;
+  readonly relatedContexts?: readonly string[];
 }
 
 export interface UserEntityView { readonly kind: 'user' }
@@ -74,55 +80,109 @@ class EntityHierarchyBuilder<
   TContexts extends string = never,
   TProducts extends string = never,
   TParentlessProducts extends string = never,
+  TParentMap extends Record<string, string | null> = Record<never, never>,
+  TRelatedMap extends Record<string, string> = Record<never, never>,
 > {
-  private readonly entities = new Map<string, EntityEntry>();
+  private readonly entities: Map<string, EntityEntry>;
   private readonly roles: TRoles;
-  private hasUser = false;
 
-  constructor(roles: TRoles) {
+  constructor(roles: TRoles, entities?: ReadonlyMap<string, EntityEntry>) {
     this.roles = roles;
+    this.entities = new Map(entities);
+  }
+
+  /** Copy the current entities and add one more — basis for immutable, cast-free chaining. */
+  private withEntity(name: string, entry: EntityEntry): Map<string, EntityEntry> {
+    const entities = new Map(this.entities);
+    entities.set(name, entry);
+    return entities;
   }
 
   /** Add user entity (required, once). */
-  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts> {
-    if (this.hasUser) throw new Error('EntityHierarchy: user() can only be called once');
-    this.hasUser = true;
-    this.entities.set('user', { kind: 'user' });
-    return this;
+  user(): EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap> {
+    if (this.entities.has('user')) throw new Error('EntityHierarchy: user() can only be called once');
+    return new EntityHierarchyBuilder<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap>(
+      this.roles,
+      this.withEntity('user', { kind: 'user' }),
+    );
   }
 
   /** Add a context entity with parent reference and roles. */
-  context<N extends string>(
+  context<N extends string, P extends TContexts | null, const RC extends readonly TContexts[] = []>(
     name: N,
-    options: { parent: TContexts | null; roles: readonly RoleFromRegistry<TRoles>[]; publicRead?: ContextPublicReadMode },
-  ): EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts> {
+    options: { parent: P; roles: readonly RoleFromRegistry<TRoles>[]; publicRead?: ContextPublicReadMode; relatedContexts?: RC },
+  ): EntityHierarchyBuilder<
+    TRoles,
+    TContexts | N,
+    TProducts,
+    TParentlessProducts,
+    TParentMap & { [K in N]: P },
+    TRelatedMap & { [K in N]: RC[number] }
+  > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'context');
     this.validateRoles(name, options.roles);
-    this.entities.set(name, { kind: 'context', parent: options.parent, roles: options.roles, publicRead: options.publicRead });
-    return this as EntityHierarchyBuilder<TRoles, TContexts | N, TProducts, TParentlessProducts>;
+    this.validateRelatedContexts(name, options.parent, options.relatedContexts);
+    return new EntityHierarchyBuilder<
+      TRoles,
+      TContexts | N,
+      TProducts,
+      TParentlessProducts,
+      TParentMap & { [K in N]: P },
+      TRelatedMap & { [K in N]: RC[number] }
+    >(
+      this.roles,
+      this.withEntity(name, {
+        kind: 'context',
+        parent: options.parent,
+        roles: options.roles,
+        publicRead: options.publicRead,
+        relatedContexts: options.relatedContexts,
+      }),
+    );
   }
 
-  /** Add a product entity with parent reference. Products with parent: null tracked as TParentlessProducts. */
-  product<N extends string>(
+  /**
+   * Add a product entity. `parent: null` marks a parentless (tenant-scoped only) product;
+   * a context parent links it into that context's ancestor chain. Optional `relatedContexts`
+   * declare non-ancestor context references (nullable id columns).
+   */
+  product<N extends string, P extends TContexts | null, const RC extends readonly TContexts[] = []>(
     name: N,
-    options: { parent: null; publicRead?: PublicReadMode },
-  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts | N>;
-  product<N extends string>(
-    name: N,
-    options: { parent: TContexts; publicRead?: PublicReadMode },
-  ): EntityHierarchyBuilder<TRoles, TContexts, TProducts | N, TParentlessProducts>;
-  product(name: string, options: { parent: string | null; publicRead?: PublicReadMode }) {
+    options: { parent: P; publicRead?: PublicReadMode; relatedContexts?: RC },
+  ): EntityHierarchyBuilder<
+    TRoles,
+    TContexts,
+    TProducts | N,
+    P extends null ? TParentlessProducts | N : TParentlessProducts,
+    TParentMap & { [K in N]: P },
+    TRelatedMap & { [K in N]: RC[number] }
+  > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
     this.validatePublicRead(name, options.parent, options.publicRead);
-    this.entities.set(name, { kind: 'product', parent: options.parent, publicRead: options.publicRead });
-    return this;
+    this.validateRelatedContexts(name, options.parent, options.relatedContexts);
+    return new EntityHierarchyBuilder<
+      TRoles,
+      TContexts,
+      TProducts | N,
+      P extends null ? TParentlessProducts | N : TParentlessProducts,
+      TParentMap & { [K in N]: P },
+      TRelatedMap & { [K in N]: RC[number] }
+    >(
+      this.roles,
+      this.withEntity(name, {
+        kind: 'product',
+        parent: options.parent,
+        publicRead: options.publicRead,
+        relatedContexts: options.relatedContexts,
+      }),
+    );
   }
 
   /** Build and freeze the hierarchy. */
-  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts> {
-    if (!this.hasUser) throw new Error('EntityHierarchy: user() must be called before build()');
+  build(): EntityHierarchy<TRoles, TContexts, TProducts, TParentlessProducts, TParentMap, TRelatedMap> {
+    if (!this.entities.has('user')) throw new Error('EntityHierarchy: user() must be called before build()');
     if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization context is required');
     return new EntityHierarchy(this.roles, this.entities);
   }
@@ -170,6 +230,54 @@ class EntityHierarchyBuilder<
     }
   }
 
+  /**
+   * Validate optional denormalized context references. Each must be an already-defined
+   * context entity that is NOT part of the strict ancestor chain (which already produces
+   * its own non-null id column) and not the entity itself.
+   */
+  private validateRelatedContexts(name: string, parent: string | null, relatedContexts?: readonly string[]): void {
+    if (!relatedContexts?.length) return;
+
+    const ancestors = new Set<string>();
+    let current = parent;
+    while (current !== null) {
+      ancestors.add(current);
+      const entry = this.entities.get(current);
+      current = entry && entry.kind !== 'user' ? entry.parent : null;
+    }
+
+    const seen = new Set<string>();
+    for (const related of relatedContexts) {
+      if (related === name) {
+        throw new Error(`EntityHierarchy: entity "${name}" cannot reference itself in relatedContexts`);
+      }
+      if (seen.has(related)) {
+        throw new Error(`EntityHierarchy: entity "${name}" has duplicate relatedContext "${related}"`);
+      }
+      seen.add(related);
+
+      const entry = this.entities.get(related);
+      if (!entry) {
+        throw new Error(
+          `EntityHierarchy: entity "${name}" references unknown relatedContext "${related}". ` +
+            'Related contexts must be defined before they are referenced.',
+        );
+      }
+      if (entry.kind !== 'context') {
+        throw new Error(
+          `EntityHierarchy: entity "${name}" relatedContext "${related}" must be a context entity, ` +
+            `but it is a ${entry.kind} entity.`,
+        );
+      }
+      if (ancestors.has(related)) {
+        throw new Error(
+          `EntityHierarchy: entity "${name}" relatedContext "${related}" is already an ancestor. ` +
+            'Ancestors are referenced via the strict parent chain, not relatedContexts.',
+        );
+      }
+    }
+  }
+
   private validatePublicRead(name: string, parent: string | null, publicRead?: PublicReadMode): void {
     if (!publicRead) return;
 
@@ -199,7 +307,14 @@ export class EntityHierarchy<
   TContexts extends string = string,
   TProducts extends string = string,
   TParentlessProducts extends string = string,
+  TParentMap extends Record<string, string | null> = Record<string, string | null>,
+  TRelatedMap extends Record<string, string> = Record<string, string>,
 > {
+  /** Phantom type carrier: maps each entity to its strict parent (null = root). Type-only, no runtime value. */
+  declare readonly _parentMap: TParentMap;
+  /** Phantom type carrier: maps each entity to its related (non-ancestor) context union. Type-only, no runtime value. */
+  declare readonly _relatedMap: TRelatedMap;
+
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
   private readonly ancestorCache = new Map<string, readonly string[]>();
@@ -295,15 +410,25 @@ export class EntityHierarchy<
     return frozen;
   }
 
+  /**
+   * Get optional denormalized related context types for an entity (non-ancestor contexts
+   * declared via `relatedContexts`). These map to NULLABLE id columns. Returns [] if none.
+   */
+  getRelatedContexts(entityType: string): readonly TContexts[] {
+    const entry = this.entities.get(entityType);
+    if (!entry || entry.kind === 'user') return [];
+    return (entry.relatedContexts ?? []) as readonly TContexts[];
+  }
+
   /** Get entity view (kind + parent + roles if context). */
   getConfig(entityType: string): EntityView | undefined {
     const entry = this.entities.get(entityType);
     if (!entry) return undefined;
     if (entry.kind === 'user') return { kind: 'user' };
     if (entry.kind === 'context') {
-      return { kind: 'context', parent: entry.parent, roles: entry.roles, publicRead: entry.publicRead };
+      return { kind: 'context', parent: entry.parent, roles: entry.roles, publicRead: entry.publicRead, relatedContexts: entry.relatedContexts };
     }
-    return { kind: 'product', parent: entry.parent, publicRead: entry.publicRead };
+    return { kind: 'product', parent: entry.parent, publicRead: entry.publicRead, relatedContexts: entry.relatedContexts };
   }
 
   /** Get product entity view. */

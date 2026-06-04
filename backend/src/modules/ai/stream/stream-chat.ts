@@ -18,10 +18,6 @@ const scalewayBaseUrl = 'https://api.scaleway.ai/v1';
 interface StreamOptions {
   /** Emit a `chat.created` CUSTOM event as the first stream chunk (set on chat creation). */
   emitChatCreated?: boolean;
-  /** Optional workspace scope inherited from the parent chat. */
-  workspaceId?: string;
-  /** Optional project scope inherited from the parent chat. */
-  projectId?: string;
 }
 
 export async function streamChatResponse(ctx: AuthContext, chatId: string, options?: StreamOptions): Promise<Response> {
@@ -121,8 +117,6 @@ async function* persistAssistantMessage(
         organizationId,
         chatId,
         userId,
-        workspaceId: options?.workspaceId ?? null,
-        projectId: options?.projectId ?? null,
         role: 'assistant',
         parts,
         model: model ?? scalewayModel,

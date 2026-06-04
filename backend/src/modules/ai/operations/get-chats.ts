@@ -21,8 +21,6 @@ export async function getChatsOp(
       limit: input.limit ?? 50,
       offset: input.offset ?? 0,
       order: input.order ?? 'desc',
-      workspaceId: input.workspaceId,
-      projectId: input.projectId,
     }),
   );
 

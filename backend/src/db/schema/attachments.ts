@@ -2,6 +2,7 @@ import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-or
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { organizationsTable } from '#/db/schema/organizations';
 import { maxLength } from '#/db/utils/constraints';
+import { contextRelationColumns } from '#/db/utils/context-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 
 /**
@@ -22,7 +23,7 @@ export const attachmentsTable = snakeCase.table(
     originalKey: varchar({ length: maxLength.url }).notNull(),
     convertedKey: varchar({ length: maxLength.url }),
     thumbnailKey: varchar({ length: maxLength.url }),
-    organizationId: uuid().notNull(),
+    ...contextRelationColumns('attachment'),
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
