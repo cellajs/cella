@@ -4,7 +4,9 @@ import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../constants';
 import { logEvent } from '../lib/pino';
 
 import { replicationState } from '../services/replication-state';
+import { cdcMetrics } from '../services/cdc-metrics';
 import { wsClient } from '../network/websocket-client';
+import { startHealthReporter, stopHealthReporter } from '../network/health-reporter';
 
 import { drainBuffers } from './handle-message';
 import { createReplicationService, ensureReplicationSlot, setupBackpressure, subscribeWithReconnect } from './replication';
@@ -38,6 +40,8 @@ export async function startCdcWorker(): Promise<void> {
 
   setupBackpressure();
   wsClient.connect();
+  startHealthReporter();
+  cdcMetrics.startLagPolling();
 
   await subscribeWithReconnect(service, plugin);
 }
@@ -47,6 +51,8 @@ export async function startCdcWorker(): Promise<void> {
  */
 export async function stopCdcWorker(): Promise<void> {
   logEvent('info', `CDC worker stopping...`);
+  stopHealthReporter();
+  cdcMetrics.stop();
   await drainBuffers();
   wsClient.close();
   await replicationState.service?.stop();

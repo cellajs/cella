@@ -89,7 +89,7 @@ export const config = {
   backendUrl: 'https://api.cella.dev',
   backendAuthUrl: 'https://api.cella.dev/auth',
   yjsUrl: 'wss://yjs.cella.dev',
-  aiApiUrl: 'https://ai.cella.dev',
+  aiUrl: 'https://ai.cella.dev',
 
   aboutUrl: '/about',
   statusUrl: 'https://status.cella.dev',

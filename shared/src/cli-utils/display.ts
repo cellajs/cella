@@ -10,7 +10,7 @@ export const DIVIDER = '─'.repeat(60);
  *   ⧈ {name} · v{version}                             cellajs.com
  *   ────────────────────────────────────────────────────────────
  *
- * @param name    CLI name, e.g. 'cella bench' or 'cella infra'
+ * @param name    CLI name, e.g. 'cella bench' or 'raak infra'
  * @param version Optional semver string shown as `· v{version}`
  * @param right   Right-aligned label. Defaults to 'cellajs.com'
  */

@@ -18,6 +18,7 @@ export interface InfraDerivations {
     publicBucket: string
     privateBucket: string
     pulumiStateBucket: string
+    deployTagsBucket: string
     registryNamespace: string
   }
   domains: {
@@ -56,26 +57,28 @@ export function deriveInfra(appConfig: Cfg): InfraDerivations {
       publicBucket: appConfig.s3.publicBucket,
       privateBucket: appConfig.s3.privateBucket,
       pulumiStateBucket: `${prefix}-pulumi-state`,
-      // Scaleway Container Registry namespace names require >= 4 chars. Pad
-      // short slugs by appending `app` so e.g. `rak` -> `rakapp`. Longer
-      // slugs pass through unchanged.
-      registryNamespace: (() => {
-        const base = appConfig.slug.replace(/-/g, '')
-        return base.length >= 4 ? base : `${base}app`
-      })(),
+      // Holds `deploy/<service>.tag` objects (just the image SHA, plain text).
+      // The on-VM reconciler watches its service's key and pulls + restarts
+      // the container when the tag changes. Separate bucket so VM IAM can be
+      // read-only on exactly these keys without exposing Pulumi state.
+      deployTagsBucket: `${prefix}-deploy-tags`,
+      // Scaleway Container Registry namespace names require >= 4 chars and no
+      // hyphens. The slug is validated at config load (see config-validation),
+      // so we only need to strip hyphens here.
+      registryNamespace: appConfig.slug.replace(/-/g, ''),
     },
     domains: {
       zone: appConfig.domain,
       app: new URL(appConfig.frontendUrl).hostname,
       api: new URL(appConfig.backendUrl).hostname,
-      yjs: new URL(appConfig.yjsUrl.replace('wss://', 'https://')).hostname,
-      ai: new URL(appConfig.aiApiUrl).hostname,
+      yjs: new URL(appConfig.yjsUrl).hostname,
+      ai: new URL(appConfig.aiUrl).hostname,
     },
     appUrls: {
       frontend: appConfig.frontendUrl,
       backend: appConfig.backendUrl,
       yjs: appConfig.yjsUrl,
-      ai: appConfig.aiApiUrl,
+      ai: appConfig.aiUrl,
     },
     region,
     zone: `${region}-1`,

@@ -8,7 +8,7 @@ import { logEvent } from '../lib/pino';
  * Shares the backend's `rate_limits` table via a raw pg.Pool — no Drizzle needed.
  * Falls back to in-memory limiting when the DB is unreachable (fail-open with safety net).
  */
-const connectionLimiter = env.DEV_MODE === 'none'
+const connectionLimiter = env.NODB
   ? new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 })
   : new RateLimiterPostgres({
       storeClient: pool,

@@ -21,6 +21,8 @@ export default defineProject({
       NODE_ENV: 'test',
       DATABASE_CDC_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres',
       CDC_SECRET: 'test-cdc-secret-min16chars',
+      // Backpressure integration test points the worker's WS client at a local stub server.
+      API_WS_URL: 'ws://127.0.0.1:4788/internal/cdc',
     },
   },
 });

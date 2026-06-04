@@ -3,10 +3,11 @@ import type _default from './default-config';
 
 export default {
   mode: 'tunnel',
-  name: 'Cella TUNNEL',
+  name: 'Raak TUNNEL',
+  slug: 'raak-tunnel',
 
   frontendUrl: 'https://localhost:3000',
-  backendUrl: 'http://cella.ngrok.dev',
-  backendAuthUrl: 'https://cella.ngrok.dev/auth',
+  backendUrl: 'https://raak.ngrok.dev',
+  backendAuthUrl: 'https://raak.ngrok.dev/auth',
 
 } satisfies DeepPartial<typeof _default>;

@@ -21,6 +21,11 @@ export const ALLOWED_KEYS = [
   'registry_ns',
   'frontend_bucket',
   'state_bucket',
+  'deploy_tags_bucket',
+  'frontend_url',
+  'backend_url',
+  'yjs_url',
+  'ai_url',
 ] as const
 export type AllowedKey = (typeof ALLOWED_KEYS)[number]
 
@@ -33,6 +38,11 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
     registry_ns: naming.registryNamespace,
     frontend_bucket: naming.frontendBucket,
     state_bucket: naming.pulumiStateBucket,
+    deploy_tags_bucket: naming.deployTagsBucket,
+    frontend_url: appConfig.frontendUrl,
+    backend_url: appConfig.backendUrl,
+    yjs_url: appConfig.yjsUrl,
+    ai_url: appConfig.aiUrl,
   }
 }
 

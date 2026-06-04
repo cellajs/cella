@@ -23,6 +23,14 @@ export const frontendBucketEndpoint = storage.frontendBucketEndpoint
 export const frontendWebsiteEndpoint = storage.frontendWebsiteEndpoint
 
 // ---------------------------------------------------------------------------
+// Deploy tags (image-SHA cutover surface for the on-VM reconciler)
+// ---------------------------------------------------------------------------
+
+import * as deployTags from './modules/deploy-tags'
+
+export const deployTagsBucketName = deployTags.deployTagsBucketName
+
+// ---------------------------------------------------------------------------
 // Edge Services (CDN + WAF) + DNS
 // ---------------------------------------------------------------------------
 

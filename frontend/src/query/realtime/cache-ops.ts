@@ -53,6 +53,24 @@ function hasParentContextChanged(cached: ItemData, incoming: ItemData): boolean 
 }
 
 /**
+ * Whether `queryKey` is the canonical scope key for `entity`.
+ * Keys shaped like [entityType, 'list', ...ancestorIds] match when every string segment
+ * equals the entity's corresponding ancestor ID column. Filtered keys (object segments)
+ * never match — those lists are scoped by server-side filters we can't replicate here.
+ */
+function matchesCanonicalScope(queryKey: readonly unknown[], entity: ItemData, scopeKeys: readonly string[]): boolean {
+  const segments = queryKey.slice(2);
+  const entityRecord = entity as unknown as Record<string, unknown>;
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (typeof seg !== 'string') return false;
+    const expected = entityRecord[scopeKeys[i]];
+    if (typeof expected !== 'string' || expected !== seg) return false;
+  }
+  return true;
+}
+
+/**
  * Patch only the stx metadata on a cached entity (detail + list caches).
  * Used by echo-prevented SSE notifications to keep HLC timestamp metadata fresh
  * without overwriting optimistic field values or triggering refetches.
@@ -150,6 +168,17 @@ export function invalidateEntityListForOrg(
   });
 }
 
+/**
+ * Invalidate org-scoped lists whose key tail contains a filter object (i.e. filtered lists).
+ * Canonical scope lists (string-only tails) are left alone — they're patched directly.
+ */
+function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
+  queryClient.invalidateQueries({
+    queryKey: orgListKey,
+    predicate: (q) => q.queryKey.slice(2).some((seg) => typeof seg === 'object' && seg !== null),
+  });
+}
+
 /** Remove a single entity from all list caches by ID (no refetch triggered).
  * When organizationId is provided, only scans list caches for that org.
  */
@@ -225,6 +254,12 @@ export async function fetchEntityAndUpdateList(
       for (const [queryKey, queryData] of queryClient.getQueriesData({
         queryKey: organizationId ? keys.list.org(organizationId) : keys.list.base,
       })) {
+        // Inserts only land in lists that canonically scope to this entity.
+        // For everything else (other project scopes, filtered queries) downgrade
+        // to 'update', which is a no-op when the entity isn't already cached.
+        const inScope = matchesCanonicalScope(queryKey, filtered, keys.list.scopeKeys);
+        const effectiveAction = inScope ? action : 'update';
+
         if (isInfiniteQueryData<ItemData>(queryData)) {
           // Remove from caches where entity no longer belongs (e.g. parent context changed)
           const cachedItem = queryData.pages.flatMap((p) => p.items).find((item) => item.id === entityId);
@@ -232,15 +267,21 @@ export async function fetchEntityAndUpdateList(
             changeInfiniteQueryData(queryKey, [filtered], 'remove');
             continue;
           }
-          changeInfiniteQueryData(queryKey, [filtered], action);
+          changeInfiniteQueryData(queryKey, [filtered], effectiveAction);
         } else if (isQueryData<ItemData>(queryData)) {
           const cachedItem = queryData.items.find((item) => item.id === entityId);
           if (cachedItem && hasParentContextChanged(cachedItem, filtered)) {
             changeQueryData(queryKey, [filtered], 'remove');
             continue;
           }
-          changeQueryData(queryKey, [filtered], action);
+          changeQueryData(queryKey, [filtered], effectiveAction);
         }
+      }
+
+      // Filtered list queries can't be patched safely (server-side filter unknown),
+      // so mark them stale. Active queries refetch immediately.
+      if (action === 'create' && organizationId) {
+        invalidateFilteredLists(keys.list.org(organizationId));
       }
     }
   } catch {

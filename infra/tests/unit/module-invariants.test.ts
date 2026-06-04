@@ -21,6 +21,7 @@ const edge = read('edge.ts')
 const db = read('database.ts')
 const mon = read('monitoring.ts')
 const reg = read('registry.ts')
+const secrets = read('secrets.ts')
 
 describe('loadbalancer module', () => {
   it('HTTPS frontend on port 443 is defined', () => {
@@ -83,10 +84,10 @@ describe('database module', () => {
     expect(db).toMatch(/sslmode=require/)
   })
 
-  it('three role-based DB users exist (admin, runtime, cdc)', () => {
+  it('two role-based DB users exist (admin, runtime)', () => {
     expect(db).toMatch(/name:\s*['"]admin_role['"]/)
     expect(db).toMatch(/name:\s*['"]runtime_role['"]/)
-    expect(db).toMatch(/name:\s*['"]cdc_role['"]/)
+    expect(db).not.toMatch(/name:\s*['"]cdc_role['"]/)
   })
 
   it('generated passwords have at least 32 chars and special-char floor', () => {
@@ -121,3 +122,27 @@ describe('registry module', () => {
     expect(reg).toMatch(/isPublic:\s*false/)
   })
 })
+
+describe('secrets module', () => {
+  it('reads every stack-config secret via requireSecret (never plain get)', () => {
+    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'brevoApiKey', 'scwAiApiKey']) {
+      expect(secrets).toMatch(new RegExp(`requireSecret\\(['"]${key}['"]\\)`))
+      // Must not silently fall back to a non-secret getter for these keys.
+      expect(secrets).not.toMatch(new RegExp(`infraConfig\\.get\\(['"]${key}['"]\\)`))
+    }
+  })
+
+  it('namespaces every secret under the slug/mode path', () => {
+    expect(secrets).toMatch(/const secretPath = `\/\$\{naming\.slug\}-\$\{mode\}\/`/)
+    // The Secret resource must set path: secretPath so secrets never land at root.
+    expect(secrets).toMatch(/path:\s*secretPath/)
+  })
+
+  it('writes SecretVersions only through the createSecret helper', () => {
+    // Exactly one construction site for the Version resource — the helper.
+    const versionConstructions = secrets.match(/new scaleway\.secrets\.Version\(/g) ?? []
+    expect(versionConstructions).toHaveLength(1)
+    expect(secrets).toMatch(/function createSecret\(/)
+  })
+})
+

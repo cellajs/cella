@@ -4575,7 +4575,8 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "lastName": {
                     "type": [
@@ -4583,7 +4584,8 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "language": {
                     "type": "string",
@@ -4605,7 +4607,8 @@
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                   },
                   "userFlags": {
                     "type": "object",
@@ -5548,7 +5551,8 @@
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                   },
                   "entityType": {
                     "type": "string",
@@ -6327,7 +6331,8 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "lastName": {
                     "type": [
@@ -6335,7 +6340,8 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "language": {
                     "type": "string",
@@ -6357,7 +6363,8 @@
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                   }
                 }
               }
@@ -6700,7 +6707,8 @@
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "status": {
                     "type": "string",
@@ -6781,7 +6789,8 @@
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   }
                 },
                 "required": [
@@ -6866,7 +6875,8 @@
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "status": {
                     "type": "string",
@@ -7120,7 +7130,7 @@
                     "type": "string",
                     "minLength": 4,
                     "maxLength": 255,
-                    "pattern": "^[a-z0-9].*[a-z0-9]$/i"
+                    "pattern": "^[a-z0-9].*[a-z0-9]$"
                   }
                 },
                 "required": [
@@ -8062,12 +8072,14 @@
                     "name": {
                       "type": "string",
                       "minLength": 2,
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                     },
                     "slug": {
                       "type": "string",
                       "minLength": 2,
-                      "maxLength": 255
+                      "maxLength": 255,
+                      "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                     }
                   },
                   "required": [
@@ -8992,12 +9004,14 @@
                   "slug": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                   },
                   "name": {
                     "type": "string",
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "shortName": {
                     "type": [
@@ -9005,7 +9019,8 @@
                       "null"
                     ],
                     "minLength": 2,
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "country": {
                     "type": [
@@ -12849,6 +12864,6 @@
     }
   },
   "webhooks": {},
-  "x-diff-hash": "e3b0c44298fc1c14",
-  "x-generated-at": "2026-05-28T08:33:56.021Z"
+  "x-diff-hash": "8dcc8806e4906dee",
+  "x-generated-at": "2026-05-29T12:40:16.382Z"
 }

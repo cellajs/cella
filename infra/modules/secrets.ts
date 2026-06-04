@@ -69,7 +69,7 @@ const dbUrlRuntimeSecret = createSecret(
 
 const dbUrlCdcSecret = createSecret(
   'database-url-cdc',
-  'PostgreSQL cdc_role connection string (CDC worker, append-only + replication)',
+  'PostgreSQL CDC worker connection string (admin_role — needs REPLICATION for the logical slot)',
   connectionStringCdc,
 )
 

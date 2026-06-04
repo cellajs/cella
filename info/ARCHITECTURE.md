@@ -2,14 +2,12 @@
 This document describes the high-level architecture of Cella.
 
 ### Target product
-* Frequent-use or heavy use web applications
-* Focused on user-generated content that requires authentication/authorization
+* Frequent-use or heavy use web applications focused on user-generated content
 * Requires a great UX on different devices, but native apps are not a priority
 * Fullstack development is seen as beneficial to work effectively
 
 ### DX aspects
- * Three foundational elements: Postgres, OpenAPI & React Query.
- * Type safe without overdoing it. 
+ * Three primary elements used to fullest extend: Postgres, OpenAPI & React Query.
  * Prevent abstraction layers, use composable functions.
  * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
  * Modularity: As Cella grows, be able to scaffold only modules that you need.
@@ -23,7 +21,6 @@ This document describes the high-level architecture of Cella.
 - [drizzle-orm](https://orm.drizzle.team/)
 - [zod](https://github.com/colinhacks/zod)
 - [openapi](https://www.openapis.org)
-- [jsx-email](https://jsx.email/)
 - [yjs](https://yjs.dev) / [y-protocols](https://github.com/yjs/y-protocols)
 
 ### Frontend
@@ -32,8 +29,7 @@ This document describes the high-level architecture of Cella.
 - [tanstack-query](https://github.com/tanstack/query)
 - [zustand](https://github.com/pmndrs/zustand)
 - [dexie](https://github.com/dexie/Dexie.js)
-- [shadcn](https://ui.shadcn.com)
-- [i18next](https://www.i18next.com)
+- [base-ui](https://base-ui.com/)
 - [lucide-icons](https://lucide.dev)
 
 ### Build tools
@@ -58,7 +54,7 @@ Cella is a flat-root monorepo.
 │   ├── src
 │   │   ├── db                Connect, table schemas
 │   │   ├── core              Foundational types & logic primitives 
-│   │   ├── lib               Stateful services & 3rd party wrappers (mailer, logger, caches)
+│   │   ├── lib               Stateful services & 3rd party wrappers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   ├── permissions       Permission/authorization layer
@@ -83,7 +79,7 @@ Cella is a flat-root monorepo.
 ├── info                      Documentation, changelog, migration plans
 ├── json                      Static JSON data 
 ├── locales                   Translations
-├── sdk                       Auto-generated SDK (types, zod schemas, fetch client) consumed by frontend
+├── sdk                       Auto-generated SDK (types, zod schemas, fetch client)
 ├── shared                    Shared config, types & utils
 ├── studio                    Drizzle Studio launcher for local DB inspection
 └── yjs                       Yjs collaborative editing worker (ws binary relay)
@@ -112,9 +108,9 @@ The builder validates at construction time that parents exist before children an
 
 Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`, `getPublicReadMode()`.
 
-## Hybrid sync engine
+## Sync engine
 
-Cella has a hybrid approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they have read-only offline access via prefetched menu data. Product entities (e.g. attachments, pages) can be upgraded with a full sync layer using a 'notify-then-fetch' pattern. All data is consistently collected by the react-query queryClient.
+Cella has a pragmatic approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they do have read-only offline access via prefetched data. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
 
 The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent SSE streams:
 - **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
@@ -241,8 +237,7 @@ The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx
 | Role | RLS | Purpose |
 |------|-----|---------|
 | `runtime_role` | Enforced | All app requests via Hono handlers |
-| `cdc_role` | No RLS | CDC worker — append-only, minimal privileges |
-| `admin_role` | `BYPASSRLS` | Migrations, seeds, system jobs |
+| `admin_role` | `BYPASSRLS` | Migrations, seeds, system jobs, CDC worker (needs `REPLICATION`) |
 
 ### Immutability triggers
 

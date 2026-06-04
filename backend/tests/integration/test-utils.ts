@@ -17,6 +17,8 @@ import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { baseDb as db, type PgDB } from '#/db/db';
 import { activitiesTable } from '#/db/schema/activities';
+import { attachmentsTable } from '#/db/schema/attachments';
+import { contextCountersTable } from '#/db/schema/context-counters';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -43,6 +45,8 @@ export async function clearDatabase() {
   await db.delete(sessionsTable);
   await db.delete(tokensTable);
   await db.delete(membershipsTable);
+  await db.delete(attachmentsTable);
+  await db.delete(contextCountersTable);
   await db.delete(emailsTable);
   await db.delete(usersTable);
   await db.delete(organizationsTable);

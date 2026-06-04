@@ -12,7 +12,7 @@ import { frontendBucketName } from './storage'
 
 let _pipelineId: pulumi.Output<string> | undefined
 
-if (hasDomain) {
+if (hasDomain && infra.enableEdgeServices) {
   // ---------------------------------------------------------------------------
   // Pipeline
   // ---------------------------------------------------------------------------

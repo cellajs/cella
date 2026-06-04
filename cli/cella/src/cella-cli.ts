@@ -154,7 +154,7 @@ async function main(): Promise<void> {
         break;
 
       case 'stats':
-        await runStats(config.forkPath, { verbose: config.verbose });
+        await runStats(config.forkPath, { verbose: config.verbose, refreshCoverage: config.coverage });
         break;
     }
 

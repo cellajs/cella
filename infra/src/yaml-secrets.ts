@@ -22,7 +22,6 @@ export const KNOWN_SECRET_KEYS: readonly string[] = [
   'infra:scwAiApiKey',
   'infra:adminPassword',
   'infra:runtimePassword',
-  'infra:cdcPassword',
 ]
 
 /** Suffix patterns that always imply a secret value, regardless of namespace. */
@@ -34,10 +33,6 @@ const SUFFIX_ALLOWLIST = new Set<string>([
   'scaleway:organizationId',
   'scaleway:region',
   'scaleway:zone',
-  'infra:backendImageTag',
-  'infra:cdcImageTag',
-  'infra:yjsImageTag',
-  'infra:aiWorkerImageTag',
 ])
 
 export interface SecretViolation {

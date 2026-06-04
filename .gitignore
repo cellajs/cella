@@ -64,7 +64,6 @@ storybook-static
 # GeoIP databases (downloaded at build/dev time, not committed)
 backend/geoip/*.mmdb
 
-
 # Terraform
 *.tfvars
 !*.tfvars.example

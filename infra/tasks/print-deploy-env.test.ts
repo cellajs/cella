@@ -8,8 +8,8 @@ const fakeAppConfig = {
   domain: 'cella.example',
   frontendUrl: 'https://cella.example',
   backendUrl: 'https://api.cella.example',
-  yjsUrl: 'wss://yjs.cella.example',
-  aiApiUrl: 'https://ai.cella.example',
+  yjsUrl: 'https://yjs.cella.example',
+  aiUrl: 'https://ai.cella.example',
   securityEmail: 'security@cella.example',
   // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
 } as any
@@ -27,6 +27,11 @@ describe('buildDeployEnv', () => {
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
+      deploy_tags_bucket: 'cella-deploy-tags',
+      frontend_url: 'https://cella.example',
+      backend_url: 'https://api.cella.example',
+      yjs_url: 'https://yjs.cella.example',
+      ai_url: 'https://ai.cella.example',
     })
   })
 

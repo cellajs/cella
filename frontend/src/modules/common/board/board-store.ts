@@ -3,11 +3,6 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-const arraysEqual = (left: string[], right: string[]) => {
-  if (left.length !== right.length) return false;
-  return left.every((value, index) => value === right[index]);
-};
-
 interface BoardUIState {
   // Panel collapse state
   panelCollapseState: Record<string, boolean>;
@@ -26,10 +21,12 @@ interface BoardUIState {
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
-  // Panel ordering hint: boardId => ordered stable slot IDs (project ID or extra panel ID)
-  boardPanelOrder: Record<string, string[]>;
-  updatePanelOrder: (boardId: string, order: string[]) => void;
-  syncBoardPanelOrder: (boardId: string, observedPanelIds: string[]) => string[];
+  // Local displayOrder for panels whose order isn't server-owned (e.g. explainer, ai-chat).
+  // Uses the same fractional-indexing convention as membership.displayOrder so a single
+  // comparator can sort server-owned and local-only panels together.
+  boardPanelOrders: Record<string, Record<string, number>>;
+  setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
+  prunePanelOrders: (boardId: string, knownPanelIds: string[]) => void;
 }
 
 export const useBoardStore = create<BoardUIState>()(
@@ -41,7 +38,7 @@ export const useBoardStore = create<BoardUIState>()(
         activeBoardType: null,
         activePanelId: null,
         boardLayouts: {},
-        boardPanelOrder: {},
+        boardPanelOrders: {},
 
         togglePanelCollapsedState: (panelId, newState) => {
           set((state) => {
@@ -71,37 +68,35 @@ export const useBoardStore = create<BoardUIState>()(
           });
         },
 
-        updatePanelOrder: (boardId, order) => {
+        setPanelOrder: (boardId, panelId, displayOrder) => {
           set((state) => {
-            state.boardPanelOrder[boardId] = order;
+            const map = state.boardPanelOrders[boardId] ?? {};
+            if (map[panelId] === displayOrder) return;
+            map[panelId] = displayOrder;
+            state.boardPanelOrders[boardId] = map;
           });
         },
 
-        syncBoardPanelOrder: (boardId, observedPanelIds) => {
-          const currentOrder = get().boardPanelOrder[boardId] ?? [];
-          const observedSet = new Set(observedPanelIds);
-
-          const cleaned = currentOrder.filter((panelId) => observedSet.has(panelId));
-          const existing = new Set(cleaned);
-          const appended = observedPanelIds.filter((panelId) => !existing.has(panelId));
-          const nextOrder = [...cleaned, ...appended];
-
-          if (arraysEqual(currentOrder, nextOrder)) return currentOrder;
-
+        prunePanelOrders: (boardId, knownPanelIds) => {
+          const map = get().boardPanelOrders[boardId];
+          if (!map) return;
+          const known = new Set(knownPanelIds);
+          const stale = Object.keys(map).filter((panelId) => !known.has(panelId));
+          if (stale.length === 0) return;
           set((state) => {
-            state.boardPanelOrder[boardId] = nextOrder;
+            const target = state.boardPanelOrders[boardId];
+            if (!target) return;
+            for (const panelId of stale) delete target[panelId];
           });
-
-          return nextOrder;
         },
       })),
       {
-        version: 15,
+        version: 16,
         name: `${appConfig.slug}-board-store`,
         partialize: (state) => ({
           panelCollapseState: state.panelCollapseState,
           boardLayouts: state.boardLayouts,
-          boardPanelOrder: state.boardPanelOrder,
+          boardPanelOrders: state.boardPanelOrders,
         }),
         storage: createJSONStorage(() => localStorage),
       },

@@ -1,0 +1,131 @@
+# =============================================================================
+# Frontend asset garbage collection
+# =============================================================================
+# Deletes versioned frontend chunks older than RETENTION_DAYS from Scaleway
+# Object Storage. The deploy workflow no longer uses `aws s3 sync --delete`,
+# so stale chunks accumulate — this job prunes them after a safety window
+# long enough to outlive any reasonable open browser tab on the previous
+# bundle (default 14 days).
+#
+# Never deletes the entry files (index.html, sw.js, sw.js.map,
+# manifest.webmanifest) regardless of age.
+# =============================================================================
+
+name: Frontend GC
+
+permissions: {}
+
+on:
+  schedule:
+    # Sundays at 04:00 UTC. Low-traffic window for most timezones.
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to garbage-collect'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      retention_days:
+        description: 'Delete objects older than this many days'
+        required: true
+        default: '14'
+        type: string
+      dry_run:
+        description: 'List objects to delete without actually deleting'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: frontend-gc-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  gc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Derive resource names from shared config
+        id: derive
+        env:
+          ENV: ${{ github.event.inputs.environment || 'production' }}
+        run: pnpm --silent --filter infra print-deploy-env "$ENV" >> $GITHUB_OUTPUT
+
+      - name: Garbage-collect stale frontend assets
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ steps.derive.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ steps.derive.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ steps.derive.outputs.frontend_bucket }}
+          RETENTION_DAYS: ${{ github.event.inputs.retention_days || '14' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+
+          # Compute cutoff in ISO-8601 (UTC) for awscli comparison.
+          CUTOFF=$(date -u -d "${RETENTION_DAYS} days ago" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Pruning objects in s3://$BUCKET_NAME older than $CUTOFF (retention: ${RETENTION_DAYS}d, dry-run: $DRY_RUN)"
+
+          # Entry files we must never delete regardless of age.
+          KEEP_REGEX='^(index\.html|sw\.js|sw\.js\.map|manifest\.webmanifest|robots\.txt|favicon\.ico)$'
+
+          aws --endpoint-url "$S3_ENDPOINT" s3api list-objects-v2 \
+            --bucket "$BUCKET_NAME" \
+            --query "Contents[?LastModified<='${CUTOFF}'].[Key,LastModified]" \
+            --output text 2>/dev/null \
+            | while IFS=$'\t' read -r KEY MTIME; do
+                [ -z "$KEY" ] && continue
+                if echo "$KEY" | grep -Eq "$KEEP_REGEX"; then
+                  continue
+                fi
+                if [ "$DRY_RUN" = "true" ]; then
+                  echo "DRY-RUN would delete: $KEY (mtime=$MTIME)"
+                else
+                  aws --endpoint-url "$S3_ENDPOINT" s3 rm "s3://$BUCKET_NAME/$KEY" >/dev/null
+                  echo "deleted: $KEY (mtime=$MTIME)"
+                fi
+              done
+
+      - name: Summarize
+        if: always()
+        env:
+          BUCKET_NAME: ${{ steps.derive.outputs.frontend_bucket }}
+          RETENTION_DAYS: ${{ github.event.inputs.retention_days || '14' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          {
+            echo "## Frontend GC"
+            echo ""
+            echo "- **Bucket:** \`$BUCKET_NAME\`"
+            echo "- **Retention:** ${RETENTION_DAYS} days"
+            echo "- **Dry-run:** $DRY_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -785,7 +785,7 @@ Testing PWA and offline capabilities locally requires abuild with a Workbox serv
 
 ### How it works
 
-1. Backend + CDC start in development mode (`DEV_MODE=full`)
+1. Backend + CDC start in development mode (`pnpm dev`)
 2. Frontend builds with Workbox service worker (precaches all assets)
 3. Vite preview server serves the built app on `http://localhost:3000`
 4. Service worker registers on `localhost` (no HTTPS required)

@@ -78,6 +78,11 @@ const initDocs = async (app: OpenAPIHono<Env>, options?: InitDocsOptions) => {
   // Catches typos at boot instead of silently breaking docs grouping downstream.
   validateSchemaTags(openApiDoc as unknown as Record<string, unknown>);
 
+  // Strip trailing /flags from `pattern` strings (zod-openapi serializes RegExp
+  // via `String(re)` which includes the flag suffix). JSON Schema patterns are
+  // unflagged ECMA-262, so the suffix corrupts downstream consumers.
+  stripRegexFlagsFromPatterns(openApiDoc as unknown as Record<string, unknown>);
+
   // Embed generation metadata directly in the spec (used for cache invalidation)
   if (options?.diffHash) (openApiDoc as unknown as Record<string, unknown>)['x-diff-hash'] = options.diffHash;
   if (options?.generatedAt) (openApiDoc as unknown as Record<string, unknown>)['x-generated-at'] = options.generatedAt;
@@ -110,3 +115,22 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
 };
 
 export default initDocs;
+
+/**
+ * Walk the spec and strip a trailing `/<flags>` suffix from any `pattern`
+ * string. zod-openapi serializes RegExp via `String(re)` which yields
+ * `^foo$/u`; JSON Schema patterns are ECMA-262 source-only.
+ */
+const FLAG_SUFFIX = /\/[gimsuy]+$/;
+const stripRegexFlagsFromPatterns = (node: unknown): void => {
+  if (Array.isArray(node)) {
+    for (const item of node) stripRegexFlagsFromPatterns(item);
+    return;
+  }
+  if (node === null || typeof node !== 'object') return;
+  const obj = node as Record<string, unknown>;
+  if (typeof obj.pattern === 'string' && FLAG_SUFFIX.test(obj.pattern)) {
+    obj.pattern = obj.pattern.replace(FLAG_SUFFIX, '');
+  }
+  for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
+};

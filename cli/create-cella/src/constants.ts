@@ -85,7 +85,7 @@ export function getBackendEnvReplacements(adminEmail: string, portOffset: number
   return {
     DATABASE_URL: `postgres://runtime_role:dev_password@0.0.0.0:${db}/postgres`,
     DATABASE_ADMIN_URL: `postgres://postgres:postgres@0.0.0.0:${db}/postgres`,
-    DATABASE_CDC_URL: `postgres://cdc_role:dev_password@0.0.0.0:${db}/postgres`,
+    DATABASE_CDC_URL: `postgres://admin_role:dev_password@0.0.0.0:${db}/postgres`,
     ADMIN_EMAIL: adminEmail,
     PORT: String(4000 + portOffset),
   };

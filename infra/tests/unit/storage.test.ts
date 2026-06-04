@@ -83,4 +83,17 @@ describe('storage module', () => {
     expect(idx).toBe('index.html')
     expect(err).toBe('index.html')
   })
+
+  it('frontend bucket expires stale assets/ chunks but never root entry files', () => {
+    const bucket = h.resources.find((r) => r.name === 'frontend-bucket')
+    expect(bucket).toBeDefined()
+    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
+    const rules = (bucket?.inputs.lifecycleRules as any[]) ?? []
+    const assetRule = rules.find((r) => r.id === 'expire-stale-assets')
+    expect(assetRule, 'expire-stale-assets lifecycle rule must exist').toBeDefined()
+    expect(assetRule.enabled).toBe(true)
+    // Prefix-scoped to assets/ so root entry files (index.html, sw.js, ...) are untouched.
+    expect(assetRule.prefix).toBe('assets/')
+    expect(assetRule.expiration?.days).toBeGreaterThan(0)
+  })
 })

@@ -165,9 +165,12 @@ function handleEntityNotification(
   keys: EntityQueryKeys,
   propagation?: AppStreamNotification['propagation'],
 ): void {
-  // Echo prevention: skip data fetch/invalidation for own mutations,
-  // but still patch stx metadata so subsequent mutations read fresh versions
-  if (stx?.sourceId === sourceId) {
+  // Echo prevention for create/update: skip data fetch for own mutations,
+  // but still patch stx metadata so subsequent mutations read fresh versions.
+  // Deletes are excluded: the row's stx reflects its last writer, not the deleter,
+  // so an unrelated user (the creator) would otherwise short-circuit and skip the removal.
+  // removeEntity is idempotent, so a self-echo on delete is harmless.
+  if (action !== 'delete' && stx?.sourceId === sourceId) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
     console.debug('[handleEntityNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
     return;

@@ -10,15 +10,13 @@ import development from './development-config';
  */
 export default {
   mode: 'test',
-  name: 'Cella TEST',
+  name: 'Raak TEST',
 
   domain: '',
 
-  // Derive URLs from development config so port changes only need to happen in one place
   frontendUrl: development.frontendUrl,
   backendUrl: development.backendUrl,
   backendAuthUrl: development.backendAuthUrl,
-
-  // Hide chat widget in test
-  gleapToken: undefined,
+  yjsUrl: development.yjsUrl,
+  aiUrl: development.aiUrl,
 } satisfies DeepPartial<typeof _default>;

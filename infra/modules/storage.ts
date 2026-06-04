@@ -14,6 +14,13 @@ import { naming, region, tags, isProduction, appUrls, infraConfig } from '../hel
 
 const applicationId = infraConfig.require('applicationId')
 
+// Days before stale, content-hashed frontend chunks under `assets/` are
+// expired by Object Storage. Must outlive any reasonable open browser tab on
+// a previous bundle (a tab may lazy-load a chunk it hasn't fetched yet).
+// Entry files (index.html, sw.js, manifest, etc.) live at the bucket root —
+// outside this prefix — so they are never touched by this rule.
+const assetRetentionDays = infraConfig.getNumber('assetRetentionDays') ?? 14
+
 // ---------------------------------------------------------------------------
 // Frontend static files bucket (website hosting)
 // ---------------------------------------------------------------------------
@@ -30,6 +37,17 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
       enabled: true,
       expiration: { days: 30 },
       prefix: '_noncurrent/',
+    },
+    {
+      // Prune stale, content-hashed chunks. Because filenames are immutable
+      // (content-hashed), "not modified in N days" reliably means "no longer
+      // referenced by the current index.html and outlived any open tab".
+      // A rollback redeploy rebuilds identical hashes and re-uploads any
+      // missing chunk, so expiring old assets never breaks rollback.
+      id: 'expire-stale-assets',
+      enabled: true,
+      expiration: { days: assetRetentionDays },
+      prefix: 'assets/',
     },
   ],
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction })

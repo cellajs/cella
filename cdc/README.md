@@ -2,7 +2,7 @@
 
 PostgreSQL logical-replication worker for activity and sync events.
 
-Subscribes to WAL changes (INSERT/UPDATE/DELETE) via the `pgoutput` plugin, transforms them into activity records, writes them to the `activities` table, and forwards events to the API server over WebSocket for real-time sync. Only runs when `DEV_MODE=full` or in production.
+Subscribes to WAL changes (INSERT/UPDATE/DELETE) via the `pgoutput` plugin, transforms them into activity records, writes them to the `activities` table, and forwards events to the API server over WebSocket for real-time sync.
 
 ## Internal service only
 
@@ -80,7 +80,7 @@ SELECT pg_reload_conf();
 ## Scripts
 
 ```sh
-pnpm dev          # Development with watch mode (requires DEV_MODE=full)
+pnpm dev          # Development with watch mode
 pnpm build        # Production build via tsup
 pnpm start        # Run production build
 pnpm start:dev    # Run with tsx (no build)

@@ -7,7 +7,6 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import { deriveInfra } from './naming.js'
-import { assertPinnedImageTags } from './src/image-tags.js'
 
 // Derive APP_MODE from the Pulumi stack name so appConfig picks the right env
 // without a manual env var. Must run BEFORE importing shared.
@@ -39,11 +38,29 @@ export const infraConfig = new pulumi.Config('infra')
 // Mode-aware defaults — forks only need to set secrets + scaleway:projectId
 // ---------------------------------------------------------------------------
 
+// `instanceType` is the fleet-wide default VM size; `instanceTypes` holds
+// per-service overrides keyed by service name (backend/cdc/yjs/ai/frontend).
+// Backend defaults to a larger box in production because its blue-green roll
+// runs OLD + NEW slots side-by-side and needs ~2× the steady-state RAM during
+// cutover — DEV1-S (2 GB) cannot hold both.
+// See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
 const sizingDefaults = isProduction
-  ? { dbNodeType: 'DB-DEV-S', dbVolumeSize: 10, instanceType: 'DEV1-S', enableWaf: true }
-  : { dbNodeType: 'DB-DEV-S', dbVolumeSize: 10, instanceType: 'DEV1-S', enableWaf: false }
-
-const backendImageTag = infraConfig.get('backendImageTag') ?? 'latest'
+  ? {
+      dbNodeType: 'DB-DEV-S',
+      dbVolumeSize: 10,
+      instanceType: 'DEV1-S',
+      instanceTypes: { backend: 'DEV1-M' } as Record<string, string>,
+      enableWaf: true,
+      enableEdgeServices: false,
+    }
+  : {
+      dbNodeType: 'DB-DEV-S',
+      dbVolumeSize: 10,
+      instanceType: 'DEV1-S',
+      instanceTypes: {} as Record<string, string>,
+      enableWaf: false,
+      enableEdgeServices: false,
+    }
 
 // Compute is on by default. It is only skipped while the bootstrap tooling is
 // mid-flight — bootstrap.ts sets `bootstrap:applyInProgress` before the initial
@@ -53,25 +70,27 @@ const backendImageTag = infraConfig.get('backendImageTag') ?? 'latest'
 // silently tear down compute the way a missing `deployCompute=true` would.
 const bootstrapInProgress = new pulumi.Config('bootstrap').get('applyInProgress') !== undefined
 
+// Fleet-wide default size, plus per-service overrides merged on top of the
+// mode defaults. Override via Pulumi config, e.g.:
+//   pulumi config set infra:instanceType DEV1-S          # fleet default
+//   pulumi config set --path infra:instanceTypes.backend DEV1-M
+const baseInstanceType = infraConfig.get('instanceType') ?? sizingDefaults.instanceType
+const instanceTypeOverrides: Record<string, string> = {
+  ...sizingDefaults.instanceTypes,
+  ...(infraConfig.getObject<Record<string, string>>('instanceTypes') ?? {}),
+}
+
 export const infra = {
   dbNodeType: infraConfig.get('dbNodeType') ?? sizingDefaults.dbNodeType,
   dbVolumeSize: infraConfig.getNumber('dbVolumeSize') ?? sizingDefaults.dbVolumeSize,
   enableWaf: infraConfig.getBoolean('enableWaf') ?? sizingDefaults.enableWaf,
-  instanceType: infraConfig.get('instanceType') ?? sizingDefaults.instanceType,
-  backendImageTag,
-  cdcImageTag: infraConfig.get('cdcImageTag') ?? 'latest',
-  yjsImageTag: infraConfig.get('yjsImageTag') ?? 'latest',
-  aiWorkerImageTag: infraConfig.get('aiWorkerImageTag') ?? backendImageTag,
+  // Edge Services is the legacy SPA pipeline (S3 website + managed cert),
+  // superseded by a Caddy reverse-proxy on the `frontend` VM behind the LB.
+  // Off by default; enable only to keep the old path alive as a rollback option.
+  enableEdgeServices: infraConfig.getBoolean('enableEdgeServices') ?? sizingDefaults.enableEdgeServices,
+  instanceType: baseInstanceType,
+  /** VM size for a given service — per-service override or the fleet default. */
+  instanceTypeFor: (serviceName: string): string => instanceTypeOverrides[serviceName] ?? baseInstanceType,
   computeEnabled: !bootstrapInProgress,
 }
 
-// Refuse to provision VMs with mutable tags — Pulumi can't detect a registry-side
-// :latest update, so a deploy would silently keep the old image.
-if (infra.computeEnabled) {
-  assertPinnedImageTags({
-    backendImageTag: infra.backendImageTag,
-    cdcImageTag: infra.cdcImageTag,
-    yjsImageTag: infra.yjsImageTag,
-    aiWorkerImageTag: infra.aiWorkerImageTag,
-  })
-}

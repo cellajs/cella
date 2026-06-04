@@ -40,22 +40,25 @@ export function PullToRefresh({
   const [pullPosition, setPullPosition] = useState(0);
   // Tracks whether refresh was triggered by pull gesture (to scope spinner to pull-to-refresh only)
   const [wasTriggered, setWasTriggered] = useState(false);
+  // Tracks the in-flight onRefresh promise so the spinner shows even when isFetching never flips
+  // (e.g. offline reconnect probe that does no react-query work).
+  const [isAwaitingRefresh, setIsAwaitingRefresh] = useState(false);
 
   const pullStartRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isRefreshing = wasTriggered && isFetching;
+  const isRefreshing = wasTriggered && (isFetching || isAwaitingRefresh);
 
   const isPulling = pullPosition > 0;
 
   // Disable when UI is locked (dialog, dropdown, sheet open)
   const isUILocked = useUIStore((state) => state.uiLocks.length > 0);
-  if (isUILocked) isDisabled = true;
+  const disabled = isDisabled || isUILocked;
 
   const startPull = useCallback(
     (e: TouchEvent) => {
-      if (isDisabled) return;
+      if (disabled) return;
 
       // Check if user is at the top: look at the nearest scrollable ancestor
       // of the touch target, or fall back to window.scrollY
@@ -65,6 +68,7 @@ export function PullToRefresh({
       if (scrollTop > 0) return;
 
       const touch = e.targetTouches[0];
+      if (!touch) return;
       const pullArea = window.innerHeight * 0.4;
 
       if (touch.clientY <= pullArea) {
@@ -72,7 +76,7 @@ export function PullToRefresh({
         isDraggingRef.current = true;
       }
     },
-    [isDisabled],
+    [disabled],
   );
 
   // Minimum swipe distance before the pull-to-refresh UI appears and starts counting
@@ -80,7 +84,7 @@ export function PullToRefresh({
 
   const onPull = useCallback(
     (e: TouchEvent) => {
-      if (isDisabled || !isDraggingRef.current || pullStartRef.current === null) return;
+      if (disabled || !isDraggingRef.current || pullStartRef.current === null) return;
 
       const touch = e.targetTouches[0];
       if (!touch) return;
@@ -98,11 +102,11 @@ export function PullToRefresh({
 
       setPullPosition(clamped);
     },
-    [isDisabled, maximumPullLength],
+    [disabled, maximumPullLength],
   );
 
   const endPull = useCallback(() => {
-    if (isDisabled || !isDraggingRef.current) return;
+    if (disabled || !isDraggingRef.current) return;
 
     // Account for the empty circle phase (30px) before progress counting starts
     const pulledEnough = pullPosition - 30 >= refreshThreshold;
@@ -118,11 +122,15 @@ export function PullToRefresh({
 
     // Trigger refresh — keep pullPosition until isRefreshing takes over
     setWasTriggered(true);
-    onRefresh();
+    setIsAwaitingRefresh(true);
+    Promise.resolve(onRefresh()).finally(() => setIsAwaitingRefresh(false));
 
-    // Safety timeout: clear triggered flag after 5s in case isFetching never settles
-    timeoutRef.current = setTimeout(() => setWasTriggered(false), refreshTimeout);
-  }, [isDisabled, pullPosition, refreshThreshold, onRefresh]);
+    // Safety timeout: clear triggered flag in case isFetching never settles
+    timeoutRef.current = setTimeout(() => {
+      setWasTriggered(false);
+      setIsAwaitingRefresh(false);
+    }, refreshTimeout);
+  }, [disabled, pullPosition, refreshThreshold, onRefresh]);
 
   // Once isRefreshing is active, clear pullPosition so the indicator transitions to the refreshing position
   useEffect(() => {
@@ -148,7 +156,7 @@ export function PullToRefresh({
   }, []);
 
   useEffect(() => {
-    if (isDisabled) return;
+    if (disabled) return;
 
     const options = { passive: false }; // important!
 
@@ -161,7 +169,7 @@ export function PullToRefresh({
       window.removeEventListener('touchmove', onPull);
       window.removeEventListener('touchend', endPull);
     };
-  }, [startPull, onPull, endPull, isDisabled]);
+  }, [startPull, onPull, endPull, disabled]);
 
   useEffect(() => {
     const className = 'overflow-hidden';
@@ -184,6 +192,11 @@ export function PullToRefresh({
   const progress = clamped / refreshThreshold;
   const strokeDashoffset = circumference * (1 - progress);
 
+  // While refreshing, render a partial arc (~25% of the circle) and let `animate-spin` rotate it.
+  // A full circle with offset=0 looks static even while spinning.
+  const spinnerArc = circumference * 0.25;
+  const spinnerDashArray = `${spinnerArc} ${circumference - spinnerArc}`;
+
   if (!isPulling && !isRefreshing) return null;
 
   return (
@@ -195,7 +208,7 @@ export function PullToRefresh({
       }}
       className="fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
     >
-      <CircleIcon className="absolute size-8 text-muted-foreground/50" strokeWidth={4} />
+      {!isRefreshing && <CircleIcon className="absolute size-8 text-muted-foreground/50" strokeWidth={4} />}
       <svg
         className={`h-8 w-8 ${isRefreshing ? 'animate-spin' : ''}`}
         viewBox="0 0 40 40"
@@ -212,7 +225,7 @@ export function PullToRefresh({
           fill="none"
           stroke="currentColor"
           strokeWidth={stroke}
-          strokeDasharray={circumference}
+          strokeDasharray={isRefreshing ? spinnerDashArray : circumference}
           strokeDashoffset={isRefreshing ? 0 : strokeDashoffset}
           strokeLinecap="round"
           className="text-foreground"

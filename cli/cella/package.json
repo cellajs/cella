@@ -33,13 +33,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@inquirer/core": "^11.1.9",
-    "@inquirer/prompts": "^8.4.2",
-    "commander": "^14.0.3"
+    "@inquirer/core": "^11.2.1",
+    "@inquirer/prompts": "^8.5.1",
+    "commander": "^15.0.0"
   },
   "devDependencies": {
     "@types/node": "24.10.13",
     "tsup": "^8.5.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.22.3"
   }
 }

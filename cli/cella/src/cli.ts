@@ -120,7 +120,8 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .option('--fork <name>', 'pre-select fork by name (skips fork selection prompt)')
     .option('--hard', 'overwrite drifted files with upstream version (aggressive realignment)')
     .option('--force', 'bypass pnpm metadata cache for fresh registry data (audit)')
-    .option('--check-overrides', 'check which pnpm.overrides are still needed (audit)');
+    .option('--check-overrides', 'check which pnpm.overrides are still needed (audit)')
+    .option('--coverage', 'regenerate test coverage before showing the stats summary (stats)');
 
   program.parse(process.argv);
 
@@ -175,5 +176,6 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     hard: opts.hard,
     force: opts.force,
     checkOverrides: opts.checkOverrides,
+    coverage: opts.coverage,
   };
 }

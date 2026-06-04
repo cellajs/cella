@@ -74,19 +74,20 @@ END IF;
     END IF;
   END;
 
--- admin_role: Migrations, seeds, system admin
--- Try BYPASSRLS first, fall back without it (Scaleway doesn't allow BYPASSRLS on custom roles)
+-- admin_role: Migrations, seeds, system admin, CDC worker.
+-- Needs BYPASSRLS (for CDC seq stamping under FORCE RLS) and REPLICATION (for the CDC slot).
+-- Try with both first; fall back without them on managed providers that forbid these attributes.
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role with BYPASSRLS';
+    CREATE ROLE admin_role WITH LOGIN BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
+    RAISE NOTICE 'Created role admin_role with BYPASSRLS + REPLICATION';
   ELSE
-    ALTER ROLE admin_role WITH BYPASSRLS PASSWORD '${escSql(adminPassword)}';
+    ALTER ROLE admin_role WITH BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
   END IF;
 EXCEPTION WHEN OTHERS THEN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
     CREATE ROLE admin_role WITH LOGIN PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role without BYPASSRLS (managed provider)';
+    RAISE NOTICE 'Created role admin_role without BYPASSRLS/REPLICATION (managed provider)';
   ELSE
     ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
   END IF;

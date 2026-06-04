@@ -246,7 +246,8 @@ export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
 export const validUrlSchema = z
   .string()
   .max(maxLength.url)
-  .superRefine(refineWithType((url: string) => url.startsWith('https'), 'invalid_url'))
+  .startsWith('https://', { message: t('error:invalid_url') })
+  .superRefine(refineWithType((url: string) => url.startsWith('https://'), 'invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid name: string between 2 and max field length, allowing specific characters */
@@ -254,6 +255,7 @@ export const validNameSchema = z
   .string()
   .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
   .max(maxLength.field, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
+  .regex(/^[\p{L}\d\-., '&()]+$/u, { message: t('error:invalid_name') })
   .superRefine(refineWithType((s) => /^[\p{L}\d\-., '&()]+$/u.test(s), 'invalid_name'));
 
 /** Schema for a valid email */
@@ -268,9 +270,15 @@ export const validSlugSchema = z
   .string()
   .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
   .max(maxLength.field, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i, { message: t('error:invalid_slug') })
   .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
+/**
+ * Schema for a valid CDN URL.
+ * Kept as `superRefine` because the allowed CDN hosts come from runtime config
+ * and cannot be expressed as a static JSON-schema pattern.
+ */
 export const validCDNUrlSchema = z
   .string()
   .max(maxLength.url)
@@ -284,6 +292,7 @@ export const validDomainsSchema = z
       .string()
       .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
       .max(maxLength.field, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .regex(/^[a-z0-9][a-z0-9.-]*\.[a-z0-9][a-z0-9.-]*[a-z0-9]$/i, { message: t('error:invalid_domain') })
       .superRefine(refineWithType((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), 'invalid_domain'))
       .transform((str) => str.toLowerCase().trim()),
   )

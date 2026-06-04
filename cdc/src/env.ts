@@ -19,7 +19,6 @@ const envSchema = z.object({
   CDC_HEALTH_PORT: z.coerce.number().default(4001),
   MAPLE_API_KEY: z.string().optional(),
 
-  DEV_MODE: z.enum(['none', 'core', 'full']).default('core'),
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   DEBUG: z

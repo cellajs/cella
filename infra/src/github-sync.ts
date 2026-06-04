@@ -24,8 +24,6 @@ export interface GithubSyncOptions {
     projectId: string
     organizationId: string
   }
-  /** Non-secret Actions Variables (name → value). */
-  variables: ReadonlyArray<readonly [name: string, value: string]>
   /** Injected for testability. Returns the spawn exit status. */
   run?: (cmd: string, args: string[], opts: { cwd: string }) => number
 }
@@ -33,9 +31,9 @@ export interface GithubSyncOptions {
 const defaultRun = (cmd: string, args: string[], opts: { cwd: string }): number =>
   spawnSync(cmd, args, { cwd: opts.cwd, stdio: 'inherit' }).status ?? 1
 
-/** Ensures the GitHub Environment exists, then writes CI secrets (if given)
- *  and the supplied non-secret variables. No-op (with warning) when gh isn't
- *  authenticated or origin isn't a GitHub remote. */
+/** Ensures the GitHub Environment exists, then writes CI secrets (if given).
+ *  No-op (with warning) when gh isn't authenticated or origin isn't a GitHub
+ *  remote. */
 export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<void> {
   const run = opts.run ?? defaultRun
 
@@ -73,12 +71,5 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
         ['gh', 'secret', 'set', name, '--env', opts.stackShort, '--repo', ownerRepo, '--body', value],
       )
     }
-  }
-
-  for (const [name, value] of opts.variables) {
-    step(
-      `gh variable set ${name} (env: ${opts.stackShort})`,
-      ['gh', 'variable', 'set', name, '--env', opts.stackShort, '--repo', ownerRepo, '--body', value],
-    )
   }
 }

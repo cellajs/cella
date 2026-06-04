@@ -1,6 +1,6 @@
 # OWASP Top 10:2025 Security Analysis v2
 
-Code-level audit of the Cella codebase against the [OWASP Top 10:2025](https://owasp.org/Top10/2025/).
+Code-level audit of the Raak codebase against the [OWASP Top 10:2025](https://owasp.org/Top10/2025/).
 
 **Analysis date**: March 2026
 
@@ -71,7 +71,7 @@ Code-level audit of the Cella codebase against the [OWASP Top 10:2025](https://o
 | Source maps enabled in production builds (`vite.config.ts:50`) | Medium | Set `sourcemap: false` or use hidden source maps (Sentry-only upload already configured) |
 | No application-level HTTPS redirect | Medium | Add redirect middleware or confirm infrastructure enforces it |
 | OpenAPI spec publicly accessible at `/openapi.json` | Low | Intentional for API consumers; gate behind auth if not needed publicly |
-| `DEV_MODE` defaults to `'core'` | Low | Ensure production deployments explicitly set `DEV_MODE=none` |
+| `NODB` defaults to `false` | Low | Ensure production deployments never set `NODB=true` |
 
 ---
 

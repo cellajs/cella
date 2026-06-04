@@ -16,8 +16,12 @@ i18n.use(initReactI18next).init({
 // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
 const annotations = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
 
-// Mock console methods to suppress logs during tests
+// Silence noisy console output during tests (QueryPersister debug logs,
+// zustand warnings, info breadcrumbs). Errors remain visible.
 console.info = vi.fn();
+console.debug = vi.fn();
+console.log = vi.fn();
+console.warn = vi.fn();
 
 // Run Storybook's beforeAll hook
 beforeAll(annotations.beforeAll);

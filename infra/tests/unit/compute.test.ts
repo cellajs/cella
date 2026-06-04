@@ -50,22 +50,35 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]secretKey['"]\)/)
   })
 
-  it('cloud-init scrubs secrets from cloud-init logs', () => {
-    expect(source).toMatch(/sed -i.*SECRET.*PASSWORD.*API_KEY.*DATABASE_URL.*cloud-init/s)
+  it('cloud-init render is delegated to the cloud-init module', () => {
+    // The boot-script text lives in modules/cloud-init.ts and is verified
+    // against its rendered output in modules/cloud-init.test.ts. compute.ts
+    // must keep wiring buildCloudInit through renderCloudInit.
+    expect(source).toMatch(/renderCloudInit\(/)
   })
 
-  it('cloud-init writes /opt/app/.env with mode 0600', () => {
-    expect(source).toMatch(/chmod\s+600\s+\/opt\/app\/\.env/)
+  it('sizes each VM via the per-service instanceTypeFor helper', () => {
+    // VM size must be resolved per service (so backend can run a bigger box
+    // for blue-green 2x-RAM cutover) rather than the fleet-wide infra.instanceType.
+    expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(service\.name\)/)
+    expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
-  it('registry login uses --password-stdin (no secret on argv)', () => {
-    expect(source).toMatch(/docker login[^\n]*--password-stdin/)
-    expect(source).not.toMatch(/docker login[^\n]*-p\s+\$/)
-  })
-
-  it('all four service profiles are defined (backend, cdc, yjs, ai)', () => {
-    for (const profile of ['backend', 'cdc', 'yjs', 'ai']) {
+  it('all five service profiles are defined (backend, cdc, yjs, ai, frontend)', () => {
+    for (const profile of ['backend', 'cdc', 'yjs', 'ai', 'frontend']) {
       expect(source).toMatch(new RegExp(`profile:\\s*['"]${profile}['"]`))
+    }
+  })
+
+  it('frontend service does not receive backend secrets through composeEnv', () => {
+    // The .env file is still mounted via env_file: .env, but the frontend
+    // profile must not surface DB creds / cookie secrets / API keys via
+    // explicit composeEnv keys. This guards against accidental cross-wiring.
+    const frontendBlock = source.match(/name:\s*'frontend',[\s\S]*?\}\s*,?\s*\]/)
+    expect(frontendBlock, 'could not locate frontend service block').not.toBeNull()
+    const body = frontendBlock?.[0] ?? ''
+    for (const banned of ['DATABASE_URL', 'COOKIE_SECRET', 'BREVO_API_KEY', 'SCW_AI_API_KEY', 'YJS_SECRET', 'CDC_SECRET']) {
+      expect(body, `${banned} must not appear in frontend composeEnv`).not.toContain(banned)
     }
   })
 })

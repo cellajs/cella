@@ -1,8 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { appConfig } from 'shared';
-import { YjsTokenFetcher } from '~/modules/common/blocknote/yjs-token-fetcher';
 import { Spinner } from '~/modules/common/spinner';
 import { organizationQueryOptions } from '~/modules/organization/query';
 
@@ -15,21 +13,9 @@ const orgRouteApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organiza
 const orgMembersApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/members');
 const orgAttachmentsApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/attachments');
 const orgSettingsApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/settings');
-const orgLayoutApi = getRouteApi('/appLayout/$tenantId/$organizationSlug');
 
 export const OrganizationLayoutComponent = () => {
-  const { tenantId, organization } = orgLayoutApi.useRouteContext();
-  return (
-    <>
-      <Outlet />
-      {!!appConfig.yjsUrl && (
-        <>
-          <YjsTokenFetcher entityType="task" tenantId={tenantId} organizationId={organization.id} />
-          <YjsTokenFetcher entityType="page" tenantId="" organizationId={organization.id} />
-        </>
-      )}
-    </>
-  );
+  return <Outlet />;
 };
 
 export const OrganizationRouteComponent = () => {

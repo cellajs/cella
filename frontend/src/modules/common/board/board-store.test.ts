@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBoardStore } from './board-store';
 
-describe('board-store panel order sync', () => {
+describe('board-store panel orders', () => {
   beforeEach(() => {
     useBoardStore.setState({
       panelCollapseState: {},
@@ -9,37 +9,58 @@ describe('board-store panel order sync', () => {
       activeBoardType: null,
       activePanelId: null,
       boardLayouts: {},
-      boardPanelOrder: {},
+      boardPanelOrders: {},
     });
   });
 
-  it('removes stale panel ids and appends new observed ids', () => {
+  it('records and updates local panel displayOrder', () => {
     const boardId = 'board-1';
-    useBoardStore.getState().updatePanelOrder(boardId, ['explainer', 'project-a', 'project-c']);
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
+    useBoardStore.getState().setPanelOrder(boardId, 'ai-chat', 200);
 
-    const resolved = useBoardStore.getState().syncBoardPanelOrder(boardId, ['explainer', 'project-a', 'project-b']);
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
+      explainer: 100,
+      'ai-chat': 200,
+    });
 
-    expect(resolved).toEqual(['explainer', 'project-a', 'project-b']);
-    expect(useBoardStore.getState().boardPanelOrder[boardId]).toEqual(['explainer', 'project-a', 'project-b']);
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 150);
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
+      explainer: 150,
+      'ai-chat': 200,
+    });
   });
 
-  it('does not rewrite state when order is already in sync', () => {
+  it('does not rewrite state when displayOrder is unchanged', () => {
     const boardId = 'board-2';
-    useBoardStore.getState().updatePanelOrder(boardId, ['explainer', 'project-a']);
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
+    const previousRef = useBoardStore.getState().boardPanelOrders[boardId];
 
-    const previousRef = useBoardStore.getState().boardPanelOrder[boardId];
-    const resolved = useBoardStore.getState().syncBoardPanelOrder(boardId, ['explainer', 'project-a']);
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
 
-    expect(resolved).toBe(previousRef);
-    expect(useBoardStore.getState().boardPanelOrder[boardId]).toBe(previousRef);
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toBe(previousRef);
   });
 
-  it('initializes board order from observed ids when no prior order exists', () => {
+  it('prunes orders for panels that no longer exist', () => {
     const boardId = 'board-3';
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
+    useBoardStore.getState().setPanelOrder(boardId, 'ai-chat', 200);
+    useBoardStore.getState().setPanelOrder(boardId, 'gone', 300);
 
-    const resolved = useBoardStore.getState().syncBoardPanelOrder(boardId, ['explainer', 'project-a', 'ai-chat']);
+    useBoardStore.getState().prunePanelOrders(boardId, ['explainer', 'ai-chat']);
 
-    expect(resolved).toEqual(['explainer', 'project-a', 'ai-chat']);
-    expect(useBoardStore.getState().boardPanelOrder[boardId]).toEqual(['explainer', 'project-a', 'ai-chat']);
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
+      explainer: 100,
+      'ai-chat': 200,
+    });
+  });
+
+  it('is a no-op when nothing is stale', () => {
+    const boardId = 'board-4';
+    useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
+    const previousRef = useBoardStore.getState().boardPanelOrders[boardId];
+
+    useBoardStore.getState().prunePanelOrders(boardId, ['explainer']);
+
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toBe(previousRef);
   });
 });

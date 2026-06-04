@@ -25,16 +25,18 @@ const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
  */
 export const PROJECT_PERMISSION_SETS = [
   // Write — touched by routine CI deploys.
+  'BlockStorageFullAccess', // block volumes attached to instances (split from InstancesFullAccess upstream)
   'ContainerRegistryFullAccess', // image push
+  'IPAMFullAccess', // reserve + attach stable private IPAM IPs for VMs
   'InstancesFullAccess', // VM lifecycle
   'LoadBalancersFullAccess', // backend/frontend re-pointing
   'EdgeServicesFullAccess', // edge pipeline tweaks
   'ObjectStorageFullAccess', // frontend bucket uploads, policy refresh
   'ObservabilityFullAccess', // log/metric source updates
+  'PrivateNetworksFullAccess', // VM PN attachments (write required by InstancesFullAccess replacements)
   'SecretManagerFullAccess', // secret version rotation
   // Read-only — bootstrap-owned, refreshed but never mutated by CI.
   'VPCReadOnly',
-  'PrivateNetworksReadOnly',
   'RelationalDatabasesReadOnly',
 ] as const
 

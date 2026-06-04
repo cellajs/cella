@@ -1,12 +1,12 @@
 /**
  * Publication name for CDC.
  */
-export const CDC_PUBLICATION_NAME = 'cdc_pub';
+export const CDC_PUBLICATION_NAME = "cdc_pub";
 
 /**
  * Replication slot name for CDC.
  */
-export const CDC_SLOT_NAME = 'cdc_slot';
+export const CDC_SLOT_NAME = "cdc_slot";
 
 /**
  * CDC Resource Limits and Thresholds
@@ -68,6 +68,14 @@ export const RESOURCE_LIMITS = {
     /** Flush events individually if no commit arrives within this window (ms) */
     transactionTimeoutMs: 30_000,
   },
+
+  // WAL lag thresholds for backpressure
+  walLag: {
+    /** WAL lag in bytes before logging a warning */
+    warnBytes: 1 * 1024 * 1024 * 1024, // 1 GB
+    /** WAL lag in bytes that triggers unhealthy health status */
+    unhealthyBytes: 2 * 1024 * 1024 * 1024, // 2 GB
+  },
 } as const;
 
 /**
@@ -75,14 +83,14 @@ export const RESOURCE_LIMITS = {
  * These are PostgreSQL error codes that indicate temporary failures.
  */
 export const TRANSIENT_ERROR_CODES = new Set([
-  '40001', // serialization_failure
-  '40P01', // deadlock_detected
-  '53000', // insufficient_resources
-  '53100', // disk_full
-  '53200', // out_of_memory
-  '53300', // too_many_connections
-  '57P03', // cannot_connect_now
-  '08000', // connection_exception
-  '08003', // connection_does_not_exist
-  '08006', // connection_failure
+  "40001", // serialization_failure
+  "40P01", // deadlock_detected
+  "53000", // insufficient_resources
+  "53100", // disk_full
+  "53200", // out_of_memory
+  "53300", // too_many_connections
+  "57P03", // cannot_connect_now
+  "08000", // connection_exception
+  "08003", // connection_does_not_exist
+  "08006", // connection_failure
 ]);

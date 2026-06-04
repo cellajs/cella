@@ -39,11 +39,11 @@ describe('findUnencryptedSecrets', () => {
     expect(findUnencryptedSecrets(yaml)).toEqual([{ key: 'infra:thirdPartyApiKey', reason: 'plaintext' }])
   })
 
-  it('ignores allowlisted suffix-matched keys (image tags, projectId)', () => {
+  it('ignores allowlisted suffix-matched keys (projectId, region)', () => {
     const yaml = [
       'config:',
-      '  infra:backendImageTag: sha-abc123',
       '  scaleway:projectId: e2e322db',
+      '  scaleway:region: fr-par',
     ].join('\n')
     expect(findUnencryptedSecrets(yaml)).toEqual([])
   })

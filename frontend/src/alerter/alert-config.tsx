@@ -34,7 +34,7 @@ if (appConfig.mode === 'production') {
     children: (
       <>
         <strong className="mr-2">{t('about:prerelease')}</strong>
-        {t('common:experiment_notice.text')}
+        {t('c:experiment_notice.text')}
       </>
     ),
   });

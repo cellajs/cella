@@ -73,6 +73,7 @@ export {
 } from './src/entity-guards';
 
 export { hasKey, recordFromKeys, identityRecord, typedEntries, typedKeys } from './src/config-builder/utils';
+export { toWsUrl } from './src/utils/ws-url';
 
 // Permissions
 export type {

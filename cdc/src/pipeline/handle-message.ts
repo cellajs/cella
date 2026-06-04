@@ -132,6 +132,8 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
       return;
     }
 
+    replicationState.markEvent();
+
     // Buffer the event (or process immediately if no active transaction)
     await txBuffer.onEvent(lsn, parseResult);
   } catch (error) {

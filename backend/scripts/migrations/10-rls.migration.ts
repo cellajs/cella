@@ -70,6 +70,13 @@ async function run() {
     return getTableName(table);
   });
 
+  // Entity embedding columns where CDC needs UPDATE permission to strip deleted refs
+  const embeddingGrants = appConfig.entityEmbeddings.map(({ hostEntity, hostColumn }) => {
+    const table = entityTables[hostEntity as keyof typeof entityTables];
+    if (!table) throw new Error(`No table found for embedding host entity: ${hostEntity}`);
+    return `    GRANT UPDATE (${hostColumn}) ON ${getTableName(table)} TO cdc_role;`;
+  });
+
   // ============================================================================
   // Migration SQL
   // ============================================================================
@@ -105,7 +112,7 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
     GRANT SELECT ON tenants TO cdc_role;
     GRANT SELECT ON organizations TO cdc_role;
   ${productEntityTableNames.map((t) => `    GRANT SELECT (id, stx), UPDATE (seq, stx) ON ${t} TO cdc_role;`).join('\n')}
-    GRANT UPDATE (labels) ON tasks TO cdc_role;
+${embeddingGrants.join('\n')}
 
     -- Grants: admin_role (full access)
     GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;

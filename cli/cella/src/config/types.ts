@@ -192,6 +192,9 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Check which pnpm.overrides are still needed (audit service) */
   checkOverrides?: boolean;
+
+  /** Regenerate test coverage before showing the stats summary (stats service) */
+  coverage?: boolean;
 }
 
 /** File status after analysis */

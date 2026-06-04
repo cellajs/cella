@@ -22,6 +22,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY yjs/package.json ./yjs/
 COPY shared/package.json ./shared/
+COPY patches/ ./patches/
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter yjs...
@@ -34,6 +35,7 @@ FROM base AS builder
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY yjs/package.json ./yjs/
 COPY shared/package.json ./shared/
+COPY patches/ ./patches/
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts --filter yjs...
@@ -67,6 +69,11 @@ RUN chown -R app:app /app
 
 # Switch to non-root user
 USER app
+
+# Build-time release identifier (Git SHA from CI). Surfaced at runtime via
+# `/health` so the deploy verifier can confirm the new code is actually live.
+ARG RELEASE_SHA=unknown
+ENV RELEASE_SHA=${RELEASE_SHA}
 
 # Environment variables
 ENV NODE_ENV=production

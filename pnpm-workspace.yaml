@@ -10,25 +10,10 @@ minimumReleaseAgeExclude:
   - protobufjs@8.0.2
   - ws@8.20.1
   - prosemirror-model@1.25.7
-  - undici@7.24.0
-  - brace-expansion@2.0.3
-  - brace-expansion@5.0.5
-  - picomatch@2.3.2
-  - picomatch@4.0.4
-  - yaml@2.8.3
-  - lodash@4.17.24
-  - '@hono/node-server@1.19.13'
-  - follow-redirects@1.15.12
-  - axios@1.15.0
-  - axios@1.15.1
-  - axios@1.15.2
-  - fast-uri@3.1.1
-  - fast-uri@3.1.2
-  - '@babel/plugin-transform-modules-systemjs@7.29.4'
-  - brace-expansion@5.0.6
-  - js-cookie@3.0.6
+  - tmp@0.2.6
 
 packages:
+  - ai
   - backend
   - cdc
   - shared
@@ -56,21 +41,30 @@ peerDependencyRules:
     '@opentelemetry/api': '>=1' # gleap transitive deps haven't caught up
 
 overrides:
-  # Intentional pins
   "@tiptap/pm": "3.22.5"
   "@tiptap/core": "3.22.5"
   "prosemirror-model": "1.25.7"
   "prosemirror-view": "1.41.7"
-  # Security overrides still doing work (floor matches installed version, or pulled in by transitive dep)
-  "esbuild@<=0.24.2": ">=0.25.0" # @esbuild-kit/core-utils -> drizzle-kit 0.31 still pulls 0.18.20 without this
+  "esbuild@<=0.24.2": ">=0.25.0"
+  "ai@<5.0.52": ">=5.0.52"
+  "seroval@<=1.4.0": ">=1.4.1"
+  "seroval@<1.4.1": ">=1.4.1"
+  "serialize-javascript@<=7.0.2": ">=7.0.3"
   "serialize-javascript@<7.0.5": ">=7.0.5"
+  "dompurify@<=3.3.3": ">=3.4.0"
+  "hono@<4.12.14": ">=4.12.14"
+  "protobufjs@<7.5.5": ">=7.5.5"
+  "protobufjs@>=8.0.0 <8.0.1": ">=8.0.1"
+  "i18next-http-backend@<3.0.5": ">=3.0.5"
+  "dompurify@<3.4.0": ">=3.4.0"
+  "dompurify@>=1.0.10 <3.4.0": ">=3.4.0"
+  "dompurify@>=3.0.1 <3.4.0": ">=3.4.0"
+  "fast-xml-parser@<5.7.0": ">=5.7.0"
+  "uuid@<14.0.0": ">=14.0.0"
+  "postcss@<8.5.10": ">=8.5.10"
   protobufjs@>=8.0.0 <=8.0.1: ^8.0.2
   ws@>=8.0.0 <8.20.1: ^8.20.1
-  brace-expansion@>=5.0.0 <5.0.6: ^5.0.6
-  fast-uri@<=3.1.1: ^3.1.2
-  picomatch@<2.3.2: ^2.3.2
-  picomatch@>=4.0.0 <4.0.4: ^4.0.4
-  "uuid@<14.0.0": ">=14.0.0"
+  tmp@<0.2.6: ^0.2.6
 
 allowBuilds:
   esbuild: true
@@ -80,3 +74,11 @@ allowBuilds:
   core-js: false
   protobufjs: false
   unix-dgram: false
+  msgpackr-extract: false
+
+# Allow patches whose package isn't installed in a given filtered install
+# (e.g. backend-only Docker build excludes the frontend, where pragmatic-drag-and-drop lives).
+allowUnusedPatches: true
+
+patchedDependencies:
+  '@atlaskit/pragmatic-drag-and-drop@1.8.1': patches/@atlaskit__pragmatic-drag-and-drop@1.8.1.patch

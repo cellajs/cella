@@ -23,13 +23,15 @@ const FORBIDDEN = [
 describe('CI key permission sets', () => {
   it('PROJECT_PERMISSION_SETS exact membership snapshot', () => {
     expect([...PROJECT_PERMISSION_SETS].sort()).toEqual([
+      'BlockStorageFullAccess',
       'ContainerRegistryFullAccess',
       'EdgeServicesFullAccess',
+      'IPAMFullAccess',
       'InstancesFullAccess',
       'LoadBalancersFullAccess',
       'ObjectStorageFullAccess',
       'ObservabilityFullAccess',
-      'PrivateNetworksReadOnly',
+      'PrivateNetworksFullAccess',
       'RelationalDatabasesReadOnly',
       'SecretManagerFullAccess',
       'VPCReadOnly',

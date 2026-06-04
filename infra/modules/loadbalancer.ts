@@ -61,6 +61,7 @@ if (hasDomain && infra.computeEnabled) {
   const apiSubdomain = domains.api.replace(`.${domains.zone}`, '')
   const yjsSubdomain = domains.yjs.replace(`.${domains.zone}`, '')
   const aiSubdomain = domains.ai.replace(`.${domains.zone}`, '')
+  const appSubdomain = domains.app.replace(`.${domains.zone}`, '')
 
   const apiDns = new scaleway.domain.Record('api-dns', {
     dnsZone: domains.zone,
@@ -85,6 +86,19 @@ if (hasDomain && infra.computeEnabled) {
     data: lbPublicIp,
     ttl: 300,
   })
+
+  // App (www) DNS — points at the LB, which serves the SPA via the Caddy
+  // frontend VM.
+  let appDns: scaleway.domain.Record | undefined
+  if (!appIsAtApex) {
+    appDns = new scaleway.domain.Record('app-dns', {
+      dnsZone: domains.zone,
+      name: appSubdomain,
+      type: 'A',
+      data: lbPublicIp,
+      ttl: 300,
+    })
+  }
 
   let apexDns: scaleway.domain.Record | undefined
   if (!appIsAtApex) {
@@ -137,6 +151,17 @@ if (hasDomain && infra.computeEnabled) {
     }, { dependsOn: [apexDns] })
   }
 
+  let appCert: scaleway.loadbalancers.Certificate | undefined
+  if (!appIsAtApex && appDns) {
+    appCert = new scaleway.loadbalancers.Certificate('app-cert', {
+      lbId: lb.id,
+      name: naming.resource('app-cert'),
+      letsencrypt: {
+        commonName: domains.app,
+      },
+    }, { dependsOn: [appDns] })
+  }
+
   // -------------------------------------------------------------------------
   // LB Backends — each points to a VM's private IP
   // -------------------------------------------------------------------------
@@ -144,6 +169,7 @@ if (hasDomain && infra.computeEnabled) {
   const backendIp = getInstanceIp('backend')
   const yjsIp = getInstanceIp('yjs')
   const aiIp = getInstanceIp('ai')
+  const frontendIp = getInstanceIp('frontend')
 
   const backendBackend = new scaleway.loadbalancers.Backend('backend-lb-backend', {
     lbId: lb.id,
@@ -151,7 +177,11 @@ if (hasDomain && infra.computeEnabled) {
     forwardProtocol: 'http',
     forwardPort: 4000,
     serverIps: [backendIp],
-    healthCheckHttp: { uri: '/health', code: 204 },
+    // Health-check the ingress proxy's own liveness endpoint, not the app's
+    // /health. The ingress always answers 200 while its process is up, so an
+    // app-container rollover (brief 502s on proxied paths) never drains this
+    // backend. See infra/ingress.Caddyfile.
+    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
     healthCheckDelay: '3s',
     healthCheckTimeout: '2s',
     healthCheckMaxRetries: 2,
@@ -163,7 +193,7 @@ if (hasDomain && infra.computeEnabled) {
     forwardProtocol: 'http',
     forwardPort: 4002,
     serverIps: [yjsIp],
-    healthCheckHttp: { uri: '/health', code: 204 },
+    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
     healthCheckDelay: '3s',
     healthCheckTimeout: '2s',
     healthCheckMaxRetries: 2,
@@ -178,7 +208,21 @@ if (hasDomain && infra.computeEnabled) {
     forwardProtocol: 'http',
     forwardPort: 4003,
     serverIps: [aiIp],
-    healthCheckHttp: { uri: '/health', code: 204 },
+    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
+    healthCheckDelay: '3s',
+    healthCheckTimeout: '2s',
+    healthCheckMaxRetries: 2,
+  })
+
+  // Caddy reverse-proxy in front of the SPA bucket. Listens on :80 inside
+  // the container; LB forwards plain HTTP and adds TLS at the edge.
+  const frontendBackend = new scaleway.loadbalancers.Backend('frontend-lb-backend', {
+    lbId: lb.id,
+    name: naming.resource('frontend'),
+    forwardProtocol: 'http',
+    forwardPort: 80,
+    serverIps: [frontendIp],
+    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
     healthCheckDelay: '3s',
     healthCheckTimeout: '2s',
     healthCheckMaxRetries: 2,
@@ -190,6 +234,7 @@ if (hasDomain && infra.computeEnabled) {
 
   const allCertIds = [apiCert.id, yjsCert.id, aiCert.id]
   if (apexCert) allCertIds.push(apexCert.id)
+  if (appCert) allCertIds.push(appCert.id)
 
   const httpsFrontend = new scaleway.loadbalancers.Frontend('https-frontend', {
     lbId: lb.id,
@@ -212,6 +257,17 @@ if (hasDomain && infra.computeEnabled) {
     matchHostHeader: domains.ai,
   })
 
+  // www (app) route — only when app is on its own subdomain. When app is at
+  // the apex, the default backend would have to be frontend instead of api,
+  // which we don't currently support.
+  if (!appIsAtApex) {
+    new scaleway.loadbalancers.Route('app-route', {
+      frontendId: httpsFrontend.id,
+      backendId: frontendBackend.id,
+      matchHostHeader: domains.app,
+    })
+  }
+
   // Apex → www redirect (HTTPS) via ACL on the HTTPS frontend
   if (!appIsAtApex) {
     new scaleway.loadbalancers.Acl('apex-redirect-https', {
@@ -222,7 +278,10 @@ if (hasDomain && infra.computeEnabled) {
         type: 'redirect',
         redirects: [{
           type: 'location',
-          target: `https://${domains.app}`,
+          // Preserve the original path and query so deep links (e.g. /static/logo/logo.png)
+          // survive the apex→www redirect. Scaleway supports {{host}}, {{path}} and {{query}}
+          // placeholders; {{path}} includes the leading slash.
+          target: `https://${domains.app}{{path}}?{{query}}`,
           code: 301,
         }],
       },

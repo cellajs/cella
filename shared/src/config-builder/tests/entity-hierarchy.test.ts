@@ -76,8 +76,8 @@ describe('EntityHierarchyBuilder', () => {
     });
   });
 
-  describe('hierarchy queries (multi-context model)', () => {
-    // Example fork entity structure:
+  describe('hierarchy queries (raak-like model)', () => {
+    // Matches raak's entity structure:
     // - organization: root context
     // - workspace: context under organization (parallel to project)
     // - project: context under organization

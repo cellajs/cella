@@ -654,12 +654,27 @@ export const zGetMeResponse = zMe;
 
 export const zUpdateMeBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
-  firstName: z.string().min(2).max(255).nullish(),
-  lastName: z.string().min(2).max(255).nullish(),
+  firstName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .nullish(),
+  lastName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
   thumbnailUrl: z.string().max(2048).nullish(),
-  slug: z.string().min(2).max(255).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .optional(),
   userFlags: z
     .object({
       finishedOnboarding: z.boolean().optional(),
@@ -762,7 +777,11 @@ export const zGetMyMembershipsResponse = z.object({
 export const zGetUnseenCountsResponse = z.record(z.string(), z.record(z.string(), z.int().gte(0)));
 
 export const zCheckSlugBody = z.object({
-  slug: z.string().min(2).max(255),
+  slug: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/),
   entityType: z.enum(['organization']),
 });
 
@@ -884,12 +903,27 @@ export const zDeleteUsersResponse = z.object({
 
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
-  firstName: z.string().min(2).max(255).nullish(),
-  lastName: z.string().min(2).max(255).nullish(),
+  firstName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .nullish(),
+  lastName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
   thumbnailUrl: z.string().max(2048).nullish(),
-  slug: z.string().min(2).max(255).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .optional(),
 });
 
 export const zUpdateUserPath = z.object({
@@ -936,7 +970,11 @@ export const zGetTenantsResponse = z.object({
 });
 
 export const zCreateTenantBody = z.object({
-  name: z.string().min(2).max(255),
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
 });
 
@@ -946,7 +984,11 @@ export const zCreateTenantBody = z.object({
 export const zCreateTenantResponse = zTenant;
 
 export const zSelfCreateTenantBody = z.object({
-  name: z.string().min(2).max(255),
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
 });
 
 /**
@@ -955,7 +997,12 @@ export const zSelfCreateTenantBody = z.object({
 export const zSelfCreateTenantResponse = zTenant;
 
 export const zUpdateTenantBody = z.object({
-  name: z.string().min(2).max(255).optional(),
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
   subscriptionId: z.string().max(255).nullish(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
@@ -1006,7 +1053,7 @@ export const zCreateDomainBody = z.object({
     .string()
     .min(4)
     .max(255)
-    .regex(/^[a-z0-9].*[a-z0-9]$\/i/),
+    .regex(/^[a-z0-9].*[a-z0-9]$/),
 });
 
 export const zCreateDomainPath = z.object({
@@ -1166,8 +1213,16 @@ export const zCreateOrganizationsBody = z
         .string()
         .max(50)
         .regex(/^temp-/),
-      name: z.string().min(2).max(255),
-      slug: z.string().min(2).max(255),
+      name: z
+        .string()
+        .min(2)
+        .max(255)
+        .regex(/^[\p{L}\d\-., '&()]+$/u),
+      slug: z
+        .string()
+        .min(2)
+        .max(255)
+        .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/),
     }),
   )
   .min(1)
@@ -1246,9 +1301,24 @@ export const zGetOrganizationQuery = z.object({
 export const zGetOrganizationResponse = zOrganization;
 
 export const zUpdateOrganizationBody = z.object({
-  slug: z.string().min(2).max(255).optional(),
-  name: z.string().min(2).max(255).optional(),
-  shortName: z.string().min(2).max(255).nullish(),
+  slug: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .optional(),
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .optional(),
+  shortName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .nullish(),
   country: z.string().max(255).nullish(),
   timezone: z.string().max(255).nullish(),
   defaultLanguage: z.enum(['en', 'nl']).optional(),

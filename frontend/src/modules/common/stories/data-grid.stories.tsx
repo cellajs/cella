@@ -511,8 +511,10 @@ export const ShouldSelectRowOnClick: Story = {
       const cell = await canvas.findByText('Bob');
       const cellEl = cell.closest('.rdg-cell')!;
       const style = window.getComputedStyle(cellEl);
-      // Cell should NOT have an individual outline
-      expect(style.outlineStyle).toBe('none');
+      // Cell should NOT carry the per-cell selection ring (2px). Avoid asserting
+      // outlineStyle === 'none' because UA :focus-visible may set outline:auto
+      // on focused tabindex cells in headless Chromium.
+      expect(style.outlineWidth).not.toBe('2px');
     });
   },
 };
@@ -532,9 +534,14 @@ export const ShouldSelectCellRange: Story = {
 
     await step('Shift+click another cell to create range', async () => {
       const targetCell = await canvas.findByText('Diana');
-      await userEvent.keyboard('{Shift>}');
-      await userEvent.click(targetCell, { delay: 100 });
-      await userEvent.keyboard('{/Shift}');
+      // Use the pointer DSL so shiftKey is bound to the pointer event itself.
+      // userEvent.keyboard('{Shift>}') only holds the modifier for subsequent
+      // keyboard events, not for userEvent.click — which fails on Linux Chromium.
+      await userEvent.pointer([
+        { keys: '[ShiftLeft>]' },
+        { target: targetCell, keys: '[MouseLeft]' },
+        { keys: '[/ShiftLeft]' },
+      ]);
 
       await waitFor(() => {
         const grid = canvas.getByRole('grid');
@@ -549,7 +556,9 @@ export const ShouldSelectCellRange: Story = {
       const rangeCells = grid.querySelectorAll('.rdg-cell-in-range');
       for (const cell of rangeCells) {
         const style = window.getComputedStyle(cell);
-        expect(style.outlineStyle).toBe('none');
+        // See ShouldSelectRowOnClick: assert no per-cell selection ring instead
+        // of outlineStyle === 'none' to avoid UA :focus-visible interference.
+        expect(style.outlineWidth).not.toBe('2px');
       }
     });
 

@@ -1,7 +1,7 @@
 # =============================================================================
 # Scaleway Deployment Workflow
 # =============================================================================
-# Deploys Cella to Scaleway infrastructure using Pulumi
+# Deploys Raak to Scaleway infrastructure using Pulumi
 # Triggered on pushes to main (production) or manually for other environments
 # =============================================================================
 
@@ -66,7 +66,12 @@ jobs:
       registry_ns: ${{ steps.derive.outputs.registry_ns }}
       frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
       state_bucket: ${{ steps.derive.outputs.state_bucket }}
+      deploy_tags_bucket: ${{ steps.derive.outputs.deploy_tags_bucket }}
       region: ${{ steps.derive.outputs.region }}
+      frontend_url: ${{ steps.derive.outputs.frontend_url }}
+      backend_url: ${{ steps.derive.outputs.backend_url }}
+      yjs_url: ${{ steps.derive.outputs.yjs_url }}
+      ai_url: ${{ steps.derive.outputs.ai_url }}
       image_tag: ${{ steps.set-env.outputs.image_tag }}
       backend: 'true'
       cdc: 'true'
@@ -140,6 +145,8 @@ jobs:
             dockerfile: cdc/Dockerfile
           - service: yjs
             dockerfile: yjs/Dockerfile
+          - service: frontend
+            dockerfile: infra/caddy/Dockerfile
     environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
@@ -163,6 +170,11 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:${{ needs.setup.outputs.image_tag }}
+          # RELEASE_SHA is baked into the image as ENV so `/health` can return
+          # it. The deploy verifier asserts X-App-Version matches GITHUB_SHA
+          # before declaring the rollout green.
+          build-args: |
+            RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
@@ -194,7 +206,8 @@ jobs:
           exit 1
 
   # -------------------------------------------------------------------------
-  # Build and deploy frontend to Object Storage
+  # Build frontend bundle (no upload). Runs in parallel with build-images so
+  # the artifact is ready when publish-frontend gates on backend health.
   # -------------------------------------------------------------------------
   build-frontend:
     runs-on: ubuntu-latest
@@ -222,79 +235,16 @@ jobs:
       - name: Build frontend
         run: pnpm --filter frontend build
         env:
-          VITE_BACKEND_URL: ${{ vars.BACKEND_URL }}
-          VITE_FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          VITE_BACKEND_URL: ${{ needs.setup.outputs.backend_url }}
+          VITE_FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
 
-      - name: Install Scaleway CLI
-        run: |
-          curl -sLo /usr/local/bin/scw "https://github.com/scaleway/scaleway-cli/releases/download/v${{ env.SCW_CLI_VERSION }}/scaleway-cli_${{ env.SCW_CLI_VERSION }}_linux_amd64"
-          chmod +x /usr/local/bin/scw
-          scw version
-
-      - name: Upload frontend to Object Storage
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
-          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        run: |
-          BUCKET="s3://$BUCKET_NAME"
-
-          # Sync versioned static assets with long cache, remove stale files
-          aws s3 sync frontend/dist/ "$BUCKET/" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "index.html" \
-            --exclude "sw.js" \
-            --exclude "sw.js.map" \
-            --exclude "manifest.webmanifest" \
-            --size-only \
-            --delete
-
-          # Entry files must be revalidated to ensure clients see new deployments
-          aws s3 cp frontend/dist/index.html "$BUCKET/index.html" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "no-cache, no-store, must-revalidate"
-
-          aws s3 cp frontend/dist/sw.js "$BUCKET/sw.js" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "no-cache, no-store, must-revalidate"
-
-          aws s3 cp frontend/dist/manifest.webmanifest "$BUCKET/manifest.webmanifest" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "no-cache, no-store, must-revalidate"
-
-      - name: Purge Edge Services cache for index.html
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          EDGE_PIPELINE_ID: ${{ vars.EDGE_PIPELINE_ID }}
-          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        run: |
-          set -euo pipefail
-
-          # Use configured pipeline ID, or fall back to dynamic lookup
-          if [ -z "${EDGE_PIPELINE_ID:-}" ]; then
-            if [ -z "${SCW_DEFAULT_ORGANIZATION_ID:-}" ]; then
-              echo "::warning::EDGE_PIPELINE_ID is not set and SCW_DEFAULT_ORGANIZATION_ID is missing; skipping edge cache purge."
-              exit 0
-            fi
-            EDGE_PIPELINE_ID=$(scw edge-services pipeline list -o json | jq -r ".[] | select(.name | contains(\"$BUCKET_NAME\")) | .id" | head -n1)
-          fi
-
-          if [ -n "${EDGE_PIPELINE_ID:-}" ]; then
-            scw edge-services purge-request create \
-              pipeline-id="$EDGE_PIPELINE_ID" \
-              assets.0="index.html" \
-              assets.1="sw.js" \
-              assets.2="manifest.webmanifest"
-          else
-            echo "::warning::Could not resolve EDGE_PIPELINE_ID; skipping edge cache purge."
-          fi
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+          if-no-files-found: error
 
   # -------------------------------------------------------------------------
   # Apply Pulumi infrastructure
@@ -371,7 +321,6 @@ jobs:
           pulumi config set infra:backendImageTag "$TAG"
           pulumi config set infra:cdcImageTag "$TAG"
           pulumi config set infra:yjsImageTag "$TAG"
-          pulumi config set infra:deployCompute true
 
       - name: Ensure stack secrets exist
         # Idempotent: only writes keys not already set. Keeps `pulumi up` from
@@ -485,98 +434,382 @@ jobs:
           echo "- **Yjs Domain:** $(pulumi stack output yjsDomainUrl --stack "$STACK" 2>/dev/null || echo 'no domain')" >> $GITHUB_STEP_SUMMARY
 
   # -------------------------------------------------------------------------
-  # Post-deployment health check
+  # Roll services — for each backend service (backend, cdc, yjs, ai):
+  #   1. PUT the new image SHA into s3://<deploy_tags_bucket>/deploy/<svc>.tag
+  #   2. Poll the public health endpoint until X-App-Version == SHA
+  #
+  # Matrix runs in parallel; `fail-fast: true` cancels siblings the moment one
+  # service refuses to roll, so a broken cdc/yjs deploy doesn't have to wait
+  # 5 minutes on a separately-stuck backend before the workflow turns red.
+  #
+  # Tag rollback: re-running the workflow on the previous commit re-PUTs the
+  # old SHA. The on-VM reconciler sees the change and rolls back the same way
+  # it rolled forward — no separate code path. CI doesn't try to "undo" on
+  # failure; that would race the reconciler's own rollback (which only the VM
+  # has the local context to do safely).
   # -------------------------------------------------------------------------
-  # -------------------------------------------------------------------------
-  # Wait for the freshly-replaced VMs to come up and verify rollout health
-  # -------------------------------------------------------------------------
-  verify-rollout:
+  roll-services:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [setup, pulumi, build-images, build-frontend]
-    # No checkout, no repo writes — purely external HTTP probes.
+    needs: [setup, pulumi, build-images]
     permissions: {}
     if: >-
       always() &&
       needs.setup.result == 'success' &&
       (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
-      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
-      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
+      needs.build-images.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: backend
+            health_url: ${{ needs.setup.outputs.backend_url }}
+          - service: cdc
+            # CDC has no public LB frontend; the worker hosts /health on its
+            # private IP only. Skip the live probe step for cdc and rely on
+            # the reconciler's own local health check + LB drain to surface
+            # failures (a broken cdc takes the backend's CDC websocket down,
+            # which fails the backend probe).
+            health_url: ''
+          - service: yjs
+            health_url: ${{ needs.setup.outputs.yjs_url }}
+          - service: ai
+            health_url: ${{ needs.setup.outputs.ai_url }}
+          - service: frontend
+            health_url: ${{ needs.setup.outputs.frontend_url }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
+      REGION: ${{ needs.setup.outputs.region }}
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      SERVICE: ${{ matrix.service }}
     steps:
-      - name: Wait for backend to serve traffic
-        env:
-          # Prefer Pulumi-derived URL; fall back to manually configured repo var.
-          HEALTH_URL: ${{ needs.pulumi.outputs.api_url || vars.BACKEND_URL }}/health
-        # The actual /health request is ~50ms. The wall-clock here is the time
-        # for cloud-init (apt + docker + pull + boot, ~60-90s) + LB probe
-        # convergence (~10s with current tuning) on the freshly-replaced VM.
-        # 60 × 3s = 3 min budget.
+      - name: Write deploy tag for ${{ matrix.service }}
         run: |
-          echo "Probing $HEALTH_URL"
+          ENDPOINT="https://s3.$REGION.scw.cloud"
+          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
+          # Plain text body, no newline — reconciler reads it as-is.
+          printf '%s' "$EXPECTED_SHA" \
+            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
+                --content-type 'text/plain'
 
-          for i in {1..60}; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
-            if [ "$response" = "204" ] || [ "$response" = "200" ]; then
-              echo "Backend healthy after ${i} attempts"
+      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
+        if: matrix.health_url != ''
+        env:
+          # URLs come from setup outputs (derived from shared/ appConfig).
+          # appConfig URLs are canonical https:// origins; CI probes /health
+          # directly without any scheme transformation.
+          BASE: ${{ matrix.health_url }}
+        run: |
+          if [ -z "$BASE" ]; then
+            echo "::error::No health URL for $SERVICE in environment ${{ needs.setup.outputs.environment }}"
+            exit 1
+          fi
+          HEALTH_URL="$BASE/health"
+          echo "Probing $HEALTH_URL — expecting X-App-Version: $EXPECTED_SHA"
+
+          # Frontend (Caddy) returns 200 with body 'ok'; backend/yjs/ai return
+          # 204 with no body. Both emit X-App-Version, which is what we assert.
+          # 100 × 3s = 5 min budget per service. Matrix runs in parallel, so
+          # wall-clock for the slowest service is the upper bound.
+          for i in $(seq 1 100); do
+            headers=$(curl -sS -D - -o /dev/null --max-time 8 "$HEALTH_URL" 2>/dev/null || true)
+            status=$(printf '%s' "$headers" | awk 'NR==1{print $2}')
+            served=$(printf '%s' "$headers" | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
+
+            if { [ "$status" = "204" ] || [ "$status" = "200" ]; } && [ "$served" = "$EXPECTED_SHA" ]; then
+              echo "$SERVICE serving $EXPECTED_SHA after ${i} attempts"
               exit 0
             fi
-            echo "Attempt $i/60: $response"
+            echo "Attempt $i/100: status=${status:-<none>} served=${served:-<missing>}"
             sleep 3
           done
 
-          echo "Backend did not become healthy within 3 minutes"
+          echo "::error::$SERVICE did not roll to $EXPECTED_SHA within 5 minutes (last served: ${served:-<unknown>})"
           exit 1
 
-      - name: Fetch backend boot diagnostics on failure
+      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
         if: failure()
-        # The backend VM uploads a snapshot (cloud-init log + docker compose
-        # logs) to s3://<state-bucket>/boot-diag/ ~2 min after boot. Pull the
-        # most recent backend-*.log so the real failure is in the workflow log.
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
-          REGION: ${{ needs.setup.outputs.region }}
         run: |
           ENDPOINT="https://s3.$REGION.scw.cloud"
 
-          # First filter to backend-related entries from the past hour to keep noise down.
-          # Show ALL backend stage markers + main log for this run.
-          echo "::group::Stage markers (backend-*)"
+          echo "::group::Stage markers ($SERVICE-*)"
           aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-            | awk '{print $4}' | grep -E '^backend-(stage|[0-9])' | sort | tail -30 || true
+            | awk '{print $4}' | grep -E "^${SERVICE}-(stage|[0-9])" | sort | tail -30 || true
           echo "::endgroup::"
 
-          # Print every backend stage marker uploaded in this deploy (small text files)
           for KEY in $(aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-              | awk '{print $4}' | grep '^backend-stage-' | sort | tail -10); do
+              | awk '{print $4}' | grep "^${SERVICE}-stage-" | sort | tail -10); do
             echo "::group::$KEY"
             aws --endpoint-url "$ENDPOINT" s3 cp "s3://$STATE_BUCKET/boot-diag/$KEY" - 2>/dev/null || true
             echo
             echo "::endgroup::"
           done
 
-          # Print latest full diag log if present
           LATEST=$(aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-            | awk '{print $4}' | grep -E '^backend-[0-9]{8}T' | sort | tail -1)
+            | awk '{print $4}' | grep -E "^${SERVICE}-[0-9]{8}T" | sort | tail -1)
           if [ -n "$LATEST" ]; then
-            echo "::group::Backend boot diagnostics ($LATEST)"
+            echo "::group::$SERVICE boot diagnostics ($LATEST)"
             aws --endpoint-url "$ENDPOINT" s3 cp "s3://$STATE_BUCKET/boot-diag/$LATEST" - || true
             echo "::endgroup::"
           else
-            echo "::warning::No backend full boot-diag log uploaded — uploader may have failed (see stage markers above)"
+            echo "::warning::No $SERVICE full boot-diag log uploaded"
           fi
 
-      - name: Check frontend availability
+  # -------------------------------------------------------------------------
+  # Verify rollout — backward-compatible alias that depends on roll-services.
+  # Kept as its own job so the existing branch protection rule
+  # ("verify-rollout must pass") stays satisfied without re-configuring repo
+  # settings. publish-frontend gates on this too.
+  # -------------------------------------------------------------------------
+  verify-rollout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [setup, pulumi, build-images, roll-services]
+    permissions: {}
+    if: >-
+      always() &&
+      needs.setup.result == 'success' &&
+      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
+      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
+      needs.roll-services.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Summarise rollout
         env:
-          FRONTEND_URL: ${{ vars.FRONTEND_URL || needs.pulumi.outputs.frontend_url }}
+          EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
         run: |
-          echo "Checking frontend at $FRONTEND_URL"
+          {
+            echo "## Rollout"
+            echo
+            echo "All services serving \`$EXPECTED_SHA\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          response=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" || echo "000")
-          if [ "$response" = "200" ]; then
-            echo "Frontend is available!"
-          else
-            echo "Frontend returned $response (may be expected for dev with no domain)"
+  # -------------------------------------------------------------------------
+  # Publish frontend to Object Storage — runs AFTER backend is verified
+  # healthy, so users never load a new bundle that calls a not-yet-rolled API.
+  # Upload order is strict: versioned chunks first (so they exist when the new
+  # index.html references them), then index.html/sw.js/manifest with no-cache.
+  # No --delete: stale chunks are garbage-collected by frontend-gc.yml after
+  # a safety window, so in-flight tabs on the previous bundle still load.
+  # -------------------------------------------------------------------------
+  publish-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup, build-frontend, verify-rollout]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Install Scaleway CLI
+        run: |
+          curl -sLo /usr/local/bin/scw "https://github.com/scaleway/scaleway-cli/releases/download/v${{ env.SCW_CLI_VERSION }}/scaleway-cli_${{ env.SCW_CLI_VERSION }}_linux_amd64"
+          chmod +x /usr/local/bin/scw
+          scw version
+
+      - name: Upload versioned assets (long cache, no --delete)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        # Chunks must exist BEFORE the new index.html is published; old
+        # chunks are intentionally retained so already-loaded tabs keep
+        # working until frontend-gc.yml prunes them after the safety window.
+        run: |
+          BUCKET="s3://$BUCKET_NAME"
+          aws s3 sync dist/ "$BUCKET/" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "sw.js" \
+            --exclude "sw.js.map" \
+            --exclude "manifest.webmanifest" \
+            --size-only
+
+      - name: Upload entry files (no-cache) — strictly after assets
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        run: |
+          BUCKET="s3://$BUCKET_NAME"
+          for f in index.html sw.js manifest.webmanifest; do
+            if [ -f "dist/$f" ]; then
+              aws s3 cp "dist/$f" "$BUCKET/$f" \
+                --endpoint-url "$S3_ENDPOINT" \
+                --cache-control "no-cache, no-store, must-revalidate"
+            fi
+          done
+
+      - name: Purge Edge Services cache for entry files
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          EDGE_PIPELINE_ID: ${{ vars.EDGE_PIPELINE_ID }}
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EDGE_PIPELINE_ID:-}" ]; then
+            if [ -z "${SCW_DEFAULT_ORGANIZATION_ID:-}" ]; then
+              echo "::warning::EDGE_PIPELINE_ID is not set and SCW_DEFAULT_ORGANIZATION_ID is missing; skipping edge cache purge."
+              exit 0
+            fi
+            EDGE_PIPELINE_ID=$(scw edge-services pipeline list -o json | jq -r ".[] | select(.name | contains(\"$BUCKET_NAME\")) | .id" | head -n1)
           fi
+          if [ -n "${EDGE_PIPELINE_ID:-}" ]; then
+            scw edge-services purge-request create \
+              pipeline-id="$EDGE_PIPELINE_ID" \
+              assets.0="index.html" \
+              assets.1="sw.js" \
+              assets.2="manifest.webmanifest"
+          else
+            echo "::warning::Could not resolve EDGE_PIPELINE_ID; skipping edge cache purge."
+          fi
+
+      - name: Verify served bundle matches uploaded bundle
+        env:
+          FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
+        # Compare a stable marker from the just-uploaded index.html against
+        # what the edge actually serves with Cache-Control: no-cache. We use
+        # the entry script's hashed filename (e.g. /assets/index-abc123.js)
+        # extracted from the local index.html — if the served HTML still
+        # references the previous hash, the edge purge hasn't propagated
+        # (or worse, TLS is broken). 30 × 3s = ~90s budget.
+        run: |
+          set -uo pipefail
+          if [ -z "$FRONTEND_URL" ]; then
+            echo "No FRONTEND_URL configured — skipping verify"
+            exit 0
+          fi
+
+          # Extract the expected entry script src from the freshly uploaded HTML.
+          EXPECTED=$(grep -oE 'src="[^"]*assets/[^"]+\.js"' dist/index.html | head -n1 | sed 's/^src="//; s/"$//')
+          if [ -z "$EXPECTED" ]; then
+            echo "::warning::Could not extract entry asset from dist/index.html; skipping hash verify"
+            EXPECTED=""
+          else
+            echo "Expecting served index.html to reference: $EXPECTED"
+          fi
+
+          for i in $(seq 1 30); do
+            BODY=$(curl -fsS --max-time 8 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$FRONTEND_URL/index.html" 2>/dev/null)
+            rc=$?
+            case "$rc" in
+              0)
+                if [ -z "$EXPECTED" ] || echo "$BODY" | grep -qF "$EXPECTED"; then
+                  echo "Frontend serving new bundle after ${i} attempts"
+                  exit 0
+                fi
+                echo "Attempt $i/30: served HTML does not yet reference $EXPECTED"
+                ;;
+              35|60|51|58|59|66|77|83)
+                echo "::error::Frontend TLS failure (curl exit $rc) on $FRONTEND_URL"
+                echo "Likely cause: Scaleway Edge Services pipeline has a stuck managed certificate."
+                echo "Recover with:"
+                echo "  scw edge-services pipeline list -o json | jq -r '.[] | select(.status==\"error\") | .id'"
+                echo "  scw edge-services tls-stage list pipeline-id=<id> -o json | jq -r '.[0].id'"
+                echo "  scw edge-services tls-stage update <tls-stage-id> managed-certificate=true"
+                exit 1
+                ;;
+              *)
+                echo "Attempt $i/30: curl exit $rc"
+                ;;
+            esac
+            sleep 3
+          done
+          echo "::error::Frontend did not serve the new bundle within ~90s"
+          exit 1
+
+  # -------------------------------------------------------------------------
+  # Smoke tests — last-mile sanity checks executed against the now-live
+  # bundle + API. Intentionally narrow: each probe targets a single HTTP
+  # contract that, if broken, would render the app unusable for all users.
+  # Anything heavier (auth flows, DB writes) belongs in the e2e suite, not
+  # in the critical-path deploy pipeline.
+  # -------------------------------------------------------------------------
+  smoke-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [setup, publish-frontend]
+    permissions: {}
+    if: needs.publish-frontend.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    env:
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
+      BACKEND_URL: ${{ needs.setup.outputs.backend_url }}
+    steps:
+      - name: Frontend index.html resolves and references hashed assets
+        run: |
+          html=$(curl -fsSL --max-time 10 "$FRONTEND_URL/" \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
+          echo "$html" | grep -qE 'src="[^"]*assets/[^"]+\.js"' \
+            || { echo "::error::index.html missing hashed asset reference"; printf '%s\n' "$html" | head -40; exit 1; }
+
+      - name: Backend OpenAPI spec is reachable
+        run: |
+          # The spec is generated, so a 404 here usually means the API
+          # router lost its OpenAPI mount — high-signal smoke target.
+          curl -fsS --max-time 10 -o /dev/null "$BACKEND_URL/openapi.json" \
+            || { echo "::error::OpenAPI endpoint not reachable"; exit 1; }
+
+      - name: Backend reports the deployed release SHA
+        run: |
+          # Belt-and-braces: roll-services already proved this, but the bundle
+          # cutover happens after. If anything restarted backend in between
+          # (LB flap, OOM), catch it here before traffic ramps up.
+          served=$(curl -fsSI --max-time 10 "$BACKEND_URL/health" \
+            | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
+          if [ "$served" != "$EXPECTED_SHA" ]; then
+            echo "::error::Backend X-App-Version drift: served=${served:-<missing>} expected=$EXPECTED_SHA"
+            exit 1
+          fi
+
+      - name: SPA route fallback works (random path returns index.html)
+        run: |
+          # Caddy rewrites 404s from the S3 origin to /index.html so the
+          # client router can take over. A regression here breaks every deep
+          # link.
+          body=$(curl -fsSL --max-time 10 "$FRONTEND_URL/__smoke_$(date +%s)" \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
+          echo "$body" | grep -qi '<html' \
+            || { echo "::error::SPA fallback did not return an HTML document"; exit 1; }
+
+      - name: Frontend security headers are present
+        run: |
+          # Caddy injects HSTS + the rest of the OWASP-recommended baseline
+          # that S3 + Edge Services cannot. If any are missing, the Caddyfile
+          # was regressed or the request bypassed Caddy entirely.
+          headers=$(curl -fsSI --max-time 10 "$FRONTEND_URL/" \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
+          missing=()
+          for h in 'Strict-Transport-Security' 'X-Frame-Options' \
+                   'X-Content-Type-Options' 'Referrer-Policy' \
+                   'Permissions-Policy' 'Cross-Origin-Opener-Policy'; do
+            if ! echo "$headers" | grep -qi "^${h}:"; then
+              missing+=("$h")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing security headers: ${missing[*]}"
+            printf '%s\n' "$headers"
+            exit 1
+          fi
+

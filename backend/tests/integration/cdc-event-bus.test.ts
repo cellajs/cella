@@ -34,6 +34,10 @@ const mockEventWithData = (key: string): ActivityEvent =>
     trace: null,
   }) as ActivityEvent;
 
+import { eq, sql } from 'drizzle-orm';
+import { attachmentsTable } from '#/db/schema/attachments';
+import { contextCountersTable } from '#/db/schema/context-counters';
+import { mockAttachment } from '../../mocks/mock-attachment';
 import { mockContextMembership } from '../../mocks/mock-membership';
 import { mockOrganization } from '../../mocks/mock-organization';
 import { mockUser } from '../../mocks/mock-user';
@@ -129,5 +133,63 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
     expect(event.type).toBe('membership.created');
     expect(event.subjectId).toBe(membershipData.id);
     expect(event.organizationId).toBe(testOrg.id);
+  });
+
+  it('should stamp attachments.seq and bump context_counters.s:attachment on UPDATE', async () => {
+    const attachment = {
+      ...mockAttachment('cdc-seq-test-attachment'),
+      tenantId: testOrg.tenantId,
+      organizationId: testOrg.id,
+      createdBy: testUser.id,
+      updatedBy: testUser.id,
+      seq: 0,
+    };
+    await db.insert(attachmentsTable).values(attachment);
+
+    const counterKey = sql`${testOrg.id}::varchar`;
+    const readCounter = async () => {
+      const [row] = await db
+        .select({ s: sql<number>`(${contextCountersTable.counts}->>'s:attachment')::int` })
+        .from(contextCountersTable)
+        .where(eq(contextCountersTable.contextKey, counterKey));
+      return row?.s ?? 0;
+    };
+    const readAttachment = async () => {
+      const [row] = await db
+        .select({ seq: attachmentsTable.seq, stx: attachmentsTable.stx })
+        .from(attachmentsTable)
+        .where(eq(attachmentsTable.id, attachment.id));
+      return row;
+    };
+
+    const beforeCounter = await readCounter();
+
+    // Backend-style UPDATE: bump summary AND set stx.changedFields so CDC processes it
+    await db.execute(sql`
+      UPDATE attachments
+      SET name = 'cdc-seq-test-updated',
+          stx = jsonb_set(stx, '{changedFields}', '["summary","updatedAt"]'::jsonb)
+      WHERE id = ${attachment.id}
+    `);
+
+    // Poll for CDC to stamp the row (counter UPSERT + entity stamp)
+    const deadline = Date.now() + 15000;
+    let stamped: Awaited<ReturnType<typeof readAttachment>> | undefined;
+    while (Date.now() < deadline) {
+      stamped = await readAttachment();
+      if (stamped && stamped.seq > 0) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    expect(stamped, 'attachment row should exist').toBeDefined();
+    expect(stamped!.seq, 'seq should be stamped by CDC').toBeGreaterThan(0);
+
+    const afterCounter = await readCounter();
+    expect(afterCounter, 'organization s:attachment should advance').toBe(beforeCounter + 1);
+    expect(stamped!.seq, 'attachment.seq should equal new s:attachment').toBe(afterCounter);
+
+    // changedFields should be stripped from stx as part of the stamp
+    const stx = stamped!.stx as { changedFields?: unknown } | null;
+    expect(stx?.changedFields, 'stx.changedFields should be removed').toBeUndefined();
   });
 });

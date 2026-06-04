@@ -13,7 +13,7 @@ import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
  * Declare search nav button action
  */
 function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null>) {
-  if (!onlineManager.isOnline()) return toaster(i18n.t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return toaster(i18n.t('c:action.offline.text'), 'warning');
 
   return useDialoger.getState().create(<AppSearch />, {
     id: 'search',

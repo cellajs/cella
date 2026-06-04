@@ -3,7 +3,7 @@
 Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities.
 
 ## Important information
-Cella is a minimal implementation of the template itself. It is designed to be forked and extended to build custom applications. The entity model is dynamic and configurable per app, with `user` and `organization` as built-in entities. The architecture focuses on a hybrid sync engine to enable offline-first experiences with real-time updates. Raak is an example app built with the Cella template, showcasing its capabilities. It should be used as a reference to build  implementations so please check it out in the raak folder if it is included in a VSCode workspace.
+Cella is a minimal yet complete implementation of itself. It is designed to be forked and extended to build custom web applications. The entity model is dynamic and configurable per app, with `user` and `organization` as built-in entities. The architecture focuses on a hybrid sync engine to enable offline-first experiences with real-time updates. Raak is an example app built with the Cella template, showcasing its capabilities. It should be used as a reference to build  implementations so please check it out in the raak folder if it is included in a VSCode workspace.
 
 ## Architecture Overview
 

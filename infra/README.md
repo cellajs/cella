@@ -3,7 +3,6 @@
 Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
 
 > For architecture details and module reference see [INFRA_ARCHITECTURE.md](./INFRA_ARCHITECTURE.md).
-> For self-hosted deployment without Scaleway see [STANDALONE.md](./STANDALONE.md).
 
 ## Operating model — two modes
 
@@ -27,6 +26,9 @@ When re-run, `pnpm --filter infra bootstrap` detects existing state from
 | **Rotate CI** | Deletes the existing `<slug>-ci-deploy` API key and IAM policy, mints a fresh key, re-attaches the policy with current `PROJECT_PERMISSION_SETS`, pushes new secrets to GitHub. Use after rotating credentials **or after changing permission sets in `tasks/setup-ci-key.ts`**. |
 | **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key, swaps it into stack config, runs `pulumi up`, then restores the CI key (`try/finally`). See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
 | **Clean** | Wipes local state and starts over — see [Clean slate](#clean-slate). |
+
+> To tear down and rebuild the entire stack (with an optional DB snapshot and
+> upload backup), see [Destroy & rebuild](./DESTROY_REBUILD.md).
 
 > Resume prints a `⚠ CI policy permission sets have changed` warning when the
 > permission-set fingerprint in `Pulumi.<stack>.yaml` doesn't match the current
@@ -193,6 +195,8 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 
 A separate workflow at [.github/workflows/infra-preview.yml](../.github/workflows/infra-preview.yml) runs `pulumi preview` on every PR that touches `infra/` or `shared/`, so you can review the plan before merging.
 
+Routine deploys don't replace VMs. CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [INFRA_ARCHITECTURE.md → Zero-downtime deploys](./INFRA_ARCHITECTURE.md#zero-downtime-deploys) for the rollover model and [Operating the reconciler](./INFRA_ARCHITECTURE.md#operating-the-reconciler) for diagnostics and rollback.
+
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
 To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers — the workflow already targets it.
@@ -249,6 +253,41 @@ Or set it directly:
 pulumi config set --secret infra:cookieSecret "$(openssl rand -base64 32)" \
   --stack organization/infra/<stack>
 ```
+
+### Local credential hygiene
+
+Bootstrap and apply-mode keep Scaleway credentials **in memory only** — they are
+never written to disk, and they neutralise any local `~/.config/scw/config.yaml`
+profile by pointing `SCW_CONFIG_PATH` at a non-existent file (see
+[`src/bootstrap-helpers.ts`](src/bootstrap-helpers.ts)). Keep it that way:
+
+- **Do not run `scw init`.** It writes your access + secret key in plaintext to
+  `~/.config/scw/config.yaml`. When you need the `scw` CLI ad-hoc, scope the
+  credentials to a subshell with a neutralised config instead:
+
+  ```bash
+  ( export SCW_CONFIG_PATH=/dev/null \
+      SCW_ACCESS_KEY=… SCW_SECRET_KEY=… SCW_DEFAULT_PROJECT_ID=… ; \
+    scw … )
+  ```
+
+- **Keep secrets out of shell history.** Setting `SCW_SECRET_KEY=…` or a
+  passphrase inline on the command line records the value in `~/.bash_history` /
+  `~/.zsh_history`. Either:
+  - add `export HISTCONTROL=ignorespace` to your shell rc and prefix any
+    secret-bearing command with a leading space, or
+  - pipe secrets so they never appear as arguments, e.g.
+    `pulumi config get scaleway:secretKey --stack <stack> | gh secret set SCW_SECRET_KEY --env production`.
+
+- **Don't stash Scaleway keys in `~/.aws/credentials`.** The S3 state backend
+  needs `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, but prefer exporting them
+  per-session over persisting a `[default]` profile — a stale profile silently
+  shadows whatever you intend to use and lingers long after the key is revoked.
+
+If a key does leak to disk: revoke it in the Scaleway console first, then scrub
+the file(s). Remember that **open shells re-flush their in-memory history on
+exit** — after editing `~/.bash_history`, run `history -c` in every open
+terminal (or close them) so the scrub isn't overwritten.
 
 ## Emergency access to a VM
 

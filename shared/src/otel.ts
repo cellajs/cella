@@ -5,7 +5,7 @@
  * Centralizes Maple.dev exporter config so backend, CDC, and YJS share one source of truth.
  *
  * Usage:
- *   const otel = createOtelSDK({ serviceName: 'cella-development-api', mapleApiKey: env.MAPLE_API_KEY });
+ *   const otel = createOtelSDK({ serviceName: 'raak-development-api', mapleApiKey: env.MAPLE_API_KEY });
  *   otel.start();
  *   // on shutdown: await otel.shutdown();
  */

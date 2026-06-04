@@ -18,9 +18,13 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig } from '../helpers'
+import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index.js'
+import { renderCloudInit } from './cloud-init'
+import { deployTagsBucketName } from './deploy-tags'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
+import { frontendBucketName } from './storage'
 
 // ---------------------------------------------------------------------------
 // Secrets from stack config
@@ -96,6 +100,13 @@ const composeContent = fs.readFileSync(
   'utf-8',
 )
 
+// Per-VM ingress reverse-proxy config. Mounted into the `ingress` container so
+// the app container can roll without dropping the LB-facing host listener.
+const ingressContent = fs.readFileSync(
+  path.resolve(import.meta.dirname, '../ingress.Caddyfile'),
+  'utf-8',
+)
+
 // ---------------------------------------------------------------------------
 // Cloud-init template
 // ---------------------------------------------------------------------------
@@ -103,7 +114,8 @@ const composeContent = fs.readFileSync(
 interface ServiceConfig {
   name: string
   profile: string
-  imageTag: string
+  /** App container's internal port; also the host port the ingress publishes. */
+  port: number
   /** Extra compose env vars (REGISTRY, URLs, tags) */
   composeEnv: Record<string, pulumi.Input<string>>
 }
@@ -115,127 +127,39 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
     ),
   )
 
-  return pulumi.all([dotEnv, envLines, scwSecretKey, scwAccessKey, registryEndpoint]).apply(
-    ([secrets, env, secretKey, accessKey, registry]) => {
+  return pulumi.all([dotEnv, envLines, scwSecretKey, scwAccessKey, registryEndpoint, deployTagsBucketName]).apply(
+    ([secrets, env, secretKey, accessKey, registry, tagBucket]) => {
       const allEnv = [...env, '', '# Secrets', secrets].join('\n')
-      const bucket = naming.pulumiStateBucket
-      const s3Endpoint = `https://s3.${region}.scw.cloud`
 
-      return `#!/bin/bash
-set -uo pipefail
-# NOTE: intentionally no -e — we want stage markers to always upload so we
-# can pinpoint which step failed. Each command uses || true where needed.
+      // Reconciler env file — single source of truth for the per-VM watcher.
+      // Reuses the existing Pulumi-owned creds in PR1; PR2 will scope these
+      // down to s3:GetObject on deploy/<service>.tag only.
+      const reconcilerEnvFile = buildReconcilerEnv({
+        service: service.name as ReconcilerService,
+        tagBucket,
+        region,
+        registry,
+        stateBucket: naming.pulumiStateBucket,
+        awsAccessKeyId: accessKey,
+        awsSecretAccessKey: secretKey,
+      })
+      const installReconcilerSnippet = buildInstallSnippet()
 
-# -----------------------------------------------------------------------
-# Stage markers: upload tiny files to S3 at each milestone, so even if the
-# whole script aborts we can see how far it got.
-# -----------------------------------------------------------------------
-export AWS_ACCESS_KEY_ID='${accessKey}'
-export AWS_SECRET_ACCESS_KEY='${secretKey}'
-mark() {
-  local tag="$1"
-  local ts=$(date -u +%Y%m%dT%H%M%SZ)
-  if command -v aws >/dev/null 2>&1; then
-    echo "$tag at $ts on $(hostname)" \
-      | aws --endpoint-url '${s3Endpoint}' s3 cp - \
-        "s3://${bucket}/boot-diag/${service.name}-stage-$tag-$ts.txt" 2>&1 \
-      | tee -a /var/log/mark.log || true
-  else
-    echo "$tag at $ts (aws missing)" >> /var/log/mark.log
-  fi
-}
-
-# Stage 00 — install awscli first so we can mark every subsequent stage
-apt-get update -qq 2>&1 | tail -5
-apt-get install -y -qq awscli 2>&1 | tail -5
-mark 00-started
-
-# -----------------------------------------------------------------------
-# Boot diagnostics — write snapshot script + schedule via systemd-run.
-# -----------------------------------------------------------------------
-mkdir -p /opt/diag
-cat > /opt/diag/boot-diag.sh <<'DIAG_EOF'
-#!/bin/bash
-LOG=/tmp/boot-diag.log
-{
-  echo "=== uname / uptime ==="
-  uname -a; uptime
-  echo
-  echo "=== cloud-init status ==="
-  cloud-init status --long 2>&1 || true
-  echo
-  echo "=== cloud-init-output.log (tail 500) ==="
-  tail -500 /var/log/cloud-init-output.log 2>/dev/null || echo "(missing)"
-  echo
-  echo "=== mark.log ==="
-  cat /var/log/mark.log 2>/dev/null || echo "(no marks)"
-  echo
-  echo "=== docker ps -a ==="
-  docker ps -a 2>&1 || echo "(docker missing)"
-  echo
-  echo "=== docker compose ps ==="
-  (cd /opt/app 2>/dev/null && docker compose --profile ${service.profile} ps) 2>&1 || echo "(no compose)"
-  echo
-  echo "=== docker compose logs (tail 500) ==="
-  (cd /opt/app 2>/dev/null && docker compose --profile ${service.profile} logs --no-color --tail=500) 2>&1 || echo "(no logs)"
-} > "$LOG" 2>&1
-
-AWS_ACCESS_KEY_ID='${accessKey}' AWS_SECRET_ACCESS_KEY='${secretKey}' \
-  aws --endpoint-url '${s3Endpoint}' s3 cp "$LOG" \
-  "s3://${bucket}/boot-diag/${service.name}-$(date -u +%Y%m%dT%H%M%SZ).log" 2>&1 || true
-DIAG_EOF
-chmod +x /opt/diag/boot-diag.sh
-systemd-run --on-active=180 --unit=boot-diag-${service.name} /opt/diag/boot-diag.sh 2>&1 | tail -5
-mark 05-diag-scheduled
-
-# Install Docker from official repo (Ubuntu repos lack docker-compose-plugin)
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
-apt-get update -qq 2>&1 | tail -5
-apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin 2>&1 | tail -5
-systemctl enable --now docker
-mark 10-docker-installed
-
-# App directory
-mkdir -p /opt/app
-
-# Write compose file
-cat > /opt/app/compose.yml <<'COMPOSE_EOF'
-${composeContent}
-COMPOSE_EOF
-
-# Write environment
-cat > /opt/app/.env <<'ENV_EOF'
-${allEnv}
-ENV_EOF
-chmod 600 /opt/app/.env
-mark 20-files-written
-
-# Login to container registry
-echo '${secretKey}' | docker login ${registry.split('/')[0]} -u nologin --password-stdin
-mark 30-registry-login
-
-# Start service
-cd /opt/app
-PULL_OK=0
-for i in $(seq 1 12); do
-  if docker compose --profile ${service.profile} pull 2>&1 | tail -10; then
-    PULL_OK=1; break
-  fi
-  echo "Pull attempt $i failed, retrying in 10s..."
-  sleep 10
-done
-mark "40-pull-$([ $PULL_OK = 1 ] && echo ok || echo failed)"
-
-docker compose --profile ${service.profile} up -d 2>&1 | tail -10
-mark 50-compose-up
-
-# Scrub secrets from cloud-init logs
-sed -i '/SECRET\\|PASSWORD\\|API_KEY\\|DATABASE_URL\\|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
-sed -i '/SECRET\\|PASSWORD\\|API_KEY\\|DATABASE_URL\\|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true
-`
+      return renderCloudInit({
+        service: service.name,
+        bootService: bootSlotService(service.name),
+        profile: service.profile,
+        envFileContent: allEnv,
+        reconcilerEnvFile,
+        installReconcilerSnippet,
+        composeContent,
+        ingressContent,
+        registry,
+        secretKey,
+        accessKey,
+        stateBucket: naming.pulumiStateBucket,
+        region,
+      })
     },
   )
 }
@@ -246,7 +170,7 @@ sed -i '/SECRET\\|PASSWORD\\|API_KEY\\|DATABASE_URL\\|docker login/Id' /var/log/
 
 const backendUrl = hasDomain ? appUrls.backend : 'http://localhost:4000'
 const frontendUrl = appUrls.frontend
-const aiApiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
+const aiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
 
 // CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
 // path. The backend rejects sources outside loopback or the VPC /24 (see
@@ -259,10 +183,9 @@ const services: ServiceConfig[] = [
   {
     name: 'backend',
     profile: 'backend',
-    imageTag: infra.backendImageTag,
+    port: 4000,
     composeEnv: {
       REGISTRY: registryEndpoint,
-      BACKEND_TAG: infra.backendImageTag,
       APP_MODE: mode,
       FRONTEND_URL: frontendUrl,
       BACKEND_URL: backendUrl,
@@ -271,10 +194,9 @@ const services: ServiceConfig[] = [
   {
     name: 'cdc',
     profile: 'cdc',
-    imageTag: infra.cdcImageTag,
+    port: 4001,
     composeEnv: {
       REGISTRY: registryEndpoint,
-      CDC_TAG: infra.cdcImageTag,
       APP_MODE: mode,
       get API_WS_URL() { return cdcWsUrl },
       BACKEND_URL: backendUrl,
@@ -283,10 +205,9 @@ const services: ServiceConfig[] = [
   {
     name: 'yjs',
     profile: 'yjs',
-    imageTag: infra.yjsImageTag,
+    port: 4002,
     composeEnv: {
       REGISTRY: registryEndpoint,
-      YJS_TAG: infra.yjsImageTag,
       APP_MODE: mode,
       BACKEND_URL: backendUrl,
     },
@@ -294,17 +215,57 @@ const services: ServiceConfig[] = [
   {
     name: 'ai',
     profile: 'ai',
-    imageTag: infra.aiWorkerImageTag,
+    port: 4003,
     composeEnv: {
       REGISTRY: registryEndpoint,
-      AI_TAG: infra.aiWorkerImageTag,
       APP_MODE: mode,
       FRONTEND_URL: frontendUrl,
       BACKEND_URL: backendUrl,
-      AI_API_URL: aiApiUrl,
+      AI_API_URL: aiUrl,
+    },
+  },
+  {
+    // Reverse-proxy in front of the S3 frontend bucket. Adds the security
+    // headers Edge Services + S3 can't (HSTS, X-Frame-Options, etc.) and
+    // rewrites 404s to /index.html so SPA deep links resolve. Image is built
+    // per release with RELEASE_SHA baked in so X-App-Version drives the
+    // reconciler's cutover assertion the same way the other services do.
+    //
+    // Deliberately excludes every app secret from .env — the .env file is
+    // still mounted (compose env_file: .env) but this profile reads nothing
+    // from it. Lives on its own VM with no DB or registry credentials beyond
+    // what cloud-init already needs to pull the image.
+    name: 'frontend',
+    profile: 'frontend',
+    port: 80,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      // S3 REST hostname Caddy reverse-proxies to. Bucket name is whatever
+      // `naming.frontendBucket` resolves to (e.g. `<slug>-frontend`).
+      ORIGIN_HOST: pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
     },
   },
 ]
+
+// Ingress wiring — every VM runs a Caddy `ingress` container that publishes the
+// host port and forwards to the app container by its compose-network name. This
+// is what lets the reconciler roll the app (`up -d --no-deps <service>`) without
+// the LB ever losing its backend. INGRESS_PORT == the app's published port
+// historically; UPSTREAM_HOST is the compose service name; UPSTREAM_PORT is the
+// app's internal port. See infra/ingress.Caddyfile.
+//
+// Backend uses blue-green slots (backend-blue / backend-green); its ingress
+// starts pointing at the initial active slot (blue), and the reconciler flips
+// the upstream between slots on each deploy. Every other service is a single
+// container named after the service. See infra/INFRA_ARCHITECTURE.md.
+const bootSlotService = (name: string): string => (name === 'backend' ? 'backend-blue' : name)
+
+for (const service of services) {
+  service.composeEnv.INGRESS_PORT = String(service.port)
+  service.composeEnv.UPSTREAM_HOST = bootSlotService(service.name)
+  service.composeEnv.UPSTREAM_PORT = String(service.port)
+}
 
 // ---------------------------------------------------------------------------
 // Create VMs
@@ -325,31 +286,57 @@ function createVm(service: ServiceConfig): ComputeInstance {
     tags,
   })
 
+  // Reserve a stable private IP from IPAM up front. Decoupling the IP from the
+  // instance lifecycle means it survives VM replacement (deleteBeforeReplace)
+  // and is known at plan-time, so LB backends can reference it deterministically
+  // instead of reading an auto-assigned DHCP address off the server after
+  // create (which the provider returns empty at create-time).
+  const reservedIp = new scaleway.ipam.Ip(`ipam-${service.name}`, {
+    sources: [{ privateNetworkId }],
+    isIpv6: false,
+    region,
+    tags,
+  })
+
   const server = new scaleway.instance.Server(`vm-${service.name}`, {
     name: naming.resource(service.name),
-    type: infra.instanceType,
+    type: infra.instanceTypeFor(service.name),
     image: 'ubuntu_noble',
     zone,
     tags,
     securityGroupId: securityGroup.id,
     cloudInit: buildCloudInit(service),
     ipIds: [ip.id],
-    privateNetworks: [{
-      pnId: privateNetworkId,
-    }],
   }, {
-    // cloud-init only runs on first boot; in-place updates would never apply new env/scripts to running VMs.
+    // cloud-init only runs on first boot; in-place updates would never apply
+    // new env/scripts to running VMs. Since the image tag is no longer baked
+    // into cloud-init (the on-VM reconciler pulls it from S3), this replace
+    // trigger now only fires for genuine cloud-init edits (reconciler script
+    // update, package install change, etc.) — not every release. That is the
+    // whole point of the tag-out-of-cloud-init refactor.
     replaceOnChanges: ['cloudInit'],
     // Delete old VM before creating new (IP can only be attached to one server)
     // CDC is additionally a singleton — must not run two at once.
     deleteBeforeReplace: true,
   })
 
-  // The private IP is assigned by IPAM when attaching to the private network
-  // Pick the IPv4 address (skip IPv6 SLAAC addresses)
-  const privateIp = server.privateIps.apply(
-    (ips) => ips?.find((ip) => ip.address && !ip.address.includes(':'))?.address ?? ips?.[0]?.address ?? '',
-  )
+  // Attach the VM to the private network with the reserved IPAM IP pinned.
+  // The inline `privateNetworks` on the server does not support pinning an
+  // IPAM IP, so a dedicated PrivateNic resource is used. It is recreated with
+  // the server (depends on serverId) but always reclaims the same reserved IP.
+  new scaleway.instance.PrivateNic(`pnic-${service.name}`, {
+    serverId: server.id,
+    privateNetworkId,
+    ipamIpIds: [reservedIp.id],
+    zone,
+    tags,
+  }, {
+    deleteBeforeReplace: true,
+  })
+
+  // The reserved IP address is stable and known at plan-time. Strip any CIDR
+  // suffix the provider may include (e.g. "10.0.0.9/22" → "10.0.0.9").
+  const privateIp = reservedIp.address.apply((addr) => addr.split('/')[0])
 
   const inst = { name: service.name, server, privateIp }
   instances.push(inst)
@@ -380,5 +367,6 @@ export const computeInstances = instances
 export function getInstanceIp(name: string): pulumi.Output<string> {
   const inst = instances.find((i) => i.name === name)
   if (!inst) return pulumi.output('')
+  // Stable reserved IPAM IP, decoupled from the VM lifecycle.
   return inst.privateIp
 }

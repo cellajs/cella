@@ -115,8 +115,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - PRs: concise description, linked issues, passing checks. Keep changes scoped.
 
 ## Commands
-- `pnpm dev:core`: Dev with PostgreSQL (no CDC, requires Docker).
-- `pnpm dev`: Dev with PostgreSQL + CDC Worker.
+- `pnpm dev`: Dev with PostgreSQL + CDC Worker (requires Docker).
 - `pnpm check`: Runs `sdk` + typecheck + `lint:fix`.
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.

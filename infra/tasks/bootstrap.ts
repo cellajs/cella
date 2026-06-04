@@ -259,21 +259,18 @@ if (ciAccessKey) {
   }
 }
 
-// GitHub sync — secrets only when we just (re)created a CI key, but the
-// Actions Variables derived from appConfig should sync on every run so a
-// Resume after changing backendUrl / frontendUrl in shared config still
-// updates them. Scoped to the GitHub Environment matching the stack so
-// deploy creds/vars are only injected into jobs that opt in via `environment:`.
+// GitHub sync — writes CI deploy creds when we just (re)created a key.
+// URLs (BACKEND_URL/FRONTEND_URL/YJS_URL/AI_URL) are no longer synced as
+// Actions Variables: the deploy workflow derives them on every run from
+// shared/ appConfig via infra/tasks/print-deploy-env.ts.
+// Scoped to the GitHub Environment matching the stack so deploy creds are
+// only injected into jobs that opt in via `environment:`.
 await syncGithubEnvironment({
   repoRoot: resolve(infraDir, '..'),
   stackShort,
   ciKey: ciAccessKey ? { accessKey: ciAccessKey, secretKey: ciSecretKey, projectId: scwProjectId, organizationId: ciOrganizationId } : undefined,
   // EDGE_PIPELINE_ID is intentionally omitted — the deploy workflow writes
   // it after the first successful pulumi up.
-  variables: [
-    ['BACKEND_URL', appConfig.backendUrl],
-    ['FRONTEND_URL', appConfig.frontendUrl],
-  ],
 })
 
 const DIVIDER = pc.dim('─'.repeat(60))

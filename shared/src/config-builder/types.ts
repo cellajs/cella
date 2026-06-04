@@ -189,7 +189,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   backendUrl: string;
   backendAuthUrl: string;
   yjsUrl: string;
-  aiApiUrl: string;
+
+  aiUrl: string;
   aboutUrl: string;
   statusUrl: string;
   productionUrl: string;

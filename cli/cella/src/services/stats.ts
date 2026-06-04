@@ -8,6 +8,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import pc from '../utils/colors';
+import { printCoverageSummary } from '../utils/coverage-utils';
 import { createSpinner, DIVIDER, spinnerSuccess } from '../utils/display';
 import { git } from '../utils/git';
 
@@ -280,7 +281,10 @@ function printStats(stats: StatsResult, verbose: boolean): void {
 /**
  * Run the stats service.
  */
-export async function runStats(forkPath: string, options: { json?: boolean; verbose?: boolean } = {}): Promise<void> {
+export async function runStats(
+  forkPath: string,
+  options: { json?: boolean; verbose?: boolean; refreshCoverage?: boolean } = {},
+): Promise<void> {
   createSpinner('counting files...');
   const stats = await collectStats(forkPath);
   spinnerSuccess(`counted ${stats.total} files · ${formatLoc(stats.totalLoc)} loc`);
@@ -289,5 +293,7 @@ export async function runStats(forkPath: string, options: { json?: boolean; verb
     console.info(JSON.stringify(stats, null, 2));
   } else {
     printStats(stats, options.verbose ?? false);
+    console.info();
+    printCoverageSummary(forkPath, { refresh: options.refreshCoverage });
   }
 }

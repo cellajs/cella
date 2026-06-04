@@ -41,7 +41,7 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
     for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
   };
 
-  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
+  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
     // Handle escape key
     if (!nextOpen && eventDetails.reason === 'escape-key') {
       if (!closeSheetOnEsc) return;
@@ -59,10 +59,17 @@ export const SheeterSheet = ({ sheet }: { sheet: InternalSheet }) => {
       const dialogs = useDialoger.getState().dialogs;
       if (dialogs.some((d) => d.open)) return;
 
-      // Nav sheet in keep open mode shouldnt close
+      // Nav sheet: let the nav button's own click handler toggle it.
+      // If we close here first, the button click would then see navSheetOpen=null and reopen.
       if (sheet.id === 'nav-sheet') {
         const navState = useNavigationStore.getState();
         if (navState.keepNavOpen && navState.navSheetOpen) return;
+
+        const target = eventDetails.event?.target as Node | null;
+        if (target && (target as Element).nodeType === 1) {
+          const el = target as Element;
+          if (el.closest('#sidebar-nav, #bottom-bar-nav')) return;
+        }
       }
 
       closeSheet();

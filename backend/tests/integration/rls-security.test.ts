@@ -937,4 +937,53 @@ describe('RLS Policy Verification', () => {
       await adminDb.execute(sql`UPDATE organizations SET name = 'RLS Org A' WHERE id = ${TEST_ORG_A}`);
     });
   });
+
+  // ---- CDC seq stamping invariant ----
+  // Regression test: the CDC worker runs as admin_role (no app.tenant_id set)
+  // and must be able to UPDATE seq on product entity rows under FORCE RLS.
+  // Without BYPASSRLS on the connecting role, the tenant SELECT policy hides
+  // every row and the UPDATE silently affects 0 rows — counters then advance
+  // while row.seq stays at 0, breaking the sync engine.
+  describe('CDC seq stamping (admin_role under FORCE RLS)', () => {
+    let adminRoleDb: NodePgDatabase;
+
+    beforeAll(async () => {
+      if (!rolesAvailable) return;
+      const ADMIN_ROLE_DB_URL = 'postgres://admin_role:dev_password@0.0.0.0:5434/postgres';
+      adminRoleDb = drizzle({
+        connection: { connectionString: ADMIN_ROLE_DB_URL, connectionTimeoutMillis: 5_000 },
+      });
+    });
+
+    it('admin_role has BYPASSRLS attribute', async () => {
+      const rows = getRows<{ bypass: boolean }>(
+        await adminDb.execute(sql`SELECT rolbypassrls AS bypass FROM pg_roles WHERE rolname = 'admin_role'`),
+      );
+      expect(rows[0]?.bypass).toBe(true);
+    });
+
+    it('admin_role can UPDATE seq on a task row without tenant context', async () => {
+      // Read current seq (admin connection, no app.tenant_id set anywhere)
+      const before = getRows<{ seq: string | number }>(
+        await adminRoleDb.execute(sql`SELECT seq FROM tasks WHERE id = ${TEST_TASK_A}`),
+      );
+      expect(before, 'admin_role must see the task row (BYPASSRLS)').toHaveLength(1);
+
+      // bigint columns come back as strings from node-pg; coerce
+      const newSeq = Number(before[0].seq ?? 0) + 1;
+      const updateResult = await adminRoleDb.execute(
+        sql`UPDATE tasks SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = ${TEST_TASK_A}`,
+      );
+
+      // node-pg returns rowCount; the regression bug manifests as 0 here
+      expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(
+        1,
+      );
+
+      const after = getRows<{ seq: string | number }>(
+        await adminDb.execute(sql`SELECT seq FROM tasks WHERE id = ${TEST_TASK_A}`),
+      );
+      expect(Number(after[0].seq)).toBe(newSeq);
+    });
+  });
 });

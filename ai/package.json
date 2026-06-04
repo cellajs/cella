@@ -1,0 +1,28 @@
+{
+  "name": "ai",
+  "version": "0.0.1",
+  "description": "Standalone AI worker for streaming chat, tools, and background jobs",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node dist/main.js",
+    "start:dev": "tsx src/ai-worker.ts",
+    "dev": "cross-env NODE_ENV=development tsx --watch-path=../backend/src src/ai-worker.ts",
+    "build": "cross-env NODE_ENV=production tsup",
+    "ts": "cd .. && tsgo -p ai/tsconfig.json --pretty",
+    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.13",
+    "cross-env": "^10.1.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

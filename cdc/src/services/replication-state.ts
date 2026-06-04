@@ -23,6 +23,7 @@ class ReplicationStateManager {
   private _catchupEventsProcessed = 0;
   private _consecutiveLiveTxns = 0;
   private _lastLagMs: number | null = null;
+  private _lastEventAt: Date | null = null;
 
   /** Get current replication status */
   get status(): ReplicationState {
@@ -109,6 +110,16 @@ class ReplicationStateManager {
     return this._lastLagMs;
   }
 
+  /** When the last DML change was applied (null if none yet this run) */
+  get lastEventAt(): Date | null {
+    return this._lastEventAt;
+  }
+
+  /** Stamp the time of the most recently applied DML change. */
+  markEvent(): void {
+    this._lastEventAt = new Date();
+  }
+
   /** Increment catchup event counter */
   incrementCatchupEvents(count = 1): void {
     this._catchupEventsProcessed += count;
@@ -182,6 +193,7 @@ class ReplicationStateManager {
     this._catchupEventsProcessed = 0;
     this._consecutiveLiveTxns = 0;
     this._lastLagMs = null;
+    this._lastEventAt = null;
   }
 }
 

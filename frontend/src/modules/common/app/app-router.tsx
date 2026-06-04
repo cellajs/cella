@@ -2,6 +2,7 @@ import { onlineManager, useIsFetching, useIsRestoring } from '@tanstack/react-qu
 import { RouterProvider } from '@tanstack/react-router';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
 import { Spinner } from '~/modules/common/spinner';
+import { checkConnectivity, forceOnline } from '~/query/offline/connectivity';
 import { queryClient } from '~/query/query-client';
 import router from '~/routes/router';
 
@@ -17,7 +18,15 @@ export const AppRouter = () => {
     return <Spinner className="mt-[45vh] h-12 w-12" />;
   }
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    // When offline, treat pull-to-refresh as a user-initiated reconnect attempt.
+    if (!onlineManager.isOnline()) {
+      console.debug('[AppRouter] Offline — probing connectivity');
+      const reachable = await checkConnectivity();
+      if (!reachable) return;
+      forceOnline();
+    }
+
     console.debug('[AppRouter] Refreshing router');
     queryClient.invalidateQueries();
     router.invalidate();
@@ -25,11 +34,7 @@ export const AppRouter = () => {
 
   return (
     <>
-      <PullToRefresh
-        onRefresh={() => handleRefresh()}
-        isFetching={fetchingCount > 0}
-        isDisabled={isRestoring || !isOnline}
-      />
+      <PullToRefresh onRefresh={handleRefresh} isFetching={fetchingCount > 0} isDisabled={isRestoring} />
       <RouterProvider router={router} />
     </>
   );

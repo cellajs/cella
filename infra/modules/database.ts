@@ -41,7 +41,6 @@ function rolePassword(name: string): pulumi.Output<string> {
 
 const adminPassword = rolePassword('admin')
 const runtimePassword = rolePassword('runtime')
-const cdcPassword = rolePassword('cdc')
 
 // Temporary public endpoint for operator tasks (e.g. one-off data migrations).
 // `infra:dbPublicEndpoint=true` attaches a public LB endpoint to the instance.
@@ -66,6 +65,16 @@ const instance = new scaleway.databases.Instance('main-postgres', {
   privateNetwork: {
     pnId: privateNetworkId,
     enableIpam: true,
+  },
+  // Required for CDC: Scaleway PG-17 uses its own setting keys for logical
+  // replication. `rdb.enable_logical_replication` flips wal_level to logical
+  // under the hood; `hot_standby_feedback` + `sync_replication_slots` are
+  // required to keep slots alive across Scaleway's internal HA failovers.
+  // (Raw wal_level / max_wal_senders / max_replication_slots are not user-settable.)
+  settings: {
+    'rdb.enable_logical_replication': 'true',
+    hot_standby_feedback: 'on',
+    sync_replication_slots: 'on',
   },
   loadBalancer: dbPublicEndpoint ? {} : undefined,
 }, { aliases: [{ type: 'scaleway:index/databaseInstance:DatabaseInstance' }], deleteBeforeReplace: true, protect: isProduction })
@@ -93,9 +102,8 @@ const database = new scaleway.databases.Database('main-database', {
 
 // ---------------------------------------------------------------------------
 // Users — one per role, matching the PostgreSQL roles used by the application.
-// admin_role: migrations, seeds, system jobs (isAdmin for BYPASSRLS)
+// admin_role: migrations, seeds, system jobs, CDC worker (isAdmin → BYPASSRLS + REPLICATION)
 // runtime_role: authenticated app requests, subject to RLS
-// cdc_role: CDC worker, append-only activities + logical replication
 // ---------------------------------------------------------------------------
 
 const adminUser = new scaleway.databases.User('admin-user', {
@@ -110,14 +118,6 @@ const runtimeUser = new scaleway.databases.User('runtime-user', {
   instanceId: instance.id,
   name: 'runtime_role',
   password: runtimePassword,
-  isAdmin: false,
-  region,
-})
-
-const cdcUser = new scaleway.databases.User('cdc-user', {
-  instanceId: instance.id,
-  name: 'cdc_role',
-  password: cdcPassword,
   isAdmin: false,
   region,
 })
@@ -143,14 +143,6 @@ new scaleway.databases.Privilege('runtime-privilege', {
   region,
 })
 
-new scaleway.databases.Privilege('cdc-privilege', {
-  instanceId: instance.id,
-  databaseName: database.name,
-  userName: cdcUser.name,
-  permission: 'all',
-  region,
-})
-
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
@@ -171,19 +163,27 @@ export const ip = instance.privateNetwork.apply((pn) => pn!.ip)
 export const port = instance.privateNetwork.apply((pn) => pn!.port)
 
 /**
+ * Assemble a PostgreSQL DSN from plain string parts.
+ *
+ * User and password are percent-encoded so credentials containing `@`, `:`,
+ * `/`, `?`, `#` or `&` cannot break out of the userinfo segment. Always pins
+ * `sslmode=require&uselibpqcompat=true` — Scaleway private endpoints use
+ * self-signed certs, so libpq-compat mode encrypts without cert verification.
+ *
+ * Exported for unit testing; the Output-wrapping helpers below call it.
+ */
+export function formatPostgresUrl(user: string, pass: string, host: string, port: number | string, database: string): string {
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?sslmode=require&uselibpqcompat=true`
+}
+
+/**
  * Build a connection string for the private network endpoint.
- * Scaleway private endpoints use self-signed certs, so we use
- * `uselibpqcompat=true` to make sslmode=require behave like libpq
- * (encrypt without certificate verification).
  */
 function buildConnectionString(
   user: pulumi.Output<string>,
   pass: pulumi.Output<string>,
 ): pulumi.Output<string> {
-  return pulumi.all([user, pass, ip, port, database.name]).apply(
-    ([u, p, h, pt, db]) =>
-      `postgresql://${encodeURIComponent(u)}:${encodeURIComponent(p)}@${h}:${pt}/${db}?sslmode=require&uselibpqcompat=true`,
-  )
+  return pulumi.all([user, pass, ip, port, database.name]).apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db))
 }
 
 /** Admin connection — for migrations, seeds, system jobs (BYPASSRLS) */
@@ -192,8 +192,14 @@ export const connectionStringAdmin = buildConnectionString(adminUser.name, admin
 /** Runtime connection — for backend API requests (subject to RLS) */
 export const connectionStringRuntime = buildConnectionString(runtimeUser.name, runtimePassword)
 
-/** CDC connection — for CDC worker (append-only + logical replication) */
-export const connectionStringCdc = buildConnectionString(cdcUser.name, cdcPassword)
+/**
+ * CDC connection — for CDC worker (append-only + logical replication).
+ *
+ * Uses admin credentials because Scaleway only grants the REPLICATION role
+ * attribute (required to open a logical replication slot) to users with
+ * isAdmin=true.
+ */
+export const connectionStringCdc = buildConnectionString(adminUser.name, adminPassword)
 
 /**
  * Admin connection over the temporary public endpoint, when enabled.
@@ -203,5 +209,5 @@ export const connectionStringAdminPublic = pulumi
   .all([adminUser.name, adminPassword, instance.loadBalancer, database.name])
   .apply(([u, p, lb, db]) => {
     if (!dbPublicEndpoint || !lb?.hostname) return ''
-    return `postgresql://${encodeURIComponent(u)}:${encodeURIComponent(p)}@${lb.hostname}:${lb.port}/${db}?sslmode=require&uselibpqcompat=true`
+    return formatPostgresUrl(u, p, lb.hostname, lb.port, db)
   })

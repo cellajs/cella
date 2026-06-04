@@ -15,10 +15,10 @@ Cella supports two test modes to balance speed vs. coverage:
 
 These align with development modes:
 
-| Dev Command | Test Command | DEV_MODE | Description |
-|-------------|--------------|----------|-------------|
-| `pnpm dev:core` | `pnpm test:core` | core | PostgreSQL, no CDC |
-| `pnpm dev` | `pnpm test:full` | full | PostgreSQL + CDC Worker |
+| Dev Command | Test Command | Description |
+|-------------|--------------|-------------|
+| `pnpm dev` | `pnpm test:core` | PostgreSQL + CDC Worker |
+| `pnpm dev` | `pnpm test:full` | PostgreSQL + CDC Worker (incl. CDC integration tests) |
 
 ### Core Mode (`pnpm test:core` or `pnpm test`)
 

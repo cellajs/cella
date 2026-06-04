@@ -19,7 +19,10 @@ const envSchema = z.object({
   YJS_DB_POOL_MAX: z.coerce.number().default(20),
   MAPLE_API_KEY: z.string().optional(),
 
-  DEV_MODE: z.enum(['none', 'core', 'full']).default('core'),
+  NODB: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   DEBUG: z
