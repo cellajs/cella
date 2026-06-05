@@ -6,10 +6,16 @@ export function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props & Reac
 
 export function CollapsibleTrigger({
   render,
+  nativeButton = !render,
   ...props
 }: CollapsiblePrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
   return (
-    <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" nativeButton={!render} render={render} {...props} />
+    <CollapsiblePrimitive.Trigger
+      data-slot="collapsible-trigger"
+      nativeButton={nativeButton}
+      render={render}
+      {...props}
+    />
   );
 }
 

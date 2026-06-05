@@ -1,11 +1,27 @@
 import { useEffect, useState } from 'react';
-import { codeToHtml } from 'shiki';
+import { createHighlighter } from 'shiki';
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
   code: string;
   language: 'typescript' | 'zod';
 }
+
+/**
+ * Singleton highlighter using Shiki's JavaScript regex engine (no WASM).
+ * The default `codeToHtml` uses the Oniguruma WASM engine, which requires
+ * `WebAssembly.instantiate` and is blocked by the app CSP (no 'unsafe-eval').
+ */
+let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
+const getHighlighter = () => {
+  highlighterPromise ??= createHighlighter({
+    themes: ['github-dark-default', 'github-light-default'],
+    langs: ['typescript'],
+    engine: createJavaScriptRegexEngine(),
+  });
+  return highlighterPromise;
+};
 
 /**
  * Code viewer component using Shiki for syntax highlighting.
@@ -21,7 +37,8 @@ export const CodeViewer = ({ code, language }: CodeViewerProps) => {
 
     const highlight = async () => {
       try {
-        const highlighted = await codeToHtml(code, {
+        const highlighter = await getHighlighter();
+        const highlighted = highlighter.codeToHtml(code, {
           lang: 'typescript',
           theme: mode === 'dark' ? 'github-dark-default' : 'github-light-default',
         });

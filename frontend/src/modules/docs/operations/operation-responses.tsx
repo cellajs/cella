@@ -105,6 +105,7 @@ export const OperationResponses = ({ detail }: OperationResponsesProps) => {
   return (
     <Collapsible defaultOpen className="mt-8">
       <CollapsibleTrigger
+        nativeButton
         render={
           <Button variant="ghost" size="sm" className="group w-full justify-start gap-2">
             <span className="font-medium text-sm">{t('c:docs.responses')}</span>
