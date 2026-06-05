@@ -21,18 +21,20 @@ describe('Health endpoint', () => {
   it('GET /health?depth=full returns full diagnostics', async () => {
     const res = await fetchHealth('?depth=full');
     const body = (await res.json()) as Record<string, any>;
+    const components = body.components as Record<string, any>;
 
     expect(res.status).toBe(200);
     expect(body).toHaveProperty('status');
     expect(body).toHaveProperty('uptime');
-    expect(body).toHaveProperty('database');
-    expect(body).toHaveProperty('cdc');
-    expect(body).toHaveProperty('memory');
+    expect(body).toHaveProperty('components');
+    expect(components).toHaveProperty('api');
+    expect(components).toHaveProperty('database');
+    expect(components).toHaveProperty('cdc');
     expect(['healthy', 'degraded', 'unhealthy']).toContain(body.status);
-    expect(['connected', 'disconnected']).toContain(body.database);
-    expect(body.memory).toHaveProperty('heapUsed');
-    expect(body.memory).toHaveProperty('heapTotal');
-    expect(body.memory).toHaveProperty('rss');
+    expect(['healthy', 'unhealthy']).toContain(components.database.status);
+    expect(components.api.details).toHaveProperty('heapUsedMb');
+    expect(components.api.details).toHaveProperty('heapTotalMb');
+    expect(components.api.details).toHaveProperty('rssMb');
   });
 
   it('GET /health?depth=shallow still returns 204 (explicit shallow)', async () => {
@@ -56,12 +58,15 @@ describe('Health endpoint', () => {
   it('GET /health?depth=full cdc section has expected shape', async () => {
     const res = await fetchHealth('?depth=full');
     const body = (await res.json()) as Record<string, any>;
+    const cdc = body.components?.cdc as Record<string, any>;
 
-    expect(body.cdc).toHaveProperty('cdcConnected');
-    expect(body.cdc).toHaveProperty('lastMessageAt');
-    expect(body.cdc).toHaveProperty('messagesReceived');
-    expect(body.cdc).toHaveProperty('parseErrors');
-    expect(body.cdc).toHaveProperty('status');
-    expect(['healthy', 'degraded', 'unknown']).toContain(body.cdc.status);
+    expect(cdc).toHaveProperty('status');
+    expect(cdc).toHaveProperty('checkedVia');
+    expect(cdc).toHaveProperty('details');
+    expect(cdc.details).toHaveProperty('wsConnected');
+    expect(cdc.details).toHaveProperty('lastMessageAt');
+    expect(cdc.details).toHaveProperty('messages');
+    expect(cdc.details).toHaveProperty('parseErrors');
+    expect(['healthy', 'degraded', 'unhealthy']).toContain(cdc.status);
   });
 });

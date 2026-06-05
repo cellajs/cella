@@ -30,6 +30,21 @@ function getRows<T = Record<string, unknown>>(result: any): T[] {
   return [];
 }
 
+async function ensureRuntimeRoleAccess() {
+  await adminDb.execute(sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
+        CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
+      END IF;
+
+      GRANT USAGE ON SCHEMA public TO runtime_role;
+      GRANT USAGE ON SCHEMA pg_catalog TO runtime_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON organizations TO runtime_role;
+    END $$;
+  `);
+}
+
 describe('Defense-in-depth data isolation', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
@@ -41,6 +56,7 @@ describe('Defense-in-depth data isolation', async () => {
     mockFetchRequest();
     tenantA = await createTestTenant(call, 'depth-a');
     tenantB = await createTestTenant(call, 'depth-b');
+    await ensureRuntimeRoleAccess();
 
     // Try to connect as runtime_role for RLS-level tests
     try {

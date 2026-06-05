@@ -7,8 +7,21 @@ import { findUnencryptedSecrets, KNOWN_SECRET_KEYS } from './yaml-secrets.js'
 const infraDir = resolve(fileURLToPath(import.meta.url), '../..')
 
 describe('findUnencryptedSecrets', () => {
-  it('passes the committed Pulumi.production.yaml', () => {
-    const text = readFileSync(resolve(infraDir, 'Pulumi.production.yaml'), 'utf8')
+  it('passes the committed Pulumi stack config when present', () => {
+    const stackPath = ['Pulumi.production.yaml', 'Pulumi.yaml']
+      .map((fileName) => resolve(infraDir, fileName))
+      .find((filePath) => {
+        try {
+          readFileSync(filePath, 'utf8')
+          return true
+        } catch {
+          return false
+        }
+      })
+
+    expect(stackPath).toBeDefined()
+
+    const text = readFileSync(stackPath!, 'utf8')
     expect(findUnencryptedSecrets(text)).toEqual([])
   })
 

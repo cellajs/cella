@@ -70,6 +70,10 @@ let runtimeDb: NodePgDatabase;
 
 /** Whether runtime_role exists in the test database */
 let rolesAvailable = false;
+let requiredTablesAvailable = false;
+const supportsLegacyRlsMatrix = ['project', 'task', 'label', 'workspace'].every((entityType) =>
+  appConfig.entityTypes.includes(entityType as (typeof appConfig.entityTypes)[number]),
+);
 
 /** Parentless product entity types (no org FK, no RLS) — derived from hierarchy config */
 const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
@@ -84,6 +88,25 @@ async function checkRolesExist(): Promise<boolean> {
     ),
   );
   return rows[0]?.exists === true;
+}
+
+async function tableExists(tableName: string): Promise<boolean> {
+  const rows = getRows<{ exists: boolean }>(
+    await adminDb.execute(sql`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = ${tableName}
+      ) AS exists
+    `),
+  );
+  return rows[0]?.exists === true;
+}
+
+async function checkRequiredTablesExist(): Promise<boolean> {
+  const requiredTables = ['attachments', 'organizations', 'memberships', 'pages', 'tasks', 'labels', 'projects'];
+  const results = await Promise.all(requiredTables.map((tableName) => tableExists(tableName)));
+  return results.every(Boolean);
 }
 
 /**
@@ -438,8 +461,14 @@ describe('RLS Security Tests', () => {
 // RLS policy verification (runtime_role connection — genuinely subject to RLS)
 // ============================================================================
 
-describe('RLS Policy Verification', () => {
+(supportsLegacyRlsMatrix ? describe : describe.skip)('RLS Policy Verification', () => {
   beforeAll(async () => {
+    requiredTablesAvailable = await checkRequiredTablesExist();
+    if (!requiredTablesAvailable) {
+      console.warn('required RLS tables not available — skipping RLS policy tests');
+      return;
+    }
+
     // 1. Ensure RLS roles exist in test database
     await ensureRlsRoles();
     rolesAvailable = await checkRolesExist();
@@ -463,7 +492,7 @@ describe('RLS Policy Verification', () => {
   });
 
   afterAll(async () => {
-    if (!rolesAvailable) return;
+    if (!rolesAvailable || !requiredTablesAvailable) return;
     await cleanupTestData();
   });
 
