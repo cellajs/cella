@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/is-cdn-url';
-import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import { Logo } from '~/modules/marketing/logo';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
 

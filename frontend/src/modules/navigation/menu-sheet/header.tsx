@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { Logo } from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { Logo } from '~/modules/marketing/logo';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';

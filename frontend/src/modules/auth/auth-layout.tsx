@@ -2,7 +2,7 @@ import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
-import { Logo } from '~/modules/common/logo';
+import { Logo } from '~/modules/marketing/logo';
 
 const authFooterLinks: FooterLinkProps[] = [
   { id: 'sign_in', href: '/auth/authenticate' },

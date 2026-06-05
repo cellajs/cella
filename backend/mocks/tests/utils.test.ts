@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
-  generateMockContextEntityIdColumns,
+  generateMockContextIdColumns,
   mockNanoid,
   mockTenantId,
   mockUuid,
@@ -12,9 +12,9 @@ import {
   withMockContext,
 } from '../utils';
 
-describe('generateMockContextEntityIdColumns', () => {
+describe('generateMockContextIdColumns', () => {
   it('returns correct column names for default config', () => {
-    const columns = generateMockContextEntityIdColumns();
+    const columns = generateMockContextIdColumns();
 
     // Should have a key for each context entity type
     for (const entityType of appConfig.contextEntityTypes) {
@@ -30,16 +30,16 @@ describe('generateMockContextEntityIdColumns', () => {
   it('generates deterministic values when wrapped in withFakerSeed', () => {
     const key = 'test-seed-key';
 
-    const columns1 = withFakerSeed(key, generateMockContextEntityIdColumns);
-    const columns2 = withFakerSeed(key, generateMockContextEntityIdColumns);
+    const columns1 = withFakerSeed(key, generateMockContextIdColumns);
+    const columns2 = withFakerSeed(key, generateMockContextIdColumns);
 
     // Same seed should produce same values
     expect(columns1).toEqual(columns2);
   });
 
   it('generates different values with different seeds', () => {
-    const columns1 = withFakerSeed('seed-a', generateMockContextEntityIdColumns);
-    const columns2 = withFakerSeed('seed-b', generateMockContextEntityIdColumns);
+    const columns1 = withFakerSeed('seed-a', generateMockContextIdColumns);
+    const columns2 = withFakerSeed('seed-b', generateMockContextIdColumns);
 
     // Different seeds should produce different values
     expect(columns1.organizationId).not.toBe(columns2.organizationId);

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Logo } from '~/modules/common/logo';
+import { Logo } from '~/modules/marketing/logo';
 
 const meta = {
   title: 'common/Logo',

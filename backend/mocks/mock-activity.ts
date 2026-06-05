@@ -3,7 +3,7 @@ import { actionToVerb, activityActions, appConfig } from 'shared';
 import type { ActivityModel } from '#/db/schema/activities';
 import { entityTableNames } from '#/tables';
 import {
-  generateMockContextEntityIdColumns,
+  generateMockContextIdColumns,
   MOCK_REF_DATE,
   mockPaginated,
   mockTenantId,
@@ -44,7 +44,7 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
           ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
           : null,
       stx: null,
-      ...generateMockContextEntityIdColumns('relatable'),
+      ...generateMockContextIdColumns('relatable'),
       ...overrides,
     };
   });

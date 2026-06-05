@@ -3,8 +3,8 @@ import { HomeIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
-import { Logo } from '~/modules/common/logo';
 import { Spinner } from '~/modules/common/spinner';
+import { Logo } from '~/modules/marketing/logo';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { cn } from '~/utils/cn';
 

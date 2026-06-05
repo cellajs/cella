@@ -12,7 +12,7 @@ import { mockUuid } from './mock-nanoid';
  * Type for dynamically generated context entity ID columns in mocks.
  * Maps each context entity type to its corresponding ID column (e.g., organization -> organizationId).
  */
-export type MockContextEntityIdColumns = {
+export type MockContextIdColumns = {
   [K in ContextEntityType as (typeof appConfig.entityIdColumnKeys)[K]]: string;
 };
 
@@ -23,7 +23,7 @@ export type MockContextEntityIdColumns = {
  *   those in the hierarchy's relatableContextTypes. Defaults to 'all'.
  * @returns An object with mock ID values for each context entity ID column.
  */
-export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = 'all'): MockContextEntityIdColumns => {
+export const generateMockContextIdColumns = (mode: 'all' | 'relatable' = 'all'): MockContextIdColumns => {
   const entityTypes = mode === 'all' ? appConfig.contextEntityTypes : hierarchy.relatableContextTypes;
   const columns = {} as Record<string, string>;
 
@@ -32,7 +32,7 @@ export const generateMockContextEntityIdColumns = (mode: 'all' | 'relatable' = '
     columns[columnName] = mockUuid();
   }
 
-  return columns as MockContextEntityIdColumns;
+  return columns as MockContextIdColumns;
 };
 
 /**

@@ -3,7 +3,7 @@
 ## Project summary
 Cella is a TypeScript template to build web apps with sync engine for offline and realtime use. Postgres, openapi & react-query are foundational layers. 
 
-Cella is an implementation-ready template with quite some modules and a default entity config, see [shared/config/config.default.ts](../shared/config/config.default.ts) and [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Each fork will extend and change the entity config and its hierarchy, so its important to write entity-agnostic code.
+ Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
 ## Architecture & tech stack
 See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
@@ -74,7 +74,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - OpenAPI examples: pass `mockXResponse()` to `.openapi('Name', { example })` and route `example:`.
 - Seeding (`backend/scripts/seeds/`): call `setMockContext('script')` + `mockMany(mockEntity, count)`.
 - Tests (`backend/tests/`): use insert mocks via `backend/tests/helpers.ts`. Call `resetXMockEnforcers()` in cleanup.
-- Key utils: `mockMany()`, `mockPaginated()`, `mockTimestamps()`, `mockPastIsoDate()`, `mockContextEntityIdColumns()`.
+- Key utils: `mockMany()`, `mockPaginated()`, `mockTimestamps()`, `mockPastIsoDate()`, `generateMockContextIdColumns()` (all configured context columns) / `generateMockEntityContextIdColumns()` (one product entity's columns).
 
 ## Sync engine details
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from cached entity version.
@@ -120,5 +120,5 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
-- `pnpm test`: Run all tests (alias for `test:core`). Also: `test:full` (includes CDC).
+- `pnpm test`: Run the default test suite (alias for `test:core`). `pnpm test:full` runs the broader full-mode suite, including integration tests such as CDC-related flows.
 - `pnpm cella`: run Cella CLI to sync with upstream or downstream: [cli/cella/README.md](../cli/cella/README.md)

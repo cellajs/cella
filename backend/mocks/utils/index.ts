@@ -1,9 +1,9 @@
 export { withFakerSeed } from './faker-seed';
 export { type BatchResponse, mockBatchResponse } from './mock-batch-response';
 export {
-  generateMockContextEntityIdColumns,
+  generateMockContextIdColumns,
   generateMockEntityContextIdColumns,
-  type MockContextEntityIdColumns,
+  type MockContextIdColumns,
   type MockEntityContextIdColumns,
 } from './mock-context-entity-id-columns';
 export { generateMockEntityCounts, type MockEntityCounts } from './mock-entity-counts';

@@ -4,9 +4,9 @@ import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
 import type { InsertMembershipModel, MembershipModel } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import {
-  generateMockContextEntityIdColumns,
+  generateMockContextIdColumns,
   MOCK_REF_DATE,
-  type MockContextEntityIdColumns,
+  type MockContextIdColumns,
   mockPaginated,
   mockPastIsoDate,
   mockTenantId,
@@ -25,7 +25,7 @@ type MembershipBase = {
   displayOrder: number;
   muted: boolean;
   archived: boolean;
-} & MockContextEntityIdColumns;
+} & MockContextIdColumns;
 
 // Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
@@ -45,7 +45,7 @@ export const getMembershipOrderOffset = (contextId: string): number => {
 type ContextEntity = { id: string; tenantId: string };
 
 /** Override IDs for context entity columns (organizationId, workspaceId, etc.) */
-type ContextEntityIdOverrides = Partial<MockContextEntityIdColumns>;
+type ContextEntityIdOverrides = Partial<MockContextIdColumns>;
 
 /**
  * Generates a mock membership linking a user to a context entity.
@@ -95,7 +95,7 @@ export const mockMembershipBase = (key = 'membership-base:default'): MembershipB
     contextType: 'organization' as const,
     contextId: mockUuid(),
     userId: mockUuid(),
-    ...generateMockContextEntityIdColumns(),
+    ...generateMockContextIdColumns(),
     role: faker.helpers.arrayElement(roles.all),
     displayOrder: faker.number.int({ min: 1, max: 100 }),
     muted: false,
@@ -112,7 +112,7 @@ export const mockMembership = (key = 'membership:default'): MembershipModel =>
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const contextEntityColumns = generateMockContextEntityIdColumns();
+    const contextEntityColumns = generateMockContextIdColumns();
 
     return {
       id: mockUuid(),
@@ -145,7 +145,7 @@ export const mockInactiveMembership = (key = 'inactive-membership:default'): Ina
     const refDate = MOCK_REF_DATE;
     const createdAt = faker.date.past({ refDate }).toISOString();
     const userId = mockUuid();
-    const contextEntityColumns = generateMockContextEntityIdColumns();
+    const contextEntityColumns = generateMockContextIdColumns();
     const tokenId = mockUuid();
 
     return {
