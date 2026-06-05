@@ -13,9 +13,6 @@ import type {
   CreateAttachmentsData,
   CreateAttachmentsErrors,
   CreateAttachmentsResponses,
-  CreateChatData,
-  CreateChatErrors,
-  CreateChatResponses,
   CreateDomainData,
   CreateDomainErrors,
   CreateDomainResponses,
@@ -40,9 +37,6 @@ import type {
   DeleteAttachmentsData,
   DeleteAttachmentsErrors,
   DeleteAttachmentsResponses,
-  DeleteChatsData,
-  DeleteChatsErrors,
-  DeleteChatsResponses,
   DeleteDomainData,
   DeleteDomainErrors,
   DeleteDomainResponses,
@@ -94,9 +88,6 @@ import type {
   GetAuthHealthData,
   GetAuthHealthErrors,
   GetAuthHealthResponses,
-  GetChatsData,
-  GetChatsErrors,
-  GetChatsResponses,
   GetDomainData,
   GetDomainErrors,
   GetDomainResponses,
@@ -109,9 +100,6 @@ import type {
   GetMembersErrors,
   GetMembersResponses,
   GetMeResponses,
-  GetMessagesData,
-  GetMessagesErrors,
-  GetMessagesResponses,
   GetMyAuthData,
   GetMyAuthErrors,
   GetMyAuthResponses,
@@ -207,9 +195,6 @@ import type {
   SendMagicLinkData,
   SendMagicLinkErrors,
   SendMagicLinkResponses,
-  SendMessageData,
-  SendMessageErrors,
-  SendMessageResponses,
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
@@ -239,9 +224,6 @@ import type {
   UpdateAttachmentData,
   UpdateAttachmentErrors,
   UpdateAttachmentResponses,
-  UpdateChatData,
-  UpdateChatErrors,
-  UpdateChatResponses,
   UpdateMeData,
   UpdateMeErrors,
   UpdateMembershipData,
@@ -275,8 +257,6 @@ import {
   zCreateAttachmentsBody,
   zCreateAttachmentsPath,
   zCreateAttachmentsResponse,
-  zCreateChatBody,
-  zCreateChatPath,
   zCreateDomainBody,
   zCreateDomainPath,
   zCreateDomainResponse,
@@ -295,9 +275,6 @@ import {
   zDeleteAttachmentsBody,
   zDeleteAttachmentsPath,
   zDeleteAttachmentsResponse,
-  zDeleteChatsBody,
-  zDeleteChatsPath,
-  zDeleteChatsResponse,
   zDeleteDomainPath,
   zDeleteDomainResponse,
   zDeleteMembershipsBody,
@@ -330,9 +307,6 @@ import {
   zGetAttachmentsQuery,
   zGetAttachmentsResponse,
   zGetAuthHealthResponse,
-  zGetChatsPath,
-  zGetChatsQuery,
-  zGetChatsResponse,
   zGetDomainPath,
   zGetDomainResponse,
   zGetDomainsPath,
@@ -341,9 +315,6 @@ import {
   zGetMembersQuery,
   zGetMembersResponse,
   zGetMeResponse,
-  zGetMessagesPath,
-  zGetMessagesQuery,
-  zGetMessagesResponse,
   zGetMyAuthResponse,
   zGetMyInvitationsResponse,
   zGetMyMembershipsResponse,
@@ -405,8 +376,6 @@ import {
   zSelfCreateTenantResponse,
   zSendMagicLinkBody,
   zSendMagicLinkResponse,
-  zSendMessageBody,
-  zSendMessagePath,
   zSendNewsletterBody,
   zSendNewsletterQuery,
   zSendNewsletterResponse,
@@ -427,9 +396,6 @@ import {
   zUpdateAttachmentPath,
   zUpdateAttachmentQuery,
   zUpdateAttachmentResponse,
-  zUpdateChatBody,
-  zUpdateChatPath,
-  zUpdateChatResponse,
   zUpdateMeBody,
   zUpdateMembershipBody,
   zUpdateMembershipPath,
@@ -3014,263 +2980,6 @@ export const getUser = <ThrowOnError extends boolean = true>(
     ],
     url: '/users/users/{relatableUserId}',
     ...options,
-  });
-
-/**
- * Delete chats
- *
- * Deletes one or more chat sessions and their messages.
- *
- * **DELETE /{tenantId}/{organizationId}/chats** ·· [deleteChats](https://api.cellajs.com/docs#tag/ai/delete/{tenantId}/{organizationId}/chats) ·· [deleteChats](https://api.cellajs.com/docs#tag/cella/delete/{tenantId}/{organizationId}/chats) ·· _ai_cella_
- *
- * @param {deleteChatsData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deleteChats = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteChatsData, ThrowOnError>,
-): RequestResult<DeleteChatsResponses, DeleteChatsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteChatsResponses, DeleteChatsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zDeleteChatsBody.optional(),
-          path: zDeleteChatsPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeleteChatsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get chats
- *
- * Returns a paginated list of chat sessions for the current user.
- *
- * **GET /{tenantId}/{organizationId}/chats** ·· [getChats](https://api.cellajs.com/docs#tag/ai/get/{tenantId}/{organizationId}/chats) ·· [getChats](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/chats) ·· _ai_cella_
- *
- * @param {getChatsData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @param {enum=} options.query.archived - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getChats = <ThrowOnError extends boolean = true>(
-  options: Options<GetChatsData, ThrowOnError>,
-): RequestResult<GetChatsResponses, GetChatsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetChatsResponses, GetChatsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetChatsPath,
-          query: zGetChatsQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetChatsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats',
-    ...options,
-  });
-
-/**
- * Create chat
- *
- * Creates a new chat session with an initial user message. Returns an SSE stream with the assistant response.
- *
- * **POST /{tenantId}/{organizationId}/chats** ·· [createChat](https://api.cellajs.com/docs#tag/ai/post/{tenantId}/{organizationId}/chats) ·· [createChat](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/chats) ·· _ai_cella_
- *
- * @param {createChatData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {string=} options.body.content - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const createChat = <ThrowOnError extends boolean = true>(
-  options: Options<CreateChatData, ThrowOnError, unknown>,
-): Promise<ServerSentEventsResult<CreateChatResponses, CreateChatErrors | void, ThrowOnError>> =>
-  (options.client ?? client).sse.post<CreateChatResponses, CreateChatErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreateChatBody,
-          path: zCreateChatPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get messages
- *
- * Returns a paginated list of messages for a chat session.
- *
- * **GET /{tenantId}/{organizationId}/chats/{id}/messages** ·· [getMessages](https://api.cellajs.com/docs#tag/ai/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· [getMessages](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
- *
- * @param {getMessagesData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getMessages = <ThrowOnError extends boolean = true>(
-  options: Options<GetMessagesData, ThrowOnError>,
-): RequestResult<GetMessagesResponses, GetMessagesErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetMessagesResponses, GetMessagesErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetMessagesPath,
-          query: zGetMessagesQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetMessagesResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats/{id}/messages',
-    ...options,
-  });
-
-/**
- * Send message
- *
- * Sends a user message and returns an SSE stream with the assistant response.
- *
- * **POST /{tenantId}/{organizationId}/chats/{id}/messages** ·· [sendMessage](https://api.cellajs.com/docs#tag/ai/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· [sendMessage](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
- *
- * @param {sendMessageData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.content - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const sendMessage = <ThrowOnError extends boolean = true>(
-  options: Options<SendMessageData, ThrowOnError, unknown>,
-): Promise<ServerSentEventsResult<SendMessageResponses, SendMessageErrors | void, ThrowOnError>> =>
-  (options.client ?? client).sse.post<SendMessageResponses, SendMessageErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zSendMessageBody,
-          path: zSendMessagePath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats/{id}/messages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update chat
- *
- * Updates a chat session (rename or archive).
- *
- * **PUT /{tenantId}/{organizationId}/chats/{id}** ·· [updateChat](https://api.cellajs.com/docs#tag/ai/put/{tenantId}/{organizationId}/chats/{id}) ·· [updateChat](https://api.cellajs.com/docs#tag/cella/put/{tenantId}/{organizationId}/chats/{id}) ·· _ai_cella_
- *
- * @param {updateChatData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @param {string} options.path.id - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {boolean=} options.body.archived - `boolean` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const updateChat = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateChatData, ThrowOnError>,
-): RequestResult<UpdateChatResponses, UpdateChatErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateChatResponses, UpdateChatErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zUpdateChatBody,
-          path: zUpdateChatPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zUpdateChatResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/chats/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 
 /**

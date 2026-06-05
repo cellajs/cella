@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { aiHandlers } from '#/modules/ai/ai-handlers';
+import { mcpHandlers } from '#/modules/ai/mcp/mcp-handlers';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';
@@ -41,11 +41,13 @@ baseApp.route('/', pageHandlers);
 baseApp.route('/users', userHandlers);
 // Cross-tenant list routes
 // Tenant-scoped routes: /:tenantId/:organizationId/...
-baseApp.route('/:tenantId/:organizationId/chats', aiHandlers);
 baseApp.route('/:tenantId/:organizationId/attachments', attachmentHandlers);
 baseApp.route('/:tenantId/:organizationId/memberships', membershipHandlers);
 baseApp.route('/:tenantId/:organizationId/seen', seenHandlers);
 baseApp.route('/yjs', yjsHandlers);
+
+// AI: Model Context Protocol endpoint exposing the workspace tool registry
+if (appConfig.has.ai) baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
 // TODO review
 // Dev-only email preview (local authoring + Storybook email stories)

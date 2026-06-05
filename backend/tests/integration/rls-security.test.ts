@@ -60,8 +60,6 @@ const TEST_LABEL_A = '00000000-0000-4000-a000-00000000000d';
 const TEST_ATTACHMENT_A = '00000000-0000-4000-a000-00000000000e';
 const TEST_ATTACHMENT_C = '00000000-0000-4000-a000-00000000000f';
 const TEST_WORKSPACE_A = '00000000-0000-4000-a000-000000000010';
-const TEST_CHAT_A = '00000000-0000-4000-a000-000000000011';
-const TEST_CONVERSATION_A = '00000000-0000-4000-a000-000000000012';
 const TEST_ACTIVITY_A = 'rls-activity-001';
 
 // Runtime role connection (subject to RLS)
@@ -254,18 +252,6 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Create AI chat and message in Org A (needed for immutability trigger tests on chats / messages)
-  await adminDb.execute(sql`
-    INSERT INTO chats (id, entity_type, tenant_id, name, stx, keywords, organization_id, created_by)
-    VALUES (${TEST_CHAT_A}, 'chat', ${TEST_TENANT_A}, 'RLS Chat A', '{}', '', ${TEST_ORG_A}, ${TEST_USER_A})
-    ON CONFLICT (id) DO NOTHING
-  `);
-  await adminDb.execute(sql`
-    INSERT INTO messages (id, entity_type, tenant_id, name, stx, keywords, organization_id, chat_id, role, created_by)
-    VALUES (${TEST_CONVERSATION_A}, 'message', ${TEST_TENANT_A}, 'RLS Message A', '{}', '', ${TEST_ORG_A}, ${TEST_CHAT_A}, 'user', ${TEST_USER_A})
-    ON CONFLICT (id) DO NOTHING
-  `);
-
   // Create activity row (needed for append-only trigger test)
   await adminDb.execute(sql`
     INSERT INTO activities (id, tenant_id, action, table_name, type, created_at)
@@ -279,8 +265,6 @@ async function setupTestData() {
  */
 async function cleanupTestData() {
   await adminDb.execute(sql`DELETE FROM activities WHERE id = ${TEST_ACTIVITY_A}`);
-  await adminDb.execute(sql`DELETE FROM messages WHERE id = ${TEST_CONVERSATION_A}`);
-  await adminDb.execute(sql`DELETE FROM chats WHERE id = ${TEST_CHAT_A}`);
   await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id IN (${TEST_TASK_A}, ${TEST_LABEL_A})`);
   await adminDb.execute(sql`DELETE FROM tasks WHERE id = ${TEST_TASK_A}`);
   await adminDb.execute(sql`DELETE FROM labels WHERE id = ${TEST_LABEL_A}`);

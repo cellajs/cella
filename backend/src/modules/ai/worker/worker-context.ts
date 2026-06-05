@@ -2,7 +2,7 @@ import type { AuthContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 
 export interface AiJobData {
-  chatId: string;
+  subjectId: string;
   userId: string;
   organizationId: string;
   tenantId: string;

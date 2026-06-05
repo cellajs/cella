@@ -10,13 +10,13 @@ export const config = {
    ******************************************************************************/
 
   /** All entity types in the app - must match hierarchy.allTypes. */
-  entityTypes: ['user', 'organization', 'attachment', 'page', 'chat', 'message'] as const,
+  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
   /** Context entities with memberships - must match hierarchy.contextTypes. */
   contextEntityTypes: ['organization'] as const,
 
   /** Product/content entities - must match hierarchy.productTypes. */
-  productEntityTypes: ['attachment', 'page', 'chat', 'message'] as const,
+  productEntityTypes: ['attachment', 'page'] as const,
 
   /**
    * Product entity types tracked for seen/unseen counts.
@@ -30,8 +30,6 @@ export const config = {
     organization: 'organizationId',
     attachment: 'attachmentId',
     page: 'pageId',
-    chat: 'chatId',
-    message: 'messageId',
   } as const,
 
   /** Available CRUD actions for permission checks */
@@ -125,8 +123,10 @@ export const config = {
     selfRegistration: false as boolean,
     waitlist: false as boolean,
     uploadEnabled: true as boolean,
+    /** Customer support chat widget (Gleap). Unrelated to the AI module. */
     chatSupport: false as boolean,
     yjs: false as boolean,
+    /** AI capability layer: tool registry + model runner + MCP endpoint. */
     ai: false as boolean,
   },
 
@@ -165,8 +165,6 @@ export const config = {
     attachments: 40,
     pages: 100,
     pendingMemberships: 20,
-    chats: 40,
-    messages: 100,
   },
 
   jsonBodyLimit: 1 * 1024 * 1024,

@@ -3,13 +3,11 @@ export * from './activities';
 // App-specific schemas (fork-customizable)
 export * from './app-schemas';
 export * from './attachments';
-export * from './chats';
 export * from './context-counters';
 export * from './domains';
 export * from './emails';
 export * from './inactive-memberships';
 export * from './memberships';
-export * from './messages';
 export * from './oauth-accounts';
 export * from './organizations';
 export * from './pages';

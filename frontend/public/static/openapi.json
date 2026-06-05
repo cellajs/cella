@@ -161,7 +161,7 @@
     },
     {
       "name": "ai",
-      "description": "Endpoints for AI chat sessions. Supports streaming LLM responses via SSE, per-user chat sessions scoped to a workspace (organization), and tool calling for workspace actions.",
+      "description": "AI capability layer: a server-side tool registry and a Model Context Protocol (MCP) endpoint that exposes that registry to external MCP clients. Ships no LLM transport or agent of its own — forks build AI features and agent products (e.g. chat) on top, reusing the same tool registry.",
       "parent": "cella",
       "kind": "module"
     },
@@ -575,9 +575,7 @@
             "type": "string",
             "enum": [
               "attachment",
-              "page",
-              "chat",
-              "message"
+              "page"
             ]
           },
           "keywords": {
@@ -760,8 +758,6 @@
             "enum": [
               "attachment",
               "page",
-              "chat",
-              "message",
               null
             ]
           },
@@ -1010,9 +1006,7 @@
               "user",
               "organization",
               "attachment",
-              "page",
-              "chat",
-              "message"
+              "page"
             ]
           },
           "logId": {
@@ -2243,18 +2237,10 @@
                     "properties": {
                       "attachment": {
                         "type": "number"
-                      },
-                      "chat": {
-                        "type": "number"
-                      },
-                      "message": {
-                        "type": "number"
                       }
                     },
                     "required": [
-                      "attachment",
-                      "chat",
-                      "message"
+                      "attachment"
                     ]
                   }
                 },
@@ -2344,9 +2330,7 @@
               },
               "entities": {
                 "attachment": 178,
-                "page": 257,
-                "chat": 47,
-                "message": 21
+                "page": 257
               }
             }
           }
@@ -2507,262 +2491,6 @@
         "x-tags": [
           "data",
           "pages",
-          "cella"
-        ]
-      },
-      "Chat": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "entityType": {
-            "type": "string",
-            "enum": [
-              "chat"
-            ]
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 1000000
-          },
-          "keywords": {
-            "type": "string",
-            "maxLength": 1000000
-          },
-          "seq": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "model": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "archivedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "stx": {
-            "$ref": "#/components/schemas/StxBase"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "entityType",
-          "tenantId",
-          "name",
-          "updatedAt",
-          "description",
-          "keywords",
-          "seq",
-          "organizationId",
-          "userId",
-          "model",
-          "archivedAt",
-          "stx"
-        ],
-        "description": "An AI chat session scoped to a user within an organization.",
-        "x-tags": [
-          "data",
-          "ai",
-          "cella"
-        ]
-      },
-      "Message": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "entityType": {
-            "type": "string",
-            "enum": [
-              "message"
-            ]
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 1000000
-          },
-          "keywords": {
-            "type": "string",
-            "maxLength": 1000000
-          },
-          "seq": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "chatId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "role": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "parts": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
-                "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
-              }
-            ]
-          },
-          "model": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 255
-          },
-          "status": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "usage": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              },
-              {
-                "type": "object",
-                "additionalProperties": {}
-              },
-              {
-                "type": "array",
-                "items": {}
-              }
-            ]
-          },
-          "error": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "stx": {
-            "$ref": "#/components/schemas/StxBase"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "entityType",
-          "tenantId",
-          "name",
-          "updatedAt",
-          "description",
-          "keywords",
-          "seq",
-          "organizationId",
-          "chatId",
-          "userId",
-          "role",
-          "parts",
-          "model",
-          "status",
-          "usage",
-          "error",
-          "stx"
-        ],
-        "description": "A single message within a chat session.",
-        "x-tags": [
-          "data",
-          "ai",
           "cella"
         ]
       },
@@ -8261,21 +7989,13 @@
                     },
                     "page": {
                       "type": "number"
-                    },
-                    "chat": {
-                      "type": "number"
-                    },
-                    "message": {
-                      "type": "number"
                     }
                   },
                   "required": [
                     "user",
                     "organization",
                     "attachment",
-                    "page",
-                    "chat",
-                    "message"
+                    "page"
                   ]
                 },
                 "example": {
@@ -8435,18 +8155,10 @@
                                         "properties": {
                                           "attachment": {
                                             "type": "number"
-                                          },
-                                          "chat": {
-                                            "type": "number"
-                                          },
-                                          "message": {
-                                            "type": "number"
                                           }
                                         },
                                         "required": [
-                                          "attachment",
-                                          "chat",
-                                          "message"
+                                          "attachment"
                                         ]
                                       }
                                     },
@@ -8515,9 +8227,7 @@
                               },
                               "entities": {
                                 "attachment": 178,
-                                "page": 257,
-                                "chat": 47,
-                                "message": 21
+                                "page": 257
                               }
                             }
                           }
@@ -8605,9 +8315,7 @@
                           },
                           "entities": {
                             "attachment": 294,
-                            "page": 327,
-                            "chat": 491,
-                            "message": 182
+                            "page": 327
                           }
                         }
                       }
@@ -8663,9 +8371,7 @@
                           },
                           "entities": {
                             "attachment": 321,
-                            "page": 94,
-                            "chat": 122,
-                            "message": 493
+                            "page": 94
                           }
                         }
                       }
@@ -9013,9 +8719,7 @@
                           },
                           "entities": {
                             "attachment": 188,
-                            "page": 390,
-                            "chat": 423,
-                            "message": 413
+                            "page": 390
                           }
                         }
                       }
@@ -9071,9 +8775,7 @@
                           },
                           "entities": {
                             "attachment": 1,
-                            "page": 272,
-                            "chat": 153,
-                            "message": 264
+                            "page": 272
                           }
                         }
                       }
@@ -9229,9 +8931,7 @@
                       },
                       "entities": {
                         "attachment": 178,
-                        "page": 257,
-                        "chat": 47,
-                        "message": 21
+                        "page": 257
                       }
                     }
                   }
@@ -9491,9 +9191,7 @@
                       },
                       "entities": {
                         "attachment": 178,
-                        "page": 257,
-                        "chat": 47,
-                        "message": 21
+                        "page": 257
                       }
                     }
                   }
@@ -10704,729 +10402,6 @@
                   "lastStartedAt": "2024-12-13T11:17:23.643Z",
                   "lastSignInAt": "2024-12-13T11:17:23.643Z",
                   "lastSeenAt": "2024-12-13T11:17:23.643Z"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/{organizationId}/chats": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createChat",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Create chat",
-        "description": "Creates a new chat session with an initial user message. Returns an SSE stream with the assistant response.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 1000000
-                  }
-                },
-                "required": [
-                  "content"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "SSE stream with assistant response",
-            "content": {
-              "text/event-stream": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getChats",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Get chats",
-        "description": "Returns a paginated list of chat sessions for the current user.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 255
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "createdAt",
-                "updatedAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "seqCursor",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ],
-              "default": "false"
-            },
-            "required": false,
-            "name": "archived",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Chats",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Chat"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteChats",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Delete chats",
-        "description": "Deletes one or more chat sessions and their messages.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": [
-                  "ids"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "prefixItems": []
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/{organizationId}/chats/{id}/messages": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getMessages",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Get messages",
-        "description": "Returns a paginated list of messages for a chat session.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 255
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "createdAt"
-              ],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "seqCursor",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Messages",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Message"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "sendMessage",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Send message",
-        "description": "Sends a user message and returns an SSE stream with the assistant response.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "content": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 1000000
-                  }
-                },
-                "required": [
-                  "content"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "SSE stream with assistant response",
-            "content": {
-              "text/event-stream": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/{tenantId}/{organizationId}/chats/{id}": {
-      "put": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "updateChat",
-        "tags": [
-          "ai",
-          "cella"
-        ],
-        "summary": "Update chat",
-        "description": "Updates a chat session (rename or archive).",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "maxLength": 255
-                  },
-                  "archived": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Chat updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Chat"
                 }
               }
             }
@@ -13671,9 +12646,7 @@
                     "type": "string",
                     "enum": [
                       "attachment",
-                      "page",
-                      "chat",
-                      "message"
+                      "page"
                     ],
                     "description": "Entity type for all IDs in this batch"
                   }

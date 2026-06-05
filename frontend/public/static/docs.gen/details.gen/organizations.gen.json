@@ -193,9 +193,7 @@
                             "type": "object",
                             "required": true,
                             "properties": {
-                              "attachment": { "type": "number", "required": true },
-                              "chat": { "type": "number", "required": true },
-                              "message": { "type": "number", "required": true }
+                              "attachment": { "type": "number", "required": true }
                             }
                           }
                         }
@@ -268,12 +266,7 @@
                     "pending": 47,
                     "total": 101
                   },
-                  "entities": {
-                    "attachment": 294,
-                    "page": 327,
-                    "chat": 491,
-                    "message": 182
-                  }
+                  "entities": { "attachment": 294, "page": 327 }
                 }
               }
             },
@@ -322,12 +315,7 @@
                     "pending": 44,
                     "total": 144
                   },
-                  "entities": {
-                    "attachment": 321,
-                    "page": 94,
-                    "chat": 122,
-                    "message": 493
-                  }
+                  "entities": { "attachment": 321, "page": 94 }
                 }
               }
             }
@@ -700,9 +688,7 @@
                             "type": "object",
                             "required": true,
                             "properties": {
-                              "attachment": { "type": "number", "required": true },
-                              "chat": { "type": "number", "required": true },
-                              "message": { "type": "number", "required": true }
+                              "attachment": { "type": "number", "required": true }
                             }
                           }
                         }
@@ -764,12 +750,7 @@
                     "pending": 27,
                     "total": 50
                   },
-                  "entities": {
-                    "attachment": 188,
-                    "page": 390,
-                    "chat": 423,
-                    "message": 413
-                  }
+                  "entities": { "attachment": 188, "page": 390 }
                 }
               }
             },
@@ -818,12 +799,7 @@
                     "pending": 18,
                     "total": 157
                   },
-                  "entities": {
-                    "attachment": 1,
-                    "page": 272,
-                    "chat": 153,
-                    "message": 264
-                  }
+                  "entities": { "attachment": 1, "page": 272 }
                 }
               }
             }
@@ -1096,9 +1072,7 @@
                       "type": "object",
                       "required": true,
                       "properties": {
-                        "attachment": { "type": "number", "required": true },
-                        "chat": { "type": "number", "required": true },
-                        "message": { "type": "number", "required": true }
+                        "attachment": { "type": "number", "required": true }
                       }
                     }
                   }
@@ -1154,12 +1128,7 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": {
-                "attachment": 178,
-                "page": 257,
-                "chat": 47,
-                "message": 21
-              }
+              "entities": { "attachment": 178, "page": 257 }
             }
           }
         }
@@ -1417,9 +1386,7 @@
                       "type": "object",
                       "required": true,
                       "properties": {
-                        "attachment": { "type": "number", "required": true },
-                        "chat": { "type": "number", "required": true },
-                        "message": { "type": "number", "required": true }
+                        "attachment": { "type": "number", "required": true }
                       }
                     }
                   }
@@ -1475,12 +1442,7 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": {
-                "attachment": 178,
-                "page": 257,
-                "chat": 47,
-                "message": 21
-              }
+              "entities": { "attachment": 178, "page": 257 }
             }
           }
         }

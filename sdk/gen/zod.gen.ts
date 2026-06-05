@@ -55,7 +55,7 @@ export const zProductEntityBase = z.object({
   description: z.string().nullable(),
   createdBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
   updatedBy: zUserMinimalBase.and(z.record(z.string(), z.unknown())).nullable(),
-  entityType: z.enum(['attachment', 'page', 'chat', 'message']),
+  entityType: z.enum(['attachment', 'page']),
   keywords: z.string(),
 });
 
@@ -89,7 +89,7 @@ export const zStxBase = z.object({
  */
 export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete']),
-  entityType: z.enum(['attachment', 'page', 'chat', 'message']).nullable(),
+  entityType: z.enum(['attachment', 'page']).nullable(),
   resourceType: z.enum(['request', 'membership', 'inactive_membership', 'tenant']).nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),
@@ -121,7 +121,7 @@ export const zApiError = z.object({
   type: z.string(),
   status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  entityType: z.enum(['user', 'organization', 'attachment', 'page', 'chat', 'message']).optional(),
+  entityType: z.enum(['user', 'organization', 'attachment', 'page']).optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
@@ -369,8 +369,6 @@ export const zOrganization = z.object({
         }),
         entities: z.object({
           attachment: z.number(),
-          chat: z.number(),
-          message: z.number(),
         }),
       })
       .optional(),
@@ -397,55 +395,6 @@ export const zPage = z.object({
   publicAt: z.string().nullable(),
   parentId: z.uuid().nullable(),
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-});
-
-/**
- * An AI chat session scoped to a user within an organization.
- */
-export const zChat = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  entityType: z.enum(['chat']),
-  tenantId: z.string().max(24),
-  name: z.string().max(255),
-  updatedAt: z.string().nullable(),
-  description: z.string().max(1000000).nullable(),
-  keywords: z.string().max(1000000),
-  seq: z.int().gte(-9007199254740991).lte(9007199254740991),
-  organizationId: z.uuid(),
-  userId: z.uuid().nullable(),
-  model: z.string().max(255),
-  archivedAt: z.string().nullable(),
-  stx: zStxBase,
-});
-
-/**
- * A single message within a chat session.
- */
-export const zMessage = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  entityType: z.enum(['message']),
-  tenantId: z.string().max(24),
-  name: z.string().max(255),
-  updatedAt: z.string().nullable(),
-  description: z.string().max(1000000).nullable(),
-  keywords: z.string().max(1000000),
-  seq: z.int().gte(-9007199254740991).lte(9007199254740991),
-  organizationId: z.uuid(),
-  chatId: z.uuid(),
-  userId: z.uuid().nullable(),
-  role: z.string().max(255),
-  parts: z
-    .union([z.string(), z.number(), z.boolean(), z.record(z.string(), z.unknown()), z.array(z.unknown())])
-    .nullable(),
-  model: z.string().max(255).nullable(),
-  status: z.string().max(255),
-  usage: z
-    .union([z.string(), z.number(), z.boolean(), z.record(z.string(), z.unknown()), z.array(z.unknown())])
-    .nullable(),
-  error: z.string().nullable(),
-  stx: zStxBase,
 });
 
 /**
@@ -1238,8 +1187,6 @@ export const zGetPublicCountsResponse = z.object({
   organization: z.number(),
   attachment: z.number(),
   page: z.number(),
-  chat: z.number(),
-  message: z.number(),
 });
 
 export const zDeleteOrganizationsBody = z.object({
@@ -1305,8 +1252,6 @@ export const zCreateOrganizationsResponse = z.object({
                 }),
                 entities: z.object({
                   attachment: z.number(),
-                  chat: z.number(),
-                  message: z.number(),
                 }),
               })
               .optional(),
@@ -1540,105 +1485,6 @@ export const zGetUserResponse = zUserBase.and(
     lastSeenAt: z.string().nullable(),
   }),
 );
-
-export const zDeleteChatsBody = z.object({
-  ids: z.array(z.string()).min(1).max(50),
-});
-
-export const zDeleteChatsPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-/**
- * Success
- */
-export const zDeleteChatsResponse = z.object({
-  data: z.array(z.unknown()),
-  rejectedIds: z.array(z.string()),
-  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
-});
-
-export const zGetChatsPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-export const zGetChatsQuery = z.object({
-  q: z.string().max(255).optional(),
-  sort: z.enum(['createdAt', 'updatedAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().optional(),
-  limit: z.string().optional(),
-  seqCursor: z.string().optional(),
-  archived: z.enum(['true', 'false']).optional().default('false'),
-});
-
-/**
- * Chats
- */
-export const zGetChatsResponse = z.object({
-  items: z.array(zChat),
-  total: z.number(),
-});
-
-export const zCreateChatBody = z.object({
-  content: z.string().min(1).max(1000000),
-});
-
-export const zCreateChatPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-export const zGetMessagesPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-export const zGetMessagesQuery = z.object({
-  q: z.string().max(255).optional(),
-  sort: z.enum(['createdAt']).optional().default('createdAt'),
-  order: z.enum(['asc', 'desc']).optional().default('asc'),
-  offset: z.string().optional(),
-  limit: z.string().optional(),
-  seqCursor: z.string().optional(),
-});
-
-/**
- * Messages
- */
-export const zGetMessagesResponse = z.object({
-  items: z.array(zMessage),
-  total: z.number(),
-});
-
-export const zSendMessageBody = z.object({
-  content: z.string().min(1).max(1000000),
-});
-
-export const zSendMessagePath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-export const zUpdateChatBody = z.object({
-  name: z.string().max(255).optional(),
-  archived: z.boolean().optional(),
-});
-
-export const zUpdateChatPath = z.object({
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-/**
- * Chat updated
- */
-export const zUpdateChatResponse = zChat;
 
 export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
@@ -1917,7 +1763,7 @@ export const zGetPendingMembershipsResponse = z.object({
 
 export const zMarkSeenBody = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500),
-  entityType: z.enum(['attachment', 'page', 'chat', 'message']),
+  entityType: z.enum(['attachment', 'page']),
 });
 
 export const zMarkSeenPath = z.object({

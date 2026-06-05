@@ -6,7 +6,7 @@ import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { logEvent } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
-import { aiHandlers } from '#/modules/ai/ai-handlers';
+import { mcpHandlers } from '#/modules/ai/mcp/mcp-handlers';
 import baseApp from '#/server';
 
 const port = Number(env.PORT ?? '4003');
@@ -34,7 +34,7 @@ export async function startAiWorker(): Promise<void> {
     }
 
     // Mount AI routes on the shared base app (middleware, health, error handling)
-    baseApp.route('/:tenantId/:organizationId/chats', aiHandlers);
+    baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
     // Start pg-boss (creates queues)
     await getPgBoss();
