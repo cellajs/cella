@@ -8,7 +8,7 @@ import pc from 'picocolors';
  * Creates database roles for RLS tenant isolation.
  *
  * In production (Scaleway): roles are pre-created as Scaleway-managed users
- * (admin_role, runtime_role, cdc_role). This script only ensures schema grants
+ * (admin_role, runtime_role). This script only ensures schema grants
  * and role memberships are in place.
  *
  * In development (Docker Compose): roles are created from scratch using
@@ -33,7 +33,7 @@ return {
  * Build idempotent SQL to create roles with passwords from connection strings.
  * Only used in development — production roles are Scaleway-managed users.
  */
-function buildCreateRolesSql(runtimePassword: string, cdcPassword: string, adminPassword: string): string {
+function buildCreateRolesSql(runtimePassword: string, adminPassword: string): string {
 // Escape single quotes for SQL injection safety
 const escSql = (s: string) => s.replace(/'/g, "''");
 
@@ -53,26 +53,6 @@ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
 ELSE
   ALTER ROLE runtime_role WITH PASSWORD '${escSql(runtimePassword)}';
 END IF;
-
-  -- cdc_role: CDC worker, INSERT on activities only + REPLICATION for logical replication
-  BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
-      CREATE ROLE cdc_role WITH LOGIN REPLICATION PASSWORD '${escSql(cdcPassword)}';
-      RAISE NOTICE 'Created role cdc_role with REPLICATION';
-    ELSE
-      ALTER ROLE cdc_role WITH REPLICATION PASSWORD '${escSql(cdcPassword)}';
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    -- Some managed providers (e.g., Neon, Scaleway) don't allow REPLICATION on custom roles
-    -- or return non-standard error codes (Scaleway returns XX000 instead of 42501).
-    -- Fall back to creating without REPLICATION; the CDC URL must then use a role that has it.
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cdc_role') THEN
-      CREATE ROLE cdc_role WITH LOGIN PASSWORD '${escSql(cdcPassword)}';
-      RAISE NOTICE 'Created role cdc_role without REPLICATION (managed provider)';
-    ELSE
-      ALTER ROLE cdc_role WITH PASSWORD '${escSql(cdcPassword)}';
-    END IF;
-  END;
 
 -- admin_role: Migrations, seeds, system admin, CDC worker.
 -- Needs BYPASSRLS (for CDC seq stamping under FORCE RLS) and REPLICATION (for the CDC slot).
@@ -95,13 +75,11 @@ END;
 
 -- Grant schema access
 GRANT USAGE ON SCHEMA public TO runtime_role;
-GRANT USAGE ON SCHEMA public TO cdc_role;
 GRANT ALL ON SCHEMA public TO admin_role;
 
 -- Grant role membership to current user so migrations can ALTER TABLE ... OWNER TO admin_role
 BEGIN
   GRANT runtime_role TO CURRENT_USER;
-  GRANT cdc_role TO CURRENT_USER;
   GRANT admin_role TO CURRENT_USER;
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Could not grant roles to current user (may already be granted or not supported)';
@@ -121,13 +99,11 @@ DO $$
 BEGIN
 -- Grant schema access (idempotent)
 GRANT USAGE ON SCHEMA public TO runtime_role;
-GRANT USAGE ON SCHEMA public TO cdc_role;
 GRANT ALL ON SCHEMA public TO admin_role;
 
 -- Grant role membership to current user so migrations can ALTER TABLE ... OWNER TO admin_role
 BEGIN
   GRANT runtime_role TO CURRENT_USER;
-  GRANT cdc_role TO CURRENT_USER;
   GRANT admin_role TO CURRENT_USER;
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Could not grant roles to current user (may already be granted or not supported)';
@@ -137,7 +113,7 @@ END $$;
 `;
 }
 
-const requiredRoles = ['runtime_role', 'cdc_role', 'admin_role'] as const;
+const requiredRoles = ['runtime_role', 'admin_role'] as const;
 
 /**
  * Fast read-only check: do all required roles already exist?
@@ -183,15 +159,11 @@ export async function createDbRoles() {
 
 // Extract passwords from connection strings
 const runtime = parseCredentials(env.DATABASE_URL);
-const cdcUrl = process.env.DATABASE_CDC_URL;
 
 // For admin_role in dev, use a dedicated env var or fall back to same password as runtime
 const adminPassword = process.env.DATABASE_ADMIN_ROLE_PASSWORD ?? runtime.password;
 
-// CDC URL is optional — default to runtime password if not set (e.g., quick/core modes without CDC)
-const cdcPassword = cdcUrl ? parseCredentials(cdcUrl).password : runtime.password;
-
-const createRolesSql = buildCreateRolesSql(runtime.password, cdcPassword, adminPassword);
+const createRolesSql = buildCreateRolesSql(runtime.password, adminPassword);
 
   try {
     await migrationDb.execute(sql.raw(createRolesSql));

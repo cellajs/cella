@@ -54,7 +54,7 @@ export function DropdownActionItem({
       )}
     >
       {Icon && <Icon size={16} />}
-      <span>{children}</span>
+      {children}
     </Menu.Item>
   );
 }

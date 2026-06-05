@@ -21,4 +21,4 @@ export const countersSeed = async () => {
   succeedSpinner(`Recalculated counters for ${contextRows} context entities, ${productRows} product entities`);
 };
 
-export const seedConfig: SeedScript = { name: 'counters', run: countersSeed };
+export const seedConfig: SeedScript = { name: 'counters', run: countersSeed, allowProduction: true };

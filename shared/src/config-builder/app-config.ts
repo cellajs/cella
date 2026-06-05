@@ -43,8 +43,11 @@ if (merged.slug.replace(/-/g, '').length < 4) {
   throw new Error(`Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`);
 }
 
-// Derive S3 bucket names and CDN URLs from slug + mode prefix unless explicitly overridden.
-// Each environment gets dedicated buckets (e.g. raak-public, raak-development-public).
+// Derive S3 bucket names and CDN URLs from the slug (which already encodes the
+// environment, e.g. "cella-development" -> cella-development-public/-private).
+// The bucket name also doubles as the Transloadit credential name. Set explicit
+// publicBucket/privateBucket in a config to override (e.g. to share dev buckets
+// across multiple cella apps).
 const s3 = merged.s3 as S3Config;
 const bucketPrefix = merged.slug;
 s3.publicBucket ??= `${bucketPrefix}-public`;

@@ -356,7 +356,7 @@ export const config = {
   /** Available language codes - first is fallback */
   languages: ['en', 'nl'] as const,
   /** Common reference data */
-  common: {
+  c: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
   },

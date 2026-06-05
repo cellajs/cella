@@ -130,6 +130,10 @@ export default {
         'flip-vertical': {
           '50%': { transform: 'rotateX(180deg)' },
         },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 0 0 var(--glow-color, currentColor)' },
+          '50%': { boxShadow: '0 0 4px 1px var(--glow-color, currentColor)' },
+        },
       },
       animation: {
         'waving-hand': 'wave 2s linear infinite',
@@ -141,6 +145,7 @@ export default {
         heartbeat: 'heartbeat 1s infinite',
         hflip: 'flip-horizontal 2s infinite',
         vflip: 'flip-certical 2s infinite',
+        glow: 'glow 2s ease-in-out infinite',
       },
     },
   },

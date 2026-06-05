@@ -50,6 +50,8 @@ export interface FeatureFlagsConfig {
   waitlist: boolean;
   uploadEnabled: boolean;
   chatSupport: boolean;
+  yjs: boolean;
+  ai: boolean;
 }
 
 export interface TotpConfig {

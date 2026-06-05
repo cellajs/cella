@@ -32,11 +32,11 @@ describe('deriveInfra', () => {
 
   it('parses every hostname from its URL', () => {
     const d = deriveInfra(fakeConfig())
-    expect(d.domains.zone).toBe('cella.dev')
-    expect(d.domains.app).toBe('www.cella.dev')
-    expect(d.domains.api).toBe('api.cella.dev')
-    expect(d.domains.yjs).toBe('yjs.cella.dev')
-    expect(d.domains.ai).toBe('ai.cella.dev')
+    expect(d.domains.zone).toBe('cellajs.com')
+    expect(d.domains.app).toBe('www.cellajs.com')
+    expect(d.domains.api).toBe('api.cellajs.com')
+    expect(d.domains.yjs).toBe('yjs.cellajs.com')
+    expect(d.domains.ai).toBe('ai.cellajs.com')
   })
 
   it('hasDomain is false for localhost', () => {

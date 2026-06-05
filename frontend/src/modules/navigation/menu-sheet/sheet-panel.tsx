@@ -3,22 +3,26 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusTrap } from '~/modules/common/focus-trap';
+import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
 import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
-import { SupportContent } from '~/modules/navigation/menu-sheet/support-section';
+import { healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetPanelProps {
   id: string;
   label: string;
   children: ReactNode;
+  /** Fired on hover/focus of the panel button to warm data before the panel opens. */
+  onPrefetch?: () => void;
 }
 
 /**
  * Single accordion panel button + expandable content.
  */
-const MenuSheetPanel = ({ id, label, children }: MenuSheetPanelProps) => {
+const MenuSheetPanel = ({ id, label, children, onPrefetch }: MenuSheetPanelProps) => {
   const { t } = useTranslation();
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
@@ -29,6 +33,8 @@ const MenuSheetPanel = ({ id, label, children }: MenuSheetPanelProps) => {
     <div>
       <Button
         onClick={() => toggleMenuSheetPanel(id)}
+        onMouseEnter={onPrefetch}
+        onFocus={onPrefetch}
         className="w-full justify-between shadow-none"
         variant={isOpen ? 'secondary' : 'ghost'}
       >
@@ -107,8 +113,8 @@ export const MenuSheetPanels = () => {
           <MenuSheetPanel id="preferences" label="c:preferences">
             <PreferencesContent />
           </MenuSheetPanel>
-          <MenuSheetPanel id="support" label="c:support">
-            <SupportContent />
+          <MenuSheetPanel id="info" label="c:info" onPrefetch={() => queryClient.prefetchQuery(healthQueryOptions())}>
+            <InfoContent />
           </MenuSheetPanel>
         </div>
       </FocusTrap>

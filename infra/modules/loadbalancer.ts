@@ -12,7 +12,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, tags, domains, hasDomain, infra } from '../helpers'
+import { naming, zone, tags, domains, hasDomain, infra, appConfig } from '../helpers'
 import { privateNetworkId } from './network'
 import { getInstanceIp } from './compute'
 
@@ -71,21 +71,29 @@ if (hasDomain && infra.computeEnabled) {
     ttl: 300,
   })
 
-  const yjsDns = new scaleway.domain.Record('yjs-dns', {
-    dnsZone: domains.zone,
-    name: yjsSubdomain,
-    type: 'A',
-    data: lbPublicIp,
-    ttl: 300,
-  })
+  // Conditionally create yjs DNS record
+  let yjsDns: scaleway.domain.Record | undefined
+  if (appConfig.has.yjs) {
+    yjsDns = new scaleway.domain.Record('yjs-dns', {
+      dnsZone: domains.zone,
+      name: yjsSubdomain,
+      type: 'A',
+      data: lbPublicIp,
+      ttl: 300,
+    })
+  }
 
-  const aiDns = new scaleway.domain.Record('ai-dns', {
-    dnsZone: domains.zone,
-    name: aiSubdomain,
-    type: 'A',
-    data: lbPublicIp,
-    ttl: 300,
-  })
+  // Conditionally create ai DNS record
+  let aiDns: scaleway.domain.Record | undefined
+  if (appConfig.has.ai) {
+    aiDns = new scaleway.domain.Record('ai-dns', {
+      dnsZone: domains.zone,
+      name: aiSubdomain,
+      type: 'A',
+      data: lbPublicIp,
+      ttl: 300,
+    })
+  }
 
   // App (www) DNS — points at the LB, which serves the SPA via the Caddy
   // frontend VM.
@@ -124,21 +132,29 @@ if (hasDomain && infra.computeEnabled) {
     },
   }, { dependsOn: [apiDns] })
 
-  const yjsCert = new scaleway.loadbalancers.Certificate('yjs-cert', {
-    lbId: lb.id,
-    name: naming.resource('yjs-cert'),
-    letsencrypt: {
-      commonName: domains.yjs,
-    },
-  }, { dependsOn: [yjsDns] })
+  // Conditionally create yjs certificate
+  let yjsCert: scaleway.loadbalancers.Certificate | undefined
+  if (appConfig.has.yjs && yjsDns) {
+    yjsCert = new scaleway.loadbalancers.Certificate('yjs-cert', {
+      lbId: lb.id,
+      name: naming.resource('yjs-cert'),
+      letsencrypt: {
+        commonName: domains.yjs,
+      },
+    }, { dependsOn: [yjsDns] })
+  }
 
-  const aiCert = new scaleway.loadbalancers.Certificate('ai-cert', {
-    lbId: lb.id,
-    name: naming.resource('ai-cert'),
-    letsencrypt: {
-      commonName: domains.ai,
-    },
-  }, { dependsOn: [aiDns] })
+  // Conditionally create ai certificate
+  let aiCert: scaleway.loadbalancers.Certificate | undefined
+  if (appConfig.has.ai && aiDns) {
+    aiCert = new scaleway.loadbalancers.Certificate('ai-cert', {
+      lbId: lb.id,
+      name: naming.resource('ai-cert'),
+      letsencrypt: {
+        commonName: domains.ai,
+      },
+    }, { dependsOn: [aiDns] })
+  }
 
   let apexCert: scaleway.loadbalancers.Certificate | undefined
   if (!appIsAtApex && apexDns) {
@@ -187,32 +203,40 @@ if (hasDomain && infra.computeEnabled) {
     healthCheckMaxRetries: 2,
   })
 
-  const yjsBackend = new scaleway.loadbalancers.Backend('yjs-lb-backend', {
-    lbId: lb.id,
-    name: naming.resource('yjs'),
-    forwardProtocol: 'http',
-    forwardPort: 4002,
-    serverIps: [yjsIp],
-    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
-    healthCheckDelay: '3s',
-    healthCheckTimeout: '2s',
-    healthCheckMaxRetries: 2,
-    // Long timeout for WebSocket connections
-    timeoutServer: '1h',
-    timeoutTunnel: '1h',
-  })
+  // Conditionally create yjs backend
+  let yjsBackend: scaleway.loadbalancers.Backend | undefined
+  if (appConfig.has.yjs) {
+    yjsBackend = new scaleway.loadbalancers.Backend('yjs-lb-backend', {
+      lbId: lb.id,
+      name: naming.resource('yjs'),
+      forwardProtocol: 'http',
+      forwardPort: 4002,
+      serverIps: [yjsIp],
+      healthCheckHttp: { uri: '/__ingress/health', code: 200 },
+      healthCheckDelay: '3s',
+      healthCheckTimeout: '2s',
+      healthCheckMaxRetries: 2,
+      // Long timeout for WebSocket connections
+      timeoutServer: '1h',
+      timeoutTunnel: '1h',
+    })
+  }
 
-  const aiBackend = new scaleway.loadbalancers.Backend('ai-lb-backend', {
-    lbId: lb.id,
-    name: naming.resource('ai'),
-    forwardProtocol: 'http',
-    forwardPort: 4003,
-    serverIps: [aiIp],
-    healthCheckHttp: { uri: '/__ingress/health', code: 200 },
-    healthCheckDelay: '3s',
-    healthCheckTimeout: '2s',
-    healthCheckMaxRetries: 2,
-  })
+  // Conditionally create ai backend
+  let aiBackend: scaleway.loadbalancers.Backend | undefined
+  if (appConfig.has.ai) {
+    aiBackend = new scaleway.loadbalancers.Backend('ai-lb-backend', {
+      lbId: lb.id,
+      name: naming.resource('ai'),
+      forwardProtocol: 'http',
+      forwardPort: 4003,
+      serverIps: [aiIp],
+      healthCheckHttp: { uri: '/__ingress/health', code: 200 },
+      healthCheckDelay: '3s',
+      healthCheckTimeout: '2s',
+      healthCheckMaxRetries: 2,
+    })
+  }
 
   // Caddy reverse-proxy in front of the SPA bucket. Listens on :80 inside
   // the container; LB forwards plain HTTP and adds TLS at the edge.
@@ -232,7 +256,9 @@ if (hasDomain && infra.computeEnabled) {
   // HTTPS Frontend (port 443) — TLS termination + host-header routes
   // -------------------------------------------------------------------------
 
-  const allCertIds = [apiCert.id, yjsCert.id, aiCert.id]
+  const allCertIds = [apiCert.id]
+  if (yjsCert) allCertIds.push(yjsCert.id)
+  if (aiCert) allCertIds.push(aiCert.id)
   if (apexCert) allCertIds.push(apexCert.id)
   if (appCert) allCertIds.push(appCert.id)
 
@@ -245,17 +271,21 @@ if (hasDomain && infra.computeEnabled) {
   })
 
   // Host-header routes for yjs and ai (backend is the default)
-  new scaleway.loadbalancers.Route('yjs-route', {
-    frontendId: httpsFrontend.id,
-    backendId: yjsBackend.id,
-    matchHostHeader: domains.yjs,
-  })
+  if (appConfig.has.yjs && yjsBackend) {
+    new scaleway.loadbalancers.Route('yjs-route', {
+      frontendId: httpsFrontend.id,
+      backendId: yjsBackend.id,
+      matchHostHeader: domains.yjs,
+    })
+  }
 
-  new scaleway.loadbalancers.Route('ai-route', {
-    frontendId: httpsFrontend.id,
-    backendId: aiBackend.id,
-    matchHostHeader: domains.ai,
-  })
+  if (appConfig.has.ai && aiBackend) {
+    new scaleway.loadbalancers.Route('ai-route', {
+      frontendId: httpsFrontend.id,
+      backendId: aiBackend.id,
+      matchHostHeader: domains.ai,
+    })
+  }
 
   // www (app) route — only when app is on its own subdomain. When app is at
   // the apex, the default backend would have to be frontend instead of api,
@@ -327,8 +357,12 @@ if (hasDomain && infra.computeEnabled) {
   // -------------------------------------------------------------------------
 
   _apiDomainUrl = pulumi.interpolate`https://${domains.api}`
-  _yjsDomainUrl = pulumi.interpolate`wss://${domains.yjs}`
-  _aiDomainUrl = pulumi.interpolate`https://${domains.ai}`
+  if (appConfig.has.yjs) {
+    _yjsDomainUrl = pulumi.interpolate`wss://${domains.yjs}`
+  }
+  if (appConfig.has.ai) {
+    _aiDomainUrl = pulumi.interpolate`https://${domains.ai}`
+  }
 }
 
 export const apiDomainUrl = _apiDomainUrl

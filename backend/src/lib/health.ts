@@ -1,5 +1,6 @@
 import process from 'node:process';
 import { sql } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { getEventLoopLagMs } from 'shared/event-loop-monitor';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
@@ -88,19 +89,32 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
   const components: Record<string, HealthComponent> = {};
 
   const dbCheck = await checkDatabase();
-  components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
-  components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
+  components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
+  components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
 
   if (env.MODE === 'ai-worker') {
-    components.ai = await buildAiSelfComponent();
+    components.ai = { ...(await buildAiSelfComponent()), label: 'AI' };
   } else {
-    components.cdc = buildCdcComponent();
-    const [yjs, ai] = await Promise.all([
-      probeWorker(workerUrls.yjs).then((r) => mapProbeComponent(r, extractYjsDetails)),
-      probeWorker(workerUrls.ai).then((r) => mapProbeComponent(r, extractAiDetails)),
+    components.cdc = { ...buildCdcComponent(), label: 'CDC' };
+
+    const workerChecks = await Promise.all([
+      appConfig.has.yjs
+        ? probeWorker(workerUrls.yjs).then(
+            (result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const,
+          )
+        : Promise.resolve(null),
+      appConfig.has.ai
+        ? probeWorker(workerUrls.ai).then(
+            (result) => ['ai', { ...mapProbeComponent(result, extractAiDetails), label: 'AI' }] as const,
+          )
+        : Promise.resolve(null),
     ]);
-    components.yjs = yjs;
-    components.ai = ai;
+
+    for (const workerCheck of workerChecks) {
+      if (!workerCheck) continue;
+      const [name, component] = workerCheck;
+      components[name] = component;
+    }
   }
 
   const status = rollupStatus(components, CRITICAL_COMPONENTS);

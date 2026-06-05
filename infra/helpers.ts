@@ -31,6 +31,8 @@ export const {
   hasDomain,
 } = derived
 
+export { appConfig }
+
 /** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
 export const infraConfig = new pulumi.Config('infra')
 

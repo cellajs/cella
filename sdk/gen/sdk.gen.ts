@@ -477,7 +477,7 @@ export type Options<
  *
  * Returns auth health status including whether the client IP is rate-limited for email enumeration protection.
  *
- * **GET /auth/health** ·· [getAuthHealth](https://api.cella.dev/docs#tag/auth/get/auth/health) ·· [getAuthHealth](https://api.cella.dev/docs#tag/cella/get/auth/health) ·· _auth_cella_
+ * **GET /auth/health** ·· [getAuthHealth](https://api.cellajs.com/docs#tag/auth/get/auth/health) ·· [getAuthHealth](https://api.cellajs.com/docs#tag/cella/get/auth/health) ·· _auth_cella_
  *
  * @param {getAuthHealthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -505,7 +505,7 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
  *
  * Checks if a user with the specified email address exists in the system.
  *
- * **POST /auth/check-email** ·· [checkEmail](https://api.cella.dev/docs#tag/auth/post/auth/check-email) ·· [checkEmail](https://api.cella.dev/docs#tag/cella/post/auth/check-email) ·· _auth_cella_
+ * **POST /auth/check-email** ·· [checkEmail](https://api.cellajs.com/docs#tag/auth/post/auth/check-email) ·· [checkEmail](https://api.cellajs.com/docs#tag/cella/post/auth/check-email) ·· _auth_cella_
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -538,7 +538,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
  *
  * Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
  *
- * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://api.cella.dev/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· [invokeToken](https://api.cella.dev/docs#tag/cella/get/auth/invoke-token/{type}/{token}) ·· _auth_cella_
+ * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://api.cellajs.com/docs#tag/auth/get/auth/invoke-token/{type}/{token}) ·· [invokeToken](https://api.cellajs.com/docs#tag/cella/get/auth/invoke-token/{type}/{token}) ·· _auth_cella_
  *
  * @param {invokeTokenData} options
  * @param {enum} options.path.type - `enum`
@@ -567,7 +567,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
  *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *
- * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://api.cella.dev/docs#tag/auth/get/auth/token/{type}/{id}) ·· [getTokenData](https://api.cella.dev/docs#tag/cella/get/auth/token/{type}/{id}) ·· _auth_cella_
+ * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://api.cellajs.com/docs#tag/auth/get/auth/token/{type}/{id}) ·· [getTokenData](https://api.cellajs.com/docs#tag/cella/get/auth/token/{type}/{id}) ·· _auth_cella_
  *
  * @param {getTokenDataData} options
  * @param {enum} options.path.type - `enum`
@@ -597,7 +597,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  *
- * **GET /auth/impersonation/start** ·· [startImpersonation](https://api.cella.dev/docs#tag/auth/get/auth/impersonation/start) ·· [startImpersonation](https://api.cella.dev/docs#tag/cella/get/auth/impersonation/start) ·· _auth_cella_
+ * **GET /auth/impersonation/start** ·· [startImpersonation](https://api.cellajs.com/docs#tag/auth/get/auth/impersonation/start) ·· [startImpersonation](https://api.cellajs.com/docs#tag/cella/get/auth/impersonation/start) ·· _auth_cella_
  *
  * @param {startImpersonationData} options
  * @param {string} options.query.targetuserid - `string`
@@ -620,7 +620,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -633,7 +633,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
- * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://api.cella.dev/docs#tag/auth/get/auth/impersonation/stop) ·· [stopImpersonation](https://api.cella.dev/docs#tag/cella/get/auth/impersonation/stop) ·· _auth_cella_
+ * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://api.cellajs.com/docs#tag/auth/get/auth/impersonation/stop) ·· [stopImpersonation](https://api.cellajs.com/docs#tag/cella/get/auth/impersonation/stop) ·· _auth_cella_
  *
  * @param {stopImpersonationData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -655,7 +655,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -668,7 +668,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
  *
  * Resends an invitation email with token to a new user using the provided email address and token ID.
  *
- * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://api.cella.dev/docs#tag/auth/post/auth/resend-invitation) ·· [resendInvitationWithToken](https://api.cella.dev/docs#tag/cella/post/auth/resend-invitation) ·· _auth_cella_
+ * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://api.cellajs.com/docs#tag/auth/post/auth/resend-invitation) ·· [resendInvitationWithToken](https://api.cellajs.com/docs#tag/cella/post/auth/resend-invitation) ·· _auth_cella_
  *
  * @param {resendInvitationWithTokenData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -705,7 +705,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
  *
  * Signs out the *current user* and clears the active session.
  *
- * **POST /auth/sign-out** ·· [signOut](https://api.cella.dev/docs#tag/auth/post/auth/sign-out) ·· [signOut](https://api.cella.dev/docs#tag/cella/post/auth/sign-out) ·· _auth_cella_
+ * **POST /auth/sign-out** ·· [signOut](https://api.cellajs.com/docs#tag/auth/post/auth/sign-out) ·· [signOut](https://api.cellajs.com/docs#tag/cella/post/auth/sign-out) ·· _auth_cella_
  *
  * @param {signOutData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -733,7 +733,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  *
  * Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.
  *
- * **POST /auth/magic/send** ·· [sendMagicLink](https://api.cella.dev/docs#tag/auth/post/auth/magic/send) ·· [sendMagicLink](https://api.cella.dev/docs#tag/cella/post/auth/magic/send) ·· _auth_cella_
+ * **POST /auth/magic/send** ·· [sendMagicLink](https://api.cellajs.com/docs#tag/auth/post/auth/magic/send) ·· [sendMagicLink](https://api.cellajs.com/docs#tag/cella/post/auth/magic/send) ·· _auth_cella_
  *
  * @param {sendMagicLinkData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -766,7 +766,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://api.cella.dev/docs#tag/auth/post/auth/totp/generate-key) ·· [generateTotpKey](https://api.cella.dev/docs#tag/cella/post/auth/totp/generate-key) ·· _auth_cella_
+ * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://api.cellajs.com/docs#tag/auth/post/auth/totp/generate-key) ·· [generateTotpKey](https://api.cellajs.com/docs#tag/cella/post/auth/totp/generate-key) ·· _auth_cella_
  *
  * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -788,7 +788,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -801,7 +801,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
  *
  * Delete TOTP credential for current user.
  *
- * **DELETE /auth/totp** ·· [deleteTotp](https://api.cella.dev/docs#tag/auth/delete/auth/totp) ·· [deleteTotp](https://api.cella.dev/docs#tag/cella/delete/auth/totp) ·· _auth_cella_
+ * **DELETE /auth/totp** ·· [deleteTotp](https://api.cellajs.com/docs#tag/auth/delete/auth/totp) ·· [deleteTotp](https://api.cellajs.com/docs#tag/cella/delete/auth/totp) ·· _auth_cella_
  *
  * @param {deleteTotpData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -823,7 +823,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -836,7 +836,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
  *
- * **POST /auth/totp** ·· [createTotp](https://api.cella.dev/docs#tag/auth/post/auth/totp) ·· [createTotp](https://api.cella.dev/docs#tag/cella/post/auth/totp) ·· _auth_cella_
+ * **POST /auth/totp** ·· [createTotp](https://api.cellajs.com/docs#tag/auth/post/auth/totp) ·· [createTotp](https://api.cellajs.com/docs#tag/cella/post/auth/totp) ·· _auth_cella_
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -858,7 +858,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -875,7 +875,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
- * **POST /auth/totp-verification** ·· [signInWithTotp](https://api.cella.dev/docs#tag/auth/post/auth/totp-verification) ·· [signInWithTotp](https://api.cella.dev/docs#tag/cella/post/auth/totp-verification) ·· _auth_cella_
+ * **POST /auth/totp-verification** ·· [signInWithTotp](https://api.cellajs.com/docs#tag/auth/post/auth/totp-verification) ·· [signInWithTotp](https://api.cellajs.com/docs#tag/cella/post/auth/totp-verification) ·· _auth_cella_
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -908,7 +908,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **POST /auth/passkey** ·· [createPasskey](https://api.cella.dev/docs#tag/auth/post/auth/passkey) ·· [createPasskey](https://api.cella.dev/docs#tag/cella/post/auth/passkey) ·· _auth_cella_
+ * **POST /auth/passkey** ·· [createPasskey](https://api.cellajs.com/docs#tag/auth/post/auth/passkey) ·· [createPasskey](https://api.cellajs.com/docs#tag/cella/post/auth/passkey) ·· _auth_cella_
  *
  * @param {createPasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
@@ -933,7 +933,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -950,7 +950,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
  *
  * Delete a passkey by id from the *current user*.
  *
- * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://api.cella.dev/docs#tag/auth/delete/auth/passkey/{id}) ·· [deletePasskey](https://api.cella.dev/docs#tag/cella/delete/auth/passkey/{id}) ·· _auth_cella_
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://api.cellajs.com/docs#tag/auth/delete/auth/passkey/{id}) ·· [deletePasskey](https://api.cellajs.com/docs#tag/cella/delete/auth/passkey/{id}) ·· _auth_cella_
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
@@ -973,7 +973,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -986,7 +986,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
- * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://api.cella.dev/docs#tag/auth/post/auth/passkey/generate-challenge) ·· [generatePasskeyChallenge](https://api.cella.dev/docs#tag/cella/post/auth/passkey/generate-challenge) ·· _auth_cella_
+ * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://api.cellajs.com/docs#tag/auth/post/auth/passkey/generate-challenge) ·· [generatePasskeyChallenge](https://api.cellajs.com/docs#tag/cella/post/auth/passkey/generate-challenge) ·· _auth_cella_
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum=} options.body.type - `enum` (optional)
@@ -1025,7 +1025,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
- * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://api.cella.dev/docs#tag/auth/post/auth/passkey-verification) ·· [signInWithPasskey](https://api.cella.dev/docs#tag/cella/post/auth/passkey-verification) ·· _auth_cella_
+ * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://api.cellajs.com/docs#tag/auth/post/auth/passkey-verification) ·· [signInWithPasskey](https://api.cellajs.com/docs#tag/cella/post/auth/passkey-verification) ·· _auth_cella_
  *
  * @param {signInWithPasskeyData} options
  * @param {string=} options.body.credentialId - `string` (optional)
@@ -1063,7 +1063,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/github** ·· [github](https://api.cella.dev/docs#tag/auth/get/auth/github) ·· [github](https://api.cella.dev/docs#tag/cella/get/auth/github) ·· _auth_cella_
+ * **GET /auth/github** ·· [github](https://api.cellajs.com/docs#tag/auth/get/auth/github) ·· [github](https://api.cellajs.com/docs#tag/cella/get/auth/github) ·· _auth_cella_
  *
  * @param {githubData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1092,7 +1092,7 @@ export const github = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/google** ·· [google](https://api.cella.dev/docs#tag/auth/get/auth/google) ·· [google](https://api.cella.dev/docs#tag/cella/get/auth/google) ·· _auth_cella_
+ * **GET /auth/google** ·· [google](https://api.cellajs.com/docs#tag/auth/get/auth/google) ·· [google](https://api.cellajs.com/docs#tag/cella/get/auth/google) ·· _auth_cella_
  *
  * @param {googleData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1121,7 +1121,7 @@ export const google = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/microsoft** ·· [microsoft](https://api.cella.dev/docs#tag/auth/get/auth/microsoft) ·· [microsoft](https://api.cella.dev/docs#tag/cella/get/auth/microsoft) ·· _auth_cella_
+ * **GET /auth/microsoft** ·· [microsoft](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft) ·· [microsoft](https://api.cellajs.com/docs#tag/cella/get/auth/microsoft) ·· _auth_cella_
  *
  * @param {microsoftData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1150,7 +1150,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/github/callback** ·· [githubCallback](https://api.cella.dev/docs#tag/auth/get/auth/github/callback) ·· [githubCallback](https://api.cella.dev/docs#tag/cella/get/auth/github/callback) ·· _auth_cella_
+ * **GET /auth/github/callback** ·· [githubCallback](https://api.cellajs.com/docs#tag/auth/get/auth/github/callback) ·· [githubCallback](https://api.cellajs.com/docs#tag/cella/get/auth/github/callback) ·· _auth_cella_
  *
  * @param {githubCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1182,7 +1182,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/google/callback** ·· [googleCallback](https://api.cella.dev/docs#tag/auth/get/auth/google/callback) ·· [googleCallback](https://api.cella.dev/docs#tag/cella/get/auth/google/callback) ·· _auth_cella_
+ * **GET /auth/google/callback** ·· [googleCallback](https://api.cellajs.com/docs#tag/auth/get/auth/google/callback) ·· [googleCallback](https://api.cellajs.com/docs#tag/cella/get/auth/google/callback) ·· _auth_cella_
  *
  * @param {googleCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1211,7 +1211,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://api.cella.dev/docs#tag/auth/get/auth/microsoft/callback) ·· [microsoftCallback](https://api.cella.dev/docs#tag/cella/get/auth/microsoft/callback) ·· _auth_cella_
+ * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://api.cellajs.com/docs#tag/auth/get/auth/microsoft/callback) ·· [microsoftCallback](https://api.cellajs.com/docs#tag/cella/get/auth/microsoft/callback) ·· _auth_cella_
  *
  * @param {microsoftCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1240,7 +1240,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /me** ·· [deleteMe](https://api.cella.dev/docs#tag/me/delete/me) ·· [deleteMe](https://api.cella.dev/docs#tag/cella/delete/me) ·· _me_cella_
+ * **DELETE /me** ·· [deleteMe](https://api.cellajs.com/docs#tag/me/delete/me) ·· [deleteMe](https://api.cellajs.com/docs#tag/cella/delete/me) ·· _me_cella_
  *
  * @param {deleteMeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -1262,7 +1262,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1275,7 +1275,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
  *
  * Returns the *current user*.
  *
- * **GET /me** ·· [getMe](https://api.cella.dev/docs#tag/me/get/me) ·· [getMe](https://api.cella.dev/docs#tag/cella/get/me) ·· _me_cella_
+ * **GET /me** ·· [getMe](https://api.cellajs.com/docs#tag/me/get/me) ·· [getMe](https://api.cellajs.com/docs#tag/cella/get/me) ·· _me_cella_
  *
  * @param {getMeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1297,7 +1297,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1310,7 +1310,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  *
  * Updates the *current user*.
  *
- * **PUT /me** ·· [updateMe](https://api.cella.dev/docs#tag/me/put/me) ·· [updateMe](https://api.cella.dev/docs#tag/cella/put/me) ·· _me_cella_
+ * **PUT /me** ·· [updateMe](https://api.cellajs.com/docs#tag/me/put/me) ·· [updateMe](https://api.cellajs.com/docs#tag/cella/put/me) ·· _me_cella_
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
@@ -1340,7 +1340,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1357,7 +1357,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
  *
  * Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.
  *
- * **PUT /me/mfa** ·· [toggleMfa](https://api.cella.dev/docs#tag/me/put/me/mfa) ·· [toggleMfa](https://api.cella.dev/docs#tag/cella/put/me/mfa) ·· _me_cella_
+ * **PUT /me/mfa** ·· [toggleMfa](https://api.cellajs.com/docs#tag/me/put/me/mfa) ·· [toggleMfa](https://api.cellajs.com/docs#tag/cella/put/me/mfa) ·· _me_cella_
  *
  * @param {toggleMfaData} options
  * @param {object} options.body.passkeyData - `object`
@@ -1382,7 +1382,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1399,7 +1399,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
  *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
- * **GET /me/auth** ·· [getMyAuth](https://api.cella.dev/docs#tag/me/get/me/auth) ·· [getMyAuth](https://api.cella.dev/docs#tag/cella/get/me/auth) ·· _me_cella_
+ * **GET /me/auth** ·· [getMyAuth](https://api.cellajs.com/docs#tag/me/get/me/auth) ·· [getMyAuth](https://api.cellajs.com/docs#tag/cella/get/me/auth) ·· _me_cella_
  *
  * @param {getMyAuthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1421,7 +1421,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1434,7 +1434,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of pending memberships with entity data.
  *
- * **GET /me/invitations** ·· [getMyInvitations](https://api.cella.dev/docs#tag/me/get/me/invitations) ·· [getMyInvitations](https://api.cella.dev/docs#tag/cella/get/me/invitations) ·· _me_cella_
+ * **GET /me/invitations** ·· [getMyInvitations](https://api.cellajs.com/docs#tag/me/get/me/invitations) ·· [getMyInvitations](https://api.cellajs.com/docs#tag/cella/get/me/invitations) ·· _me_cella_
  *
  * @param {getMyInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1456,7 +1456,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1469,7 +1469,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
  *
- * **DELETE /me/sessions** ·· [deleteMySessions](https://api.cella.dev/docs#tag/me/delete/me/sessions) ·· [deleteMySessions](https://api.cella.dev/docs#tag/cella/delete/me/sessions) ·· _me_cella_
+ * **DELETE /me/sessions** ·· [deleteMySessions](https://api.cellajs.com/docs#tag/me/delete/me/sessions) ·· [deleteMySessions](https://api.cellajs.com/docs#tag/cella/delete/me/sessions) ·· _me_cella_
  *
  * @param {deleteMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1492,7 +1492,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1509,7 +1509,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
  *
  * Removes the *current user* from an entity they are a member of.
  *
- * **DELETE /me/leave** ·· [deleteMyMembership](https://api.cella.dev/docs#tag/me/delete/me/leave) ·· [deleteMyMembership](https://api.cella.dev/docs#tag/cella/delete/me/leave) ·· _me_cella_
+ * **DELETE /me/leave** ·· [deleteMyMembership](https://api.cellajs.com/docs#tag/me/delete/me/leave) ·· [deleteMyMembership](https://api.cellajs.com/docs#tag/cella/delete/me/leave) ·· _me_cella_
  *
  * @param {deleteMyMembershipData} options
  * @param {string} options.query.entityid - `string`
@@ -1533,7 +1533,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1546,7 +1546,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
  *
- * **GET /me/upload-token** ·· [getUploadToken](https://api.cella.dev/docs#tag/me/get/me/upload-token) ·· [getUploadToken](https://api.cella.dev/docs#tag/cella/get/me/upload-token) ·· _me_cella_
+ * **GET /me/upload-token** ·· [getUploadToken](https://api.cellajs.com/docs#tag/me/get/me/upload-token) ·· [getUploadToken](https://api.cellajs.com/docs#tag/cella/get/me/upload-token) ·· _me_cella_
  *
  * @param {getUploadTokenData} options
  * @param {string | boolean=} options.query.public - `string | boolean` (optional)
@@ -1571,7 +1571,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1584,7 +1584,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
- * **GET /me/unsubscribe** ·· [unsubscribeMe](https://api.cella.dev/docs#tag/me/get/me/unsubscribe) ·· [unsubscribeMe](https://api.cella.dev/docs#tag/cella/get/me/unsubscribe) ·· _me_cella_
+ * **GET /me/unsubscribe** ·· [unsubscribeMe](https://api.cellajs.com/docs#tag/me/get/me/unsubscribe) ·· [unsubscribeMe](https://api.cellajs.com/docs#tag/cella/get/me/unsubscribe) ·· _me_cella_
  *
  * @param {unsubscribeMeData} options
  * @param {string} options.query.token - `string`
@@ -1612,7 +1612,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(
  *
  * Returns all memberships for the *current user* across all context entities.
  *
- * **GET /me/memberships** ·· [getMyMemberships](https://api.cella.dev/docs#tag/me/get/me/memberships) ·· [getMyMemberships](https://api.cella.dev/docs#tag/cella/get/me/memberships) ·· _me_cella_
+ * **GET /me/memberships** ·· [getMyMemberships](https://api.cellajs.com/docs#tag/me/get/me/memberships) ·· [getMyMemberships](https://api.cellajs.com/docs#tag/cella/get/me/memberships) ·· _me_cella_
  *
  * @param {getMyMembershipsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1634,7 +1634,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1647,7 +1647,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
  *
  * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).
  *
- * **GET /unseen/counts** ·· [getUnseenCounts](https://api.cella.dev/docs#tag/seen/get/unseen/counts) ·· [getUnseenCounts](https://api.cella.dev/docs#tag/cella/get/unseen/counts) ·· _seen_cella_
+ * **GET /unseen/counts** ·· [getUnseenCounts](https://api.cellajs.com/docs#tag/seen/get/unseen/counts) ·· [getUnseenCounts](https://api.cellajs.com/docs#tag/cella/get/unseen/counts) ·· _seen_cella_
  *
  * @param {getUnseenCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1669,7 +1669,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1683,7 +1683,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  * Checks whether a given slug is available within a tenant for the specified entity type.
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://api.cella.dev/docs#tag/entities/post/entities/{tenantId}/check-slug) ·· [checkSlug](https://api.cella.dev/docs#tag/cella/post/entities/{tenantId}/check-slug) ·· _entities_cella_
+ * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://api.cellajs.com/docs#tag/entities/post/entities/{tenantId}/check-slug) ·· [checkSlug](https://api.cellajs.com/docs#tag/cella/post/entities/{tenantId}/check-slug) ·· _entities_cella_
  *
  * @param {checkSlugData} options
  * @param {string} options.path.tenantid - `string`
@@ -1708,7 +1708,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1725,7 +1725,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
  *
  * SSE stream for real-time public entity changes. No authentication required.
  *
- * **GET /entities/public/stream** ·· [getPublicStream](https://api.cella.dev/docs#tag/entities/get/entities/public/stream) ·· [getPublicStream](https://api.cella.dev/docs#tag/cella/get/entities/public/stream) ·· _entities_cella_
+ * **GET /entities/public/stream** ·· [getPublicStream](https://api.cellajs.com/docs#tag/entities/get/entities/public/stream) ·· [getPublicStream](https://api.cellajs.com/docs#tag/cella/get/entities/public/stream) ·· _entities_cella_
  *
  * @param {getPublicStreamData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1752,7 +1752,7 @@ export const getPublicStream = <ThrowOnError extends boolean = true>(
  *
  * Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.
  *
- * **POST /entities/public/stream** ·· [postPublicCatchup](https://api.cella.dev/docs#tag/entities/post/entities/public/stream) ·· [postPublicCatchup](https://api.cella.dev/docs#tag/cella/post/entities/public/stream) ·· _entities_cella_
+ * **POST /entities/public/stream** ·· [postPublicCatchup](https://api.cellajs.com/docs#tag/entities/post/entities/public/stream) ·· [postPublicCatchup](https://api.cellajs.com/docs#tag/cella/post/entities/public/stream) ·· _entities_cella_
  *
  * @param {postPublicCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
@@ -1786,7 +1786,7 @@ export const postPublicCatchup = <ThrowOnError extends boolean = true>(
  *
  * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
  *
- * **GET /entities/app/stream** ·· [getAppStream](https://api.cella.dev/docs#tag/entities/get/entities/app/stream) ·· [getAppStream](https://api.cella.dev/docs#tag/cella/get/entities/app/stream) ·· _entities_cella_
+ * **GET /entities/app/stream** ·· [getAppStream](https://api.cellajs.com/docs#tag/entities/get/entities/app/stream) ·· [getAppStream](https://api.cellajs.com/docs#tag/cella/get/entities/app/stream) ·· _entities_cella_
  *
  * @param {getAppStreamData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1807,7 +1807,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1820,7 +1820,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  *
  * Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.
  *
- * **POST /entities/app/stream** ·· [postAppCatchup](https://api.cella.dev/docs#tag/entities/post/entities/app/stream) ·· [postAppCatchup](https://api.cella.dev/docs#tag/cella/post/entities/app/stream) ·· _entities_cella_
+ * **POST /entities/app/stream** ·· [postAppCatchup](https://api.cellajs.com/docs#tag/entities/post/entities/app/stream) ·· [postAppCatchup](https://api.cellajs.com/docs#tag/cella/post/entities/app/stream) ·· _entities_cella_
  *
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
@@ -1844,7 +1844,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1861,7 +1861,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
  *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  *
- * **POST /system/invite** ·· [systemInvite](https://api.cella.dev/docs#tag/system/post/system/invite) ·· [systemInvite](https://api.cella.dev/docs#tag/cella/post/system/invite) ·· _system_cella_
+ * **POST /system/invite** ·· [systemInvite](https://api.cellajs.com/docs#tag/system/post/system/invite) ·· [systemInvite](https://api.cellajs.com/docs#tag/cella/post/system/invite) ·· _system_cella_
  *
  * @param {systemInviteData} options
  * @param {any[]=} options.body.emails - `any[]` (optional)
@@ -1884,7 +1884,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1901,7 +1901,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /system** ·· [deleteUsers](https://api.cella.dev/docs#tag/system/delete/system) ·· [deleteUsers](https://api.cella.dev/docs#tag/cella/delete/system) ·· _system_cella_
+ * **DELETE /system** ·· [deleteUsers](https://api.cellajs.com/docs#tag/system/delete/system) ·· [deleteUsers](https://api.cellajs.com/docs#tag/cella/delete/system) ·· _system_cella_
  *
  * @param {deleteUsersData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1924,7 +1924,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1941,7 +1941,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  *
  * Updates a *user* identified by ID.
  *
- * **PUT /system/{id}** ·· [updateUser](https://api.cella.dev/docs#tag/system/put/system/{id}) ·· [updateUser](https://api.cella.dev/docs#tag/cella/put/system/{id}) ·· _system_cella_
+ * **PUT /system/{id}** ·· [updateUser](https://api.cellajs.com/docs#tag/system/put/system/{id}) ·· [updateUser](https://api.cellajs.com/docs#tag/cella/put/system/{id}) ·· _system_cella_
  *
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
@@ -1971,7 +1971,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1988,7 +1988,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  *
  * Sends a newsletter to members of one or more specified organizations.
  *
- * **POST /system/newsletter** ·· [sendNewsletter](https://api.cella.dev/docs#tag/system/post/system/newsletter) ·· [sendNewsletter](https://api.cella.dev/docs#tag/cella/post/system/newsletter) ·· _system_cella_
+ * **POST /system/newsletter** ·· [sendNewsletter](https://api.cellajs.com/docs#tag/system/post/system/newsletter) ·· [sendNewsletter](https://api.cellajs.com/docs#tag/cella/post/system/newsletter) ·· _system_cella_
  *
  * @param {sendNewsletterData} options
  * @param {string | boolean=} options.query.toself - `string | boolean` (optional)
@@ -2015,7 +2015,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2032,7 +2032,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of tenants. System admin access required.
  *
- * **GET /tenants** ·· [getTenants](https://api.cella.dev/docs#tag/tenants/get/tenants) ·· [getTenants](https://api.cella.dev/docs#tag/cella/get/tenants) ·· _tenants_cella_
+ * **GET /tenants** ·· [getTenants](https://api.cellajs.com/docs#tag/tenants/get/tenants) ·· [getTenants](https://api.cellajs.com/docs#tag/cella/get/tenants) ·· _tenants_cella_
  *
  * @param {getTenantsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2061,7 +2061,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2074,7 +2074,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
  *
  * Creates a new tenant. System admin access required.
  *
- * **POST /tenants** ·· [createTenant](https://api.cella.dev/docs#tag/tenants/post/tenants) ·· [createTenant](https://api.cella.dev/docs#tag/cella/post/tenants) ·· _tenants_cella_
+ * **POST /tenants** ·· [createTenant](https://api.cellajs.com/docs#tag/tenants/post/tenants) ·· [createTenant](https://api.cellajs.com/docs#tag/cella/post/tenants) ·· _tenants_cella_
  *
  * @param {createTenantData} options
  * @param {string=} options.body.name - `string` (optional)
@@ -2098,7 +2098,7 @@ export const createTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2115,7 +2115,7 @@ export const createTenant = <ThrowOnError extends boolean = true>(
  *
  * Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.
  *
- * **POST /tenants/self** ·· [selfCreateTenant](https://api.cella.dev/docs#tag/tenants/post/tenants/self) ·· [selfCreateTenant](https://api.cella.dev/docs#tag/cella/post/tenants/self) ·· _tenants_cella_
+ * **POST /tenants/self** ·· [selfCreateTenant](https://api.cellajs.com/docs#tag/tenants/post/tenants/self) ·· [selfCreateTenant](https://api.cellajs.com/docs#tag/cella/post/tenants/self) ·· _tenants_cella_
  *
  * @param {selfCreateTenantData} options
  * @param {string=} options.body.name - `string` (optional)
@@ -2138,7 +2138,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2155,7 +2155,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
  *
  * Updates a tenant by ID. System admin access required.
  *
- * **PUT /tenants/{tenantId}** ·· [updateTenant](https://api.cella.dev/docs#tag/tenants/put/tenants/{tenantId}) ·· [updateTenant](https://api.cella.dev/docs#tag/cella/put/tenants/{tenantId}) ·· _tenants_cella_
+ * **PUT /tenants/{tenantId}** ·· [updateTenant](https://api.cellajs.com/docs#tag/tenants/put/tenants/{tenantId}) ·· [updateTenant](https://api.cellajs.com/docs#tag/cella/put/tenants/{tenantId}) ·· _tenants_cella_
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantid - `string`
@@ -2184,7 +2184,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2201,7 +2201,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
  *
  * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
  *
- * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://api.cella.dev/docs#tag/tenants/get/tenants/{tenantId}/domains) ·· [getDomains](https://api.cella.dev/docs#tag/cella/get/tenants/{tenantId}/domains) ·· _tenants_cella_
+ * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}/domains) ·· [getDomains](https://api.cellajs.com/docs#tag/cella/get/tenants/{tenantId}/domains) ·· _tenants_cella_
  *
  * @param {getDomainsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2224,7 +2224,7 @@ export const getDomains = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2237,7 +2237,7 @@ export const getDomains = <ThrowOnError extends boolean = true>(
  *
  * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
  *
- * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://api.cella.dev/docs#tag/tenants/post/tenants/{tenantId}/domains) ·· [createDomain](https://api.cella.dev/docs#tag/cella/post/tenants/{tenantId}/domains) ·· _tenants_cella_
+ * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://api.cellajs.com/docs#tag/tenants/post/tenants/{tenantId}/domains) ·· [createDomain](https://api.cellajs.com/docs#tag/cella/post/tenants/{tenantId}/domains) ·· _tenants_cella_
  *
  * @param {createDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2261,7 +2261,7 @@ export const createDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2278,7 +2278,7 @@ export const createDomain = <ThrowOnError extends boolean = true>(
  *
  * Removes a domain from a tenant. System admin access required.
  *
- * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://api.cella.dev/docs#tag/tenants/delete/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://api.cella.dev/docs#tag/cella/delete/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://api.cellajs.com/docs#tag/tenants/delete/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://api.cellajs.com/docs#tag/cella/delete/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
  *
  * @param {deleteDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2302,7 +2302,7 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2315,7 +2315,7 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(
  *
  * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
  *
- * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://api.cella.dev/docs#tag/tenants/get/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://api.cella.dev/docs#tag/cella/get/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://api.cellajs.com/docs#tag/tenants/get/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://api.cellajs.com/docs#tag/cella/get/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
  *
  * @param {getDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2339,7 +2339,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2352,7 +2352,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
  *
  * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
  *
- * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://api.cella.dev/docs#tag/tenants/post/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://api.cella.dev/docs#tag/cella/post/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
+ * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://api.cellajs.com/docs#tag/tenants/post/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://api.cellajs.com/docs#tag/cella/post/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
  *
  * @param {verifyDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2376,7 +2376,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2389,7 +2389,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *requests* from the system by their IDs.
  *
- * **DELETE /requests** ·· [deleteRequests](https://api.cella.dev/docs#tag/requests/delete/requests) ·· [deleteRequests](https://api.cella.dev/docs#tag/cella/delete/requests) ·· _requests_cella_
+ * **DELETE /requests** ·· [deleteRequests](https://api.cellajs.com/docs#tag/requests/delete/requests) ·· [deleteRequests](https://api.cellajs.com/docs#tag/cella/delete/requests) ·· _requests_cella_
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -2412,7 +2412,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2429,7 +2429,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
  *
- * **GET /requests** ·· [getRequests](https://api.cella.dev/docs#tag/requests/get/requests) ·· [getRequests](https://api.cella.dev/docs#tag/cella/get/requests) ·· _requests_cella_
+ * **GET /requests** ·· [getRequests](https://api.cellajs.com/docs#tag/requests/get/requests) ·· [getRequests](https://api.cellajs.com/docs#tag/cella/get/requests) ·· _requests_cella_
  *
  * @param {getRequestsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2457,7 +2457,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2470,7 +2470,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
  *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *
- * **POST /requests** ·· [createRequest](https://api.cella.dev/docs#tag/requests/post/requests) ·· [createRequest](https://api.cella.dev/docs#tag/cella/post/requests) ·· _requests_cella_
+ * **POST /requests** ·· [createRequest](https://api.cellajs.com/docs#tag/requests/post/requests) ·· [createRequest](https://api.cellajs.com/docs#tag/cella/post/requests) ·· _requests_cella_
  *
  * @param {createRequestData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -2506,7 +2506,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
  * Returns basic count metrics for entity types such as `users` and `organizations`.
  * This endpoint is public and uses a 1 minute in memory cache for performance.
  *
- * **GET /metrics/public** ·· [getPublicCounts](https://api.cella.dev/docs#tag/metrics/get/metrics/public) ·· [getPublicCounts](https://api.cella.dev/docs#tag/cella/get/metrics/public) ·· _metrics_cella_
+ * **GET /metrics/public** ·· [getPublicCounts](https://api.cellajs.com/docs#tag/metrics/get/metrics/public) ·· [getPublicCounts](https://api.cellajs.com/docs#tag/cella/get/metrics/public) ·· _metrics_cella_
  *
  * @param {getPublicCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -2534,7 +2534,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *organizations* by ID within a tenant.
  *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cella.dev/docs#tag/organizations/delete/{tenantId}/organizations) ·· [deleteOrganizations](https://api.cella.dev/docs#tag/cella/delete/{tenantId}/organizations) ·· [deleteOrganizations](https://api.cella.dev/docs#tag/context/delete/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/organizations/delete/{tenantId}/organizations) ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/cella/delete/{tenantId}/organizations) ·· [deleteOrganizations](https://api.cellajs.com/docs#tag/context/delete/{tenantId}/organizations) ·· _organizations_cella_context_
  *
  * @param {deleteOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2558,7 +2558,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2575,7 +2575,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more new *organizations* within a tenant.
  *
- * **POST /{tenantId}/organizations** ·· [createOrganizations](https://api.cella.dev/docs#tag/organizations/post/{tenantId}/organizations) ·· [createOrganizations](https://api.cella.dev/docs#tag/cella/post/{tenantId}/organizations) ·· [createOrganizations](https://api.cella.dev/docs#tag/context/post/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **POST /{tenantId}/organizations** ·· [createOrganizations](https://api.cellajs.com/docs#tag/organizations/post/{tenantId}/organizations) ·· [createOrganizations](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/organizations) ·· [createOrganizations](https://api.cellajs.com/docs#tag/context/post/{tenantId}/organizations) ·· _organizations_cella_context_
  *
  * @param {createOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2598,7 +2598,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2615,7 +2615,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of *organizations*.
  *
- * **GET /organizations** ·· [getOrganizations](https://api.cella.dev/docs#tag/organizations/get/organizations) ·· [getOrganizations](https://api.cella.dev/docs#tag/cella/get/organizations) ·· [getOrganizations](https://api.cella.dev/docs#tag/context/get/organizations) ·· _organizations_cella_context_
+ * **GET /organizations** ·· [getOrganizations](https://api.cellajs.com/docs#tag/organizations/get/organizations) ·· [getOrganizations](https://api.cellajs.com/docs#tag/cella/get/organizations) ·· [getOrganizations](https://api.cellajs.com/docs#tag/context/get/organizations) ·· _organizations_cella_context_
  *
  * @param {getOrganizationsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2647,7 +2647,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2660,7 +2660,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://api.cella.dev/docs#tag/organizations/get/{tenantId}/organizations/{id}) ·· [getOrganization](https://api.cella.dev/docs#tag/cella/get/{tenantId}/organizations/{id}) ·· [getOrganization](https://api.cella.dev/docs#tag/context/get/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://api.cellajs.com/docs#tag/organizations/get/{tenantId}/organizations/{id}) ·· [getOrganization](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/organizations/{id}) ·· [getOrganization](https://api.cellajs.com/docs#tag/context/get/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
@@ -2686,7 +2686,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2699,7 +2699,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  *
  * Updates an *organization* within a tenant.
  *
- * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://api.cella.dev/docs#tag/organizations/put/{tenantId}/organizations/{id}) ·· [updateOrganization](https://api.cella.dev/docs#tag/cella/put/{tenantId}/organizations/{id}) ·· [updateOrganization](https://api.cella.dev/docs#tag/context/put/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://api.cellajs.com/docs#tag/organizations/put/{tenantId}/organizations/{id}) ·· [updateOrganization](https://api.cellajs.com/docs#tag/cella/put/{tenantId}/organizations/{id}) ·· [updateOrganization](https://api.cellajs.com/docs#tag/context/put/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
  * @param {updateOrganizationData} options
  * @param {string} options.path.tenantid - `string`
@@ -2739,7 +2739,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2756,7 +2756,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  *
  * Delete one or more *pages* by ID.
  *
- * **DELETE /pages** ·· [deletePages](https://api.cella.dev/docs#tag/pages/delete/pages) ·· [deletePages](https://api.cella.dev/docs#tag/cella/delete/pages) ·· [deletePages](https://api.cella.dev/docs#tag/product/delete/pages) ·· _pages_cella_product_
+ * **DELETE /pages** ·· [deletePages](https://api.cellajs.com/docs#tag/pages/delete/pages) ·· [deletePages](https://api.cellajs.com/docs#tag/cella/delete/pages) ·· [deletePages](https://api.cellajs.com/docs#tag/product/delete/pages) ·· _pages_cella_product_
  *
  * @param {deletePagesData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -2780,7 +2780,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2797,7 +2797,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(
  *
  * Get all matching *pages*.
  *
- * **GET /pages** ·· [getPages](https://api.cella.dev/docs#tag/pages/get/pages) ·· [getPages](https://api.cella.dev/docs#tag/cella/get/pages) ·· [getPages](https://api.cella.dev/docs#tag/product/get/pages) ·· _pages_cella_product_
+ * **GET /pages** ·· [getPages](https://api.cellajs.com/docs#tag/pages/get/pages) ·· [getPages](https://api.cellajs.com/docs#tag/cella/get/pages) ·· [getPages](https://api.cellajs.com/docs#tag/product/get/pages) ·· _pages_cella_product_
  *
  * @param {getPagesData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2831,7 +2831,7 @@ export const getPages = <ThrowOnError extends boolean = true>(
  *
  * Insert one or more new *pages*. Returns created pages and any rejected items.
  *
- * **POST /pages** ·· [createPages](https://api.cella.dev/docs#tag/pages/post/pages) ·· [createPages](https://api.cella.dev/docs#tag/cella/post/pages) ·· [createPages](https://api.cella.dev/docs#tag/product/post/pages) ·· _pages_cella_product_
+ * **POST /pages** ·· [createPages](https://api.cellajs.com/docs#tag/pages/post/pages) ·· [createPages](https://api.cellajs.com/docs#tag/cella/post/pages) ·· [createPages](https://api.cellajs.com/docs#tag/product/post/pages) ·· _pages_cella_product_
  *
  * @param {createPagesData} options
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 409, 429
@@ -2853,7 +2853,7 @@ export const createPages = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2870,7 +2870,7 @@ export const createPages = <ThrowOnError extends boolean = true>(
  *
  * Get a single *page* by ID. Cached using LRU - first request warms cache.
  *
- * **GET /pages/{id}** ·· [getPage](https://api.cella.dev/docs#tag/pages/get/pages/{id}) ·· [getPage](https://api.cella.dev/docs#tag/cella/get/pages/{id}) ·· [getPage](https://api.cella.dev/docs#tag/product/get/pages/{id}) ·· _pages_cella_product_
+ * **GET /pages/{id}** ·· [getPage](https://api.cellajs.com/docs#tag/pages/get/pages/{id}) ·· [getPage](https://api.cellajs.com/docs#tag/cella/get/pages/{id}) ·· [getPage](https://api.cellajs.com/docs#tag/product/get/pages/{id}) ·· _pages_cella_product_
  *
  * @param {getPageData} options
  * @param {string} options.path.id - `string`
@@ -2899,7 +2899,7 @@ export const getPage = <ThrowOnError extends boolean = true>(
  *
  * Update a single *page* by ID.
  *
- * **PUT /pages/{id}** ·· [updatePage](https://api.cella.dev/docs#tag/pages/put/pages/{id}) ·· [updatePage](https://api.cella.dev/docs#tag/cella/put/pages/{id}) ·· [updatePage](https://api.cella.dev/docs#tag/product/put/pages/{id}) ·· _pages_cella_product_
+ * **PUT /pages/{id}** ·· [updatePage](https://api.cellajs.com/docs#tag/pages/put/pages/{id}) ·· [updatePage](https://api.cellajs.com/docs#tag/cella/put/pages/{id}) ·· [updatePage](https://api.cellajs.com/docs#tag/product/put/pages/{id}) ·· _pages_cella_product_
  *
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
@@ -2925,7 +2925,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2942,7 +2942,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of *users*.
  *
- * **GET /users/users** ·· [getUsers](https://api.cella.dev/docs#tag/users/get/users/users) ·· [getUsers](https://api.cella.dev/docs#tag/cella/get/users/users) ·· _users_cella_
+ * **GET /users/users** ·· [getUsers](https://api.cellajs.com/docs#tag/users/get/users/users) ·· [getUsers](https://api.cellajs.com/docs#tag/cella/get/users/users) ·· _users_cella_
  *
  * @param {getUsersData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2971,7 +2971,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2984,7 +2984,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
  *
  * Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /users/users/{relatableUserId}** ·· [getUser](https://api.cella.dev/docs#tag/users/get/users/users/{relatableUserId}) ·· [getUser](https://api.cella.dev/docs#tag/cella/get/users/users/{relatableUserId}) ·· _users_cella_
+ * **GET /users/users/{relatableUserId}** ·· [getUser](https://api.cellajs.com/docs#tag/users/get/users/users/{relatableUserId}) ·· [getUser](https://api.cellajs.com/docs#tag/cella/get/users/users/{relatableUserId}) ·· _users_cella_
  *
  * @param {getUserData} options
  * @param {string} options.path.relatableuserid - `string`
@@ -3008,7 +3008,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3021,7 +3021,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more chat sessions and their messages.
  *
- * **DELETE /{tenantId}/{organizationId}/chats** ·· [deleteChats](https://api.cella.dev/docs#tag/ai/delete/{tenantId}/{organizationId}/chats) ·· [deleteChats](https://api.cella.dev/docs#tag/cella/delete/{tenantId}/{organizationId}/chats) ·· _ai_cella_
+ * **DELETE /{tenantId}/{organizationId}/chats** ·· [deleteChats](https://api.cellajs.com/docs#tag/ai/delete/{tenantId}/{organizationId}/chats) ·· [deleteChats](https://api.cellajs.com/docs#tag/cella/delete/{tenantId}/{organizationId}/chats) ·· _ai_cella_
  *
  * @param {deleteChatsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3046,7 +3046,7 @@ export const deleteChats = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3063,7 +3063,7 @@ export const deleteChats = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of chat sessions for the current user.
  *
- * **GET /{tenantId}/{organizationId}/chats** ·· [getChats](https://api.cella.dev/docs#tag/ai/get/{tenantId}/{organizationId}/chats) ·· [getChats](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/chats) ·· _ai_cella_
+ * **GET /{tenantId}/{organizationId}/chats** ·· [getChats](https://api.cellajs.com/docs#tag/ai/get/{tenantId}/{organizationId}/chats) ·· [getChats](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/chats) ·· _ai_cella_
  *
  * @param {getChatsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3094,7 +3094,7 @@ export const getChats = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3107,7 +3107,7 @@ export const getChats = <ThrowOnError extends boolean = true>(
  *
  * Creates a new chat session with an initial user message. Returns an SSE stream with the assistant response.
  *
- * **POST /{tenantId}/{organizationId}/chats** ·· [createChat](https://api.cella.dev/docs#tag/ai/post/{tenantId}/{organizationId}/chats) ·· [createChat](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/chats) ·· _ai_cella_
+ * **POST /{tenantId}/{organizationId}/chats** ·· [createChat](https://api.cellajs.com/docs#tag/ai/post/{tenantId}/{organizationId}/chats) ·· [createChat](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/chats) ·· _ai_cella_
  *
  * @param {createChatData} options
  * @param {string} options.path.tenantid - `string`
@@ -3131,7 +3131,7 @@ export const createChat = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3148,7 +3148,7 @@ export const createChat = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of messages for a chat session.
  *
- * **GET /{tenantId}/{organizationId}/chats/{id}/messages** ·· [getMessages](https://api.cella.dev/docs#tag/ai/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· [getMessages](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
+ * **GET /{tenantId}/{organizationId}/chats/{id}/messages** ·· [getMessages](https://api.cellajs.com/docs#tag/ai/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· [getMessages](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
  *
  * @param {getMessagesData} options
  * @param {string} options.path.tenantid - `string`
@@ -3179,7 +3179,7 @@ export const getMessages = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3192,7 +3192,7 @@ export const getMessages = <ThrowOnError extends boolean = true>(
  *
  * Sends a user message and returns an SSE stream with the assistant response.
  *
- * **POST /{tenantId}/{organizationId}/chats/{id}/messages** ·· [sendMessage](https://api.cella.dev/docs#tag/ai/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· [sendMessage](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
+ * **POST /{tenantId}/{organizationId}/chats/{id}/messages** ·· [sendMessage](https://api.cellajs.com/docs#tag/ai/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· [sendMessage](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/chats/{id}/messages) ·· _ai_cella_
  *
  * @param {sendMessageData} options
  * @param {string} options.path.tenantid - `string`
@@ -3217,7 +3217,7 @@ export const sendMessage = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3234,7 +3234,7 @@ export const sendMessage = <ThrowOnError extends boolean = true>(
  *
  * Updates a chat session (rename or archive).
  *
- * **PUT /{tenantId}/{organizationId}/chats/{id}** ·· [updateChat](https://api.cella.dev/docs#tag/ai/put/{tenantId}/{organizationId}/chats/{id}) ·· [updateChat](https://api.cella.dev/docs#tag/cella/put/{tenantId}/{organizationId}/chats/{id}) ·· _ai_cella_
+ * **PUT /{tenantId}/{organizationId}/chats/{id}** ·· [updateChat](https://api.cellajs.com/docs#tag/ai/put/{tenantId}/{organizationId}/chats/{id}) ·· [updateChat](https://api.cellajs.com/docs#tag/cella/put/{tenantId}/{organizationId}/chats/{id}) ·· _ai_cella_
  *
  * @param {updateChatData} options
  * @param {string} options.path.tenantid - `string`
@@ -3261,7 +3261,7 @@ export const updateChat = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3278,7 +3278,7 @@ export const updateChat = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  *
- * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://api.cella.dev/docs#tag/attachments/delete/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://api.cella.dev/docs#tag/cella/delete/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://api.cella.dev/docs#tag/product/delete/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://api.cellajs.com/docs#tag/attachments/delete/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://api.cellajs.com/docs#tag/cella/delete/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://api.cellajs.com/docs#tag/product/delete/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {deleteAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3304,7 +3304,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3321,7 +3321,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of *attachments* for the organization.
  *
- * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](https://api.cella.dev/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://api.cella.dev/docs#tag/product/get/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://api.cellajs.com/docs#tag/product/get/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {getAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3351,7 +3351,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3364,7 +3364,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
- * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://api.cella.dev/docs#tag/attachments/post/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://api.cella.dev/docs#tag/product/post/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://api.cellajs.com/docs#tag/attachments/post/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://api.cellajs.com/docs#tag/product/post/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {createAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3388,7 +3388,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3405,7 +3405,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  *
  * Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.
  *
- * **GET /{tenantId}/{organizationId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cella.dev/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://api.cella.dev/docs#tag/product/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments/presigned-url** ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://api.cellajs.com/docs#tag/product/get/{tenantId}/{organizationId}/attachments/presigned-url) ·· _attachments_cella_product_
  *
  * @param {getPresignedUrlData} options
  * @param {string} options.path.tenantid - `string`
@@ -3430,7 +3430,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3443,7 +3443,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
  *
  * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
  *
- * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://api.cella.dev/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://api.cella.dev/docs#tag/product/get/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://api.cellajs.com/docs#tag/attachments/get/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://api.cellajs.com/docs#tag/product/get/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
  * @param {getAttachmentData} options
  * @param {string} options.path.tenantid - `string`
@@ -3468,7 +3468,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3481,7 +3481,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
  *
- * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://api.cella.dev/docs#tag/attachments/put/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://api.cella.dev/docs#tag/cella/put/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://api.cella.dev/docs#tag/product/put/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
+ * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://api.cellajs.com/docs#tag/attachments/put/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://api.cellajs.com/docs#tag/cella/put/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://api.cellajs.com/docs#tag/product/put/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
  * @param {updateAttachmentData} options
  * @param {string} options.path.tenantid - `string`
@@ -3509,7 +3509,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3526,7 +3526,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  *
- * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://api.cella.dev/docs#tag/memberships/delete/{tenantId}/{organizationId}/memberships) ·· [deleteMemberships](https://api.cella.dev/docs#tag/cella/delete/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
+ * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://api.cellajs.com/docs#tag/memberships/delete/{tenantId}/{organizationId}/memberships) ·· [deleteMemberships](https://api.cellajs.com/docs#tag/cella/delete/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
  * @param {deleteMembershipsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3553,7 +3553,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3570,7 +3570,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
- * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://api.cella.dev/docs#tag/memberships/post/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
+ * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
  * @param {membershipInviteData} options
  * @param {string} options.path.tenantid - `string`
@@ -3598,7 +3598,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3615,7 +3615,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  *
- * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://api.cella.dev/docs#tag/memberships/put/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://api.cella.dev/docs#tag/cella/put/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
+ * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://api.cellajs.com/docs#tag/memberships/put/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://api.cellajs.com/docs#tag/cella/put/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *
  * @param {updateMembershipData} options
  * @param {string} options.path.tenantid - `string`
@@ -3644,7 +3644,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3661,7 +3661,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cella.dev/docs#tag/memberships/post/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· [handleMembershipInvitation](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships_cella_
+ * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/memberships/post/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· [handleMembershipInvitation](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships_cella_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
@@ -3690,7 +3690,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3703,7 +3703,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  *
  * Retrieves members (users) of a context entity by ID, including their associated *membership* data.
  *
- * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://api.cella.dev/docs#tag/memberships/get/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
+ * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
  *
  * @param {getMembersData} options
  * @param {string} options.path.tenantid - `string`
@@ -3737,7 +3737,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3750,7 +3750,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
  *
  * Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.
  *
- * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://api.cella.dev/docs#tag/memberships/get/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://api.cella.dev/docs#tag/cella/get/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
+ * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://api.cellajs.com/docs#tag/memberships/get/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://api.cellajs.com/docs#tag/cella/get/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
  *
  * @param {getPendingMembershipsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3782,7 +3782,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3795,7 +3795,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
  *
  * Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.
  *
- * **POST /{tenantId}/{organizationId}/seen** ·· [markSeen](https://api.cella.dev/docs#tag/seen/post/{tenantId}/{organizationId}/seen) ·· [markSeen](https://api.cella.dev/docs#tag/cella/post/{tenantId}/{organizationId}/seen) ·· _seen_cella_
+ * **POST /{tenantId}/{organizationId}/seen** ·· [markSeen](https://api.cellajs.com/docs#tag/seen/post/{tenantId}/{organizationId}/seen) ·· [markSeen](https://api.cellajs.com/docs#tag/cella/post/{tenantId}/{organizationId}/seen) ·· _seen_cella_
  *
  * @param {markSeenData} options
  * @param {string} options.path.tenantid - `string`
@@ -3821,7 +3821,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3838,7 +3838,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
  *
  * Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.
  *
- * **GET /yjs/token** ·· [getYjsToken](https://api.cella.dev/docs#tag/yjs/get/yjs/token) ·· [getYjsToken](https://api.cella.dev/docs#tag/cella/get/yjs/token) ·· _yjs_cella_
+ * **GET /yjs/token** ·· [getYjsToken](https://api.cellajs.com/docs#tag/yjs/get/yjs/token) ·· [getYjsToken](https://api.cellajs.com/docs#tag/cella/get/yjs/token) ·· _yjs_cella_
  *
  * @param {getYjsTokenData} options
  * @param {string} options.query.entitytype - `string`
@@ -3863,7 +3863,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -3876,7 +3876,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.
  *
- * **GET /yjs/verify-entity** ·· [verifyYjsEntity](https://api.cella.dev/docs#tag/yjs/get/yjs/verify-entity) ·· [verifyYjsEntity](https://api.cella.dev/docs#tag/cella/get/yjs/verify-entity) ·· _yjs_cella_
+ * **GET /yjs/verify-entity** ·· [verifyYjsEntity](https://api.cellajs.com/docs#tag/yjs/get/yjs/verify-entity) ·· [verifyYjsEntity](https://api.cellajs.com/docs#tag/cella/get/yjs/verify-entity) ·· _yjs_cella_
  *
  * @param {verifyYjsEntityData} options
  * @param {string} options.query.entitytype - `string`
@@ -3902,7 +3902,7 @@ export const verifyYjsEntity = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'raak-development-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],

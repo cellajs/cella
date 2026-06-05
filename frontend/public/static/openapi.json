@@ -5,7 +5,7 @@
     }
   ],
   "info": {
-    "title": "Raak DEVELOPMENT API",
+    "title": "Cella DEVELOPMENT API",
     "version": "v1",
     "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
     "x-extensions": [
@@ -255,7 +255,7 @@
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "raak-development-session-v1",
+        "name": "cella-development-session-v1",
         "description": "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first."
       }
     },
@@ -13896,7 +13896,5 @@
       }
     }
   },
-  "webhooks": {},
-  "x-diff-hash": "e3b0c44298fc1c14",
-  "x-generated-at": "2026-06-04T19:32:21.338Z"
+  "webhooks": {}
 }

@@ -1,4 +1,4 @@
-import type { ConfigMode, RequiredConfig } from '../src/config-builder/types';
+import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
@@ -78,7 +78,7 @@ export const config = {
 
   name: 'Cella',
   slug: 'cella',
-  domain: 'cella.dev',
+  domain: 'cellajs.com',
   description: 'A TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
@@ -87,15 +87,15 @@ export const config = {
    * URLS & ENDPOINTS
    ******************************************************************************/
 
-  frontendUrl: 'https://www.cella.dev',
-  backendUrl: 'https://api.cella.dev',
-  backendAuthUrl: 'https://api.cella.dev/auth',
-  yjsUrl: 'wss://yjs.cella.dev',
-  aiUrl: 'https://ai.cella.dev',
+  frontendUrl: 'https://www.cellajs.com',
+  backendUrl: 'https://api.cellajs.com',
+  backendAuthUrl: 'https://api.cellajs.com/auth',
+  yjsUrl: 'wss://yjs.cellajs.com',
+  aiUrl: 'https://ai.cellajs.com',
 
   aboutUrl: '/about',
-  statusUrl: 'https://status.cella.dev',
-  productionUrl: 'https://cella.dev',
+  statusUrl: 'https://status.cellajs.com',
+  productionUrl: 'https://cellajs.com',
 
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',
@@ -122,10 +122,12 @@ export const config = {
 
   has: {
     pwa: true as boolean,
-    selfRegistration: true as boolean,
-    waitlist: true as boolean,
+    selfRegistration: false as boolean,
+    waitlist: false as boolean,
     uploadEnabled: true as boolean,
     chatSupport: false as boolean,
+    yjs: false as boolean,
+    ai: false as boolean,
   },
 
   /******************************************************************************
@@ -178,7 +180,7 @@ export const config = {
   s3: {
     region: 'nl-ams',
     host: 's3.nl-ams.scw.cloud',
-  },
+  } as S3ConfigInput,
 
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 

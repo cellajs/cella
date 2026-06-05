@@ -13,13 +13,8 @@ import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
-interface InitDocsOptions {
-  diffHash?: string;
-  generatedAt?: string;
-}
-
 /** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint */
-const initDocs = async (app: OpenAPIHono<Env>, options?: InitDocsOptions) => {
+const initDocs = async (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
 
   // Build extension entries with collected value metadata
@@ -82,10 +77,6 @@ const initDocs = async (app: OpenAPIHono<Env>, options?: InitDocsOptions) => {
   // via `String(re)` which includes the flag suffix). JSON Schema patterns are
   // unflagged ECMA-262, so the suffix corrupts downstream consumers.
   stripRegexFlagsFromPatterns(openApiDoc as unknown as Record<string, unknown>);
-
-  // Embed generation metadata directly in the spec (used for cache invalidation)
-  if (options?.diffHash) (openApiDoc as unknown as Record<string, unknown>)['x-diff-hash'] = options.diffHash;
-  if (options?.generatedAt) (openApiDoc as unknown as Record<string, unknown>)['x-generated-at'] = options.generatedAt;
 
   const tmpPath = './openapi.cache.json.tmp';
   await fs.writeFile(tmpPath, JSON.stringify(openApiDoc, null, 2));

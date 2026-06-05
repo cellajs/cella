@@ -1,6 +1,6 @@
 import pino from 'pino';
 import { appConfig } from 'shared';
-import { createLogger } from 'shared/pino';
+import { createLogger, createLogHelpers } from 'shared/pino';
 import { env } from '#/env';
 
 // Sensitive fields to redact from logs (auth tokens, credentials)
@@ -55,3 +55,5 @@ export const eventLogger = createLogger({
     censor: '[REDACTED]',
   },
 });
+
+export const { logEvent, logError } = createLogHelpers(eventLogger, isProduction);

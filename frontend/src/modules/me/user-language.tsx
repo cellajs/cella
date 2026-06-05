@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateMe } from 'sdk';
 import { appConfig, type Language } from 'shared';
+import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
@@ -37,25 +38,28 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
 
   const openDropdown = () => {
     const currentLang = user?.language || i18n.languages[0];
+    const isMobile = window.innerWidth < 640;
 
     useDropdowner.getState().create(
       <div className="flex flex-col">
         {appConfig.languages.map((lang) => (
-          <Button
+          <DropdownActionItem
             key={lang}
+            isMobile={isMobile}
             variant="ghost"
             className="w-full justify-between gap-4"
-            onClick={() => changeLanguage(lang)}
+            onSelect={() => changeLanguage(lang)}
           >
             <span>{t(`c:${lang}`)}</span>
             <CheckIcon size={16} className={`text-success ${currentLang === lang ? 'visible' : 'invisible'}`} />
-          </Button>
+          </DropdownActionItem>
         ))}
       </div>,
       {
         id: 'user-language',
         triggerId: 'user-language-trigger',
         triggerRef,
+        kind: 'menu',
       },
     );
   };

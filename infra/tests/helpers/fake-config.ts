@@ -12,12 +12,12 @@ export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     slug: 'cella',
     mode: 'production' as const,
-    domain: 'cella.dev',
-    frontendUrl: 'https://www.cella.dev',
-    backendUrl: 'https://api.cella.dev',
-    yjsUrl: 'https://yjs.cella.dev',
-    aiUrl: 'https://ai.cella.dev',
-    securityEmail: 'security@cella.dev',
+    domain: 'cellajs.com',
+    frontendUrl: 'https://www.cellajs.com',
+    backendUrl: 'https://api.cellajs.com',
+    yjsUrl: 'https://yjs.cellajs.com',
+    aiUrl: 'https://ai.cellajs.com',
+    securityEmail: 'security@cellajs.com',
     s3: {
       host: 's3.nl-ams.scw.cloud',
       region: 'nl-ams',

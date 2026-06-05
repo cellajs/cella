@@ -3,8 +3,8 @@ import type _default from './config.default';
 
 export default {
   mode: 'development',
-  name: 'Raak DEVELOPMENT',
-  slug: 'raak-development',
+  name: 'Cella DEVELOPMENT',
+  slug: 'cella-development',
 
   has: {
     selfRegistration: true,
@@ -18,4 +18,9 @@ export default {
   backendAuthUrl: 'http://localhost:4000/auth',
   yjsUrl: 'http://localhost:4002',
   aiUrl: 'http://localhost:4003',
+
+  s3: {
+    publicBucket: 'cella-shared-public',
+    privateBucket: 'cella-shared-private',
+  },
 } satisfies DeepPartial<typeof _default>;

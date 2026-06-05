@@ -18,7 +18,7 @@ if (hasDomain && pipelineId) {
   _isApex = _appSubdomain === domains.zone || _appSubdomain === ''
 
   if (!_isApex) {
-    // CNAME record for subdomain (e.g. www.cella.dev) → Edge Services
+    // CNAME record for subdomain (e.g. www.cellajs.com) → Edge Services
     new scaleway.domain.Record('app-dns', {
       dnsZone: domains.zone,
       name: _appSubdomain,

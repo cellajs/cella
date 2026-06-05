@@ -66,8 +66,8 @@ if (hasDomain && infra.enableEdgeServices) {
 
   // ---------------------------------------------------------------------------
   // DNS stage — attach custom domain(s)
-  // Only the app domain (e.g. www.cella.dev) is served by Edge Services.
-  // The apex domain (cella.dev) is handled by the load balancer with a 301 redirect.
+  // Only the app domain (e.g. www.cellajs.com) is served by Edge Services.
+  // The apex domain (cellajs.com) is handled by the load balancer with a 301 redirect.
   // ---------------------------------------------------------------------------
 
   const dnsStage = new scaleway.edgeservices.DnsStage('frontend-dns', {

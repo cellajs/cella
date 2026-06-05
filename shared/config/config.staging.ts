@@ -3,11 +3,11 @@ import type _default from './config.default';
 
 export default {
   mode: 'staging',
-  name: 'Raak STAGING',
-  slug: 'raak-staging',
+  name: 'Cella STAGING',
+  slug: 'cella-staging',
 
-  domain: 'raak.dev',
-  frontendUrl: 'https://staging.raak.dev',
-  backendUrl: 'https://api-staging.cella.dev',
-  backendAuthUrl: 'https://api-staging.cella.dev/auth',
+  domain: 'cellajs.com',
+  frontendUrl: 'https://staging.cellajs.com',
+  backendUrl: 'https://api-staging.cellajs.com',
+  backendAuthUrl: 'https://api-staging.cellajs.com/auth',
 } satisfies DeepPartial<typeof _default>;

@@ -17,7 +17,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig, appConfig } from '../helpers'
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index.js'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
@@ -179,7 +179,8 @@ const aiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
 // Computed lazily after the backend VM is created, below.
 let cdcWsUrl: pulumi.Input<string> = 'ws://localhost:4000/internal/cdc'
 
-const services: ServiceConfig[] = [
+// Base services that are always created
+const baseServices: ServiceConfig[] = [
   {
     name: 'backend',
     profile: 'backend',
@@ -200,28 +201,6 @@ const services: ServiceConfig[] = [
       APP_MODE: mode,
       get API_WS_URL() { return cdcWsUrl },
       BACKEND_URL: backendUrl,
-    },
-  },
-  {
-    name: 'yjs',
-    profile: 'yjs',
-    port: 4002,
-    composeEnv: {
-      REGISTRY: registryEndpoint,
-      APP_MODE: mode,
-      BACKEND_URL: backendUrl,
-    },
-  },
-  {
-    name: 'ai',
-    profile: 'ai',
-    port: 4003,
-    composeEnv: {
-      REGISTRY: registryEndpoint,
-      APP_MODE: mode,
-      FRONTEND_URL: frontendUrl,
-      BACKEND_URL: backendUrl,
-      AI_API_URL: aiUrl,
     },
   },
   {
@@ -247,6 +226,39 @@ const services: ServiceConfig[] = [
     },
   },
 ]
+
+// Conditionally add yjs service
+const optionalServices: ServiceConfig[] = []
+if (appConfig.has.yjs) {
+  optionalServices.push({
+    name: 'yjs',
+    profile: 'yjs',
+    port: 4002,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      BACKEND_URL: backendUrl,
+    },
+  })
+}
+
+// Conditionally add ai service
+if (appConfig.has.ai) {
+  optionalServices.push({
+    name: 'ai',
+    profile: 'ai',
+    port: 4003,
+    composeEnv: {
+      REGISTRY: registryEndpoint,
+      APP_MODE: mode,
+      FRONTEND_URL: frontendUrl,
+      BACKEND_URL: backendUrl,
+      AI_API_URL: aiUrl,
+    },
+  })
+}
+
+const services: ServiceConfig[] = [...baseServices, ...optionalServices]
 
 // Ingress wiring — every VM runs a Caddy `ingress` container that publishes the
 // host port and forwards to the app container by its compose-network name. This

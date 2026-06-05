@@ -6,7 +6,6 @@ import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-acc
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Switch } from '~/modules/ui/switch';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { cn } from '~/utils/cn';
 
 const pwaEnabled = appConfig.has.pwa;
 
@@ -24,14 +23,11 @@ export const PreferencesContent = () => {
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
   const { mode, setMode } = useUIStore();
-  const hasThemeColors = Object.keys(appConfig.theme.colors).length > 0;
 
   return (
     <>
       {/* Appearance */}
-      <div
-        className={cn('mb-6 flex flex-col gap-4 pt-3', !showDesktopMenuOption && !hasThemeColors && 'max-xl:hidden')}
-      >
+      <div className="mb-6 flex flex-col gap-4 pt-3">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:appearance')}</h3>
 
         <div className="flex items-center gap-4 px-4">

@@ -2,6 +2,7 @@ import { BanIcon, CheckIcon, CircleIcon, type LucideIcon, MoonIcon, SunIcon } fr
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -23,13 +24,18 @@ interface ThemeItem {
   separator?: boolean;
 }
 
-function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
+function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobile: boolean }) {
   return (
     <div className="flex flex-col">
       {items.map((item) => (
         <div key={item.key}>
           {item.separator && <div className="my-1 border-t" />}
-          <Button variant="ghost" className="w-full justify-between gap-4" onClick={item.onSelect}>
+          <DropdownActionItem
+            isMobile={isMobile}
+            variant="ghost"
+            className="w-full justify-between gap-4"
+            onSelect={item.onSelect}
+          >
             <span className="flex items-center gap-2">
               <span className={item.iconClass} style={item.iconStyle}>
                 <Icon size={16} icon={item.icon} />
@@ -37,7 +43,7 @@ function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
               {item.label}
             </span>
             <CheckIcon size={16} className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
-          </Button>
+          </DropdownActionItem>
         </div>
       ))}
     </div>
@@ -82,6 +88,7 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
 
   const openDropdown = () => {
     const { mode: currentMode, theme: currentTheme } = useUIStore.getState();
+    const isMobile = window.innerWidth < 640;
 
     const items: ThemeItem[] = [
       ...modes.map((m) => ({
@@ -119,10 +126,11 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
       })),
     ];
 
-    useDropdowner.getState().create(<ThemeDropdownContent items={items} />, {
+    useDropdowner.getState().create(<ThemeDropdownContent items={items} isMobile={isMobile} />, {
       id: 'user-theme',
       triggerId: 'user-theme-trigger',
       triggerRef,
+      kind: 'menu',
     });
   };
 

@@ -1,9 +1,10 @@
-import process from 'node:process';
 import { type ServerType, serve } from '@hono/node-server';
+import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/worker-lifecycle';
 import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
+import { logEvent } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import { aiHandlers } from '#/modules/ai/ai-handlers';
 import baseApp from '#/server';
@@ -13,8 +14,14 @@ const port = Number(env.PORT ?? '4003');
 export async function startAiWorker(): Promise<void> {
   const hasApiKey = !!env.SCW_AI_API_KEY;
 
+  // Stop if ai is disabled via config
+  if (!appConfig.has.ai) {
+    logEvent('info', 'AI server disabled by appConfig');
+    return;
+  }
+
   if (!hasApiKey) {
-    console.info('[ai-worker] SCW_AI_API_KEY not set, running as no-op (health-only)');
+    logEvent('info', 'SCW_AI_API_KEY not set, running as no-op (health-only)');
   }
 
   if (hasApiKey) {
@@ -31,7 +38,7 @@ export async function startAiWorker(): Promise<void> {
 
     // Start pg-boss (creates queues)
     await getPgBoss();
-    console.info('[ai-worker] pg-boss started, queues ready');
+    logEvent('info', 'pg-boss started, queues ready');
 
     // Phase 5: active job handlers will be registered here
     // boss.work('ai-yjs', { teamSize: 3, teamConcurrency: 3 }, yjsJobHandler);
@@ -47,7 +54,7 @@ export async function startAiWorker(): Promise<void> {
       port,
     },
     () => {
-      console.info(`[ai-worker] AI service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
+      logEvent('info', `AI service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
     },
   );
 
@@ -58,6 +65,6 @@ export async function startAiWorker(): Promise<void> {
       if (hasApiKey) await stopPgBoss();
       if (hasApiKey) await otel.shutdown();
     },
-    log: (msg) => process.stderr.write(`[ai-worker] ${msg}\n`),
+    log: (msg) => logEvent('info', msg),
   });
 }

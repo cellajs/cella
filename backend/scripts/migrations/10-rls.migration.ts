@@ -63,20 +63,6 @@ async function run() {
   ];
   const readOnlyTables = ['system_roles', 'activities'];
 
-  // Product entity tables where CDC needs column-level UPDATE(seq) permission
-  const productEntityTableNames = appConfig.productEntityTypes.map((entityType) => {
-    const table = entityTables[entityType as keyof typeof entityTables];
-    if (!table) throw new Error(`No table found for product entity type: ${entityType}`);
-    return getTableName(table);
-  });
-
-  // Entity embedding columns where CDC needs UPDATE permission to strip deleted refs
-  const embeddingGrants = appConfig.entityEmbeddings.map(({ hostEntity, hostColumn }) => {
-    const table = entityTables[hostEntity as keyof typeof entityTables];
-    if (!table) throw new Error(`No table found for embedding host entity: ${hostEntity}`);
-    return `    GRANT UPDATE (${hostColumn}) ON ${getTableName(table)} TO cdc_role;`;
-  });
-
   // ============================================================================
   // Migration SQL
   // ============================================================================
@@ -106,15 +92,7 @@ ${rlsTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runt
 ${fullCrudTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
 ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\n')}
 
-    -- Grants: cdc_role (append-only activities + counter sequences + seq stamping)
-    GRANT INSERT ON activities TO cdc_role;
-    GRANT SELECT, INSERT, UPDATE ON context_counters TO cdc_role;
-    GRANT SELECT ON tenants TO cdc_role;
-    GRANT SELECT ON organizations TO cdc_role;
-  ${productEntityTableNames.map((t) => `    GRANT SELECT (id, stx), UPDATE (seq, stx) ON ${t} TO cdc_role;`).join('\n')}
-${embeddingGrants.join('\n')}
-
-    -- Grants: admin_role (full access)
+    -- Grants: admin_role (full access; also used by the CDC worker)
     GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
     GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role;
 

@@ -33,7 +33,7 @@ const csp = [
   `default-src 'self'`,
   `script-src 'self' *.gleap.io`,
   `style-src 'self' 'unsafe-inline'`,
-  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3} *.gleap.io wss://ws.gleap.io`,
+  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3} https://*.transloadit.com wss://*.transloadit.com https://transloaditstatus.com *.gleap.io wss://ws.gleap.io`,
   `img-src 'self' blob: https: data:`,
   `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io`,
   `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
