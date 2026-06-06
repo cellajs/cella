@@ -97,5 +97,9 @@ export const sendOAuthVerificationEmail = async (
 
   mailer.prepareEmails(oauthVerificationEmail, staticProps, recipients);
 
+  if (appConfig.mode === 'development') {
+    console.info(`[verification-link] ${email} ${verificationURL.toString()}`);
+  }
+
   logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };

@@ -80,6 +80,10 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props, log
 
   mailer.prepareEmails(emailVerificationEmail, staticProps, recipients);
 
+  if (appConfig.mode === 'development') {
+    console.info(`[verification-link] ${email} ${verificationURL.toString()}`);
+  }
+
   logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
 };
 

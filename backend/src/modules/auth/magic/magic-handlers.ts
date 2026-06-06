@@ -85,6 +85,10 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 
   mailer.prepareEmails(magicLinkEmail, staticProps, recipients);
 
+  if (appConfig.mode === 'development') {
+    console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl.toString()}`);
+  }
+
   logEvent(ctx, 'info', 'Magic link email sent', { userId: user.id });
 
   return ctx.body(null, 204);
