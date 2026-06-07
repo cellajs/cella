@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { InfoIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertBanner } from '~/alerter/alert-banner';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';

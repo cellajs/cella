@@ -9,8 +9,8 @@ import { type SendNewsletterData, type SendNewsletterResponse, sendNewsletter } 
 import { zSendNewsletterBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import { AlertBanner } from '~/alerter/alert-banner';
 import type { ApiError } from '~/lib/api';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
@@ -21,7 +21,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
@@ -122,15 +122,13 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
         <FormField
           control={form.control}
           name="roles"
-          render={({ field }) => (
+          render={({ field: { value, onChange } }) => (
             <FormItem>
               <FormLabel>
                 {t('c:roles')}
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
-              <FormControl>
-                <SelectRoles {...field} />
-              </FormControl>
+              <SelectRoles value={value} onValueChange={onChange} />
               <FormMessage />
             </FormItem>
           )}

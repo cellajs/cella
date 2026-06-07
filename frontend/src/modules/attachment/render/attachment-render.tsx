@@ -56,7 +56,11 @@ export const AttachmentRender = ({
         {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
         {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-[90vh] max-w-7xl" />}
         {type.includes('pdf') && (
-          <RenderPDF file={url} className="m-auto mt-12 h-[calc(97vh-3rem)] w-[95vw] max-w-280 overflow-auto" />
+          <RenderPDF
+            file={url}
+            fitMode={imagePanZoom ? 'contain' : 'width'}
+            className="m-auto mt-12 h-[calc(97vh-3rem)] w-[95vw] max-w-280 overflow-auto"
+          />
         )}
         {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
           <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view" />

@@ -13,7 +13,7 @@ import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 
 interface Props {
@@ -58,21 +58,15 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
     onSuccess,
   });
 
-  const onSubmit = (values: InviteFormValues) => {
-    contextEntity
-      ? membershipInvite(
-          {
-            body: values,
-            path: {
-              tenantId: contextEntity.tenantId,
-              organizationId: contextEntity.organizationId || contextEntity.id,
-            },
-            query: { entityId: contextEntity.id, entityType: contextEntity.entityType },
-            contextEntity,
-          },
-          { onSuccess },
-        )
-      : systemInvite(values);
+  const onSubmit = (body: InviteFormValues) => {
+    // When no context its a system invite, otherwise its a membership invite
+    if (!contextEntity) return systemInvite(body);
+
+    const organizationId = contextEntity.organizationId || contextEntity.id;
+    const path = { tenantId: contextEntity.tenantId, organizationId: organizationId };
+    const query = { entityId: contextEntity.id, entityType: contextEntity.entityType };
+
+    membershipInvite({ body, path, query, contextEntity }, { onSuccess });
   };
 
   return (
@@ -83,14 +77,12 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <FormControl>
-                <SelectEmails
-                  placeholder={t('c:add_email')}
-                  emails={value}
-                  onValueChange={onChange}
-                  inputProps={{ autoComplete: 'off' }}
-                />
-              </FormControl>
+              <SelectEmails
+                placeholder={t('c:add_email')}
+                emails={value}
+                onValueChange={onChange}
+                inputProps={{ autoComplete: 'off' }}
+              />
               <FormMessage />
             </FormItem>
           )}
@@ -102,7 +94,7 @@ export function InviteEmailForm({ contextEntity, dialog: isDialog, children }: P
             render={({ field: { value, onChange } }) => (
               <FormItem className="ml-3 flex-row items-center gap-4">
                 <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onChange={onChange} />
+                <SelectRoleRadio value={value} onValueChange={onChange} />
                 <FormMessage />
               </FormItem>
             )}

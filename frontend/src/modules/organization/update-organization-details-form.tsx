@@ -82,7 +82,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               className:
-                'min-h-20 max-h-[50vh] overflow-auto bg-background pl-10 pr-6 p-3 border-input ring-offset-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'min-h-20 max-h-[50vh] overflow-auto bg-background pl-10 pr-6 p-3 border-input ring-offset-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 w-full rounded-md border text-sm focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2',
               baseFilePanelProps: { tenantId: organization.tenantId, organizationId: organization.id },
             }}
           />

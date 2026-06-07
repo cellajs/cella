@@ -7,7 +7,7 @@ import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 import { UserCombobox } from '~/modules/user/user-combobox';
 
@@ -60,9 +60,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <FormControl>
-                <UserCombobox value={value} onChange={onChange} contextEntity={contextEntity} />
-              </FormControl>
+              <UserCombobox value={value} onValueChange={onChange} contextEntity={contextEntity} />
               <FormMessage />
             </FormItem>
           )}
@@ -73,9 +71,7 @@ export function InviteSearchForm({ contextEntity, dialog: isDialog }: Props) {
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row items-center gap-4">
               <FormLabel>{t('c:role')}:</FormLabel>
-              <FormControl>
-                <SelectRoleRadio value={value} onChange={onChange} />
-              </FormControl>
+              <SelectRoleRadio value={value} onValueChange={onChange} />
               <FormMessage />
             </FormItem>
           )}

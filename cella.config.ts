@@ -55,7 +55,7 @@ export default defineConfig({
       "frontend/src/nav-config.tsx",
       "frontend/src/routes-config.tsx",
       "frontend/src/menu-config.tsx",
-      "frontend/src/alerter/alert-config.tsx",
+      "frontend/src/modules/common/alerter/alert-config.tsx",
       "frontend/src/list-queries-config.tsx",
       "frontend/src/styling/gradients.css",
       "frontend/src/routes/route-tree.tsx",

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { BookOpenIcon, ExternalLinkIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
+import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -50,6 +50,14 @@ export const InfoContent = () => {
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:support')}</h3>
+        <Button
+          variant="ghost"
+          className="w-full justify-start px-3.5 text-left"
+          render={<Link to={appConfig.aboutUrl} draggable={false} />}
+        >
+          <InfoIcon className="mr-2 size-4" aria-hidden="true" />
+          {t('c:about')}
+        </Button>
         <Button
           variant="ghost"
           className="w-full justify-start px-3.5 text-left"

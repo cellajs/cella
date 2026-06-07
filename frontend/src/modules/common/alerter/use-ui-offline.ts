@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useAlertStore } from '~/alerter/alert-store';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { revalidateConnectivity } from '~/query/offline/connectivity';
 
 // Sustained-offline duration required before surfacing the UI toast.

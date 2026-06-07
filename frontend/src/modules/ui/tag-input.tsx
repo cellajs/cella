@@ -196,6 +196,11 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     }
 
     if (!hasInput) {
+      // Swallow Enter so it doesn't trigger implicit form submission when there's nothing to add
+      if (key === 'Enter' && activeTagIndex === null) {
+        e.preventDefault();
+        return;
+      }
       if (key === 'Backspace' && tags.length) {
         e.preventDefault();
         removeTagByIndex(tags.length - 1);
@@ -366,6 +371,7 @@ function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
         >
           {tag}
           <Button
+            type="button"
             variant="ghost"
             size="micro"
             onClick={(e) => {

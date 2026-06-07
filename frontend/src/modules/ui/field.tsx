@@ -349,6 +349,16 @@ export function FormLabel({
   );
 }
 
+/**
+ * Wraps a single child in Base UI's `Field.Control`, which injects native field props
+ * (event-based `onChange`, `id`, `aria-*`) onto that child for accessibility and validation wiring.
+ *
+ * Only use this for native inputs or components that accept and consume those injected props
+ * (e.g. `Input`, `Checkbox`, Shadcn `Select`). Custom selectors that expose a value-based
+ * callback (`onValueChange`) must NOT be wrapped here: place them directly inside `FormItem`
+ * and bind to `field.value` / `field.onChange` instead. Wrapping such a component causes Base UI
+ * to call its event handler with a non-event value and crash (`reading 'defaultPrevented'`).
+ */
 export function FormControl({ children }: { children: React.ReactElement }) {
   return <Field.Control render={children} />;
 }

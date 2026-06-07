@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ShieldAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AlertBanner } from '~/alerter/alert-banner';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
 import { Button } from '~/modules/ui/button';

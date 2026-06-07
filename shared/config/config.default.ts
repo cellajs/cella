@@ -79,7 +79,7 @@ export const config = {
   domain: 'cellajs.com',
   description: 'A TypeScript template to build collaborative web apps with sync engine. MIT licensed.',
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
   /******************************************************************************
    * URLS & ENDPOINTS

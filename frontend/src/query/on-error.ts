@@ -1,6 +1,6 @@
 import i18n from 'i18next';
-import { useAlertStore } from '~/alerter/alert-store';
 import { ApiError } from '~/lib/api';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
 import type { QueryMeta } from '~/query/react-query';

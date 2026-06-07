@@ -3,7 +3,7 @@ import type { LucideProps } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAlertStore } from '~/alerter/alert-store';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { cn } from '~/utils/cn';

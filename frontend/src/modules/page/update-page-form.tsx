@@ -137,7 +137,7 @@ export function UpdatePageForm({ page }: Props) {
   useBeforeUnload(hasUnsavedChanges);
 
   const blockNoteClassName =
-    'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+    'min-h-[50vh] bg-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 w-full text-sm focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2';
 
   if (form.loading) return null;
 

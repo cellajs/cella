@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ChevronsUpDownIcon, SearchIcon, UserIcon, Users2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -25,21 +25,20 @@ import { usersListQueryOptions } from '~/modules/user/query';
 
 interface Props {
   value: string[];
-  onChange: (items: string[]) => void;
+  onValueChange: (items: string[]) => void;
   contextEntity: ContextEntityBase & { organizationId?: string };
 }
 
-export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
+export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
-  const [selected, setSelected] = useState<string[]>(value);
   const [searchQuery, setSearchQuery] = useState('');
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const handleUnselect = (item: string) => {
-    setSelected((prev) => prev.filter((v) => v !== item));
+    onValueChange(value.filter((v) => v !== item));
   };
 
   const queryOptions = usersListQueryOptions({ q: debouncedSearchQuery });
@@ -63,10 +62,6 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
 
   const existingMemberIds = new Set(membersData?.pages.flatMap((p) => p.items.map((m) => m.id)) ?? []);
 
-  useEffect(() => {
-    onChange(selected);
-  }, [selected]);
-
   const variants = {
     hidden: { opacity: 0, y: -5, scale: 0.98 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
@@ -79,16 +74,18 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
       items={items.map((u) => u.email)}
       itemToStringLabel={(v) => v}
       itemToStringValue={(v) => v}
-      value={selected}
-      onValueChange={(next) => setSelected(next)}
+      value={value}
+      onValueChange={onValueChange}
       inputValue={searchQuery}
       onInputValueChange={setSearchQuery}
       filter={() => true}
     >
       <ComboboxPrimitive.Trigger
-        nativeButton={false}
         render={
-          <div className="hover:transparent relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 active:translate-y-0!" />
+          <button
+            type="button"
+            className="hover:transparent relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left active:translate-y-0!"
+          />
         }
       >
         {value?.length ? (
@@ -100,17 +97,26 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
               className="max-w-60 data-disabled:bg-muted-foreground data-fixed:bg-muted-foreground data-disabled:text-muted-foreground/50 data-fixed:text-muted data-disabled:hover:bg-muted-foreground data-fixed:hover:bg-muted-foreground"
             >
               <span className="truncate">{el}</span>
-              <button
-                type="button"
+              {/* biome-ignore lint/a11y/useSemanticElements: a native <button> cannot be nested inside the trigger <button>; this is an intentional removable-chip control. */}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={t('c:remove')}
                 className="focus-effect -m-1 ml-1 rounded-full py-1"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleUnselect(el);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUnselect(el);
+                }}
               >
                 <XIcon className="size-4 opacity-50 hover:opacity-100" />
-              </button>
+              </span>
             </Badge>
           ))
         ) : (
@@ -168,7 +174,7 @@ export const UserCombobox = ({ value, onChange, contextEntity }: Props) => {
                           key={id}
                           value={email}
                           disabled={alreadyMember}
-                          data-was-selected={selected.some((u) => u === email)}
+                          data-was-selected={value.some((u) => u === email)}
                           data-already-member={alreadyMember}
                           className="group w-full justify-between"
                         >

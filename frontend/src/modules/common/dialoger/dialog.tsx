@@ -74,16 +74,26 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? finalFocusRef : undefined}
       >
-        <DialogHeader
-          sticky
-          className={cn(isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName)}
-        >
-          <DialogTitle className={`${title ? '' : 'hidden'} h-6 leading-6`}>{titleContent}</DialogTitle>
-          <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
-        </DialogHeader>
+        {/* Only render the visible header when there is a title or description to show.
+            This avoids an empty header overlapping content (e.g. fullscreen attachment dialog). */}
+        {(title || description) && (
+          <DialogHeader
+            sticky
+            className={cn(
+              isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName,
+            )}
+          >
+            {title ? (
+              <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>
+            ) : (
+              <DialogTitle className="hidden" />
+            )}
+            {description && <DialogDescription>{description}</DialogDescription>}
+          </DialogHeader>
+        )}
 
-        {/* For accessibility */}
-        {!title && <DialogTitle className="hidden" />}
+        {/* Accessibility: guarantee the dialog always has an accessible name even without a visible header */}
+        {!title && !description && <DialogTitle className="hidden" />}
         {content}
       </DialogContent>
     </Dialog>

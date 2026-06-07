@@ -20,7 +20,7 @@ export const UserAccountRoute = createRoute({
   path: '/account',
   staticData: { isAuth: true },
   validateSearch: errorSearchSchema,
-  head: () => ({ meta: [{ title: appTitle('My account') }] }),
+  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
   getParentRoute: () => AppLayoutRoute,
   beforeLoad: ({ search }) => {
     if (search.error) {

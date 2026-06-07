@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
+import i18n from 'i18next';
 import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
@@ -19,6 +20,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '~/modules/ui/carousel';
+import { DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
 export type CarouselItemData = {
@@ -121,8 +123,10 @@ export function AttachmentsCarousel({
     >
       {currentItem && isDialog && (
         <div className="fixed top-0 left-0 z-10 flex w-full gap-2 bg-background/60 p-3 text-center backdrop-blur-xs sm:text-left">
-          {currentItem.name && (
-            <h2 className="ml-1 flex h-6 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
+          {/* The visible name is the dialog's accessible name (Base UI has no VisuallyHidden component).
+              When there is no name, render a screen-reader-only title so the dialog is still labelled. */}
+          {currentItem.name ? (
+            <DialogTitle className="ml-1 flex h-6 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
               {currentItem.contentType && (
                 <FilePlaceholder
                   contentType={currentItem.contentType}
@@ -132,7 +136,9 @@ export function AttachmentsCarousel({
                 />
               )}
               <span className="truncate">{currentItem.name}</span>
-            </h2>
+            </DialogTitle>
+          ) : (
+            <DialogTitle className="sr-only">{currentItem.filename || i18n.t('c:attachment')}</DialogTitle>
           )}
           <div className="grow" />
           {isCDNUrl(currentItem.url) && (

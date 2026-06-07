@@ -1,5 +1,5 @@
-import { useAlertStore } from '~/alerter/alert-store';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import type { MeUser } from '~/modules/me/types';
 import { useSeenStore } from '~/modules/seen/seen-store';

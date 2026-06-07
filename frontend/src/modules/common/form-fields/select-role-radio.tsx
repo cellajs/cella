@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 
 interface Props {
-  onChange: (value?: string) => void;
+  onValueChange: (value?: string) => void;
   value?: EntityRole;
   className?: string;
 }
@@ -12,13 +12,13 @@ interface Props {
 /**
  * Radio group for selecting a single entity role.
  */
-export function SelectRoleRadio({ onChange, value, className }: Props) {
+export function SelectRoleRadio({ onValueChange, value, className }: Props) {
   const { t } = useTranslation();
 
   return (
     <RadioGroup
       value={value}
-      onValueChange={(v) => onChange(v as string)}
+      onValueChange={(v) => onValueChange(v as string)}
       className={cn('inline-flex items-center gap-4', className)}
     >
       {roles.all.map((role) => (

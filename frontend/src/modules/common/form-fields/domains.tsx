@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { TagInput } from '~/modules/ui/tag-input';
 
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
@@ -50,27 +50,25 @@ export const DomainsFormField = <TFieldValues extends FieldValues>({
               {required && <span className="ml-1 opacity-50">*</span>}
             </FormLabel>
             {description && <FormDescription>{description}</FormDescription>}
-            <FormControl>
-              <TagInput
-                inputProps={{ value: currentValue, 'aria-invalid': !isValidInput(currentValue) }}
-                onInputChange={(newValue) => setCurrentValue(newValue)}
-                onBlur={() => {
-                  if (checkValidDomain(currentValue)) {
-                    onChange([...domains, currentValue]);
-                  }
-                  setCurrentValue('');
-                }}
-                maxLength={100}
-                minLength={4}
-                placeholder={t('c:placeholder.email_domains')}
-                tags={domains}
-                setTags={(newTags) => {
-                  if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag));
-                  setCurrentValue('');
-                }}
-                validateTag={checkValidDomain}
-              />
-            </FormControl>
+            <TagInput
+              inputProps={{ value: currentValue, 'aria-invalid': !isValidInput(currentValue) }}
+              onInputChange={(newValue) => setCurrentValue(newValue)}
+              onBlur={() => {
+                if (checkValidDomain(currentValue)) {
+                  onChange([...domains, currentValue]);
+                }
+                setCurrentValue('');
+              }}
+              maxLength={100}
+              minLength={4}
+              placeholder={t('c:placeholder.email_domains')}
+              tags={domains}
+              setTags={(newTags) => {
+                if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag));
+                setCurrentValue('');
+              }}
+              validateTag={checkValidDomain}
+            />
             <FormMessage />
           </FormItem>
         );

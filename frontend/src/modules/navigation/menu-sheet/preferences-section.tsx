@@ -1,7 +1,7 @@
 import { InfoIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { AlertBanner } from '~/alerter/alert-banner';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Switch } from '~/modules/ui/switch';

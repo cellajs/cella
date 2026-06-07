@@ -31,7 +31,8 @@
     "manual-migration": "tsx scripts/manual-migration.ts",
     "test:full": "cross-env TEST_MODE=full vitest run",
     "seed:k8s": "node dist/seeds-bundle.js",
-    "geoip:download": "tsx scripts/download-geoip.ts"
+    "geoip:download": "tsx scripts/download-geoip.ts",
+    "s3:cors": "tsx scripts/set-bucket-cors.ts"
   },
   "dependencies": {
     "@ag-ui/core": "^0.0.55",

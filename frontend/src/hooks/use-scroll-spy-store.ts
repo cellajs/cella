@@ -227,7 +227,15 @@ const performScroll = (el: HTMLElement, id: string) => {
   // The docs page scrolls inside <main class="overflow-auto">, not the window, so scrollIntoView()
   // doesn't help — drive the real container directly.
   const scroller = findScrollParent(el);
-  const delta = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+  // The root scrolling element (<html>/<body>) reports getBoundingClientRect().top === -scrollTop
+  // (its box scrolls out of the viewport), unlike a normal overflow container whose rect top is a
+  // fixed viewport offset. Using its rect top here would count scrollTop twice and make upward
+  // clicks resolve to ≈ the current position (scroll aborts after a few px). For the root scroller
+  // the reference is simply the viewport top (0).
+  const isRootScroller =
+    scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body;
+  const scrollerTop = isRootScroller ? 0 : scroller.getBoundingClientRect().top;
+  const delta = el.getBoundingClientRect().top - scrollerTop;
   const targetTop = scroller.scrollTop + delta - 16;
   const smooth = Math.abs(delta) < window.innerHeight * 2;
 

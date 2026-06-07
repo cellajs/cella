@@ -17,31 +17,31 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {
   args: {
     value: undefined,
-    onChange: () => {},
+    onValueChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>(undefined);
 
-    return <SelectRoleRadio value={value} onChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
   },
 };
 
 export const Selected: Story = {
   args: {
     value: 'admin',
-    onChange: () => {},
+    onValueChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>('admin');
 
-    return <SelectRoleRadio value={value} onChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
   },
 };
 
 export const WrappedLayout: Story = {
   args: {
     value: 'member',
-    onChange: () => {},
+    onValueChange: () => {},
     className: 'flex-wrap items-start gap-3',
   },
   render: function Render() {
@@ -51,7 +51,7 @@ export const WrappedLayout: Story = {
       <div className="w-72 rounded-lg border p-4">
         <SelectRoleRadio
           value={value}
-          onChange={(next) => setValue(next as EntityRole | undefined)}
+          onValueChange={(next) => setValue(next as EntityRole | undefined)}
           className="flex-wrap items-start gap-3"
         />
       </div>
@@ -64,12 +64,12 @@ export const ShouldSelectRole: Story = {
   tags: ['!dev', '!autodocs'],
   args: {
     value: undefined,
-    onChange: () => {},
+    onValueChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole | undefined>(undefined);
 
-    return <SelectRoleRadio value={value} onChange={(next) => setValue(next as EntityRole | undefined)} />;
+    return <SelectRoleRadio value={value} onValueChange={(next) => setValue(next as EntityRole | undefined)} />;
   },
   play: async ({ canvas, step }) => {
     const radios = await canvas.findAllByRole('radio');

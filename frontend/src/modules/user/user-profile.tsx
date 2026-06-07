@@ -64,7 +64,7 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
                 className="focus-effect inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/80"
               >
                 <UserRoundCogIcon size={16} />
-                <span className="ml-1 max-sm:hidden">{t('c:my_account')}</span>
+                <span className="ml-1 max-sm:hidden">{t('c:settings')}</span>
               </Link>
             </div>
           )

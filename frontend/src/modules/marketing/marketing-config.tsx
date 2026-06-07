@@ -65,12 +65,14 @@ export const legalLinks = [
 
 export const features = [
   { id: 'hono' },
-  { id: 'vite' },
   { id: 'react' },
   { id: 'drizzle' },
-  { id: 'shadcn' },
+  { id: 'baseui' },
   { id: 'openapi' },
-  { id: 'tanstack' },
+  { id: 'vite' },
+  { id: 'yjs' },
+  { id: 'pulumi' },
+  { id: 'artillery' },
 ];
 
 /*************************************************************************************************
@@ -79,12 +81,11 @@ export const features = [
 
 export const cards: AboutCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'onedollarstats' },
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
+  { name: 'Scaleway', country: 'FR', url: 'scaleway.com', id: 'scaleway' },
+  { name: 'One dollar stats', country: 'UA', url: 'onedollarstats.com', id: 'onedollarstats' },
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
   { name: 'Matrix', country: 'GB', url: 'matrix.org', id: 'matrix', invert: true },
-  { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
-  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
 ];
 

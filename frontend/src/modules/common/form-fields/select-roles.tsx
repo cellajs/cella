@@ -4,7 +4,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/utils/cn';
 
 interface SelectRoleProps {
-  onChange: (value: string[]) => void;
+  onValueChange: (value: string[]) => void;
   value?: string[];
   className?: string;
 }
@@ -14,14 +14,14 @@ const EMPTY_ROLES: string[] = [];
 /**
  * Checkbox group for selecting multiple entity roles.
  */
-export function SelectRoles({ onChange, value = EMPTY_ROLES, className }: SelectRoleProps) {
+export function SelectRoles({ onValueChange, value = EMPTY_ROLES, className }: SelectRoleProps) {
   const { t } = useTranslation();
 
   const handleCheckboxChange = (role: string) => {
     const newValue = value.includes(role)
       ? value.filter((selectedRole) => selectedRole !== role) // Remove role if it already exists
       : [...value, role];
-    onChange(newValue);
+    onValueChange(newValue);
   };
 
   return (

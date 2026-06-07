@@ -54,7 +54,7 @@ vi.mock('~/query/persister', () => ({
   sessionPersister: { removeClient: vi.fn() },
 }));
 
-vi.mock('~/alerter/alert-store', () => ({
+vi.mock('~/modules/common/alerter/alert-store', () => ({
   useAlertStore: { getState: () => ({ clearAlertStore: vi.fn() }) },
 }));
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertTriangleIcon, CheckCircleIcon, InfoIcon } from 'lucide-react';
-import { AlertBanner } from '~/alerter/alert-banner';
+import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 
 const meta = {
   title: 'common/AlertBanner',

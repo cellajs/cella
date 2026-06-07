@@ -1,6 +1,6 @@
-import { AlertBanner, type AlertContextMode } from '~/alerter/alert-banner';
-import { alertsConfig } from '~/alerter/alert-config';
-import { useAlertStore } from '~/alerter/alert-store';
+import { alertsConfig } from '~/alert-config';
+import { AlertBanner, type AlertContextMode } from './alert-banner';
+import { useAlertStore } from './alert-store';
 
 export function Alerter({ mode }: { mode: AlertContextMode }) {
   const { alertsSeen } = useAlertStore();

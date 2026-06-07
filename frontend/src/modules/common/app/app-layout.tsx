@@ -1,6 +1,6 @@
 import { ErrorBoundary } from 'react-error-boundary';
-import { DownAlert } from '~/alerter/down-alert';
 import { AttachmentDialogHandler } from '~/modules/attachment/dialog/handler';
+import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { AppContent } from '~/modules/common/app/app-content';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';

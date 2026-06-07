@@ -122,7 +122,7 @@ export const AccountSheet = () => {
           isOnline={isOnline}
           icon={SettingsIcon}
           id="btn-account"
-          label={t('c:my_account')}
+          label={t('c:settings')}
           action="/account"
         />
         {isSystemAdmin && (

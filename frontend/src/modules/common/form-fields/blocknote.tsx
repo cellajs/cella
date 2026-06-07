@@ -2,7 +2,7 @@ import type { FieldValues } from 'react-hook-form';
 import BlockNote from '~/modules/common/blocknote/block-note-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 type BaseBlockNoteProps = Omit<
   CommonBlockNoteProps,
@@ -42,16 +42,14 @@ const BlockNoteContentFormField = <TFieldValues extends FieldValues>({
                 {required && <span className="ml-1 opacity-50">*</span>}
               </FormLabel>
             )}
-            <FormControl>
-              <BlockNote
-                commitOnEveryChange
-                autoFocus={autoFocus}
-                defaultValue={value}
-                excludeBlockTypes={excludeBlockTypes}
-                updateData={onChange}
-                {...restBlockNoteProps}
-              />
-            </FormControl>
+            <BlockNote
+              commitOnEveryChange
+              autoFocus={autoFocus}
+              defaultValue={value}
+              excludeBlockTypes={excludeBlockTypes}
+              updateData={onChange}
+              {...restBlockNoteProps}
+            />
             <FormMessage />
           </FormItem>
         );
