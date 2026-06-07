@@ -1,18 +1,22 @@
 [
   {
-    "operationId": "getYjsToken",
+    "operationId": "getPublicCounts",
     "responses": [
       {
         "status": 200,
-        "description": "Yjs auth token",
+        "description": "Public counts",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "token": { "type": "string", "required": true }
+            "user": { "type": "number", "required": true },
+            "organization": { "type": "number", "required": true },
+            "attachment": { "type": "number", "required": true },
+            "page": { "type": "number", "required": true }
           },
           "contentType": "application/json"
-        }
+        },
+        "example": { "user": 150, "organization": 12 }
       },
       {
         "status": 400,
@@ -56,42 +60,6 @@
         "ref": "#/components/responses/TooManyRequestsError",
         "contentType": "application/json"
       }
-    ],
-    "request": {
-      "query": {
-        "properties": {
-          "entityType": { "type": "string", "required": true, "maxLength": 50 },
-          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
-          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
-        }
-      }
-    }
-  },
-  {
-    "operationId": "verifyYjsEntity",
-    "responses": [
-      {
-        "status": 200,
-        "description": "Access check result",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "allowed": { "type": "boolean", "required": true }
-          },
-          "contentType": "application/json"
-        }
-      }
-    ],
-    "request": {
-      "query": {
-        "properties": {
-          "entityType": { "type": "string", "required": true, "maxLength": 50 },
-          "entityId": { "type": "string", "required": true, "maxLength": 50 },
-          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
-          "userId": { "type": "string", "required": true, "maxLength": 50 }
-        }
-      }
-    }
+    ]
   }
 ]

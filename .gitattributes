@@ -4,4 +4,4 @@ pnpm-lock.yaml merge=ours
 backend/openapi.yaml merge=ours
 backend/openapi.cache.json merge=ours
 frontend/src/api.gen/** merge=ours
-frontend/public/static/docs.gen/** merge=ours
+sdk/gen/** merge=ours

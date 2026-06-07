@@ -90,6 +90,12 @@ const viteConfig = {
     viteStaticCopy({
       targets: [
         { src: '../locales/**/*', dest: 'locales' },
+        // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
+        // stripBase: 2 drops the `sdk/gen` prefix so files land at /static/... (and /static/docs.gen/...).
+        { src: '../sdk/gen/openapi.json', dest: 'static', rename: { stripBase: 2 } },
+        { src: '../sdk/gen/zod.gen.ts', dest: 'static', rename: { stripBase: 2 } },
+        { src: '../sdk/gen/types.gen.ts', dest: 'static', rename: { stripBase: 2 } },
+        { src: '../sdk/gen/docs.gen/**/*', dest: 'static', rename: { stripBase: 2 } },
       ],
     }),
     createHtmlPlugin({

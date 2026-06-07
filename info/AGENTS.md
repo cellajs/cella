@@ -67,7 +67,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `x-routes.ts`: Always use `createXRoute` instead of `createRoute`. Props: `xGuard` (required), `xRateLimiter`, `xCache`.
 - `extensions-config.ts`: Add new `x-*` extension types here.
 - `docs.ts`: Orchestrates spec build, writes `openapi.cache.json`, mounts Scalar at `/docs`.
-- Frontend: Vite plugin in `frontend/vite/openapi-parser/` → output in `frontend/public/static/docs.gen/`. Docs UI in `frontend/src/modules/docs/`.
+- Frontend: openapi-parser plugin in `sdk/src/plugins/openapi-parser/` → output in `sdk/gen/docs.gen/` (served at `/static/docs.gen/` by Vite). Docs UI in `frontend/src/modules/docs/`.
 
 **Mocks** (`backend/mocks/mock-*.ts`, utils in `backend/mocks/utils/`):
 - Each entity has **insert mocks** (`mockUser()` → `Insert*Model`) and **response mocks** (`mockUserResponse()` → deterministic via `withFakerSeed`).

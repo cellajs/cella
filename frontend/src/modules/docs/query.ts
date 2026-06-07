@@ -9,7 +9,7 @@ import type {
   GenTagSummary,
 } from '~/modules/docs/types';
 
-/** Base URL for docs JSON files in public/static/docs.gen (auto-generated) */
+/** Base URL for docs JSON files served at /static/docs.gen (generated into sdk/gen, copied by Vite) */
 const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 
 /** Fetch JSON with Content-Type validation (guards against SPA HTML fallback responses). */

@@ -1187,10 +1187,7 @@
         "properties": {
           "slug": {
             "required": false,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "boolean", "required": false }
-            ]
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
           },
           "include": { "type": "string", "required": false }
         }

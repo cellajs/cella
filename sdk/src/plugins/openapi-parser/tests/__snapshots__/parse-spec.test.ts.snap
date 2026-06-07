@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "e9f1a9bff8823a11",
+  "inputHash": "14ac6f67cfd0d6fc",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -2434,204 +2434,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a paginated list of chat sessions for the current user.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/ai/GET/{tenantId}/{organizationId}/chats",
-        "id": "getChats",
-        "method": "get",
-        "path": "/{tenantId}/{organizationId}/chats",
-        "summary": "Get chats",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Creates a new chat session with an initial user message. Returns an SSE stream with the assistant response.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": true,
-        "hasResponseBody": true,
-        "hash": "tag/ai/POST/{tenantId}/{organizationId}/chats",
-        "id": "createChat",
-        "method": "post",
-        "path": "/{tenantId}/{organizationId}/chats",
-        "summary": "Create chat",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Deletes one or more chat sessions and their messages.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": true,
-        "hasResponseBody": true,
-        "hash": "tag/ai/DELETE/{tenantId}/{organizationId}/chats",
-        "id": "deleteChats",
-        "method": "delete",
-        "path": "/{tenantId}/{organizationId}/chats",
-        "summary": "Delete chats",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Returns a paginated list of messages for a chat session.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/ai/GET/{tenantId}/{organizationId}/chats/{id}/messages",
-        "id": "getMessages",
-        "method": "get",
-        "path": "/{tenantId}/{organizationId}/chats/{id}/messages",
-        "summary": "Get messages",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Sends a user message and returns an SSE stream with the assistant response.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": true,
-        "hasResponseBody": true,
-        "hash": "tag/ai/POST/{tenantId}/{organizationId}/chats/{id}/messages",
-        "id": "sendMessage",
-        "method": "post",
-        "path": "/{tenantId}/{organizationId}/chats/{id}/messages",
-        "summary": "Send message",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Updates a chat session (rename or archive).",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "authGuard",
-            "tenantGuard",
-            "orgGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": true,
-        "hasRequestBody": true,
-        "hasResponseBody": true,
-        "hash": "tag/ai/PUT/{tenantId}/{organizationId}/chats/{id}",
-        "id": "updateChat",
-        "method": "put",
-        "path": "/{tenantId}/{organizationId}/chats/{id}",
-        "summary": "Update chat",
-        "tags": [
-          "ai",
-        ],
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
         "description": "Returns a paginated list of *attachments* for the organization.",
         "entityType": "attachment",
         "extensions": {
@@ -3170,7 +2972,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
     ],
     "schemaTags": [
       {
-        "count": 14,
+        "count": 12,
         "description": "Complete data schemas",
         "name": "data",
       },
@@ -3186,350 +2988,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
     ],
     "schemas": [
-      {
-        "description": "An AI chat session scoped to a user within an organization.",
-        "name": "Chat",
-        "ref": "#/components/schemas/Chat",
-        "schema": {
-          "properties": {
-            "archivedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "description": {
-              "maxLength": 1000000,
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "entityType": {
-              "enum": [
-                "chat",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "id": {
-              "format": "uuid",
-              "required": true,
-              "type": "string",
-            },
-            "keywords": {
-              "maxLength": 1000000,
-              "required": true,
-              "type": "string",
-            },
-            "model": {
-              "maxLength": 255,
-              "required": true,
-              "type": "string",
-            },
-            "name": {
-              "maxLength": 255,
-              "required": true,
-              "type": "string",
-            },
-            "organizationId": {
-              "format": "uuid",
-              "required": true,
-              "type": "string",
-            },
-            "seq": {
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "required": true,
-              "type": "integer",
-            },
-            "stx": {
-              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-              "properties": {
-                "fieldTimestamps": {
-                  "additionalProperties": {
-                    "required": false,
-                    "type": "string",
-                  },
-                  "description": "Per-field HLC timestamps for scalar fields being changed",
-                  "required": true,
-                  "type": "object",
-                },
-                "mutationId": {
-                  "description": "Unique mutation ID",
-                  "maxLength": 36,
-                  "required": true,
-                  "type": "string",
-                },
-                "sourceId": {
-                  "description": "Tab/instance identifier for echo prevention",
-                  "maxLength": 64,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-              "ref": "#/components/schemas/StxBase",
-              "required": true,
-              "type": "object",
-            },
-            "tenantId": {
-              "maxLength": 24,
-              "required": true,
-              "type": "string",
-            },
-            "updatedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "userId": {
-              "format": "uuid",
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-          "schema": [
-            "data",
-          ],
-        },
-        "type": "object",
-      },
-      {
-        "description": "A single message within a chat session.",
-        "name": "Message",
-        "ref": "#/components/schemas/Message",
-        "schema": {
-          "properties": {
-            "chatId": {
-              "format": "uuid",
-              "required": true,
-              "type": "string",
-            },
-            "createdAt": {
-              "required": true,
-              "type": "string",
-            },
-            "description": {
-              "maxLength": 1000000,
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "entityType": {
-              "enum": [
-                "message",
-              ],
-              "required": true,
-              "type": "string",
-            },
-            "error": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "id": {
-              "format": "uuid",
-              "required": true,
-              "type": "string",
-            },
-            "keywords": {
-              "maxLength": 1000000,
-              "required": true,
-              "type": "string",
-            },
-            "model": {
-              "maxLength": 255,
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "name": {
-              "maxLength": 255,
-              "required": true,
-              "type": "string",
-            },
-            "organizationId": {
-              "format": "uuid",
-              "required": true,
-              "type": "string",
-            },
-            "parts": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "additionalProperties": {
-                    "required": false,
-                    "type": "object",
-                  },
-                  "required": false,
-                  "type": "object",
-                },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
-                },
-              ],
-              "required": true,
-            },
-            "role": {
-              "maxLength": 255,
-              "required": true,
-              "type": "string",
-            },
-            "seq": {
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "required": true,
-              "type": "integer",
-            },
-            "status": {
-              "maxLength": 255,
-              "required": true,
-              "type": "string",
-            },
-            "stx": {
-              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-              "properties": {
-                "fieldTimestamps": {
-                  "additionalProperties": {
-                    "required": false,
-                    "type": "string",
-                  },
-                  "description": "Per-field HLC timestamps for scalar fields being changed",
-                  "required": true,
-                  "type": "object",
-                },
-                "mutationId": {
-                  "description": "Unique mutation ID",
-                  "maxLength": 36,
-                  "required": true,
-                  "type": "string",
-                },
-                "sourceId": {
-                  "description": "Tab/instance identifier for echo prevention",
-                  "maxLength": 64,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-              "ref": "#/components/schemas/StxBase",
-              "required": true,
-              "type": "object",
-            },
-            "tenantId": {
-              "maxLength": 24,
-              "required": true,
-              "type": "string",
-            },
-            "updatedAt": {
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-            "usage": {
-              "anyOf": [
-                {
-                  "required": false,
-                  "type": "string",
-                },
-                {
-                  "required": false,
-                  "type": "number",
-                },
-                {
-                  "required": false,
-                  "type": "boolean",
-                },
-                {
-                  "required": false,
-                  "type": "null",
-                },
-                {
-                  "additionalProperties": {
-                    "required": false,
-                    "type": "object",
-                  },
-                  "required": false,
-                  "type": "object",
-                },
-                {
-                  "itemType": "object",
-                  "required": false,
-                  "type": "array",
-                },
-              ],
-              "required": true,
-            },
-            "userId": {
-              "format": "uuid",
-              "required": true,
-              "type": [
-                "string",
-                "null",
-              ],
-            },
-          },
-          "type": "object",
-        },
-        "schemaTag": "data",
-        "tagsByKind": {
-          "module": [
-            "ai",
-          ],
-          "ownership": [
-            "cella",
-          ],
-          "schema": [
-            "data",
-          ],
-        },
-        "type": "object",
-      },
       {
         "description": "A product entity for file attachment metadata.",
         "example": {
@@ -3971,8 +3429,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "enum": [
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": true,
               "type": "string",
@@ -4134,8 +3590,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "enum": [
                 "attachment",
                 "page",
-                "chat",
-                "message",
                 null,
               ],
               "required": true,
@@ -5161,8 +4615,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
             "counts": {
               "entities": {
                 "attachment": 178,
-                "chat": 47,
-                "message": 21,
                 "page": 257,
               },
               "membership": {
@@ -5315,14 +4767,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "entities": {
                       "properties": {
                         "attachment": {
-                          "required": true,
-                          "type": "number",
-                        },
-                        "chat": {
-                          "required": true,
-                          "type": "number",
-                        },
-                        "message": {
                           "required": true,
                           "type": "number",
                         },
@@ -6330,8 +5774,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -6456,8 +5898,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -6583,8 +6023,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -6710,8 +6148,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -6837,8 +6273,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -7010,8 +6444,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -7137,8 +6569,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "organization",
                 "attachment",
                 "page",
-                "chat",
-                "message",
               ],
               "required": false,
               "type": "string",
@@ -7244,1062 +6674,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
     ],
     "tagDetails": {
-      "ai": [
-        {
-          "operationId": "getChats",
-          "request": {
-            "path": {
-              "properties": {
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-            "query": {
-              "properties": {
-                "archived": {
-                  "enum": [
-                    "true",
-                    "false",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-                "limit": {
-                  "required": false,
-                  "type": "string",
-                },
-                "offset": {
-                  "required": false,
-                  "type": "string",
-                },
-                "order": {
-                  "enum": [
-                    "asc",
-                    "desc",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-                "q": {
-                  "maxLength": 255,
-                  "required": false,
-                  "type": "string",
-                },
-                "seqCursor": {
-                  "required": false,
-                  "type": "string",
-                },
-                "sort": {
-                  "enum": [
-                    "createdAt",
-                    "updatedAt",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Chats",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "items": {
-                    "itemType": "object",
-                    "items": {
-                      "description": "An AI chat session scoped to a user within an organization.",
-                      "properties": {
-                        "archivedAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "createdAt": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "description": {
-                          "maxLength": 1000000,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "entityType": {
-                          "enum": [
-                            "chat",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "id": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": "string",
-                        },
-                        "keywords": {
-                          "maxLength": 1000000,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "model": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "name": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "organizationId": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": "string",
-                        },
-                        "seq": {
-                          "maximum": 9007199254740991,
-                          "minimum": -9007199254740991,
-                          "required": true,
-                          "type": "integer",
-                        },
-                        "stx": {
-                          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-                          "properties": {
-                            "fieldTimestamps": {
-                              "additionalProperties": {
-                                "required": false,
-                                "type": "string",
-                              },
-                              "description": "Per-field HLC timestamps for scalar fields being changed",
-                              "required": true,
-                              "type": "object",
-                            },
-                            "mutationId": {
-                              "description": "Unique mutation ID",
-                              "maxLength": 36,
-                              "required": true,
-                              "type": "string",
-                            },
-                            "sourceId": {
-                              "description": "Tab/instance identifier for echo prevention",
-                              "maxLength": 64,
-                              "required": true,
-                              "type": "string",
-                            },
-                          },
-                          "ref": "#/components/schemas/StxBase",
-                          "required": true,
-                          "type": "object",
-                        },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "updatedAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "userId": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                      },
-                      "ref": "#/components/schemas/Chat",
-                      "type": "object",
-                    },
-                    "ref": "#/components/schemas/Chat",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "total": {
-                    "required": true,
-                    "type": "number",
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "createChat",
-          "request": {
-            "body": {
-              "contentType": "application/json",
-              "properties": {
-                "content": {
-                  "maxLength": 1000000,
-                  "minLength": 1,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-            "path": {
-              "properties": {
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "text/event-stream",
-              "description": "SSE stream with assistant response",
-              "schema": {
-                "contentType": "text/event-stream",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "deleteChats",
-          "request": {
-            "body": {
-              "contentType": "application/json",
-              "properties": {
-                "ids": {
-                  "itemType": "string",
-                  "maxItems": 50,
-                  "minItems": 1,
-                  "required": true,
-                  "type": "array",
-                },
-              },
-              "required": false,
-              "type": "object",
-            },
-            "path": {
-              "properties": {
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Success",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "data": {
-                    "required": true,
-                    "type": "array",
-                  },
-                  "rejectedIds": {
-                    "description": "Identifiers of items that could not be processed",
-                    "itemType": "string",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "rejectionReasons": {
-                    "additionalProperties": {
-                      "itemType": "string",
-                      "required": false,
-                      "type": "array",
-                    },
-                    "description": "Map of reason code to rejected item IDs",
-                    "required": false,
-                    "type": "object",
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "getMessages",
-          "request": {
-            "path": {
-              "properties": {
-                "id": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-            "query": {
-              "properties": {
-                "limit": {
-                  "required": false,
-                  "type": "string",
-                },
-                "offset": {
-                  "required": false,
-                  "type": "string",
-                },
-                "order": {
-                  "enum": [
-                    "asc",
-                    "desc",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-                "q": {
-                  "maxLength": 255,
-                  "required": false,
-                  "type": "string",
-                },
-                "seqCursor": {
-                  "required": false,
-                  "type": "string",
-                },
-                "sort": {
-                  "enum": [
-                    "createdAt",
-                  ],
-                  "required": false,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Messages",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "items": {
-                    "itemType": "object",
-                    "items": {
-                      "description": "A single message within a chat session.",
-                      "properties": {
-                        "chatId": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": "string",
-                        },
-                        "createdAt": {
-                          "required": true,
-                          "type": "string",
-                        },
-                        "description": {
-                          "maxLength": 1000000,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "entityType": {
-                          "enum": [
-                            "message",
-                          ],
-                          "required": true,
-                          "type": "string",
-                        },
-                        "error": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "id": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": "string",
-                        },
-                        "keywords": {
-                          "maxLength": 1000000,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "model": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "name": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "organizationId": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": "string",
-                        },
-                        "parts": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "additionalProperties": {
-                                "required": false,
-                                "type": "object",
-                              },
-                              "required": false,
-                              "type": "object",
-                            },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
-                            },
-                          ],
-                          "required": true,
-                        },
-                        "role": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "seq": {
-                          "maximum": 9007199254740991,
-                          "minimum": -9007199254740991,
-                          "required": true,
-                          "type": "integer",
-                        },
-                        "status": {
-                          "maxLength": 255,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "stx": {
-                          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-                          "properties": {
-                            "fieldTimestamps": {
-                              "additionalProperties": {
-                                "required": false,
-                                "type": "string",
-                              },
-                              "description": "Per-field HLC timestamps for scalar fields being changed",
-                              "required": true,
-                              "type": "object",
-                            },
-                            "mutationId": {
-                              "description": "Unique mutation ID",
-                              "maxLength": 36,
-                              "required": true,
-                              "type": "string",
-                            },
-                            "sourceId": {
-                              "description": "Tab/instance identifier for echo prevention",
-                              "maxLength": 64,
-                              "required": true,
-                              "type": "string",
-                            },
-                          },
-                          "ref": "#/components/schemas/StxBase",
-                          "required": true,
-                          "type": "object",
-                        },
-                        "tenantId": {
-                          "maxLength": 24,
-                          "required": true,
-                          "type": "string",
-                        },
-                        "updatedAt": {
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                        "usage": {
-                          "anyOf": [
-                            {
-                              "required": false,
-                              "type": "string",
-                            },
-                            {
-                              "required": false,
-                              "type": "number",
-                            },
-                            {
-                              "required": false,
-                              "type": "boolean",
-                            },
-                            {
-                              "required": false,
-                              "type": "null",
-                            },
-                            {
-                              "additionalProperties": {
-                                "required": false,
-                                "type": "object",
-                              },
-                              "required": false,
-                              "type": "object",
-                            },
-                            {
-                              "itemType": "object",
-                              "required": false,
-                              "type": "array",
-                            },
-                          ],
-                          "required": true,
-                        },
-                        "userId": {
-                          "format": "uuid",
-                          "required": true,
-                          "type": [
-                            "string",
-                            "null",
-                          ],
-                        },
-                      },
-                      "ref": "#/components/schemas/Message",
-                      "type": "object",
-                    },
-                    "ref": "#/components/schemas/Message",
-                    "required": true,
-                    "type": "array",
-                  },
-                  "total": {
-                    "required": true,
-                    "type": "number",
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "sendMessage",
-          "request": {
-            "body": {
-              "contentType": "application/json",
-              "properties": {
-                "content": {
-                  "maxLength": 1000000,
-                  "minLength": 1,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-            "path": {
-              "properties": {
-                "id": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "text/event-stream",
-              "description": "SSE stream with assistant response",
-              "schema": {
-                "contentType": "text/event-stream",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "updateChat",
-          "request": {
-            "body": {
-              "contentType": "application/json",
-              "properties": {
-                "archived": {
-                  "required": false,
-                  "type": "boolean",
-                },
-                "name": {
-                  "maxLength": 255,
-                  "required": false,
-                  "type": "string",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-            "path": {
-              "properties": {
-                "id": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "organizationId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-                "tenantId": {
-                  "maxLength": 50,
-                  "required": true,
-                  "type": "string",
-                },
-              },
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Chat updated",
-              "name": "Chat",
-              "ref": "#/components/schemas/Chat",
-              "schema": {
-                "contentType": "application/json",
-                "description": "An AI chat session scoped to a user within an organization.",
-                "properties": {
-                  "archivedAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "createdAt": {
-                    "required": true,
-                    "type": "string",
-                  },
-                  "description": {
-                    "maxLength": 1000000,
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "entityType": {
-                    "enum": [
-                      "chat",
-                    ],
-                    "required": true,
-                    "type": "string",
-                  },
-                  "id": {
-                    "format": "uuid",
-                    "required": true,
-                    "type": "string",
-                  },
-                  "keywords": {
-                    "maxLength": 1000000,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "model": {
-                    "maxLength": 255,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "name": {
-                    "maxLength": 255,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "organizationId": {
-                    "format": "uuid",
-                    "required": true,
-                    "type": "string",
-                  },
-                  "seq": {
-                    "maximum": 9007199254740991,
-                    "minimum": -9007199254740991,
-                    "required": true,
-                    "type": "integer",
-                  },
-                  "stx": {
-                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-                    "properties": {
-                      "fieldTimestamps": {
-                        "additionalProperties": {
-                          "required": false,
-                          "type": "string",
-                        },
-                        "description": "Per-field HLC timestamps for scalar fields being changed",
-                        "required": true,
-                        "type": "object",
-                      },
-                      "mutationId": {
-                        "description": "Unique mutation ID",
-                        "maxLength": 36,
-                        "required": true,
-                        "type": "string",
-                      },
-                      "sourceId": {
-                        "description": "Tab/instance identifier for echo prevention",
-                        "maxLength": 64,
-                        "required": true,
-                        "type": "string",
-                      },
-                    },
-                    "ref": "#/components/schemas/StxBase",
-                    "required": true,
-                    "type": "object",
-                  },
-                  "tenantId": {
-                    "maxLength": 24,
-                    "required": true,
-                    "type": "string",
-                  },
-                  "updatedAt": {
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                  "userId": {
-                    "format": "uuid",
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                },
-                "ref": "#/components/schemas/Chat",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-      ],
       "attachments": [
         {
           "operationId": "getAttachments",
@@ -15961,14 +14335,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": true,
                     "type": "number",
                   },
-                  "chat": {
-                    "required": true,
-                    "type": "number",
-                  },
-                  "message": {
-                    "required": true,
-                    "type": "number",
-                  },
                   "organization": {
                     "required": true,
                     "type": "number",
@@ -16100,8 +14466,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "counts": {
                         "entities": {
                           "attachment": 294,
-                          "chat": 491,
-                          "message": 182,
                           "page": 327,
                         },
                         "membership": {
@@ -16158,8 +14522,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "counts": {
                         "entities": {
                           "attachment": 321,
-                          "chat": 122,
-                          "message": 493,
                           "page": 94,
                         },
                         "membership": {
@@ -16320,14 +14682,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                                 "entities": {
                                   "properties": {
                                     "attachment": {
-                                      "required": true,
-                                      "type": "number",
-                                    },
-                                    "chat": {
-                                      "required": true,
-                                      "type": "number",
-                                    },
-                                    "message": {
                                       "required": true,
                                       "type": "number",
                                     },
@@ -16818,8 +15172,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "counts": {
                         "entities": {
                           "attachment": 188,
-                          "chat": 423,
-                          "message": 413,
                           "page": 390,
                         },
                         "membership": {
@@ -16876,8 +15228,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "counts": {
                         "entities": {
                           "attachment": 1,
-                          "chat": 153,
-                          "message": 264,
                           "page": 272,
                         },
                         "membership": {
@@ -17037,14 +15387,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                                 "entities": {
                                   "properties": {
                                     "attachment": {
-                                      "required": true,
-                                      "type": "number",
-                                    },
-                                    "chat": {
-                                      "required": true,
-                                      "type": "number",
-                                    },
-                                    "message": {
                                       "required": true,
                                       "type": "number",
                                     },
@@ -17391,8 +15733,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   "counts": {
                     "entities": {
                       "attachment": 178,
-                      "chat": 47,
-                      "message": 21,
                       "page": 257,
                     },
                     "membership": {
@@ -17547,14 +15887,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "entities": {
                             "properties": {
                               "attachment": {
-                                "required": true,
-                                "type": "number",
-                              },
-                              "chat": {
-                                "required": true,
-                                "type": "number",
-                              },
-                              "message": {
                                 "required": true,
                                 "type": "number",
                               },
@@ -18005,8 +16337,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   "counts": {
                     "entities": {
                       "attachment": 178,
-                      "chat": 47,
-                      "message": 21,
                       "page": 257,
                     },
                     "membership": {
@@ -18161,14 +16491,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "entities": {
                             "properties": {
                               "attachment": {
-                                "required": true,
-                                "type": "number",
-                              },
-                              "chat": {
-                                "required": true,
-                                "type": "number",
-                              },
-                              "message": {
                                 "required": true,
                                 "type": "number",
                               },
@@ -20743,8 +19065,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   "enum": [
                     "attachment",
                     "page",
-                    "chat",
-                    "message",
                   ],
                   "required": true,
                   "type": "string",
@@ -23442,8 +21762,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
     },
     "tags": [
       {
-        "count": 6,
-        "description": "Endpoints for AI chat sessions. Supports streaming LLM responses via SSE, per-user chat sessions scoped to a workspace (organization), and tool calling for workspace actions.",
+        "count": 0,
+        "description": "AI capability layer: a server-side tool registry and a Model Context Protocol (MCP) endpoint that exposes that registry to external MCP clients. Ships no LLM transport or agent of its own — forks build AI features and agent products (e.g. chat) on top, reusing the same tool registry.",
         "kind": "module",
         "name": "ai",
       },

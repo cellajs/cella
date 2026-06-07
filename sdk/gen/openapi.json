@@ -126,12 +126,12 @@
     {
       "name": "cella",
       "description": "Core modules provided by cella.",
-      "kind": "ownership"
+      "kind": "owner"
     },
     {
       "name": "app",
       "description": "Application-specific modules.",
-      "kind": "ownership"
+      "kind": "owner"
     },
     {
       "name": "data",
@@ -335,25 +335,14 @@
             "type": "string"
           },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "user"
-            ]
+            "enum": ["user"]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "slug",
-          "thumbnailUrl",
-          "entityType"
-        ],
+        "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
         "description": "Minimal user data for references.",
         "example": {
           "id": "d6ecd8ea-406d-4160-8fbd-8407414b54b2",
@@ -362,11 +351,7 @@
           "thumbnailUrl": null,
           "entityType": "user"
         },
-        "x-tags": [
-          "base",
-          "users",
-          "cella"
-        ]
+        "x-tags": ["base", "users", "cella"]
       },
       "UserBase": {
         "type": "object",
@@ -381,31 +366,19 @@
             "type": "string"
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "slug": {
             "type": "string"
           },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "bannerUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "email": {
             "type": "string",
@@ -413,9 +386,7 @@
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "user"
-            ]
+            "enum": ["user"]
           }
         },
         "required": [
@@ -443,11 +414,7 @@
           "bannerUrl": null,
           "email": "rosalia_bayer@hotmail.com"
         },
-        "x-tags": [
-          "base",
-          "users",
-          "cella"
-        ]
+        "x-tags": ["base", "users", "cella"]
       },
       "ContextEntityBase": {
         "type": "object",
@@ -462,34 +429,23 @@
             "type": "string"
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "tenantId": {
             "type": "string"
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "slug": {
             "type": "string"
           },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "bannerUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         },
         "required": [
@@ -515,11 +471,7 @@
           "thumbnailUrl": null,
           "bannerUrl": null
         },
-        "x-tags": [
-          "base",
-          "entities",
-          "cella"
-        ]
+        "x-tags": ["base", "entities", "cella"]
       },
       "ProductEntityBase": {
         "type": "object",
@@ -534,16 +486,10 @@
             "type": "string"
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "createdBy": {
             "allOf": [
@@ -551,10 +497,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -564,19 +507,13 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "attachment",
-              "page"
-            ]
+            "enum": ["attachment", "page"]
           },
           "keywords": {
             "type": "string"
@@ -617,11 +554,7 @@
           },
           "entityType": "page"
         },
-        "x-tags": [
-          "base",
-          "entities",
-          "cella"
-        ]
+        "x-tags": ["base", "entities", "cella"]
       },
       "MembershipBase": {
         "type": "object",
@@ -636,9 +569,7 @@
           },
           "contextType": {
             "type": "string",
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "contextId": {
             "type": "string",
@@ -650,10 +581,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "member"
-            ]
+            "enum": ["admin", "member"]
           },
           "archived": {
             "type": "boolean"
@@ -696,11 +624,7 @@
           "muted": false,
           "archived": false
         },
-        "x-tags": [
-          "base",
-          "memberships",
-          "cella"
-        ]
+        "x-tags": ["base", "memberships", "cella"]
       },
       "StxBase": {
         "type": "object",
@@ -723,98 +647,50 @@
             "description": "Per-field HLC timestamps for scalar fields being changed"
           }
         },
-        "required": [
-          "mutationId",
-          "sourceId",
-          "fieldTimestamps"
-        ],
+        "required": ["mutationId", "sourceId", "fieldTimestamps"],
         "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
         "example": {
           "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
           "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
           "fieldTimestamps": {}
         },
-        "x-tags": [
-          "base",
-          "cella"
-        ]
+        "x-tags": ["base", "cella"]
       },
       "StreamNotification": {
         "type": "object",
         "properties": {
           "action": {
             "type": "string",
-            "enum": [
-              "create",
-              "update",
-              "delete"
-            ]
+            "enum": ["create", "update", "delete"]
           },
           "entityType": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "attachment",
-              "page",
-              null
-            ]
+            "type": ["string", "null"],
+            "enum": ["attachment", "page", null]
           },
           "resourceType": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "request",
-              "membership",
-              "inactive_membership",
-              "tenant",
-              null
-            ]
+            "type": ["string", "null"],
+            "enum": ["request", "membership", "inactive_membership", "tenant", null]
           },
           "subjectId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "organizationId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "tenantId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "contextType": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "organization",
-              null
-            ],
+            "type": ["string", "null"],
+            "enum": ["organization", null],
             "description": "Context entity type for membership events (e.g. organization, project)"
           },
           "seq": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Per-entityType sequence number used for gap detection in sync"
           },
           "contextId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
           },
           "stx": {
@@ -823,43 +699,28 @@
                 "$ref": "#/components/schemas/StxBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ],
+                "type": ["object", "null"],
                 "description": "Sync transaction metadata for HLC conflict resolution"
               }
             ]
           },
           "cacheToken": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "description": "HMAC-signed token for single-entity LRU cache access"
           },
           "batchUntilSeq": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "description": "Last seq for a batched notification — client should fetch range"
           },
           "deletedIds": {
-            "type": [
-              "array",
-              "null"
-            ],
+            "type": ["array", "null"],
             "items": {
               "type": "string"
             },
             "description": "Entity IDs in a delete batch"
           },
           "propagation": {
-            "type": [
-              "object",
-              "null"
-            ],
+            "type": ["object", "null"],
             "properties": {
               "sourceType": {
                 "type": "string",
@@ -888,13 +749,7 @@
                 "description": "Target entity IDs that need the source reference removed"
               }
             },
-            "required": [
-              "sourceType",
-              "targetType",
-              "field",
-              "update",
-              "remove"
-            ],
+            "required": ["sourceType", "targetType", "field", "update", "remove"],
             "description": "Embedded entity propagation hint for cross-entity cache invalidation"
           }
         },
@@ -935,11 +790,7 @@
           "deletedIds": null,
           "propagation": null
         },
-        "x-tags": [
-          "data",
-          "entities",
-          "cella"
-        ]
+        "x-tags": ["data", "entities", "cella"]
       },
       "BadRequestError": {
         "allOf": [
@@ -951,9 +802,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  400
-                ]
+                "enum": [400]
               }
             }
           }
@@ -967,10 +816,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "ApiError": {
         "type": "object",
@@ -991,23 +837,11 @@
           },
           "severity": {
             "type": "string",
-            "enum": [
-              "fatal",
-              "error",
-              "warn",
-              "info",
-              "debug",
-              "trace"
-            ]
+            "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "user",
-              "organization",
-              "attachment",
-              "page"
-            ]
+            "enum": ["user", "organization", "attachment", "page"]
           },
           "logId": {
             "type": "string"
@@ -1053,13 +887,7 @@
             }
           }
         },
-        "required": [
-          "name",
-          "message",
-          "type",
-          "status",
-          "severity"
-        ],
+        "required": ["name", "message", "type", "status", "severity"],
         "description": "Standard error response returned by all API endpoints.",
         "example": {
           "name": "BadRequestError",
@@ -1069,10 +897,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "UnauthorizedError": {
         "allOf": [
@@ -1084,9 +909,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  401
-                ]
+                "enum": [401]
               }
             }
           }
@@ -1100,10 +923,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "ForbiddenError": {
         "allOf": [
@@ -1115,9 +935,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  403
-                ]
+                "enum": [403]
               }
             }
           }
@@ -1131,10 +949,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "NotFoundError": {
         "allOf": [
@@ -1146,9 +961,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  404
-                ]
+                "enum": [404]
               }
             }
           }
@@ -1162,10 +975,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "ConflictError": {
         "allOf": [
@@ -1177,9 +987,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  409
-                ]
+                "enum": [409]
               }
             }
           }
@@ -1193,10 +1001,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "TooManyRequestsError": {
         "allOf": [
@@ -1208,9 +1013,7 @@
             "properties": {
               "status": {
                 "type": "number",
-                "enum": [
-                  429
-                ]
+                "enum": [429]
               }
             }
           }
@@ -1224,10 +1027,7 @@
           "severity": "warn",
           "timestamp": "2025-01-01T12:00:00.000Z"
         },
-        "x-tags": [
-          "errors",
-          "cella"
-        ]
+        "x-tags": ["errors", "cella"]
       },
       "Me": {
         "type": "object",
@@ -1240,10 +1040,7 @@
             "description": "Whether the current user has system admin privileges."
           }
         },
-        "required": [
-          "user",
-          "isSystemAdmin"
-        ],
+        "required": ["user", "isSystemAdmin"],
         "description": "The currently authenticated user with their system admin status.",
         "example": {
           "user": {
@@ -1270,11 +1067,7 @@
           },
           "isSystemAdmin": false
         },
-        "x-tags": [
-          "data",
-          "me",
-          "cella"
-        ]
+        "x-tags": ["data", "me", "cella"]
       },
       "User": {
         "type": "object",
@@ -1288,36 +1081,25 @@
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "user"
-            ]
+            "enum": ["user"]
           },
           "name": {
             "type": "string",
             "maxLength": 255
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "slug": {
             "type": "string",
             "maxLength": 255
           },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "bannerUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "email": {
@@ -1328,25 +1110,16 @@
             "type": "boolean"
           },
           "firstName": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "lastName": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "language": {
             "type": "string",
-            "enum": [
-              "en",
-              "nl"
-            ]
+            "enum": ["en", "nl"]
           },
           "newsletter": {
             "type": "boolean"
@@ -1358,40 +1131,23 @@
                 "type": "boolean"
               }
             },
-            "required": [
-              "finishedOnboarding"
-            ]
+            "required": ["finishedOnboarding"]
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "updatedBy": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "lastSeenAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "lastStartedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "lastSignInAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         },
         "required": [
@@ -1439,11 +1195,7 @@
           "lastSignInAt": "2024-12-13T11:17:23.643Z",
           "lastSeenAt": "2024-12-13T11:17:23.643Z"
         },
-        "x-tags": [
-          "data",
-          "users",
-          "cella"
-        ]
+        "x-tags": ["data", "users", "cella"]
       },
       "MeAuthData": {
         "type": "object",
@@ -1452,9 +1204,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "github"
-              ]
+              "enum": ["github"]
             }
           },
           "hasTotp": {
@@ -1471,82 +1221,46 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": [
-                    "regular",
-                    "impersonation",
-                    "mfa"
-                  ]
+                  "enum": ["regular", "impersonation", "mfa"]
                 },
                 "userId": {
                   "type": "string",
                   "format": "uuid"
                 },
                 "deviceName": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "deviceType": {
                   "type": "string",
-                  "enum": [
-                    "desktop",
-                    "mobile"
-                  ]
+                  "enum": ["desktop", "mobile"]
                 },
                 "deviceOs": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "browser": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "authStrategy": {
                   "type": "string",
-                  "enum": [
-                    "github",
-                    "google",
-                    "microsoft",
-                    "passkey",
-                    "totp",
-                    "email",
-                    "magic"
-                  ]
+                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                 },
                 "ipHash": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 64
                 },
                 "ipSubnetHash": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 64
                 },
                 "ipCountry": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 2
                 },
                 "ipAsn": {
-                  "type": [
-                    "integer",
-                    "null"
-                  ],
+                  "type": ["integer", "null"],
                   "minimum": -2147483648,
                   "maximum": 2147483647
                 },
@@ -1593,31 +1307,19 @@
                   "format": "uuid"
                 },
                 "deviceName": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "deviceType": {
                   "type": "string",
-                  "enum": [
-                    "desktop",
-                    "mobile"
-                  ]
+                  "enum": ["desktop", "mobile"]
                 },
                 "deviceOs": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "browser": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
+                  "type": ["string", "null"],
                   "maxLength": 255
                 },
                 "nameOnDevice": {
@@ -1641,17 +1343,10 @@
             }
           }
         },
-        "required": [
-          "enabledOAuth",
-          "hasTotp",
-          "sessions",
-          "passkeys"
-        ],
+        "required": ["enabledOAuth", "hasTotp", "sessions", "passkeys"],
         "description": "Authentication metadata for the current user session.",
         "example": {
-          "enabledOAuth": [
-            "github"
-          ],
+          "enabledOAuth": ["github"],
           "hasTotp": false,
           "sessions": [
             {
@@ -1674,11 +1369,7 @@
           ],
           "passkeys": []
         },
-        "x-tags": [
-          "data",
-          "me",
-          "cella"
-        ]
+        "x-tags": ["data", "me", "cella"]
       },
       "InactiveMembership": {
         "type": "object",
@@ -1696,9 +1387,7 @@
           },
           "contextType": {
             "type": "string",
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "contextId": {
             "type": "string",
@@ -1709,31 +1398,19 @@
             "maxLength": 255
           },
           "userId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "tokenId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "member"
-            ]
+            "enum": ["admin", "member"]
           },
           "rejectedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "createdBy": {
             "allOf": [
@@ -1741,10 +1418,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -1782,11 +1456,7 @@
           "organizationId": "4fa889f9-15ca-4730-a060-e4167170b7db",
           "tenantId": "test01"
         },
-        "x-tags": [
-          "data",
-          "memberships",
-          "cella"
-        ]
+        "x-tags": ["data", "memberships", "cella"]
       },
       "UploadToken": {
         "type": "object",
@@ -1801,10 +1471,7 @@
             "type": "boolean"
           },
           "signature": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "params": {
             "anyOf": [
@@ -1821,14 +1488,10 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "key"
-                    ]
+                    "required": ["key"]
                   }
                 },
-                "required": [
-                  "auth"
-                ],
+                "required": ["auth"],
                 "additionalProperties": {}
               },
               {
@@ -1837,13 +1500,7 @@
             ]
           }
         },
-        "required": [
-          "public",
-          "sub",
-          "s3",
-          "signature",
-          "params"
-        ],
+        "required": ["public", "sub", "s3", "signature", "params"],
         "description": "A signed token authorizing file uploads to the configured storage provider.",
         "example": {
           "public": false,
@@ -1857,11 +1514,7 @@
             }
           }
         },
-        "x-tags": [
-          "data",
-          "me",
-          "cella"
-        ]
+        "x-tags": ["data", "me", "cella"]
       },
       "Tenant": {
         "type": "object",
@@ -1876,11 +1529,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "active",
-              "suspended",
-              "archived"
-            ]
+            "enum": ["active", "suspended", "archived"]
           },
           "restrictions": {
             "type": "object",
@@ -1902,56 +1551,32 @@
                     "description": "Max API points per hour per user within this tenant"
                   }
                 },
-                "required": [
-                  "apiPointsPerHour"
-                ]
+                "required": ["apiPointsPerHour"]
               }
             },
-            "required": [
-              "quotas",
-              "rateLimits"
-            ]
+            "required": ["quotas", "rateLimits"]
           },
           "createdBy": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "subscriptionId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "subscriptionStatus": {
             "type": "string",
-            "enum": [
-              "none",
-              "trialing",
-              "active",
-              "past_due",
-              "paused",
-              "canceled"
-            ]
+            "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
           },
           "subscriptionPlan": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "createdAt": {
             "type": "string"
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "domainsCount": {
             "type": "integer",
@@ -1972,11 +1597,7 @@
           "domainsCount"
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
-        "x-tags": [
-          "data",
-          "tenants",
-          "cella"
-        ]
+        "x-tags": ["data", "tenants", "cella"]
       },
       "Request": {
         "type": "object",
@@ -1989,10 +1610,7 @@
             "format": "uuid"
           },
           "message": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "email": {
@@ -2001,24 +1619,13 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "waitlist",
-              "newsletter",
-              "contact"
-            ]
+            "enum": ["waitlist", "newsletter", "contact"]
           },
           "wasInvited": {
             "type": "boolean"
           }
         },
-        "required": [
-          "createdAt",
-          "id",
-          "message",
-          "email",
-          "type",
-          "wasInvited"
-        ],
+        "required": ["createdAt", "id", "message", "email", "type", "wasInvited"],
         "description": "A contact or waitlist submission from an unauthenticated user.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
@@ -2028,11 +1635,7 @@
           "createdAt": "2024-12-03T05:34:12.086Z",
           "wasInvited": true
         },
-        "x-tags": [
-          "data",
-          "requests",
-          "cella"
-        ]
+        "x-tags": ["data", "requests", "cella"]
       },
       "Organization": {
         "type": "object",
@@ -2046,9 +1649,7 @@
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "tenantId": {
             "type": "string",
@@ -2059,27 +1660,18 @@
             "maxLength": 255
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "slug": {
             "type": "string",
             "maxLength": 255
           },
           "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "bannerUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "createdBy": {
@@ -2088,10 +1680,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -2101,100 +1690,59 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
           "shortName": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "country": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "timezone": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "defaultLanguage": {
             "type": "string",
-            "enum": [
-              "en",
-              "nl"
-            ]
+            "enum": ["en", "nl"]
           },
           "languages": {
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "en",
-                "nl"
-              ]
+              "enum": ["en", "nl"]
             },
             "minItems": 1
           },
           "notificationEmail": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "color": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "logoUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "websiteUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "welcomeText": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 1000000
           },
           "authStrategies": {
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "github",
-                "google",
-                "microsoft",
-                "passkey",
-                "totp",
-                "email",
-                "magic"
-              ]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
             }
           },
           "chatSupport": {
@@ -2225,12 +1773,7 @@
                         "type": "number"
                       }
                     },
-                    "required": [
-                      "admin",
-                      "member",
-                      "pending",
-                      "total"
-                    ]
+                    "required": ["admin", "member", "pending", "total"]
                   },
                   "entities": {
                     "type": "object",
@@ -2239,15 +1782,10 @@
                         "type": "number"
                       }
                     },
-                    "required": [
-                      "attachment"
-                    ]
+                    "required": ["attachment"]
                   }
                 },
-                "required": [
-                  "membership",
-                  "entities"
-                ]
+                "required": ["membership", "entities"]
               }
             }
           }
@@ -2290,9 +1828,7 @@
           "country": "Tajikistan",
           "timezone": "Antarctica/Syowa",
           "defaultLanguage": "en",
-          "languages": [
-            "en"
-          ],
+          "languages": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
           "color": "#6af7b9",
           "thumbnailUrl": null,
@@ -2300,9 +1836,7 @@
           "bannerUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-          "authStrategies": [
-            "passkey"
-          ],
+          "authStrategies": ["passkey"],
           "chatSupport": false,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
@@ -2335,11 +1869,7 @@
             }
           }
         },
-        "x-tags": [
-          "data",
-          "organizations",
-          "cella"
-        ]
+        "x-tags": ["data", "organizations", "cella"]
       },
       "Page": {
         "type": "object",
@@ -2353,28 +1883,20 @@
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "page"
-            ]
+            "enum": ["page"]
           },
           "name": {
             "type": "string",
             "maxLength": 255
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "stx": {
             "$ref": "#/components/schemas/StxBase"
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 1000000
           },
           "keywords": {
@@ -2387,10 +1909,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -2400,10 +1919,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -2414,31 +1930,17 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "unpublished",
-              "published",
-              "archived"
-            ]
+            "enum": ["unpublished", "published", "archived"]
           },
           "renderMode": {
             "type": "string",
-            "enum": [
-              "default",
-              "overview",
-              "nodeOnly"
-            ]
+            "enum": ["default", "overview", "nodeOnly"]
           },
           "publicAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "parentId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "displayOrder": {
@@ -2488,11 +1990,7 @@
             "fieldTimestamps": {}
           }
         },
-        "x-tags": [
-          "data",
-          "pages",
-          "cella"
-        ]
+        "x-tags": ["data", "pages", "cella"]
       },
       "Attachment": {
         "type": "object",
@@ -2506,9 +2004,7 @@
           },
           "entityType": {
             "type": "string",
-            "enum": [
-              "attachment"
-            ]
+            "enum": ["attachment"]
           },
           "tenantId": {
             "type": "string",
@@ -2519,19 +2015,13 @@
             "maxLength": 255
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "stx": {
             "$ref": "#/components/schemas/StxBase"
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 1000000
           },
           "keywords": {
@@ -2544,10 +2034,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -2557,10 +2044,7 @@
                 "$ref": "#/components/schemas/UserMinimalBase"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": ["object", "null"]
               }
             ]
           },
@@ -2577,10 +2061,7 @@
             "maxLength": 255
           },
           "groupId": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "filename": {
@@ -2592,10 +2073,7 @@
             "maxLength": 255
           },
           "convertedContentType": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 255
           },
           "size": {
@@ -2607,17 +2085,11 @@
             "maxLength": 2048
           },
           "convertedKey": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "thumbnailKey": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "maxLength": 2048
           },
           "organizationId": {
@@ -2684,11 +2156,7 @@
           },
           "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
         },
-        "x-tags": [
-          "data",
-          "attachments",
-          "cella"
-        ]
+        "x-tags": ["data", "attachments", "cella"]
       },
       "Membership": {
         "type": "object",
@@ -2706,9 +2174,7 @@
           },
           "contextType": {
             "type": "string",
-            "enum": [
-              "organization"
-            ]
+            "enum": ["organization"]
           },
           "contextId": {
             "type": "string",
@@ -2720,26 +2186,17 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "admin",
-              "member"
-            ]
+            "enum": ["admin", "member"]
           },
           "createdBy": {
             "type": "string",
             "format": "uuid"
           },
           "updatedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "updatedBy": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "archived": {
@@ -2791,11 +2248,7 @@
           "updatedBy": null,
           "tenantId": "test01"
         },
-        "x-tags": [
-          "data",
-          "memberships",
-          "cella"
-        ]
+        "x-tags": ["data", "memberships", "cella"]
       }
     },
     "parameters": {}
@@ -2805,15 +2258,10 @@
       "get": {
         "security": [],
         "operationId": "getAuthHealth",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Auth health check",
         "description": "Returns auth health status including whether the client IP is rate-limited for email enumeration protection.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -2831,9 +2279,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "restrictedMode"
-                  ]
+                  "required": ["restrictedMode"]
                 }
               }
             }
@@ -2863,18 +2309,11 @@
       "post": {
         "security": [],
         "operationId": "checkEmail",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Check if email exists",
         "description": "Checks if a user with the specified email address exists in the system.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "emailEnumLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["emailEnumLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -2888,9 +2327,7 @@
                     "format": "email"
                   }
                 },
-                "required": [
-                  "email"
-                ]
+                "required": ["email"]
               }
             }
           }
@@ -2924,30 +2361,17 @@
       "get": {
         "security": [],
         "operationId": "invokeToken",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Invoke token session",
         "description": "Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "email-verification",
-                "oauth-verification",
-                "invitation",
-                "confirm-mfa",
-                "magic"
-              ]
+              "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2999,30 +2423,17 @@
       "get": {
         "security": [],
         "operationId": "getTokenData",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Get token data",
         "description": "Get basic token data from single-use token session, It returns basic data if the session is still valid.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "email-verification",
-                "oauth-verification",
-                "invitation",
-                "confirm-mfa",
-                "magic"
-              ]
+              "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
             },
             "required": true,
             "name": "type",
@@ -3057,9 +2468,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "email"
-                  ]
+                  "required": ["email"]
                 },
                 "example": {
                   "email": "obie.becker-hickle@demo.local",
@@ -3097,16 +2506,10 @@
           }
         ],
         "operationId": "startImpersonation",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -3161,15 +2564,10 @@
           }
         ],
         "operationId": "stopImpersonation",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Stop impersonating",
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -3201,18 +2599,11 @@
       "post": {
         "security": [],
         "operationId": "resendInvitationWithToken",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Resend invitation",
         "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "spamLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3231,9 +2622,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "email"
-                    ]
+                    "required": ["email"]
                   },
                   {
                     "type": "object",
@@ -3246,9 +2635,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "tokenId"
-                    ]
+                    "required": ["tokenId"]
                   }
                 ]
               }
@@ -3284,15 +2671,10 @@
       "post": {
         "security": [],
         "operationId": "signOut",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Sign out",
         "description": "Signs out the *current user* and clears the active session.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -3324,19 +2706,11 @@
       "post": {
         "security": [],
         "operationId": "sendMagicLink",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Send magic link",
         "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "magicLinkLimiter",
-          "spamLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["magicLinkLimiter", "spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3350,9 +2724,7 @@
                     "format": "email"
                   }
                 },
-                "required": [
-                  "email"
-                ]
+                "required": ["email"]
               }
             }
           }
@@ -3390,18 +2762,11 @@
           }
         ],
         "operationId": "generateTotpKey",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
           "200": {
@@ -3418,10 +2783,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "totpUri",
-                    "manualKey"
-                  ]
+                  "required": ["totpUri", "manualKey"]
                 },
                 "example": {
                   "totpUri": "otpauth://totp/App:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=App",
@@ -3459,18 +2821,11 @@
           }
         ],
         "operationId": "createTotp",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3484,9 +2839,7 @@
                     "pattern": "^\\d{6}$"
                   }
                 },
-                "required": [
-                  "code"
-                ]
+                "required": ["code"]
               }
             }
           }
@@ -3522,18 +2875,11 @@
           }
         ],
         "operationId": "deleteTotp",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
           "204": {
@@ -3564,18 +2910,11 @@
       "post": {
         "security": [],
         "operationId": "signInWithTotp",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "totpVerificationLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["totpVerificationLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3589,9 +2928,7 @@
                     "pattern": "^\\d{6}$"
                   }
                 },
-                "required": [
-                  "code"
-                ]
+                "required": ["code"]
               }
             }
           }
@@ -3638,18 +2975,11 @@
           }
         ],
         "operationId": "createPasskey",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3669,11 +2999,7 @@
                     "maxLength": 255
                   }
                 },
-                "required": [
-                  "attestationObject",
-                  "clientDataJSON",
-                  "nameOnDevice"
-                ]
+                "required": ["attestationObject", "clientDataJSON", "nameOnDevice"]
               }
             }
           }
@@ -3695,31 +3021,19 @@
                       "format": "uuid"
                     },
                     "deviceName": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 255
                     },
                     "deviceType": {
                       "type": "string",
-                      "enum": [
-                        "desktop",
-                        "mobile"
-                      ]
+                      "enum": ["desktop", "mobile"]
                     },
                     "deviceOs": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 255
                     },
                     "browser": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 255
                     },
                     "nameOnDevice": {
@@ -3780,18 +3094,11 @@
           }
         ],
         "operationId": "deletePasskey",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the *current user*.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -3833,18 +3140,11 @@
       "post": {
         "security": [],
         "operationId": "generatePasskeyChallenge",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "passkeyChallengeLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["passkeyChallengeLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3855,20 +3155,14 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "authentication",
-                      "mfa",
-                      "registration"
-                    ]
+                    "enum": ["authentication", "mfa", "registration"]
                   },
                   "email": {
                     "type": "string",
                     "maxLength": 255
                   }
                 },
-                "required": [
-                  "type"
-                ]
+                "required": ["type"]
               }
             }
           }
@@ -3891,16 +3185,11 @@
                       }
                     }
                   },
-                  "required": [
-                    "challengeBase64",
-                    "credentialIds"
-                  ]
+                  "required": ["challengeBase64", "credentialIds"]
                 },
                 "example": {
                   "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
-                  "credentialIds": [
-                    "3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"
-                  ]
+                  "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
                 }
               }
             }
@@ -3930,18 +3219,11 @@
       "post": {
         "security": [],
         "operationId": "signInWithPasskey",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -3964,23 +3246,14 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "authentication",
-                      "mfa"
-                    ]
+                    "enum": ["authentication", "mfa"]
                   },
                   "email": {
                     "type": "string",
                     "maxLength": 255
                   }
                 },
-                "required": [
-                  "credentialId",
-                  "clientDataJSON",
-                  "authenticatorObject",
-                  "signature",
-                  "type"
-                ]
+                "required": ["credentialId", "clientDataJSON", "authenticatorObject", "signature", "type"]
               }
             }
           }
@@ -4023,27 +3296,17 @@
       "get": {
         "security": [],
         "operationId": "github",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "auth",
-                "connect",
-                "invite",
-                "verify"
-              ],
+              "enum": ["auth", "connect", "invite", "verify"],
               "default": "auth"
             },
             "required": false,
@@ -4096,27 +3359,17 @@
       "get": {
         "security": [],
         "operationId": "google",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "auth",
-                "connect",
-                "invite",
-                "verify"
-              ],
+              "enum": ["auth", "connect", "invite", "verify"],
               "default": "auth"
             },
             "required": false,
@@ -4169,27 +3422,17 @@
       "get": {
         "security": [],
         "operationId": "microsoft",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "auth",
-                "connect",
-                "invite",
-                "verify"
-              ],
+              "enum": ["auth", "connect", "invite", "verify"],
               "default": "auth"
             },
             "required": false,
@@ -4242,18 +3485,11 @@
       "get": {
         "security": [],
         "operationId": "githubCallback",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -4334,18 +3570,11 @@
       "get": {
         "security": [],
         "operationId": "googleCallback",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -4402,18 +3631,11 @@
       "get": {
         "security": [],
         "operationId": "microsoftCallback",
-        "tags": [
-          "auth",
-          "cella"
-        ],
+        "tags": ["auth", "cella"],
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -4474,15 +3696,10 @@
           }
         ],
         "operationId": "getMe",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Get self",
         "description": "Returns the *current user*.",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -4548,18 +3765,11 @@
           }
         ],
         "operationId": "updateMe",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Update self",
         "description": "Updates the *current user*.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -4569,45 +3779,30 @@
                 "type": "object",
                 "properties": {
                   "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 255,
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 255,
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "language": {
                     "type": "string",
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
+                    "enum": ["en", "nl"]
                   },
                   "newsletter": {
                     "type": "boolean"
                   },
                   "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "slug": {
@@ -4689,18 +3884,11 @@
           }
         ],
         "operationId": "deleteMe",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Delete self",
         "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
           "204": {
@@ -4735,18 +3923,11 @@
           }
         ],
         "operationId": "toggleMfa",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Toggle MFA",
         "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "content": {
@@ -4770,12 +3951,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "credentialId",
-                      "clientDataJSON",
-                      "authenticatorObject",
-                      "signature"
-                    ]
+                    "required": ["credentialId", "clientDataJSON", "authenticatorObject", "signature"]
                   },
                   "totpCode": {
                     "type": "string",
@@ -4785,9 +3961,7 @@
                     "type": "boolean"
                   }
                 },
-                "required": [
-                  "mfaRequired"
-                ]
+                "required": ["mfaRequired"]
               }
             }
           }
@@ -4854,15 +4028,10 @@
           }
         ],
         "operationId": "getMyAuth",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Get auth data",
         "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -4874,9 +4043,7 @@
                   "$ref": "#/components/schemas/MeAuthData"
                 },
                 "example": {
-                  "enabledOAuth": [
-                    "github"
-                  ],
+                  "enabledOAuth": ["github"],
                   "hasTotp": false,
                   "sessions": [
                     {
@@ -4931,16 +4098,10 @@
           }
         ],
         "operationId": "getMyInvitations",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -4963,20 +4124,14 @@
                             "$ref": "#/components/schemas/InactiveMembership"
                           }
                         },
-                        "required": [
-                          "entity",
-                          "inactiveMembership"
-                        ]
+                        "required": ["entity", "inactiveMembership"]
                       }
                     },
                     "total": {
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -5069,18 +4224,11 @@
           }
         ],
         "operationId": "deleteMySessions",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Terminate sessions",
         "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "content": {
@@ -5097,9 +4245,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -5134,10 +4280,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -5171,19 +4314,11 @@
           }
         ],
         "operationId": "deleteMyMembership",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Leave entity",
         "description": "Removes the *current user* from an entity they are a member of.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -5198,9 +4333,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
             "required": true,
             "name": "entityType",
@@ -5240,15 +4373,10 @@
           }
         ],
         "operationId": "getUploadToken",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -5279,11 +4407,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "avatar",
-                "cover",
-                "attachment"
-              ]
+              "enum": ["avatar", "cover", "attachment"]
             },
             "required": true,
             "name": "templateId",
@@ -5338,18 +4462,11 @@
       "get": {
         "security": [],
         "operationId": "unsubscribeMe",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Unsubscribe",
         "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "tokenLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -5402,15 +4519,10 @@
           }
         ],
         "operationId": "getMyMemberships",
-        "tags": [
-          "me",
-          "cella"
-        ],
+        "tags": ["me", "cella"],
         "summary": "Get my memberships",
         "description": "Returns all memberships for the *current user* across all context entities.",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5428,9 +4540,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "items"
-                  ]
+                  "required": ["items"]
                 }
               }
             }
@@ -5464,15 +4574,10 @@
           }
         ],
         "operationId": "getUnseenCounts",
-        "tags": [
-          "seen",
-          "cella"
-        ],
+        "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
         "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5522,19 +4627,11 @@
           }
         ],
         "operationId": "checkSlug",
-        "tags": [
-          "entities",
-          "cella"
-        ],
+        "tags": ["entities", "cella"],
         "summary": "Check slug availability",
         "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -5562,15 +4659,10 @@
                   },
                   "entityType": {
                     "type": "string",
-                    "enum": [
-                      "organization"
-                    ]
+                    "enum": ["organization"]
                   }
                 },
-                "required": [
-                  "slug",
-                  "entityType"
-                ]
+                "required": ["slug", "entityType"]
               }
             }
           }
@@ -5604,15 +4696,10 @@
       "get": {
         "security": [],
         "operationId": "getPublicStream",
-        "tags": [
-          "entities",
-          "cella"
-        ],
+        "tags": ["entities", "cella"],
         "summary": "Public entity SSE stream",
         "description": "SSE stream for real-time public entity changes. No authentication required.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5647,15 +4734,10 @@
       "post": {
         "security": [],
         "operationId": "postPublicCatchup",
-        "tags": [
-          "entities",
-          "cella"
-        ],
+        "tags": ["entities", "cella"],
         "summary": "Public entity catchup",
         "description": "Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -5771,34 +4853,20 @@
                                   "description": "Target entity IDs that need the source reference removed"
                                 }
                               },
-                              "required": [
-                                "sourceType",
-                                "targetType",
-                                "field",
-                                "update",
-                                "remove"
-                              ]
+                              "required": ["sourceType", "targetType", "field", "update", "remove"]
                             }
                           }
                         },
-                        "required": [
-                          "deletedByType"
-                        ]
+                        "required": ["deletedByType"]
                       },
                       "description": "Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }"
                     },
                     "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "description": "Last activity ID (use as offset for next request)"
                     }
                   },
-                  "required": [
-                    "changes",
-                    "cursor"
-                  ]
+                  "required": ["changes", "cursor"]
                 }
               }
             }
@@ -5832,15 +4900,10 @@
           }
         ],
         "operationId": "getAppStream",
-        "tags": [
-          "entities",
-          "cella"
-        ],
+        "tags": ["entities", "cella"],
         "summary": "App event SSE stream",
         "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
-        "x-guard": [
-          "authGuard"
-        ],
+        "x-guard": ["authGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5879,18 +4942,11 @@
           }
         ],
         "operationId": "postAppCatchup",
-        "tags": [
-          "entities",
-          "cella"
-        ],
+        "tags": ["entities", "cella"],
         "summary": "App event catchup",
         "description": "Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6005,34 +5061,20 @@
                                   "description": "Target entity IDs that need the source reference removed"
                                 }
                               },
-                              "required": [
-                                "sourceType",
-                                "targetType",
-                                "field",
-                                "update",
-                                "remove"
-                              ]
+                              "required": ["sourceType", "targetType", "field", "update", "remove"]
                             }
                           }
                         },
-                        "required": [
-                          "deletedByType"
-                        ]
+                        "required": ["deletedByType"]
                       },
                       "description": "Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }"
                     },
                     "cursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "description": "Last activity ID (use as offset for next request)"
                     }
                   },
-                  "required": [
-                    "changes",
-                    "cursor"
-                  ]
+                  "required": ["changes", "cursor"]
                 },
                 "example": {
                   "changes": {
@@ -6074,20 +5116,11 @@
           }
         ],
         "operationId": "systemInvite",
-        "tags": [
-          "system",
-          "cella"
-        ],
+        "tags": ["system", "cella"],
         "summary": "Invite to system",
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "spamLimiter",
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6106,9 +5139,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "emails"
-                ]
+                "required": ["emails"]
               }
             }
           }
@@ -6146,11 +5177,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds",
-                    "invitesSentCount"
-                  ]
+                  "required": ["data", "rejectedIds", "invitesSentCount"]
                 },
                 "example": {
                   "data": [],
@@ -6189,19 +5216,11 @@
           }
         ],
         "operationId": "deleteUsers",
-        "tags": [
-          "system",
-          "cella"
-        ],
+        "tags": ["system", "cella"],
         "summary": "Delete users",
         "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6219,9 +5238,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -6256,10 +5273,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -6293,19 +5307,11 @@
           }
         ],
         "operationId": "updateUser",
-        "tags": [
-          "system",
-          "cella"
-        ],
+        "tags": ["system", "cella"],
         "summary": "Update user",
         "description": "Updates a *user* identified by ID.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -6325,45 +5331,30 @@
                 "type": "object",
                 "properties": {
                   "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 255,
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 255,
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "language": {
                     "type": "string",
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
+                    "enum": ["en", "nl"]
                   },
                   "newsletter": {
                     "type": "boolean"
                   },
                   "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "slug": {
@@ -6439,19 +5430,11 @@
           }
         ],
         "operationId": "sendNewsletter",
-        "tags": [
-          "system",
-          "cella"
-        ],
+        "tags": ["system", "cella"],
         "summary": "Newsletter to members",
         "description": "Sends a newsletter to members of one or more specified organizations.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -6489,10 +5472,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": [
-                        "admin",
-                        "member"
-                      ]
+                      "enum": ["admin", "member"]
                     },
                     "minItems": 1
                   },
@@ -6505,12 +5485,7 @@
                     "maxLength": 1000000
                   }
                 },
-                "required": [
-                  "organizationIds",
-                  "roles",
-                  "subject",
-                  "content"
-                ]
+                "required": ["organizationIds", "roles", "subject", "content"]
               }
             }
           }
@@ -6548,16 +5523,10 @@
           }
         ],
         "operationId": "getTenants",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Get list of tenants",
         "description": "Returns a paginated list of tenants. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -6573,10 +5542,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "createdAt",
-                "name"
-              ],
+              "enum": ["createdAt", "name"],
               "default": "createdAt"
             },
             "required": false,
@@ -6586,10 +5552,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -6623,11 +5586,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "suspended",
-                "archived"
-              ],
+              "enum": ["active", "suspended", "archived"],
               "description": "Filter by status"
             },
             "required": false,
@@ -6654,10 +5613,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 }
               }
             }
@@ -6689,19 +5645,11 @@
           }
         ],
         "operationId": "createTenant",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Create a new tenant",
         "description": "Creates a new tenant. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6718,16 +5666,10 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "suspended",
-                      "archived"
-                    ]
+                    "enum": ["active", "suspended", "archived"]
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -6772,18 +5714,11 @@
           }
         ],
         "operationId": "selfCreateTenant",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
         "description": "Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -6799,9 +5734,7 @@
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -6846,19 +5779,11 @@
           }
         ],
         "operationId": "updateTenant",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Update a tenant",
         "description": "Updates a tenant by ID. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -6886,35 +5811,18 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "suspended",
-                      "archived"
-                    ]
+                    "enum": ["active", "suspended", "archived"]
                   },
                   "subscriptionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "subscriptionStatus": {
                     "type": "string",
-                    "enum": [
-                      "none",
-                      "trialing",
-                      "active",
-                      "past_due",
-                      "paused",
-                      "canceled"
-                    ]
+                    "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
                   },
                   "subscriptionPlan": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "restrictions": {
@@ -6985,17 +5893,10 @@
           }
         ],
         "operationId": "getDomains",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "List domains for a tenant",
         "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard",
-          "tenantGuard"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7035,23 +5936,14 @@
                         "type": "boolean"
                       },
                       "verificationToken": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 50
                       },
                       "verifiedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "lastCheckedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "createdAt": {
                         "type": "string"
@@ -7099,20 +5991,11 @@
           }
         ],
         "operationId": "createDomain",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Add a domain to a tenant",
         "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -7139,9 +6022,7 @@
                     "pattern": "^[a-z0-9].*[a-z0-9]$"
                   }
                 },
-                "required": [
-                  "domain"
-                ]
+                "required": ["domain"]
               }
             }
           }
@@ -7170,30 +6051,16 @@
                       "type": "boolean"
                     },
                     "verifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "lastCheckedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "createdAt": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "tenantId",
-                    "domain",
-                    "verified",
-                    "verifiedAt",
-                    "lastCheckedAt",
-                    "createdAt"
-                  ]
+                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
                 }
               }
             }
@@ -7227,20 +6094,11 @@
           }
         ],
         "operationId": "deleteDomain",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Remove a domain",
         "description": "Removes a domain from a tenant. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -7286,30 +6144,16 @@
                       "type": "boolean"
                     },
                     "verifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "lastCheckedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "createdAt": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "tenantId",
-                    "domain",
-                    "verified",
-                    "verifiedAt",
-                    "lastCheckedAt",
-                    "createdAt"
-                  ]
+                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
                 }
               }
             }
@@ -7341,17 +6185,10 @@
           }
         ],
         "operationId": "getDomain",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Get domain with verification token",
         "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard",
-          "tenantGuard"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7398,23 +6235,14 @@
                       "type": "boolean"
                     },
                     "verificationToken": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 50
                     },
                     "verifiedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "lastCheckedAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "createdAt": {
                       "type": "string"
@@ -7463,20 +6291,11 @@
           }
         ],
         "operationId": "verifyDomain",
-        "tags": [
-          "tenants",
-          "cella"
-        ],
+        "tags": ["tenants", "cella"],
         "summary": "Verify domain ownership via DNS",
         "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -7528,23 +6347,14 @@
                           "type": "boolean"
                         },
                         "verificationToken": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "maxLength": 50
                         },
                         "verifiedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lastCheckedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -7574,16 +6384,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "recordsFound",
-                        "expectedToken"
-                      ]
+                      "required": ["recordsFound", "expectedToken"]
                     }
                   },
-                  "required": [
-                    "success",
-                    "domain"
-                  ]
+                  "required": ["success", "domain"]
                 }
               }
             }
@@ -7613,19 +6417,11 @@
       "post": {
         "security": [],
         "operationId": "createRequest",
-        "tags": [
-          "requests",
-          "cella"
-        ],
+        "tags": ["requests", "cella"],
         "summary": "Create request",
         "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
-        "x-guard": [
-          "publicGuard"
-        ],
-        "x-rate-limiter": [
-          "emailEnumLimiter",
-          "spamLimiter"
-        ],
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["emailEnumLimiter", "spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -7641,25 +6437,14 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "waitlist",
-                      "newsletter",
-                      "contact"
-                    ]
+                    "enum": ["waitlist", "newsletter", "contact"]
                   },
                   "message": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   }
                 },
-                "required": [
-                  "email",
-                  "type",
-                  "message"
-                ]
+                "required": ["email", "type", "message"]
               }
             }
           }
@@ -7710,16 +6495,10 @@
           }
         ],
         "operationId": "getRequests",
-        "tags": [
-          "requests",
-          "cella"
-        ],
+        "tags": ["requests", "cella"],
         "summary": "Get list of requests",
         "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7735,12 +6514,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "id",
-                "email",
-                "type",
-                "createdAt"
-              ],
+              "enum": ["id", "email", "type", "createdAt"],
               "default": "createdAt"
             },
             "required": false,
@@ -7750,10 +6524,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -7803,10 +6574,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -7859,19 +6627,11 @@
           }
         ],
         "operationId": "deleteRequests",
-        "tags": [
-          "requests",
-          "cella"
-        ],
+        "tags": ["requests", "cella"],
         "summary": "Delete requests",
         "description": "Deletes one or more *requests* from the system by their IDs.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -7889,9 +6649,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -7926,10 +6684,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -7959,15 +6714,10 @@
       "get": {
         "security": [],
         "operationId": "getPublicCounts",
-        "tags": [
-          "metrics",
-          "cella"
-        ],
+        "tags": ["metrics", "cella"],
         "summary": "Get public counts",
         "description": "Returns basic count metrics for entity types such as `users` and `organizations`.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -7991,12 +6741,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "user",
-                    "organization",
-                    "attachment",
-                    "page"
-                  ]
+                  "required": ["user", "organization", "attachment", "page"]
                 },
                 "example": {
                   "user": 150,
@@ -8034,21 +6779,11 @@
           }
         ],
         "operationId": "createOrganizations",
-        "tags": [
-          "organizations",
-          "cella",
-          "context"
-        ],
+        "tags": ["organizations", "cella", "context"],
         "summary": "Create organizations",
         "description": "Creates one or more new *organizations* within a tenant.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "insertEntityLock",
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard"],
+        "x-rate-limiter": ["insertEntityLock", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -8088,11 +6823,7 @@
                       "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
                     }
                   },
-                  "required": [
-                    "id",
-                    "name",
-                    "slug"
-                  ]
+                  "required": ["id", "name", "slug"]
                 },
                 "minItems": 1,
                 "maxItems": 10
@@ -8143,12 +6874,7 @@
                                             "type": "number"
                                           }
                                         },
-                                        "required": [
-                                          "admin",
-                                          "member",
-                                          "pending",
-                                          "total"
-                                        ]
+                                        "required": ["admin", "member", "pending", "total"]
                                       },
                                       "entities": {
                                         "type": "object",
@@ -8157,20 +6883,13 @@
                                             "type": "number"
                                           }
                                         },
-                                        "required": [
-                                          "attachment"
-                                        ]
+                                        "required": ["attachment"]
                                       }
                                     },
-                                    "required": [
-                                      "membership",
-                                      "entities"
-                                    ]
+                                    "required": ["membership", "entities"]
                                   }
                                 },
-                                "required": [
-                                  "membership"
-                                ]
+                                "required": ["membership"]
                               }
                             }
                           }
@@ -8187,9 +6906,7 @@
                           "country": "Tajikistan",
                           "timezone": "Antarctica/Syowa",
                           "defaultLanguage": "en",
-                          "languages": [
-                            "en"
-                          ],
+                          "languages": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                           "color": "#6af7b9",
                           "thumbnailUrl": null,
@@ -8197,9 +6914,7 @@
                           "bannerUrl": null,
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                          "authStrategies": [
-                            "passkey"
-                          ],
+                          "authStrategies": ["passkey"],
                           "chatSupport": false,
                           "createdAt": "2024-12-25T15:29:47.111Z",
                           "createdBy": null,
@@ -8232,11 +6947,7 @@
                             }
                           }
                         },
-                        "x-tags": [
-                          "data",
-                          "organizations",
-                          "cella"
-                        ]
+                        "x-tags": ["data", "organizations", "cella"]
                       }
                     },
                     "rejectedIds": {
@@ -8257,10 +6968,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 },
                 "example": {
                   "data": [
@@ -8275,9 +6983,7 @@
                       "country": "Slovakia",
                       "timezone": "Asia/Kabul",
                       "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
+                      "languages": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
                       "color": "#bc1f77",
                       "thumbnailUrl": null,
@@ -8285,9 +6991,7 @@
                       "bannerUrl": null,
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
-                      "authStrategies": [
-                        "passkey"
-                      ],
+                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "createdAt": "2024-04-19T14:04:35.773Z",
                       "createdBy": null,
@@ -8331,9 +7035,7 @@
                       "country": "Romania",
                       "timezone": "Indian/Reunion",
                       "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
+                      "languages": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
                       "color": "#39ae6d",
                       "thumbnailUrl": null,
@@ -8341,9 +7043,7 @@
                       "bannerUrl": null,
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
-                      "authStrategies": [
-                        "passkey"
-                      ],
+                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "createdAt": "2024-02-25T13:01:35.301Z",
                       "createdBy": null,
@@ -8409,20 +7109,11 @@
           }
         ],
         "operationId": "deleteOrganizations",
-        "tags": [
-          "organizations",
-          "cella",
-          "context"
-        ],
+        "tags": ["organizations", "cella", "context"],
         "summary": "Delete organizations",
         "description": "Deletes one or more *organizations* by ID within a tenant.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -8451,9 +7142,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -8488,10 +7177,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -8525,18 +7211,10 @@
           }
         ],
         "operationId": "getOrganizations",
-        "tags": [
-          "organizations",
-          "cella",
-          "context"
-        ],
+        "tags": ["organizations", "cella", "context"],
         "summary": "Get list of organizations",
         "description": "Returns a list of *organizations*.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard",
-          "relatableGuard"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8552,12 +7230,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "createdAt",
-                "displayOrder"
-              ],
+              "enum": ["id", "name", "createdAt", "displayOrder"],
               "default": "displayOrder"
             },
             "required": false,
@@ -8567,10 +7240,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -8613,10 +7283,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "admin",
-                "member"
-              ]
+              "enum": ["admin", "member"]
             },
             "required": false,
             "name": "role",
@@ -8625,10 +7292,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ]
+              "enum": ["true", "false"]
             },
             "required": false,
             "name": "excludeArchived",
@@ -8661,10 +7325,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -8679,9 +7340,7 @@
                       "country": "Portugal",
                       "timezone": "Pacific/Efate",
                       "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
+                      "languages": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
                       "color": "#b6e6ee",
                       "thumbnailUrl": null,
@@ -8689,9 +7348,7 @@
                       "bannerUrl": null,
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
-                      "authStrategies": [
-                        "passkey"
-                      ],
+                      "authStrategies": ["passkey"],
                       "chatSupport": false,
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": null,
@@ -8735,9 +7392,7 @@
                       "country": "Chile",
                       "timezone": "Europe/Samara",
                       "defaultLanguage": "en",
-                      "languages": [
-                        "en"
-                      ],
+                      "languages": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
                       "color": "#b87a1e",
                       "thumbnailUrl": null,
@@ -8745,9 +7400,7 @@
                       "bannerUrl": null,
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
-                      "authStrategies": [
-                        "passkey"
-                      ],
+                      "authStrategies": ["passkey"],
                       "chatSupport": true,
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": null,
@@ -8815,17 +7468,10 @@
           }
         ],
         "operationId": "getOrganization",
-        "tags": [
-          "organizations",
-          "cella",
-          "context"
-        ],
+        "tags": ["organizations", "cella", "context"],
         "summary": "Get organization",
         "description": "Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard"
-        ],
+        "x-guard": ["authGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8891,9 +7537,7 @@
                   "country": "Tajikistan",
                   "timezone": "Antarctica/Syowa",
                   "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
+                  "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                   "color": "#6af7b9",
                   "thumbnailUrl": null,
@@ -8901,9 +7545,7 @@
                   "bannerUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "authStrategies": [
-                    "passkey"
-                  ],
+                  "authStrategies": ["passkey"],
                   "chatSupport": false,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
@@ -8966,20 +7608,11 @@
           }
         ],
         "operationId": "updateOrganization",
-        "tags": [
-          "organizations",
-          "cella",
-          "context"
-        ],
+        "tags": ["organizations", "cella", "context"],
         "summary": "Update organization",
         "description": "Updates an *organization* within a tenant.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -9020,108 +7653,64 @@
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "shortName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 255,
                     "pattern": "^[\\p{L}\\d\\-., '&()]+$"
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "defaultLanguage": {
                     "type": "string",
-                    "enum": [
-                      "en",
-                      "nl"
-                    ]
+                    "enum": ["en", "nl"]
                   },
                   "languages": {
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": [
-                        "en",
-                        "nl"
-                      ]
+                      "enum": ["en", "nl"]
                     },
                     "minItems": 1
                   },
                   "notificationEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "color": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "thumbnailUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "logoUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "bannerUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "websiteUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2048
                   },
                   "welcomeText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 1000000
                   },
                   "authStrategies": {
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": [
-                        "github",
-                        "google",
-                        "microsoft",
-                        "passkey",
-                        "totp",
-                        "email",
-                        "magic"
-                      ]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                     }
                   },
                   "chatSupport": {
@@ -9151,9 +7740,7 @@
                   "country": "Tajikistan",
                   "timezone": "Antarctica/Syowa",
                   "defaultLanguage": "en",
-                  "languages": [
-                    "en"
-                  ],
+                  "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
                   "color": "#6af7b9",
                   "thumbnailUrl": null,
@@ -9161,9 +7748,7 @@
                   "bannerUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "authStrategies": [
-                    "passkey"
-                  ],
+                  "authStrategies": ["passkey"],
                   "chatSupport": false,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
@@ -9224,16 +7809,10 @@
       "get": {
         "security": [],
         "operationId": "getPages",
-        "tags": [
-          "pages",
-          "cella",
-          "product"
-        ],
+        "tags": ["pages", "cella", "product"],
         "summary": "Get pages",
         "description": "Get all matching *pages*.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -9249,12 +7828,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "status",
-                "createdAt",
-                "displayOrder"
-              ],
+              "enum": ["name", "status", "createdAt", "displayOrder"],
               "default": "createdAt"
             },
             "required": false,
@@ -9264,10 +7838,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -9317,10 +7888,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -9401,20 +7969,11 @@
           }
         ],
         "operationId": "createPages",
-        "tags": [
-          "pages",
-          "cella",
-          "product"
-        ],
+        "tags": ["pages", "cella", "product"],
         "summary": "Create pages",
         "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -9440,10 +7999,7 @@
                       "$ref": "#/components/schemas/StxBase"
                     }
                   },
-                  "required": [
-                    "id",
-                    "stx"
-                  ]
+                  "required": ["id", "stx"]
                 },
                 "minItems": 1,
                 "maxItems": 50
@@ -9483,10 +8039,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 },
                 "example": {
                   "data": [
@@ -9571,10 +8124,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 },
                 "example": {
                   "data": [
@@ -9655,20 +8205,11 @@
           }
         ],
         "operationId": "deletePages",
-        "tags": [
-          "pages",
-          "cella",
-          "product"
-        ],
+        "tags": ["pages", "cella", "product"],
         "summary": "Delete pages",
         "description": "Delete one or more *pages* by ID.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -9695,15 +8236,10 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "mutationId",
-                      "sourceId"
-                    ]
+                    "required": ["mutationId", "sourceId"]
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -9738,10 +8274,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -9771,20 +8304,12 @@
       "get": {
         "security": [],
         "operationId": "getPage",
-        "tags": [
-          "pages",
-          "cella",
-          "product"
-        ],
+        "tags": ["pages", "cella", "product"],
         "summary": "Get page",
         "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
-        "x-guard": [
-          "publicGuard"
-        ],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
-        "x-cache": [
-          "publicCache"
-        ],
+        "x-cache": ["publicCache"],
         "parameters": [
           {
             "schema": {
@@ -9855,20 +8380,11 @@
           }
         ],
         "operationId": "updatePage",
-        "tags": [
-          "pages",
-          "cella",
-          "product"
-        ],
+        "tags": ["pages", "cella", "product"],
         "summary": "Update page",
         "description": "Update a single *page* by ID.",
-        "x-guard": [
-          "authGuard",
-          "sysAdminGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -9911,49 +8427,29 @@
                         "maxLength": 255
                       },
                       "description": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 1000000
                       },
                       "keywords": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "displayOrder": {
                         "type": "number"
                       },
                       "status": {
                         "type": "string",
-                        "enum": [
-                          "unpublished",
-                          "published",
-                          "archived"
-                        ]
+                        "enum": ["unpublished", "published", "archived"]
                       },
                       "renderMode": {
                         "type": "string",
-                        "enum": [
-                          "default",
-                          "overview",
-                          "nodeOnly"
-                        ]
+                        "enum": ["default", "overview", "nodeOnly"]
                       },
                       "parentId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 50
                       },
                       "publicAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       }
                     }
                   },
@@ -9961,10 +8457,7 @@
                     "$ref": "#/components/schemas/StxBase"
                   }
                 },
-                "required": [
-                  "ops",
-                  "stx"
-                ]
+                "required": ["ops", "stx"]
               }
             }
           }
@@ -10031,16 +8524,10 @@
           }
         ],
         "operationId": "getUsers",
-        "tags": [
-          "users",
-          "cella"
-        ],
+        "tags": ["users", "cella"],
         "summary": "Get list of users",
         "description": "Returns a list of *users*.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10056,14 +8543,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "email",
-                "role",
-                "createdAt",
-                "lastSeenAt"
-              ],
+              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"],
               "default": "createdAt"
             },
             "required": false,
@@ -10073,10 +8553,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -10110,9 +8587,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "admin"
-              ]
+              "enum": ["admin"]
             },
             "required": false,
             "name": "role",
@@ -10138,25 +8613,14 @@
                             "type": "object",
                             "properties": {
                               "lastSeenAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "role": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "admin",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["admin", null]
                               }
                             },
-                            "required": [
-                              "lastSeenAt"
-                            ]
+                            "required": ["lastSeenAt"]
                           }
                         ],
                         "description": "Base user schema with essential fields for identification and display.",
@@ -10172,21 +8636,14 @@
                           "bannerUrl": null,
                           "email": "rosalia_bayer@hotmail.com"
                         },
-                        "x-tags": [
-                          "base",
-                          "users",
-                          "cella"
-                        ]
+                        "x-tags": ["base", "users", "cella"]
                       }
                     },
                     "total": {
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -10297,17 +8754,10 @@
           }
         ],
         "operationId": "getUser",
-        "tags": [
-          "users",
-          "cella"
-        ],
+        "tags": ["users", "cella"],
         "summary": "Get user",
         "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard",
-          "relatableGuard"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10351,15 +8801,10 @@
                       "type": "object",
                       "properties": {
                         "lastSeenAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "lastSeenAt"
-                      ]
+                      "required": ["lastSeenAt"]
                     }
                   ],
                   "description": "Base user schema with essential fields for identification and display.",
@@ -10375,11 +8820,7 @@
                     "bannerUrl": null,
                     "email": "rosalia_bayer@hotmail.com"
                   },
-                  "x-tags": [
-                    "base",
-                    "users",
-                    "cella"
-                  ]
+                  "x-tags": ["base", "users", "cella"]
                 },
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
@@ -10435,18 +8876,10 @@
           }
         ],
         "operationId": "getAttachments",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Get attachments",
         "description": "Returns a paginated list of *attachments* for the organization.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10480,11 +8913,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "createdAt",
-                "contentType"
-              ],
+              "enum": ["name", "createdAt", "contentType"],
               "default": "createdAt"
             },
             "required": false,
@@ -10494,10 +8923,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -10547,10 +8973,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -10645,21 +9068,11 @@
           }
         ],
         "operationId": "createAttachments",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
         "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -10722,46 +9135,26 @@
                       "type": "boolean"
                     },
                     "groupId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "format": "uuid"
                     },
                     "convertedContentType": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 255
                     },
                     "convertedKey": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 2048
                     },
                     "thumbnailKey": {
-                      "type": [
-                        "string",
-                        "null"
-                      ],
+                      "type": ["string", "null"],
                       "maxLength": 2048
                     },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
                     }
                   },
-                  "required": [
-                    "id",
-                    "filename",
-                    "contentType",
-                    "size",
-                    "originalKey",
-                    "bucketName",
-                    "stx"
-                  ]
+                  "required": ["id", "filename", "contentType", "size", "originalKey", "bucketName", "stx"]
                 },
                 "minItems": 1,
                 "maxItems": 50
@@ -10801,10 +9194,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 },
                 "example": {
                   "data": [
@@ -10903,10 +9293,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 },
                 "example": {
                   "data": [
@@ -11001,21 +9388,11 @@
           }
         ],
         "operationId": "deleteAttachments",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
         "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11062,15 +9439,10 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "mutationId",
-                      "sourceId"
-                    ]
+                    "required": ["mutationId", "sourceId"]
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -11105,10 +9477,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -11142,24 +9511,12 @@
           }
         ],
         "operationId": "getPresignedUrl",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Get presigned URL",
         "description": "Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "presignedUrlLimiter"
-        ],
-        "x-cache": [
-          "httpCache"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["presignedUrlLimiter"],
+        "x-cache": ["httpCache"],
         "parameters": [
           {
             "schema": {
@@ -11229,22 +9586,12 @@
           }
         ],
         "operationId": "getAttachment",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
         "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
-        "x-cache": [
-          "appCache"
-        ],
+        "x-cache": ["appCache"],
         "parameters": [
           {
             "schema": {
@@ -11341,21 +9688,11 @@
           }
         ],
         "operationId": "updateAttachment",
-        "tags": [
-          "attachments",
-          "cella",
-          "product"
-        ],
+        "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",
         "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11425,10 +9762,7 @@
                     "$ref": "#/components/schemas/StxBase"
                   }
                 },
-                "required": [
-                  "ops",
-                  "stx"
-                ]
+                "required": ["ops", "stx"]
               }
             }
           }
@@ -11502,21 +9836,11 @@
           }
         ],
         "operationId": "membershipInvite",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Create memberships",
         "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "spamLimiter",
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11549,9 +9873,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
             "required": true,
             "name": "entityType",
@@ -11578,16 +9900,10 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "admin",
-                      "member"
-                    ]
+                    "enum": ["admin", "member"]
                   }
                 },
-                "required": [
-                  "emails",
-                  "role"
-                ]
+                "required": ["emails", "role"]
               }
             }
           }
@@ -11627,11 +9943,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds",
-                    "invitesSentCount"
-                  ]
+                  "required": ["data", "rejectedIds", "invitesSentCount"]
                 },
                 "example": {
                   "data": [
@@ -11681,20 +9993,11 @@
           }
         ],
         "operationId": "deleteMemberships",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Delete memberships",
         "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11727,9 +10030,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
             "required": true,
             "name": "entityType",
@@ -11752,9 +10053,7 @@
                     "maxItems": 50
                   }
                 },
-                "required": [
-                  "ids"
-                ]
+                "required": ["ids"]
               }
             }
           }
@@ -11789,10 +10088,7 @@
                       "description": "Map of reason code to rejected item IDs"
                     }
                   },
-                  "required": [
-                    "data",
-                    "rejectedIds"
-                  ]
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -11826,20 +10122,11 @@
           }
         ],
         "operationId": "updateMembership",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Update membership",
         "description": "Updates the *membership* metadata, such as role, `muted`, or `archived` status.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11878,10 +10165,7 @@
                 "properties": {
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "admin",
-                      "member"
-                    ]
+                    "enum": ["admin", "member"]
                   },
                   "muted": {
                     "type": "boolean"
@@ -11953,19 +10237,11 @@
           }
         ],
         "operationId": "handleMembershipInvitation",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
-        "x-guard": [
-          "authGuard",
-          "crossTenantGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -11980,10 +10256,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "accept",
-                "reject"
-              ]
+              "enum": ["accept", "reject"]
             },
             "required": true,
             "name": "acceptOrReject",
@@ -12041,17 +10314,10 @@
           }
         ],
         "operationId": "getMembers",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -12085,14 +10351,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "id",
-                "name",
-                "email",
-                "role",
-                "createdAt",
-                "lastSeenAt"
-              ],
+              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"],
               "default": "createdAt"
             },
             "required": false,
@@ -12102,10 +10361,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -12148,9 +10404,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
             "required": true,
             "name": "entityType",
@@ -12159,10 +10413,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "admin",
-                "member"
-              ]
+              "enum": ["admin", "member"]
             },
             "required": false,
             "name": "role",
@@ -12196,19 +10447,13 @@
                             "type": "object",
                             "properties": {
                               "lastSeenAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "membership": {
                                 "$ref": "#/components/schemas/MembershipBase"
                               }
                             },
-                            "required": [
-                              "lastSeenAt",
-                              "membership"
-                            ]
+                            "required": ["lastSeenAt", "membership"]
                           }
                         ],
                         "description": "Base user schema with essential fields for identification and display.",
@@ -12224,21 +10469,14 @@
                           "bannerUrl": null,
                           "email": "rosalia_bayer@hotmail.com"
                         },
-                        "x-tags": [
-                          "base",
-                          "users",
-                          "cella"
-                        ]
+                        "x-tags": ["base", "users", "cella"]
                       }
                     },
                     "total": {
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -12341,17 +10579,10 @@
           }
         ],
         "operationId": "getPendingMemberships",
-        "tags": [
-          "memberships",
-          "cella"
-        ],
+        "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
         "description": "Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -12385,9 +10616,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "createdAt"
-              ],
+              "enum": ["createdAt"],
               "default": "createdAt"
             },
             "required": false,
@@ -12397,10 +10626,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -12443,9 +10669,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization"
-              ]
+              "enum": ["organization"]
             },
             "required": true,
             "name": "entityType",
@@ -12473,21 +10697,11 @@
                             "format": "email"
                           },
                           "thumbnailUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "role": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "enum": [
-                              "admin",
-                              "member",
-                              null
-                            ]
+                            "type": ["string", "null"],
+                            "enum": ["admin", "member", null]
                           },
                           "createdAt": {
                             "type": "string"
@@ -12498,32 +10712,19 @@
                                 "$ref": "#/components/schemas/UserMinimalBase"
                               },
                               {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ]
+                                "type": ["object", "null"]
                               }
                             ]
                           }
                         },
-                        "required": [
-                          "id",
-                          "email",
-                          "thumbnailUrl",
-                          "role",
-                          "createdAt",
-                          "createdBy"
-                        ]
+                        "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ]
+                  "required": ["items", "total"]
                 },
                 "example": {
                   "items": [
@@ -12590,20 +10791,11 @@
           }
         ],
         "operationId": "markSeen",
-        "tags": [
-          "seen",
-          "cella"
-        ],
+        "tags": ["seen", "cella"],
         "summary": "Mark entities as seen",
         "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
-        "x-guard": [
-          "authGuard",
-          "tenantGuard",
-          "orgGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -12644,17 +10836,11 @@
                   },
                   "entityType": {
                     "type": "string",
-                    "enum": [
-                      "attachment",
-                      "page"
-                    ],
+                    "enum": ["attachment", "page"],
                     "description": "Entity type for all IDs in this batch"
                   }
                 },
-                "required": [
-                  "entityIds",
-                  "entityType"
-                ]
+                "required": ["entityIds", "entityType"]
               }
             }
           }
@@ -12673,9 +10859,7 @@
                       "description": "Number of entities newly marked as seen (deduped)"
                     }
                   },
-                  "required": [
-                    "newCount"
-                  ]
+                  "required": ["newCount"]
                 }
               }
             }
@@ -12708,19 +10892,12 @@
             "cookieAuth": []
           }
         ],
-        "tags": [
-          "yjs",
-          "cella"
-        ],
+        "tags": ["yjs", "cella"],
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
         "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-        "x-guard": [
-          "authGuard"
-        ],
-        "x-rate-limiter": [
-          "pointsLimiter"
-        ],
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -12763,9 +10940,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "token"
-                  ]
+                  "required": ["token"]
                 }
               }
             }
@@ -12798,10 +10973,7 @@
             "cookieAuth": []
           }
         ],
-        "tags": [
-          "yjs",
-          "cella"
-        ],
+        "tags": ["yjs", "cella"],
         "operationId": "verifyYjsEntity",
         "summary": "Verify Yjs entity access",
         "description": "Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.",
@@ -12858,9 +11030,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "allowed"
-                  ]
+                  "required": ["allowed"]
                 }
               }
             }

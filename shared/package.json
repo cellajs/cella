@@ -38,7 +38,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260603.1",
+    "@typescript/native-preview": "7.0.0-dev.20260606.1",
     "strip-json-comments": "^5.0.3",
     "typescript": "^6.0.3"
   }

@@ -7,7 +7,7 @@ export interface OpenApiTag {
   /** Parent tag name for hierarchical grouping (OpenAPI 3.2.0). */
   parent?: string;
   /** Machine-readable category (OpenAPI 3.2.0). */
-  kind?: 'module' | 'ownership' | 'schema' | 'entity';
+  kind?: 'module' | 'owner' | 'schema' | 'entity';
   /** Link to external documentation. */
   externalDocs?: { url: string; description?: string };
   /** For schema-kind tags: marks the fallback bucket when a component schema has no `x-tags`. */
@@ -26,16 +26,16 @@ export const registerTag = (tag: OpenApiTag): OpenApiTag => {
 /** Returns all registered tags in registration (display) order. */
 export const getRegisteredTags = (): OpenApiTag[] => [...tagRegistry.values()];
 
-/** Default ownership tags — registered eagerly so module tags can reference them as parents. */
+/** Default owner tags — registered eagerly so module tags can reference them as parents. */
 registerTag({
   tag: 'cella',
-  kind: 'ownership',
+  kind: 'owner',
   description: 'Core modules provided by cella.',
 });
 
 registerTag({
   tag: 'app',
-  kind: 'ownership',
+  kind: 'owner',
   description: 'Application-specific modules.',
 });
 

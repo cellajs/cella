@@ -131,7 +131,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["attachments"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A product entity for file attachment metadata.",
     "example": {
@@ -199,7 +199,7 @@
     "tagsByKind": {
       "schema": ["base"],
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Base schema for entities with memberships (e.g. organization).",
     "example": {
@@ -284,7 +284,7 @@
     "tagsByKind": {
       "schema": ["base"],
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Base schema for content entities with creator tracking (e.g. page, attachment).",
     "example": {
@@ -408,9 +408,21 @@
           "required": true,
           "description": "Embedded entity propagation hint for cross-entity cache invalidation",
           "properties": {
-            "sourceType": { "type": "string", "required": true, "description": "Entity type that triggered the propagation (e.g. label)" },
-            "targetType": { "type": "string", "required": true, "description": "Entity type whose cache should be invalidated (e.g. task)" },
-            "field": { "type": "string", "required": true, "description": "Field on the target entity that references the source (e.g. labels)" },
+            "sourceType": {
+              "type": "string",
+              "required": true,
+              "description": "Entity type that triggered the propagation (e.g. label)"
+            },
+            "targetType": {
+              "type": "string",
+              "required": true,
+              "description": "Entity type whose cache should be invalidated (e.g. task)"
+            },
+            "field": {
+              "type": "string",
+              "required": true,
+              "description": "Field on the target entity that references the source (e.g. labels)"
+            },
             "update": {
               "type": "array",
               "required": true,
@@ -431,7 +443,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Realtime notification delivered via SSE for entity and membership changes.",
     "example": {
@@ -539,14 +551,18 @@
           },
           "ref": "#/components/schemas/User"
         },
-        "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
+        "isSystemAdmin": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the current user has system admin privileges."
+        }
       }
     },
     "schemaTag": "data",
     "tagsByKind": {
       "schema": ["data"],
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "The currently authenticated user with their system admin status.",
     "example": {
@@ -695,7 +711,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Authentication metadata for the current user session.",
     "example": {
@@ -764,7 +780,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A signed token authorizing file uploads to the configured storage provider.",
     "example": {
@@ -840,7 +856,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A membership record for a user who has not yet accepted an invitation.",
     "example": {
@@ -905,7 +921,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A user's membership in a context entity, including role and activity data.",
     "example": {
@@ -961,7 +977,7 @@
     "tagsByKind": {
       "schema": ["base"],
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Core membership fields shared across active and inactive memberships.",
     "example": {
@@ -1173,7 +1189,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["organizations"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "The main context entity is an organization.",
     "example": {
@@ -1354,7 +1370,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["pages"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A content page for documentation purposes.",
     "example": {
@@ -1407,7 +1423,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["requests"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A contact or waitlist submission from an unauthenticated user.",
     "example": {
@@ -1482,14 +1498,18 @@
           "type": ["string", "null"],
           "required": true
         },
-        "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
+        "domainsCount": {
+          "type": "integer",
+          "required": true,
+          "description": "Number of domains claimed by this tenant"
+        }
       }
     },
     "schemaTag": "data",
     "tagsByKind": {
       "schema": ["data"],
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A tenant representing an isolated data partition for multi-tenancy."
   },
@@ -1575,7 +1595,7 @@
     "tagsByKind": {
       "schema": ["data"],
       "module": ["users"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "A user with profile data and activity timestamps.",
     "example": {
@@ -1640,7 +1660,7 @@
     "tagsByKind": {
       "schema": ["base"],
       "module": ["users"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Base user schema with essential fields for identification and display.",
     "example": {
@@ -1681,7 +1701,7 @@
     "tagsByKind": {
       "schema": ["base"],
       "module": ["users"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Minimal user data for references.",
     "example": {
@@ -1743,7 +1763,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Standard error response returned by all API endpoints.",
     "example": {
@@ -1806,7 +1826,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when the request is malformed or contains invalid data.",
     "extendsRef": "#/components/schemas/ApiError",
@@ -1870,7 +1890,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when the request conflicts with current resource state.",
     "extendsRef": "#/components/schemas/ApiError",
@@ -1934,7 +1954,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when the user lacks permission for the requested action.",
     "extendsRef": "#/components/schemas/ApiError",
@@ -1998,7 +2018,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when the requested resource cannot be found.",
     "extendsRef": "#/components/schemas/ApiError",
@@ -2041,7 +2061,7 @@
     "schemaTag": "base",
     "tagsByKind": {
       "schema": ["base"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
     "example": {
@@ -2101,7 +2121,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when rate limits are exceeded.",
     "extendsRef": "#/components/schemas/ApiError",
@@ -2165,7 +2185,7 @@
     "schemaTag": "errors",
     "tagsByKind": {
       "schema": ["errors"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "description": "Error returned when authentication is missing or invalid.",
     "extendsRef": "#/components/schemas/ApiError",

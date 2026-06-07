@@ -25,7 +25,7 @@ export const openApiConfig: UserConfig = {
     path: './gen',
     source: {
       fileName: 'openapi',
-      path: '../frontend/public/static',
+      path: './gen',
     },
   },
   parser: {

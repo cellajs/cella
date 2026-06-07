@@ -54,7 +54,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       },
     }));
 
-    // Generate tag kind columns dynamically (one column per kind, e.g., 'module', 'ownership')
+    // Generate tag kind columns dynamically (one column per kind, e.g., 'module', 'owner')
     const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
       key: `tag-${kind}`,
       name: kind.replace(/^\w/, (c) => c.toUpperCase()),

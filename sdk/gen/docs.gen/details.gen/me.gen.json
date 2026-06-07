@@ -89,7 +89,11 @@
               },
               "ref": "#/components/schemas/User"
             },
-            "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
+            "isSystemAdmin": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the current user has system admin privileges."
+            }
           },
           "ref": "#/components/schemas/Me",
           "contentType": "application/json"
@@ -1248,10 +1252,7 @@
         "properties": {
           "public": {
             "required": false,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "boolean", "required": false }
-            ]
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
           },
           "organizationId": { "type": "string", "required": false },
           "templateId": {

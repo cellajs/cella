@@ -11,13 +11,28 @@
       "required": true,
       "kind": "middleware",
       "values": {
-        "publicGuard": { "name": "public", "description": "No authentication required; provides baseDb without RLS context" },
-        "authGuard": { "name": "auth", "description": "Requires valid session and sets auth context (user, memberships, baseDb)" },
-        "crossTenantGuard": { "name": "crossTenant", "description": "Requires authGuard and sets baseDb for cross-tenant access" },
+        "publicGuard": {
+          "name": "public",
+          "description": "No authentication required; provides baseDb without RLS context"
+        },
+        "authGuard": {
+          "name": "auth",
+          "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
+        },
+        "crossTenantGuard": {
+          "name": "crossTenant",
+          "description": "Requires authGuard and sets baseDb for cross-tenant access"
+        },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
-        "relatableGuard": { "name": "relatable", "description": "Checks that the requesting user shares at least one organization with the target user" },
+        "relatableGuard": {
+          "name": "relatable",
+          "description": "Checks that the requesting user shares at least one organization with the target user"
+        },
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
-        "tenantGuard": { "name": "tenant", "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context" }
+        "tenantGuard": {
+          "name": "tenant",
+          "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+        }
       }
     },
     {
@@ -29,13 +44,31 @@
       "values": {
         "spamLimiter": { "name": "spam", "description": "Max 10 requests/hour per IP for email-sending endpoints" },
         "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
-        "presignedUrlLimiter": { "name": "presignedUrl", "description": "Max 2000 requests/hour per user for presigned URLs" },
-        "totpVerificationLimiter": { "name": "totpVerification", "description": "Blocks IP for 30 min after 5 failed TOTP attempts" },
-        "magicLinkLimiter": { "name": "magicLink", "description": "Max 2 magic link emails per 30 min per email address" },
-        "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Max 30 passkey challenges/hour per IP" },
-        "pointsLimiter": { "name": "points", "description": "Consumes 1 API point(s) per request against per-tenant hourly budget" },
+        "presignedUrlLimiter": {
+          "name": "presignedUrl",
+          "description": "Max 2000 requests/hour per user for presigned URLs"
+        },
+        "totpVerificationLimiter": {
+          "name": "totpVerification",
+          "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
+        },
+        "magicLinkLimiter": {
+          "name": "magicLink",
+          "description": "Max 2 magic link emails per 30 min per email address"
+        },
+        "passkeyChallengeLimiter": {
+          "name": "passkeyChallenge",
+          "description": "Max 30 passkey challenges/hour per IP"
+        },
+        "pointsLimiter": {
+          "name": "points",
+          "description": "Consumes 1 API point(s) per request against per-tenant hourly budget"
+        },
         "tokenLimiter": { "name": "token", "description": "Blocks IP for 30 min after 10 consecutive token failures" },
-        "insertEntityLock": { "name": "insertEntityLock", "description": "Prevents concurrent entity creation for the same tenant" }
+        "insertEntityLock": {
+          "name": "insertEntityLock",
+          "description": "Prevents concurrent entity creation for the same tenant"
+        }
       }
     },
     {

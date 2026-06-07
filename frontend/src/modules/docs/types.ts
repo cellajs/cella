@@ -49,7 +49,7 @@ export interface GenOperationSummary {
   hasExample: boolean;
   /** Dynamic x-extensions keyed by camelCase name */
   extensions: Record<string, string[]>;
-  /** Tags grouped by their kind (e.g., { module: ['tasks'], ownership: ['app'] }) */
+  /** Tags grouped by their kind (e.g., { module: ['tasks'], owner: ['app'] }) */
   tagsByKind: Record<string, string[]>;
   /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */
   entityType?: string;
@@ -298,7 +298,7 @@ export interface GenComponentSchema {
   extendsRef?: string;
   /** Schema tag for categorization — name of a backend-registered `kind: 'schema'` tag. */
   schemaTag: string;
-  /** Tags grouped by their kind (e.g., { module: ['pages'], ownership: ['cella'], schema: ['data'] }). */
+  /** Tags grouped by their kind (e.g., { module: ['pages'], owner: ['cella'], schema: ['data'] }). */
   tagsByKind: Record<string, string[]>;
   /** References to this schema from operations (operationIds that use it) */
   usedBy?: string[];

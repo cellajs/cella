@@ -4,7 +4,7 @@
  * `schemaTags()` is the canonical way to set the `x-tags` extension on a
  * component schema. It accepts any combination of registered tag names —
  * typically one schema-kind tag (`data` / `base` / `errors`), optionally
- * followed by a module tag (e.g. `pages`) and an ownership tag (`cella` /
+ * followed by a module tag (e.g. `pages`) and an owner tag (`cella` /
  * `app`). Validation (every tag must exist in the registry) happens later
  * in `init-docs` once all module files have registered their tags.
  *

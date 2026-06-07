@@ -22,7 +22,7 @@ sdk
     ├── console.ts                 Logging helpers
     ├── .spec-hash                 Cached spec hash (skip redundant runs)
     └── plugins/
-        ├── openapi-parser/        Parses spec, generates docs to frontend/public/static/docs.gen/
+        ├── openapi-parser/        Parses spec, generates docs to sdk/gen/docs.gen/
         └── tsdoc/                 Adds TSDoc comments to generated functions
 ```
 

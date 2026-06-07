@@ -185,9 +185,21 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "sourceType": { "type": "string", "required": true, "description": "Entity type that triggered the propagation (e.g. label)" },
-                        "targetType": { "type": "string", "required": true, "description": "Entity type whose cache should be invalidated (e.g. task)" },
-                        "field": { "type": "string", "required": true, "description": "Field on the target entity that references the source (e.g. labels)" },
+                        "sourceType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type that triggered the propagation (e.g. label)"
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type whose cache should be invalidated (e.g. task)"
+                        },
+                        "field": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Field on the target entity that references the source (e.g. labels)"
+                        },
                         "update": {
                           "type": "array",
                           "required": true,
@@ -262,7 +274,11 @@
       "body": {
         "type": "object",
         "properties": {
-          "cursor": { "type": "string", "required": false, "description": "Last activity cursor received by the client (LSN-based). Omit on first sync." },
+          "cursor": {
+            "type": "string",
+            "required": false,
+            "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
+          },
           "seqs": {
             "type": "object",
             "required": false,
@@ -388,9 +404,21 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "sourceType": { "type": "string", "required": true, "description": "Entity type that triggered the propagation (e.g. label)" },
-                        "targetType": { "type": "string", "required": true, "description": "Entity type whose cache should be invalidated (e.g. task)" },
-                        "field": { "type": "string", "required": true, "description": "Field on the target entity that references the source (e.g. labels)" },
+                        "sourceType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type that triggered the propagation (e.g. label)"
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type whose cache should be invalidated (e.g. task)"
+                        },
+                        "field": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Field on the target entity that references the source (e.g. labels)"
+                        },
                         "update": {
                           "type": "array",
                           "required": true,
@@ -473,7 +501,11 @@
       "body": {
         "type": "object",
         "properties": {
-          "cursor": { "type": "string", "required": false, "description": "Last activity cursor received by the client (LSN-based). Omit on first sync." },
+          "cursor": {
+            "type": "string",
+            "required": false,
+            "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
+          },
           "seqs": {
             "type": "object",
             "required": false,

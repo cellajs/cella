@@ -19,7 +19,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -42,7 +42,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -65,7 +65,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -88,7 +88,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -111,7 +111,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -134,7 +134,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -157,7 +157,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -180,7 +180,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -203,7 +203,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -226,7 +226,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -249,7 +249,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -272,7 +272,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -295,7 +295,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -318,7 +318,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -341,7 +341,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -364,7 +364,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -387,7 +387,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -410,7 +410,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -433,7 +433,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -456,7 +456,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -479,7 +479,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -502,7 +502,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -525,7 +525,7 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -548,7 +548,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -571,7 +571,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -594,7 +594,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -617,7 +617,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -640,7 +640,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -663,7 +663,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -686,7 +686,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -709,7 +709,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -732,7 +732,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -755,7 +755,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -778,7 +778,7 @@
     },
     "tagsByKind": {
       "module": ["me"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -801,7 +801,7 @@
     },
     "tagsByKind": {
       "module": ["seen"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -824,7 +824,7 @@
     },
     "tagsByKind": {
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -847,7 +847,7 @@
     },
     "tagsByKind": {
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -870,7 +870,7 @@
     },
     "tagsByKind": {
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -893,7 +893,7 @@
     },
     "tagsByKind": {
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -916,7 +916,7 @@
     },
     "tagsByKind": {
       "module": ["entities"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -939,7 +939,7 @@
     },
     "tagsByKind": {
       "module": ["system"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -962,7 +962,7 @@
     },
     "tagsByKind": {
       "module": ["system"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -985,7 +985,7 @@
     },
     "tagsByKind": {
       "module": ["system"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1008,7 +1008,7 @@
     },
     "tagsByKind": {
       "module": ["system"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1031,7 +1031,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1054,7 +1054,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1077,7 +1077,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1100,7 +1100,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1123,7 +1123,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1146,7 +1146,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1169,7 +1169,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1192,7 +1192,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1215,7 +1215,7 @@
     },
     "tagsByKind": {
       "module": ["tenants"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1238,7 +1238,7 @@
     },
     "tagsByKind": {
       "module": ["requests"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1261,7 +1261,7 @@
     },
     "tagsByKind": {
       "module": ["requests"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1284,7 +1284,7 @@
     },
     "tagsByKind": {
       "module": ["requests"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1307,7 +1307,7 @@
     },
     "tagsByKind": {
       "module": ["metrics"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1330,7 +1330,7 @@
     },
     "tagsByKind": {
       "module": ["organizations"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["context"]
     },
     "entityType": "organization"
@@ -1355,7 +1355,7 @@
     },
     "tagsByKind": {
       "module": ["organizations"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["context"]
     },
     "entityType": "organization"
@@ -1380,7 +1380,7 @@
     },
     "tagsByKind": {
       "module": ["organizations"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["context"]
     },
     "entityType": "organization"
@@ -1405,7 +1405,7 @@
     },
     "tagsByKind": {
       "module": ["organizations"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["context"]
     },
     "entityType": "organization"
@@ -1430,7 +1430,7 @@
     },
     "tagsByKind": {
       "module": ["organizations"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["context"]
     },
     "entityType": "organization"
@@ -1455,7 +1455,7 @@
     },
     "tagsByKind": {
       "module": ["pages"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "page"
@@ -1480,7 +1480,7 @@
     },
     "tagsByKind": {
       "module": ["pages"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "page"
@@ -1505,7 +1505,7 @@
     },
     "tagsByKind": {
       "module": ["pages"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "page"
@@ -1530,7 +1530,7 @@
     },
     "tagsByKind": {
       "module": ["pages"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "page"
@@ -1555,7 +1555,7 @@
     },
     "tagsByKind": {
       "module": ["pages"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "page"
@@ -1580,7 +1580,7 @@
     },
     "tagsByKind": {
       "module": ["users"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "entityType": "user"
   },
@@ -1604,7 +1604,7 @@
     },
     "tagsByKind": {
       "module": ["users"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     },
     "entityType": "user"
   },
@@ -1628,7 +1628,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1653,7 +1653,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1678,7 +1678,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1703,7 +1703,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1728,7 +1728,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1753,7 +1753,7 @@
     },
     "tagsByKind": {
       "module": ["attachments"],
-      "ownership": ["cella"],
+      "owner": ["cella"],
       "entity": ["product"]
     },
     "entityType": "attachment"
@@ -1778,7 +1778,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1801,7 +1801,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1824,7 +1824,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1847,7 +1847,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1870,7 +1870,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1893,7 +1893,7 @@
     },
     "tagsByKind": {
       "module": ["memberships"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1916,7 +1916,7 @@
     },
     "tagsByKind": {
       "module": ["seen"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1939,7 +1939,7 @@
     },
     "tagsByKind": {
       "module": ["yjs"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   },
   {
@@ -1962,7 +1962,7 @@
     },
     "tagsByKind": {
       "module": ["yjs"],
-      "ownership": ["cella"]
+      "owner": ["cella"]
     }
   }
 ]

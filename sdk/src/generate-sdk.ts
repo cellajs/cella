@@ -29,13 +29,11 @@ const watchMode = process.argv.includes('--watch');
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const sdkDir = resolve(srcDir, '..');
 const rootDir = resolve(sdkDir, '..');
-const frontendDir = resolve(rootDir, 'frontend');
 const lockFilePath = resolve(srcDir, '.generate-sdk.lock');
 const specHashFile = resolve(srcDir, '.spec-hash');
 const specPath = resolve(rootDir, 'backend/openapi.cache.json');
+// Single generated output tree: SDK code + openapi.json + docs.gen all live here.
 const finalOutputPath = resolve(sdkDir, 'gen');
-const finalDocsPath = resolve(frontendDir, 'public/static/docs.gen');
-const publicStaticPath = resolve(frontendDir, 'public/static');
 
 /** Small delay helper. */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -178,27 +176,21 @@ const generate = async () => {
   // Generate unique temp folder paths per invocation
   const tempSuffix = createHash('sha256').update(`${Date.now()}-${process.pid}`).digest('hex').slice(0, 8);
   const tempOutputPath = resolve(srcDir, `temp-api-gen-${tempSuffix}`);
-  const tempDocsPath = resolve(srcDir, `temp-docs-gen-${tempSuffix}`);
+  // Docs JSON is generated inside the temp output tree so the entire sdk/gen
+  // folder (SDK code + openapi.json + docs.gen) is generated and compared as one.
+  const tempDocsPath = resolve(tempOutputPath, 'docs.gen');
 
   try {
     // Clean up any old temp folders from previous runs
     try {
       const entries = readdirSync(srcDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (
-          entry.isDirectory() &&
-          (entry.name.startsWith('temp-api-gen-') || entry.name.startsWith('temp-docs-gen-'))
-        ) {
+        if (entry.isDirectory() && entry.name.startsWith('temp-api-gen-')) {
           rmSync(resolve(srcDir, entry.name), { recursive: true });
         }
       }
     } catch {
       // Ignore cleanup errors
-    }
-
-    // Ensure public/static directory exists for source output
-    if (!existsSync(publicStaticPath)) {
-      mkdirSync(publicStaticPath, { recursive: true });
     }
 
     console.info(`${timestamp()} ${loadingMark} Generating SDK to temp folder...`);
@@ -241,7 +233,7 @@ const generate = async () => {
           ? {
               ...(typeof sourceConfig === 'object' ? sourceConfig : {}),
               fileName: sourceFileName,
-              path: publicStaticPath,
+              path: tempOutputPath,
             }
           : undefined,
       },
@@ -258,16 +250,10 @@ const generate = async () => {
       // Biome may fail if directory is newly created or empty, continue anyway
     }
 
-    // Compare temp output with existing output for both api.gen and docs.gen
-    const tempApiHash = hashDirectory(tempOutputPath);
-    const existingApiHash = hashDirectory(finalOutputPath);
-    const apiChanged = tempApiHash !== existingApiHash;
+    // Compare temp output (SDK code + openapi.json + docs.gen) with existing output as one tree
+    const changed = hashDirectory(tempOutputPath) !== hashDirectory(finalOutputPath);
 
-    const tempDocsHash = hashDirectory(tempDocsPath);
-    const existingDocsHash = hashDirectory(finalDocsPath);
-    const docsChanged = tempDocsHash !== existingDocsHash;
-
-    if (!apiChanged && !docsChanged) {
+    if (!changed) {
       saveSpecHash();
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
       console.info(
@@ -276,14 +262,7 @@ const generate = async () => {
       return;
     }
 
-    // Log what changed
-    if (apiChanged && docsChanged) {
-      console.info(`${timestamp()} [Openapi gen] ${changeMark} SDK and docs changed — updating output...`);
-    } else if (apiChanged) {
-      console.info(`${timestamp()} [Openapi gen] ${changeMark} SDK changed — updating output...`);
-    } else {
-      console.info(`${timestamp()} [Openapi gen] ${changeMark} Docs changed — updating output...`);
-    }
+    console.info(`${timestamp()} [Openapi gen] ${changeMark} SDK changed — updating output...`);
 
     // Helper to safely update a directory
     const updateDirectory = (tempPath: string, finalPath: string) => {
@@ -313,30 +292,16 @@ const generate = async () => {
       }
     };
 
-    // Update api.gen if changed
-    if (apiChanged) {
-      updateDirectory(tempOutputPath, finalOutputPath);
-    }
-
-    // Update docs.gen if changed
-    if (docsChanged) {
-      updateDirectory(tempDocsPath, finalDocsPath);
-    }
-
-    // Copy raw source files to public/static for runtime fetching (docs viewer)
-    for (const file of ['zod.gen.ts', 'types.gen.ts']) {
-      const src = resolve(finalOutputPath, file);
-      if (existsSync(src)) cpSync(src, resolve(publicStaticPath, file));
-    }
+    // Update sdk/gen (SDK code + openapi.json + docs.gen) in one atomic pass
+    updateDirectory(tempOutputPath, finalOutputPath);
 
     saveSpecHash();
 
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
     console.info(`${timestamp()} [Openapi gen] ${checkMark} SDK generation complete (${elapsed}s)`);
   } finally {
-    // Clean up temp folders
+    // Clean up temp folder (docs.gen is nested inside, removed with it)
     if (existsSync(tempOutputPath)) rmSync(tempOutputPath, { recursive: true });
-    if (existsSync(tempDocsPath)) rmSync(tempDocsPath, { recursive: true });
     releaseLock();
   }
 };

@@ -24,7 +24,7 @@ interface OperationsTableBarProps {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
   /**
    * Tag-kind filter values discovered in the dataset, e.g.
-   * `{ ownership: ['cella', 'app'], entity: ['context', 'product'] }`.
+   * `{ owner: ['cella', 'app'], entity: ['context', 'product'] }`.
    * Each entry becomes a group of options in the filter dropdown.
    */
   tagFilters: Record<string, string[]>;

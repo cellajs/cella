@@ -2,7 +2,7 @@
  * OpenAPI Parser Plugin for API Documentation
  *
  * Transforms OpenAPI spec into lightweight operation summaries for docs UI.
- * Generates JSON files in public/static/docs.gen for runtime fetching:
+ * Generates JSON files in the SDK's docs.gen folder for runtime fetching:
  * - operations.json, tags.json, schemas.json, info.json
  * - details/{tagName}.json for per-tag operation details
  *
@@ -38,10 +38,10 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   const spec = plugin.context.spec as OpenApiSpec;
   const parsed = parseOpenApiSpec(spec);
 
-  // Use configured docsOutputPath if provided, otherwise default to public/static/docs.gen
+  // Use configured docsOutputPath if provided, otherwise default to <output>/docs.gen
   const publicDocsDir = plugin.config.docsOutputPath
     ? plugin.config.docsOutputPath
-    : resolve(plugin.context.config.output.path, '../../public/static/docs.gen');
+    : resolve(plugin.context.config.output.path, 'docs.gen');
 
   mkdirSync(publicDocsDir, { recursive: true });
 
@@ -55,7 +55,7 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
     writeFileSync(tagJsonPath, formatJson(tagOperations), 'utf-8');
   }
 
-  // Write JSON files to public/static/docs.gen for runtime fetching (reduces bundle size)
+  // Write docs JSON files for runtime fetching (reduces bundle size)
   writeFileSync(resolve(publicDocsDir, 'operations.gen.json'), formatJson(parsed.operations), 'utf-8');
   writeFileSync(resolve(publicDocsDir, 'tags.gen.json'), formatJson(parsed.tags), 'utf-8');
   writeFileSync(resolve(publicDocsDir, 'info.gen.json'), formatJson(parsed.info), 'utf-8');

@@ -1256,10 +1256,7 @@
         "properties": {
           "fullResponse": {
             "required": false,
-            "anyOf": [
-              { "type": "string", "required": false },
-              { "type": "boolean", "required": false }
-            ]
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
           }
         }
       },
