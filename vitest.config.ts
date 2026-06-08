@@ -28,12 +28,7 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      // All reporters write under a single `coverage/` directory at the repo root
-      // (the default reportsDirectory) — nothing is emitted next to source files.
-      // - text-summary: compact 4-line totals in the terminal
-      // - html:         browsable coverage/index.html for drill-down
-      // - lcov:         coverage/lcov.info for CI / editor coverage tooling
-      // - json-summary: coverage/coverage-summary.json consumed by `pnpm cella --stats`
+      reportOnFailure: true,
       reporter: ['text-summary', 'html', 'lcov', 'json-summary'],
       include: [
         'backend/src/**/*.ts',
@@ -51,8 +46,6 @@ export default defineConfig({
         '**/tests/**',
         '**/mocks/**',
         '**/scripts/**',
-        // Generated SDK output — never hand-written, so coverage is meaningless.
-        'frontend/src/api.gen/**',
         'sdk/gen/**',
       ],
     },

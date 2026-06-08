@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "14ac6f67cfd0d6fc",
+  "inputHash": "e0afebd3f9f96c66",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -150,7 +150,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -183,7 +183,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -216,7 +216,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -249,7 +249,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -281,7 +281,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -312,7 +312,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -345,7 +345,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -376,7 +376,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -410,7 +410,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -443,7 +443,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -476,7 +476,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -509,7 +509,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -542,7 +542,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -575,7 +575,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -608,7 +608,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -641,7 +641,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -674,7 +674,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -705,7 +705,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -736,7 +736,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -767,7 +767,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -800,7 +800,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -833,7 +833,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -866,7 +866,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "auth",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -897,7 +897,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -930,7 +930,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -963,7 +963,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -996,7 +996,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1027,7 +1027,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1059,7 +1059,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1092,7 +1092,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1126,7 +1126,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1157,7 +1157,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1190,7 +1190,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1221,7 +1221,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1252,7 +1252,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "seen",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1287,7 +1287,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1318,7 +1318,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1349,7 +1349,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1380,7 +1380,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1413,7 +1413,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1448,7 +1448,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "system",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1482,7 +1482,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "system",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1516,7 +1516,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "system",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1550,7 +1550,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "system",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1582,7 +1582,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1616,7 +1616,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1649,7 +1649,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1683,7 +1683,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1716,7 +1716,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1751,7 +1751,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1784,7 +1784,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1819,7 +1819,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1854,7 +1854,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1886,7 +1886,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "requests",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1920,7 +1920,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "requests",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1954,7 +1954,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "requests",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -1986,7 +1986,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "metrics",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2025,7 +2025,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2063,7 +2063,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2100,7 +2100,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2136,7 +2136,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2174,7 +2174,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2209,7 +2209,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2247,7 +2247,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2285,7 +2285,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2322,7 +2322,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2360,7 +2360,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2393,7 +2393,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "users",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2427,7 +2427,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "users",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2464,7 +2464,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2503,7 +2503,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2542,7 +2542,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2583,7 +2583,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2622,7 +2622,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2661,7 +2661,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2697,7 +2697,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2732,7 +2732,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2767,7 +2767,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2801,7 +2801,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2834,7 +2834,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2867,7 +2867,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2902,7 +2902,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "seen",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2935,7 +2935,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "yjs",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -2964,7 +2964,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "yjs",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
         },
@@ -3257,7 +3257,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "attachments",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -3339,7 +3339,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -3497,7 +3497,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -3718,7 +3718,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "entities",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -3911,7 +3911,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4152,7 +4152,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4239,7 +4239,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "me",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4380,7 +4380,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4497,7 +4497,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4586,7 +4586,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "memberships",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -4999,7 +4999,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "organizations",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5233,7 +5233,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "pages",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5299,7 +5299,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "requests",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5421,7 +5421,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "tenants",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5598,7 +5598,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "users",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5689,7 +5689,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "users",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5745,7 +5745,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "module": [
             "users",
           ],
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5867,7 +5867,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -5992,7 +5992,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6117,7 +6117,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6242,7 +6242,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6367,7 +6367,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6413,7 +6413,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "base",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6538,7 +6538,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [
@@ -6663,7 +6663,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         },
         "schemaTag": "errors",
         "tagsByKind": {
-          "ownership": [
+          "owner": [
             "cella",
           ],
           "schema": [

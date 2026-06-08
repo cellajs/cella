@@ -31,7 +31,7 @@ app.openapi(routes.operationName, async (ctx) => { ... })
 Use `import { z } from '@hono/zod-openapi'` in backend (NOT plain zod).
 
 ### Frontend API Client
-Generated SDK in `frontend/src/api.gen/` - **never edit manually**. After backend route/schema changes:
+Generated SDK in `sdk/gen/`, consumed via the `sdk` workspace package - **never edit manually**. After backend route/schema changes:
 ```bash
 pnpm sdk
 ```
@@ -86,7 +86,7 @@ pnpm cella           # Sync changes from upstream cella to fork (useful for fork
 |---------|----------|
 | DB schemas | `backend/src/db/schema/[tablename]` |
 | API validation | `backend/src/modules/<module>/[module]-schema.ts` |
-| Generated types | `frontend/src/api.gen/` |
+| Generated types | `sdk/gen/` via `sdk` package exports |
 | Query keys/options | `frontend/src/modules/<module>/query.ts` |
 | Route definitions | `frontend/src/routes/` + `route-tree.tsx` |
 | UI react components | `frontend/src/modules/ui/` (Shadcn) |

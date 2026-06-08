@@ -111,7 +111,7 @@ export const getZodCodeForResponse = (
     return `// Schema ${name} not found in zod.gen.ts`;
   }
 
-  return `// From ~/api.gen/zod.gen.ts\n${definition}`;
+  return `// From sdk/zod.gen.ts\n${definition}`;
 };
 
 /**
@@ -124,10 +124,10 @@ export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId:
   const definition = typesIndex.get(typeName);
 
   if (!definition) {
-    return `// Type ${typeName} not found in api.gen.ts`;
+    return `// Type ${typeName} not found in sdk exports`;
   }
 
-  return `// From ~/api.gen\n${definition}`;
+  return `// From sdk\n${definition}`;
 };
 
 /**
@@ -144,7 +144,7 @@ export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: str
     return `// No request schemas (${base}Path / ${base}Query / ${base}Body) found in zod.gen.ts`;
   }
 
-  return `// From ~/api.gen/zod.gen.ts\n${parts.join('\n\n')}`;
+  return `// From sdk/zod.gen.ts\n${parts.join('\n\n')}`;
 };
 
 /**
@@ -155,10 +155,10 @@ export const getTypeCodeForRequest = (typesIndex: DefinitionIndex, operationId: 
   const definition = typesIndex.get(typeName);
 
   if (!definition) {
-    return `// Type ${typeName} not found in api.gen.ts`;
+    return `// Type ${typeName} not found in sdk exports`;
   }
 
-  return `// From ~/api.gen\n${definition}`;
+  return `// From sdk\n${definition}`;
 };
 
 /**
@@ -172,7 +172,7 @@ export const getZodCodeForSchema = (zodIndex: DefinitionIndex, schemaName: strin
     return `// Schema ${name} not found in zod.gen.ts`;
   }
 
-  return `// From ~/api.gen/zod.gen.ts\n${definition}`;
+  return `// From sdk/zod.gen.ts\n${definition}`;
 };
 
 /**
@@ -185,5 +185,5 @@ export const getTypeCodeForSchema = (typesIndex: DefinitionIndex, schemaName: st
     return `// Type ${schemaName} not found in types.gen.ts`;
   }
 
-  return `// From ~/api.gen/types.gen.ts\n${definition}`;
+  return `// From sdk/types.gen.ts\n${definition}`;
 };

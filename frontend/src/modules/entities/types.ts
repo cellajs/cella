@@ -31,6 +31,6 @@ export type EntityEnrichment = {
 /**
  * Frontend-enriched context entity type.
  * Extends the API base with client-side data populated via cache enrichment.
- * Use `ContextEntityBase` from `~/api.gen` when you only need the base fields.
+ * Use `ContextEntityBase` from `sdk` when you only need the base fields.
  */
 export type EnrichedContextEntity = ContextEntityBase & EntityEnrichment;
