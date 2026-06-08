@@ -1,8 +1,8 @@
-import { registerTag } from '#/core/tag-registry';
+import { registerModule } from 'shared/module-registry';
 
-registerTag({
-  tag: 'metrics',
-  kind: 'module',
-  parent: 'cella',
+registerModule({
+  name: 'metrics',
+  owner: 'cella',
+  scope: 'backend',
   description: 'Endpoints for retrieving high-level counts for entities such as `users` and `organizations`.',
 });

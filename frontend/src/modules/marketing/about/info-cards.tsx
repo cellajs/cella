@@ -5,7 +5,7 @@ import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-export interface AboutCard {
+export interface InfoCard {
   name: string;
   url: string;
   invert?: boolean;
@@ -13,7 +13,7 @@ export interface AboutCard {
   country: string;
 }
 
-export function AboutCards() {
+export function InfoCards() {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 

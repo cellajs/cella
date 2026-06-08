@@ -3,11 +3,11 @@ import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon,
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { JsonViewer } from '~/modules/common/json-viewer';
+import { getPathToNthMatch } from '~/modules/common/json-viewer/utils';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
-import { JsonViewer } from '~/modules/docs/json-viewer';
-import { getPathToNthMatch } from '~/modules/docs/json-viewer/utils';
 import { openApiSpecQueryOptions, openApiUrl } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';

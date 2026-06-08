@@ -10,6 +10,14 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 const roleEnum = roles.all;
 
 /**
+ * Sub-context relation columns (below `organization`) shared with inactive-memberships,
+ * so both membership tables stay structurally identical. Fork-owned: cella ships none;
+ * forks add e.g. `workspaceId`/`projectId` here (with their foreign keys). Returns fresh
+ * column builders on each call so the two tables don't share builder instances.
+ */
+export const membershipContextColumns = () => ({});
+
+/**
  * Memberships table to track active memberships of users in organizations and other context entities.
  * Each membership belongs to exactly one tenant (RLS isolation boundary).
  */
@@ -36,6 +44,7 @@ export const membershipsTable = snakeCase.table(
     muted: boolean().default(false).notNull(),
     displayOrder: doublePrecision().notNull(),
     organizationId: uuid().notNull(),
+    ...membershipContextColumns(),
   },
   (table) => [
     index('memberships_user_id_idx').on(table.userId),

@@ -1,5 +1,5 @@
 import { appConfig, type ContextEntityType } from 'shared';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { flattenInfiniteData } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
@@ -18,7 +18,7 @@ const menuEntityTypes = Array.from(
  * Used by both useMenu (reactive) and getMenuData (imperative).
  */
 export function buildMenuFromCache(userId: string): UserMenu {
-  const registry = getContextEntityTypeToListQueries();
+  const registry = contextEntityListQueriesByType;
   const byType = new Map<ContextEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {

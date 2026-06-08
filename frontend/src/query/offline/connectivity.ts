@@ -19,7 +19,7 @@ let inFlight: Promise<boolean> | null = null;
 /**
  * Probe actual internet connectivity via /health (shallow 204).
  *
- * Triggered by network-level fetch failures (TypeError) in api-client.ts and on-error.ts
+ * Triggered by network-level fetch failures (TypeError) in lib/api-client.ts and on-error.ts
  * to detect "WiFi connected but no internet" — a scenario where navigator.onLine stays
  * true but all API calls fail.
  *

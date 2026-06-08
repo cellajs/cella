@@ -1,10 +1,11 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { HashUrlButton } from '~/modules/docs/hash-url-button';
+import { HashUrlButton } from '~/modules/common/hash-url-button';
 import type { GenComponentSchema } from '~/modules/docs/types';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
+import { getHashUrl } from '../hash-url';
 import {
   getTypeCodeForSchema,
   getZodCodeForSchema,
@@ -33,7 +34,7 @@ const SchemaDetail = ({ schema, className }: SchemaDetailProps) => {
       <CardHeader className="group">
         <CardTitle className="gap-2 text-xl leading-8">
           {schema.name}
-          <HashUrlButton id={refId} />
+          <HashUrlButton url={getHashUrl(refId)} />
         </CardTitle>
         {schema.description && (
           <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>

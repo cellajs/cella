@@ -1,8 +1,8 @@
-import { registerTag } from '#/core/tag-registry';
+import { registerModule } from 'shared/module-registry';
 
-registerTag({
-  tag: 'seen',
-  kind: 'module',
-  parent: 'cella',
+registerModule({
+  name: 'seen',
+  owner: 'cella',
+  scope: 'both',
   description: 'Endpoints for tracking entity view counts and marking entities as seen by the current user.',
 });

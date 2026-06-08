@@ -1,4 +1,4 @@
-import { getEntitySyncQueries } from '~/list-queries-config';
+import { buildEntitySyncQueries } from '~/list-queries-config';
 import type { UserMenuItem } from '~/modules/me/types';
 import { pagesCanonicalOptions } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
@@ -76,7 +76,13 @@ async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise
 
   // For organizations, the entity IS the org. For sub-contexts, organizationId comes from enrichment.
   const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
-  const queries = getEntitySyncQueries(item.id, item.entityType, item.tenantId, organizationId, offlineAccess);
+  const queries = buildEntitySyncQueries({
+    targetEntityId: item.id,
+    targetEntityType: item.entityType,
+    tenantId: item.tenantId,
+    currentOrganizationId: organizationId,
+    includeMemberQueries: offlineAccess,
+  });
 
   await Promise.allSettled(
     queries.map(async (source) => {

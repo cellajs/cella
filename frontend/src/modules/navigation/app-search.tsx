@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
 import { appConfig } from 'shared';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
@@ -93,9 +93,8 @@ export const AppSearch = () => {
   });
 
   // Get context entity queries from offline config
-  const contextEntityQueries = getContextEntityTypeToListQueries();
   const contextEntityResults = Object.fromEntries(
-    Object.entries(contextEntityQueries).map(([entityType, queryOptions]) => [
+    Object.entries(contextEntityListQueriesByType).map(([entityType, queryOptions]) => [
       entityType,
       useInfiniteQuery({
         // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.

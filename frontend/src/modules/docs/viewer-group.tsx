@@ -2,7 +2,7 @@ import { BirdIcon, BracesIcon, FileTypeIcon, TextIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { JsonViewer } from '~/modules/docs/json-viewer';
+import { JsonViewer } from '~/modules/common/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { CodeViewer } from './code-viewer';
 import type { GenRequest, GenSchema, GenSchemaProperty } from './types';

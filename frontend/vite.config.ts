@@ -136,7 +136,7 @@ const viteConfig = {
     'process.env': {
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
     },
-    // Injected into sw.ts for periodic badge sync
+    // Injected into lib/sw.ts for periodic badge sync
     '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
   },
 } satisfies UserConfig;
@@ -146,7 +146,7 @@ viteConfig.plugins?.push(
   VitePWA({
     disable: !appConfig.has.pwa,
     strategies: 'injectManifest',
-    srcDir: 'src',
+    srcDir: 'src/lib',
     filename: 'sw.ts',
     devOptions: {
       enabled: false,

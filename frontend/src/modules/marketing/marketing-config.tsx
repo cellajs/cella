@@ -1,7 +1,7 @@
 import { Building2Icon, CloudIcon, type LucideIcon, UsersIcon } from 'lucide-react';
 import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/nanoid';
-import type { AboutCard } from '~/modules/marketing/about/cards';
+import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
 import { ElementIcon } from '~/modules/marketing/icons/element';
@@ -79,7 +79,7 @@ export const features = [
  * About - Cards
  ************************************************************************************************/
 
-export const cards: AboutCard[] = [
+export const cards: InfoCard[] = [
   { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
   { name: 'Scaleway', country: 'FR', url: 'scaleway.com', id: 'scaleway' },

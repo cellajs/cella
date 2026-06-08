@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { StickyBox } from '~/modules/common/sticky-box';
-import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { TagOperationsList } from '~/modules/docs/operations/operation-detail';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
+import { getHashUrl } from '../hash-url';
 
 function OperationsPage() {
   const { t } = useTranslation();
@@ -116,7 +117,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
         <CardHeader className="group">
           <CardTitle className="gap-2 text-2xl leading-12">
             {tag.name}
-            <HashUrlButton id={`tag/${tag.name}`} />
+            <HashUrlButton url={getHashUrl(`tag/${tag.name}`)} />
           </CardTitle>
           {tag.description && <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>}
         </CardHeader>

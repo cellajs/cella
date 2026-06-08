@@ -4,11 +4,11 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
-import { AboutCards } from '~/modules/marketing/about/cards';
 // import { Counters } from '~/modules/marketing/about/counters';
 // import { FAQ } from '~/modules/marketing/about/faq';
-import { Features } from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
+import { InfoCards } from '~/modules/marketing/about/info-cards';
+import { InfoGrid } from '~/modules/marketing/about/info-grid';
 // import { Pricing } from '~/modules/marketing/about/pricing';
 import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
@@ -84,12 +84,12 @@ export function AboutPage() {
             text="about:text_3"
             alternate={true}
           >
-            <Features />
+            <InfoGrid />
           </AboutSection>
 
           {/* Integrations */}
           <AboutSection key={'integrations'} sectionId="integrations" title="about:title_4" text="about:text_4">
-            <AboutCards />
+            <InfoCards />
           </AboutSection>
 
           {/* Showcase */}

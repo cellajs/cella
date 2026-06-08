@@ -1,44 +1,45 @@
-import type { ContextEntityType, EntityType } from 'shared';
+import type { ContextEntityType } from 'shared';
 import { attachmentsCanonicalOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
-
-/** Structural type for query factories — only requires queryKey on return. */
-// biome-ignore lint/suspicious/noExplicitAny: Query factories have different parameter shapes per entity type
-type ContextEntityQueryFactory = (...args: any[]) => { queryKey: readonly unknown[] };
-type ContextEntityQueryRegistry = Partial<Record<ContextEntityType, ContextEntityQueryFactory>>;
+import type { BuildEntitySyncQueriesParams, ContextEntityListQueryMap, EntitySyncQueryOptions } from '~/query/types';
 
 /** Maps context entity types to their list query options (used for menu generation). */
-export const getContextEntityTypeToListQueries = () =>
-  ({
-    organization: organizationsListQueryOptions,
-  }) satisfies ContextEntityQueryRegistry;
-
-type SyncQueryOptions = ReturnType<typeof membersListQueryOptions | typeof attachmentsCanonicalOptions>;
+export const contextEntityListQueriesByType = {
+  organization: organizationsListQueryOptions,
+} satisfies ContextEntityListQueryMap;
 
 /** Returns query options to sync for a given entity. Pure mapping — staleness is handled by React Query. */
-export const getEntitySyncQueries = (
-  entityId: string,
-  entityType: EntityType,
-  tenantId: string,
-  organizationId: string,
-  includeMembers: boolean,
-) => {
-  const queries: SyncQueryOptions[] = [];
+export const buildEntitySyncQueries = ({
+  targetEntityId,
+  targetEntityType,
+  tenantId,
+  currentOrganizationId,
+  includeMemberQueries,
+}: BuildEntitySyncQueriesParams) => {
+  const syncQueries: EntitySyncQueryOptions[] = [];
 
-  const limit = 200;
-  const orgId = entityType === 'organization' ? entityId : organizationId;
+  const memberListLimit = 200;
+  const queryOrganizationId = targetEntityType === 'organization' ? targetEntityId : currentOrganizationId;
 
-  // Only when offlineAccess is enabled, we want to sync members for the entity.
-  const pushMembers = (entityType: ContextEntityType) => {
-    if (includeMembers)
-      queries.push(membersListQueryOptions({ entityId, tenantId, organizationId: orgId, entityType, limit }));
+  const addMembersQuery = (contextEntityType: ContextEntityType) => {
+    if (includeMemberQueries) {
+      syncQueries.push(
+        membersListQueryOptions({
+          entityId: targetEntityId,
+          tenantId,
+          organizationId: queryOrganizationId,
+          entityType: contextEntityType,
+          limit: memberListLimit,
+        }),
+      );
+    }
   };
 
-  switch (entityType) {
+  switch (targetEntityType) {
     case 'organization': {
-      pushMembers('organization');
-      queries.push(attachmentsCanonicalOptions({ tenantId, organizationId: entityId }));
+      addMembersQuery('organization');
+      syncQueries.push(attachmentsCanonicalOptions({ tenantId, organizationId: targetEntityId }));
       break;
     }
 
@@ -46,5 +47,5 @@ export const getEntitySyncQueries = (
       break;
   }
 
-  return queries;
+  return syncQueries;
 };

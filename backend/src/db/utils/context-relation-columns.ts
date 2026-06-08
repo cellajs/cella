@@ -2,6 +2,8 @@ import { uuid } from 'drizzle-orm/pg-core';
 import {
   type AncestorContextType,
   appConfig,
+  type EntityIdColumnKey,
+  type EntityType,
   hierarchy,
   type ProductEntityType,
   type RelatedContextType,
@@ -16,9 +18,23 @@ type NullableUuid = ReturnType<typeof uuid>;
  * Context-entity id columns generated for a product entity, derived from the hierarchy:
  * - strict ancestors (parent chain) → non-null id columns
  * - related contexts (`relatedContexts`) → nullable id columns
+ *
+ * Column names come from `entityIdColumnKeys` (single source of truth) rather than a
+ * re-derived `${C}Id` template literal, so type and runtime stay in lockstep.
  */
-export type ContextRelationColumns<E extends string> = { [C in AncestorContextType<E> as `${C}Id`]: NotNullUuid } & {
-  [C in RelatedContextType<E> as `${C}Id`]: NullableUuid;
+export type ContextRelationColumns<E extends string> = {
+  [C in AncestorContextType<E> & EntityType as EntityIdColumnKey<C>]: NotNullUuid;
+} & {
+  [C in RelatedContextType<E> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
+};
+
+/**
+ * Nullable ancestor-context id columns spanning all product entities. Intended for shared
+ * cross-entity tables (e.g. `activities`) that store rows for many entity types at once.
+ * Every column is nullable because a given row may not belong to every context.
+ */
+export type ActivityContextColumns = {
+  [C in AncestorContextType<ProductEntityType> & EntityType as EntityIdColumnKey<C>]: NullableUuid;
 };
 
 /**
@@ -41,4 +57,21 @@ export const contextRelationColumns = <E extends ProductEntityType>(entityType: 
   }
 
   return columns as ContextRelationColumns<E>;
+};
+
+/**
+ * Generates nullable ancestor-context id columns for every product entity in the app.
+ * Intended for shared tables that persist rows for multiple entity types (e.g. `activities`).
+ * Forks only adjust the hierarchy; the column set follows automatically.
+ */
+export const activityContextColumns = (): ActivityContextColumns => {
+  const columns = {} as Record<string, NullableUuid>;
+
+  for (const ctx of new Set(
+    appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)),
+  )) {
+    columns[appConfig.entityIdColumnKeys[ctx]] = uuid();
+  }
+
+  return columns as ActivityContextColumns;
 };

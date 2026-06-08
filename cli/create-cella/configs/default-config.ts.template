@@ -132,7 +132,7 @@ export const config = {
   supportEmail: 'support@__project_slug__.example.com',
 
   /** From address for system notifications */
-  notificationsEmail: 'notifications@__project_slug__.example.com',
+  senderEmail: 'notifications@__project_slug__.example.com',
 
     /** Receive security warnings */
   securityEmail: 'security@__project_slug__.example.com',

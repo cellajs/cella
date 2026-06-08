@@ -1,3 +1,12 @@
+import { onModuleRegister } from 'shared/module-registry';
+
+// Bridge shared module registry to backend tag registry
+onModuleRegister(({ name, owner, description, scope }) => {
+  if (scope === 'backend' || scope === 'both') {
+    registerTag({ tag: name, kind: 'module', parent: owner, description });
+  }
+});
+
 /** Tag definition for OpenAPI documentation (forward-compatible with OpenAPI 3.2.0). */
 export interface OpenApiTag {
   tag: string;

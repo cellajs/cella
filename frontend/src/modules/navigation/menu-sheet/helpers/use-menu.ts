@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
 
 /**
@@ -13,14 +13,11 @@ import { buildMenuFromCache, menuEntityTypes } from './build-menu-from-cache';
  * @returns An object containing the menu, loading state, and any errors
  */
 export function useMenu(userId: string | undefined) {
-  // Memoize registry so useQueries sees stable configs across renders
-  const contextEntityQueryRegistry = useMemo(() => getContextEntityTypeToListQueries(), []);
-
   // Subscribe to each entity list query for granular reactivity
   const results = useQueries({
     // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
     queries: menuEntityTypes.map((t) => ({
-      ...contextEntityQueryRegistry[t]?.({ relatableUserId: userId ?? '' }),
+      ...contextEntityListQueriesByType[t]?.({ relatableUserId: userId ?? '' }),
       enabled: !!userId,
     })),
   });

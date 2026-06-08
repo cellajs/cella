@@ -1,6 +1,6 @@
 import { getMyMemberships } from 'sdk';
 import type { ContextEntityType } from 'shared';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
@@ -11,7 +11,7 @@ import { queryClient } from '~/query/query-client';
  * Invalidate all context entity detail queries (fallback when contextType unknown)
  */
 function invalidateAllContextDetails(): void {
-  const registry = getContextEntityTypeToListQueries();
+  const registry = contextEntityListQueriesByType;
   for (const contextType of Object.keys(registry)) {
     queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === contextType && query.queryKey[1] === 'detail',
@@ -28,7 +28,7 @@ function invalidateAllContextDetails(): void {
  */
 export function invalidateContextList(contextType: ContextEntityType | null): void {
   const userId = useUserStore.getState().user.id;
-  const queryFactory = contextType ? getContextEntityTypeToListQueries()[contextType] : null;
+  const queryFactory = contextType ? contextEntityListQueriesByType[contextType] : null;
 
   if (queryFactory) {
     const queryKey = queryFactory({ relatableUserId: userId }).queryKey;

@@ -1,6 +1,7 @@
 import { foreignKey, index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, roles } from 'shared';
 import { generateId } from 'shared/entity-id';
+import { membershipContextColumns } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { tenantsTable } from '#/db/schema/tenants';
 import { usersTable } from '#/db/schema/users';
@@ -29,6 +30,7 @@ export const inactiveMembershipsTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     organizationId: uuid().notNull(),
+    ...membershipContextColumns(),
   },
   (table) => [
     index('inactive_memberships_user_id_idx').on(table.userId),

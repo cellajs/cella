@@ -102,8 +102,8 @@ export const config = {
    * EMAIL
    ******************************************************************************/
 
+  senderEmail: 'notifications@shareworks.nl',
   supportEmail: 'support@cellajs.com',
-  notificationsEmail: 'notifications@cellajs.com',
   securityEmail: 'security@cellajs.com',
 
   /******************************************************************************

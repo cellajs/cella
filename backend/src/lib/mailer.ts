@@ -103,7 +103,7 @@ export const mailer: Mailer = {
       await brevoClient.transactionalEmails.sendTransacEmail({
         subject: sanitizeEmailSubject(subject || `${appConfig.name} message`),
         htmlContent: html,
-        sender: { email: appConfig.notificationsEmail },
+        sender: { email: appConfig.senderEmail },
         replyTo: { email: replyTo || appConfig.supportEmail },
         messageVersions: versions,
       });

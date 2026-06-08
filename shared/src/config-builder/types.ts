@@ -201,7 +201,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   // Email
   supportEmail: string;
-  notificationsEmail: string;
+  senderEmail: string;
   securityEmail: string;
 
   // Mode & flags

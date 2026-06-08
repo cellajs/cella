@@ -1,9 +1,9 @@
-import { registerTag } from '#/core/tag-registry';
+import { registerModule } from 'shared/module-registry';
 
-registerTag({
-  tag: 'system',
-  kind: 'module',
-  parent: 'cella',
+registerModule({
+  name: 'system',
+  owner: 'cella',
+  scope: 'backend',
   description: `*System level* endpoints for administrative actions and platform wide functionality. These endpoints
     support operations such as user invitations, file uploads, and webhook handling.`,
 });

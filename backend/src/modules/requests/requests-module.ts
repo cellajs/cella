@@ -1,9 +1,9 @@
-import { registerTag } from '#/core/tag-registry';
+import { registerModule } from 'shared/module-registry';
 
-registerTag({
-  tag: 'requests',
-  kind: 'module',
-  parent: 'cella',
+registerModule({
+  name: 'requests',
+  owner: 'cella',
+  scope: 'both',
   description: `Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
     and waitlist entries.`,
 });

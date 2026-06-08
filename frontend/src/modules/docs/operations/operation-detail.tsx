@@ -3,8 +3,8 @@ import i18n from 'i18next';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import type { GenOperationDetail, GenOperationSummary } from '~/modules/docs/types';
@@ -12,6 +12,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 import { Spinner } from '../../common/spinner';
+import { getHashUrl } from '../hash-url';
 import { getMethodColor } from '../helpers/get-method-color';
 import { tagDetailsQueryOptions } from '../query';
 
@@ -62,7 +63,7 @@ export const OperationDetail = ({ operation, detail: detailProp, className }: Op
         <div className="flex items-center justify-between">
           <CardTitle className="gap-2 leading-8 sm:text-xl">
             {operation.summary}
-            <HashUrlButton id={operation.hash} />
+            <HashUrlButton url={getHashUrl(operation.hash)} />
           </CardTitle>
           <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
             {operation.id}

@@ -1,7 +1,7 @@
 // biome-ignore lint/style/noRestrictedImports: imperative cache prefetch helper — used by router loader path; not eligible for a hook.
 import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import { meKeys } from '~/modules/me/query';
 import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -27,7 +27,7 @@ export async function getMenuData() {
   // Fetch entity lists — the subscriber enriches them with memberships on cache write
   await Promise.all(
     appConfig.contextEntityTypes.map(async (entityType) => {
-      const factory = getContextEntityTypeToListQueries()[entityType];
+      const factory = contextEntityListQueriesByType[entityType];
       if (!factory) return;
       const queryOpts = factory({ relatableUserId: userId });
       // biome-ignore lint/suspicious/noExplicitAny: heterogeneous infinite query options across entity types.

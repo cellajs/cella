@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { StickyBox } from '~/modules/common/sticky-box';
-import { HashUrlButton } from '~/modules/docs/hash-url-button';
 import { schemasByTagQueryOptions, schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
@@ -15,6 +15,7 @@ import type { GenComponentSchema, GenSchemaTagSummary } from '~/modules/docs/typ
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
+import { getHashUrl } from '../hash-url';
 
 /**
  * Schemas page displaying all component schemas from the OpenAPI spec.
@@ -102,7 +103,7 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
         <CardHeader className="group">
           <CardTitle className="gap-2 text-2xl leading-12">
             {tag.name}
-            <HashUrlButton id={tag.name} />
+            <HashUrlButton url={getHashUrl(tag.name)} />
           </CardTitle>
           <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>
         </CardHeader>

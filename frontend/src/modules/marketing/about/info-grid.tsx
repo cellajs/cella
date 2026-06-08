@@ -4,15 +4,16 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import { features } from '~/modules/marketing/marketing-config';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-export type Feature = {
+export type InfoGridItem = {
   id: string;
 };
-interface FeatureProps {
+
+interface InfoGridItemProps {
   id: string;
   invertClassName: string;
 }
 
-function Feature({ id, invertClassName }: FeatureProps) {
+function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
   const { t } = useTranslation();
   const title = `about:feature.${id}_title`;
   const text = `about:feature.${id}_text`;
@@ -33,16 +34,16 @@ function Feature({ id, invertClassName }: FeatureProps) {
   );
 }
 
-export function Features() {
+export function InfoGrid() {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpointAbove('md');
 
   return (
     <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
-      <ExpandableList<Feature>
+      <ExpandableList<InfoGridItem>
         items={features}
-        renderItem={(feature) => <Feature key={feature.id} {...feature} invertClassName={invertClass} />}
+        renderItem={(feature) => <InfoGridItem key={feature.id} {...feature} invertClassName={invertClass} />}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}
         expandText="c:more_features"

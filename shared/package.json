@@ -16,7 +16,8 @@
     "./tracing": "./src/tracing/tracing.ts",
     "./otel": "./src/otel.ts",
     "./config-builder": "./src/config-builder/index.ts",
-    "./pino": "./src/pino.ts"
+    "./pino": "./src/pino.ts",
+    "./module-registry": "./src/module-registry.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.51.4",

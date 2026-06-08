@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { FieldValues } from 'react-hook-form';
 import type { ContextEntityBase } from 'sdk';
 import type { ContextEntityType } from 'shared';
-import { getContextEntityTypeToListQueries } from '~/list-queries-config';
+import { contextEntityListQueriesByType } from '~/list-queries-config';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
@@ -31,7 +31,7 @@ export const SelectParentFormField = <TFieldValues extends FieldValues>({
   const { user } = useUserStore();
 
   // Fetch entities using proper query
-  const queryFactory = getContextEntityTypeToListQueries()[parentType];
+  const queryFactory = contextEntityListQueriesByType[parentType];
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
   const query = useInfiniteQuery((queryFactory as any)({ userId: user.id }));
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown

@@ -1,9 +1,9 @@
-import { registerTag } from '#/core/tag-registry';
+import { registerModule } from 'shared/module-registry';
 
-registerTag({
-  tag: 'activities',
-  kind: 'module',
-  parent: 'cella',
+registerModule({
+  name: 'activities',
+  owner: 'cella',
+  scope: 'both',
   description: `Endpoints for retrieving *activities* (audit log entries). Activities track create, update, and
     delete operations across all resources. This serves as an audit trail and can be extended for webhook
     delivery.`,
