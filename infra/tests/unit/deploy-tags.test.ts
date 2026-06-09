@@ -9,19 +9,18 @@ import { describe, expect, it } from 'vitest'
 const src = readFileSync(resolve(__dirname, '../../modules/deploy-tags.ts'), 'utf-8')
 
 describe('deploy-tags module', () => {
-  it('seeds one tag object per service', () => {
+  it('exports the deploy/<service>.tag key for every service', () => {
     for (const svc of ['backend', 'cdc', 'yjs', 'ai', 'frontend']) {
-      expect(src, `missing seed for service '${svc}'`).toContain(`deploy/${svc}.tag`)
+      expect(src, `missing tag key for service '${svc}'`).toContain(`deploy/${svc}.tag`)
     }
   })
 
-  it('seeded objects ignore content/etag/hash so pulumi up never reverts CI writes', () => {
-    expect(src).toMatch(/ignoreChanges:\s*\[\s*['"]content['"],\s*['"]etag['"],\s*['"]hash['"]\s*\]/)
-  })
-
-  it('bootstrap placeholder content is the literal string `bootstrap`', () => {
-    // The reconciler shell script checks for this exact value as a no-op.
-    expect(src).toContain("content: 'bootstrap'")
+  it('does NOT seed placeholder objects — CI creates the tag on first roll', () => {
+    // The old design created a `scaleway.object.Item` per service with
+    // placeholder content then disowned it via ignoreChanges. Readers now
+    // treat an ABSENT object as "no release yet", so there must be no seeding.
+    expect(src).not.toContain('new scaleway.object.Item')
+    expect(src).not.toContain("content: 'bootstrap'")
   })
 
   it('bucket policy grants CI PutObject only on deploy/*', () => {

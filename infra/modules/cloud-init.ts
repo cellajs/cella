@@ -289,10 +289,10 @@ mark 45-ingress-up
 
 # First boot: run the reconciler once to pull + roll the currently-published
 # release. We don't trust its exit code:
-#   - Fresh stack (S3 still holds the 'bootstrap' placeholder): it exits 0
+#   - Fresh stack (no release pushed yet, so S3 has no tag object): it exits 0
 #     without booting anything — we fall through to the fallback, which also
-#     no-ops on 'bootstrap', and the systemd timer (every 20s) converges once
-#     CI writes the first real SHA.
+#     no-ops when the tag is absent, and the systemd timer (every 20s) converges
+#     once CI writes the first real SHA.
 #   - VM replacement (S3 already holds a real SHA): it pulls + rolls and records
 #     /var/lib/reconciler/current.tag. But its health-gated rollback targets the
 #     *previous* tag, which on a fresh replacement is empty — so a momentarily
@@ -309,12 +309,15 @@ else
   # the desired SHA and re-applies health-gated rollback for any later deploy
   # (where a real previous tag exists to roll back to). The tag is read in a
   # subshell so sourcing the reconciler env (which carries its own scoped S3
-  # creds) doesn't clobber the boot-diag credentials used by mark().
+  # creds) doesn't clobber the boot-diag credentials used by mark(). An ABSENT
+  # tag object (no release yet) yields an empty value here → awaiting-first-
+  # deploy; a real fetch error likewise boots nothing and lets the timer surface
+  # it on its next tick.
   fallback_tag=$(
     set -a; . /etc/reconciler/reconciler.env; set +a
     aws --endpoint-url '${s3Endpoint}' s3 cp "s3://\${TAG_BUCKET}/\${TAG_KEY}" - 2>/dev/null | tr -d '[:space:]'
   )
-  if [[ -n "$fallback_tag" && "$fallback_tag" != "bootstrap" ]]; then
+  if [[ -n "$fallback_tag" ]]; then
     export ${service.toUpperCase()}_TAG="$fallback_tag"
     cd /opt/app
     PULL_OK=0

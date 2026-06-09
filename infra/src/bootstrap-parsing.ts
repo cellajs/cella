@@ -53,13 +53,17 @@ export interface ApplyInterruptedTrace {
 /**
  * Detect whether a prior "Apply infra change" run was interrupted between
  * swapping the CI key out and restoring it. Either signal is enough:
- *   - YAML marker `bootstrap:applyInProgress` is present in the stack file.
- *   - Local sentinel lock file exists.
+ *   - A verbatim stack-file backup (`Pulumi.<stack>.yaml.apply-backup`) is
+ *     still on disk — apply-mode writes it before the swap and removes it
+ *     after restore, so its presence means a run did not finish. This is the
+ *     actionable trace: the backup restores the CI key byte-for-byte.
+ *   - YAML marker `bootstrap:applyInProgress` is present in the stack file
+ *     (secondary trace; normally cleared together with the backup).
  * Returns a trace descriptor when interrupted, or undefined when clean. Pure.
  */
-export function detectInterruptedApply(probe: { yamlText?: string; lockExists: boolean; lockPath: string }): ApplyInterruptedTrace | undefined {
+export function detectInterruptedApply(probe: { yamlText?: string; backupExists: boolean; backupPath: string }): ApplyInterruptedTrace | undefined {
+  if (probe.backupExists) return { trace: `Backup file: ${probe.backupPath}` }
   const marker = probe.yamlText ? extractApplyMarker(probe.yamlText) : undefined
   if (marker) return { trace: `YAML marker bootstrap:applyInProgress = ${marker}` }
-  if (probe.lockExists) return { trace: `Lock file: ${probe.lockPath}` }
   return undefined
 }

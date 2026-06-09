@@ -67,7 +67,7 @@ const sizingDefaults = isProduction
 // Compute is on by default. It is only skipped while the bootstrap tooling is
 // mid-flight — bootstrap.ts sets `bootstrap:applyInProgress` before the initial
 // `pulumi up` (registry has no images yet, VMs would crash-loop) and during
-// "Apply infra change" mode, and clears it via try/finally + signal handlers.
+// "Apply infra change" mode, and clears it via a verbatim stack-file restore.
 // Treating its presence as the gate means a stray local `pulumi up` cannot
 // silently tear down compute the way a missing `deployCompute=true` would.
 const bootstrapInProgress = new pulumi.Config('bootstrap').get('applyInProgress') !== undefined

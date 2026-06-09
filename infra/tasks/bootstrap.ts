@@ -8,7 +8,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 import { confirm, input, password, select } from '@inquirer/prompts'
@@ -53,24 +53,27 @@ const hasCiKey = state === 'bootstrapped'
 
 console.info(`State: ${state}${state === 'fresh' ? '' : ` (Pulumi.${stackShort}.yaml)`}\n`)
 
-// Two redundant traces are written by apply-mode before swapping the CI key
-// out, and removed after restore:
-//   1. Local sentinel file `.apply-in-progress.<stack>.lock` (gitignored).
-//   2. Plaintext config marker `bootstrap:applyInProgress: <iso>` in the
-//      Pulumi stack YAML — visible in `git diff`, survives across machines.
-// Either trace on a subsequent run means a previous Apply was interrupted
-// between swap and restore, so stack credentials likely point at a
-// (now-revoked) bootstrap key rather than the CI key. The original CI secret
-// is unrecoverable — recovery path is Rotate CI.
-const applyLockPath = resolve(infraDir, `.apply-in-progress.${stackShort}.lock`)
-const interrupted = detectInterruptedApply({ yamlText: stackYaml, lockExists: existsSync(applyLockPath), lockPath: applyLockPath })
+// Apply-mode snapshots the stack file verbatim to `Pulumi.<stack>.yaml.apply-
+// backup` (gitignored) before swapping in a bootstrap key, then copies it back
+// after `pulumi up`. A leftover backup on a later run means a previous Apply
+// was interrupted before restore — so the working-tree stack file may still
+// hold the (now-revoked) bootstrap key. Because the backup is a byte-for-byte
+// copy of the pre-swap file, the CI key is fully recoverable: we offer to
+// restore it here.
+const applyBackupPath = resolve(infraDir, `Pulumi.${stackShort}.yaml.apply-backup`)
+const interrupted = detectInterruptedApply({ yamlText: stackYaml, backupExists: existsSync(applyBackupPath), backupPath: applyBackupPath })
 if (interrupted) {
   console.warn(
     `${warningMark} ${pc.bold('Previous Apply infra change run was interrupted.')}\n` +
-      `  Stack credentials in Pulumi.${stackShort}.yaml may be a (now-revoked) bootstrap key instead of the CI key.\n` +
-      `  Recover by re-running bootstrap and choosing ${pc.italic('"Rotate CI"')} to mint a fresh CI key.\n` +
+      `  Stack credentials in Pulumi.${stackShort}.yaml may still hold the (now-revoked) bootstrap key.\n` +
       `  Trace: ${interrupted.trace}\n`,
   )
+  if (existsSync(applyBackupPath) && (await confirm({ message: 'Restore the pre-apply stack config (CI key) from the backup now?', default: true }))) {
+    copyFileSync(applyBackupPath, stackPath)
+    unlinkSync(applyBackupPath)
+    console.info(`${checkMark} Stack config restored from backup. Re-run bootstrap to continue.`)
+    process.exit(0)
+  }
 }
 
 const mode: Mode =
@@ -432,10 +435,17 @@ if (needsCiKey && ciAccessKey) {
   console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now — see ${pc.underline('infra/README.md')} → ${pc.italic('"Revoke the bootstrap key"')}`)
 }
 
-/** One-shot `pulumi up` using a freshly-supplied bootstrap key, with the
- *  CI key swapped out of stack config and restored afterwards (try/finally).
- *  For applying changes to bootstrap-owned modules (DB / VPC / private network)
- *  without permanently widening CI permissions. */
+/** One-shot `pulumi up` using a freshly-supplied bootstrap key, with the CI
+ *  key swapped out of stack config and restored afterwards. For applying
+ *  changes to bootstrap-owned modules (DB / VPC / private network) without
+ *  permanently widening CI permissions.
+ *
+ *  Restore is crash-safe by construction: the stack file (which holds the
+ *  encrypted CI key) is snapshotted verbatim to `Pulumi.<stack>.yaml.apply-
+ *  backup` before the swap and copied back in a `finally`. A hard crash
+ *  (kill -9, power loss, Ctrl-C) skips the finally but leaves the backup on
+ *  disk — the next bootstrap run detects it and offers to restore, so the CI
+ *  key is never lost. No signal handlers or re-encrypt dance needed. */
 async function runApplyMode(): Promise<void> {
   if (state !== 'bootstrapped') {
     console.error(`${warningMark} "Apply infra change" requires a fully bootstrapped stack (state=${state}). Run Resume first.`)
@@ -444,19 +454,6 @@ async function runApplyMode(): Promise<void> {
   console.info(pc.dim('\nApply infra change: swap CI key out for a bootstrap key, run pulumi up, restore CI key.\n'))
 
   const passphrase = process.env.PULUMI_CONFIG_PASSPHRASE || (await password({ message: 'Pulumi passphrase' }))
-
-  let ciAccess = ''
-  let ciSecret = ''
-  try {
-    const d = decryptStackSecrets(stackPath, passphrase, ['scaleway:accessKey', 'scaleway:secretKey'])
-    ciAccess = d['scaleway:accessKey'] ?? ''
-    ciSecret = d['scaleway:secretKey'] ?? ''
-    if (!ciAccess || !ciSecret) throw new Error('scaleway:accessKey/secretKey not present in stack config')
-    console.info(`${checkMark} CI key snapshotted (access: ${pc.dim(ciAccess)}) — will be restored after pulumi up`)
-  } catch (err) {
-    console.error(`${warningMark} Could not decrypt CI key: ${(err as Error).message}`)
-    process.exit(1)
-  }
 
   const projectId = (stackYaml && extractProjectId(stackYaml)) || ''
   if (!projectId) {
@@ -477,7 +474,7 @@ async function runApplyMode(): Promise<void> {
   }
 
   console.warn(
-    `${pc.yellow(pc.bold('\u26A0  Do not interrupt this run.'))} ${pc.dim('Ctrl-C / SIGTERM are handled, but a hard crash (kill -9, power loss) would leave the bootstrap key in stack config.')}`,
+    `${pc.yellow(pc.bold('\u26A0  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run bootstrap — it will offer to restore the CI key from the backup snapshot.')}`,
   )
 
   const apEnv: NodeJS.ProcessEnv = {
@@ -499,43 +496,16 @@ async function runApplyMode(): Promise<void> {
   spawnSync('pulumi', ['login', loginUrl], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
   spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env: apEnv, stdio: 'ignore' })
 
+  // Snapshot the stack file (holds the encrypted CI key) before the swap. The
+  // verbatim copy is what makes restore crash-safe — see the function header.
+  copyFileSync(stackPath, applyBackupPath)
   let swapped = false
-  // Synchronous restore used by both the normal finally path AND signal /
-  // exception handlers. spawnSync survives because handler-spawned children
-  // form a new process: SIGINT to the parent doesn't propagate to them.
-  // Also clears the YAML marker; ignore its exit status (cosmetic cleanup).
-  const restoreSync = (): boolean => {
-    const r1 = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:accessKey', ciAccess, '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
-    const r2 = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:secretKey', ciSecret, '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
-    spawnSync('pulumi', ['config', 'rm', 'bootstrap:applyInProgress', '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'ignore' })
-    return r1.status === 0 && r2.status === 0
-  }
-  const onFatal = (label: string) => {
-    if (!swapped) process.exit(130)
-    console.warn(`\n${warningMark} ${pc.bold(label)} — restoring CI key in stack config…`)
-    const ok = restoreSync()
-    if (ok) {
-      try { unlinkSync(applyLockPath) } catch {}
-      console.warn(`${checkMark} CI key restored.`)
-      process.exit(130)
-    }
-    console.error(`${warningMark} ${pc.bold('FAILED to restore CI key!')} Run manually:`)
-    for (const line of manualRestoreCommands(targetStack, ciAccess, ciSecret)) console.error(`  ${pc.cyan(line)}`)
-    process.exit(1)
-  }
-  const onSigint = () => onFatal('Interrupted (SIGINT)')
-  const onSigterm = () => onFatal('Terminated (SIGTERM)')
-  const onException = (err: unknown) => {
-    console.error(err)
-    onFatal('Uncaught exception')
-  }
-  process.on('SIGINT', onSigint)
-  process.on('SIGTERM', onSigterm)
-  process.on('uncaughtException', onException)
-  process.on('unhandledRejection', onException)
   try {
+    // Gate compute off for the duration (same marker the initial provisioning
+    // uses) so a broad-permission bootstrap key's `pulumi up` only touches
+    // bootstrap-owned modules (DB/VPC/PN), never the running VMs. The verbatim
+    // restore below clears this marker along with the swapped-in creds.
     const startedAt = new Date().toISOString()
-    writeFileSync(applyLockPath, `${startedAt}\nci-access:${ciAccess}\n`)
     const m = spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
     const a1 = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:accessKey', bootAccess, '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
     const a2 = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:secretKey', bootSecret, '--stack', targetStack], { cwd: infraDir, env: apEnv, stdio: 'inherit' })
@@ -549,19 +519,10 @@ async function runApplyMode(): Promise<void> {
   } finally {
     if (swapped) {
       console.info('\n→ Restoring CI key in stack config')
-      const ok = restoreSync()
-      if (!ok) {
-        console.error(`${warningMark} ${pc.bold('FAILED to restore CI key in stack config!')} Run manually:`)
-        for (const line of manualRestoreCommands(targetStack, ciAccess, ciSecret)) console.error(`  ${pc.cyan(line)}`)
-        process.exit(1)
-      }
+      copyFileSync(applyBackupPath, stackPath)
       console.info(`${checkMark} CI key restored.`)
     }
-    try { unlinkSync(applyLockPath) } catch {}
-    process.off('SIGINT', onSigint)
-    process.off('SIGTERM', onSigterm)
-    process.off('uncaughtException', onException)
-    process.off('unhandledRejection', onException)
+    try { unlinkSync(applyBackupPath) } catch {}
   }
 
   console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now (Scaleway console → IAM → API keys).`)

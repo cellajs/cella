@@ -118,8 +118,13 @@ describe('reconciler files', () => {
     }
   })
 
-  it('script handles the bootstrap placeholder as a no-op', () => {
-    expect(reconcilerScript).toMatch(/desired.*==.*bootstrap/)
+  it('treats a MISSING tag object as a no-op skip (not a fatal error)', () => {
+    // No Pulumi seeding: before CI's first roll the tag object does not exist.
+    // The script must classify a 404/not-found as a quiet skip and exit 0,
+    // while any other fetch failure dies with exit 2.
+    expect(reconcilerScript).toMatch(/grep -qiE '404\|not found\|nosuchkey/)
+    expect(reconcilerScript).toContain('tag_absent action=skip')
+    expect(reconcilerScript).toContain('tag_fetch_failed')
   })
 
   it('script verifies X-App-Version matches desired before declaring success', () => {
