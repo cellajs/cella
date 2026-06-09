@@ -1,0 +1,12 @@
+encryptionsalt: v1:OB3eX2/Cavo=:v1:zUWCmiHoqAtbw5w9:nUhV6Y7FbTkk7Ok5ad1LipqvR6L/4Q==
+config:
+  scaleway:projectId: 3ad2b2d5-a772-40a2-a82b-bd0cee9ebb12
+  infra:dbPassword:
+    secure: v1:avOl6eHscB9bS8q6:wiWmt6aiY5QT15aymC49x7s9hv/Rdet45oNbF2T4QZFuJBVBc8rt8IVocnoE5Oh0
+  infra:applicationId: bfe8e160-3c14-41d6-95ba-386f7a5aeaad
+  infra:operatorPrincipal: user_id:50574a0a-74be-44cc-b8f8-1377ee7a069f
+  infra:ciPolicyFingerprint: 007ada11d823
+  scaleway:accessKey:
+    secure: v1:+OxQZ5P+1K49b60k:fsutLqaqbLrs3+rb+2D3oSTg2OzGkqkDokkcOKYHemE8pStM
+  scaleway:secretKey:
+    secure: v1:FCme2Bm3Nr/OEbS5:wZyrxRPEhvypoXt8w0Ub+UoS+HNDg4JfPgIRdzfId5WSRV43D6YobNAxI/7cUZzh+JiEgw==
