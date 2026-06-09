@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { migrateRuntimeSecrets } from './migrate-runtime-secrets.js'
+import { seedOperatorSecrets } from './seed-operator-secrets.js'
 
 const getSecretByName = vi.fn()
 const ensureSecret = vi.fn()
@@ -27,16 +27,16 @@ const baseOptions = {
   log: vi.fn(),
 }
 
-describe('migrateRuntimeSecrets', () => {
-  it('seeds operator-managed secrets from legacy stack values when the secret has no versions', async () => {
+describe('seedOperatorSecrets', () => {
+  it('seeds operator-managed secrets from prompt values when the secret has no versions', async () => {
     resetMocks()
     getSecretByName.mockResolvedValue(undefined)
     ensureSecret.mockResolvedValue({ id: 'secret-1', name: 'admin-email' })
 
-    await migrateRuntimeSecrets({
+    await seedOperatorSecrets({
       ...baseOptions,
-      valuesByLegacyKey: {
-        'infra:adminEmail': 'admin@example.com',
+      values: {
+        adminEmail: 'admin@example.com',
       },
     })
 
@@ -51,10 +51,10 @@ describe('migrateRuntimeSecrets', () => {
     resetMocks()
     getSecretByName.mockResolvedValue({ id: 'secret-2', name: 'brevo-api-key', version_count: 2 })
 
-    await migrateRuntimeSecrets({
+    await seedOperatorSecrets({
       ...baseOptions,
-      valuesByLegacyKey: {
-        'infra:brevoApiKey': 'brevo-key',
+      values: {
+        brevoApiKey: 'brevo-key',
       },
     })
 

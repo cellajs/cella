@@ -37,7 +37,7 @@ Routine deploys no longer replace the VM. Each VM runs a tiny **ingress** Caddy 
 Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
 ```
 
-CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler (systemd timer, every 20s) pulls it and rolls the app behind the ingress. There are **two roll strategies**, declared per service in the reconciler's `serviceMatrix` ([reconciler/index.ts](reconciler/index.ts)):
+CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler (systemd timer, every 20s) pulls it and rolls the app behind the ingress. There are **two roll strategies**, declared per service in the canonical service registry ([src/services.ts](src/services.ts)):
 
 | Strategy | Services | How |
 |----------|----------|-----|

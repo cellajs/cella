@@ -1,29 +1,7 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { IMAGE_REUSE, imageRef, imageServices, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images.js'
 
 const TAG = 'abc1234'
-
-describe('service lists stay in lockstep with infra source', () => {
-  // Read the real modules as text (same pattern as deploy-tags.test.ts) so the
-  // hardcoded TAGGED_SERVICES here can't drift from the canonical definitions
-  // without failing a test.
-  const reconcilerSrc = readFileSync(resolve(__dirname, '../reconciler/index.ts'), 'utf-8')
-  const deployTagsSrc = readFileSync(resolve(__dirname, '../modules/deploy-tags.ts'), 'utf-8')
-
-  it('matches reconcilerServices in infra/reconciler/index.ts', () => {
-    for (const svc of TAGGED_SERVICES) {
-      expect(reconcilerSrc, `reconcilerServices missing '${svc}'`).toContain(`'${svc}'`)
-    }
-  })
-
-  it('matches taggedServices in infra/modules/deploy-tags.ts', () => {
-    for (const svc of TAGGED_SERVICES) {
-      expect(deployTagsSrc, `taggedServices missing '${svc}'`).toContain(`'${svc}'`)
-    }
-  })
-})
 
 describe('imageServices', () => {
   it('excludes services that reuse another image', () => {

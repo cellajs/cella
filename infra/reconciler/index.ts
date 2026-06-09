@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { servicesByName, serviceNames, type ServiceName } from '../src/services.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -27,63 +28,9 @@ export const reconcilerService = read('reconciler.service')
 /** Systemd timer — installed as `/etc/systemd/system/reconciler.timer`. */
 export const reconcilerTimer = read('reconciler.timer')
 
-/** Services that ship as their own image; kept in lockstep with deploy-tags.ts. */
-export const reconcilerServices = ['backend', 'cdc', 'yjs', 'ai', 'frontend'] as const
-export type ReconcilerService = (typeof reconcilerServices)[number]
-
-/**
- * Per-service knobs. The compose profile and health port mirror
- * `infra/compose.yml`; keep them aligned. Promoting these to a single
- * source of truth (e.g. a TS export from compose generation) is a future
- * cleanup once compose.yml itself becomes generated.
- */
-interface ServiceShape {
-  composeProfile: string
-  healthPort: number
-  /**
-   * Seconds the reconciler waits for the new container to answer /health with
-   * the desired X-App-Version before rolling back. The backend image is heavy
-   * (it runs migrations + warmup on boot today), so it needs a larger budget
-   * than the lightweight services — too tight a window causes a rollback loop.
-   * ai reuses the backend image, so it gets the same budget.
-   */
-  healthTimeoutSeconds: number
-  /**
-   * When true, the reconciler runs the one-shot `migrate` compose service to
-   * apply schema migrations BEFORE rolling this service's app container
-   * (expand-before-rollover). Only the backend owns the schema; ai reuses the
-   * backend image but must NOT migrate (it is a worker that waits for the API).
-   */
-  runMigrate: boolean
-  /**
-   * How the reconciler rolls this service:
-   *  - 'in-place'   — recreate the single app container behind the ingress.
-   *  - 'blue-green' — run two named slots (`<svc>-blue` / `<svc>-green`) and
-   *    flip the ingress upstream between them. The idle slot is brought up on
-   *    the new tag and identity-gated BEFORE any traffic moves, so a bad
-   *    release never replaces the serving container.
-   * Only the backend opts into blue-green today (stateless + critical, and it
-   * owns migrations); the lighter services keep the simpler in-place roll. cdc
-   * is a singleton (one replication slot) and could never run two slots.
-   * See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
-   */
-  rolloverStrategy: 'in-place' | 'blue-green'
-  /**
-   * For blue-green services only: seconds the old slot keeps serving in-flight
-   * requests AFTER the ingress has flipped to the new slot, before the old slot
-   * is stopped. Lets long-ish requests drain on the retired slot. 0 for the
-   * in-place services (unused).
-   */
-  drainSeconds: number
-}
-
-const serviceMatrix: Record<ReconcilerService, ServiceShape> = {
-  backend:  { composeProfile: 'backend',  healthPort: 4000, healthTimeoutSeconds: 240, runMigrate: true,  rolloverStrategy: 'blue-green', drainSeconds: 10 },
-  cdc:      { composeProfile: 'cdc',      healthPort: 4001, healthTimeoutSeconds: 90,  runMigrate: false, rolloverStrategy: 'in-place',   drainSeconds: 0  },
-  yjs:      { composeProfile: 'yjs',      healthPort: 4002, healthTimeoutSeconds: 90,  runMigrate: false, rolloverStrategy: 'in-place',   drainSeconds: 0  },
-  ai:       { composeProfile: 'ai',       healthPort: 4003, healthTimeoutSeconds: 240, runMigrate: false, rolloverStrategy: 'in-place',   drainSeconds: 0  },
-  frontend: { composeProfile: 'frontend', healthPort: 80,   healthTimeoutSeconds: 90,  runMigrate: false, rolloverStrategy: 'in-place',   drainSeconds: 0  },
-}
+/** Services that ship as their own image; derived from the canonical registry. */
+export const reconcilerServices = serviceNames
+export type ReconcilerService = ServiceName
 
 export interface ReconcilerEnvInput {
   service: ReconcilerService
@@ -112,7 +59,7 @@ export interface ReconcilerEnvInput {
  * if Scaleway ever changes credential formatting.
  */
 export function buildReconcilerEnv(input: ReconcilerEnvInput): string {
-  const shape = serviceMatrix[input.service]
+  const shape = servicesByName.get(input.service)
   if (!shape) throw new Error(`unknown reconciler service: ${input.service}`)
 
   const pairs: Array<[string, string]> = [

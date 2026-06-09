@@ -1,6 +1,8 @@
-export const runtimeSecretConsumers = ['backend', 'cdc', 'yjs', 'ai', 'frontend'] as const
+import { serviceNames, type ServiceName } from './services.js'
 
-export type RuntimeSecretConsumer = (typeof runtimeSecretConsumers)[number]
+export const runtimeSecretConsumers = serviceNames
+
+export type RuntimeSecretConsumer = ServiceName
 
 export type RuntimeSecretValueSource = 'pulumi' | 'operator'
 export type RuntimeSecretGeneration = 'manual' | 'random'
@@ -10,7 +12,6 @@ export interface RuntimeSecretDefinition {
   secretName: string
   description: string
   envVar: string
-  legacyStackConfigKey?: string
   required: boolean
   valueSource: RuntimeSecretValueSource
   generation: RuntimeSecretGeneration
@@ -53,7 +54,6 @@ export const runtimeSecrets = [
     secretName: 'cookie-secret',
     description: 'Cookie signing secret',
     envVar: 'COOKIE_SECRET',
-    legacyStackConfigKey: 'infra:cookieSecret',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
@@ -64,7 +64,6 @@ export const runtimeSecrets = [
     secretName: 'unsubscribe-token-secret',
     description: 'Email unsubscribe token secret',
     envVar: 'UNSUBSCRIBE_SECRET',
-    legacyStackConfigKey: 'infra:unsubscribeSecret',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
@@ -75,7 +74,6 @@ export const runtimeSecrets = [
     secretName: 'cdc-secret',
     description: 'CDC authentication secret',
     envVar: 'CDC_SECRET',
-    legacyStackConfigKey: 'infra:cdcSecret',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
@@ -86,7 +84,6 @@ export const runtimeSecrets = [
     secretName: 'yjs-secret',
     description: 'Yjs WebSocket authentication secret',
     envVar: 'YJS_SECRET',
-    legacyStackConfigKey: 'infra:yjsSecret',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
@@ -97,7 +94,6 @@ export const runtimeSecrets = [
     secretName: 'pii-hash-secret',
     description: 'HMAC pepper for hashing PII-derived identifiers',
     envVar: 'PII_HASH_SECRET',
-    legacyStackConfigKey: 'infra:piiHashSecret',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
@@ -108,7 +104,6 @@ export const runtimeSecrets = [
     secretName: 'admin-email',
     description: 'Primary administrative contact email',
     envVar: 'ADMIN_EMAIL',
-    legacyStackConfigKey: 'infra:adminEmail',
     required: true,
     valueSource: 'operator',
     generation: 'manual',
@@ -119,7 +114,6 @@ export const runtimeSecrets = [
     secretName: 'brevo-api-key',
     description: 'Brevo transactional email API key',
     envVar: 'BREVO_API_KEY',
-    legacyStackConfigKey: 'infra:brevoApiKey',
     required: false,
     valueSource: 'operator',
     generation: 'manual',
@@ -130,7 +124,6 @@ export const runtimeSecrets = [
     secretName: 'scw-ai-api-key',
     description: 'Scaleway AI API key for the AI worker',
     envVar: 'SCW_AI_API_KEY',
-    legacyStackConfigKey: 'infra:scwAiApiKey',
     required: false,
     valueSource: 'operator',
     generation: 'manual',

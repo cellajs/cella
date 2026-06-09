@@ -23,7 +23,7 @@ import { syncGithubEnvironment } from '../src/github-sync.js'
 import { decryptStackSecrets } from '../src/pulumi-passphrase.js'
 import { runPulumiUpWithHint } from '../src/pulumi-up.js'
 import { manageRuntimeSecrets } from './manage-runtime-secrets.js'
-import { migrateRuntimeSecrets } from './migrate-runtime-secrets.js'
+import { seedOperatorSecrets } from './seed-operator-secrets.js'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, setupCiKey } from './setup-ci-key.js'
 
 /** Short hash of the permission sets the CI policy *should* have. Stored in stack config
@@ -177,16 +177,6 @@ const scwAiApiKey = stackHas('infra:scwAiApiKey')
   ? ''
   : await password({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
 
-const legacyRuntimeValues = stackYaml
-  ? (() => {
-      try {
-        return decryptStackSecrets(stackPath, pulumiPassphrase, ['infra:adminEmail', 'infra:brevoApiKey', 'infra:scwAiApiKey'])
-      } catch {
-        return {}
-      }
-    })()
-  : {}
-
 if (!(await confirm({ message: `Proceed with ${mode}?`, default: true }))) process.exit(0)
 
 const childEnv: NodeJS.ProcessEnv = {
@@ -249,18 +239,18 @@ await must('Set scaleway:projectId', 'pulumi', ['config', 'set', 'scaleway:proje
 await must('Initialize stack secrets', 'pnpm', ['init-stack-secrets', stackName])
 
 const runtimeSecretPath = `/${appConfig.slug}-${stackShort}/`
-await migrateRuntimeSecrets({
+await seedOperatorSecrets({
   secretKey: scwSecretKey,
   projectId: scwProjectId,
   region: appConfig.s3.region,
   path: runtimeSecretPath,
-  valuesByLegacyKey: {
-    'infra:adminEmail': legacyRuntimeValues['infra:adminEmail'] ?? (adminEmail || undefined),
-    'infra:brevoApiKey': legacyRuntimeValues['infra:brevoApiKey'] ?? (brevoApiKey || undefined),
-    'infra:scwAiApiKey': legacyRuntimeValues['infra:scwAiApiKey'] ?? (scwAiApiKey || undefined),
+  values: {
+    adminEmail: adminEmail || undefined,
+    brevoApiKey: brevoApiKey || undefined,
+    scwAiApiKey: scwAiApiKey || undefined,
   },
 })
-if (!legacyRuntimeValues['infra:adminEmail'] && !adminEmail) {
+if (!adminEmail) {
   console.warn(`  ${warningMark} Required runtime secret admin-email is not set yet. Use "Manage runtime secrets" before deploying backend/ai.`)
 }
 

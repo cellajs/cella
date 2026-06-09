@@ -41,6 +41,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, isProduction, infraConfig } from '../helpers'
+import { serviceNames, type ServiceName } from '../src/services.js'
 
 const applicationId = infraConfig.require('applicationId')
 
@@ -61,9 +62,9 @@ const vmApplicationId = infraConfig.get('vmApplicationId') ?? applicationId
 // can grant it here. Absent in CI, where pulumi already runs as applicationId.
 const operatorPrincipal = infraConfig.get('operatorPrincipal')
 
-/** Services that ship as their own image and need an independent tag file. */
-export const taggedServices = ['backend', 'cdc', 'yjs', 'ai', 'frontend'] as const
-export type TaggedService = (typeof taggedServices)[number]
+/** Services that ship as their own tag file. Derived from the canonical registry. */
+export const taggedServices = serviceNames
+export type TaggedService = ServiceName
 
 const deployTagsBucket = new scaleway.object.Bucket('deploy-tags-bucket', {
   name: naming.deployTagsBucket,

@@ -1,18 +1,27 @@
 import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../src/runtime-secrets.js'
 import { createSecretManagerClient } from '../src/scaleway-secret-manager.js'
 
-export interface MigrateRuntimeSecretsOptions {
+export interface SeedOperatorSecretsOptions {
   secretKey: string
   projectId: string
   region: string
   path: string
-  valuesByLegacyKey: Record<string, string | undefined>
+  /** Initial values keyed by runtime secret id (e.g. `adminEmail`). Empty/undefined entries are skipped. */
+  values: Partial<Record<string, string>>
   log?: (message: string) => void
 }
 
 const defaultLog = (message: string) => console.info(message)
 
-export async function migrateRuntimeSecrets(options: MigrateRuntimeSecretsOptions): Promise<void> {
+/**
+ * Seed operator-managed runtime secrets with their first value during bootstrap.
+ *
+ * Pulumi already creates the empty containers (see modules/secrets.ts), so this
+ * only writes an initial Version for the values the operator typed at the
+ * prompt. Containers that already have a version are left untouched, so re-runs
+ * never clobber a value set later via "Manage runtime secrets".
+ */
+export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): Promise<void> {
   const log = options.log ?? defaultLog
   const client = createSecretManagerClient({
     secretKey: options.secretKey,
@@ -21,9 +30,7 @@ export async function migrateRuntimeSecrets(options: MigrateRuntimeSecretsOption
   })
 
   for (const secret of operatorManagedRuntimeSecrets as RuntimeSecretDefinition[]) {
-    const legacyKey = secret.legacyStackConfigKey
-    if (!legacyKey) continue
-    const value = options.valuesByLegacyKey[legacyKey]
+    const value = options.values[secret.id]
     if (!value) continue
 
     const existing = await client.getSecretByName(secret.secretName, options.path)
@@ -40,9 +47,9 @@ export async function migrateRuntimeSecrets(options: MigrateRuntimeSecretsOption
     await client.putSecretValue({
       secretId: ensured.id,
       value,
-      description: 'Seeded from legacy Pulumi stack config',
+      description: 'Seeded during bootstrap',
       disablePrevious: false,
     })
-    log(`seed ${secret.secretName} from ${legacyKey}`)
+    log(`seed ${secret.secretName}`)
   }
 }

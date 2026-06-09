@@ -21,27 +21,27 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
+import { imageServiceNames, serviceNames, services, type ServiceName } from '../src/services.js'
 import { getFlag, getNumFlag, sleep } from './cli'
 
 /**
- * Every service that has an entry in the deploy-tags / reconciler service list.
- * Kept in lockstep with `infra/modules/deploy-tags.ts` (`taggedServices`) and
- * `infra/reconciler/index.ts` (`reconcilerServices`); the test asserts equality.
+ * Every service that has an entry in the canonical service registry
+ * (`infra/src/services.ts`). Derived from there so it can't drift.
  */
-export const TAGGED_SERVICES = ['backend', 'cdc', 'yjs', 'ai', 'frontend'] as const
-export type TaggedService = (typeof TAGGED_SERVICES)[number]
+export const TAGGED_SERVICES = serviceNames
+export type TaggedService = ServiceName
 
 /**
  * Services that do NOT ship their own image, mapped to the image they reuse.
  * `ai` runs on its own VM but pulls the backend image at the same SHA.
  */
-export const IMAGE_REUSE: Partial<Record<TaggedService, TaggedService>> = {
-  ai: 'backend',
-}
+export const IMAGE_REUSE: Partial<Record<ServiceName, ServiceName>> = Object.fromEntries(
+  services.filter((s) => s.reusesImageOf).map((s) => [s.name, s.reusesImageOf]),
+) as Partial<Record<ServiceName, ServiceName>>
 
 /** Tagged services that ship an independent image and must exist in the registry. */
 export function imageServices(): TaggedService[] {
-  return TAGGED_SERVICES.filter((s) => !(s in IMAGE_REUSE))
+  return imageServiceNames
 }
 
 /** Inspect a single image ref; resolves true if it exists. Injectable for tests. */
