@@ -1,131 +1,102 @@
 /**
- * Secrets — mirror of all runtime secrets into Scaleway Secret Manager.
+ * Secrets — registry-driven runtime secret containers in Scaleway Secret Manager.
  *
- * Compute VMs currently consume secrets directly from cloud-init userdata (see the
- * compute module's known limitation), so these Secret/SecretVersion pairs act as
- * the canonical, rotateable, audit-logged store and a recovery source. Each secret
- * is namespaced under `/{slug}-{mode}/` so multiple stacks can share a project.
- *
- * Stack config secrets: infra:cookieSecret, infra:unsubscribeSecret,
- *                       infra:cdcSecret, infra:yjsSecret, infra:scwAiApiKey
+ * Pulumi provisions the secret containers for every runtime secret in the central
+ * registry. Values are only written by Pulumi for secrets marked `valueSource:
+ * 'pulumi'`; operator-managed secrets are created as empty containers and filled
+ * later via the bootstrap secret-management flow.
  */
 import * as pulumi from '@pulumi/pulumi'
+import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode, infraConfig } from '../helpers'
+import { runtimeSecrets } from '../src/runtime-secrets.js'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
-
-// Application secrets from stack config
-const cookieSecret = infraConfig.requireSecret('cookieSecret')
-const unsubscribeSecret = infraConfig.requireSecret('unsubscribeSecret')
-const cdcSecret = infraConfig.requireSecret('cdcSecret')
-const yjsSecret = infraConfig.requireSecret('yjsSecret')
-const brevoApiKey = infraConfig.requireSecret('brevoApiKey')
-const scwAiApiKey = infraConfig.requireSecret('scwAiApiKey')
 
 /** Folder path for secret organization, e.g. '/cella-production/' */
 const secretPath = `/${naming.slug}-${mode}/`
 
 // ---------------------------------------------------------------------------
-// Helper — create a Secret + SecretVersion pair
+// Helper — create a Secret container, optionally with a Version
 // ---------------------------------------------------------------------------
 
-function createSecret(
+function createSecretContainer(
   name: string,
   description: string,
-  data: pulumi.Input<string>,
 ) {
-  const secret = new scaleway.secrets.Secret(`secret-${name}`, {
+  return new scaleway.secrets.Secret(`secret-${name}`, {
     name,
     path: secretPath,
     description,
     region,
     tags,
   }, { aliases: [{ type: 'scaleway:index/secret:Secret' }] })
+}
 
-  new scaleway.secrets.Version(`secret-version-${name}`, {
-    secretId: secret.id,
+function getExistingSecretContainer(name: string) {
+  return scaleway.secrets.getSecretOutput({
+    name,
+    path: secretPath,
+    region,
+  })
+}
+
+function createSecretVersion(
+  name: string,
+  secretId: pulumi.Input<string>,
+  data: pulumi.Input<string>,
+) {
+  return new scaleway.secrets.Version(`secret-version-${name}`, {
+    secretId,
     data,
     region,
   }, { aliases: [{ type: 'scaleway:index/secretVersion:SecretVersion' }] })
+}
 
-  return secret
+function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
+  const configured = infraConfig.getSecret(configKey)
+  if (configured) return configured
+  return new random.RandomPassword(`generated-${name}`, {
+    length: 32,
+    special: true,
+    overrideSpecial: '-_.~',
+    minLower: 2,
+    minUpper: 2,
+    minNumeric: 2,
+    minSpecial: 2,
+  }).result
+}
+
+const pulumiRuntimeSecretData: Record<string, pulumi.Input<string>> = {
+  databaseUrlAdmin: connectionStringAdmin,
+  databaseUrlRuntime: connectionStringRuntime,
+  databaseUrlCdc: connectionStringCdc,
+  cookieSecret: pulumiOwnedRuntimeSecret('cookieSecret', 'cookie-secret'),
+  unsubscribeSecret: pulumiOwnedRuntimeSecret('unsubscribeSecret', 'unsubscribe-token-secret'),
+  cdcSecret: pulumiOwnedRuntimeSecret('cdcSecret', 'cdc-secret'),
+  yjsSecret: pulumiOwnedRuntimeSecret('yjsSecret', 'yjs-secret'),
+  piiHashSecret: pulumiOwnedRuntimeSecret('piiHashSecret', 'pii-hash-secret'),
 }
 
 // ---------------------------------------------------------------------------
-// Database URL secrets
+// Registry-driven secret containers
 // ---------------------------------------------------------------------------
 
-const dbUrlAdminSecret = createSecret(
-  'database-url-admin',
-  'PostgreSQL admin_role connection string (migrations, seeds, BYPASSRLS)',
-  connectionStringAdmin,
-)
-
-const dbUrlRuntimeSecret = createSecret(
-  'database-url-runtime',
-  'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
-  connectionStringRuntime,
-)
-
-const dbUrlCdcSecret = createSecret(
-  'database-url-cdc',
-  'PostgreSQL CDC worker connection string (admin_role — needs REPLICATION for the logical slot)',
-  connectionStringCdc,
-)
-
-// ---------------------------------------------------------------------------
-// Application secrets
-// ---------------------------------------------------------------------------
-
-const cookieSecretRes = createSecret(
-  'cookie-secret',
-  'Cookie signing secret',
-  cookieSecret,
-)
-
-const unsubscribeSecretRes = createSecret(
-  'unsubscribe-token-secret',
-  'Email unsubscribe token secret',
-  unsubscribeSecret,
-)
-
-const cdcSecretRes = createSecret(
-  'cdc-secret',
-  'CDC authentication secret',
-  cdcSecret,
-)
-
-const yjsSecretRes = createSecret(
-  'yjs-secret',
-  'Yjs WebSocket authentication secret',
-  yjsSecret,
-)
-
-const brevoApiKeyRes = createSecret(
-  'brevo-api-key',
-  'Brevo transactional email API key',
-  brevoApiKey,
-)
-
-const scwAiApiKeyRes = createSecret(
-  'scw-ai-api-key',
-  'Scaleway AI API key for the AI worker',
-  scwAiApiKey,
-)
+const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
+  const secret = definition.valueSource === 'pulumi'
+    ? createSecretContainer(definition.secretName, definition.description)
+    : getExistingSecretContainer(definition.secretName)
+  if (definition.valueSource === 'pulumi') {
+    createSecretVersion(definition.secretName, secret.id, pulumiRuntimeSecretData[definition.id]!)
+  }
+  return [definition.id, secret]
+}))
 
 // ---------------------------------------------------------------------------
 // Exports — secret IDs for container references
 // ---------------------------------------------------------------------------
 
-/** Map of secret names to their Scaleway Secret IDs */
-export const secretIds = {
-  databaseUrlAdmin: dbUrlAdminSecret.id,
-  databaseUrlRuntime: dbUrlRuntimeSecret.id,
-  databaseUrlCdc: dbUrlCdcSecret.id,
-  cookieSecret: cookieSecretRes.id,
-  unsubscribeSecret: unsubscribeSecretRes.id,
-  cdcSecret: cdcSecretRes.id,
-  yjsSecret: yjsSecretRes.id,
-  brevoApiKey: brevoApiKeyRes.id,
-  scwAiApiKey: scwAiApiKeyRes.id,
-}
+/** Map of runtime secret IDs to their Scaleway Secret IDs. */
+export const secretIds = Object.fromEntries(
+  Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),
+) as Record<string, pulumi.Output<string>>

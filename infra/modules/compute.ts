@@ -17,29 +17,26 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, infraConfig, appConfig } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, appConfig } from '../helpers'
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index.js'
+import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../src/runtime-secrets.js'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
-import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
+import { secretIds } from './secrets'
 import { frontendBucketName } from './storage'
 
 // ---------------------------------------------------------------------------
-// Secrets from stack config
+// Infra-only secrets still needed on the VM for bootstrap + registry/S3 access
 // ---------------------------------------------------------------------------
 
-const cookieSecret = infraConfig.requireSecret('cookieSecret')
-const unsubscribeSecret = infraConfig.requireSecret('unsubscribeSecret')
-const cdcSecret = infraConfig.requireSecret('cdcSecret')
-const yjsSecret = infraConfig.requireSecret('yjsSecret')
-const piiHashSecret = infraConfig.requireSecret('piiHashSecret')
-const brevoApiKey = infraConfig.requireSecret('brevoApiKey')
-const scwAiApiKey = infraConfig.requireSecret('scwAiApiKey')
-const adminEmail = infraConfig.requireSecret('adminEmail')
-const scwSecretKey = new pulumi.Config('scaleway').requireSecret('secretKey')
-const scwAccessKey = new pulumi.Config('scaleway').requireSecret('accessKey')
+const scwSecretKey = infra.computeEnabled
+  ? new pulumi.Config('scaleway').requireSecret('secretKey')
+  : pulumi.secret('')
+const scwAccessKey = infra.computeEnabled
+  ? new pulumi.Config('scaleway').requireSecret('accessKey')
+  : pulumi.secret('')
 
 // ---------------------------------------------------------------------------
 // Security Group — fully closed inbound; LB reaches VMs via private network.
@@ -57,36 +54,32 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 })
 
 // ---------------------------------------------------------------------------
-// Shared .env content (all secrets, all DB URLs)
+// Shared static .env content (compose wiring only; runtime secrets are synced
+// from Secret Manager into /opt/app/.env.runtime)
 // ---------------------------------------------------------------------------
 
-const dotEnv = pulumi.all([
-  connectionStringRuntime,
-  connectionStringAdmin,
-  connectionStringCdc,
-  cookieSecret,
-  unsubscribeSecret,
-  cdcSecret,
-  yjsSecret,
-  piiHashSecret,
-  brevoApiKey,
-  scwAiApiKey,
-  adminEmail,
-]).apply(([dbUrl, dbAdminUrl, dbCdcUrl, cookie, unsub, cdc, yjs, pii, brevo, aiApiKey, admin]) =>
-  [
-    `DATABASE_URL=${dbUrl}`,
-    `DATABASE_ADMIN_URL=${dbAdminUrl}`,
-    `DATABASE_CDC_URL=${dbCdcUrl}`,
-    `COOKIE_SECRET=${cookie}`,
-    `UNSUBSCRIBE_SECRET=${unsub}`,
-    `CDC_SECRET=${cdc}`,
-    `YJS_SECRET=${yjs}`,
-    `PII_HASH_SECRET=${pii}`,
-    `BREVO_API_KEY=${brevo}`,
-    `SCW_AI_API_KEY=${aiApiKey}`,
-    `ADMIN_EMAIL=${admin}`,
-  ].join('\n'),
-)
+function buildRuntimeSecretsManifest(serviceName: string): pulumi.Output<string> {
+  const definitions = runtimeSecretsForConsumer(serviceName as RuntimeSecretConsumer)
+  return pulumi.all(definitions.map((definition) => secretIds[definition.id]!)).apply((ids) =>
+    JSON.stringify(
+      definitions.map((definition, index) => ({
+        id: definition.id,
+        secretName: definition.secretName,
+        // Pulumi's scaleway Secret `.id` is the composite `<region>/<uuid>`.
+        // The Secret Manager access URL the VM builds already carries the
+        // region in its path (`/regions/<region>/secrets/<id>/...`), so we must
+        // emit ONLY the bare uuid here — otherwise the VM requests
+        // `/secrets/<region>/<uuid>/...` and every read 404s, failing
+        // runtime-secret-sync fleet-wide.
+        secretId: (ids[index] ?? '').split('/').pop(),
+        envVar: definition.envVar,
+        required: definition.required,
+      })),
+      null,
+      2,
+    ),
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Compose file content (read from deploy/compose.yml at deploy time)
@@ -127,9 +120,16 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
     ),
   )
 
-  return pulumi.all([dotEnv, envLines, scwSecretKey, scwAccessKey, registryEndpoint, deployTagsBucketName]).apply(
-    ([secrets, env, secretKey, accessKey, registry, tagBucket]) => {
-      const allEnv = [...env, '', '# Secrets', secrets].join('\n')
+  return pulumi.all([
+    buildRuntimeSecretsManifest(service.name),
+    envLines,
+    scwSecretKey,
+    scwAccessKey,
+    registryEndpoint,
+    deployTagsBucketName,
+  ]).apply(
+    ([runtimeSecretsManifest, env, secretKey, accessKey, registry, tagBucket]) => {
+      const allEnv = env.join('\n')
 
       // Reconciler env file — single source of truth for the per-VM watcher.
       // Reuses the existing Pulumi-owned creds in PR1; PR2 will scope these
@@ -150,6 +150,7 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
         bootService: bootSlotService(service.name),
         profile: service.profile,
         envFileContent: allEnv,
+        runtimeSecretsManifest,
         reconcilerEnvFile,
         installReconcilerSnippet,
         composeContent,

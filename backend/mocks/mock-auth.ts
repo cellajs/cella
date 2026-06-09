@@ -54,10 +54,14 @@ export const mockSignUpWithTokenResponse = (key = 'sign-up-token:default') =>
  * Used for generateTotpKey endpoint example.
  */
 export const mockTotpKeyResponse = (key = 'totp-key:default') =>
-  withFakerSeed(key, () => ({
-    totpUri: `otpauth://totp/App:user@example.com?secret=${faker.string.alphanumeric(32).toUpperCase()}&issuer=App`,
-    manualKey: faker.string.alphanumeric(32).toUpperCase(),
-  }));
+  withFakerSeed(key, () => {
+    const exampleManualKey = 'EXAMPLE-BASE32-KEY';
+
+    return {
+      totpUri: `otpauth://totp/App:user@example.com?secret=${exampleManualKey}&issuer=App`,
+      manualKey: exampleManualKey,
+    };
+  });
 
 /**
  * Generates a mock token data response.

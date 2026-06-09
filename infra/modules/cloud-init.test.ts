@@ -12,7 +12,8 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
     service: 'backend',
     bootService: 'backend-blue',
     profile: 'backend',
-    envFileContent: 'APP_MODE=production\n\n# Secrets\nCOOKIE_SECRET=shhh',
+    envFileContent: 'APP_MODE=production\nBACKEND_URL=https://api.example.test',
+    runtimeSecretsManifest: JSON.stringify([{ secretId: 'secret-1', envVar: 'COOKIE_SECRET', required: true }], null, 2),
     reconcilerEnvFile: 'SERVICE=backend\nHEALTH_PORT=4000',
     installReconcilerSnippet: 'echo install-reconciler',
     composeContent: 'services:\n  backend: {}',
@@ -72,7 +73,9 @@ describe('renderCloudInit', () => {
   it('writes /opt/app/.env with mode 600 and the reconciler env with mode 0600', () => {
     const out = renderCloudInit(params())
     expect(out).toMatch(/chmod 600 \/opt\/app\/\.env/)
+    expect(out).toMatch(/chmod 600 \/etc\/runtime-secrets\/manifest\.json/)
     expect(out).toMatch(/chmod 0600 \/etc\/reconciler\/reconciler\.env/)
+    expect(out).toMatch(/os\.chmod\(RUNTIME_ENV_PATH, 0o600\)/)
   })
 
   it('logs into the registry host (not the full namespaced ref) via --password-stdin', () => {
@@ -91,9 +94,37 @@ describe('renderCloudInit', () => {
   it('embeds the compose, env and reconciler-env bodies in their heredocs', () => {
     const out = renderCloudInit(params())
     expect(out).toContain('services:\n  backend: {}')
-    expect(out).toContain('COOKIE_SECRET=shhh')
+    expect(out).toContain('BACKEND_URL=https://api.example.test')
+    expect(out).toContain('"envVar": "COOKIE_SECRET"')
     expect(out).toContain('SERVICE=backend\nHEALTH_PORT=4000')
     expect(out).toContain('echo install-reconciler')
+  })
+
+  it('installs and runs the runtime secret sync before booting ingress or the app', () => {
+    const out = renderCloudInit(params())
+    const syncInstall = out.indexOf('cat > /usr/local/bin/runtime-secret-sync')
+    const syncRun = out.indexOf('/usr/local/bin/runtime-secret-sync')
+    const ingressUp = out.indexOf('docker compose --profile backend up -d ingress')
+    expect(syncInstall).toBeGreaterThan(-1)
+    expect(syncRun).toBeGreaterThan(syncInstall)
+    expect(ingressUp).toBeGreaterThan(syncRun)
+  })
+
+  it('does not corrupt Python newline literals in the runtime secret sync script', () => {
+    // The script is embedded in a JS template literal; using '\n'/'\r' there
+    // would render as real newlines and break the Python ("unterminated string
+    // literal"). chr(10)/chr(13) keep the source robust against that.
+    const out = renderCloudInit(params())
+    expect(out).toContain('if chr(10) in value or chr(13) in value:')
+    expect(out).toContain('payload = chr(10).join(lines)')
+    expect(out).not.toContain("if '\n' in value")
+  })
+
+  it('keeps runtime secrets out of the static env file and only references secret IDs in the manifest', () => {
+    const out = renderCloudInit(params())
+    expect(out).not.toContain('COOKIE_SECRET=shhh')
+    expect(out).toContain('"secretId": "secret-1"')
+    expect(out).toContain('/opt/app/.env.runtime')
   })
 
   it('writes the ingress.Caddyfile body to /opt/app/ingress.Caddyfile', () => {

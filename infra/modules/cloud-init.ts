@@ -23,8 +23,10 @@ export interface CloudInitParams {
   bootService: string
   /** Docker compose profile to bring up. */
   profile: string
-  /** Fully-resolved .env body (compose env vars + secrets) written to /opt/app/.env. */
+  /** Fully-resolved static .env body written to /opt/app/.env. */
   envFileContent: string
+  /** JSON manifest describing which Secret Manager objects this VM should hydrate. */
+  runtimeSecretsManifest: string
   /** Resolved reconciler env file written to /etc/reconciler/reconciler.env. */
   reconcilerEnvFile: string
   /** Snippet that installs the reconciler binary + systemd units. */
@@ -47,7 +49,7 @@ export interface CloudInitParams {
 
 /** Render the first-boot cloud-init script for a single service VM. */
 export function renderCloudInit(p: CloudInitParams): string {
-  const { service, profile, envFileContent, reconcilerEnvFile, installReconcilerSnippet, composeContent, ingressContent, registry, secretKey, accessKey, stateBucket, region } = p
+  const { service, profile, envFileContent, runtimeSecretsManifest, reconcilerEnvFile, installReconcilerSnippet, composeContent, ingressContent, registry, secretKey, accessKey, stateBucket, region } = p
   const s3Endpoint = `https://s3.${region}.scw.cloud`
   const bootService = p.bootService
   return `#!/bin/bash
@@ -142,6 +144,7 @@ mark 10-docker-installed
 
 # App directory
 mkdir -p /opt/app
+mkdir -p /etc/runtime-secrets
 
 # Write compose file
 cat > /opt/app/compose.yml <<'COMPOSE_EOF'
@@ -159,6 +162,12 @@ cat > /opt/app/.env <<'ENV_EOF'
 ${envFileContent}
 ENV_EOF
 chmod 600 /opt/app/.env
+
+# Write the runtime secret manifest (metadata only, never secret values).
+cat > /etc/runtime-secrets/manifest.json <<'RUNTIME_SECRETS_EOF'
+${runtimeSecretsManifest}
+RUNTIME_SECRETS_EOF
+chmod 600 /etc/runtime-secrets/manifest.json
 mark 20-files-written
 
 # Login to container registry
@@ -180,8 +189,96 @@ ${reconcilerEnvFile}
 RECON_ENV_EOF
 chmod 0600 /etc/reconciler/reconciler.env
 
+cat > /usr/local/bin/runtime-secret-sync <<'RUNTIME_SECRET_SYNC_EOF'
+#!/usr/bin/env python3
+import base64
+import json
+import os
+import pathlib
+import sys
+import urllib.error
+import urllib.request
+
+MANIFEST_PATH = pathlib.Path('/etc/runtime-secrets/manifest.json')
+RUNTIME_ENV_PATH = pathlib.Path('/opt/app/.env.runtime')
+RECONCILER_ENV_PATH = pathlib.Path('/etc/reconciler/reconciler.env')
+
+
+def read_env_file(path: pathlib.Path) -> dict[str, str]:
+  values: dict[str, str] = {}
+  if not path.exists():
+    return values
+  for raw_line in path.read_text(encoding='utf-8').splitlines():
+    line = raw_line.strip()
+    if not line or line.startswith('#') or '=' not in line:
+      continue
+    key, value = line.split('=', 1)
+    values[key] = value.strip().strip("'").strip('"')
+  return values
+
+
+def main() -> int:
+  manifest = json.loads(MANIFEST_PATH.read_text(encoding='utf-8'))
+  reconciler_env = read_env_file(RECONCILER_ENV_PATH)
+  token = os.environ.get('SCW_SECRET_KEY') or os.environ.get('AWS_SECRET_ACCESS_KEY') or reconciler_env.get('AWS_SECRET_ACCESS_KEY')
+  region = os.environ.get('SCW_REGION') or os.environ.get('REGION') or reconciler_env.get('REGION')
+  if not token or not region:
+    print('runtime-secret-sync: missing Secret Manager credentials or region', file=sys.stderr)
+    return 1
+
+  lines: list[str] = []
+  errors: list[str] = []
+  for entry in manifest:
+    # The access URL already carries the region in its path, so use ONLY the
+    # bare uuid. Pulumi's scaleway Secret id is the composite region/uuid; a
+    # region-prefixed id here yields secrets/<region>/<uuid> in the path -> 404.
+    secret_id = str(entry['secretId']).rsplit('/', 1)[-1]
+    request = urllib.request.Request(
+      f'https://api.scaleway.com/secret-manager/v1beta1/regions/{region}/secrets/{secret_id}/versions/latest/access',
+      headers={
+        'Content-Type': 'application/json',
+        'X-Auth-Token': token,
+      },
+      method='GET',
+    )
+    try:
+      with urllib.request.urlopen(request) as response:
+        payload = json.loads(response.read().decode('utf-8'))
+    except urllib.error.HTTPError as exc:
+      if entry['required']:
+        errors.append(f'{entry["envVar"]}: {exc.code}')
+      continue
+
+    value = base64.b64decode(payload['data']).decode('utf-8')
+    if chr(10) in value or chr(13) in value:
+      errors.append(f'{entry["envVar"]}: multiline values are not supported in env files')
+      continue
+    lines.append(f'{entry["envVar"]}={value}')
+
+  if errors:
+    print('runtime-secret-sync: failed to hydrate required runtime secrets', file=sys.stderr)
+    for error in errors:
+      print(error, file=sys.stderr)
+    return 1
+
+  payload = chr(10).join(lines)
+  if payload:
+    payload += chr(10)
+  RUNTIME_ENV_PATH.write_text(payload, encoding='utf-8')
+  os.chmod(RUNTIME_ENV_PATH, 0o600)
+  return 0
+
+
+if __name__ == '__main__':
+  raise SystemExit(main())
+RUNTIME_SECRET_SYNC_EOF
+chmod 0755 /usr/local/bin/runtime-secret-sync
+
 ${installReconcilerSnippet}
 mark 40-reconciler-installed
+
+/usr/local/bin/runtime-secret-sync
+mark 42-runtime-secrets-synced
 
 # Bring up the ingress proxy first so the host port is served before any app
 # container exists. The reconciler then rolls only the app (up -d --no-deps),

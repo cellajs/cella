@@ -8,6 +8,14 @@ import { spawn } from 'node:child_process'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 
+async function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
+  while (child.exitCode === null && child.signalCode === null) {
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+
+  return child.exitCode ?? 1
+}
+
 /** Resources whose permission set is intentionally NOT granted to the CI key
  *  (see PROJECT_PERMISSION_SETS in setup-ci-key.ts). When permission is denied
  *  on one of these, the fix is to use Apply mode, not to widen CI. */
@@ -33,30 +41,29 @@ export function classifyPermissionError(stderr: string): PermissionHint {
 /** Runs `pulumi up --stack <s> --yes --non-interactive` in `cwd` with `env`.
  *  On non-zero exit, prints a permission hint when stderr indicates one. */
 export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv): Promise<number> {
-  return new Promise((resolveFn) => {
-    console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive`)
-    const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {
-      cwd,
-      env,
-      stdio: ['inherit', 'inherit', 'pipe'],
-    })
-    let stderrBuf = ''
-    child.stderr?.on('data', (chunk: Buffer) => {
-      stderrBuf += chunk.toString()
-      process.stderr.write(chunk)
-    })
-    child.on('close', (code) => {
-      if (code !== 0) {
-        const hint = classifyPermissionError(stderrBuf)
-        if (hint) {
-          console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`)
-          if (hint.kind === 'bootstrap-owned')
-            console.error(`  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`)
-          else
-            console.error(`  Add the matching permission set to PROJECT_PERMISSION_SETS in tasks/setup-ci-key.ts, then re-run bootstrap → Rotate CI.`)
-        }
-      }
-      resolveFn(code ?? 1)
-    })
+  console.info(`\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive`)
+  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {
+    cwd,
+    env,
+    stdio: ['inherit', 'inherit', 'pipe'],
   })
+  let stderrBuf = ''
+  child.stderr?.on('data', (chunk: Buffer) => {
+    stderrBuf += chunk.toString()
+    process.stderr.write(chunk)
+  })
+
+  const exitCode = await waitForExitCode(child)
+  if (exitCode !== 0) {
+    const hint = classifyPermissionError(stderrBuf)
+    if (hint) {
+      console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`)
+      if (hint.kind === 'bootstrap-owned')
+        console.error(`  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`)
+      else
+        console.error(`  Add the matching permission set to PROJECT_PERMISSION_SETS in tasks/setup-ci-key.ts, then re-run bootstrap → Rotate CI.`)
+    }
+  }
+
+  return exitCode
 }

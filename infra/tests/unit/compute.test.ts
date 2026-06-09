@@ -28,21 +28,12 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/['"]ssh['"]/i)
   })
 
-  it('reads every app secret via requireSecret (no plain require for known secret keys)', () => {
-    const secretKeys = [
-      'cookieSecret',
-      'unsubscribeSecret',
-      'cdcSecret',
-      'yjsSecret',
-      'brevoApiKey',
-      'scwAiApiKey',
-      'adminEmail',
-    ]
-    for (const k of secretKeys) {
-      const requireSecretPattern = new RegExp(`requireSecret\\(\\s*['"]${k}['"]\\s*\\)`)
-      const plainRequirePattern = new RegExp(`infraConfig\\.require\\(\\s*['"]${k}['"]\\s*\\)`)
-      expect(source, `${k} must use requireSecret`).toMatch(requireSecretPattern)
-      expect(source, `${k} must NOT be loaded via plain require`).not.toMatch(plainRequirePattern)
+  it('builds per-service runtime secret manifests instead of loading app secrets from stack config', () => {
+    expect(source).toMatch(/buildRuntimeSecretsManifest\(/)
+    expect(source).toMatch(/runtimeSecretsForConsumer\(/)
+    expect(source).toMatch(/secretIds\[definition\.id\]/)
+    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
+      expect(source).not.toMatch(new RegExp(`requireSecret\\(\\s*['"]${key}['"]\\s*\\)`))
     }
   })
 
@@ -80,5 +71,12 @@ describe('compute module source invariants', () => {
     for (const banned of ['DATABASE_URL', 'COOKIE_SECRET', 'BREVO_API_KEY', 'SCW_AI_API_KEY', 'YJS_SECRET', 'CDC_SECRET']) {
       expect(body, `${banned} must not appear in frontend composeEnv`).not.toContain(banned)
     }
+  })
+
+  it('passes a runtime secret manifest into cloud-init instead of inlining runtime values into .env', () => {
+    expect(source).toMatch(/runtimeSecretsManifest,/)
+    expect(source).not.toContain('COOKIE_SECRET=')
+    expect(source).not.toContain('DATABASE_URL=')
+    expect(source).not.toContain('BREVO_API_KEY=')
   })
 })

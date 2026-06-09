@@ -16,44 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Install deps once and reuse for other jobs (optional optimization)
-  install:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Create .env files
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          cp ./frontend/.env.example ./frontend/.env
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Save node_modules so other jobs can reuse
-      - name: Cache node_modules
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
   # Runs linting
   lint:
     runs-on: ubuntu-latest
-    needs: install
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -69,12 +35,8 @@ jobs:
           node-version: 24
           cache: "pnpm"
 
-      - name: Restore node_modules
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run Biome
         run: pnpm biome check .
@@ -82,7 +44,7 @@ jobs:
   # Runs all tests (full mode with PostgreSQL)
   test:
     runs-on: ubuntu-latest
-    needs: install
+    timeout-minutes: 20
     permissions:
       contents: read
     services:
@@ -117,12 +79,8 @@ jobs:
           cp ./backend/.env.example ./backend/.env
           cp ./frontend/.env.example ./frontend/.env
 
-      - name: Restore node_modules
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install
@@ -136,14 +94,14 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
       - name: Run tests (full mode)
-        run: pnpm --filter backend test:full && pnpm --filter frontend test
+        run: pnpm test:full
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
   # Tests for the sync CLI tool
   test-sync-cli:
     runs-on: ubuntu-latest
-    needs: install
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -161,12 +119,8 @@ jobs:
           node-version: 24
           cache: "pnpm"
 
-      - name: Restore node_modules
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run sync CLI unit tests
         run: pnpm --filter @cellajs/cli test
@@ -187,49 +141,3 @@ jobs:
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           pnpm cella --service analyze
-
-  # Generates draft release notes (for testing only)
-  draft-release-notes:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          fetch-depth: 0 # needed so changelog sees full commit history
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 24
-
-      - name: Install changelog deps
-        run: pnpm add -Dw conventional-changelog-cli conventional-changelog-conventionalcommits
-
-      - name: Generate draft release notes
-        run: |
-          # Check latest and previous tags
-          LATEST_TAG=$(if [ "$(git tag | wc -l)" -ge 1 ]; then git describe --tags --abbrev=0; fi)
-          PREV_TAG=$(if [ "$(git tag | wc -l)" -ge 2 ]; then git tag --sort=creatordate | tail -2 | head -1; fi)
-
-          echo "Latest tag: $LATEST_TAG"
-          echo "Previous tag: $PREV_TAG"
-
-          if [ -z "$PREV_TAG" ]; then
-            echo "First release — include all commits"
-            npx conventional-changelog -p conventionalcommits -r 0 -o RELEASE_NOTES.md
-          else
-            echo "Generating changelog since previous tag $PREV_TAG"
-            # Use -r 2 and output commits since PREV_TAG
-            npx conventional-changelog -p conventionalcommits -r 2 -o RELEASE_NOTES.md
-          fi
-
-      - name: Upload draft release notes
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: draft-release-notes
-          path: RELEASE_NOTES.md

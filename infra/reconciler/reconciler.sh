@@ -319,6 +319,34 @@ command -v curl >/dev/null   || die 1 "curl_missing"
 
 S3_ENDPOINT="https://s3.${REGION}.scw.cloud"
 
+runtime_env_hash() {
+  local env_file="${COMPOSE_DIR}/.env.runtime"
+  if [[ -f "$env_file" ]]; then
+    sha256sum "$env_file" | awk '{print $1}'
+  else
+    printf '<missing>'
+  fi
+}
+
+secrets_changed=0
+if [[ -x /usr/local/bin/runtime-secret-sync ]]; then
+  publish_status syncing rolling
+  before_secret_hash=$(runtime_env_hash)
+  # Capture stderr so a sync failure is debuggable from CI/laptop without SSH.
+  # runtime-secret-sync prints the offending `<ENV_VAR>: <http-code>` lines and
+  # a summary to stderr; on a long-lived VM (timer-driven) those would otherwise
+  # vanish into journald. Upload them to the boot-diag prefix before dying.
+  if ! sync_err=$(/usr/local/bin/runtime-secret-sync 2>&1); then
+    upload_diag_text secret-sync-failed "$sync_err"
+    die 1 "runtime_secret_sync_failed"
+  fi
+  after_secret_hash=$(runtime_env_hash)
+  if [[ "$before_secret_hash" != "$after_secret_hash" ]]; then
+    secrets_changed=1
+    log INFO "runtime_secret_change service=$SERVICE before=$before_secret_hash after=$after_secret_hash"
+  fi
+fi
+
 # --- Fetch desired tag ------------------------------------------------------
 desired=$(aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://${TAG_BUCKET}/${TAG_KEY}" - 2>/dev/null | tr -d '[:space:]')
 if [[ -z "$desired" ]]; then
@@ -336,12 +364,16 @@ fi
 current=""
 [[ -f "$CURRENT_TAG_FILE" ]] && current=$(< "$CURRENT_TAG_FILE")
 
-if [[ "$desired" == "$current" ]]; then
+if [[ "$desired" == "$current" && "$secrets_changed" != "1" ]]; then
   # Steady state. Nothing to do; stay quiet.
   exit 0
 fi
 
-log INFO "tag_change service=$SERVICE from=${current:-<none>} to=$desired"
+if [[ "$desired" == "$current" ]]; then
+  log INFO "config_change service=$SERVICE tag=$desired"
+else
+  log INFO "tag_change service=$SERVICE from=${current:-<none>} to=$desired"
+fi
 publish_status start rolling
 
 # --- Compose up cutover -----------------------------------------------------

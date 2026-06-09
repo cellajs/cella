@@ -9,14 +9,6 @@ describe('init-stack-secrets specs', () => {
   it('snapshot of keys + sources', () => {
     expect(specs.map((s) => ({ key: s.key, from: s.from }))).toEqual([
       { key: 'infra:dbPassword',        from: 'random' },
-      { key: 'infra:cookieSecret',      from: 'random' },
-      { key: 'infra:unsubscribeSecret', from: 'random' },
-      { key: 'infra:cdcSecret',         from: 'random' },
-      { key: 'infra:yjsSecret',         from: 'random' },
-      { key: 'infra:piiHashSecret',     from: 'random' },
-      { key: 'infra:adminEmail',        from: 'env' },
-      { key: 'infra:brevoApiKey',       from: 'env' },
-      { key: 'infra:scwAiApiKey',       from: 'env' },
       { key: 'scaleway:projectId',      from: 'env' },
     ])
   })

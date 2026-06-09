@@ -31,6 +31,9 @@ jobs:
     # Skip preview for PRs from forks — they cannot access repo secrets, and
     # we do not want to expose Scaleway/Pulumi credentials to fork code.
     if: github.event.pull_request.head.repo.full_name == github.repository
+    # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the production Environment.
+    # Repo-level secrets were removed so credentials live in one place only.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

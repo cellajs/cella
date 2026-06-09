@@ -48,14 +48,6 @@ export type Spec =
 /** Declarative table of stack values to populate. Order is log order only. */
 export const specs: Spec[] = [
   { key: 'infra:dbPassword',        label: 'database password',  from: 'random', bytes: 24 },
-  { key: 'infra:cookieSecret',      label: 'cookie secret',      from: 'random' },
-  { key: 'infra:unsubscribeSecret', label: 'unsubscribe secret', from: 'random' },
-  { key: 'infra:cdcSecret',         label: 'CDC secret',         from: 'random' },
-  { key: 'infra:yjsSecret',         label: 'Yjs secret',         from: 'random' },
-  { key: 'infra:piiHashSecret',     label: 'PII hash secret',    from: 'random' },
-  { key: 'infra:adminEmail',        label: 'admin email',        from: 'env', envName: 'ADMIN_EMAIL' },
-  { key: 'infra:brevoApiKey',       label: 'Brevo API key',      from: 'env', envName: 'BREVO_API_KEY' },
-  { key: 'infra:scwAiApiKey',       label: 'Scaleway AI API key',from: 'env', envName: 'SCW_AI_API_KEY' },
   { key: 'scaleway:projectId',      label: 'Scaleway project ID',from: 'env', envName: 'SCW_PROJECT_ID', secret: false },
 ]
 

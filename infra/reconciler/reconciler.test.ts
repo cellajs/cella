@@ -204,6 +204,14 @@ describe('reconciler files', () => {
     expect(reconcilerScript).toContain('export DOCKER_CONFIG="$STATE_DIR/.docker"')
   })
 
+  it('runs runtime secret sync on every tick and treats secret changes as a rollout trigger', () => {
+    expect(reconcilerScript).toContain('runtime_env_hash()')
+    expect(reconcilerScript).toContain('/usr/local/bin/runtime-secret-sync')
+    expect(reconcilerScript).toContain('runtime_secret_change service=$SERVICE')
+    expect(reconcilerScript).toContain('if [[ "$desired" == "$current" && "$secrets_changed" != "1" ]]; then')
+    expect(reconcilerScript).toContain('config_change service=$SERVICE tag=$desired')
+  })
+
   it('uploads the migrate output on migrate_failed so the real cause is visible', () => {
     // The one-shot migrator's stderr used to only reach journald, so a
     // migrate_failed from CI was a black box. Capture its combined output and

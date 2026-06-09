@@ -2786,8 +2786,8 @@
                   "required": ["totpUri", "manualKey"]
                 },
                 "example": {
-                  "totpUri": "otpauth://totp/App:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=App",
-                  "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8"
+                  "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App",
+                  "manualKey": "EXAMPLE-BASE32-KEY"
                 }
               }
             }

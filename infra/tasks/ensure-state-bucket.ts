@@ -17,6 +17,7 @@ export type EnsureResult = 'exists' | 'created'
  * fatal "name taken by another account".
  */
 export async function ensureStateBucket(s3: S3Client, bucketName: string): Promise<EnsureResult> {
+  let headWasAmbiguous403 = false
   const headResult = await s3
     .send(new HeadBucketCommand({ Bucket: bucketName }))
     .then(() => true)
@@ -24,7 +25,11 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
       const status = err.$metadata?.httpStatusCode
       // 403 is ambiguous on Scaleway (foreign-owned, missing perms, stale
       // reservation); fall through to CreateBucket for an authoritative answer.
-      if (status === 404 || status === 301 || status === 403) return false
+      if (status === 403) {
+        headWasAmbiguous403 = true
+        return false
+      }
+      if (status === 404 || status === 301) return false
       throw err
     })
 
@@ -36,6 +41,7 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
   } catch (err: unknown) {
     const name = (err as { name?: string }).name
     if (name === 'BucketAlreadyOwnedByYou') return 'exists'
+    if (name === 'BucketAlreadyExists' && headWasAmbiguous403) return 'exists'
     if (name === 'BucketAlreadyExists') {
       throw new Error(
         `Bucket name "${bucketName}" is taken by another account. Pick a different slug or rename in shared/config/config.default.ts.`,

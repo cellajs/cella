@@ -44,13 +44,15 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
 };
 
 export const getSignature = (paramsString: string) => {
-  const authSecret = env.TRANSLOADIT_SECRET;
-  if (!authSecret) throw Error('auth_key_not_found');
+  const hmacKey = env.TRANSLOADIT_SECRET;
 
-  // Note: This is HMAC for Transloadit API request signing.
-  const signatureBytes = crypto.createHmac('sha384', authSecret).update(Buffer.from(paramsString, 'utf-8'));
-  // The final signature needs the hash name in front, so
-  // the hashing algorithm can be updated in a backwards-compatible
-  // way when old algorithms become insecure.
-  return `sha384:${signatureBytes.digest('hex')}`;
+  if (!hmacKey) {
+    throw new Error('transloadit_secret_not_found');
+  }
+
+  // Transloadit request signing requires HMAC-SHA384.
+  // This is message authentication, not password storage.
+  const digest = crypto.createHmac('sha384', hmacKey).update(paramsString, 'utf8').digest('hex');
+
+  return `sha384:${digest}`;
 };

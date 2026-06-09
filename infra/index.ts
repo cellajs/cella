@@ -2,7 +2,7 @@
  * Pulumi entrypoint — orchestrates all infrastructure modules.
  *
  * Modules are imported and composed here in dependency order:
- * storage → edge/dns → network/registry → database → secrets/compute → loadbalancer → monitoring.
+ * storage → edge/dns → network/registry → database → secrets/compute → loadbalancer.
  * Comment out a group to deploy incrementally (see INFRA_ARCHITECTURE.md).
  */
 import { naming, region, mode } from './helpers'
@@ -91,12 +91,3 @@ import * as pulumi from '@pulumi/pulumi'
 export const apiDomainUrl = lb.apiDomainUrl ?? pulumi.output('')
 export const yjsDomainUrl = lb.yjsDomainUrl ?? pulumi.output('')
 export const aiDomainUrl = lb.aiDomainUrl ?? pulumi.output('')
-
-// ---------------------------------------------------------------------------
-// Monitoring (Cockpit data sources)
-// ---------------------------------------------------------------------------
-
-import * as monitoring from './modules/monitoring'
-
-export const metricsSourceId = monitoring.metricsSourceId
-export const logsSourceId = monitoring.logsSourceId

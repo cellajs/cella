@@ -56,7 +56,9 @@ services:
       - '4000'
     # Give in-flight requests time to drain on SIGTERM during a rollover.
     stop_grace_period: 30s
-    env_file: .env
+    env_file:
+      - .env
+      - .env.runtime
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -90,7 +92,9 @@ services:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
     restart: 'no'
-    env_file: .env
+    env_file:
+      - .env
+      - .env.runtime
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -109,7 +113,9 @@ services:
     expose:
       - '4001'
     stop_grace_period: 30s
-    env_file: .env
+    env_file:
+      - .env
+      - .env.runtime
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -131,7 +137,9 @@ services:
     expose:
       - '4002'
     stop_grace_period: 30s
-    env_file: .env
+    env_file:
+      - .env
+      - .env.runtime
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
@@ -152,7 +160,9 @@ services:
     expose:
       - '4003'
     stop_grace_period: 30s
-    env_file: .env
+    env_file:
+      - .env
+      - .env.runtime
     environment:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}

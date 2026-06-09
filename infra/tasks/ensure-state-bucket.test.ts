@@ -55,6 +55,11 @@ describe('ensureStateBucket', () => {
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('exists')
   })
 
+  it('treats HEAD 403 as ambiguous → falls through to CREATE → BucketAlreadyExists as reusable', async () => {
+    const s3 = makeS3({ head: [{ status: 403 }], create: [{ name: 'BucketAlreadyExists' }] })
+    await expect(ensureStateBucket(s3, 'cella-pulumi-state')).resolves.toBe('exists')
+  })
+
   it('throws on BucketAlreadyExists (taken by another account)', async () => {
     const s3 = makeS3({ head: [{ status: 404 }], create: [{ name: 'BucketAlreadyExists' }] })
     await expect(ensureStateBucket(s3, 'cella-pulumi-state')).rejects.toThrow(/taken by another account/)

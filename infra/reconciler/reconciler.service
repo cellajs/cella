@@ -22,7 +22,14 @@ LockPersonality=true
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/reconciler /var/lock /var/log/reconciler
+# /opt/app must be writable: each reconcile runs `runtime-secret-sync`, which
+# (re)writes /opt/app/.env.runtime from Secret Manager before the roll. Without
+# this, ProtectSystem=strict mounts /opt read-only and the Python write raises
+# an uncaught OSError (read-only file system) → the reconciler exits 1 with
+# `runtime_secret_sync_failed` on every timer tick and never rolls the app.
+# (At first boot the sync runs from cloud-init OUTSIDE this sandbox, which is
+# why a fresh VM hydrates secrets fine but a running one could not re-sync.)
+ReadWritePaths=/var/lib/reconciler /var/lock /var/log/reconciler /opt/app
 # We need access to /var/run/docker.sock; that lives on the host root fs
 # which ProtectSystem=strict makes read-only, but the socket itself is a
 # Unix socket and writes go via the docker daemon, so no extra path needed.

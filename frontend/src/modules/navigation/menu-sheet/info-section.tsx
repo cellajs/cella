@@ -21,7 +21,7 @@ function StatusCard({ label, status }: { label: string; status: HealthStatus }) 
     <div className="flex items-center gap-2 rounded-md border border-dashed px-4 py-2">
       <span
         className={cn(
-          'size-2 shrink-0 animate-glow rounded-full',
+          'inline-block size-2 shrink-0 animate-[glow_3.5s_ease-in-out_infinite] rounded-full',
           statusStyleMap[status].dot,
           statusStyleMap[status].glow,
         )}

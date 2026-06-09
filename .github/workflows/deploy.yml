@@ -177,6 +177,15 @@ jobs:
             RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          # Push a plain Docker manifest, NOT an OCI image index. With buildx
+          # provenance on, the push is an index (image + attestation manifest);
+          # Scaleway's registry serves that index inconsistently, so a pull can
+          # fail with "repository does not exist / manifest unknown" — most often
+          # on a fully-cached build where the attestation is the only fresh push
+          # (this is what stranded rakapp/frontend while backend rebuilt real
+          # layers). Supply-chain attestation is provided by the cosign keyless
+          # signing step below, so dropping buildx provenance loses nothing.
+          provenance: false
 
       # Keyless Sigstore signing via GitHub OIDC. Signature is stored alongside
       # the image in the Scaleway registry as an OCI artifact. Verify later with:
@@ -302,7 +311,7 @@ jobs:
           REGION: ${{ needs.setup.outputs.region }}
         run: pulumi login "s3://$STATE_BUCKET?endpoint=s3.$REGION.scw.cloud&region=$REGION"
 
-      - name: Select stack and set image tags
+      - name: Select stack
         working-directory: infra
         env:
           # AWS_* = state-bucket S3 access only. Scaleway provider credentials and
@@ -315,12 +324,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          TAG: ${{ needs.setup.outputs.image_tag }}
-        run: |
-          pulumi stack select "$STACK"
-          pulumi config set infra:backendImageTag "$TAG"
-          pulumi config set infra:cdcImageTag "$TAG"
-          pulumi config set infra:yjsImageTag "$TAG"
+        # Image tags are no longer Pulumi config — the running version lives
+        # entirely in s3://<bucket>/deploy/<svc>.tag, written by the
+        # roll-services job and read by the on-VM reconciler. `pulumi up` here
+        # only reconciles infrastructure; it never carries the release SHA, so a
+        # routine deploy leaves cloud-init (and therefore the VMs) untouched.
+        run: pulumi stack select "$STACK"
 
       - name: Ensure stack secrets exist
         # Idempotent: only writes keys not already set. Keeps `pulumi up` from
@@ -334,14 +343,48 @@ jobs:
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: pnpm init-stack-secrets "$STACK"
 
+      - name: Sync Scaleway provider creds from CI secrets
+        # Single source of truth for the VM-baked Scaleway key is the GitHub
+        # Actions secret pair (SCW_ACCESS_KEY / SCW_SECRET_KEY) — the same pair
+        # the rotation procedure updates (setup-ci-key.ts → github-sync.ts).
+        #
+        # The encrypted `scaleway:accessKey` / `scaleway:secretKey` stack-config
+        # values are what cloud-init bakes into every VM for the reconciler's S3
+        # access (deploy-tag reads, status/boot-diag writes) and the registry
+        # `docker login`. They used to be set ONLY by bootstrap.ts and never
+        # re-synced, so a CI-key rotation that updated the GitHub secrets but not
+        # the stack config left the VMs with a stale key: the reconciler could
+        # not read its deploy tag and never rolled the app container, while the
+        # public-Docker-Hub `caddy` ingress still answered the LB health check —
+        # so the LB stayed green while every real `/health` 502'd fleet-wide.
+        #
+        # Re-stamping the config from the CI secrets on every deploy removes that
+        # dual-source drift. It's a no-op (`pulumi up` shows the VMs unchanged)
+        # whenever the values already match; only an actual key change alters
+        # cloud-init and triggers the VM replacement that re-bakes the new creds.
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+        run: |
+          pulumi config set --secret --stack "$STACK" scaleway:accessKey "$SCW_ACCESS_KEY"
+          pulumi config set --secret --stack "$STACK" scaleway:secretKey "$SCW_SECRET_KEY"
+
       # Pulumi prep (checkout, install, login, stack select, secrets) runs in
-      # parallel with build-images / build-frontend. Before applying compute
-      # changes, wait until the new image tags exist in the registry — cloud-init
-      # on a fresh VM does `docker compose pull` immediately, and replaceOnChanges
-      # makes every deploy create new VMs.
+      # parallel with build-images / build-frontend. Gate the registry wait
+      # before the deploy proceeds: the on-VM reconciler does `docker compose
+      # pull` the moment roll-services writes the new SHA, and a fresh/replaced
+      # VM pulls during cloud-init — both fail if the image isn't pushed yet.
       #
-      # Uses `docker buildx imagetools inspect` because Scaleway's registry
-      # rejects Basic auth on /v2/ and requires the Docker bearer-token flow.
+      # The wait loop (and the "exclude ai / include frontend" rule) lives in
+      # infra/tasks/wait-for-images.ts, unit-tested against the reconciler and
+      # deploy-tags service lists so the set can't silently drift. Uses
+      # `docker buildx imagetools inspect` under the hood because Scaleway's
+      # registry requires the Docker bearer-token flow.
       - name: Wait for image tags in registry
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -352,24 +395,7 @@ jobs:
           set -uo pipefail
           REGISTRY="rg.$REGION.scw.cloud"
           echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
-          # 80 × 15s = 20 min ceiling; build-images timeout is 20 min.
-          for service in backend cdc yjs; do
-            echo "::group::Waiting for $service:$TAG"
-            image="$REGISTRY/$REGISTRY_NS/$service:$TAG"
-            for i in $(seq 1 80); do
-              if docker buildx imagetools inspect "$image" >/dev/null 2>&1; then
-                echo "  ready after ${i} attempt(s)"
-                break
-              fi
-              if [ "$i" = "80" ]; then
-                echo "::error::$image never appeared in registry"
-                docker buildx imagetools inspect "$image" || true
-                exit 1
-              fi
-              sleep 15
-            done
-            echo "::endgroup::"
-          done
+          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG"
 
       - name: Pulumi up
         working-directory: infra
@@ -448,16 +474,231 @@ jobs:
   # failure; that would race the reconciler's own rollback (which only the VM
   # has the local context to do safely).
   # -------------------------------------------------------------------------
-  roll-services:
+  # -------------------------------------------------------------------------
+  # Roll backend FIRST — backend is the schema owner. Its reconciler runs the
+  # expand (additive) migration before swapping the app container, so the
+  # backend deploy-tag write + health gate MUST go green before any other
+  # service rolls. This guarantees the new schema is present before ai/yjs/cdc/
+  # frontend pick up code that may depend on it. roll-rest gates on this job.
+  # -------------------------------------------------------------------------
+  roll-backend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [setup, pulumi, build-images]
-    permissions: {}
+    # contents: read is required for actions/checkout below. The repo is
+    # private, so an empty token ({}) makes checkout fail with
+    # "Repository not found". Only the checkout scope is needed; the deploy-tag
+    # write and health poll use Scaleway creds, not the GITHUB_TOKEN.
+    permissions:
+      contents: read
     if: >-
       always() &&
       needs.setup.result == 'success' &&
       (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
       needs.build-images.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: backend
+            health_url: ${{ needs.setup.outputs.backend_url }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
+      REGION: ${{ needs.setup.outputs.region }}
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      SERVICE: ${{ matrix.service }}
+    steps:
+      # Checkout + Node are needed for the wait-for-version task below. The
+      # deploy-tag write only needs the preinstalled aws CLI, but keeping setup
+      # at the top means both steps share one toolchain install.
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
+      - name: Write deploy tag for ${{ matrix.service }}
+        run: |
+          ENDPOINT="https://s3.$REGION.scw.cloud"
+          # Immutability guard: the reconciler pulls whatever SHA we publish
+          # here, and Pulumi can no longer reject a mutable tag at plan time
+          # (image tags left cloud-init entirely). So the write path is now the
+          # sole gate — refuse to publish an empty value or a mutable :latest.
+          case "$EXPECTED_SHA" in
+            ''|latest|*:latest)
+              echo "::error::refusing to publish non-pinned tag '$EXPECTED_SHA' to deploy/$SERVICE.tag"
+              exit 1
+              ;;
+          esac
+          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
+          # Plain text body, no newline — reconciler reads it as-is.
+          printf '%s' "$EXPECTED_SHA" \
+            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
+                --content-type 'text/plain'
+
+      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
+        if: matrix.health_url != ''
+        env:
+          # URLs come from setup outputs (derived from shared/ appConfig).
+          # appConfig URLs are canonical https:// origins; CI probes /health
+          # directly without any scheme transformation.
+          BASE: ${{ matrix.health_url }}
+        # Status/header poll lives in infra/tasks/wait-for-version.ts (unit
+        # tested) instead of an inline awk loop. Frontend (Caddy) returns 200,
+        # backend/yjs/ai return 204; both emit X-App-Version. 100 × 3s = 5 min
+        # budget per service; the matrix runs in parallel. The status triple
+        # lets the poll fast-fail on a reconciler-reported failure (and surface
+        # its phase/reason) instead of blindly waiting out the whole budget.
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA" --status-bucket "$TAG_BUCKET" --service "$SERVICE" --region "$REGION"
+
+      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
+        if: failure()
+        env:
+          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
+        # Key selection (which stage markers / latest full log to show) lives in
+        # the unit-tested infra/tasks/fetch-boot-diag.ts; the aws calls are the
+        # only side effect. roll-backend already has Node installed above.
+        run: pnpm --filter infra fetch-boot-diag --bucket "$STATE_BUCKET" --service "$SERVICE" --region "$REGION"
+
+  # -------------------------------------------------------------------------
+  # Roll the remaining services — runs ONLY after roll-backend is green, so the
+  # expand migration has already been applied. These four roll in parallel.
+  # -------------------------------------------------------------------------
+  roll-rest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [setup, pulumi, build-images, roll-backend]
+    permissions:
+      contents: read
+    if: >-
+      always() &&
+      needs.setup.result == 'success' &&
+      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
+      needs.build-images.result == 'success' &&
+      needs.roll-backend.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: cdc
+            # CDC has no public LB frontend; the worker hosts /health on its
+            # private IP only. Skip the live probe step for cdc and rely on
+            # the reconciler's own local health check + LB drain to surface
+            # failures (a broken cdc takes the backend's CDC websocket down,
+            # which fails the backend probe).
+            health_url: ''
+          - service: yjs
+            health_url: ${{ needs.setup.outputs.yjs_url }}
+          - service: ai
+            # AI runs as its own VM but reuses the backend image
+            # (aiWorkerImageTag ?? backendImageTag) — there is no separate ai
+            # image built or pushed. Writing deploy/ai.tag=<SHA> tells the AI
+            # VM's reconciler to pull the backend image at this SHA; the probe
+            # below confirms the AI LB host serves it. Do NOT add `ai` to the
+            # build-images matrix or the registry-wait loop.
+            health_url: ${{ needs.setup.outputs.ai_url }}
+          - service: frontend
+            health_url: ${{ needs.setup.outputs.frontend_url }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
+      REGION: ${{ needs.setup.outputs.region }}
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      SERVICE: ${{ matrix.service }}
+    steps:
+      # Checkout + Node are needed for the wait-for-version task below. The
+      # deploy-tag write only needs the preinstalled aws CLI, but keeping setup
+      # at the top means both steps share one toolchain install.
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
+      - name: Write deploy tag for ${{ matrix.service }}
+        run: |
+          ENDPOINT="https://s3.$REGION.scw.cloud"
+          # Immutability guard: the reconciler pulls whatever SHA we publish
+          # here, and Pulumi can no longer reject a mutable tag at plan time
+          # (image tags left cloud-init entirely). So the write path is now the
+          # sole gate — refuse to publish an empty value or a mutable :latest.
+          case "$EXPECTED_SHA" in
+            ''|latest|*:latest)
+              echo "::error::refusing to publish non-pinned tag '$EXPECTED_SHA' to deploy/$SERVICE.tag"
+              exit 1
+              ;;
+          esac
+          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
+          # Plain text body, no newline — reconciler reads it as-is.
+          printf '%s' "$EXPECTED_SHA" \
+            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
+                --content-type 'text/plain'
+
+      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
+        if: matrix.health_url != ''
+        env:
+          # URLs come from setup outputs (derived from shared/ appConfig).
+          # appConfig URLs are canonical https:// origins; CI probes /health
+          # directly without any scheme transformation.
+          BASE: ${{ matrix.health_url }}
+        # Status/header poll lives in infra/tasks/wait-for-version.ts (unit
+        # tested) instead of an inline awk loop. Frontend (Caddy) returns 200,
+        # backend/yjs/ai return 204; both emit X-App-Version. 100 × 3s = 5 min
+        # budget per service; the matrix runs in parallel. The status triple
+        # lets the poll fast-fail on a reconciler-reported failure (and surface
+        # its phase/reason) instead of blindly waiting out the whole budget.
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA" --status-bucket "$TAG_BUCKET" --service "$SERVICE" --region "$REGION"
+
+      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
+        if: failure()
+        env:
+          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
+        # Key selection (which stage markers / latest full log to show) lives in
+        # the unit-tested infra/tasks/fetch-boot-diag.ts; the aws calls are the
+        # only side effect. roll-rest already has Node installed above.
+        run: pnpm --filter infra fetch-boot-diag --bucket "$STATE_BUCKET" --service "$SERVICE" --region "$REGION"
+
+  # -------------------------------------------------------------------------
+  # Verify rollout — backward-compatible alias that depends on the roll jobs.
+  # Kept as its own job so the existing branch protection rule
+  # ("verify-rollout must pass") stays satisfied without re-configuring repo
+  # settings. publish-frontend gates on this too.
+  # -------------------------------------------------------------------------
+  verify-rollout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [setup, pulumi, build-images, roll-backend, roll-rest]
+    permissions: {}
+    if: >-
+      always() &&
+      needs.setup.result == 'success' &&
+      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
+      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
+      needs.roll-backend.result == 'success' &&
+      needs.roll-rest.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
     strategy:
       fail-fast: true
@@ -486,99 +727,6 @@ jobs:
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       SERVICE: ${{ matrix.service }}
     steps:
-      - name: Write deploy tag for ${{ matrix.service }}
-        run: |
-          ENDPOINT="https://s3.$REGION.scw.cloud"
-          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
-          # Plain text body, no newline — reconciler reads it as-is.
-          printf '%s' "$EXPECTED_SHA" \
-            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
-                --content-type 'text/plain'
-
-      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
-        if: matrix.health_url != ''
-        env:
-          # URLs come from setup outputs (derived from shared/ appConfig).
-          # appConfig URLs are canonical https:// origins; CI probes /health
-          # directly without any scheme transformation.
-          BASE: ${{ matrix.health_url }}
-        run: |
-          if [ -z "$BASE" ]; then
-            echo "::error::No health URL for $SERVICE in environment ${{ needs.setup.outputs.environment }}"
-            exit 1
-          fi
-          HEALTH_URL="$BASE/health"
-          echo "Probing $HEALTH_URL — expecting X-App-Version: $EXPECTED_SHA"
-
-          # Frontend (Caddy) returns 200 with body 'ok'; backend/yjs/ai return
-          # 204 with no body. Both emit X-App-Version, which is what we assert.
-          # 100 × 3s = 5 min budget per service. Matrix runs in parallel, so
-          # wall-clock for the slowest service is the upper bound.
-          for i in $(seq 1 100); do
-            headers=$(curl -sS -D - -o /dev/null --max-time 8 "$HEALTH_URL" 2>/dev/null || true)
-            status=$(printf '%s' "$headers" | awk 'NR==1{print $2}')
-            served=$(printf '%s' "$headers" | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
-
-            if { [ "$status" = "204" ] || [ "$status" = "200" ]; } && [ "$served" = "$EXPECTED_SHA" ]; then
-              echo "$SERVICE serving $EXPECTED_SHA after ${i} attempts"
-              exit 0
-            fi
-            echo "Attempt $i/100: status=${status:-<none>} served=${served:-<missing>}"
-            sleep 3
-          done
-
-          echo "::error::$SERVICE did not roll to $EXPECTED_SHA within 5 minutes (last served: ${served:-<unknown>})"
-          exit 1
-
-      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
-        if: failure()
-        env:
-          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
-        run: |
-          ENDPOINT="https://s3.$REGION.scw.cloud"
-
-          echo "::group::Stage markers ($SERVICE-*)"
-          aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-            | awk '{print $4}' | grep -E "^${SERVICE}-(stage|[0-9])" | sort | tail -30 || true
-          echo "::endgroup::"
-
-          for KEY in $(aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-              | awk '{print $4}' | grep "^${SERVICE}-stage-" | sort | tail -10); do
-            echo "::group::$KEY"
-            aws --endpoint-url "$ENDPOINT" s3 cp "s3://$STATE_BUCKET/boot-diag/$KEY" - 2>/dev/null || true
-            echo
-            echo "::endgroup::"
-          done
-
-          LATEST=$(aws --endpoint-url "$ENDPOINT" s3 ls "s3://$STATE_BUCKET/boot-diag/" \
-            | awk '{print $4}' | grep -E "^${SERVICE}-[0-9]{8}T" | sort | tail -1)
-          if [ -n "$LATEST" ]; then
-            echo "::group::$SERVICE boot diagnostics ($LATEST)"
-            aws --endpoint-url "$ENDPOINT" s3 cp "s3://$STATE_BUCKET/boot-diag/$LATEST" - || true
-            echo "::endgroup::"
-          else
-            echo "::warning::No $SERVICE full boot-diag log uploaded"
-          fi
-
-  # -------------------------------------------------------------------------
-  # Verify rollout — backward-compatible alias that depends on roll-services.
-  # Kept as its own job so the existing branch protection rule
-  # ("verify-rollout must pass") stays satisfied without re-configuring repo
-  # settings. publish-frontend gates on this too.
-  # -------------------------------------------------------------------------
-  verify-rollout:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [setup, pulumi, build-images, roll-services]
-    permissions: {}
-    if: >-
-      always() &&
-      needs.setup.result == 'success' &&
-      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
-      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
-      needs.roll-services.result == 'success'
-    environment: ${{ needs.setup.outputs.environment }}
-    steps:
       - name: Summarise rollout
         env:
           EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
@@ -590,21 +738,89 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # -------------------------------------------------------------------------
-  # Publish frontend to Object Storage — runs AFTER backend is verified
-  # healthy, so users never load a new bundle that calls a not-yet-rolled API.
-  # Upload order is strict: versioned chunks first (so they exist when the new
-  # index.html references them), then index.html/sw.js/manifest with no-cache.
-  # No --delete: stale chunks are garbage-collected by frontend-gc.yml after
-  # a safety window, so in-flight tabs on the previous bundle still load.
+  # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
+  #
+  # These chunks are purely additive: nothing references them until the new
+  # index.html is flipped in `publish-frontend`, and already-loaded tabs keep
+  # using their old chunks. That makes this safe to run EARLY — in parallel
+  # with pulumi / roll-backend / roll-rest — instead of gating it behind the
+  # backend rollout. Only the entry-file flip (publish-frontend) must wait for
+  # verify-rollout. A deploy that fails after this job merely leaves some
+  # unreferenced immutable chunks behind, which the bucket's time-based
+  # `expire-stale-assets` lifecycle rule prunes after the safety window.
   # -------------------------------------------------------------------------
-  publish-frontend:
+  upload-frontend-assets:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [setup, build-frontend, verify-rollout]
+    needs: [setup, build-frontend]
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Upload versioned assets (long cache, no --delete)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        # Chunks must exist BEFORE the new index.html is published; old
+        # chunks are intentionally retained so already-loaded tabs keep
+        # working until the bucket's `expire-stale-assets` lifecycle rule
+        # prunes them after the safety window.
+        #
+        # Intentionally NOT using --size-only: the default size+mtime sync
+        # re-uploads every chunk in the current build, refreshing its
+        # LastModified. This keeps still-referenced (e.g. long-lived vendor)
+        # chunks "fresh" so the time-based lifecycle rule only expires chunks
+        # that are absent from recent builds — never ones still in use.
+        run: |
+          BUCKET="s3://$BUCKET_NAME"
+          aws s3 sync dist/ "$BUCKET/" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "sw.js" \
+            --exclude "sw.js.map" \
+            --exclude "manifest.webmanifest"
+
+  # -------------------------------------------------------------------------
+  # Atomic frontend flip: publish the mutable entry files and purge the edge
+  # cache so users start loading the new build. Deliberately thin and on the
+  # critical path AFTER verify-rollout — the versioned chunks it references are
+  # already in the bucket (uploaded in parallel by `upload-frontend-assets`).
+  # -------------------------------------------------------------------------
+  publish-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup, upload-frontend-assets, verify-rollout]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      # Checkout + Node are needed for the verify-frontend-bundle task at the
+      # end of this job. Done first so the artifact download lands alongside.
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
       - name: Download dist artifact
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
@@ -616,27 +832,6 @@ jobs:
           curl -sLo /usr/local/bin/scw "https://github.com/scaleway/scaleway-cli/releases/download/v${{ env.SCW_CLI_VERSION }}/scaleway-cli_${{ env.SCW_CLI_VERSION }}_linux_amd64"
           chmod +x /usr/local/bin/scw
           scw version
-
-      - name: Upload versioned assets (long cache, no --delete)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
-          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        # Chunks must exist BEFORE the new index.html is published; old
-        # chunks are intentionally retained so already-loaded tabs keep
-        # working until frontend-gc.yml prunes them after the safety window.
-        run: |
-          BUCKET="s3://$BUCKET_NAME"
-          aws s3 sync dist/ "$BUCKET/" \
-            --endpoint-url "$S3_ENDPOINT" \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "index.html" \
-            --exclude "sw.js" \
-            --exclude "sw.js.map" \
-            --exclude "manifest.webmanifest" \
-            --size-only
 
       - name: Upload entry files (no-cache) — strictly after assets
         env:
@@ -686,56 +881,16 @@ jobs:
       - name: Verify served bundle matches uploaded bundle
         env:
           FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
-        # Compare a stable marker from the just-uploaded index.html against
-        # what the edge actually serves with Cache-Control: no-cache. We use
-        # the entry script's hashed filename (e.g. /assets/index-abc123.js)
-        # extracted from the local index.html — if the served HTML still
-        # references the previous hash, the edge purge hasn't propagated
-        # (or worse, TLS is broken). 30 × 3s = ~90s budget.
+        # Compare a stable marker from the just-uploaded index.html against what
+        # the edge actually serves with Cache-Control: no-cache. The HTML parse,
+        # TLS-error classification and poll loop live in
+        # infra/tasks/verify-frontend-bundle.ts (unit tested). 30 × 3s = ~90s.
         run: |
-          set -uo pipefail
           if [ -z "$FRONTEND_URL" ]; then
             echo "No FRONTEND_URL configured — skipping verify"
             exit 0
           fi
-
-          # Extract the expected entry script src from the freshly uploaded HTML.
-          EXPECTED=$(grep -oE 'src="[^"]*assets/[^"]+\.js"' dist/index.html | head -n1 | sed 's/^src="//; s/"$//')
-          if [ -z "$EXPECTED" ]; then
-            echo "::warning::Could not extract entry asset from dist/index.html; skipping hash verify"
-            EXPECTED=""
-          else
-            echo "Expecting served index.html to reference: $EXPECTED"
-          fi
-
-          for i in $(seq 1 30); do
-            BODY=$(curl -fsS --max-time 8 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$FRONTEND_URL/index.html" 2>/dev/null)
-            rc=$?
-            case "$rc" in
-              0)
-                if [ -z "$EXPECTED" ] || echo "$BODY" | grep -qF "$EXPECTED"; then
-                  echo "Frontend serving new bundle after ${i} attempts"
-                  exit 0
-                fi
-                echo "Attempt $i/30: served HTML does not yet reference $EXPECTED"
-                ;;
-              35|60|51|58|59|66|77|83)
-                echo "::error::Frontend TLS failure (curl exit $rc) on $FRONTEND_URL"
-                echo "Likely cause: Scaleway Edge Services pipeline has a stuck managed certificate."
-                echo "Recover with:"
-                echo "  scw edge-services pipeline list -o json | jq -r '.[] | select(.status==\"error\") | .id'"
-                echo "  scw edge-services tls-stage list pipeline-id=<id> -o json | jq -r '.[0].id'"
-                echo "  scw edge-services tls-stage update <tls-stage-id> managed-certificate=true"
-                exit 1
-                ;;
-              *)
-                echo "Attempt $i/30: curl exit $rc"
-                ;;
-            esac
-            sleep 3
-          done
-          echo "::error::Frontend did not serve the new bundle within ~90s"
-          exit 1
+          pnpm --filter infra verify-frontend-bundle --url "$FRONTEND_URL" --dist dist/index.html
 
   # -------------------------------------------------------------------------
   # Smoke tests — last-mile sanity checks executed against the now-live
@@ -748,7 +903,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [setup, publish-frontend]
-    permissions: {}
+    # contents: read is required for actions/checkout below (private repo).
+    permissions:
+      contents: read
     if: needs.publish-frontend.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
     env:
@@ -756,60 +913,24 @@ jobs:
       FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
       BACKEND_URL: ${{ needs.setup.outputs.backend_url }}
     steps:
-      - name: Frontend index.html resolves and references hashed assets
-        run: |
-          html=$(curl -fsSL --max-time 10 "$FRONTEND_URL/" \
-            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
-          echo "$html" | grep -qE 'src="[^"]*assets/[^"]+\.js"' \
-            || { echo "::error::index.html missing hashed asset reference"; printf '%s\n' "$html" | head -40; exit 1; }
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - name: Backend OpenAPI spec is reachable
-        run: |
-          # The spec is generated, so a 404 here usually means the API
-          # router lost its OpenAPI mount — high-signal smoke target.
-          curl -fsS --max-time 10 -o /dev/null "$BACKEND_URL/openapi.json" \
-            || { echo "::error::OpenAPI endpoint not reachable"; exit 1; }
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
-      - name: Backend reports the deployed release SHA
-        run: |
-          # Belt-and-braces: roll-services already proved this, but the bundle
-          # cutover happens after. If anything restarted backend in between
-          # (LB flap, OOM), catch it here before traffic ramps up.
-          served=$(curl -fsSI --max-time 10 "$BACKEND_URL/health" \
-            | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
-          if [ "$served" != "$EXPECTED_SHA" ]; then
-            echo "::error::Backend X-App-Version drift: served=${served:-<missing>} expected=$EXPECTED_SHA"
-            exit 1
-          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: SPA route fallback works (random path returns index.html)
-        run: |
-          # Caddy rewrites 404s from the S3 origin to /index.html so the
-          # client router can take over. A regression here breaks every deep
-          # link.
-          body=$(curl -fsSL --max-time 10 "$FRONTEND_URL/__smoke_$(date +%s)" \
-            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
-          echo "$body" | grep -qi '<html' \
-            || { echo "::error::SPA fallback did not return an HTML document"; exit 1; }
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
 
-      - name: Frontend security headers are present
-        run: |
-          # Caddy injects HSTS + the rest of the OWASP-recommended baseline
-          # that S3 + Edge Services cannot. If any are missing, the Caddyfile
-          # was regressed or the request bypassed Caddy entirely.
-          headers=$(curl -fsSI --max-time 10 "$FRONTEND_URL/" \
-            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache')
-          missing=()
-          for h in 'Strict-Transport-Security' 'X-Frame-Options' \
-                   'X-Content-Type-Options' 'Referrer-Policy' \
-                   'Permissions-Policy' 'Cross-Origin-Opener-Policy'; do
-            if ! echo "$headers" | grep -qi "^${h}:"; then
-              missing+=("$h")
-            fi
-          done
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing security headers: ${missing[*]}"
-            printf '%s\n' "$headers"
-            exit 1
-          fi
+      # All five probes (hashed-asset, OpenAPI reachable, SHA drift, SPA
+      # fallback, security headers) live in the unit-tested infra/tasks/smoke.ts.
+      # It runs every check before failing so one deploy surfaces all breakage.
+      - name: Run smoke checks
+        run: pnpm --filter infra smoke --frontend "$FRONTEND_URL" --backend "$BACKEND_URL" --sha "$EXPECTED_SHA"
 

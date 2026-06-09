@@ -131,8 +131,14 @@ export default {
           '50%': { transform: 'rotateX(180deg)' },
         },
         glow: {
-          '0%, 100%': { boxShadow: '0 0 0 0 var(--glow-color, currentColor)' },
-          '50%': { boxShadow: '0 0 4px 1px var(--glow-color, currentColor)' },
+          '0%, 100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 2px 1px var(--glow-color, currentColor)',
+          },
+          '50%': {
+            transform: 'scale(1.12)',
+            boxShadow: '0 0 4px 2px var(--glow-color, currentColor)',
+          },
         },
       },
       animation: {

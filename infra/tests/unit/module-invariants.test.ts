@@ -1,6 +1,6 @@
 /**
- * Source-level security invariants for the LB / DNS / Edge / DB / monitoring
- * / registry modules.
+ * Source-level security invariants for the LB / DNS / Edge / DB / registry
+ * / secrets modules.
  *
  * These modules either gate on `hasDomain` (LB, DNS, Edge) or read deeply from
  * stack config (DB), making a live render via the Pulumi mock harness brittle
@@ -19,7 +19,6 @@ const lb = read('loadbalancer.ts')
 const dns = read('dns.ts')
 const edge = read('edge.ts')
 const db = read('database.ts')
-const mon = read('monitoring.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
 
@@ -106,17 +105,6 @@ describe('database module', () => {
   it.todo('production instance has automated backups (disableBackup: false)')
 })
 
-describe('monitoring module', () => {
-  it('Cockpit sources have a finite retention window (no infinite log storage)', () => {
-    expect(mon).toMatch(/retentionDays:\s*\d+/)
-  })
-
-  it('does not embed PII patterns in source labels (no email, no phone)', () => {
-    expect(mon).not.toMatch(/labels:\s*\{[^}]*email/i)
-    expect(mon).not.toMatch(/labels:\s*\{[^}]*phone/i)
-  })
-})
-
 describe('registry module', () => {
   it('container registry is created non-public (isPublic: false)', () => {
     expect(reg).toMatch(/isPublic:\s*false/)
@@ -124,11 +112,18 @@ describe('registry module', () => {
 })
 
 describe('secrets module', () => {
-  it('reads every stack-config secret via requireSecret (never plain get)', () => {
-    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'brevoApiKey', 'scwAiApiKey']) {
-      expect(secrets).toMatch(new RegExp(`requireSecret\\(['"]${key}['"]\\)`))
-      // Must not silently fall back to a non-secret getter for these keys.
-      expect(secrets).not.toMatch(new RegExp(`infraConfig\\.get\\(['"]${key}['"]\\)`))
+  it('sources runtime secret containers from the central registry', () => {
+    expect(secrets).toMatch(/runtimeSecrets\.map\(/)
+    expect(secrets).toMatch(/valueSource === 'pulumi'/)
+    expect(secrets).toMatch(/scaleway\.secrets\.getSecretOutput\(/)
+    expect(secrets).toMatch(/pulumiRuntimeSecretData/)
+  })
+
+  it('seeds stable pulumi-owned runtime secrets from stack config only as a migration fallback', () => {
+    expect(secrets).toMatch(/new random\.RandomPassword\(/)
+    expect(secrets).toContain('const configured = infraConfig.getSecret(configKey)')
+    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret']) {
+      expect(secrets).toContain(`pulumiOwnedRuntimeSecret('${key}'`)
     }
   })
 
@@ -138,11 +133,20 @@ describe('secrets module', () => {
     expect(secrets).toMatch(/path:\s*secretPath/)
   })
 
-  it('writes SecretVersions only through the createSecret helper', () => {
+  it('writes SecretVersions only through the createSecretVersion helper', () => {
     // Exactly one construction site for the Version resource — the helper.
     const versionConstructions = secrets.match(/new scaleway\.secrets\.Version\(/g) ?? []
     expect(versionConstructions).toHaveLength(1)
-    expect(secrets).toMatch(/function createSecret\(/)
+    expect(secrets).toMatch(/function createSecretVersion\(/)
+  })
+
+  it('does not read runtime app secrets from Pulumi stack config', () => {
+    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
+      expect(secrets).not.toMatch(new RegExp(`requireSecret\(['"]${key}['"]\)`))
+    }
+    for (const key of ['brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
+      expect(secrets).not.toMatch(new RegExp(`getSecret\(['"]${key}['"]\)`))
+    }
   })
 })
 

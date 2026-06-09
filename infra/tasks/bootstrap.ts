@@ -22,6 +22,8 @@ import { ensureEdgePlan } from '../src/ensure-edge-plan.js'
 import { syncGithubEnvironment } from '../src/github-sync.js'
 import { decryptStackSecrets } from '../src/pulumi-passphrase.js'
 import { runPulumiUpWithHint } from '../src/pulumi-up.js'
+import { manageRuntimeSecrets } from './manage-runtime-secrets.js'
+import { migrateRuntimeSecrets } from './migrate-runtime-secrets.js'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, setupCiKey } from './setup-ci-key.js'
 
 /** Short hash of the permission sets the CI policy *should* have. Stored in stack config
@@ -42,7 +44,7 @@ if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
 }
 
 // Detect prior state from the local Pulumi stack file (purely local).
-type Mode = 'resume' | 'rotate' | 'apply' | 'clean'
+type Mode = 'resume' | 'rotate' | 'apply' | 'clean' | 'secrets'
 const stackShort = pickStackShort((n) => existsSync(resolve(infraDir, `Pulumi.${n}.yaml`)))
 const stackPath = resolve(infraDir, `Pulumi.${stackShort}.yaml`)
 const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined
@@ -81,6 +83,7 @@ const mode: Mode =
           { name: 'Resume',            value: 'resume', description: 'Idempotent re-run; refreshes config & GitHub secrets. Cannot apply changes to DB/VPC/PN (CI key is read-only there).' },
           { name: 'Rotate CI',         value: 'rotate', description: 'Mint a fresh CI deploy key (existing one is deleted). Use after editing PROJECT_PERMISSION_SETS.' },
           { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; CI key is swapped out then restored.' },
+          { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
           { name: 'Clean slate',       value: 'clean',  description: 'Print reset recipe and exit.' },
         ],
       })
@@ -92,6 +95,11 @@ if (mode === 'clean') {
 
 if (mode === 'apply') {
   await runApplyMode()
+  process.exit(0)
+}
+
+if (mode === 'secrets') {
+  await runSecretsMode()
   process.exit(0)
 }
 
@@ -138,6 +146,22 @@ if (!scwAccessKey || !scwSecretKey || !scwProjectId) {
     input({ message: 'Scaleway project ID', validate: (v) => !!v.trim() || '(required)' }),
   )
 }
+
+// Pulumi's S3 backend still needs a bootstrap key on Resume. The provider can
+// keep using the decrypted stack creds, but bucket preflight / login must use
+// broader object-storage credentials.
+const needsStateBootstrapKey = hasCiKey && mode === 'resume'
+const stateAccessKey = needsStateBootstrapKey
+  ? await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
+      input({ message: 'Scaleway bootstrap access key (for Pulumi state bucket)', validate: (v) => !!v.trim() || '(required)' }),
+    )
+  : scwAccessKey
+const stateSecretKey = needsStateBootstrapKey
+  ? await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
+      password({ message: 'Scaleway bootstrap secret key (for Pulumi state bucket)' }),
+    )
+  : scwSecretKey
+
 const stackName = await input({ message: 'Pulumi stack name', default: `organization/infra/${stackShort}` })
 
 // Prompt for optional values only if they're not already in the stack yaml.
@@ -153,6 +177,16 @@ const scwAiApiKey = stackHas('infra:scwAiApiKey')
   ? ''
   : await password({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
 
+const legacyRuntimeValues = stackYaml
+  ? (() => {
+      try {
+        return decryptStackSecrets(stackPath, pulumiPassphrase, ['infra:adminEmail', 'infra:brevoApiKey', 'infra:scwAiApiKey'])
+      } catch {
+        return {}
+      }
+    })()
+  : {}
+
 if (!(await confirm({ message: `Proceed with ${mode}?`, default: true }))) process.exit(0)
 
 const childEnv: NodeJS.ProcessEnv = {
@@ -161,8 +195,8 @@ const childEnv: NodeJS.ProcessEnv = {
   SCW_SECRET_KEY: scwSecretKey,
   SCW_DEFAULT_PROJECT_ID: scwProjectId,
   SCW_PROJECT_ID: scwProjectId,
-  AWS_ACCESS_KEY_ID: scwAccessKey,
-  AWS_SECRET_ACCESS_KEY: scwSecretKey,
+  AWS_ACCESS_KEY_ID: stateAccessKey,
+  AWS_SECRET_ACCESS_KEY: stateSecretKey,
   PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
   // Ignore any local `~/.config/scw/config.yaml` profile so the Scaleway
   // provider doesn't warn about "Multiple variable sources" when the user
@@ -171,9 +205,12 @@ const childEnv: NodeJS.ProcessEnv = {
   // init, breaking `pulumi up`).
   SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
   SCW_PROFILE: '',
-  ...(adminEmail && { ADMIN_EMAIL: adminEmail }),
-  ...(brevoApiKey && { BREVO_API_KEY: brevoApiKey }),
-  ...(scwAiApiKey && { SCW_AI_API_KEY: scwAiApiKey }),
+}
+
+const stateBucketEnv: NodeJS.ProcessEnv = {
+  ...childEnv,
+  SCW_ACCESS_KEY: stateAccessKey,
+  SCW_SECRET_KEY: stateSecretKey,
 }
 
 async function step(label: string, cmd: string, args: string[], opts: { cwd?: string; retry?: boolean; env?: NodeJS.ProcessEnv } = {}): Promise<number> {
@@ -192,7 +229,7 @@ const must = async (...args: Parameters<typeof step>) => {
 }
 
 // Run chain.
-await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], { retry: true })
+await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], { retry: true, env: stateBucketEnv })
 
 process.env.APP_MODE = process.env.APP_MODE ?? 'production'
 const { appConfig } = await import('shared')
@@ -210,6 +247,22 @@ if (selected.status === 0) {
 
 await must('Set scaleway:projectId', 'pulumi', ['config', 'set', 'scaleway:projectId', scwProjectId, '--stack', stackName])
 await must('Initialize stack secrets', 'pnpm', ['init-stack-secrets', stackName])
+
+const runtimeSecretPath = `/${appConfig.slug}-${stackShort}/`
+await migrateRuntimeSecrets({
+  secretKey: scwSecretKey,
+  projectId: scwProjectId,
+  region: appConfig.s3.region,
+  path: runtimeSecretPath,
+  valuesByLegacyKey: {
+    'infra:adminEmail': legacyRuntimeValues['infra:adminEmail'] ?? (adminEmail || undefined),
+    'infra:brevoApiKey': legacyRuntimeValues['infra:brevoApiKey'] ?? (brevoApiKey || undefined),
+    'infra:scwAiApiKey': legacyRuntimeValues['infra:scwAiApiKey'] ?? (scwAiApiKey || undefined),
+  },
+})
+if (!legacyRuntimeValues['infra:adminEmail'] && !adminEmail) {
+  console.warn(`  ${warningMark} Required runtime secret admin-email is not set yet. Use "Manage runtime secrets" before deploying backend/ai.`)
+}
 
 // CI deploy key — run when explicitly rotating, or when none is stored yet.
 let ciAccessKey = ''
@@ -501,5 +554,29 @@ async function runApplyMode(): Promise<void> {
   }
 
   console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now (Scaleway console → IAM → API keys).`)
+}
+
+async function runSecretsMode(): Promise<void> {
+  const projectId =
+    process.env.SCW_PROJECT_ID ||
+    process.env.SCW_DEFAULT_PROJECT_ID ||
+    extractProjectId(stackYaml ?? '') ||
+    (await input({ message: 'Scaleway project ID', validate: (v) => !!v.trim() || '(required)' }))
+  const secretKey =
+    process.env.SCW_SECRET_KEY ||
+    process.env.SCW_BOOTSTRAP_SECRET_KEY ||
+    (await password({ message: 'Scaleway secret key with Secret Manager access' }))
+
+  process.env.APP_MODE = process.env.APP_MODE ?? stackShort
+  const { appConfig } = await import('shared')
+  const path = `/${appConfig.slug}-${stackShort}/`
+
+  await manageRuntimeSecrets({
+    secretKey,
+    projectId,
+    region: appConfig.s3.region,
+    path,
+    prompts: { select, password, confirm },
+  })
 }
 

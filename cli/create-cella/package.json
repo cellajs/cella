@@ -39,7 +39,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.5.1",
+    "@inquirer/prompts": "^8.5.2",
     "axios": "^1.17.0",
     "commander": "^15.0.0",
     "giget": "^3.1.2",
