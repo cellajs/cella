@@ -26,6 +26,8 @@ export const ALLOWED_KEYS = [
   'backend_url',
   'yjs_url',
   'ai_url',
+  'has_yjs',
+  'has_ai',
 ] as const
 export type AllowedKey = (typeof ALLOWED_KEYS)[number]
 
@@ -43,6 +45,12 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
     backend_url: appConfig.backendUrl,
     yjs_url: appConfig.yjsUrl,
     ai_url: appConfig.aiUrl,
+    // Feature flags — the deploy workflow gates the yjs/ai build + roll matrix
+    // entries on these so a fork with the feature disabled (e.g. the cella
+    // template itself) doesn't try to build/health-check a service whose
+    // infra (DNS/LB/cert) is intentionally never provisioned.
+    has_yjs: String(appConfig.has.yjs),
+    has_ai: String(appConfig.has.ai),
   }
 }
 

@@ -11,6 +11,7 @@ const fakeAppConfig = {
   yjsUrl: 'https://yjs.cella.example',
   aiUrl: 'https://ai.cella.example',
   securityEmail: 'security@cella.example',
+  has: { yjs: false, ai: false },
   // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
 } as any
 
@@ -32,6 +33,8 @@ describe('buildDeployEnv', () => {
       backend_url: 'https://api.cella.example',
       yjs_url: 'https://yjs.cella.example',
       ai_url: 'https://ai.cella.example',
+      has_yjs: 'false',
+      has_ai: 'false',
     })
   })
 

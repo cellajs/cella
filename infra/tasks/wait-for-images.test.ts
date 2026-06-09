@@ -83,6 +83,14 @@ describe('waitForImages', () => {
     const inspectedRefs = inspect.mock.calls.map((c) => c[0])
     expect(inspectedRefs.some((ref) => ref.includes('/ai:'))).toBe(false)
   })
+
+  it('waits only for the explicit services override', async () => {
+    const inspect = vi.fn(async (_ref: string) => true)
+    await waitForImages({ registry: 'r', namespace: 'n', tag: TAG, inspect, services: ['backend', 'cdc', 'frontend'], sleep: noSleep, log: noLog })
+    const inspectedRefs = inspect.mock.calls.map((c) => c[0])
+    expect(inspectedRefs).toEqual(['r/n/backend:abc1234', 'r/n/cdc:abc1234', 'r/n/frontend:abc1234'])
+    expect(inspectedRefs.some((ref) => ref.includes('/yjs:'))).toBe(false)
+  })
 })
 
 describe('parseArgs', () => {
@@ -98,5 +106,17 @@ describe('parseArgs', () => {
 
   it('throws when a required flag is missing', () => {
     expect(() => parseArgs(['--registry', 'rg.x', '--tag', TAG])).toThrow(/Usage/)
+  })
+
+  it('parses a --services override, restricting to known image services', () => {
+    // `ai` (reuse-only) and `bogus` (unknown) are dropped; order is preserved.
+    expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--services', 'backend,ai,frontend,bogus']).services).toEqual([
+      'backend',
+      'frontend',
+    ])
+  })
+
+  it('leaves services undefined when --services is omitted', () => {
+    expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG]).services).toBeUndefined()
   })
 })

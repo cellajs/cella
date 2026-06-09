@@ -73,11 +73,12 @@ jobs:
       yjs_url: ${{ steps.derive.outputs.yjs_url }}
       ai_url: ${{ steps.derive.outputs.ai_url }}
       image_tag: ${{ steps.set-env.outputs.image_tag }}
-      backend: 'true'
-      cdc: 'true'
-      yjs: 'true'
-      frontend: 'true'
-      infra: 'true'
+      # Service matrices, gated on the yjs/ai feature flags so a fork with the
+      # feature off (e.g. the cella template) doesn't build/roll a service whose
+      # infra (DNS/LB/cert) is intentionally never provisioned.
+      build_images_matrix: ${{ steps.matrices.outputs.build_images }}
+      roll_rest_matrix: ${{ steps.matrices.outputs.roll_rest }}
+      verify_rollout_matrix: ${{ steps.matrices.outputs.verify_rollout }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -123,6 +124,62 @@ jobs:
           ENV: ${{ steps.set-env.outputs.environment }}
         run: pnpm --silent --filter infra print-deploy-env "$ENV" >> $GITHUB_OUTPUT
 
+      - name: Build service matrices (feature-flag gated)
+        id: matrices
+        env:
+          HAS_YJS: ${{ steps.derive.outputs.has_yjs }}
+          HAS_AI: ${{ steps.derive.outputs.has_ai }}
+          YJS_URL: ${{ steps.derive.outputs.yjs_url }}
+          AI_URL: ${{ steps.derive.outputs.ai_url }}
+          BACKEND_URL: ${{ steps.derive.outputs.backend_url }}
+          FRONTEND_URL: ${{ steps.derive.outputs.frontend_url }}
+        run: |
+          # build-images: backend/cdc/frontend always; yjs only when enabled.
+          # ai is never built here — it reuses the backend image at deploy time.
+          build=$(jq -cn \
+            --argjson hasYjs "${HAS_YJS:-false}" \
+            '[
+               {service:"backend",  dockerfile:"backend/Dockerfile"},
+               {service:"cdc",       dockerfile:"cdc/Dockerfile"},
+               {service:"frontend",  dockerfile:"infra/caddy/Dockerfile"}
+             ]
+             + (if $hasYjs then [{service:"yjs", dockerfile:"yjs/Dockerfile"}] else [] end)')
+          echo "build_images=$build" >> "$GITHUB_OUTPUT"
+
+          # roll-rest: cdc (no public health) + frontend always; yjs/ai gated.
+          roll=$(jq -cn \
+            --argjson hasYjs "${HAS_YJS:-false}" \
+            --argjson hasAi "${HAS_AI:-false}" \
+            --arg yjsUrl "$YJS_URL" \
+            --arg aiUrl "$AI_URL" \
+            --arg frontendUrl "$FRONTEND_URL" \
+            '[
+               {service:"cdc",       health_url:""},
+               {service:"frontend",  health_url:$frontendUrl}
+             ]
+             + (if $hasYjs then [{service:"yjs", health_url:$yjsUrl}] else [] end)
+             + (if $hasAi  then [{service:"ai",  health_url:$aiUrl}]  else [] end)')
+          echo "roll_rest=$roll" >> "$GITHUB_OUTPUT"
+
+          # verify-rollout: cosmetic alias kept for branch protection. backend +
+          # cdc + frontend always; yjs/ai gated so it doesn't claim a disabled
+          # service is "serving".
+          verify=$(jq -cn \
+            --argjson hasYjs "${HAS_YJS:-false}" \
+            --argjson hasAi "${HAS_AI:-false}" \
+            --arg yjsUrl "$YJS_URL" \
+            --arg aiUrl "$AI_URL" \
+            --arg backendUrl "$BACKEND_URL" \
+            --arg frontendUrl "$FRONTEND_URL" \
+            '[
+               {service:"backend",  health_url:$backendUrl},
+               {service:"cdc",       health_url:""},
+               {service:"frontend",  health_url:$frontendUrl}
+             ]
+             + (if $hasYjs then [{service:"yjs", health_url:$yjsUrl}] else [] end)
+             + (if $hasAi  then [{service:"ai",  health_url:$aiUrl}]  else [] end)')
+          echo "verify_rollout=$verify" >> "$GITHUB_OUTPUT"
+
 
 
   # -------------------------------------------------------------------------
@@ -138,15 +195,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: backend
-            dockerfile: backend/Dockerfile
-          - service: cdc
-            dockerfile: cdc/Dockerfile
-          - service: yjs
-            dockerfile: yjs/Dockerfile
-          - service: frontend
-            dockerfile: infra/caddy/Dockerfile
+        include: ${{ fromJSON(needs.setup.outputs.build_images_matrix) }}
     environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
@@ -391,11 +440,16 @@ jobs:
           REGION: ${{ needs.setup.outputs.region }}
           REGISTRY_NS: ${{ needs.setup.outputs.registry_ns }}
           TAG: ${{ needs.setup.outputs.image_tag }}
+          BUILD_IMAGES_MATRIX: ${{ needs.setup.outputs.build_images_matrix }}
         run: |
           set -uo pipefail
           REGISTRY="rg.$REGION.scw.cloud"
           echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
-          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG"
+          # Only wait for images that were actually built — the build matrix is
+          # already feature-flag gated, so a disabled service (e.g. yjs) is
+          # absent here and must not block the deploy.
+          SERVICES=$(echo "$BUILD_IMAGES_MATRIX" | jq -r '[.[].service] | join(",")')
+          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --services "$SERVICES"
 
       - name: Pulumi up
         working-directory: infra
@@ -592,26 +646,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - service: cdc
-            # CDC has no public LB frontend; the worker hosts /health on its
-            # private IP only. Skip the live probe step for cdc and rely on
-            # the reconciler's own local health check + LB drain to surface
-            # failures (a broken cdc takes the backend's CDC websocket down,
-            # which fails the backend probe).
-            health_url: ''
-          - service: yjs
-            health_url: ${{ needs.setup.outputs.yjs_url }}
-          - service: ai
-            # AI runs as its own VM but reuses the backend image
-            # (aiWorkerImageTag ?? backendImageTag) — there is no separate ai
-            # image built or pushed. Writing deploy/ai.tag=<SHA> tells the AI
-            # VM's reconciler to pull the backend image at this SHA; the probe
-            # below confirms the AI LB host serves it. Do NOT add `ai` to the
-            # build-images matrix or the registry-wait loop.
-            health_url: ${{ needs.setup.outputs.ai_url }}
-          - service: frontend
-            health_url: ${{ needs.setup.outputs.frontend_url }}
+        # cdc + frontend always; yjs/ai included only when their feature flag is
+        # on (see the "Build service matrices" step in setup). ai reuses the
+        # backend image — writing deploy/ai.tag tells its VM reconciler to pull
+        # the backend image at this SHA; the probe confirms the AI LB serves it.
+        include: ${{ fromJSON(needs.setup.outputs.roll_rest_matrix) }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -703,22 +742,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - service: backend
-            health_url: ${{ needs.setup.outputs.backend_url }}
-          - service: cdc
-            # CDC has no public LB frontend; the worker hosts /health on its
-            # private IP only. Skip the live probe step for cdc and rely on
-            # the reconciler's own local health check + LB drain to surface
-            # failures (a broken cdc takes the backend's CDC websocket down,
-            # which fails the backend probe).
-            health_url: ''
-          - service: yjs
-            health_url: ${{ needs.setup.outputs.yjs_url }}
-          - service: ai
-            health_url: ${{ needs.setup.outputs.ai_url }}
-          - service: frontend
-            health_url: ${{ needs.setup.outputs.frontend_url }}
+        include: ${{ fromJSON(needs.setup.outputs.verify_rollout_matrix) }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}

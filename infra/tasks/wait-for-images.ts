@@ -58,6 +58,12 @@ export interface WaitOptions {
   namespace: string
   tag: string
   inspect: InspectFn
+  /**
+   * Override which image services to wait for. Defaults to `imageServices()`.
+   * The deploy workflow passes the feature-gated build set here so a fork with
+   * yjs/ai disabled doesn't wait for an image that is never built.
+   */
+  services?: TaggedService[]
   attempts?: number
   intervalMs?: number
   sleep?: (ms: number) => Promise<void>
@@ -77,7 +83,7 @@ export async function waitForImages(opts: WaitOptions): Promise<{ ok: boolean; m
   const log = opts.log ?? ((msg: string) => console.info(msg))
 
   const missing: string[] = []
-  for (const service of imageServices()) {
+  for (const service of opts.services ?? imageServices()) {
     const ref = imageRef(opts.registry, opts.namespace, service, opts.tag)
     log(`Waiting for ${service}:${opts.tag}`)
     let ready = false
@@ -102,6 +108,7 @@ interface CliArgs {
   registry: string
   namespace: string
   tag: string
+  services?: TaggedService[]
   attempts: number
   intervalMs: number
 }
@@ -112,13 +119,24 @@ export function parseArgs(argv: string[]): CliArgs {
   const namespace = getFlag(argv, '--ns')
   const tag = getFlag(argv, '--tag')
   if (!registry || !namespace || !tag) {
-    throw new Error('Usage: wait-for-images.ts --registry <host> --ns <namespace> --tag <git-sha> [--attempts N] [--interval ms]')
+    throw new Error('Usage: wait-for-images.ts --registry <host> --ns <namespace> --tag <git-sha> [--attempts N] [--interval ms] [--services a,b,c]')
   }
+
+  // Optional comma-separated override; restrict to known image services so an
+  // unknown or reuse-only service (e.g. `ai`) can't sneak into the wait loop.
+  const servicesFlag = getFlag(argv, '--services')
+  const services = servicesFlag
+    ? servicesFlag
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s): s is TaggedService => (imageServices() as string[]).includes(s))
+    : undefined
 
   return {
     registry,
     namespace,
     tag,
+    services,
     attempts: getNumFlag(argv, '--attempts', 80),
     intervalMs: getNumFlag(argv, '--interval', 15000),
   }
@@ -130,6 +148,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     registry: args.registry,
     namespace: args.namespace,
     tag: args.tag,
+    services: args.services,
     attempts: args.attempts,
     intervalMs: args.intervalMs,
     inspect: dockerInspect,
