@@ -30,7 +30,7 @@ dist-ssr
 !.env.example
 .envrc
 .pulumi/
-infra/.apply-in-progress.*.lock
+infra/Pulumi.*.yaml.apply-backup
 
 # Cache
 *.tsbuildinfo

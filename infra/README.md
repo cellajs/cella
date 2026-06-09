@@ -24,7 +24,7 @@ When re-run, `pnpm --filter infra bootstrap` detects existing state from
 |---|---|
 | **Resume** | Reuses the stored CI key. Re-runs idempotent steps (state bucket, secrets check, edge plan, DNS check, GitHub variable sync). Does **not** touch the IAM policy. **Cannot apply changes to DB / VPC / private network** (CI key is read-only on those). |
 | **Rotate CI** | Deletes the existing `<slug>-ci-deploy` API key and IAM policy, mints a fresh key, re-attaches the policy with current `PROJECT_PERMISSION_SETS`, pushes new secrets to GitHub. Use after rotating credentials **or after changing permission sets in `tasks/setup-ci-key.ts`**. |
-| **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key, swaps it into stack config, runs `pulumi up`, then restores the CI key (`try/finally`). See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
+| **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key, snapshots the stack file, swaps the key into stack config, runs `pulumi up`, then restores the CI key from the snapshot. See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
 | **Clean** | Wipes local state and starts over — see [Clean slate](#clean-slate). |
 
 > To tear down and rebuild the entire stack (with an optional DB snapshot and
@@ -155,12 +155,14 @@ This means **any change to [`modules/database.ts`](modules/database.ts), [`modul
 
 Re-run bootstrap and choose **Apply infra change**. The mode:
 
-1. Prompts for the Pulumi passphrase and decrypts the current CI key from stack config (held in memory only).
-2. Prompts for a fresh bootstrap key (broad permissions, see [Step 3](#3-generate-a-bootstrap-api-key)).
+1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Step 3](#3-generate-a-bootstrap-api-key)).
+2. Snapshots the current stack file (which holds the encrypted CI key) verbatim to `Pulumi.<stack>.yaml.apply-backup` (gitignored).
 3. Writes the bootstrap key into stack config.
 4. Runs `pulumi up`.
-5. **Always** restores the CI key into stack config — even if `pulumi up` failed or was cancelled (`try/finally`). If restore itself fails, the exact commands to repeat manually are printed to stderr.
+5. **Always** restores the CI key by copying the snapshot back over the stack file — even if `pulumi up` failed or was cancelled (`try/finally`), then deletes the snapshot.
 6. Reminds you to revoke the bootstrap key.
+
+If the run is interrupted by a hard crash (kill -9, power loss, Ctrl-C) before step 5, the snapshot is left on disk. The next bootstrap run detects it and offers to restore the CI key — so the key is never lost.
 
 You can also supply `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` / `PULUMI_CONFIG_PASSPHRASE` as env vars to skip the prompts.
 

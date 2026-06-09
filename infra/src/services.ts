@@ -51,7 +51,10 @@ export interface ServiceDefinition {
    *    release never replaces the serving container.
    * Only the backend opts into blue-green today (stateless + critical, and it
    * owns migrations); the lighter services keep the simpler in-place roll. cdc
-   * is a singleton (one replication slot) and could never run two slots.
+   * MUST stay in-place: it holds a single PostgreSQL logical replication slot,
+   * so running two slots (blue + green) at once would have both workers consume
+   * the same slot — a correctness bug, not just wasted RAM. in-place guarantees
+   * exactly one cdc worker exists at any moment.
    * See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
    */
   rolloverStrategy: 'in-place' | 'blue-green'

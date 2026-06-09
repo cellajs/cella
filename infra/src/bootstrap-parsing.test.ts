@@ -63,36 +63,36 @@ describe('extractApplyMarker', () => {
 })
 
 describe('detectInterruptedApply', () => {
-  const lockPath = '/tmp/.apply-in-progress.production.lock'
+  const backupPath = '/tmp/Pulumi.production.yaml.apply-backup'
 
-  it('clean: no yaml, no lock', () => {
-    expect(detectInterruptedApply({ lockExists: false, lockPath })).toBeUndefined()
+  it('clean: no yaml, no backup', () => {
+    expect(detectInterruptedApply({ backupExists: false, backupPath })).toBeUndefined()
   })
 
-  it('clean: yaml without marker, no lock', () => {
-    expect(detectInterruptedApply({ yamlText: 'config:\n  scaleway:projectId: abc\n', lockExists: false, lockPath })).toBeUndefined()
+  it('clean: yaml without marker, no backup', () => {
+    expect(detectInterruptedApply({ yamlText: 'config:\n  scaleway:projectId: abc\n', backupExists: false, backupPath })).toBeUndefined()
   })
 
-  it('detects YAML marker (preferred trace)', () => {
+  it('detects YAML marker when no backup present', () => {
     const r = detectInterruptedApply({
       yamlText: 'config:\n  bootstrap:applyInProgress: 2026-05-27T10:00:00.000Z\n',
-      lockExists: false,
-      lockPath,
+      backupExists: false,
+      backupPath,
     })
     expect(r?.trace).toBe('YAML marker bootstrap:applyInProgress = 2026-05-27T10:00:00.000Z')
   })
 
-  it('detects lock-only', () => {
-    const r = detectInterruptedApply({ lockExists: true, lockPath })
-    expect(r?.trace).toBe(`Lock file: ${lockPath}`)
+  it('detects backup-only', () => {
+    const r = detectInterruptedApply({ backupExists: true, backupPath })
+    expect(r?.trace).toBe(`Backup file: ${backupPath}`)
   })
 
-  it('YAML marker wins over lock when both present', () => {
+  it('backup file wins over YAML marker when both present', () => {
     const r = detectInterruptedApply({
       yamlText: 'config:\n  bootstrap:applyInProgress: 2026-05-27T10:00:00.000Z\n',
-      lockExists: true,
-      lockPath,
+      backupExists: true,
+      backupPath,
     })
-    expect(r?.trace).toContain('YAML marker')
+    expect(r?.trace).toContain('Backup file')
   })
 })

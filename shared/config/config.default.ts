@@ -93,7 +93,7 @@ export const config = {
 
   aboutUrl: '/about',
   statusUrl: 'https://status.cellajs.com',
-  productionUrl: 'https://cellajs.com',
+  productionUrl: 'https://www.cellajs.com',
 
   defaultRedirectPath: '/home',
   welcomeRedirectPath: '/welcome',

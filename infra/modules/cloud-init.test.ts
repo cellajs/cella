@@ -66,8 +66,9 @@ describe('renderCloudInit', () => {
     expect(out).toContain('s3://${TAG_BUCKET}/${TAG_KEY}')
     // Backend boots its initial active blue-green slot in the fallback path.
     expect(out).toContain('docker compose --profile backend up -d --no-deps backend-blue')
-    // 'bootstrap' placeholder must never be booted as an image tag.
-    expect(out).toContain('"$fallback_tag" != "bootstrap"')
+    // An absent tag object (no release yet) yields an empty fallback_tag, which
+    // gates the boot — so the fallback must guard on a non-empty value.
+    expect(out).toContain('if [[ -n "$fallback_tag" ]]; then')
   })
 
   it('writes /opt/app/.env with mode 600 and the reconciler env with mode 0600', () => {

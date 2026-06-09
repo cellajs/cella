@@ -22,9 +22,10 @@
 # binary ships to every VM.
 #
 # Exits:
-#   0 — no-op (tag unchanged) OR successful cutover
+#   0 — no-op (tag unchanged, or no release published yet) OR successful cutover
 #   1 — fatal config error (missing env, missing tools)
-#   2 — tag fetch failed (S3 unreachable / IAM denied)
+#   2 — tag fetch failed for a real reason (S3 unreachable / IAM denied); a
+#       MISSING tag object is NOT an error — it exits 0 (no release yet)
 #   3 — pull failed after retries
 #   4 — compose up failed
 #   5 — post-deploy health check failed (rollback may also have failed)
@@ -255,6 +256,192 @@ bg_dump_logs() {
   upload_failed_logs "$svc"
 }
 
+# --- Roll strategies --------------------------------------------------------
+# blue_green_roll / in_place_roll are the two cutover paths the main flow
+# dispatches to based on ROLLOVER_STRATEGY. Both run AFTER the shared prologue
+# (TAG_VAR exported, cwd=$COMPOSE_DIR, ingress ensured up) and read the globals
+# `desired` / `current` / `TAG_VAR`. Each one ENDS the script itself: `exit 0`
+# on a committed cutover, or `die <code>` on failure.
+
+# Blue-green cutover (opt-in services, e.g. backend). Instead of recreating the
+# app container in place, run two named slots (<svc>-blue / <svc>-green). The
+# ingress upstream points at the ACTIVE slot; we bring the IDLE slot up on the
+# new tag, identity-gate it DIRECTLY (it has no host port — probe over the
+# compose network), then flip the ingress to it with `caddy reload` and retire
+# the old slot after a short drain. A bad release never touches the serving
+# slot. See infra/INFRA_ARCHITECTURE.md.
+blue_green_roll() {
+  ACTIVE_SLOT_FILE="$STATE_DIR/active.slot"
+  active_slot="blue"
+  [[ -f "$ACTIVE_SLOT_FILE" ]] && active_slot=$(< "$ACTIVE_SLOT_FILE")
+  if [[ "$active_slot" == "green" ]]; then idle_slot="blue"; else idle_slot="green"; fi
+  active_svc="${SERVICE}-${active_slot}"
+  idle_svc="${SERVICE}-${idle_slot}"
+  ACTIVE_SLOT_NAME="$active_slot"
+
+  # Bootstrap: if the active slot isn't running (fresh/replaced VM that hasn't
+  # booted an app yet, or a crashed slot), just (re)start the ACTIVE slot on the
+  # desired tag in place — the ingress already points at it, so there's nothing
+  # to flip. Mirrors docker-rollout's "if it's not running, just start it".
+  if [[ -z "$(docker compose --profile "$COMPOSE_PROFILE" ps -q "$active_svc" 2>/dev/null)" ]]; then
+    log INFO "bluegreen_bootstrap slot=$active_slot tag=$desired"
+    pull_with_retries "$active_svc" || die 3 "pull_exhausted tag=$desired"
+    run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
+    publish_status slot-up rolling
+    docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$active_svc" >&2 || die 4 "compose_up_failed tag=$desired"
+    publish_status probing rolling
+    if bg_probe_slot "$active_svc" "$desired"; then
+      log INFO "rolled service=$SERVICE slot=$active_slot tag=$desired action=bootstrap"
+      printf '%s' "$active_slot" > "$ACTIVE_SLOT_FILE"
+      commit_tag_state
+      finish_ok
+      exit 0
+    fi
+    bg_dump_logs "$active_svc" "$desired"
+    die 5 "bluegreen_bootstrap_health_failed tag=$desired"
+  fi
+
+  log INFO "bluegreen_cutover service=$SERVICE active=$active_slot idle=$idle_slot tag=$desired"
+
+  # 1. pull the idle slot image (same ref as active; registry is the flaky bit)
+  pull_with_retries "$idle_svc" || die 3 "pull_exhausted tag=$desired"
+
+  # 2. expand-migrate BEFORE the new slot boots (additive; old slot keeps
+  #    serving the pre-migration schema). Gate hard — leave the active slot be.
+  run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
+
+  # 3. bring the idle slot up ALONGSIDE the still-serving active slot
+  publish_status slot-up rolling
+  if ! docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$idle_svc" >&2; then
+    die 4 "compose_up_failed slot=$idle_slot tag=$desired"
+  fi
+
+  # 4. identity-gate the idle slot directly. Old slot serves all traffic here.
+  publish_status probing rolling
+  if ! bg_probe_slot "$idle_svc" "$desired"; then
+    log ERROR "bluegreen_health_failed slot=$idle_slot desired=$desired"
+    bg_dump_logs "$idle_svc" "$desired"
+    # Tear down ONLY the failed idle slot; the active slot is untouched and
+    # keeps serving. No current.tag/active.slot write — next tick retries.
+    docker compose --profile "$COMPOSE_PROFILE" rm -sf "$idle_svc" >&2 || true
+    die 5 "bluegreen_rolled_back slot=$idle_slot tag=$desired"
+  fi
+
+  # 5. flip the ingress to the new slot. Persist to .env (so a future ingress
+  #    restart picks the right slot) AND live-reload the running proxy. caddy
+  #    reload adapts the Caddyfile client-side using the exec'd env, so the -e
+  #    override decides the new upstream (see infra/ingress.Caddyfile).
+  log INFO "bluegreen_flip from=$active_slot to=$idle_slot"
+  publish_status flipping rolling
+  sed -i -E "s|^UPSTREAM_HOST=.*|UPSTREAM_HOST=${idle_svc}|" "$COMPOSE_DIR/.env" 2>/dev/null || true
+  if ! docker compose --profile "$COMPOSE_PROFILE" exec -T -e "UPSTREAM_HOST=${idle_svc}" ingress \
+       caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >&2; then
+    die 5 "bluegreen_caddy_reload_failed slot=$idle_slot"
+  fi
+
+  # 6. verify the flip took effect THROUGH the ingress on the host port
+  publish_status verifying rolling
+  if ! bg_probe_ingress "$desired"; then
+    log ERROR "bluegreen_verify_failed slot=$idle_slot desired=$desired"
+    die 5 "bluegreen_verify_failed slot=$idle_slot"
+  fi
+
+  # Cutover committed — record state.
+  ACTIVE_SLOT_NAME="$idle_slot"
+  printf '%s' "$idle_slot" > "$ACTIVE_SLOT_FILE"
+  commit_tag_state
+  log INFO "rolled service=$SERVICE slot=$idle_slot tag=$desired"
+
+  # 7. drain in-flight requests on the old slot, then retire it.
+  publish_status draining rolling
+  sleep "$DRAIN_SECONDS"
+  docker compose --profile "$COMPOSE_PROFILE" stop "$active_svc" >&2 || true
+  log INFO "bluegreen_retired slot=$active_slot"
+  finish_ok
+  exit 0
+}
+
+# In-place roll (default). Recreate ONLY the app container behind the ingress
+# (`up -d --no-deps`), identity-gate it through the ingress on the host port,
+# and roll back to the previous tag if the new container never answers with the
+# desired X-App-Version.
+in_place_roll() {
+  pull_with_retries "$SERVICE" || die 3 "pull_exhausted tag=$desired"
+
+  # --- Expand-migrate (before rollover) -------------------------------------
+  # For services that own the schema (RUN_MIGRATE=1, i.e. backend), apply
+  # pending migrations as a one-shot BEFORE rolling the serve-only app. The old
+  # app keeps serving the un-migrated schema until this succeeds; migrations are
+  # additive (expand-before-rollover convention), so the old code tolerates the
+  # new schema. Gate hard on exit 0 — if migrate fails we leave the running app
+  # untouched and do NOT write current.tag, so the next tick retries without a
+  # half-applied roll.
+  run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
+
+  # Recreate ONLY the app container — never the ingress proxy. --no-deps keeps
+  # compose from touching anything else in the profile.
+  publish_status slot-up rolling
+  if ! docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$SERVICE" >&2; then
+    die 4 "compose_up_failed tag=$desired"
+  fi
+
+  # --- Health check ---------------------------------------------------------
+  # The container's /health returns X-App-Version: <RELEASE_SHA>. We poll until
+  # it matches `desired` — that proves the *new* container is the one answering,
+  # not the old one we just asked compose to replace. The probe goes through the
+  # ingress proxy on HEALTH_PORT, which forwards to the app; during the restart
+  # gap ingress retries the upstream so the poll simply keeps waiting until the
+  # new container is live. compose's own healthcheck only checks 200/204, not
+  # identity.
+  health_url="http://${HEALTH_HOST}:${HEALTH_PORT}/health"
+  deadline=$(( SECONDS + HEALTH_TIMEOUT_SECONDS ))
+  served=""
+  publish_status probing rolling
+  while (( SECONDS < deadline )); do
+    headers=$(curl -sS -D - -o /dev/null --max-time 5 "$health_url" 2>/dev/null || true)
+    status=$(printf '%s' "$headers" | awk 'NR==1{print $2}')
+    served=$(printf '%s' "$headers" | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
+    if [[ ( "$status" == "200" || "$status" == "204" ) && "$served" == "$desired" ]]; then
+      log INFO "rolled service=$SERVICE tag=$desired"
+      commit_tag_state
+      finish_ok
+      exit 0
+    fi
+    sleep "$HEALTH_INTERVAL_SECONDS"
+  done
+
+  log ERROR "health_mismatch desired=$desired served=${served:-<missing>} status=${status:-<none>}"
+
+  # --- Capture the FAILED new container's logs ------------------------------
+  # Before we roll back and lose them, dump the new container's logs to journald
+  # (and to a file the boot-diag uploader collects). Without this we only ever
+  # see the rolled-back OLD container and stay blind to *why* the new one failed
+  # its health gate.
+  {
+    echo "=== reconciler: failed roll-forward service=$SERVICE desired=$desired ==="
+    docker compose --profile "$COMPOSE_PROFILE" logs --no-color --tail=200 "$SERVICE" 2>&1 || true
+  } | tee -a "$STATE_DIR/last-failed-roll.log" >&2
+  upload_failed_logs "$SERVICE"
+
+  # --- Rollback -------------------------------------------------------------
+  # We deliberately do NOT rollback if there's no prior tag: a fresh VM that
+  # can't start its very first deploy should stay broken and visible to the
+  # next deploy attempt rather than silently pretending to succeed.
+  if [[ -z "$current" ]]; then
+    die 5 "rollback_skipped reason=no_prior_tag"
+  fi
+
+  log WARN "rolling_back service=$SERVICE to=$current"
+  export "$TAG_VAR=$current"
+  if docker compose --profile "$COMPOSE_PROFILE" pull "$SERVICE" >&2 \
+     && docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$SERVICE" >&2; then
+    log WARN "rollback_complete service=$SERVICE tag=$current"
+  else
+    log ERROR "rollback_failed service=$SERVICE tag=$current"
+  fi
+  exit 5
+}
+
 # --- Single-instance lock ---------------------------------------------------
 # -n: non-blocking. If another tick is already running, exit 0 silently —
 # log nothing, because the timer fires often and we don't want to spam
@@ -348,17 +535,34 @@ if [[ -x /usr/local/bin/runtime-secret-sync ]]; then
 fi
 
 # --- Fetch desired tag ------------------------------------------------------
-desired=$(aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://${TAG_BUCKET}/${TAG_KEY}" - 2>/dev/null | tr -d '[:space:]')
-if [[ -z "$desired" ]]; then
-  die 2 "tag_fetch_failed bucket=$TAG_BUCKET key=$TAG_KEY"
+# The tag object is created by CI's first roll (PutObject), NOT seeded by
+# Pulumi — so on a fresh stack, before any release, it simply does not exist.
+# Classify the fetch outcome instead of collapsing every failure to one exit:
+#   - object MISSING (404 / NoSuchKey) → no release pushed yet. Keep whatever is
+#     running and stay quiet; the timer converges once CI writes the first SHA.
+#   - any OTHER failure (auth, network, S3 down) → real. Upload the error to
+#     boot-diag and die 2 so it surfaces in the status channel rather than
+#     silently not deploying.
+# Fail-safe by design: we skip ONLY on a confirmed not-found; anything
+# ambiguous falls through to die.
+fetch_err_file="$STATE_DIR/.tag-fetch-err"
+raw_desired=$(aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://${TAG_BUCKET}/${TAG_KEY}" - 2>"$fetch_err_file")
+fetch_rc=$?
+if [[ $fetch_rc -ne 0 ]]; then
+  if grep -qiE '404|not found|nosuchkey|does not exist' "$fetch_err_file"; then
+    log INFO "tag_absent action=skip key=$TAG_KEY"
+    rm -f "$fetch_err_file"
+    exit 0
+  fi
+  upload_diag_text tag-fetch-failed "key=$TAG_KEY rc=$fetch_rc
+$(cat "$fetch_err_file" 2>/dev/null)"
+  rm -f "$fetch_err_file"
+  die 2 "tag_fetch_failed bucket=$TAG_BUCKET key=$TAG_KEY rc=$fetch_rc"
 fi
-
-# Bootstrap placeholder — written by Pulumi when the bucket is first seeded.
-# Treat as "no release yet, keep whatever's running" so introducing the
-# reconciler to an existing VM doesn't kick the container.
-if [[ "$desired" == "bootstrap" ]]; then
-  log INFO "tag=bootstrap action=skip"
-  exit 0
+rm -f "$fetch_err_file"
+desired=$(printf '%s' "$raw_desired" | tr -d '[:space:]')
+if [[ -z "$desired" ]]; then
+  die 2 "tag_empty bucket=$TAG_BUCKET key=$TAG_KEY"
 fi
 
 current=""
@@ -392,174 +596,13 @@ cd "$COMPOSE_DIR" || die 1 "compose_dir_missing=$COMPOSE_DIR"
 # roll the app with no proxy in front of it.
 docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps ingress >&2 || true
 
-# --- Blue-green cutover (opt-in services, e.g. backend) ----------------------
-# Instead of recreating the app container in place, run two named slots
-# (<svc>-blue / <svc>-green). The ingress upstream points at the ACTIVE slot;
-# we bring the IDLE slot up on the new tag, identity-gate it DIRECTLY (it has no
-# host port — probe over the compose network), then flip the ingress to it with
-# `caddy reload` and retire the old slot after a short drain. A bad release
-# never touches the serving slot. See infra/INFRA_ARCHITECTURE.md.
+# --- Roll the service -------------------------------------------------------
+# Dispatch to the configured cutover path (both defined up top). blue-green runs
+# two slots + an ingress flip so a bad release never touches the serving
+# container; in-place recreates the single app container behind the ingress.
+# Each function ends the script itself (exit 0 on success, die <code> on failure).
 if [[ "$ROLLOVER_STRATEGY" == "blue-green" ]]; then
-  ACTIVE_SLOT_FILE="$STATE_DIR/active.slot"
-  active_slot="blue"
-  [[ -f "$ACTIVE_SLOT_FILE" ]] && active_slot=$(< "$ACTIVE_SLOT_FILE")
-  if [[ "$active_slot" == "green" ]]; then idle_slot="blue"; else idle_slot="green"; fi
-  active_svc="${SERVICE}-${active_slot}"
-  idle_svc="${SERVICE}-${idle_slot}"
-  ACTIVE_SLOT_NAME="$active_slot"
-
-  # Bootstrap: if the active slot isn't running (fresh/replaced VM that hasn't
-  # booted an app yet, or a crashed slot), just (re)start the ACTIVE slot on the
-  # desired tag in place — the ingress already points at it, so there's nothing
-  # to flip. Mirrors docker-rollout's "if it's not running, just start it".
-  if [[ -z "$(docker compose --profile "$COMPOSE_PROFILE" ps -q "$active_svc" 2>/dev/null)" ]]; then
-    log INFO "bluegreen_bootstrap slot=$active_slot tag=$desired"
-    pull_with_retries "$active_svc" || die 3 "pull_exhausted tag=$desired"
-    run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
-    publish_status slot-up rolling
-    docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$active_svc" >&2 || die 4 "compose_up_failed tag=$desired"
-    publish_status probing rolling
-    if bg_probe_slot "$active_svc" "$desired"; then
-      log INFO "rolled service=$SERVICE slot=$active_slot tag=$desired action=bootstrap"
-      printf '%s' "$active_slot" > "$ACTIVE_SLOT_FILE"
-      commit_tag_state
-      finish_ok
-      exit 0
-    fi
-    bg_dump_logs "$active_svc" "$desired"
-    die 5 "bluegreen_bootstrap_health_failed tag=$desired"
-  fi
-
-  log INFO "bluegreen_cutover service=$SERVICE active=$active_slot idle=$idle_slot tag=$desired"
-
-  # 1. pull the idle slot image (same ref as active; registry is the flaky bit)
-  pull_with_retries "$idle_svc" || die 3 "pull_exhausted tag=$desired"
-
-  # 2. expand-migrate BEFORE the new slot boots (additive; old slot keeps
-  #    serving the pre-migration schema). Gate hard — leave the active slot be.
-  run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
-
-  # 3. bring the idle slot up ALONGSIDE the still-serving active slot
-  publish_status slot-up rolling
-  if ! docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$idle_svc" >&2; then
-    die 4 "compose_up_failed slot=$idle_slot tag=$desired"
-  fi
-
-  # 4. identity-gate the idle slot directly. Old slot serves all traffic here.
-  publish_status probing rolling
-  if ! bg_probe_slot "$idle_svc" "$desired"; then
-    log ERROR "bluegreen_health_failed slot=$idle_slot desired=$desired"
-    bg_dump_logs "$idle_svc" "$desired"
-    # Tear down ONLY the failed idle slot; the active slot is untouched and
-    # keeps serving. No current.tag/active.slot write — next tick retries.
-    docker compose --profile "$COMPOSE_PROFILE" rm -sf "$idle_svc" >&2 || true
-    die 5 "bluegreen_rolled_back slot=$idle_slot tag=$desired"
-  fi
-
-  # 5. flip the ingress to the new slot. Persist to .env (so a future ingress
-  #    restart picks the right slot) AND live-reload the running proxy. caddy
-  #    reload adapts the Caddyfile client-side using the exec'd env, so the -e
-  #    override decides the new upstream (see infra/ingress.Caddyfile).
-  log INFO "bluegreen_flip from=$active_slot to=$idle_slot"
-  publish_status flipping rolling
-  sed -i -E "s|^UPSTREAM_HOST=.*|UPSTREAM_HOST=${idle_svc}|" "$COMPOSE_DIR/.env" 2>/dev/null || true
-  if ! docker compose --profile "$COMPOSE_PROFILE" exec -T -e "UPSTREAM_HOST=${idle_svc}" ingress \
-       caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >&2; then
-    die 5 "bluegreen_caddy_reload_failed slot=$idle_slot"
-  fi
-
-  # 6. verify the flip took effect THROUGH the ingress on the host port
-  publish_status verifying rolling
-  if ! bg_probe_ingress "$desired"; then
-    log ERROR "bluegreen_verify_failed slot=$idle_slot desired=$desired"
-    die 5 "bluegreen_verify_failed slot=$idle_slot"
-  fi
-
-  # Cutover committed — record state.
-  ACTIVE_SLOT_NAME="$idle_slot"
-  printf '%s' "$idle_slot" > "$ACTIVE_SLOT_FILE"
-  commit_tag_state
-  log INFO "rolled service=$SERVICE slot=$idle_slot tag=$desired"
-
-  # 7. drain in-flight requests on the old slot, then retire it.
-  publish_status draining rolling
-  sleep "$DRAIN_SECONDS"
-  docker compose --profile "$COMPOSE_PROFILE" stop "$active_svc" >&2 || true
-  log INFO "bluegreen_retired slot=$active_slot"
-  finish_ok
-  exit 0
-fi
-
-pull_with_retries "$SERVICE" || die 3 "pull_exhausted tag=$desired"
-
-# --- Expand-migrate (before rollover) ---------------------------------------
-# For services that own the schema (RUN_MIGRATE=1, i.e. backend), apply pending
-# migrations as a one-shot BEFORE rolling the serve-only app. The old app keeps
-# serving the un-migrated schema until this succeeds; migrations are additive
-# (expand-before-rollover convention), so the old code tolerates the new schema.
-# Gate hard on exit 0 — if migrate fails we leave the running app untouched and
-# do NOT write current.tag, so the next tick retries without a half-applied roll.
-run_migrate_if_enabled || die 6 "migrate_failed tag=$desired"
-
-# Recreate ONLY the app container — never the ingress proxy. --no-deps keeps
-# compose from touching anything else in the profile.
-publish_status slot-up rolling
-if ! docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$SERVICE" >&2; then
-  die 4 "compose_up_failed tag=$desired"
-fi
-
-# --- Health check -----------------------------------------------------------
-# The container's /health returns X-App-Version: <RELEASE_SHA>. We poll until
-# it matches `desired` — that proves the *new* container is the one answering,
-# not the old one we just asked compose to replace. The probe goes through the
-# ingress proxy on HEALTH_PORT, which forwards to the app; during the restart
-# gap ingress retries the upstream so the poll simply keeps waiting until the
-# new container is live. compose's own healthcheck only checks 200/204, not
-# identity.
-health_url="http://${HEALTH_HOST}:${HEALTH_PORT}/health"
-deadline=$(( SECONDS + HEALTH_TIMEOUT_SECONDS ))
-served=""
-publish_status probing rolling
-while (( SECONDS < deadline )); do
-  headers=$(curl -sS -D - -o /dev/null --max-time 5 "$health_url" 2>/dev/null || true)
-  status=$(printf '%s' "$headers" | awk 'NR==1{print $2}')
-  served=$(printf '%s' "$headers" | awk -F': ' 'tolower($1)=="x-app-version"{gsub(/\r/,"",$2); print $2; exit}')
-  if [[ ( "$status" == "200" || "$status" == "204" ) && "$served" == "$desired" ]]; then
-    log INFO "rolled service=$SERVICE tag=$desired"
-    commit_tag_state
-    finish_ok
-    exit 0
-  fi
-  sleep "$HEALTH_INTERVAL_SECONDS"
-done
-
-log ERROR "health_mismatch desired=$desired served=${served:-<missing>} status=${status:-<none>}"
-
-# --- Capture the FAILED new container's logs --------------------------------
-# Before we roll back and lose them, dump the new container's logs to journald
-# (and to a file the boot-diag uploader collects). Without this we only ever
-# see the rolled-back OLD container and stay blind to *why* the new one failed
-# its health gate.
-{
-  echo "=== reconciler: failed roll-forward service=$SERVICE desired=$desired ==="
-  docker compose --profile "$COMPOSE_PROFILE" logs --no-color --tail=200 "$SERVICE" 2>&1 || true
-} | tee -a "$STATE_DIR/last-failed-roll.log" >&2
-upload_failed_logs "$SERVICE"
-
-# --- Rollback ---------------------------------------------------------------
-# We deliberately do NOT rollback if there's no prior tag: a fresh VM that
-# can't start its very first deploy should stay broken and visible to the
-# next deploy attempt rather than silently pretending to succeed on `bootstrap`.
-if [[ -z "$current" ]]; then
-  die 5 "rollback_skipped reason=no_prior_tag"
-fi
-
-log WARN "rolling_back service=$SERVICE to=$current"
-export "$TAG_VAR=$current"
-if docker compose --profile "$COMPOSE_PROFILE" pull "$SERVICE" >&2 \
-   && docker compose --profile "$COMPOSE_PROFILE" up -d --no-deps "$SERVICE" >&2; then
-  log WARN "rollback_complete service=$SERVICE tag=$current"
+  blue_green_roll
 else
-  log ERROR "rollback_failed service=$SERVICE tag=$current"
+  in_place_roll
 fi
-exit 5

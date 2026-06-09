@@ -23,10 +23,13 @@
  * trivial: `aws s3 cp ... -` produces the literal value to compare against
  * `docker inspect`.
  *
- * Seeding: Pulumi creates each object once with placeholder content
- * `bootstrap`. CI overwrites them per release. We mark `ignoreChanges:
- * ['content', 'etag', 'hash']` so Pulumi never reverts a CI write back to
- * `bootstrap` on the next `pulumi up`.
+ * No seeding: Pulumi does NOT create placeholder objects. CI's first roll
+ * creates each `deploy/<svc>.tag` via PutObject. Until then the object simply
+ * doesn't exist, and every reader treats a MISSING object as "no release yet,
+ * keep whatever is running" (reconciler.sh classifies a 404 as a quiet skip;
+ * the cloud-init fallback boots nothing and lets the timer converge). This
+ * avoids the old create-then-disown pattern (a Pulumi `Item` with
+ * `ignoreChanges:['content',…]` whose content CI immediately overwrites).
  *
  * IAM split:
  *   - Pulumi application_id: full s3:* on the bucket (seed + GC).
@@ -76,11 +79,11 @@ const deployTagsBucket = new scaleway.object.Bucket('deploy-tags-bucket', {
   versioning: { enabled: false },
 }, { protect: isProduction })
 
-// Lock down the bucket: only Pulumi (seed/GC) and the configured app principal
-// can touch it. CI and VM principals get their s3:PutObject / s3:GetObject
-// grants via separate IAM policies attached to their own application IDs
-// (see secrets.ts / compute.ts in PR2 of the migration plan).
-const deployTagsPolicy = new scaleway.object.BucketPolicy('deploy-tags-policy', {
+// Lock down the bucket: only Pulumi and the configured app principal can touch
+// it. CI and VM principals get their s3:PutObject / s3:GetObject grants via
+// separate IAM policies attached to their own application IDs (see secrets.ts /
+// compute.ts in PR2 of the migration plan).
+new scaleway.object.BucketPolicy('deploy-tags-policy', {
   bucket: deployTagsBucket.name,
   region,
   policy: pulumi.jsonStringify({
@@ -97,8 +100,8 @@ const deployTagsPolicy = new scaleway.object.BucketPolicy('deploy-tags-policy', 
         ],
       },
       // Operator principal — the human/key that runs `pulumi up` locally. Full
-      // access so the seed/GC PutObject below succeeds outside CI. Omitted when
-      // unset (CI runs already authenticate as `applicationId`).
+      // access so an operator can inspect or hand-fix tags outside CI. Omitted
+      // when unset (CI runs already authenticate as `applicationId`).
       ...(operatorPrincipal
         ? [
             {
@@ -139,35 +142,14 @@ const deployTagsPolicy = new scaleway.object.BucketPolicy('deploy-tags-policy', 
   }),
 })
 
-// Seed one object per service with a placeholder. The reconciler treats
-// `bootstrap` as "no release pushed yet — keep whatever is currently running"
-// so existing VMs aren't disrupted when the bucket is first introduced.
-const seededTags = Object.fromEntries(
-  taggedServices.map((svc) => [
-    svc,
-    new scaleway.object.Item(
-      `deploy-tag-${svc}`,
-      {
-        bucket: deployTagsBucket.name,
-        region,
-        key: `deploy/${svc}.tag`,
-        content: 'bootstrap',
-        contentType: 'text/plain',
-        // CI owns the content after seeding — don't let `pulumi up` clobber
-        // a freshly-deployed SHA back to the placeholder.
-        visibility: 'private',
-      },
-      // Seed objects must wait for the policy: on a fresh bucket the operator
-      // grant has to be in place before these PutObjects, or they 403.
-      { ignoreChanges: ['content', 'etag', 'hash'], dependsOn: [deployTagsPolicy] },
-    ),
-  ]),
-) as Record<TaggedService, scaleway.object.Item>
+// No seeding: CI's first roll creates each `deploy/<svc>.tag` via PutObject.
+// Until then the object is absent, and every reader treats a MISSING object as
+// "no release yet, keep whatever is running" — see the module header.
 
 /** Bucket name — consumed by CI and cloud-init scripts. */
 export const deployTagsBucketName = deployTagsBucket.name
 
 /** Per-service tag object keys — exported for documentation / CI templating. */
 export const deployTagKeys = Object.fromEntries(
-  taggedServices.map((svc) => [svc, seededTags[svc].key]),
-) as Record<TaggedService, pulumi.Output<string>>
+  taggedServices.map((svc) => [svc, `deploy/${svc}.tag`]),
+) as Record<TaggedService, string>
