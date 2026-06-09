@@ -300,6 +300,27 @@ if (!needsCiKey) {
 if (ciAccessKey) {
   await must('Set infra:applicationId', 'pulumi', ['config', 'set', 'infra:applicationId', ciApplicationId, '--stack', stackName])
   await must('Set infra:ciPolicyFingerprint', 'pulumi', ['config', 'set', 'infra:ciPolicyFingerprint', policyFingerprint(), '--stack', stackName])
+  // Record the operator's own principal (the bootstrap key identity). A local
+  // `pulumi up` authenticates as this key, not the CI `applicationId`, so the
+  // deploy-tags bucket policy must grant it or the seed PutObject 403s on a
+  // fresh stack. Best-effort: only the first up on a fresh stack depends on it.
+  try {
+    const idRes = await fetch(`https://api.scaleway.com/iam/v1alpha1/api-keys/${scwAccessKey}`, {
+      headers: { 'X-Auth-Token': scwSecretKey },
+    })
+    if (idRes.ok) {
+      const identity = (await idRes.json()) as { user_id?: string; application_id?: string }
+      const principal = identity.user_id
+        ? `user_id:${identity.user_id}`
+        : identity.application_id
+          ? `application_id:${identity.application_id}`
+          : ''
+      if (principal)
+        await must('Set infra:operatorPrincipal', 'pulumi', ['config', 'set', 'infra:operatorPrincipal', principal, '--stack', stackName])
+    }
+  } catch {
+    console.warn(`  ${warningMark} Could not resolve operator principal; deploy-tags seed may 403 on a fresh stack.`)
+  }
   // On Rotate (state !== 'fresh'), persist the new CI key now — VPC/PN/RDB
   // already exist, ReadOnly is enough for `pulumi up` to refresh them.
   // On Fresh, defer writing scaleway:accessKey/secretKey until *after* the

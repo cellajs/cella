@@ -52,6 +52,15 @@ const ciApplicationId = infraConfig.get('ciApplicationId') ?? applicationId
 // per-VM credentials are provisioned, this stays equal to applicationId.
 const vmApplicationId = infraConfig.get('vmApplicationId') ?? applicationId
 
+// Local `pulumi up` (bootstrap and the "Apply infra change" path) authenticates
+// as the operator's own Scaleway key — NOT the CI `applicationId`. Once this
+// policy is attached, Object Storage becomes authoritative and denies every
+// principal it does not name, so the operator key would 403 on the seed/GC
+// PutObject below. `bootstrap.ts` records the operator's principal string
+// (`user_id:<id>` or `application_id:<id>`) as `infra:operatorPrincipal` so we
+// can grant it here. Absent in CI, where pulumi already runs as applicationId.
+const operatorPrincipal = infraConfig.get('operatorPrincipal')
+
 /** Services that ship as their own image and need an independent tag file. */
 export const taggedServices = ['backend', 'cdc', 'yjs', 'ai', 'frontend'] as const
 export type TaggedService = (typeof taggedServices)[number]
@@ -70,7 +79,7 @@ const deployTagsBucket = new scaleway.object.Bucket('deploy-tags-bucket', {
 // can touch it. CI and VM principals get their s3:PutObject / s3:GetObject
 // grants via separate IAM policies attached to their own application IDs
 // (see secrets.ts / compute.ts in PR2 of the migration plan).
-new scaleway.object.BucketPolicy('deploy-tags-policy', {
+const deployTagsPolicy = new scaleway.object.BucketPolicy('deploy-tags-policy', {
   bucket: deployTagsBucket.name,
   region,
   policy: pulumi.jsonStringify({
@@ -86,6 +95,23 @@ new scaleway.object.BucketPolicy('deploy-tags-policy', {
           pulumi.interpolate`${deployTagsBucket.name}/*`,
         ],
       },
+      // Operator principal — the human/key that runs `pulumi up` locally. Full
+      // access so the seed/GC PutObject below succeeds outside CI. Omitted when
+      // unset (CI runs already authenticate as `applicationId`).
+      ...(operatorPrincipal
+        ? [
+            {
+              Sid: 'OperatorManage',
+              Effect: 'Allow',
+              Principal: { SCW: operatorPrincipal },
+              Action: ['s3:*'],
+              Resource: [
+                deployTagsBucket.name,
+                pulumi.interpolate`${deployTagsBucket.name}/*`,
+              ],
+            },
+          ]
+        : []),
       {
         // CI: write image SHAs into `deploy/<service>.tag`. Get is included
         // so the roll-services job can read-back the tag for idempotency
@@ -130,7 +156,9 @@ const seededTags = Object.fromEntries(
         // a freshly-deployed SHA back to the placeholder.
         visibility: 'private',
       },
-      { ignoreChanges: ['content', 'etag', 'hash'] },
+      // Seed objects must wait for the policy: on a fresh bucket the operator
+      // grant has to be in place before these PutObjects, or they 403.
+      { ignoreChanges: ['content', 'etag', 'hash'], dependsOn: [deployTagsPolicy] },
     ),
   ]),
 ) as Record<TaggedService, scaleway.object.Item>
