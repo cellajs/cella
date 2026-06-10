@@ -2,10 +2,11 @@
  * Create (or reuse) a scoped IAM application `<slug>-vm-reader` with a
  * minimal read-only policy, then mint a fresh API key (deleting any orphans).
  *
- * The VM reader identity has exactly three capabilities:
+ * The VM reader identity has exactly these capabilities:
  *   - ContainerRegistryReadOnly  — docker pull from the project registry
  *   - ObjectStorageReadOnly      — read deploy/<service>.tag from the deploy-tags bucket
- *   - SecretManagerReadOnly      — runtime-secret-sync reads secrets by ID
+ *   - SecretManagerReadOnly      — list/describe runtime secrets by ID
+ *   - SecretManagerSecretAccess  — decrypt + read the runtime secret VALUES
  *
  * It intentionally has NO write access to anything — not instances, not the LB,
  * not IAM. A compromised container can exfiltrate its own secrets but cannot
@@ -34,6 +35,9 @@ export const VM_PROJECT_PERMISSION_SETS = [
   'ContainerRegistryReadOnly',
   'ObjectStorageReadOnly',
   'SecretManagerReadOnly',
+  // Decrypt-and-read secret VALUES. SecretManagerReadOnly is metadata-only, so
+  // without this the VM's runtime-secret-sync 403s on every required secret.
+  'SecretManagerSecretAccess',
 ] as const
 
 export type SetupVmKeyOptions = ProvisionScopedKeyOptions

@@ -18,7 +18,8 @@
  * Credentials embedded in cloud-init use the dedicated `<slug>-vm-reader` IAM
  * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate CI
  * flow). That identity has only ContainerRegistryReadOnly + ObjectStorageReadOnly
- * + SecretManagerReadOnly — no write access to any Scaleway resource.
+ * + SecretManagerReadOnly + SecretManagerSecretAccess — no write access to any
+ * Scaleway resource.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'

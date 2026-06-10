@@ -39,7 +39,8 @@ describe('compute module source invariants', () => {
 
   it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
     // The VM identity is a minimal-privilege `<slug>-vm-reader` application
-    // (ContainerRegistryReadOnly + ObjectStorageReadOnly + SecretManagerReadOnly).
+    // (ContainerRegistryReadOnly + ObjectStorageReadOnly + SecretManagerReadOnly
+    // + SecretManagerSecretAccess).
     // compute.ts must source its credentials from the infra helpers, never by
     // reading `new pulumi.Config('scaleway').requireSecret(...)` directly.
     expect(source).toMatch(/vmAccessKey|vmSecretKey/)

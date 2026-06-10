@@ -60,12 +60,16 @@ describe('CI key permission sets', () => {
 
 describe('VM reader key permission sets', () => {
   it('VM_PROJECT_PERMISSION_SETS exact membership snapshot', () => {
-    // Locked snapshot: VMs need exactly these three ReadOnly grants — nothing more.
+    // Locked snapshot: VMs need exactly these read-scoped grants — nothing more.
     // Any addition is a security regression requiring explicit code-review approval.
+    // SecretManagerSecretAccess is the one non-`ReadOnly`-suffixed grant: it only
+    // permits decrypting secret VALUES (no create/update/delete), which the VM's
+    // runtime-secret-sync requires — SecretManagerReadOnly is metadata-only.
     expect([...VM_PROJECT_PERMISSION_SETS].sort()).toEqual([
       'ContainerRegistryReadOnly',
       'ObjectStorageReadOnly',
       'SecretManagerReadOnly',
+      'SecretManagerSecretAccess',
     ])
   })
 
@@ -76,9 +80,11 @@ describe('VM reader key permission sets', () => {
     }
   })
 
-  it('every VM permission set ends with ReadOnly', () => {
+  it('every VM permission set is read-scoped (ReadOnly, or the SecretAccess decrypt-read grant)', () => {
+    // SecretManagerSecretAccess reads (decrypts) secret values but grants no
+    // write/escalation; everything else must be a plain `ReadOnly` grant.
     for (const p of VM_PROJECT_PERMISSION_SETS) {
-      expect(p, `VM permission '${p}' must end in ReadOnly`).toMatch(/ReadOnly$/)
+      expect(p, `VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(/(ReadOnly$|^SecretManagerSecretAccess$)/)
     }
   })
 })
