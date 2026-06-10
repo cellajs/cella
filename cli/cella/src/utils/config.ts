@@ -7,6 +7,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { CellaCliConfig, SyncSettings } from '../config/types';
+import { resolveAppModuleFolders } from './module-territory';
 
 /** Default git remote name used to point at the upstream repository. */
 export const DEFAULT_UPSTREAM_REMOTE = 'cella-upstream';
@@ -52,5 +53,21 @@ export async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
   }
 
   const configModule = await import(realConfigPath);
-  return configModule.default;
+  const config: CellaCliConfig = configModule.default;
+
+  // Auto-derive fork-owned module folders (modules declaring `owner: 'app'`) and merge
+  // them into ignoredFolders. This keeps app modules as fork territory: upstream never
+  // adds/modifies/deletes them during sync, and the contributions service never offers
+  // them back upstream. Derived entries always exist (they come from real files), so
+  // config validation never warns about them.
+  const appModuleFolders = resolveAppModuleFolders(realForkPath);
+  if (appModuleFolders.length > 0) {
+    const existing = config.overrides?.ignoredFolders ?? [];
+    config.overrides = {
+      ...config.overrides,
+      ignoredFolders: [...new Set([...existing, ...appModuleFolders])],
+    };
+  }
+
+  return config;
 }

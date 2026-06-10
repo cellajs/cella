@@ -332,8 +332,10 @@ if (hasDomain && infra.computeEnabled) {
           type: 'location',
           // Preserve the original path and query so deep links (e.g. /static/logo/logo.png)
           // survive the apex→www redirect. Scaleway supports {{host}}, {{path}} and {{query}}
-          // placeholders; {{path}} includes the leading slash.
-          target: `https://${domains.app}{{path}}?{{query}}`,
+          // placeholders; {{path}} does NOT include the leading slash, so it must be added
+          // literally — matching Scaleway's documented format `https://{{host}}/{{path}}?{{query}}`.
+          // Omitting it yields a garbled redirect like `https://www.example.comauth/authenticate`.
+          target: `https://${domains.app}/{{path}}?{{query}}`,
           code: 301,
         }],
       },
