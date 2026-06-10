@@ -4,6 +4,7 @@
  * undefined if file is missing).
  */
 
+export type Environment = 'production' | 'staging'
 export type StackState = 'fresh' | 'partial' | 'bootstrapped'
 
 export interface StackProbe {
@@ -25,7 +26,7 @@ export function detectStackState(probe: StackProbe): StackState {
  * Pick the first stack short-name (production, staging) whose Pulumi file
  * is present. Pure: caller supplies the existence check.
  */
-export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly string[] = ['production', 'staging']): string {
+export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly Environment[] = ['production', 'staging']): Environment {
   return candidates.find(exists) ?? 'production'
 }
 

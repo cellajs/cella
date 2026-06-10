@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALLOWED_KEYS, buildDeployEnv } from './print-deploy-env.js'
+import { ALLOWED_KEYS, buildDeployEnv } from './print-deploy-env'
 
 const fakeAppConfig = {
   slug: 'cella',

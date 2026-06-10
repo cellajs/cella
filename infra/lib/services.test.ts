@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { enabledServices, services, type ServiceFeatureFlag } from './services.js'
+import { enabledServices, services, type ServiceFeatureFlag } from './services'
 
 const allOn: Record<ServiceFeatureFlag, boolean> = { yjs: true, ai: true }
 const allOff: Record<ServiceFeatureFlag, boolean> = { yjs: false, ai: false }

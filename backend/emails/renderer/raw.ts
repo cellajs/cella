@@ -21,8 +21,8 @@ interface Raw extends Literal {
 const START_TAG = '__COMMENT_START';
 const END_TAG = '__COMMENT_END';
 export function escapeForRawComponent(input: string): string {
-  // escape comment sequences
-  return input.replace(/<!--/g, START_TAG).replace(/-->/g, END_TAG);
+  // escape comment sequences (browsers also treat `--!>` as a comment terminator)
+  return input.replace(/<!--/g, START_TAG).replace(/--!?>/g, END_TAG);
 }
 
 export function unescapeForRawComponent(input: string): string {

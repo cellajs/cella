@@ -12,8 +12,8 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, tags, domains, hasDomain, infra, appConfig } from '../helpers'
-import { enabledServices } from '../lib/services.js'
+import { naming, zone, tags, dnsZone, serviceHost, hasDomain, infra, appConfig } from '../helpers'
+import { enabledServices } from '../lib/services'
 import { privateNetworkId } from './network'
 import { getInstanceIp } from './compute'
 
@@ -35,6 +35,17 @@ if (hasDomain && infra.computeEnabled) {
   )
   const yjsEnabled = lbServiceNames.has('yjs')
   const aiEnabled = lbServiceNames.has('ai')
+
+  // Local hostname/zone bundle, derived from the service registry (slug → host)
+  // plus the DNS zone — not a parallel source of truth. Keeps the cert/route/DNS
+  // wiring below readable without re-deriving `serviceHost(...)` at each call.
+  const domains = {
+    zone: dnsZone,
+    app: serviceHost('frontend'),
+    api: serviceHost('backend'),
+    yjs: serviceHost('yjs'),
+    ai: serviceHost('ai'),
+  }
 
   // -------------------------------------------------------------------------
   // LB IP (static public IPv4)

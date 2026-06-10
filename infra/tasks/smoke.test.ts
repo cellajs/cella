@@ -10,7 +10,7 @@ import {
   runSmoke,
   SECURITY_HEADERS,
   unhealthyComponents,
-} from './smoke.js'
+} from './smoke'
 
 const SHA = 'abc1234'
 

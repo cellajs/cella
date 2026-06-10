@@ -7,7 +7,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, domains, hasDomain, infra } from '../helpers'
+import { naming, region, serviceHost, hasDomain, infra } from '../helpers'
 import { frontendBucketName } from './storage'
 
 let _pipelineId: pulumi.Output<string> | undefined
@@ -73,7 +73,7 @@ if (hasDomain && infra.enableEdgeServices) {
   const dnsStage = new scaleway.edgeservices.DnsStage('frontend-dns', {
     pipelineId: pipeline.id,
     tlsStageId: tlsStage.id,
-    fqdns: [domains.app],
+    fqdns: [serviceHost('frontend')],
   }, { aliases: [{ type: 'scaleway:index/edgeServicesDnsStage:EdgeServicesDnsStage' }] })
 
   // ---------------------------------------------------------------------------

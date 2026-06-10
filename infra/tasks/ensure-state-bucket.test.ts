@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ensureStateBucket } from './ensure-state-bucket.js'
+import { ensureStateBucket } from './ensure-state-bucket'
 
 /**
  * Builds a mock S3Client that responds to HEAD/CREATE commands using the

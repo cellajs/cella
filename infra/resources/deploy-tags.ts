@@ -1,16 +1,12 @@
 /**
  * Deploy tags bucket — the cutover surface between CI and the on-VM reconciler.
  *
- * Why a bucket instead of baking the tag into cloud-init?
- *   Baking *_TAG into cloud-init made every release mutate the userdata, which
- *   trips `replaceOnChanges: ['cloudInit']` on the VM — Pulumi would destroy and
- *   recreate the instance per push. Moving the image tag out-of-band lets us:
- *     - keep VMs long-lived (no apt + docker pull on a fresh kernel each push)
- *     - run a reconciler systemd unit that watches `s3://<bucket>/deploy/<svc>.tag`
- *       and `docker compose pull && up -d` only the changed service
- *   The tag now lives ONLY here; no Pulumi config or cloud-init constant carries
- *   it. `replaceOnChanges` is retained but only fires for genuine cloud-init
- *   edits (reconciler script, package install) — never for a routine release.
+ * The image SHA for each service lives ONLY here, as a plain-text object. Keeping
+ * it out of cloud-init means a release never mutates VM userdata, so
+ * `replaceOnChanges: ['cloudInit']` fires only for genuine cloud-init edits
+ * (reconciler script, package install) — never for a routine release. VMs stay
+ * long-lived; a reconciler systemd unit watches `s3://<bucket>/deploy/<svc>.tag`
+ * and runs `docker compose pull && up -d` only for the changed service.
  *
  * Layout (one object per service):
  *   s3://<prefix>-deploy-tags/deploy/backend.tag    -> "<git-sha>"
@@ -19,17 +15,14 @@
  *   s3://<prefix>-deploy-tags/deploy/ai.tag         -> "<git-sha>"
  *   s3://<prefix>-deploy-tags/deploy/frontend.tag   -> "<git-sha>"
  *
- * Content is just the tag string (no JSON wrapper). Keeps the on-VM script
- * trivial: `aws s3 cp ... -` produces the literal value to compare against
+ * Content is the bare tag string (no JSON wrapper), so the on-VM script stays
+ * trivial: `aws s3 cp ... -` yields the literal value to compare against
  * `docker inspect`.
  *
- * No seeding: Pulumi does NOT create placeholder objects. CI's first roll
- * creates each `deploy/<svc>.tag` via PutObject. Until then the object simply
- * doesn't exist, and every reader treats a MISSING object as "no release yet,
- * keep whatever is running" (reconciler.sh classifies a 404 as a quiet skip;
- * the cloud-init fallback boots nothing and lets the timer converge). This
- * avoids the old create-then-disown pattern (a Pulumi `Item` with
- * `ignoreChanges:['content',…]` whose content CI immediately overwrites).
+ * No seeding: Pulumi creates no placeholder objects. CI's first roll creates
+ * each `deploy/<svc>.tag` via PutObject. Until then a MISSING object means "no
+ * release yet, keep whatever is running" (reconciler.sh treats a 404 as a quiet
+ * skip; the cloud-init fallback boots nothing and lets the timer converge).
  *
  * IAM split:
  *   - Pulumi application_id: full s3:* on the bucket (seed + GC).
@@ -37,14 +30,14 @@
  *   - VM application_id: s3:GetObject on `deploy/<own-service>.tag` only.
  *     Each compute module wires the per-service read in cloud-init.
  *
- * No public read, no versioning. Tag flips must be irreversible at the
- * bucket layer — rollback happens by CI pushing the previous SHA, not by
- * S3 version restore (which would race the reconciler).
+ * No public read, no versioning: tag flips must be irreversible at the bucket
+ * layer — rollback happens by CI pushing the previous SHA, not by S3 version
+ * restore (which would race the reconciler).
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, isProduction, infraConfig } from '../helpers'
-import { serviceNames, type ServiceName } from '../lib/services.js'
+import { serviceNames, type ServiceName } from '../lib/services'
 
 const applicationId = infraConfig.require('applicationId')
 
@@ -52,9 +45,11 @@ const applicationId = infraConfig.require('applicationId')
 // PutObject/GetObject on `deploy/*` only. Until rotated (P1.9), the CI key
 // reuses the Pulumi principal and these statements collapse to no-ops.
 const ciApplicationId = infraConfig.get('ciApplicationId') ?? applicationId
-// Optional VM application_id — read-only on `deploy/*`. Same caveat: until
-// per-VM credentials are provisioned, this stays equal to applicationId.
-const vmApplicationId = infraConfig.get('vmApplicationId') ?? applicationId
+// VM application_id — read-only on `deploy/<own>.tag`. Required: falling back
+// to applicationId (full s3:* access) defeats the IAM segregation that prevents
+// a compromised container from writing arbitrary deploy tags or reading other
+// services' tags.
+const vmApplicationId = infraConfig.require('vmApplicationId')
 
 // Local `pulumi up` (bootstrap and the "Apply infra change" path) authenticates
 // as the operator's own Scaleway key — NOT the CI `applicationId`. Once this

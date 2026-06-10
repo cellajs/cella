@@ -10,7 +10,7 @@ import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode, infraConfig } from '../helpers'
-import { runtimeSecrets } from '../lib/runtime-secrets.js'
+import { runtimeSecrets } from '../lib/runtime-secrets'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
 
 /** Folder path for secret organization, e.g. '/cella-production/' */

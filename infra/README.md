@@ -4,6 +4,27 @@ Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub A
 
 > For architecture details and module reference see [INFRA_ARCHITECTURE.md](./INFRA_ARCHITECTURE.md).
 
+## File structure
+
+The infra package is the deployment control plane for Cella: Pulumi program entrypoints, resource builders, bootstrap and verification tasks, plus the compose synthesis layer used on the VMs.
+
+```text
+infra/
+├── caddy/                  Caddy templates and assets for ingress / TLS setup
+├── cli/                    Interactive operator CLI (setup, rotate, apply, secrets)
+├── compose/                Compose model, service wiring, and synthesis for the VM runtime stack
+├── lib/                    Shared infra utilities used across Pulumi resources and tasks
+├── reconciler/             On-VM deploy reconciler that applies image/tag updates in place
+├── resources/              Pulumi resource modules for network, database, compute, LB ...
+├── tasks/                  Operator-facing CLIs for bootstrap, rotation and more
+├── tests/                  Higher-level infra test coverage
+├── index.ts                Pulumi program entrypoint
+├── naming.ts               Central naming rules for infra resources
+└── Pulumi.*.yaml           Stack config and encrypted secrets per environment
+```
+
+The `compose/` folder is the runtime assembly layer for application hosts. It defines the typed compose model, maps Cella services into that model, and synthesizes the generated compose file consumed by the reconciler and VM bootstrap flow. Read it as “how a machine should run the stack”, not as a directory of unrelated per-service files.
+
 ## Operating model — two modes
 
 Long-lived infra credentials should not be stored. They live in your password manager and in GitHub Actions secrets, and are only ever read into a process's memory for the duration of a single command.

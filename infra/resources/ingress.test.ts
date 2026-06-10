@@ -3,12 +3,12 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 // Guards for the in-host zero-downtime rollover wiring. These assert the two
-// static files (compose.yml + ingress.Caddyfile) keep the invariants the
-// reconciler and load balancer depend on. See infra/INFRA_ARCHITECTURE.md
-// (Zero-downtime deploys).
+// deploy artifacts (the generated compose.gen.yml + ingress.Caddyfile)
+// keep the invariants the reconciler and load balancer depend on. See
+// infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
 
 const compose = fs.readFileSync(
-  path.resolve(import.meta.dirname, '../compose.yml'),
+  path.resolve(import.meta.dirname, '../compose.gen.yml'),
   'utf-8',
 )
 const ingressCaddyfile = fs.readFileSync(
@@ -16,10 +16,10 @@ const ingressCaddyfile = fs.readFileSync(
   'utf-8',
 )
 
-describe('compose.yml ingress model', () => {
+describe('compose.gen.yml ingress model', () => {
   it('defines an ingress service that publishes the host port', () => {
     expect(compose).toMatch(/^ {2}ingress:/m)
-    expect(compose).toContain("- '${INGRESS_PORT}:${INGRESS_PORT}'")
+    expect(compose).toContain('- ${INGRESS_PORT}:${INGRESS_PORT}')
   })
 
   it('runs the ingress for every service profile', () => {
@@ -28,21 +28,16 @@ describe('compose.yml ingress model', () => {
 
   it('app services publish NO host port (only `expose`)', () => {
     // A stray `ports:` on an app service would bypass the ingress and
-    // reintroduce a downtime window on rollover. The only host-port mapping
-    // allowed is the ingress — never backend/cdc/yjs/ai/frontend.
-    const allowed = new Set([
-      "- '${INGRESS_PORT}:${INGRESS_PORT}'",
-    ])
-    const hostPortMappings = (compose.match(/^\s*-\s*'[^']*:[^']*'/gm) ?? [])
-      .map((m) => m.trim())
-    for (const mapping of hostPortMappings) {
-      expect(allowed.has(mapping)).toBe(true)
-    }
+    // reintroduce a downtime window on rollover. The ONLY `ports:` block in the
+    // file must be the ingress — never backend/cdc/yjs/ai/frontend.
+    const portsBlocks = compose.match(/^\s+ports:/gm) ?? []
+    expect(portsBlocks.length).toBe(1)
+    expect(compose).toContain('- ${INGRESS_PORT}:${INGRESS_PORT}')
   })
 
   it('gives app containers a drain window on SIGTERM', () => {
-    // backend, cdc, yjs, ai, frontend — five app services.
-    const grace = compose.match(/stop_grace_period: 30s/g) ?? []
+    // backend (blue+green), cdc, yjs, ai, frontend — at least five app slots.
+    const grace = compose.match(/stop_grace_period: '30s'/g) ?? []
     expect(grace.length).toBeGreaterThanOrEqual(5)
   })
 })

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { seedOperatorSecrets } from './seed-operator-secrets.js'
+import { seedOperatorSecrets } from './seed-operator-secrets'
 
 const getSecretByName = vi.fn()
 const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
 
-vi.mock('../lib/scaleway-secret-manager.js', () => ({
+vi.mock('../lib/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
     getSecretByName,
     ensureSecret,

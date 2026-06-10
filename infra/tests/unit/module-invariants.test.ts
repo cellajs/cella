@@ -142,10 +142,10 @@ describe('secrets module', () => {
 
   it('does not read runtime app secrets from Pulumi stack config', () => {
     for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
-      expect(secrets).not.toMatch(new RegExp(`requireSecret\(['"]${key}['"]\)`))
+      expect(secrets).not.toMatch(new RegExp(`requireSecret\\(['"]${key}['"]\\)`))
     }
     for (const key of ['brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
-      expect(secrets).not.toMatch(new RegExp(`getSecret\(['"]${key}['"]\)`))
+      expect(secrets).not.toMatch(new RegExp(`getSecret\\(['"]${key}['"]\\)`))
     }
   })
 })

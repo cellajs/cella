@@ -5,6 +5,7 @@
  * `environment:` in their workflow.
  */
 import { spawnSync } from 'node:child_process'
+import type { Environment } from './bootstrap-stack-state'
 import { warningMark } from 'shared/console'
 
 /** Parses `git remote get-url origin` output into `owner/repo`. Accepts both
@@ -16,7 +17,7 @@ export function parseGithubOriginRepo(originUrl: string): string | undefined {
 
 export interface GithubSyncOptions {
   repoRoot: string
-  stackShort: string
+  environment: Environment
   /** Stack-scoped secrets to write. Skip the section by passing undefined. */
   ciKey?: {
     accessKey: string
@@ -54,8 +55,8 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
   }
 
   step(
-    `Ensure GitHub Environment "${opts.stackShort}"`,
-    ['gh', 'api', '-X', 'PUT', `repos/${ownerRepo}/environments/${opts.stackShort}`, '--silent'],
+    `Ensure GitHub Environment "${opts.environment}"`,
+    ['gh', 'api', '-X', 'PUT', `repos/${ownerRepo}/environments/${opts.environment}`, '--silent'],
   )
 
   if (opts.ciKey) {
@@ -67,8 +68,8 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
       ['SCW_ORGANIZATION_ID', organizationId],
     ] as const) {
       step(
-        `gh secret set ${name} (env: ${opts.stackShort})`,
-        ['gh', 'secret', 'set', name, '--env', opts.stackShort, '--repo', ownerRepo, '--body', value],
+        `gh secret set ${name} (env: ${opts.environment})`,
+        ['gh', 'secret', 'set', name, '--env', opts.environment, '--repo', ownerRepo, '--body', value],
       )
     }
   }

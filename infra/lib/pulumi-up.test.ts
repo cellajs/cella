@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyPermissionError } from './pulumi-up.js'
+import { classifyPermissionError } from './pulumi-up'
 
 describe('classifyPermissionError', () => {
   it('returns undefined when stderr has no perms diagnostic', () => {

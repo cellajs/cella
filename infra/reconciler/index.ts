@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { servicesByName, serviceNames, type ServiceName } from '../lib/services.js'
+import { servicesByName, serviceNames, type ServiceName } from '../lib/services'
 
 const here = dirname(fileURLToPath(import.meta.url))
 

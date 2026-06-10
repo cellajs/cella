@@ -2,19 +2,24 @@ import { spawnSync } from 'node:child_process'
 import { confirm, input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
-import { extractProjectId } from '../lib/bootstrap-stack-state.js'
-import { manualRestoreCommands, scwConfigPathNone, stripScwProviderEnv } from '../lib/bootstrap-scw-env.js'
-import { ensureDnsZone } from '../lib/ensure-dns-zone.js'
-import { ensureEdgePlan } from '../lib/ensure-edge-plan.js'
-import { syncGithubEnvironment } from '../lib/github-sync.js'
-import { decryptStackSecrets } from '../lib/pulumi-passphrase.js'
-import { runPulumiUpWithHint } from '../lib/pulumi-up.js'
-import { seedOperatorSecrets } from '../tasks/seed-operator-secrets.js'
-import { setupCiKey } from '../tasks/setup-ci-key.js'
-import type { BootstrapContext, Mode } from './shared.js'
-import { createStepRunner, envOr, policyFingerprint } from './shared.js'
+import { extractProjectId } from '../../lib/bootstrap-stack-state'
+import { manualRestoreCommands, scwConfigPathNone, stripScwProviderEnv } from '../../lib/bootstrap-scw-env'
+import { ensureDnsZone } from '../../lib/ensure-dns-zone'
+import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
+import { syncGithubEnvironment } from '../../lib/github-sync'
+import { decryptStackSecrets } from '../../lib/pulumi-passphrase'
+import { infraDir } from '../../lib/paths'
+import { runPulumiUpWithHint } from '../../lib/pulumi-up'
+import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
+import { setupCiKey } from '../../tasks/setup-ci-key'
+import { setupVmKey } from '../../tasks/setup-vm-key'
+import type { CliMode, InfraContext } from '../shared'
+import { createStepRunner, envOr, policyFingerprint } from '../shared'
 
-export async function runBootstrapMode(context: BootstrapContext, mode: Extract<Mode, 'resume' | 'rotate'>): Promise<void> {
+/**
+ * Runs the first setup process for the infra CLI, including handling bootstrap keys, CI keys, and Pulumi stack configuration.
+ */
+export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey
   const pulumiPassphrase = await envOr('PULUMI_CONFIG_PASSPHRASE', () => password({ message: 'Pulumi passphrase' }))
 
@@ -30,7 +35,7 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
       scwAccessKey = decrypted['scaleway:accessKey'] ?? ''
       scwSecretKey = decrypted['scaleway:secretKey'] ?? ''
       if (scwAccessKey && scwSecretKey && scwProjectId) {
-        console.info(`${checkMark} Decrypted Scaleway creds from ${context.stackShort} stack (access key ${scwAccessKey})`)
+        console.info(`${checkMark} Decrypted Scaleway creds from ${context.environment} stack (access key ${scwAccessKey})`)
       }
     } catch (error) {
       console.error(`${warningMark} Could not decrypt stored creds: ${(error as Error).message}. Falling back to manual entry.`)
@@ -59,7 +64,7 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
     ? await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key (for Pulumi state bucket)' }))
     : scwSecretKey
 
-  const stackName = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.stackShort}` })
+	const stackName = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
   const stackHas = (key: string) => !!context.stackYaml && new RegExp(`(^|\\n)\\s*${key.replace(':', ':\\s*')}\\s*:`).test(context.stackYaml)
   const adminEmail = stackHas('infra:adminEmail') ? '' : await input({ message: 'Admin email (optional)' })
   const brevoApiKey =
@@ -81,7 +86,7 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
     AWS_ACCESS_KEY_ID: stateAccessKey,
     AWS_SECRET_ACCESS_KEY: stateSecretKey,
     PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
-    SCW_CONFIG_PATH: scwConfigPathNone(context.infraDir),
+    SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
     SCW_PROFILE: '',
   }
 
@@ -91,19 +96,18 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
     SCW_SECRET_KEY: stateSecretKey,
   }
 
-  const { must } = createStepRunner(context.infraDir, childEnv)
+  const { must } = createStepRunner(infraDir, childEnv)
 
   await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, {
     retry: true,
     env: stateBucketEnv,
   })
 
-  process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { appConfig } = await import('shared')
+  const { appConfig } = context
   const loginUrl = `s3://${appConfig.slug}-pulumi-state?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`
   await must('Pulumi login (S3 backend)', 'pulumi', ['login', loginUrl], spawnSync, { retry: true })
 
-  const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: context.infraDir, env: childEnv, stdio: 'ignore' })
+  const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' })
   if (selected.status === 0) {
     console.info(`\n→ Pulumi stack: ${stackName} (exists — selected)`)
   } else {
@@ -113,7 +117,7 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
   await must('Set scaleway:projectId', 'pulumi', ['config', 'set', 'scaleway:projectId', scwProjectId, '--stack', stackName], spawnSync)
   await must('Initialize stack secrets', 'pnpm', ['init-stack-secrets', stackName], spawnSync)
 
-  const runtimeSecretPath = `/${appConfig.slug}-${context.stackShort}/`
+  const runtimeSecretPath = `/${appConfig.slug}-${context.environment}/`
   await seedOperatorSecrets({
     secretKey: scwSecretKey,
     projectId: scwProjectId,
@@ -143,6 +147,14 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
           `(stored ${stored}, expected ${expected}). Re-run bootstrap and choose Rotate CI to apply.`,
       )
     }
+    // Warn if the VM reader key was never provisioned (e.g. forked before C1 fix).
+    const hasVmKey = context.stackYaml?.includes('infra:vmApplicationId') ?? false
+    if (!hasVmKey) {
+      console.warn(
+        `  ${warningMark} VM reader key (infra:vmApplicationId) is missing from stack config. ` +
+          `Re-run bootstrap and choose ${pc.italic('"Rotate CI"')} to provision the minimal-privilege VM identity.`,
+      )
+    }
   } else {
     while (true) {
       try {
@@ -154,6 +166,27 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
         break
       } catch (error) {
         console.error(`\n${warningMark} CI key setup failed: ${(error as Error).message}`)
+        if (!(await confirm({ message: 'Retry?', default: true }))) break
+      }
+    }
+  }
+
+  // VM reader key — provisioned atomically with the CI key so both identities
+  // are always rotated together. Runs whenever needsCiKey is true (fresh + rotate).
+  let vmApplicationId = ''
+  let vmAccessKey = ''
+  let vmSecretKey = ''
+  if (needsCiKey && ciAccessKey) {
+    console.info('\n→ VM reader key (minimal-privilege identity for service VMs)')
+    while (true) {
+      try {
+        const key = await setupVmKey({ callerSecretKey: scwSecretKey, projectId: scwProjectId, slug: appConfig.slug })
+        vmApplicationId = key.applicationId
+        vmAccessKey = key.accessKey
+        vmSecretKey = key.secretKey
+        break
+      } catch (error) {
+        console.error(`\n${warningMark} VM key setup failed: ${(error as Error).message}`)
         if (!(await confirm({ message: 'Retry?', default: true }))) break
       }
     }
@@ -186,9 +219,15 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
     }
   }
 
+  if (vmApplicationId) {
+    await must('Set infra:vmApplicationId', 'pulumi', ['config', 'set', 'infra:vmApplicationId', vmApplicationId, '--stack', stackName], spawnSync)
+    await must('Set infra:vmAccessKey', 'pulumi', ['config', 'set', '--secret', 'infra:vmAccessKey', vmAccessKey, '--stack', stackName], spawnSync)
+    await must('Set infra:vmSecretKey', 'pulumi', ['config', 'set', '--secret', 'infra:vmSecretKey', vmSecretKey, '--stack', stackName], spawnSync)
+  }
+
   await syncGithubEnvironment({
-    repoRoot: new URL('..', `file://${context.infraDir}/`).pathname,
-    stackShort: context.stackShort,
+    repoRoot: new URL('..', `file://${infraDir}/`).pathname,
+    environment: context.environment,
     ciKey: ciAccessKey ? { accessKey: ciAccessKey, secretKey: ciSecretKey, projectId: scwProjectId, organizationId: ciOrganizationId } : undefined,
   })
 
@@ -196,8 +235,11 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
   console.info(`\n${divider}`)
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} CI key in stack config unchanged.`)
+  } else if (ciAccessKey && vmApplicationId) {
+    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmApplicationId)}`)
   } else if (ciAccessKey) {
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`)
+    console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate CI"')}.`)
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate CI"')}.`)
   }
@@ -214,11 +256,11 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
         console.error(`\n${warningMark} Edge Services plan check failed: ${(error as Error).message}`)
         if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
       }
-      const { deriveInfra } = await import('../naming.js')
-      const { domains: dnsDomains, hasDomain } = deriveInfra(appConfig)
+      const { deriveInfra } = await import('../../naming')
+      const { dnsZone, hasDomain } = deriveInfra(appConfig)
       if (hasDomain) {
         try {
-          await ensureDnsZone({ secretKey: scwSecretKey, projectId: scwProjectId, domain: dnsDomains.zone })
+          await ensureDnsZone({ secretKey: scwSecretKey, projectId: scwProjectId, domain: dnsZone })
         } catch (error) {
           console.error(`\n${warningMark} DNS zone check failed: ${(error as Error).message}`)
           if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
@@ -232,14 +274,14 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
       if (usingBootstrapKey) {
         const startedAt = new Date().toISOString()
         spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', stackName], {
-          cwd: context.infraDir,
+          cwd: infraDir,
           env: pulumiUpEnv,
           stdio: 'inherit',
         })
       }
       let upOk = false
       while (true) {
-        const code = await runPulumiUpWithHint(stackName, context.infraDir, pulumiUpEnv)
+        const code = await runPulumiUpWithHint(stackName, infraDir, pulumiUpEnv)
         if (code === 0) {
           upOk = true
           break
@@ -248,7 +290,7 @@ export async function runBootstrapMode(context: BootstrapContext, mode: Extract<
       }
       if (usingBootstrapKey && upOk) {
         spawnSync('pulumi', ['config', 'rm', 'bootstrap:applyInProgress', '--stack', stackName], {
-          cwd: context.infraDir,
+          cwd: infraDir,
           env: pulumiUpEnv,
           stdio: 'ignore',
         })

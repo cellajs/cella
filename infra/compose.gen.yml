@@ -1,0 +1,223 @@
+# DO NOT EDIT — generated from infra/compose/ by `pnpm --filter infra compose:synth`.
+# Edit services.config.ts (the fork-owned service registry) and re-run synth.
+# Deploy machinery and rationale live in infrastructure.ts.
+
+services:
+  ingress:
+    image: caddy:2-alpine
+    profiles: [backend, cdc, yjs, ai, frontend]
+    restart: unless-stopped
+    ports:
+      - ${INGRESS_PORT}:${INGRESS_PORT}
+    environment:
+      INGRESS_PORT: ${INGRESS_PORT}
+      UPSTREAM_HOST: ${UPSTREAM_HOST}
+      UPSTREAM_PORT: ${UPSTREAM_PORT}
+    volumes:
+      - ./ingress.Caddyfile:/etc/caddy/Caddyfile:ro
+      - ingress_data:/data
+      - ingress_config:/config
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${INGRESS_PORT}/__ingress/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '5s'
+  backend-blue:
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend]
+    restart: unless-stopped
+    expose:
+      - '4000'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+      RUN_MIGRATIONS_ON_BOOT: 'false'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+    x-service:
+      slug: backend
+      healthPort: 4000
+      healthTimeoutSeconds: 240
+      runMigrate: true
+      rolloverStrategy: blue-green
+      drainSeconds: 10
+      lbRoute: default
+      instanceType:
+        production: DEV1-M
+        staging: DEV1-S
+  backend-green:
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend]
+    restart: unless-stopped
+    expose:
+      - '4000'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+      RUN_MIGRATIONS_ON_BOOT: 'false'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+  migrate:
+    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
+    profiles: [backend]
+    restart: 'no'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: migrate
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+  cdc:
+    image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
+    profiles: [cdc]
+    restart: unless-stopped
+    expose:
+      - '4001'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      API_WS_URL: ${API_WS_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      CDC_HEALTH_PORT: '4001'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '10s'
+    x-service:
+      slug: cdc
+      healthPort: 4001
+      healthTimeoutSeconds: 90
+      runMigrate: false
+      rolloverStrategy: in-place
+      drainSeconds: 0
+  yjs:
+    image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
+    profiles: [yjs]
+    restart: unless-stopped
+    expose:
+      - '4002'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      BACKEND_URL: ${BACKEND_URL}
+      YJS_PORT: '4002'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '10s'
+    x-service:
+      slug: yjs
+      healthPort: 4002
+      healthTimeoutSeconds: 90
+      runMigrate: false
+      rolloverStrategy: in-place
+      drainSeconds: 0
+      lbRoute: host
+      featureFlag: yjs
+  ai:
+    image: ${REGISTRY}/backend:${AI_TAG:-latest}
+    profiles: [ai]
+    restart: unless-stopped
+    expose:
+      - '4003'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: ai-worker
+      PORT: '4003'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      AI_API_URL: ${AI_API_URL}
+      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+    x-service:
+      slug: ai
+      healthPort: 4003
+      healthTimeoutSeconds: 240
+      runMigrate: false
+      rolloverStrategy: in-place
+      drainSeconds: 0
+      lbRoute: host
+      reusesImageOf: backend
+      featureFlag: ai
+  frontend:
+    image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
+    profiles: [frontend]
+    restart: unless-stopped
+    expose:
+      - '80'
+    stop_grace_period: '30s'
+    environment:
+      ORIGIN_HOST: ${ORIGIN_HOST}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:80/health']
+      interval: '30s'
+      timeout: '5s'
+      retries: 3
+      start_period: '10s'
+    x-service:
+      slug: frontend
+      healthPort: 80
+      healthTimeoutSeconds: 90
+      runMigrate: false
+      rolloverStrategy: in-place
+      drainSeconds: 0
+      lbRoute: host
+
+volumes:
+  ingress_data:
+  ingress_config:

@@ -1,617 +1,441 @@
-# Sharing infrastructure across forks — Yjs, CDC & a shared Postgres
+# Multi-fork sharing — phased implementation plan
 
-> **Status:** Concept / exploratory analysis. Not a committed roadmap.
+> **Status:** Implementation plan. Phases are independently shippable and ordered by
+> risk/leverage — each one delivers value alone, and later phases are gated on real need,
+> not assumed. Stop after any phase.
 >
-> Goal: run N forks of this repository inside **one** Scaleway project, **one** private
-> network, **one** managed Postgres, **one** load balancer, and — ideally — **one** Yjs
-> relay and **one** CDC worker, instead of paying for a full per-fork stack. Each fork keeps
-> only its own frontend bucket, its own backend VM, and its own Pulumi state bucket.
+> **Goal:** let N forks of this repository share infrastructure by making the stateless
+> services **fork-agnostic** — one process accepts traffic from *any* fork/app/repo — instead
+> of running a per-fork copy of each. Each fork keeps only what is intrinsically per-fork
+> (its backend API, its data), and rides shared, multi-tenant platform services for everything
+> else.
 >
-> This document is grounded in the actual code paths (`yjs/src`, `cdc/src`,
-> `backend/src/db`) and the Pulumi modules (`infra/modules`). Read alongside
-> [ARCHITECTURE.md](./ARCHITECTURE.md), [SYNC_ENGINE.md](./SYNC_ENGINE.md), and
-> [SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md).
+> Read alongside [ARCHITECTURE.md](./ARCHITECTURE.md), [SYNC_ENGINE.md](./SYNC_ENGINE.md),
+> [SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md), and
+> [infra/INFRA_ARCHITECTURE.md](../infra/INFRA_ARCHITECTURE.md).
 
 ---
 
-## TL;DR
+## Design principle: fork-agnostic processes, not co-located copies
 
-- **The headline constraint is Postgres logical replication, not the load balancer.** A logical
-  replication slot and a publication are **per-database**. One slot can never stream more than
-  one database. So *if you want a single shared CDC worker*, the forks must share **one
-  database** and be separated by **schema** (or by `tenant_id` rows), **never** by
-  database-per-fork.
-- **The HTTP load balancer cannot share Postgres.** It speaks HTTP(S), not the Postgres wire
-  protocol. "Sharing one managed Postgres" is a **connection-pooler + multi-tenancy-model**
-  problem (PgBouncer / PgCat / Supavisor on the private network), not an LB problem.
-- **Yjs is already 95% shareable.** It is a stateless binary relay that isolates by `tenant_id`
-  via RLS and delegates entity authorization to "a backend" over HTTP. The only fork couplings
-  are `YJS_SECRET`, `appConfig.backendUrl` (which backend verifies access), and where the
-  `yjs_documents` table lives. Make those **per-request (token-derived)** instead of
-  **per-process (env)** and one relay serves every fork.
-- **CDC is the hard one.** Slot/publication names are global constants (`cdc_slot`, `cdc_pub`),
-  it streams a whole database, and it pushes to a single `API_WS_URL`. Sharing one CDC requires
-  it to become *fork-aware*: resolve the schema from each WAL relation, write the activity into
-  that fork's `activitiesTable`, and fan out the notification to that fork's backend.
-- **There is a cheap middle ground:** share the **VM**, not the **process**. Run N tiny
-  per-fork `yjs`/`cdc` containers on one shared VM. This captures most of the cost saving with
-  almost no code change and sidesteps the per-database slot constraint entirely.
+The cost of N forks comes from running a per-fork copy of every service. There are two ways to
+collapse that, and this plan deliberately picks the second:
 
----
-
-## 1. What actually couples each service to a single fork today
-
-### 1.1 Yjs relay (`yjs/src`)
-
-Connection flow (`server/upgrade.ts` → `server/auth.ts` → `data/db.ts`):
-
-1. Client connects `wss://yjs.<fork>/<entityId>?token=…&entityType=…&tenantId=…`.
-2. `verifyToken()` checks an HMAC signed with **`env.YJS_SECRET`**. The token payload already
-   carries `userId`, `entityType`, `tenantId`, `organizationId`, `exp`
-   (`server/auth.ts:10-16`).
-3. `verifyEntityAccess()` calls **`appConfig.backendUrl` + `/yjs/verify-entity`** with the
-   `x-yjs-secret` header (`server/auth.ts:54-67`).
-4. DB I/O goes through one `pg.Pool` on **`env.DATABASE_URL`**, and every query runs inside
-   `withClient()` which sets `app.tenant_id` / `app.user_id` so **RLS isolates rows**
-   (`data/db.ts:14-30`, `data/storage.ts`). All reads/writes target `yjs_documents`.
-
-**Fork couplings (only three, all process-level env):**
-
-| Coupling | Where | Why it blocks sharing |
+| | **Co-located copies** (rejected) | **Fork-agnostic process** (this plan) |
 |---|---|---|
-| `YJS_SECRET` | `env.ts`, `auth.ts` | One secret per process; each fork's backend signs with its own |
-| `appConfig.backendUrl` | `auth.ts` `verifyEntityAccess` | Hard-wired to one fork's backend for access checks |
-| `DATABASE_URL` + `yjs_documents` location | `db.ts` | One DB/schema per process |
+| Shape | N single-tenant containers on one shared VM | **One** multi-tenant process serving all forks |
+| Per-fork work | A container + its env/secret per fork | A row in a registry / a token claim |
+| Scaling | Linear in fork count (RAM per container) | Flat — one process, scale horizontally on load |
+| New fork | Deploy another container profile | Zero deploy (convention/token-derived) or one config row |
+| Fit | Stopgap | The real goal — STARDUST-friendly, truly shared |
 
-Crucially, **`tenant_id` already provides row isolation** and the token already carries it.
-Nothing in the relay logic is fork-specific *except* the three env values above.
+A service qualifies for fork-agnostic sharing when it is **stateless and isolates per request**
+(the fork identity arrives *with the call* — a Host header or a signed token — not baked into the
+process env). The frontend proxy and the Yjs relay both qualify almost as-is. CDC is the one
+exception (a stateful, per-database replication consumer) and is treated honestly as such in the
+final phase.
 
-### 1.2 CDC worker (`cdc/src`)
-
-Flow (`pipeline/replication.ts` → `handle-message.ts` → `services/activity-service.ts` →
-`network/websocket-client.ts`):
-
-1. Connects with `env.DATABASE_CDC_URL` (admin role — Scaleway only grants `REPLICATION` to
-   `isAdmin` users; `lib/db.ts`).
-2. `ensureReplicationSlot()` creates/uses slot **`cdc_slot`** reading publication **`cdc_pub`**
-   — both **hardcoded global constants** (`constants.ts:4-9`). This streams **the entire
-   database's** WAL.
-3. Each change is persisted as an activity and pushed to the backend over a **single
-   WebSocket** at `env.API_WS_URL` (wired to one backend VM's private IP in `compute.ts:180`).
-
-**Fork couplings:**
-
-| Coupling | Where | Why it blocks sharing |
-|---|---|---|
-| `cdc_slot` / `cdc_pub` (global) | `constants.ts` | One slot ⇒ **one database** (Postgres hard limit) |
-| Single `API_WS_URL` | `env.ts`, `compute.ts` | All notifications go to one backend |
-| `DATABASE_CDC_URL` schema assumptions | `activity-service.ts`, handlers | Writes activities to one schema; no fork routing |
-| `appConfig.slug` (`application_name`) | `replication.ts:41` | Cosmetic, but a coupling |
-
-This is the structural reason CDC is harder to share than Yjs: it is a **stateful singleton
-bound to one database's replication slot**, and it has to *push* to the right place rather than
-just *answer* a request.
-
-### 1.3 Infra (`infra/modules`)
-
-- `naming.ts` derives **every** resource name from `appConfig.slug`, so a stack is intrinsically
-  single-fork.
-- `compute.ts` creates **one VM per service** (`backend`, `cdc`, `yjs`, `ai`, `frontend`) and
-  bakes all secrets + all three DB URLs into each VM's cloud-init `.env`.
-- `loadbalancer.ts` already does **host-header routing** (`matchHostHeader: domains.yjs` etc.) —
-  this is the lever that lets one LB serve many hostnames/forks.
-- `database.ts` provisions one managed Postgres on the private network with `admin`/`runtime`
-  roles and `rdb.enable_logical_replication=true`.
-
-The infra is *parameterised* (everything flows from `appConfig`), so it already supports the
-"add a fork = add a config" pattern the [INFRA_ARCHITECTURE.md](../infra/INFRA_ARCHITECTURE.md)
-describes. What it does **not** have is a notion of a **shared platform layer** vs a **per-fork
-layer**.
+The throughline: **move fork identity from process env → per-request input.** Once a service reads
+"which fork" from the Host header or the token instead of `process.env`, one process serves
+everyone and a new fork needs no new process.
 
 ---
 
-## 2. The Postgres question: how do you share one managed instance?
+## Architectural seam (shared platform handles)
 
-This is the heart of the request. There are three classic multi-tenancy models; the choice is
-forced by the **single-CDC** goal.
+Sharing the LB / DB / network still needs the modules that *consume* them to not care whether the
+resource was created locally (monolith) or lives in a shared platform stack. Today each shared
+handle is a direct sibling import of a `pulumi.Output`:
 
-| Model | Isolation | Single shared CDC possible? | Schema divergence between forks | Verdict |
-|---|---|---|---|---|
-| **A. Database-per-fork** | Strongest | ❌ **No** — slot is per-DB ⇒ one CDC per DB | Free | Good isolation, **defeats the shared-CDC goal** |
-| **B. Schema-per-fork** (one DB) | Strong (schema + RLS) | ✅ **Yes** — one publication can span schemas | Free (each schema migrates independently) | **The sweet spot for forks** |
-| **C. Shared schema, `tenant_id` rows** | Row-level (RLS) | ✅ Yes (already how Cella works) | ❌ All forks locked to identical schema/migrations | Only if forks never diverge structurally |
+```ts
+// resources/database.ts, resources/compute.ts, resources/loadbalancer.ts
+import { privateNetworkId } from './network'
+```
 
-Forks in this codebase **extend the entity model** (new tables per fork — see the entity
-hierarchy builder in ARCHITECTURE.md), so **Model C is unrealistic** (a fork that adds a `book`
-table can't share a table set) and **Model A kills the single-CDC goal**. That leaves:
+The Pulumi property that makes the split clean:
 
-> **Model B — schema-per-fork in one shared database — is the only model that satisfies "one
-> managed Postgres *and* one CDC worker" while letting forks evolve their own tables.**
+> A `StackReference.getOutput('x')` has the **same type** (`Output<T>`) as a local resource's
+> `.id`. Downstream code cannot tell whether the private network was *created here* or *read from
+> another stack*.
 
-Postgres 15+ supports `CREATE PUBLICATION cdc_pub FOR TABLES IN SCHEMA fork_a, fork_b, …`, so a
-**single slot + single publication** can carry every fork's WAL. Each fork's migrations run
-against its own schema; RLS (`app.tenant_id`) still provides the row-level safety net the
-backend relies on today.
+So the split collapses to one new file, `infra/resources/platform.ts`, resolving shared handles
+**either** locally (monolith, the default) **or** from a `StackReference` (split):
 
-### 2.1 "A proxy that makes a single managed Postgres shared" — what that actually is
+```ts
+// resources/platform.ts — THE ONLY place the monolith/split branch lives
+const platformStack = infraConfig.get('platformStack') // unset = monolith
 
-The LB can't do this. The standard, battle-tested pattern is a **Postgres connection pooler**
-on the private network, sitting between the fleet of backend/yjs/cdc clients and the single
-managed instance:
+let privateNetworkId: pulumi.Output<string>
+let lbId: pulumi.Output<string>
+// …
+
+if (platformStack) {
+  const ref = new pulumi.StackReference(platformStack)
+  privateNetworkId = ref.requireOutput('privateNetworkId') as pulumi.Output<string>
+  lbId = ref.requireOutput('lbId') as pulumi.Output<string>
+} else {
+  ;({ privateNetworkId } = await import('./network'))
+  ;({ lbId } = await import('./loadbalancer'))
+}
+
+export { privateNetworkId, lbId /*, … */ }
+```
+
+Downstream modules change `from './network'` → `from './platform'` and are otherwise untouched.
+The monolith path is **byte-identical** to today, so existing single-fork users see no change. The
+split is opt-in via `infra:platformStack`. Same discipline as the compose registry (cella-owned
+machinery + one declarative seam), one layer up.
+
+Two supporting pieces:
+
+- **`infra/platform-contract.ts`** — a shared constant listing the platform output names both
+  sides agree on, so a renamed output is a typecheck error, not a silent runtime break in forks.
+- **Naming gains a second axis** ([naming.ts](../infra/naming.ts)). Split `deriveInfra` into
+  `derivePlatform(group)` (shared, **not** slug-prefixed) and `deriveFork(appConfig)`
+  (slug-prefixed, as today).
+
+---
+
+## What couples each service to one fork today
+
+Grounding for the phases — the exact code paths and whether each can go fork-agnostic.
+
+### Frontend proxy (`infra/caddy`) — almost generic already ✅
+
+[caddy/Caddyfile](../infra/caddy/Caddyfile) is a **stateless reverse proxy** in front of the SPA's
+S3 bucket: it adds the security headers S3/Edge can't, rewrites 404→`/index.html` for deep links,
+and proxies to `{$ORIGIN_HOST}`. Its only fork-specific inputs are two env values baked per
+process: `ORIGIN_HOST` (the fork's bucket) and `RELEASE_SHA` (bound to `X-App-Version`). Move the
+origin from env → **derived from the request Host**, and one proxy serves every fork (Phase 1).
+
+### Yjs relay (`yjs/src`) — three process-level env couplings
+
+| Coupling | Where | Fix to go fork-agnostic |
+|---|---|---|
+| `YJS_SECRET` | `env.ts`, `server/auth.ts` | Shared relay secret (low-stakes — see below) or per-fork registry |
+| `appConfig.backendUrl` | `server/auth.ts` `verifyEntityAccess` | Resolve from a `fork` token claim → `fork → backendUrl` registry |
+| `DATABASE_URL` + `yjs_documents` location | `data/db.ts` | `search_path` set per connection from the token claim |
+
+`tenant_id` already isolates rows (token-carried, enforced by RLS in `withClient()`). Nothing in
+the relay logic is fork-specific *except* those three env values — move them to per-connection,
+token-derived values and one relay serves all forks (Phase 2). The binary hot path is untouched.
+
+### CDC worker (`cdc/src`) — the stateful exception
+
+| Coupling | Where | Why it resists clean multi-tenancy |
+|---|---|---|
+| `cdc_slot` / `cdc_pub` (global constants) | `constants.ts` | A logical slot is **per-database** — one slot can't stream more than one DB |
+| Single `API_WS_URL` | `env.ts`, `compute.ts` | It *pushes* to one backend; multi-tenant needs fan-out |
+| Schema assumptions | `services/activity-service.ts`, handlers | Writes to one schema; no fork routing |
+
+CDC is a **push singleton bound to a replication slot**, so it can't isolate "per request" the way
+a relay does — there is no request, only a WAL stream. Making it fork-agnostic requires
+schema-per-fork + a fan-out refactor (Phase 7), and even then it carries a shared-fate failure
+mode. Until that's worth it, CDC stays **per-fork but tiny** (its own STARDUST box / slot), which
+is honest about its nature rather than pretending it's stateless.
+
+### Infra (`infra/resources`)
+
+- [naming.ts](../infra/naming.ts) derives every name from `appConfig.slug` → intrinsically single-fork.
+- [loadbalancer.ts](../infra/resources/loadbalancer.ts) already does host-header routing and attaches **every** `Backend`/`Route`/`Certificate` by `lbId: lb.id` — so a fork can self-serve its routes against a shared LB.
+- [database.ts](../infra/resources/database.ts) provisions one managed Postgres on the private network with `admin`/`runtime`/`cdc` roles and logical replication enabled.
+
+---
+
+## Phase 0 — Prep: the seam, no behaviour change
+
+**Outcome:** the seam exists and the monolith routes through it, byte-identical to today. The
+safety net that keeps every later structural phase a ~2-file change.
+
+1. Add `infra/platform-contract.ts` — the list of platform output names (start with
+   `privateNetworkId`; grow per phase).
+2. Add `infra/resources/platform.ts`. With `infra:platformStack` unset it re-exports the local
+   module outputs.
+3. Repoint one consumer (e.g. [database.ts](../infra/resources/database.ts)
+   `import { privateNetworkId }`) from `./network` to `./platform`.
+
+**Exit criteria:** `pnpm --filter infra ts` clean; `pulumi preview` zero-diff on a real stack; all
+infra tests green. **Risk:** minimal (no resource changes).
+
+---
+
+## Phase 1 — Generic frontend origin proxy (the cleanest win)
+
+**Outcome:** **one** shared Caddy proxy fronts the SPA buckets of *all* forks, routing to the
+right bucket by request Host. Adding a fork needs **no proxy change**. Per-fork SPA releases stop
+rolling a container at all — they become a bucket upload + cache bust.
+
+This is the model you want, in its simplest form: the proxy is stateless and already isolates per
+request (the Host header *is* the fork identity). Today it only fails to be generic because
+`ORIGIN_HOST` is baked per process.
+
+1. **Derive origin from Host, not env.** Replace the single `{$ORIGIN_HOST}` upstream with a
+   mapping `request Host → fork bucket origin`. Two options:
+   - **Convention (target):** derive the bucket host from the Host by naming rule (e.g.
+     `www.<fork>.<zone>` → `<fork>-frontend.s3.<region>...`). A new fork needs **zero** proxy
+     config — pure convention, the truly scalable shape.
+     [naming.ts](../infra/naming.ts) already defines `frontendBucket: ${prefix}-frontend`, so the
+     rule is just the inverse of existing naming.
+   - **Map file (fallback):** a Caddy `map {host}` block (or a hot-reloaded map file) listing
+     `host → origin`. Adding a fork updates the map; no redeploy if reloaded.
+2. **Decouple `X-App-Version` from the process.** A shared proxy can't bake one `RELEASE_SHA`.
+   The SPA bundle already carries its own version; the shared proxy stops *asserting* a single
+   version. Per-fork SPA-version verification moves to the frontend deploy job (upload + check a
+   `version.json` in the bucket), and the proxy's health gate becomes "proxy is up", not "this
+   fork is at SHA X". This is a simplification: **a frontend release no longer needs a container
+   roll** — there is nothing per-fork to roll.
+3. **Make it a platform service.** Remove `frontend` from the per-fork compose registry
+   ([infra/compose/services.config.ts](../infra/compose/services.config.ts)) and run the generic
+   proxy once in the platform tier (a STARDUST box behind the shared LB). Fork stacks no longer
+   deploy a frontend VM, deploy-tag, or reconciler entry — only their bucket.
+
+**Exit criteria:** two forks' SPAs served correctly through one shared proxy by Host; a new fork
+resolves with no proxy change (convention mode); a frontend release is a bucket-only deploy.
+**Risk:** low — the proxy is stateless and the change is contained to the Caddyfile + dropping the
+frontend service from the per-fork registry. Fully reversible.
+
+---
+
+## Phase 2 — Fork-agnostic Yjs relay
+
+**Outcome:** **one** shared Yjs relay serves every fork. Fork identity arrives in the signed token,
+not the process env. STARDUST-friendly; scale horizontally on connection load, not on fork count.
+
+This is the same principle as Phase 1 (fork identity per request), applied to the WebSocket relay.
+The relay already isolates rows by `tenant_id` via RLS; only three env values are process-global.
+
+1. **Add a `fork` claim to the Yjs token** (`server/auth.ts` `tokenPayloadSchema`). Each fork's
+   backend already mints the token, so it stamps its own identity:
+   ```ts
+   const tokenPayloadSchema = z.object({
+     userId: z.string(), entityType: z.string(), tenantId: z.string(),
+     organizationId: z.string().nullable(),
+     fork: z.string(), // ◀ NEW: fork/schema identifier
+     exp: z.number(),
+   })
+   ```
+2. **Resolve backend + secret per fork.** `verifyEntityAccess()` looks up `fork → { backendUrl,
+   secret }` from a small registry (env-provided or Secret Manager). A **shared `YJS_SECRET` is
+   acceptable** — the relay secret only gates the handshake; real authorization is still the
+   per-fork `verify-entity` backend call, so a shared relay secret does not weaken tenant
+   isolation. Per-fork secrets are available if you want tighter blast-radius.
+3. **Scope DB access per connection.** `DocContext` carries the fork; `withClient()` sets
+   `search_path` (schema-per-fork) or relies solely on `tenant_id` (shared schema) per checkout.
+   One `pg.Pool` against the shared instance/pooler is fine — context resets per checkout.
+4. **Make it a platform service.** Like Phase 1, the relay moves to the platform tier (one
+   STARDUST box behind the shared LB on `yjs.<fork>` hostnames). Fork stacks stop deploying a yjs
+   VM.
+
+**Exit criteria:** one relay serves ≥2 forks' documents with correct per-fork backend
+verification and row isolation; a new fork needs only a registry row (or nothing, if the registry
+is convention-derived). **Risk:** moderate — touches the relay auth/DB-context path (not the
+binary hot path); guard with cross-fork isolation tests.
+
+---
+
+## Phase 3 — Share the load balancer
+
+**Outcome:** one LB serves all forks; each fork self-serves its `api.<fork>` / `www.<fork>` /
+`yjs.<fork>` routes. Cleanest structural phase because LB children already attach by `lbId`.
+
+1. Export `lbId` (+ frontend/cert handles) from the platform side; add to `platform-contract.ts`.
+2. Resolve `lbId` in `platform.ts` (local for monolith, StackReference for split).
+3. Move the per-service `Backend`/`Route`/`Certificate` creation in
+   [loadbalancer.ts](../infra/resources/loadbalancer.ts) to consume `lbId` from `platform.ts`. In
+   split mode these run in the **fork** stack, attaching to the shared LB by ID; host-header
+   routing already isolates forks by hostname.
+4. Two-axis naming: route/cert/backend names gain the fork prefix; the LB itself is platform-named.
+
+**Exit criteria:** two forks resolve their own hostnames through one shared LB; monolith stacks
+unchanged (`pulumi preview` zero-diff). **Risk:** moderate; keep route names fork-prefixed to
+avoid collisions on the shared LB.
+
+---
+
+## Phase 4 — Two-axis naming + platform/fork stack partition
+
+**Outcome:** [naming.ts](../infra/naming.ts) cleanly separates shared vs per-fork names, and the
+entrypoint can run as a platform stack or a fork stack.
+
+1. Split `deriveInfra` → `derivePlatform(group)` + `deriveFork(appConfig)`. Platform names key on
+   a group id (not slug); fork names keep the `${slug}-` prefix.
+2. Stack-role switch in [index.ts](../infra/index.ts): `infra:stackRole` ∈ `monolith` (default) |
+   `platform` | `fork`. `platform` deploys shared modules + exports the contract; `fork` deploys
+   per-fork modules + reads it; `monolith` deploys everything (today).
+3. CI ordering: a `fork` `pulumi up` hard-depends on its `platform` stack; fail loudly (via
+   `requireOutput`) on a missing platform output.
+
+**Exit criteria:** a platform stack + ≥1 fork stack deploy a working app; a monolith stack still
+deploys unchanged. **Risk:** moderate; mechanical but touches every module's resource names — land
+it behind the seam so the monolith path is the safety net.
+
+---
+
+## Phase 5 — Connection pooler
+
+**Outcome:** PgBouncer/PgCat on the private network; backends + the shared yjs relay connect
+through it, CDC connects direct. Independently valuable (protects the connection ceiling) and
+**required** before sharing the DB instance.
+
+A `DB-DEV-S` has a low max-connections ceiling; N forks × (backend pool + yjs pool + cdc) blows
+past it. A transaction-mode pooler collapses thousands of client connections onto a small server
+pool. **CDC's logical-replication connection must bypass the pooler** (replication can't traverse
+transaction pooling) and connect to the instance directly; only normal query traffic uses it.
 
 ```
 fork-a backend ─┐
 fork-b backend ─┤        ┌────────────┐        ┌──────────────────────┐
-fork-c backend ─┼──TCP──▶│  pooler    │──TCP──▶│ Managed Postgres (1)  │
-shared yjs      ─┤        │ PgBouncer/ │        │  schema fork_a        │
-shared cdc      ─┘        │ PgCat/     │        │  schema fork_b  …     │
-                          │ Supavisor  │        └──────────────────────┘
-                          └────────────┘
+shared yjs relay┼──TCP──▶│  pooler    │──TCP──▶│ Managed Postgres (1)  │
+                │        │ PgBouncer/ │        │  db/schema fork_a      │
+shared cdc ─────┼─direct─┤ PgCat      │───────▶│  db/schema fork_b  …   │
+(replication)   ┘  (replication bypasses pooler) └──────────────────────┘
 ```
 
-Why you need it and what it buys:
+1. New platform module: a small VM/container running the pooler on the shared private network
+   (can co-locate with the shared relay box). Export its private endpoint via the contract.
+2. Point backend + yjs at the pooler; leave `DATABASE_CDC_URL` on the instance directly.
+3. Per-fork routing by DB role: each fork's role defaults to its own `search_path`/database, so
+   the pooler routes purely on the connection string — no app logic.
 
-- **Connection multiplication is the real scaling wall.** A `DB-DEV-S` has a low max-connections
-  ceiling. With 10 forks × (backend pool + `YJS_DB_POOL_MAX=20` + CDC `max:20`) you blow past it
-  immediately. A transaction-mode pooler collapses thousands of client connections onto a small
-  fixed server pool.
-- **Per-fork routing / `search_path`.** Give each fork a **dedicated DB role** whose default
-  `search_path` is its schema (`ALTER ROLE fork_a SET search_path = fork_a`). The pooler then
-  routes purely on the role/database in the connection string — no app logic needed for the
-  backend. (PgCat can also route by database name to different pools; PgBouncer maps
-  database→pool.)
-- **Choice of pooler:**
-  - **PgBouncer** — simplest, transaction pooling, rock-solid. One pool per (user, db).
-  - **PgCat** — PgBouncer-compatible + query routing, load balancing, sharding. Better if you
-    want routing logic in the proxy.
-  - **Supavisor** — built for huge tenant counts (per-tenant pools), if fork count grows large.
-- **Caveat — replication can't go through a transaction-mode pooler.** CDC's logical
-  replication connection (`replication=database`) must talk to the **instance directly** (or via
-  a session-mode/`replication`-aware path), not through PgBouncer transaction pooling. So CDC
-  connects direct; only the *normal* query traffic (backend, yjs) uses the pooler.
-
-Reference best practices: schema-per-tenant + connection pooler is the canonical "many small
-tenants, one instance" pattern (the same shape Supabase/Citus/RDS-Proxy deployments use). The
-only Cella-specific twist is that RLS already enforces `tenant_id`, so the schema boundary is
-**defence-in-depth**, not the sole isolation mechanism.
-
-### 2.2 One physical WAL, N logical slots — what 10 databases actually means
-
-> **Q: With 10 databases on one instance, is there one WAL the 10 CDC micro-containers share, or
-> ten WALs?**
->
-> **A: One *physical* WAL for the whole instance — but ten *logical replication slots*, each
-> decoding only its own database's changes.** These are different layers; don't conflate them.
-
-The distinction:
-
-- **Physical WAL = one per *instance* (cluster-wide).** Postgres writes a single write-ahead log
-  stream for the entire server. All 10 databases' writes are interleaved into that one physical
-  WAL. There is no per-database WAL file.
-- **Logical replication slot = per *database*.** A logical slot is created *in* a specific database
-  and, when consumed, **only decodes the changes belonging to that database** — the decoder reads
-  the shared physical WAL but filters out everything not for its database. So 10 databases ⇒ 10
-  slots (e.g. `cdc_slot` created once inside each of `fork_a`…`fork_j`), and each CDC
-  micro-container consumes exactly its fork's changes. No fork sees another fork's rows.
-
-```
-            ┌──────────────── one Postgres instance ────────────────┐
-            │  one physical WAL  (all DBs' writes interleaved)       │
-            │        │                                              │
-            │   ┌────┴─────┬───────────┬───────────┐  (decode+filter│
-            │   ▼          ▼           ▼           ▼   per database) │
-            │ slot a     slot b      slot c      slot …             │
-            │ (DB a)     (DB b)      (DB c)      (DB …)              │
-            └───┼──────────┼───────────┼───────────┼────────────────┘
-                ▼          ▼           ▼           ▼
-            cdc-a       cdc-b       cdc-c       cdc-…     (N micro-containers)
-```
-
-This means **database-per-fork (Model A) gives you clean per-fork CDC streams with zero CDC code
-change** — exactly Shape 2 (§4.2). Each container creates its own `cdc_slot` inside its own
-database; the global constant name (`cdc_slot`) is fine because slot names only need to be unique
-*within a database*.
-
-**The catch — WAL retention is instance-wide and gated by the *most-lagging* slot.** Because the
-physical WAL is shared, Postgres can only recycle a WAL segment once **every** replication slot on
-the instance has consumed past it. A single stalled CDC container (or a stuck `fork_x`) **pins WAL
-for the whole instance**, and that disk pressure hits *all* forks. So even with database-per-fork:
-
-- `max_replication_slots` / `max_wal_senders` are **instance-wide** limits — 10 forks need the
-  instance sized for ≥10 slots/senders (plus headroom for Scaleway's internal HA slots; note
-  `database.ts` already sets `sync_replication_slots=on` + `hot_standby_feedback=on`).
-- A dead fork's slot must be **dropped or its container kept alive**, or its un-consumed WAL grows
-  until the volume fills — taking every fork down. Monitor `pg_replication_slots.restart_lsn` lag
-  and alert per slot.
-- This is the *same* shared-fate concern as Shape 1's shared slot, but milder: in Model A only the
-  **WAL-retention floor** is shared, not the decode/fan-out path — a slow fork lags WAL recycling
-  but cannot deliver its changes to another fork's backend.
-
-> Bottom line: **10 databases = 1 physical WAL + 10 logical slots.** You get isolated per-fork CDC
-> consumption for free, but the *one shared WAL* means one fork's stuck slot is an
-> instance-wide disk risk. Size slots/senders for the fork count and monitor per-slot lag.
+**Exit criteria:** aggregate connection count under the instance ceiling with ≥3 forks; CDC
+replication unaffected. **Risk:** moderate; validate transaction-pooling semantics (no session
+state across statements) against the backend's query patterns.
 
 ---
 
-## 3. Making Yjs fork-agnostic
+## Phase 6 — Share the managed Postgres instance
 
+**Outcome:** one managed Postgres serves all forks. Pick the tenancy model by your CDC ambition:
 
-Yjs is the easy win. The change is to move the three couplings from **process env** to
-**per-connection, token-derived** values.
+| Model | Isolation | Single shared CDC *process*? | Schema divergence | Fit |
+|---|---|---|---|---|
+| **A. Database-per-fork** | Strongest | ❌ No (slot is per-DB) | Free | Per-fork CDC stays (Phase 7 N/A); strongest isolation |
+| **B. Schema-per-fork** (one DB) | Strong (schema + RLS) | ✅ Yes (one publication spans schemas) | Free | Required for fork-agnostic CDC (Phase 7) |
+| **C. Shared schema, `tenant_id`** | Row-level (RLS only) | ✅ Yes | ❌ All forks identical migrations | Rejected — forks add their own tables |
 
-### 3.1 Token-carried routing
+Forks extend the entity model with their own tables, so **Model C is out**. Choose **B** if you
+intend Phase 7 (single shared CDC process); otherwise **A** for the strongest isolation with
+per-fork CDC.
 
-Add a `fork` (or `schema`) claim to the Yjs token payload (`server/auth.ts` `tokenPayloadSchema`).
-The token is already minted by each fork's backend, so the backend stamps its own identity:
+1. Split [database.ts](../infra/resources/database.ts): a **platform half** (instance, PN attach,
+   HA/backups, instance-wide `max_replication_slots`/`max_wal_senders` sized for fork count + HA
+   headroom — note it already sets `sync_replication_slots=on` + `hot_standby_feedback=on`) and a
+   **fork half** (a `scaleway.rdb.Database` or schema + per-fork roles, connection-string
+   derivation moving fork-side).
+2. Export instance handles via the contract; resolve in `platform.ts`.
+3. Fork-side migration job creates/owns the fork's database/schema + roles (with the right
+   `search_path`/grants) and runs migrations. For Model B it also registers the fork's tables into
+   the shared `cdc_pub` publication.
+4. Add per-slot `restart_lsn`-lag monitoring — the physical WAL is instance-wide, so a stalled
+   fork pins WAL for everyone.
 
-```ts
-const tokenPayloadSchema = z.object({
-  userId: z.string(),
-  entityType: z.string(),
-  tenantId: z.string(),
-  organizationId: z.string().nullable(),
-  fork: z.string(),        // ◀ NEW: fork/schema identifier
-  exp: z.number(),
-});
-```
-
-### 3.2 Per-fork secret & backend resolution
-
-Two options, in increasing isolation:
-
-- **Single shared `YJS_SECRET` across all forks (simplest).** The relay secret only gates the
-  *relay handshake*; **real authorization is still the per-fork `verify-entity` backend call**,
-  so a shared relay secret does not weaken tenant isolation. Then the relay needs a
-  `fork → backendUrl` map (a small env-provided registry or a Secret Manager lookup) to know
-  which backend to call in `verifyEntityAccess()`.
-- **Per-fork secret (stronger).** Keep a `fork → { secret, backendUrl }` registry; pick the
-  secret by reading the `fork` claim from the *unverified* payload first (it's outside the
-  signature) or by trying the relevant secret. Slightly more code; cleaner blast-radius.
-
-`verifyEntityAccess()` becomes:
-
-```ts
-export async function verifyEntityAccess(fork, entityType, entityId, tenantId, userId) {
-  const { backendUrl, secret } = forkRegistry.resolve(fork);   // ◀ per-fork
-  const url = new URL('/yjs/verify-entity', backendUrl);
-  // …unchanged…
-  const res = await fetch(url, { headers: { 'x-yjs-secret': secret } });
-}
-```
-
-### 3.3 Schema-scoped DB access
-
-`DocContext` gains the schema; `withClient()` sets it per connection (Model B), or you keep one
-shared schema and rely solely on `tenant_id` (Model C). For Model B:
-
-```ts
-async function setSessionContext(client, schema, tenantId, userId) {
-  await client.query('SELECT set_config($1, $2, false)', [`search_path`, schema]); // or SET search_path
-  await client.query(
-    "SELECT set_config('app.tenant_id', $1, false), set_config('app.user_id', $2, false)",
-    [tenantId, userId],
-  );
-}
-```
-
-`yjs_documents` then resolves per-fork via `search_path`; the rest of `storage.ts` is unchanged
-(unqualified table names). One `pg.Pool` against the shared instance/pooler is fine — the
-session context is reset per checkout.
-
-### 3.4 Net effect
-
-A single Yjs process serves every fork:
-
-```
-wss://yjs.fork-a/…  ┐
-wss://yjs.fork-b/…  ┼─▶ LB (host-header) ─▶ one yjs VM ─▶ pooler ─▶ shared PG (schema per fork)
-wss://yjs.fork-c/…  ┘                                   └─ verify-entity ─▶ fork's backend
-```
-
-Effort: **small.** ~1 new token claim, a fork registry, two function-signature changes. The
-relay's hot path (binary passthrough, session manager) is untouched.
+**Exit criteria:** ≥2 forks on one instance, isolated DB/schema each; WAL-lag alerting in place.
+**Risk:** high — biggest piece; forces fork-side role/migration ownership. Do it only once shared
+DB is genuinely wanted; the prior phases already deliver most of the saving.
 
 ---
 
-## 4. Making CDC fork-agnostic (the hard part)
+## Phase 7 — (Optional) Fork-agnostic CDC process
 
-CDC cannot be made agnostic the way Yjs can, because it is a **push** singleton bound to a
-replication slot. There are two viable shapes.
+**Outcome:** **one** CDC process serves all forks via fan-out — CDC finally joins the
+fork-agnostic tier. Reserve for when fork count is high **and** the
+[SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md) scope-generalization is done. It
+trades isolation for density and introduces a shared-fate failure mode, which is why CDC is last
+and optional.
 
-### 4.1 Shape 1 — One shared CDC, schema-per-fork, fan-out (true single process)
+Requires Model B (one DB, schema-per-fork, one `cdc_pub` spanning all schemas, one `cdc_slot`).
+Refactors in `cdc/src`:
 
-Requires Model B (one DB, schemas per fork, one `cdc_pub` covering all schemas, one `cdc_slot`).
+1. **Resolve fork from each WAL change** — the pgoutput `Relation` message carries the schema
+   (namespace); map `namespace → fork`.
+2. **Write activities into the correct schema** — `services/activity-service.ts` /
+   `create-activity.ts` become schema-qualified (or `search_path`-scoped per transaction).
+3. **Fan out to the right backend** — `network/websocket-client.ts` becomes a pool of WS
+   connections keyed by fork; `TransactionBuffer` adds `fork` to its grouping key so a batch never
+   crosses forks.
+4. **De-hardcode identity** — `application_name`/`appConfig.slug` become generic; `CDC_SECRET`
+   per-fork (CDC pushes authoritative data — a routing bug must not deliver one fork's changes to
+   another's backend).
+5. **Per-fork backpressure** — buffer per fork; pause slot-ack only on global buffer pressure, not
+   per-backend disconnect, so one unhealthy fork backend doesn't stall the shared slot for all.
 
-Refactors needed in `cdc/src`:
+**Until Phase 7 (or instead of it):** CDC stays **per-fork but tiny** — its own STARDUST box and
+its own slot/database (Model A). This is the honest default: CDC is stateful and per-database, so
+a per-fork micro-instance is simpler and safer than forcing it multi-tenant.
 
-1. **Resolve the fork from each WAL change.** The pgoutput `Relation` message carries the
-   relation's **schema (namespace)**. Map `namespace → fork`. (Today handlers assume a single
-   schema.)
-2. **Write the activity into the correct schema.** `activity-service.ts` / `create-activity.ts`
-   must target `<fork>.activities` (and `<fork>.context_counters`) — i.e. schema-qualified or
-   `search_path`-scoped writes per event/transaction.
-3. **Fan out to the right backend.** `network/websocket-client.ts` becomes a **pool of WS
-   connections keyed by fork** (each fork's backend private IP), or one multiplexed connection
-   per backend. The `TransactionBuffer` must group by `(fork, entityType, action, context)` so a
-   batch never crosses forks (it already enforces single-context; add fork to the key).
-4. **De-hardcode identity.** `application_name` (`replication.ts:41`) and any `appConfig.slug`
-   assumptions become per-fork or generic. `CDC_SECRET` either shared or resolved per fork.
-5. **Backpressure is now shared.** One slow backend stalls acknowledgement for the shared slot
-   (`setupBackpressure` pauses the whole slot). This is a real operational coupling: a single
-   unhealthy fork backend creates WAL lag for **all** forks. Mitigate by buffering per-fork and
-   only pausing slot ack on global buffer pressure, not per-backend disconnect.
-
-This is the same "scope generalization" the
-[SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md) describes (`scopeKey`/`scopePath`,
-`ScopeProvider`), now with **fork** as an outermost scope level. Effort: **large** (weeks), and
-it introduces a shared-fate failure mode (one slot, shared backpressure).
-
-### 4.2 Shape 2 — Database-per-fork, one CDC *VM*, N CDC *containers* (recommended pragmatic)
-
-Keep each fork in its **own database** (Model A — strongest isolation, free schema divergence,
-no fan-out refactor) but stop paying for N CDC **VMs**: run all forks' CDC workers as **N small
-containers on one shared CDC VM**. Each container keeps its own `cdc_slot` on its own database
-and its own `API_WS_URL` — **zero CDC code change**.
-
-```
-                 ┌──────────── shared cdc VM ─────────────┐
-                 │ cdc-fork-a ─ slot ─▶ DB fork_a ─▶ be-a  │
- one VM, N procs │ cdc-fork-b ─ slot ─▶ DB fork_b ─▶ be-b  │
-                 │ cdc-fork-c ─ slot ─▶ DB fork_c ─▶ be-c  │
-                 └────────────────────────────────────────┘
-```
-
-This is the key reframing: **the cost is the VM, not the process.** The user's pain ("I don't
-want to deploy 10 yjs workers") is mostly a *VM-count* problem, and VM-count is solved purely in
-infra by moving `yjs`/`cdc` out of the per-fork stack into a **shared stack** that runs N
-container profiles. The same applies to Yjs if you don't want to do the §3 refactor: N tiny
-`yjs` containers on one VM, each with its own `YJS_SECRET`/`backendUrl`/`DATABASE_URL`.
-
-| | Shape 1 (one process) | Shape 2 (one VM, N containers) |
-|---|---|---|
-| Postgres model | Schema-per-fork (forced) | Database-per-fork (free isolation) |
-| CDC code change | Large (fan-out, schema routing, shared backpressure) | **None** |
-| Yjs code change | §3 refactor | **None** (N containers) |
-| Failure isolation | Shared slot/backpressure (one fork can lag all) | Per-fork slot, fully isolated |
-| Cost saving | Max (1 process) | ~90% of it (1 VM, cheap RAM per container) |
-| Connection count | Lowest | Higher (mitigated by the pooler) |
-
-For 10 forks, **Shape 2 captures almost all the saving with almost none of the risk.** Reserve
-Shape 1 for when fork count is large enough that even container overhead matters, *and* you've
-already done the scope-generalization work in the packaging plan.
+**Exit criteria:** one CDC process routes ≥3 forks' changes with no cross-fork leakage and
+isolated backpressure. **Risk:** high, multi-week; overlaps heavily with the packaging plan.
 
 ---
 
-## 5. Proposed infra split: a shared "platform" stack + thin per-fork stacks
+## Cost model: what's shared, what accumulates
 
-Today everything is one stack keyed on `appConfig.slug`. Introduce two layers:
-
-### 5.1 Shared platform stack (deployed once)
-
-Owns the expensive, shareable resources:
-
-- VPC + **one** private network (`network.ts` as-is).
-- **One** managed Postgres (`database.ts`), with `rdb.enable_logical_replication` already on.
-- **One** connection pooler (new module: a small VM or container running PgBouncer/PgCat on the
-  private network). Backends/yjs point here; CDC points at the instance directly.
-- **One** load balancer (`loadbalancer.ts`) — already host-header routing; it gains one
-  `Backend` + `Route` per fork hostname (`api.fork-a`, `www.fork-a`, …) and a shared
-  `yjs.*` / `cdc` has no public route (internal only).
-- **Shared `yjs` VM** and **shared `cdc` VM** running N container profiles (Shape 2) — or single
-  shared processes (Shapes §3/§4.1).
-- Shared registry, monitoring.
-
-### 5.2 Per-fork stack (deployed per fork, cheap)
-
-Owns only:
-
-- Frontend bucket (`storage.ts` frontend bucket only).
-- Backend VM (`compute.ts`, backend profile only) — points at the shared pooler + shared
-  yjs/cdc.
-- Pulumi state bucket.
-- A **migration job** that creates/owns the fork's **schema** (Model B) or **database**
-  (Model A), its DB role (with `search_path` default), and — for Model B — registers its tables
-  into the shared `cdc_pub` publication.
-
-`naming.ts` needs a second axis: today `resource(suffix)` is `${slug}-${suffix}`. Add a
-distinction between **platform-scoped** names (shared) and **fork-scoped** names so a fork stack
-doesn't try to recreate the LB/DB/network. This is the one non-trivial infra refactor: split
-`deriveInfra` into `derivePlatform(appConfig)` and `deriveFork(appConfig)`.
-
-### 5.3 Load balancer as the public multiplexer
-
-The LB is genuinely the right place to fan **HTTP** traffic across forks — it already matches on
-`Host`. Each fork adds:
-
-- `api.<fork>` → that fork's backend VM (its own `Backend` + `Route`).
-- `www.<fork>` → frontend (shared frontend Caddy VM proxying to the fork's bucket, or per-fork
-  frontend VM if you keep that per-fork).
-- `yjs.<fork>` → the **shared** yjs backend (the `fork` claim in the token does the per-fork
-  work, §3).
-
-What the LB **cannot** do — and the recurring misconception worth stating plainly — is share the
-**database**. That is the pooler's job (§2.1), on the private network, speaking the Postgres wire
-protocol.
-
----
-
-## 6. Squeezing cost further: STARDUST1-S and leaner images
-
-For **staging / demo** forks (not production), the cheapest Scaleway box is the right tool, and
-the services here are unusually well-suited to it.
-
-### 6.1 Is STARDUST1-S enough for yjs and cdc?
-
-`STARDUST1-S` — 1 shared vCPU, **1 GB RAM**, 100 Mbps, ~€0.0006/h (~€0.44/mo) — is plausible for
-**yjs** and **cdc** in non-production, because both are deliberately lightweight:
-
-- **yjs** is a *pure binary relay* — its own README/Dockerfile stress that it never instantiates a
-  `Y.Doc` server-side; it forwards raw `Uint8Array` and persists debounced blobs. Idle/low-concurrency
-  RAM is tiny. The main pressure is **connection count × buffers**, not document size. For a demo
-  with a handful of editors, 1 GB is ample. Knobs to turn down: `YJS_DB_POOL_MAX` (default 20 →
-  e.g. 4) so the pool doesn't reserve a chunk of the shared Postgres connection budget.
-- **cdc** is a single-stream replication consumer. Its memory is dominated by the
-  `TransactionBuffer` (`maxBufferedEvents: 20_000`, `flushBatchSize: 100`) — fine on 1 GB at demo
-  write rates. The risk is **WAL-lag backpressure**: if the buffer fills (a stalled backend, a
-  burst), it can grow. For staging, lower `maxBufferedEvents` so a runaway buffer OOM-kills
-  predictably rather than thrashing.
-
-Caveats specific to a 1 GB shared-CPU box:
-
-- **Node default heap.** Node sizes its old-space heap from available memory heuristics, but on a
-  1 GB box it's worth pinning `--max-old-space-size` (e.g. `NODE_OPTIONS=--max-old-space-size=320`
-  for cdc, lower for yjs) so a buffer spike fails fast instead of swapping.
-- **OTel overhead is real.** Both workers pull in the full `@opentelemetry/auto-instrumentations-node`
-  stack (see their `package.json`). Auto-instrumentation adds tens of MB of resident memory and
-  startup cost. For demo/staging, run with tracing **off** (don't set `MAPLE_API_KEY`) or trim to a
-  minimal manual SDK — this is often the single biggest RAM win on a 1 GB box.
-- **Shared vCPU = burst, not sustained.** STARDUST is fine for bursty relay/replication work but
-  will throttle under sustained CPU. Not for production traffic.
-- **Backend does *not* fit.** The backend is `DEV1-M` in production precisely because its
-  blue-green roll runs OLD+NEW slots side-by-side (see
-  [INFRA_ARCHITECTURE.md](../infra/INFRA_ARCHITECTURE.md)). STARDUST is only realistic for the
-  *stateless lightweight* workers (yjs, cdc, and arguably the frontend Caddy proxy), not backend.
-
-This dovetails with §4.2 / §5: a single shared STARDUST (or one slightly larger shared box) running
-N tiny yjs/cdc **containers** is dramatically cheaper than N VMs, and for staging the per-fork RAM
-slice per container is small.
-
-`helpers.ts` already supports this with **zero code change** — `instanceTypeFor(serviceName)` reads
-per-service overrides:
-
-```bash
-pulumi config set --path infra:instanceTypes.yjs STARDUST1-S
-pulumi config set --path infra:instanceTypes.cdc STARDUST1-S
-```
-
-So a staging stack can drop yjs/cdc to STARDUST today purely via stack config.
-
-### 6.2 Picking a more efficient container image when maximising downscale
-
-Yes — choosing a leaner base image is **standard practice** when squeezing a VM, and these
-Dockerfiles already do the easy 80% but leave a meaningful 20% on the table.
-
-What's already good (`yjs/Dockerfile`, `cdc/Dockerfile`):
-
-- **`node:24-alpine`** multi-stage build — Alpine (musl) is the common "small Node" base; the final
-  stage copies only `dist` + production `node_modules`, not the build toolchain. This is the right
-  baseline.
-- yjs `tsup` bundles `shared` (`noExternal: ['shared']`) so fewer files ship.
-
-Further downscaling options, in increasing effort:
-
-| Option | Effect on image/RAM | Cost |
-|---|---|---|
-| **Drop OTel deps for staging builds** | Removes the largest chunk of `node_modules` + resident memory | Low — build-arg/flavor toggle; biggest single win |
-| **`node:24-alpine` → `node:24-slim` only if glibc needed** | Usually *not* smaller; Alpine is already smaller. Keep Alpine unless a native dep breaks on musl | — |
-| **Distroless (`gcr.io/distroless/nodejs24`)** | Smaller attack surface, no shell/pkg-manager, slightly smaller | Low-med; loses `wget` so the compose **healthcheck must change** (it currently uses `wget`/`HEALTHCHECK wget` in the Dockerfiles + `compose.yml`) — use a node-based check |
-| **Bundle to a single file + minimal `node_modules`** | yjs already bundles via tsup; doing the same for cdc and shipping only truly-runtime deps shrinks the image | Med |
-| **Single-binary (`node --experimental-sea` / `bun build --compile`)** | Smallest footprint, no `node_modules` at all | High; changes the run model, not worth it for staging |
-
-Practical recommendation for staging/demo:
-
-1. **Add a "lean" build flavor that excludes OpenTelemetry** (a `pnpm` filter or build arg). This is
-   the highest-leverage change for a 1 GB box and shrinks both image and resident memory.
-2. **Keep Alpine multi-stage** — it's already the right base; don't chase distroless unless you also
-   move the healthcheck off `wget`.
-3. **Pin `--max-old-space-size`** per service so the small box fails predictably under pressure.
-4. Leave single-binary/SEA experiments out — high effort, low marginal benefit versus the OTel and
-   instance-type wins.
-
-> Note: the in-container healthcheck (`HEALTHCHECK … wget …` in both Dockerfiles, and the `ingress`
-> healthcheck in `compose.yml`) assumes `wget` exists in the image. Any base-image swap that removes
-> busybox/wget (distroless) must replace these with a node one-liner, or the reconciler/LB health
-> gating breaks.
-
----
-
-## 7. The resulting cost model: what's shared, what accumulates
-
-Put §2–§6 together and the per-fork bill collapses to **two** line items. Everything else is
-either shared once across all forks, or shrinks to near-zero on STARDUST.
+After Phases 1–6 the per-fork bill collapses to **one managed Postgres + N backend VMs (+ a tiny
+per-fork CDC until Phase 7)**, plus a flat shared platform tier that does **not** grow with fork
+count.
 
 | Resource | Scope | Per-fork cost | Notes |
 |---|---|---|---|
-| VPC + private network | **Shared once** | €0 | One PN already carries DB + LB + all VMs (`network.ts`) |
-| Load balancer (LB-S) | **Shared once** | €0 | Host-header routing already fans `api.<fork>` / `www.<fork>` / `yjs.<fork>` |
-| yjs VM | **Shared once** (STARDUST + N containers) | ~€0 | One STARDUST1-S (~€0.44/mo) for all forks |
-| cdc VM | **Shared once** (STARDUST + N containers) | ~€0 | One STARDUST1-S for all forks (Shape 2) |
-| Registry, monitoring | **Shared once** | €0 | — |
-| Frontend bucket | Per-fork | ~€0 | S3 storage is cents; or a shared frontend VM |
-| Pulumi state bucket | Per-fork | ~€0 | S3 storage is cents |
-| **Backend VM** | **Per-fork** | **dominant #1** | Stateless HTTP API; can't share (per-fork auth/routes/migrations) |
-| **Managed Postgres** | **Shared once** | **dominant #2** | One instance, schema- or DB-per-fork |
+| VPC + private network | Shared once | €0 | One PN carries DB + LB + all platform services |
+| Load balancer (LB-S) | Shared once | €0 | Host-header routing fans `api.<fork>` / `www.<fork>` / `yjs.<fork>` (Phase 3) |
+| Frontend proxy | **Shared once** (generic, Host-routed) | €0 | One STARDUST serves all forks; SPA releases are bucket-only (Phase 1) |
+| Yjs relay | **Shared once** (fork-agnostic, token-routed) | €0 | One STARDUST relay serves all forks (Phase 2) |
+| Connection pooler | Shared once | ~€0 | Tiny container on the shared platform box (Phase 5) |
+| Registry, monitoring | Shared once | €0 | — |
+| Frontend bucket | Per-fork | ~€0 | S3 cents |
+| Pulumi state bucket | Per-fork | ~€0 | S3 cents |
+| **CDC** | Per-fork (tiny) until Phase 7 | small | Own STARDUST + slot; shared process only after Phase 7 |
+| **Backend VM** | **Per-fork** | **dominant #1** | Stateless API; per-fork auth/routes/migrations |
+| **Managed Postgres** | **Shared once** | **dominant #2** | One instance, DB/schema-per-fork (Phase 6) |
 
-> So the steady-state bill is essentially **one managed Postgres + N backend VMs**, plus a flat,
-> shared platform tier (LB + PN + one STARDUST yjs + one STARDUST cdc) that does **not** grow with
-> fork count. That is exactly the simplification you're after.
+Two levers on the remaining costs:
 
-Two further levers on the two remaining costs:
+- **Backend is the main linear cost.** It's `DEV1-M` in production for the blue-green double-slot
+  RAM requirement. For staging/demo forks, switch it to **in-place** rolling on a `DEV1-S`/STARDUST
+  (a brief restart gap is acceptable) — a per-service field change in
+  [infra/compose/services.config.ts](../infra/compose/services.config.ts) plus the instance-type
+  override. Keep blue-green + `DEV1-M` only for production forks.
+- **Managed Postgres is a fixed cost.** The pooler + DB/schema-per-fork lets ~10 forks ride one
+  `DB-DEV-S`; scale only when aggregate load — not fork count — demands it.
 
-- **The backend VM is the only thing that scales linearly.** It's `DEV1-M` in production because of
-  the blue-green double-slot RAM requirement (see §6.1). For **staging/demo forks you can drop it to
-  in-place rolling** (the strategy cdc/yjs/ai already use — see
-  [INFRA_ARCHITECTURE.md](../infra/INFRA_ARCHITECTURE.md) `serviceMatrix`) and run it on a
-  `DEV1-S` or even STARDUST, since a brief restart gap is acceptable for non-production. That makes
-  even the per-fork backend cheap. Keep blue-green + `DEV1-M` only for production forks.
-- **The managed Postgres is shared, so it's a fixed cost, not a per-fork one.** The whole point of
-  §2's pooler + schema/DB-per-fork is that 10 forks ride one `DB-DEV-S`. The pooler (a tiny
-  STARDUST container on the shared PN, or co-located on the cdc/yjs box) keeps the connection count
-  inside the instance's ceiling. Scale the instance up only when aggregate load — not fork count —
-  demands it.
-
-Net: adding a fork costs roughly **one small backend VM + two S3 buckets**, against a flat shared
-platform. For demo/staging forks on STARDUST + in-place backend rolls, that marginal cost is a few
-euro a month per fork.
+Net: once the stateless tier is fork-agnostic, adding a fork costs roughly **one backend VM + a
+tiny CDC + two S3 buckets** against a flat shared platform.
 
 ---
 
-## 8. Security & isolation notes
+## Security & isolation notes
 
-
-
-
-- **RLS still applies and is your safety net.** Both Yjs (`data/db.ts`) and the backend
-  (`tenant-context.ts`) set `app.tenant_id`. Under Model B, schema + RLS are belt-and-braces;
-  under Model C, RLS is the *only* boundary, which is riskier across independent forks.
-- **Shared `YJS_SECRET` is acceptable; shared `CDC_SECRET` deserves more thought.** Yjs delegates
-  real authz to each fork's backend, so the relay secret is low-stakes. CDC, by contrast, *pushes
-  authoritative activity data* to backends — in Shape 1 a fork-routing bug could deliver one
-  fork's changes to another fork's backend. Per-fork CDC secrets + a verified `fork` field on
-  every WS message are the mitigation.
+- **RLS is the safety net throughout.** Both Yjs (`data/db.ts`) and the backend
+  (`tenant-context.ts`) set `app.tenant_id`. Under Model A/B, schema/database + RLS are
+  belt-and-braces; Model C (rejected) would make RLS the sole boundary.
+- **A shared frontend proxy carries no secret.** It only proxies public SPA assets and adds
+  response headers — making it generic does not widen any blast radius.
+- **Shared `YJS_SECRET` is acceptable; shared `CDC_SECRET` is not.** Yjs delegates real authz to
+  each fork's backend, so the relay secret is low-stakes. CDC *pushes* authoritative activity data,
+  so a fork-agnostic CDC (Phase 7) needs per-fork CDC secrets + a verified `fork` field on every
+  WS message.
 - **Shared CDC = shared fate.** One slot means one fork's stalled backend produces WAL lag (and
-  eventually disk pressure) for everyone (`CDC_WAL_BACKPRESSURE_PLAN.md` becomes a multi-tenant
-  concern). Shape 2 (per-fork slots) avoids this entirely.
-- **Secrets in cloud-init.** The existing known limitation (secrets readable via
-  `InstancesReadOnly`, see `compute.ts` header) now spans forks if they share a VM. A shared
-  yjs/cdc VM holds **all** forks' secrets. Acceptable for forks under one owner; not for
-  multi-owner isolation.
+  eventually instance-wide disk pressure) for everyone. Per-fork CDC (the default) avoids this;
+  Phase 7 reintroduces it and must mitigate via per-fork buffering.
 
 ---
 
-## 9. Recommended path
+## Recommended path
 
+1. **Phase 0 + Phase 1 + Phase 2 first** — the seam, then make the two genuinely stateless
+   services (frontend proxy, Yjs relay) fork-agnostic. This is the heart of what you want: one
+   process per service serving every fork, STARDUST-sized, scaling on load not fork count. No
+   shared DB/LB required yet.
+2. **Phase 3 (LB) + Phase 5 (pooler)** when you want one public entry and to protect the
+   connection ceiling — both independently valuable.
+3. **Phase 4 (naming/stack split) + Phase 6 (shared Postgres)** once sharing the managed Postgres
+   is genuinely wanted. Choose Model A (per-fork CDC stays) or Model B (enables Phase 7).
+4. **Phase 7 (fork-agnostic CDC)** only at high fork counts and after the packaging-plan scope
+   generalization. Until then, CDC is per-fork but tiny — the honest treatment of a stateful,
+   per-database service.
 
-1. **Adopt the pooler immediately** (PgBouncer/PgCat on the private network). It is required for
-   *any* sharing model and is independently valuable. Backends + yjs through the pooler; CDC
-   direct.
-2. **Pick the Postgres model by your isolation appetite:**
-   - Forks under one owner, want max cost saving + simplest ops → **Model A + Shape 2**
-     (database-per-fork, one shared CDC VM running N containers, one shared yjs VM running N
-     containers). **No service code changes.**
-   - Want a single shared yjs/cdc *process* and forks that share an instance closely →
-     **Model B** (schema-per-fork) + the §3 Yjs refactor + the §4.1 CDC fan-out refactor.
-3. **Split the infra into a platform stack + per-fork stacks** (§5). This is needed for both
-   models and is where the bulk of the *infra* work is (`naming.ts` two-axis split, a shared-vs-
-   fork module partition).
-4. **Do the Yjs token-claim refactor (§3) regardless** — it's small and makes the relay reusable
-   whether you run one process or N containers.
-5. **Only invest in the §4.1 single-CDC fan-out** once fork count and the desire for a single
-   process clearly outweigh the shared-fate risk and the multi-week scope-generalization cost
-   (which overlaps heavily with [SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md)
-   step 2–3).
-
-The single biggest correction to the original framing: **the load balancer is not the Postgres
-sharing mechanism** — a connection pooler is — and **the Postgres logical-replication
-"one-slot-per-database" rule is what dictates whether a single CDC worker is even possible**
-(it requires schema-per-fork, not database-per-fork).
+Two corrections worth keeping front of mind: **the load balancer is not the Postgres-sharing
+mechanism** (a connection pooler is), and **Postgres's one-slot-per-database rule** decides whether
+a single CDC *process* is even possible (it needs schema-per-fork, Phase 7) — which is exactly why
+CDC is the one service that can't trivially join the fork-agnostic tier the way the frontend proxy
+and Yjs relay can.

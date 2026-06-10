@@ -8,8 +8,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { deriveInfra } from '../../naming.js'
-import { fakeConfig } from '../helpers/fake-config.js'
+import { deriveInfra } from '../../naming'
+import { fakeConfig } from '../helpers/fake-config'
 
 const caddyfile = readFileSync(resolve(__dirname, '../../caddy/Caddyfile'), 'utf-8')
 const dockerfile = readFileSync(resolve(__dirname, '../../caddy/Dockerfile'), 'utf-8')

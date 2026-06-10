@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { fakeConfig } from './tests/helpers/fake-config.js'
-import { deriveInfra } from './naming.js'
+import { fakeConfig } from './tests/helpers/fake-config'
+import { serviceEndpoints } from './lib/services'
+import { deriveInfra } from './naming'
 
 describe('deriveInfra', () => {
   it('derives stable naming for the canonical production config', () => {
@@ -30,13 +31,18 @@ describe('deriveInfra', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  it('parses every hostname from its URL', () => {
-    const d = deriveInfra(fakeConfig())
-    expect(d.domains.zone).toBe('cellajs.com')
-    expect(d.domains.app).toBe('www.cellajs.com')
-    expect(d.domains.api).toBe('api.cellajs.com')
-    expect(d.domains.yjs).toBe('yjs.cellajs.com')
-    expect(d.domains.ai).toBe('ai.cellajs.com')
+  it('exposes the DNS zone', () => {
+    expect(deriveInfra(fakeConfig()).dnsZone).toBe('cellajs.com')
+  })
+
+  it('derives every public service host from the registry', () => {
+    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.host]))
+    expect(bySlug.get('frontend')).toBe('www.cellajs.com')
+    expect(bySlug.get('backend')).toBe('api.cellajs.com')
+    expect(bySlug.get('yjs')).toBe('yjs.cellajs.com')
+    expect(bySlug.get('ai')).toBe('ai.cellajs.com')
+    // cdc is internal-only (no lbRoute) → no endpoint
+    expect(bySlug.has('cdc')).toBe(false)
   })
 
   it('hasDomain is false for localhost', () => {

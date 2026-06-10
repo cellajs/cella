@@ -7,20 +7,21 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { domains, hasDomain } from '../helpers'
+import { dnsZone, hasDomain, serviceHost } from '../helpers'
 import { pipelineId } from './edge'
 
 let _isApex = false
 let _appSubdomain = ''
 
 if (hasDomain && pipelineId) {
-  _appSubdomain = domains.app.replace(`.${domains.zone}`, '')
-  _isApex = _appSubdomain === domains.zone || _appSubdomain === ''
+  const appHost = serviceHost('frontend')
+  _appSubdomain = appHost.replace(`.${dnsZone}`, '')
+  _isApex = _appSubdomain === dnsZone || _appSubdomain === ''
 
   if (!_isApex) {
     // CNAME record for subdomain (e.g. www.cellajs.com) → Edge Services
     new scaleway.domain.Record('app-dns', {
-      dnsZone: domains.zone,
+      dnsZone,
       name: _appSubdomain,
       type: 'CNAME',
       data: pulumi.interpolate`${pipelineId}.svc.edge.scw.cloud.`,
@@ -32,17 +33,17 @@ if (hasDomain && pipelineId) {
 
   // CAA records — restrict which CAs may issue certs for this zone.
   new scaleway.domain.Record('caa-issue', {
-    dnsZone: domains.zone,
+    dnsZone,
     name: '',
     type: 'CAA',
     data: '0 issue "letsencrypt.org"',
     ttl: 300,
   })
   new scaleway.domain.Record('caa-iodef', {
-    dnsZone: domains.zone,
+    dnsZone,
     name: '',
     type: 'CAA',
-    data: `0 iodef "mailto:security@${domains.zone}"`,
+    data: `0 iodef "mailto:security@${dnsZone}"`,
     ttl: 300,
   })
 }

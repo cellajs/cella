@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { specs } from './init-stack-secrets.js'
+import { specs } from './init-stack-secrets'
 
 /**
  * Locks the shape of the stack-secret table. Any addition is a deliberate

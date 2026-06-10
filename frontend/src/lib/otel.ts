@@ -35,7 +35,9 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new FetchInstrumentation({
-      propagateTraceHeaderCorsUrls: [new RegExp(appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))],
+      propagateTraceHeaderCorsUrls: [
+        new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`),
+      ],
     }),
   ],
 });

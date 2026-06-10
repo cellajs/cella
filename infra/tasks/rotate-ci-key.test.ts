@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderInstructions } from './rotate-ci-key.js'
+import { renderInstructions } from './rotate-ci-key'
 
 describe('renderInstructions', () => {
   it('threads the stack mode into all environment-specific commands', () => {

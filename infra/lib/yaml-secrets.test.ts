@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { findUnencryptedSecrets, KNOWN_SECRET_KEYS } from './yaml-secrets.js'
+import { findUnencryptedSecrets, KNOWN_SECRET_KEYS } from './yaml-secrets'
 
 const infraDir = resolve(fileURLToPath(import.meta.url), '../..')
 

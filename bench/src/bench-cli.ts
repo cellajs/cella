@@ -14,7 +14,7 @@
  *   pnpm bench -- --scenario attachment-edit --save-baseline  # save results as baseline
  */
 
-import { execSync, spawn, type ChildProcess } from 'node:child_process';
+import { execFileSync, execSync, spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -239,7 +239,7 @@ function seedDatabase(): Promise<{ output: string }> {
 function runArtillery(name: string): { exitCode: number; reportPath: string } {
   const reportPath = resolve(tmpdir(), `artillery-${name}-${Date.now()}.json`);
   try {
-    execSync(`npx artillery run scenarios/${name}.yaml --output ${reportPath}`, { cwd: BENCH_ROOT, stdio: 'inherit' });
+    execFileSync('npx', ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath], { cwd: BENCH_ROOT, stdio: 'inherit' });
     return { exitCode: 0, reportPath };
   } catch (err) {
     const code = (err as { status?: number }).status ?? 1;

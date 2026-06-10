@@ -10,7 +10,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, appUrls, infraConfig } from '../helpers'
+import { naming, region, tags, isProduction, appConfig, infraConfig } from '../helpers'
 
 const applicationId = infraConfig.require('applicationId')
 
@@ -110,7 +110,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [appUrls.frontend],
+      allowedOrigins: [appConfig.frontendUrl],
       maxAgeSeconds: 3600,
     },
   ],
@@ -158,7 +158,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [appUrls.frontend],
+      allowedOrigins: [appConfig.frontendUrl],
       maxAgeSeconds: 3600,
     },
   ],

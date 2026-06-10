@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectInterruptedApply, detectStackState, extractApplyMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state.js'
+import { detectInterruptedApply, detectStackState, extractApplyMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state'
 
 describe('detectStackState', () => {
   it('fresh: no yaml at all', () => {
@@ -29,10 +29,6 @@ describe('pickStackShort', () => {
 
   it('falls back to production when none exist', () => {
     expect(pickStackShort(() => false)).toBe('production')
-  })
-
-  it('honours a custom candidate list', () => {
-    expect(pickStackShort((n) => n === 'qa', ['qa', 'staging'])).toBe('qa')
   })
 })
 

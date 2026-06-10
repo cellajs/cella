@@ -1,6 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { __testing, decryptStackSecretsFromText } from './pulumi-passphrase.js'
+import { __testing, decryptStackSecretsFromText } from './pulumi-passphrase'
 
 const { PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN, decryptV1, deriveKey } = __testing
 

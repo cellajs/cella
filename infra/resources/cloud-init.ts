@@ -82,11 +82,20 @@ mark() {
 apt-get update -qq 2>&1 | tail -5
 apt-get install -y -qq curl unzip ca-certificates 2>&1 | tail -5
 if ! command -v aws >/dev/null 2>&1; then
+  # Pin AWS CLI v2 to an IMMUTABLE versioned artifact and verify its SHA-256
+  # before executing the installer. The unversioned "latest" URL is a moving
+  # target a CDN or on-path (MITM) compromise could swap; pin + checksum closes
+  # that supply-chain hole — the installer runs as root on first boot, before
+  # any app secret is on disk. On mismatch we fall through to the pip path
+  # (awscli v1 from PyPI over TLS) rather than executing an unverified bundle.
+  AWSCLI_VERSION=2.22.35
+  AWSCLI_SHA256=8119ccf67de875f39d386abea986738fa710be57e20d4df66fa99c7f7fd09997
   TMPD=$(mktemp -d)
-  if curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "$TMPD/awscliv2.zip" \
+  if curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-$AWSCLI_VERSION.zip" -o "$TMPD/awscliv2.zip" \
+     && echo "$AWSCLI_SHA256  $TMPD/awscliv2.zip" | sha256sum -c - \
      && unzip -q "$TMPD/awscliv2.zip" -d "$TMPD" \
      && "$TMPD/aws/install" >/dev/null 2>&1; then
-    echo "awscli v2 installed via official bundle"
+    echo "awscli v2 $AWSCLI_VERSION installed via official bundle (sha256 verified)"
   else
     apt-get install -y -qq python3-pip 2>&1 | tail -3
     pip3 install --quiet --break-system-packages awscli 2>&1 | tail -3 || true

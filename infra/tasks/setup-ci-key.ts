@@ -4,14 +4,15 @@
  * Used by the bootstrap command and the manual rotation procedure in
  * infra/README.md.
  * Standalone usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
+ *
+ * The shared provisioning flow lives in `lib/scaleway-iam.ts`; this file owns
+ * only the CI-specific permission sets and policy rules.
  */
 
 import { fileURLToPath } from 'node:url'
 import pc from 'shared/cli-utils/colors'
-import { changeMark, checkMark, tildeMark } from 'shared/console'
-
-const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
+import { checkMark } from 'shared/console'
+import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
 
 /**
  * Permission sets granted to the CI deploy key at project scope.
@@ -44,156 +45,19 @@ export const PROJECT_PERMISSION_SETS = [
 /** Permission sets granted at organization scope (DNS lives at org level). */
 export const ORG_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
 
-interface ScwApp {
-  id: string
-  name: string
-}
-interface ScwPolicy {
-  id: string
-  name: string
-}
-interface ScwApiKey {
-  access_key: string
-  secret_key: string
-  application_id: string
-}
+export type SetupCiKeyOptions = ProvisionScopedKeyOptions
+export type CiKeyResult = ScopedKeyResult
 
-export interface CiKeyResult {
-  accessKey: string
-  secretKey: string
-  applicationId: string
-  organizationId: string
-}
-
-export interface SetupCiKeyOptions {
-  callerSecretKey: string
-  organizationId?: string
-  projectId: string
-  slug: string
-  /** Injected for tests; defaults to console.info. */
-  log?: (msg: string) => void
-}
-
-const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'
-
-async function scw<T>(secretKey: string, method: string, url: string, body?: unknown): Promise<T> {
-  if (DEBUG) process.stderr.write(`[scw] → ${method} ${url}${body ? ` body=${JSON.stringify(body)}` : ''}\n`)
-  const res = await fetch(url, {
-    method,
-    headers: { 'X-Auth-Token': secretKey, 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-  const text = await res.text()
-  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${text.slice(0, 500)}\n`)
-  if (!res.ok) {
-    throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`)
-  }
-  if (res.status === 204 || text === '') return undefined as T
-  try {
-    return JSON.parse(text) as T
-  } catch {
-    throw new Error(`Scaleway ${method} ${url} returned non-JSON body: ${text.slice(0, 200)}`)
-  }
-}
-
-async function resolveOrgId(secretKey: string, projectId: string): Promise<string> {
-  // GET /account/v3/projects/{id} returns the Project object directly, not
-  // wrapped in { project: ... }.
-  const project = await scw<{ organization_id?: string }>(
-    secretKey,
-    'GET',
-    `${ACCOUNT_BASE}/projects/${projectId}`,
-  )
-  if (!project?.organization_id) {
-    throw new Error(
-      `Could not resolve organization_id from project ${projectId}. ` +
-        `Response: ${JSON.stringify(project)}. ` +
-        `Re-run with SCW_DEBUG=1 for full request/response traces, or pass SCW_DEFAULT_ORGANIZATION_ID explicitly.`,
-    )
-  }
-  return project.organization_id
-}
-
-export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
-  const { callerSecretKey, projectId, slug } = opts
-  const log = opts.log ?? ((msg) => console.info(msg))
-
-  const organizationId = opts.organizationId ?? (await resolveOrgId(callerSecretKey, projectId))
-
-  const appName = `${slug}-ci-deploy`
-  const policyName = `${slug}-ci-deploy-policy`
-
-  // 1. Find or create the IAM application
-  const { applications } = await scw<{ applications: ScwApp[] }>(
-    callerSecretKey,
-    'GET',
-    `${IAM_BASE}/applications?name=${encodeURIComponent(appName)}&organization_id=${organizationId}&page_size=20`,
-  )
-  let app = applications.find((a) => a.name === appName)
-  if (app) {
-    log(`  ${checkMark} Reusing IAM application: ${app.name} (${app.id})`)
-  } else {
-    app = await scw<ScwApp>(callerSecretKey, 'POST', `${IAM_BASE}/applications`, {
-      name: appName,
-      organization_id: organizationId,
-      description: 'Non-human principal for GitHub Actions CI deployments',
-    })
-    log(`  ${changeMark} Created IAM application: ${app.name} (${app.id})`)
-  }
-
-  // 2. Find or create the policy. Always recreate when found to ensure rules
-  //    stay in sync with PROJECT_PERMISSION_SETS / ORG_PERMISSION_SETS — an
-  //    existing policy silently loses new permissions if we just skip it.
-  const { policies } = await scw<{ policies: ScwPolicy[] }>(
-    callerSecretKey,
-    'GET',
-    `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
-  )
-  const existingPolicy = policies.find((p) => p.name === policyName)
-  if (existingPolicy) {
-    await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
-    log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
-  }
-  await scw<ScwPolicy>(callerSecretKey, 'POST', `${IAM_BASE}/policies`, {
-    name: policyName,
-    organization_id: organizationId,
-    application_id: app.id,
-    description: 'Least-privilege policy for CI deployments (auto-generated)',
-    rules: [
+export function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
+  return provisionScopedKey(opts, {
+    suffix: 'ci-deploy',
+    appDescription: 'Non-human principal for GitHub Actions CI deployments',
+    policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
+    buildRules: ({ projectId, organizationId }) => [
       { permission_set_names: PROJECT_PERMISSION_SETS, project_ids: [projectId] },
       { permission_set_names: ORG_PERMISSION_SETS, organization_id: organizationId },
     ],
   })
-  log(`  ${changeMark} Created IAM policy: ${policyName}`)
-
-  // 3. Delete any existing API keys on this application before minting a new
-  //    one. Scaleway only returns the secret_key at creation time, so any
-  //    pre-existing keys are unrecoverable dead weight — purging them keeps
-  //    re-runs of bootstrap from accumulating orphans.
-  const { api_keys: existingKeys = [] } = await scw<{ api_keys?: Array<{ access_key: string }> }>(
-    callerSecretKey,
-    'GET',
-    `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
-  )
-  for (const key of existingKeys) {
-    await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
-    log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`)
-  }
-
-  // 4. Mint a fresh API key
-  const apiKey = await scw<ScwApiKey>(callerSecretKey, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: app.id,
-    description: `ci-deploy — rotated ${new Date().toISOString().slice(0, 10)}`,
-    default_project_id: projectId,
-  })
-  log(`  ${changeMark} Created API key: ${apiKey.access_key}`)
-
-  return {
-    accessKey: apiKey.access_key,
-    secretKey: apiKey.secret_key,
-    applicationId: app.id,
-    organizationId,
-  }
 }
 
 // Standalone entry point.

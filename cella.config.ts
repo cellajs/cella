@@ -33,6 +33,7 @@ export default defineConfig({
     ignoredFolders: [
       "README.md",
       "bench",
+      "infra/compose.gen.yml",
       "sdk/gen",
       "shared/config",
       "frontend/public/static/icons",

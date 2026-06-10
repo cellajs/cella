@@ -34,7 +34,7 @@
     "tunnel": "pnpm clean && cross-env pnpm -r --parallel --stream tunnel",
     "dev:proxy": "pnpm clean && cross-env pnpm -r --parallel --stream --filter backend --filter cdc --filter frontend --filter proxy dev",
     "seed": "pnpm --filter backend seed",
-    "deploy": "pnpm --filter infra bootstrap",
+    "infra": "pnpm --filter infra cli",
     "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm lint:fix",
     "lint": "pnpm biome check .",
     "lint:fix": "pnpm biome check --write .",

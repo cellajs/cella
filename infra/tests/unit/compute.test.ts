@@ -37,8 +37,14 @@ describe('compute module source invariants', () => {
     }
   })
 
-  it('scaleway:secretKey is loaded as a secret (not require)', () => {
-    expect(source).toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]secretKey['"]\)/)
+  it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
+    // The VM identity is a minimal-privilege `<slug>-vm-reader` application
+    // (ContainerRegistryReadOnly + ObjectStorageReadOnly + SecretManagerReadOnly).
+    // compute.ts must source its credentials from the infra helpers, never by
+    // reading `new pulumi.Config('scaleway').requireSecret(...)` directly.
+    expect(source).toMatch(/vmAccessKey|vmSecretKey/)
+    expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]secretKey['"]\)/)
+    expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]accessKey['"]\)/)
   })
 
   it('cloud-init render is delegated to the cloud-init module', () => {
@@ -56,8 +62,8 @@ describe('compute module source invariants', () => {
   })
 
   it('derives the VM service list from the canonical registry (enabledServices)', () => {
-    // compute no longer re-declares the service set; it filters the canonical
-    // registry by feature flag so the LB / deploy-tags / reconciler can't drift.
+    // compute filters the canonical registry by feature flag rather than
+    // re-declaring the service set, so LB / deploy-tags / reconciler can't drift.
     expect(source).toMatch(/enabledServices\(appConfig\.has\)/)
   })
 
