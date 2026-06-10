@@ -1,6 +1,7 @@
 /**
- * Pure parser for Pulumi.<stack>.yaml bootstrap state. Used by bootstrap.ts and
- * by tests. No fs; the caller passes the YAML text (or undefined if file is missing).
+ * Pure parser for Pulumi.<stack>.yaml bootstrap state. Used by the bootstrap
+ * command handlers and by tests. No fs; the caller passes the YAML text (or
+ * undefined if file is missing).
  */
 
 export type StackState = 'fresh' | 'partial' | 'bootstrapped'

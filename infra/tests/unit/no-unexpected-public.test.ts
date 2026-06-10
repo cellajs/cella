@@ -1,7 +1,7 @@
 /**
  * "No unexpected public surface" sweep.
  *
- * Walks every `infra/modules/*.ts` file looking for patterns that historically
+ * Walks every `infra/resources/*.ts` file looking for patterns that historically
  * widen the public attack surface (open ingress, wildcard CORS, public buckets,
  * Principal:'*' policies, public DB endpoints, public registries). Every match
  * MUST be present in `EXPECTED` below — otherwise the test fails and the
@@ -14,7 +14,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 interface Finding {
-  module: string
+  resource: string
   line: number
   text: string
   pattern: string
@@ -31,26 +31,26 @@ const PATTERNS: Array<{ name: string; rx: RegExp }> = [
 ]
 
 // Allowlist: every entry MUST be justified by a real, intentional public
-// surface. Keep this list short. Format: `<module>:<pattern-name>`.
+// surface. Keep this list short. Format: `<resource>:<pattern-name>`.
 const EXPECTED = new Set<string>([
   // Frontend SPA bucket — served publicly by Edge Services, must be readable.
   'storage.ts:principal-wildcard',
   // Public-uploads bucket — user-uploaded assets meant to be public.
-  // (Same module, same pattern — counted once because we dedupe per module.)
+  // (Same resource, same pattern — counted once because we dedupe per resource.)
 ])
 
-const modulesDir = resolve(__dirname, '../../modules')
+const resourcesDir = resolve(__dirname, '../../resources')
 
 function scan(): Finding[] {
   const findings: Finding[] = []
-  for (const file of readdirSync(modulesDir)) {
+  for (const file of readdirSync(resourcesDir)) {
     if (!file.endsWith('.ts')) continue
-    const src = readFileSync(resolve(modulesDir, file), 'utf-8')
+    const src = readFileSync(resolve(resourcesDir, file), 'utf-8')
     const lines = src.split('\n')
     for (let i = 0; i < lines.length; i++) {
       for (const p of PATTERNS) {
         if (p.rx.test(lines[i])) {
-          findings.push({ module: file, line: i + 1, text: lines[i].trim(), pattern: p.name })
+          findings.push({ resource: file, line: i + 1, text: lines[i].trim(), pattern: p.name })
         }
       }
     }
@@ -61,14 +61,14 @@ function scan(): Finding[] {
 describe('no-unexpected-public sweep', () => {
   it('every public-surface pattern is in the EXPECTED allowlist', () => {
     const findings = scan()
-    const keys = new Set(findings.map((f) => `${f.module}:${f.pattern}`))
+    const keys = new Set(findings.map((f) => `${f.resource}:${f.pattern}`))
 
     const unexpected: string[] = []
     for (const k of keys) {
       if (!EXPECTED.has(k)) {
-        const occurrences = findings.filter((f) => `${f.module}:${f.pattern}` === k)
+        const occurrences = findings.filter((f) => `${f.resource}:${f.pattern}` === k)
         unexpected.push(
-          `  ${k}:\n` + occurrences.map((o) => `    ${o.module}:${o.line}  ${o.text}`).join('\n'),
+          `  ${k}:\n` + occurrences.map((o) => `    ${o.resource}:${o.line}  ${o.text}`).join('\n'),
         )
       }
     }
@@ -85,7 +85,7 @@ describe('no-unexpected-public sweep', () => {
   it('does not flag pristine surface — sanity check the scanner itself runs', () => {
     // If PATTERNS array got accidentally emptied, this test catches it.
     expect(PATTERNS.length).toBeGreaterThan(0)
-    // And ensure we're actually scanning modules.
-    expect(readdirSync(modulesDir).some((f) => f.endsWith('.ts'))).toBe(true)
+    // And ensure we're actually scanning resources.
+    expect(readdirSync(resourcesDir).some((f) => f.endsWith('.ts'))).toBe(true)
   })
 })

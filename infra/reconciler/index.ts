@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { servicesByName, serviceNames, type ServiceName } from '../src/services.js'
+import { servicesByName, serviceNames, type ServiceName } from '../lib/services.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -64,7 +64,7 @@ export function buildReconcilerEnv(input: ReconcilerEnvInput): string {
 
   const pairs: Array<[string, string]> = [
     ['SERVICE',               input.service],
-    ['COMPOSE_PROFILE',       shape.composeProfile],
+    ['COMPOSE_PROFILE',       shape.slug],
     ['HEALTH_PORT',           String(shape.healthPort)],
     ['HEALTH_TIMEOUT_SECONDS', String(shape.healthTimeoutSeconds)],
     ['RUN_MIGRATE',           shape.runMigrate ? '1' : '0'],

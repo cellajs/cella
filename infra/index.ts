@@ -1,7 +1,7 @@
 /**
- * Pulumi entrypoint — orchestrates all infrastructure modules.
+ * Pulumi entrypoint — orchestrates all infrastructure resources.
  *
- * Modules are imported and composed here in dependency order:
+ * Resources are imported and composed here in dependency order:
  * storage → edge/dns → network/registry → database → secrets/compute → loadbalancer.
  * Comment out a group to deploy incrementally (see INFRA_ARCHITECTURE.md).
  */
@@ -16,7 +16,7 @@ console.info(`Prefix: ${naming.prefix}`)
 // Static site (Object Storage)
 // ---------------------------------------------------------------------------
 
-import * as storage from './modules/storage'
+import * as storage from './resources/storage'
 
 export const frontendBucketName = storage.frontendBucketName
 export const frontendBucketEndpoint = storage.frontendBucketEndpoint
@@ -26,7 +26,7 @@ export const frontendWebsiteEndpoint = storage.frontendWebsiteEndpoint
 // Deploy tags (image-SHA cutover surface for the on-VM reconciler)
 // ---------------------------------------------------------------------------
 
-import * as deployTags from './modules/deploy-tags'
+import * as deployTags from './resources/deploy-tags'
 
 export const deployTagsBucketName = deployTags.deployTagsBucketName
 
@@ -34,8 +34,8 @@ export const deployTagsBucketName = deployTags.deployTagsBucketName
 // Edge Services (CDN + WAF) + DNS
 // ---------------------------------------------------------------------------
 
-import * as edge from './modules/edge'
-import * as dns from './modules/dns'
+import * as edge from './resources/edge'
+import * as dns from './resources/dns'
 
 export const pipelineId = edge.pipelineId
 export const isApexDomain = dns.isApexDomain
@@ -45,8 +45,8 @@ export const appSubdomainName = dns.appSubdomainName
 // Network + Registry + Upload Buckets
 // ---------------------------------------------------------------------------
 
-import * as network from './modules/network'
-import * as registry from './modules/registry'
+import * as network from './resources/network'
+import * as registry from './resources/registry'
 
 export const vpcId = network.vpcId
 export const privateNetworkId = network.privateNetworkId
@@ -62,7 +62,7 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 // Database (Managed PostgreSQL)
 // ---------------------------------------------------------------------------
 
-import * as database from './modules/database'
+import * as database from './resources/database'
 
 export const dbInstanceId = database.instanceId
 export const dbName = database.databaseName
@@ -76,8 +76,8 @@ export const dbConnectionStringAdminPublic = database.connectionStringAdminPubli
 // Secrets + Compute (Docker Compose VMs)
 // ---------------------------------------------------------------------------
 
-import * as compute from './modules/compute'
-import './modules/secrets'
+import * as compute from './resources/compute'
+import './resources/secrets'
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
 
@@ -85,7 +85,7 @@ export const computeInstances = compute.computeInstances.map((i) => i.name)
 // Load Balancer + API/Yjs/AI DNS
 // ---------------------------------------------------------------------------
 
-import * as lb from './modules/loadbalancer'
+import * as lb from './resources/loadbalancer'
 import * as pulumi from '@pulumi/pulumi'
 
 export const apiDomainUrl = lb.apiDomainUrl ?? pulumi.output('')

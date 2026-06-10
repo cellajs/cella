@@ -1,5 +1,5 @@
 /**
- * Small pure helpers shared between bootstrap.ts and apply-mode.
+ * Small pure helpers shared between the bootstrap command handlers.
  *
  * The SCW env-var dance has a single goal: leave exactly ONE source of
  * Scaleway provider credentials per invocation, so the Terraform provider

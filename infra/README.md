@@ -120,7 +120,7 @@ pulumi config set --secret scaleway:secretKey <ci-secret> --stack organization/i
 
 (If you declined the auto-deploy, bootstrap printed both values to the terminal — copy them from there. They are not stored anywhere readable after the run ends, only written into GitHub Environment secrets which are write-only.)
 
-This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — bootstrap.ts sets the transient `bootstrap:applyInProgress` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
+This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — the bootstrap command sets the transient `bootstrap:applyInProgress` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
 
 After this completes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push Docker images and run a second `pulumi up`. The marker is no longer set, so compute VMs come up on their own. **You do not need to run `pulumi up` a second time locally.**
 
@@ -149,7 +149,7 @@ deliberately split into **write at steady state** vs **read-only**:
 | **VPC, Private Network, RDB** | `…ReadOnly` | **Bootstrap key.** Created once at bootstrap, refreshed but never mutated by CI. |
 | DNS (`DomainsDNSFullAccess`, org scope) | Full | CI may add/update A records when modules change. |
 
-This means **any change to [`modules/database.ts`](modules/database.ts), [`modules/network.ts`](modules/network.ts), or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`. That's intentional — destructive operations on data-bearing resources go through a human running `pulumi up` locally with the bootstrap key.
+This means **any change to [`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts), or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`. That's intentional — destructive operations on data-bearing resources go through a human running `pulumi up` locally with the bootstrap key.
 
 #### Applying a bootstrap-owned change
 
@@ -261,7 +261,7 @@ pulumi config set --secret infra:cookieSecret "$(openssl rand -base64 32)" \
 Bootstrap and apply-mode keep Scaleway credentials **in memory only** — they are
 never written to disk, and they neutralise any local `~/.config/scw/config.yaml`
 profile by pointing `SCW_CONFIG_PATH` at a non-existent file (see
-[`src/bootstrap-helpers.ts`](src/bootstrap-helpers.ts)). Keep it that way:
+[`lib/bootstrap-scw-env.ts`](lib/bootstrap-scw-env.ts)). Keep it that way:
 
 - **Do not run `scw init`.** It writes your access + secret key in plaintext to
   `~/.config/scw/config.yaml`. When you need the `scw` CLI ad-hoc, scope the
@@ -304,6 +304,6 @@ For routine debugging, ship logs / metrics out of the VM (via Cockpit) rather th
 
 ## Known platform limitations
 
-- **No instance-attached IAM identity (Scaleway).** Application secrets and the registry-login credential are necessarily embedded in cloud-init userdata. Anyone with `InstancesReadOnly` on the project can read them. See [modules/compute.ts](modules/compute.ts) for details. Mitigated by serial-console-only access (no SSH).
+- **No instance-attached IAM identity (Scaleway).** Application secrets and the registry-login credential are necessarily embedded in cloud-init userdata. Anyone with `InstancesReadOnly` on the project can read them. See [resources/compute.ts](resources/compute.ts) for details. Mitigated by serial-console-only access (no SSH).
 
 - **No response-header injection on Edge Services + S3.** The frontend SPA is served from the S3 bucket via Scaleway Edge Services. Neither layer can inject custom response headers (S3 only emits a fixed set: `Content-Type`, `Cache-Control`, `Content-Disposition`, `Content-Encoding`, `Expires`; Edge Services has no header-transform stage). As a result, HSTS, `X-Frame-Options`, and `Permissions-Policy` are **not** set on the SPA origin response. API/Yjs/AI domains carry them via Hono `secureHeaders()` middleware. To close this gap, the SPA bucket would need to be fronted by a Caddy/nginx sidecar on the LB path instead of Edge Services.

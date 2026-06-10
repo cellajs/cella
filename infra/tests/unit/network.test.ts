@@ -1,5 +1,5 @@
 /**
- * Smoke tests for `infra/modules/network.ts` — proves the mock harness can
+ * Smoke tests for `infra/resources/network.ts` — proves the mock harness can
  * render a Pulumi module end-to-end without a Scaleway provider.
  *
  * State is shared across the file: Node ESM caches the module, so a second
@@ -15,7 +15,7 @@ beforeAll(async () => {
   // image-tag pin assertion in helpers.ts from firing in unit tests that
   // don't care about compute.
   h = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:applyInProgress': 'test' } })
-  await import('../../modules/network.js')
+  await import('../../resources/network.js')
   await flushPulumi()
 })
 

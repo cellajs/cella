@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectInterruptedApply, detectStackState, extractApplyMarker, extractProjectId, pickStackShort } from './bootstrap-parsing.js'
+import { detectInterruptedApply, detectStackState, extractApplyMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state.js'
 
 describe('detectStackState', () => {
   it('fresh: no yaml at all', () => {

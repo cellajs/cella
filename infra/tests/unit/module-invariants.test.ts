@@ -1,8 +1,8 @@
 /**
  * Source-level security invariants for the LB / DNS / Edge / DB / registry
- * / secrets modules.
+ * / secrets resources.
  *
- * These modules either gate on `hasDomain` (LB, DNS, Edge) or read deeply from
+ * These resources either gate on `hasDomain` (LB, DNS, Edge) or read deeply from
  * stack config (DB), making a live render via the Pulumi mock harness brittle
  * and slow. Static checks here are intentionally narrow and target the few
  * security invariants that have caused production outages or audits in the
@@ -12,8 +12,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const modulesDir = resolve(__dirname, '../../modules')
-const read = (m: string) => readFileSync(resolve(modulesDir, m), 'utf-8')
+const resourcesDir = resolve(__dirname, '../../resources')
+const read = (resource: string) => readFileSync(resolve(resourcesDir, resource), 'utf-8')
 
 const lb = read('loadbalancer.ts')
 const dns = read('dns.ts')
@@ -22,7 +22,7 @@ const db = read('database.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
 
-describe('loadbalancer module', () => {
+describe('loadbalancer resource', () => {
   it('HTTPS frontend on port 443 is defined', () => {
     expect(lb).toMatch(/inboundPort:\s*443/)
   })
@@ -45,7 +45,7 @@ describe('loadbalancer module', () => {
   })
 })
 
-describe('dns module', () => {
+describe('dns resource', () => {
   it('publishes a CAA record restricting issuance to Let\'s Encrypt', () => {
     expect(dns).toMatch(/type:\s*['"]CAA['"]/)
     expect(dns).toMatch(/issue.*letsencrypt\.org/)
@@ -61,7 +61,7 @@ describe('dns module', () => {
   it.todo('publishes a DMARC TXT record (p=quarantine or p=reject)')
 })
 
-describe('edge / WAF module', () => {
+describe('edge / WAF resource', () => {
   it('WAF stage is provisioned in enabled mode when infra.enableWaf is true', () => {
     expect(edge).toMatch(/if\s*\(\s*infra\.enableWaf\s*\)/)
     expect(edge).toMatch(/mode:\s*['"]enable['"]/)
@@ -73,7 +73,7 @@ describe('edge / WAF module', () => {
   })
 })
 
-describe('database module', () => {
+describe('database resource', () => {
   it('private network is required (no public endpoint)', () => {
     expect(db).toMatch(/privateNetwork:\s*\{/)
     expect(db).not.toMatch(/publicEndpoint:\s*true/)

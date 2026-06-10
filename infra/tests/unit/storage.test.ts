@@ -1,5 +1,5 @@
 /**
- * Smoke tests for `infra/modules/storage.ts` — guards the public/private
+ * Smoke tests for `infra/resources/storage.ts` — guards the public/private
  * access split between the three buckets.
  *
  * Critical invariants:
@@ -23,7 +23,7 @@ beforeAll(async () => {
     // image-tag pin assertion (these tests don't render compute).
     config: { 'infra:applicationId': '00000000-0000-0000-0000-000000000001', 'bootstrap:applyInProgress': 'test' },
   })
-  await import('../../modules/storage.js')
+  await import('../../resources/storage.js')
   await flushPulumi()
 })
 

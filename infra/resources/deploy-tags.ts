@@ -44,7 +44,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, isProduction, infraConfig } from '../helpers'
-import { serviceNames, type ServiceName } from '../src/services.js'
+import { serviceNames, type ServiceName } from '../lib/services.js'
 
 const applicationId = infraConfig.require('applicationId')
 
@@ -60,7 +60,7 @@ const vmApplicationId = infraConfig.get('vmApplicationId') ?? applicationId
 // as the operator's own Scaleway key — NOT the CI `applicationId`. Once this
 // policy is attached, Object Storage becomes authoritative and denies every
 // principal it does not name, so the operator key would 403 on the seed/GC
-// PutObject below. `bootstrap.ts` records the operator's principal string
+// PutObject below. The bootstrap command records the operator's principal string
 // (`user_id:<id>` or `application_id:<id>`) as `infra:operatorPrincipal` so we
 // can grant it here. Absent in CI, where pulumi already runs as applicationId.
 const operatorPrincipal = infraConfig.get('operatorPrincipal')
