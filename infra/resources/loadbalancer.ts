@@ -13,6 +13,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, zone, tags, domains, hasDomain, infra, appConfig } from '../helpers'
+import { enabledServices } from '../lib/services.js'
 import { privateNetworkId } from './network'
 import { getInstanceIp } from './compute'
 
@@ -25,6 +26,16 @@ let _yjsDomainUrl: pulumi.Output<string> | undefined
 let _aiDomainUrl: pulumi.Output<string> | undefined
 
 if (hasDomain && infra.computeEnabled) {
+  // Which optional services this app exposes publicly — derived from the
+  // canonical registry (feature flag + `lbRoute`) so the LB never re-decides
+  // independently of compute. A service is LB-exposed iff it is enabled AND
+  // declares an `lbRoute` (cdc has none → internal-only).
+  const lbServiceNames = new Set(
+    enabledServices(appConfig.has).filter((s) => s.lbRoute).map((s) => s.slug),
+  )
+  const yjsEnabled = lbServiceNames.has('yjs')
+  const aiEnabled = lbServiceNames.has('ai')
+
   // -------------------------------------------------------------------------
   // LB IP (static public IPv4)
   // -------------------------------------------------------------------------
@@ -73,7 +84,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create yjs DNS record
   let yjsDns: scaleway.domain.Record | undefined
-  if (appConfig.has.yjs) {
+  if (yjsEnabled) {
     yjsDns = new scaleway.domain.Record('yjs-dns', {
       dnsZone: domains.zone,
       name: yjsSubdomain,
@@ -85,7 +96,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create ai DNS record
   let aiDns: scaleway.domain.Record | undefined
-  if (appConfig.has.ai) {
+  if (aiEnabled) {
     aiDns = new scaleway.domain.Record('ai-dns', {
       dnsZone: domains.zone,
       name: aiSubdomain,
@@ -134,7 +145,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create yjs certificate
   let yjsCert: scaleway.loadbalancers.Certificate | undefined
-  if (appConfig.has.yjs && yjsDns) {
+  if (yjsEnabled && yjsDns) {
     yjsCert = new scaleway.loadbalancers.Certificate('yjs-cert', {
       lbId: lb.id,
       name: naming.resource('yjs-cert'),
@@ -146,7 +157,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create ai certificate
   let aiCert: scaleway.loadbalancers.Certificate | undefined
-  if (appConfig.has.ai && aiDns) {
+  if (aiEnabled && aiDns) {
     aiCert = new scaleway.loadbalancers.Certificate('ai-cert', {
       lbId: lb.id,
       name: naming.resource('ai-cert'),
@@ -205,7 +216,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create yjs backend
   let yjsBackend: scaleway.loadbalancers.Backend | undefined
-  if (appConfig.has.yjs) {
+  if (yjsEnabled) {
     yjsBackend = new scaleway.loadbalancers.Backend('yjs-lb-backend', {
       lbId: lb.id,
       name: naming.resource('yjs'),
@@ -224,7 +235,7 @@ if (hasDomain && infra.computeEnabled) {
 
   // Conditionally create ai backend
   let aiBackend: scaleway.loadbalancers.Backend | undefined
-  if (appConfig.has.ai) {
+  if (aiEnabled) {
     aiBackend = new scaleway.loadbalancers.Backend('ai-lb-backend', {
       lbId: lb.id,
       name: naming.resource('ai'),
@@ -271,7 +282,7 @@ if (hasDomain && infra.computeEnabled) {
   })
 
   // Host-header routes for yjs and ai (backend is the default)
-  if (appConfig.has.yjs && yjsBackend) {
+  if (yjsEnabled && yjsBackend) {
     new scaleway.loadbalancers.Route('yjs-route', {
       frontendId: httpsFrontend.id,
       backendId: yjsBackend.id,
@@ -279,7 +290,7 @@ if (hasDomain && infra.computeEnabled) {
     })
   }
 
-  if (appConfig.has.ai && aiBackend) {
+  if (aiEnabled && aiBackend) {
     new scaleway.loadbalancers.Route('ai-route', {
       frontendId: httpsFrontend.id,
       backendId: aiBackend.id,
@@ -357,10 +368,10 @@ if (hasDomain && infra.computeEnabled) {
   // -------------------------------------------------------------------------
 
   _apiDomainUrl = pulumi.interpolate`https://${domains.api}`
-  if (appConfig.has.yjs) {
+  if (yjsEnabled) {
     _yjsDomainUrl = pulumi.interpolate`wss://${domains.yjs}`
   }
-  if (appConfig.has.ai) {
+  if (aiEnabled) {
     _aiDomainUrl = pulumi.interpolate`https://${domains.ai}`
   }
 }

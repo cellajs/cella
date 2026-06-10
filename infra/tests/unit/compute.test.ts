@@ -1,5 +1,5 @@
 /**
- * Source-level security smoke tests for `infra/modules/compute.ts`.
+ * Source-level security smoke tests for `infra/resources/compute.ts`.
  *
  * compute.ts is hard to render with the Pulumi mock harness (cascading
  * requireSecret + image-tag pin guard + cross-module imports), so the most
@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const source = readFileSync(resolve(__dirname, '../../modules/compute.ts'), 'utf-8')
+const source = readFileSync(resolve(__dirname, '../../resources/compute.ts'), 'utf-8')
 
 describe('compute module source invariants', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
@@ -42,8 +42,8 @@ describe('compute module source invariants', () => {
   })
 
   it('cloud-init render is delegated to the cloud-init module', () => {
-    // The boot-script text lives in modules/cloud-init.ts and is verified
-    // against its rendered output in modules/cloud-init.test.ts. compute.ts
+    // The boot-script text lives in resources/cloud-init.ts and is verified
+    // against its rendered output in resources/cloud-init.test.ts. compute.ts
     // must keep wiring buildCloudInit through renderCloudInit.
     expect(source).toMatch(/renderCloudInit\(/)
   })
@@ -55,9 +55,15 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
-  it('all five service profiles are defined (backend, cdc, yjs, ai, frontend)', () => {
-    for (const profile of ['backend', 'cdc', 'yjs', 'ai', 'frontend']) {
-      expect(source).toMatch(new RegExp(`profile:\\s*['"]${profile}['"]`))
+  it('derives the VM service list from the canonical registry (enabledServices)', () => {
+    // compute no longer re-declares the service set; it filters the canonical
+    // registry by feature flag so the LB / deploy-tags / reconciler can't drift.
+    expect(source).toMatch(/enabledServices\(appConfig\.has\)/)
+  })
+
+  it('defines a compose-env factory for all five services (backend, cdc, yjs, ai, frontend)', () => {
+    for (const name of ['backend', 'cdc', 'yjs', 'ai', 'frontend']) {
+      expect(source).toMatch(new RegExp(`${name}:\\s*\\(\\)\\s*=>`))
     }
   })
 
@@ -65,8 +71,8 @@ describe('compute module source invariants', () => {
     // The .env file is still mounted via env_file: .env, but the frontend
     // profile must not surface DB creds / cookie secrets / API keys via
     // explicit composeEnv keys. This guards against accidental cross-wiring.
-    const frontendBlock = source.match(/name:\s*'frontend',[\s\S]*?\}\s*,?\s*\]/)
-    expect(frontendBlock, 'could not locate frontend service block').not.toBeNull()
+    const frontendBlock = source.match(/frontend:\s*\(\)\s*=>\s*\(\{[\s\S]*?\}\)/)
+    expect(frontendBlock, 'could not locate frontend composeEnv factory').not.toBeNull()
     const body = frontendBlock?.[0] ?? ''
     for (const banned of ['DATABASE_URL', 'COOKIE_SECRET', 'BREVO_API_KEY', 'SCW_AI_API_KEY', 'YJS_SECRET', 'CDC_SECRET']) {
       expect(body, `${banned} must not appear in frontend composeEnv`).not.toContain(banned)

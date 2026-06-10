@@ -21,12 +21,12 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { imageServiceNames, serviceNames, services, type ServiceName } from '../src/services.js'
+import { imageServiceNames, serviceNames, services, type ServiceName } from '../lib/services.js'
 import { getFlag, getNumFlag, sleep } from './cli'
 
 /**
  * Every service that has an entry in the canonical service registry
- * (`infra/src/services.ts`). Derived from there so it can't drift.
+ * (`infra/lib/services.ts`). Derived from there so it can't drift.
  */
 export const TAGGED_SERVICES = serviceNames
 export type TaggedService = ServiceName
@@ -36,7 +36,7 @@ export type TaggedService = ServiceName
  * `ai` runs on its own VM but pulls the backend image at the same SHA.
  */
 export const IMAGE_REUSE: Partial<Record<ServiceName, ServiceName>> = Object.fromEntries(
-  services.filter((s) => s.reusesImageOf).map((s) => [s.name, s.reusesImageOf]),
+  services.filter((s) => s.reusesImageOf).map((s) => [s.slug, s.reusesImageOf]),
 ) as Partial<Record<ServiceName, ServiceName>>
 
 /** Tagged services that ship an independent image and must exist in the registry. */

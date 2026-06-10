@@ -170,6 +170,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   membershipOps.fetchMemberships();
   membershipOps.refreshMe();
 
+  // TODO verify that this works, is there an integration test for this?
   // Step 8: Cache integrity check — compare server entity counts with cached totals.
   // Catches drift where seqs matched but cache is out of sync (e.g., failed refetch after invalidation).
   // Runs at both org level and child-context level for precision.

@@ -1,5 +1,5 @@
-import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../src/runtime-secrets.js'
-import { createSecretManagerClient } from '../src/scaleway-secret-manager.js'
+import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets.js'
+import { createSecretManagerClient } from '../lib/scaleway-secret-manager.js'
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string
@@ -16,7 +16,7 @@ const defaultLog = (message: string) => console.info(message)
 /**
  * Seed operator-managed runtime secrets with their first value during bootstrap.
  *
- * Pulumi already creates the empty containers (see modules/secrets.ts), so this
+ * Pulumi already creates the empty containers (see resources/secrets.ts), so this
  * only writes an initial Version for the values the operator typed at the
  * prompt. Containers that already have a version are left untouched, so re-runs
  * never clobber a value set later via "Manage runtime secrets".

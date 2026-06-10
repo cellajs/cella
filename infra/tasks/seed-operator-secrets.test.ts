@@ -5,7 +5,7 @@ const getSecretByName = vi.fn()
 const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
 
-vi.mock('../src/scaleway-secret-manager.js', () => ({
+vi.mock('../lib/scaleway-secret-manager.js', () => ({
   createSecretManagerClient: () => ({
     getSecretByName,
     ensureSecret,

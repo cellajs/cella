@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const src = readFileSync(resolve(__dirname, '../../modules/deploy-tags.ts'), 'utf-8')
+const src = readFileSync(resolve(__dirname, '../../resources/deploy-tags.ts'), 'utf-8')
 
 describe('deploy-tags module', () => {
   it('exports the deploy/<service>.tag key for every service', () => {

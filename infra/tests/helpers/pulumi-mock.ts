@@ -1,5 +1,5 @@
 /**
- * Pulumi mock harness — lets us instantiate `infra/modules/*.ts` in a Vitest
+ * Pulumi mock harness — lets us instantiate `infra/resources/*.ts` in a Vitest
  * process without actually talking to Scaleway.
  *
  * Pulumi's runtime stores per-process state (project name, stack name, config,

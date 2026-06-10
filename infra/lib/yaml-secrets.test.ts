@@ -72,7 +72,7 @@ describe('findUnencryptedSecrets', () => {
     expect(findUnencryptedSecrets(yaml)).toEqual([])
   })
 
-  it('KNOWN_SECRET_KEYS includes every secret consumed in modules/*.ts', () => {
+  it('KNOWN_SECRET_KEYS includes every secret consumed in resources/*.ts', () => {
     // Locks the allowlist against accidental removal.
     expect(KNOWN_SECRET_KEYS).toEqual(
       expect.arrayContaining([

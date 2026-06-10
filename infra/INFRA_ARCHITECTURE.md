@@ -19,7 +19,7 @@ Application telemetry is exported to Maple.dev from the runtime services; no obs
 
 ## Compute layer
 
-Backend services run on individual Scaleway VMs (DEV1-S by default, sized per service — backend is DEV1-M in production; see [Defaults per stack](#defaults-per-stack)), each provisioned with cloud-init that installs Docker, writes the shared `compose.yml`, a static `.env`, a Secret Manager manifest, and then hydrates `/opt/app/.env.runtime` from Scaleway Secret Manager before starting a single service profile. A [Scaleway Load Balancer](https://www.scaleway.com/en/load-balancer/) (LB-S) provides TLS termination via Let's Encrypt, host-header routing, and health checks. All VMs and the LB sit on a private network alongside the managed database.
+Backend services run on individual Scaleway VMs (DEV1-S by default, sized per service in the registry — backend is DEV1-M in production; see [Defaults per stack](#defaults-per-stack)), each provisioned with cloud-init that installs Docker, writes the shared `compose.yml`, a static `.env`, a Secret Manager manifest, and then hydrates `/opt/app/.env.runtime` from Scaleway Secret Manager before starting a single service profile. A [Scaleway Load Balancer](https://www.scaleway.com/en/load-balancer/) (LB-S) provides TLS termination via Let's Encrypt, host-header routing, and health checks. All VMs and the LB sit on a private network alongside the managed database.
 
 | Service | VM | Port | Profile | Notes |
 |---------|---|------|---------|-------|
@@ -37,7 +37,7 @@ Routine deploys no longer replace the VM. Each VM runs a tiny **ingress** Caddy 
 Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
 ```
 
-CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler (systemd timer, every 20s) pulls it and rolls the app behind the ingress. There are **two roll strategies**, declared per service in the canonical service registry ([src/services.ts](src/services.ts)):
+CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler (systemd timer, every 20s) pulls it and rolls the app behind the ingress. There are **two roll strategies**, declared per service in the canonical service registry ([lib/services.ts](lib/services.ts)):
 
 | Strategy | Services | How |
 |----------|----------|-----|
@@ -55,7 +55,7 @@ In **both** strategies the LB never drains — it health-checks the ingress's lo
 
 During an in-place roll the bridge is `lb_try_duration 20s` (Caddy re-resolves the upstream and retries the dial across the restart) plus `stop_grace_period: 30s` (in-flight requests drain after `SIGTERM`). During a blue-green flip the new slot is already healthy before any traffic moves; `caddy reload` swaps the upstream and the old slot drains for `DRAIN_SECONDS` before being stopped.
 
-Only cloud-init changes (reconciler/package updates, or an instance-type resize) trigger a full VM replacement, which the LB health checks handle gracefully. Routine runtime secret changes do not replace the VM: the reconciler refreshes `/opt/app/.env.runtime` on every tick and rolls the service if that hydrated env file changed, even when the image tag stayed the same. Wiring lives in [compose.yml](compose.yml), [ingress.Caddyfile](ingress.Caddyfile), [modules/compute.ts](modules/compute.ts), [modules/cloud-init.ts](modules/cloud-init.ts), [modules/loadbalancer.ts](modules/loadbalancer.ts), and [reconciler/reconciler.sh](reconciler/reconciler.sh).
+Only cloud-init changes (reconciler/package updates, or an instance-type resize) trigger a full VM replacement, which the LB health checks handle gracefully. Routine runtime secret changes do not replace the VM: the reconciler refreshes `/opt/app/.env.runtime` on every tick and rolls the service if that hydrated env file changed, even when the image tag stayed the same. Wiring lives in [compose.yml](compose.yml), [ingress.Caddyfile](ingress.Caddyfile), [resources/compute.ts](resources/compute.ts), [resources/cloud-init.ts](resources/cloud-init.ts), [resources/loadbalancer.ts](resources/loadbalancer.ts), and [reconciler/reconciler.sh](reconciler/reconciler.sh).
 
 ### Operating the reconciler
 
@@ -77,7 +77,7 @@ shared/config/config.production.ts → overrides for production mode
         ↓
 infra/helpers.ts                  → derives all naming, domains, regions
         ↓
-infra/modules/*.ts                → uses naming + infraConfig (stack secrets/sizing)
+infra/resources/*.ts              → uses naming + infraConfig (stack secrets/sizing)
         ↓
 Pulumi.<stack>.yaml               → stack-specific sizing + encrypted secrets
 ```
@@ -101,30 +101,35 @@ Two Scaleway API keys exist across the lifecycle, each in a different store:
 
 ## Defaults per stack
 
-All sizing has mode-aware defaults in `helpers.ts`. No `Pulumi.<stack>.yaml` config is needed unless you want to override:
+All sizing has sensible defaults — DB/WAF in `helpers.ts`, per-service VM sizes in the registry. No `Pulumi.<stack>.yaml` config is needed unless you want to override:
 
 | Setting | Staging (default) | Production (default) |
 |---------|-------------------|----------------------|
 | `dbNodeType` | DB-DEV-S | DB-DEV-S |
 | `dbVolumeSize` | 10 GB | 10 GB |
 | `instanceType` (fleet default) | DEV1-S | DEV1-S |
-| `instanceTypes.backend` (override) | — (DEV1-S) | DEV1-M |
+| `backend` VM size (registry default) | DEV1-S | DEV1-M |
 | `enableWaf` | false | true |
 | `enableEdgeServices` | false | false |
 | `computeEnabled` | true (gated off only while `bootstrap:applyInProgress` is set) | true (same) |
 
-`instanceType` is the fleet-wide VM size; `instanceTypes` holds per-service
-overrides keyed by service name (`backend`, `cdc`, `yjs`, `ai`, `frontend`).
-Backend defaults to `DEV1-M` in production because its blue-green roll runs the
-OLD + NEW slots side-by-side and needs ~2× steady-state RAM during cutover —
-DEV1-S (2 GB) cannot hold both.
+`instanceType` is the fleet-wide VM size. Per-service sizes live in the
+canonical registry (`lib/services-config.ts`, the `instanceType` field) so a
+fork can resize its fleet by editing that one file. That field is either a
+single size or a per-mode map (`{ production: 'DEV1-M', staging: 'DEV1-S' }`):
+backend runs `DEV1-M` in production because its blue-green roll runs the OLD +
+NEW slots side-by-side and needs ~2× steady-state RAM during cutover — DEV1-S
+(2 GB) cannot hold both — but stays on `DEV1-S` in staging. VM size resolves
+highest-precedence-first: `infra:instanceTypes.<slug>` (operator override) →
+the registry default for the current mode → `infra:instanceType` / the fleet
+default.
 
 To override any value:
 
 ```bash
 pulumi config set infra:dbNodeType DB-GP-XS
-pulumi config set infra:instanceType GP1-S                 # whole fleet
-pulumi config set --path infra:instanceTypes.backend DEV1-M  # one service
+pulumi config set infra:instanceType GP1-S                   # whole fleet
+pulumi config set --path infra:instanceTypes.backend DEV1-M  # one service (escape hatch)
 ```
 
 ## Common operations

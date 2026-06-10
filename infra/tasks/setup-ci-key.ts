@@ -1,7 +1,8 @@
 /**
  * Create (or reuse) a scoped IAM application `<slug>-ci-deploy` with a
  * least-privilege policy, then mint a fresh API key (deleting any orphans).
- * Used by bootstrap.ts and the manual rotation procedure in infra/README.md.
+ * Used by the bootstrap command and the manual rotation procedure in
+ * infra/README.md.
  * Standalone usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
  */
 

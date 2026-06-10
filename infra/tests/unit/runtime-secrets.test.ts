@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer, runtimeSecretsById } from '../../src/runtime-secrets.js'
+import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer, runtimeSecretsById } from '../../lib/runtime-secrets.js'
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8')
 const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'), 'utf-8')

@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const src = readFileSync(resolve(__dirname, '../../modules/loadbalancer.ts'), 'utf-8')
+const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 'utf-8')
 
 describe('loadbalancer module — www / frontend wiring', () => {
   it('declares an app (www) DNS A record pointing at the LB IP', () => {
