@@ -41,11 +41,13 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
+    "@types/node": "catalog:",
     "@types/ws": "^8.18.1",
-    "cross-env": "^10.1.0",
-    "tsup": "^8.5.1",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@typescript/native-preview": "catalog:",
+    "cross-env": "catalog:",
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

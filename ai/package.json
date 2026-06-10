@@ -19,10 +19,11 @@
     "shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
-    "cross-env": "^10.1.0",
-    "tsup": "^8.5.1",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "cross-env": "catalog:",
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

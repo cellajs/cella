@@ -38,9 +38,11 @@
     "commander": "^15.0.0"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "ts-morph": "^28.0.0",
-    "tsup": "^8.5.1",
-    "tsx": "^4.22.4"
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:"
   }
 }

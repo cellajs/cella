@@ -130,14 +130,14 @@ export default {
         'flip-vertical': {
           '50%': { transform: 'rotateX(180deg)' },
         },
-        glow: {
+        'status-pulse': {
           '0%, 100%': {
             transform: 'scale(1)',
-            boxShadow: '0 0 2px 1px var(--glow-color, currentColor)',
+            boxShadow: '0 0 2px 1px var(--status-pulse-color, currentColor)',
           },
           '50%': {
             transform: 'scale(1.12)',
-            boxShadow: '0 0 4px 2px var(--glow-color, currentColor)',
+            boxShadow: '0 0 4px 2px var(--status-pulse-color, currentColor)',
           },
         },
       },
@@ -151,7 +151,7 @@ export default {
         heartbeat: 'heartbeat 1s infinite',
         hflip: 'flip-horizontal 2s infinite',
         vflip: 'flip-certical 2s infinite',
-        glow: 'glow 2s ease-in-out infinite',
+        'status-pulse': 'status-pulse 2s ease-in-out infinite',
       },
     },
   },
