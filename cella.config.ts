@@ -36,6 +36,7 @@ export default defineConfig({
       "infra/Pulumi.production.yaml",
       "infra/Pulumi.staging.yaml",
       "sdk/gen",
+      "sdk/src/.generate-sdk.lock",
       "shared/config",
       "frontend/public/static/icons",
       "frontend/public/static/images",

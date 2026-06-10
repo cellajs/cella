@@ -171,6 +171,9 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Non-interactive list output (for LLM/agent usage) */
   list: boolean;
 
+  /** Machine-readable JSON output (for tooling/agent usage) */
+  json: boolean;
+
   /** Show verbose output */
   verbose: boolean;
 

@@ -76,6 +76,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
   let logFile = false;
   let verbose = false;
   let list = false;
+  let json = false;
 
   const program = new Command(NAME)
     .version(VERSION, '-v, --version', 'output the current version')
@@ -97,8 +98,11 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .option('--log', 'write complete file list to cella-sync.log', () => {
       logFile = true;
     })
-    .option('--list', 'non-interactive output for inspect (one file per line)', () => {
+    .option('--list', 'non-interactive output for inspect / contributions (one file per line)', () => {
       list = true;
+    })
+    .option('--json', 'machine-readable JSON output for inspect / contributions (for tooling/agents)', () => {
+      json = true;
     })
     .option('-V, --verbose', 'show detailed output during operations', () => {
       verbose = true;
@@ -152,6 +156,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     service: service ?? 'analyze',
     logFile,
     list,
+    json,
     verbose,
     fork: opts.fork,
     hard: opts.hard,

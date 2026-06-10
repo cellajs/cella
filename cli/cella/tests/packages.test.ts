@@ -86,6 +86,7 @@ describe('packages merge', () => {
       service: 'packages',
       logFile: false,
       list: false,
+      json: false,
       verbose: false,
     };
   }

@@ -328,6 +328,17 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
     return;
   }
 
+  // Machine-readable JSON output for tooling/agent usage
+  if (config.json) {
+    const out = driftedFiles.map((f) => ({
+      path: f.path,
+      status: f.status,
+      changedAt: f.changedAt ?? null,
+    }));
+    console.info(JSON.stringify(out, null, 2));
+    return;
+  }
+
   // Non-interactive mode: output plain list for LLM/agent usage
   if (config.list) {
     for (const f of driftedFiles) {

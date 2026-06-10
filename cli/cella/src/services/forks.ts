@@ -151,6 +151,7 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
     service: 'sync',
     logFile: config.logFile,
     list: false,
+    json: false,
     verbose: config.verbose,
     hard: config.hard,
   };

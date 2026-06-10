@@ -204,6 +204,7 @@ export function buildRuntimeConfig(
     service,
     logFile: false,
     list: false,
+    json: false,
     verbose: false,
   };
 }

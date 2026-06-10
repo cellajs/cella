@@ -373,10 +373,29 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   const forkCount = new Set(allItems.map((i) => i.fork)).size;
   spinnerSuccess(`${allItems.length} files from ${forkCount} fork${forkCount > 1 ? 's' : ''}`);
 
-  // Non-interactive mode: output plain list for LLM/agent usage
+  // Machine-readable JSON output for tooling/agent usage
+  if (config.json) {
+    const out = allItems.map((item) => ({
+      fork: item.fork,
+      path: item.path,
+      status: item.status ?? null,
+      kind: item.deleted ? 'deleted' : 'modified',
+      changedAt: item.changedAt ?? null,
+    }));
+    console.info(JSON.stringify(out, null, 2));
+    return;
+  }
+
+  // Non-interactive mode: output enriched list for LLM/agent usage.
+  // Columns are tab-separated: fork, status, kind, changedAt, path.
+  // Note: status reflects the fork's committed pullBranch HEAD vs cella's base
+  // (behind = fork ahead, diverged = both changed), not the fork's working tree.
   if (config.list) {
     for (const item of allItems) {
-      console.info(`${item.fork}\t${item.path}`);
+      const status = item.status ?? 'behind';
+      const kind = item.deleted ? 'deleted' : 'modified';
+      const changedAt = item.changedAt ?? '-';
+      console.info(`${item.fork}\t${status}\t${kind}\t${changedAt}\t${item.path}`);
     }
     return;
   }
