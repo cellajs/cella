@@ -1,4 +1,15 @@
-import { serviceNames, type ServiceName } from './services.js'
+/**
+ * Cella-owned runtime-secrets machinery. Forks should NOT edit this file — the
+ * fork-facing secret→service *mapping* lives in `runtime-secrets.config.ts`;
+ * this module supplies the typed `defineRuntimeSecrets` helper, flattens that
+ * config into the `runtimeSecrets` list, validates it, and derives the lookups
+ * the rest of infra consumes:
+ *   - resources/secrets.ts  — one Secret Manager container per definition;
+ *   - resources/compute.ts  — the per-VM `.env.runtime` manifest;
+ *   - tasks/manage-runtime-secrets.ts, tasks/seed-operator-secrets.ts.
+ */
+import runtimeSecretsConfig from './runtime-secrets.config'
+import { serviceNames, type ServiceName } from './services'
 
 export const runtimeSecretConsumers = serviceNames
 
@@ -7,149 +18,71 @@ export type RuntimeSecretConsumer = ServiceName
 export type RuntimeSecretValueSource = 'pulumi' | 'operator'
 export type RuntimeSecretGeneration = 'manual' | 'random'
 
-export interface RuntimeSecretDefinition {
-  id: string
+/**
+ * One runtime secret's fork-owned mapping data, authored in
+ * `runtime-secrets.config.ts`. The `id` is the config object key, so it is not
+ * repeated here (see `RuntimeSecretDefinition` for the flattened shape).
+ */
+export interface RuntimeSecretConfig {
+  /** Scaleway Secret Manager container name (kebab-case). */
   secretName: string
+  /** Human-readable purpose, surfaced in tooling and the container description. */
   description: string
+  /** Environment variable the consuming service reads the value as. */
   envVar: string
+  /** Whether deploy/health gating treats the value's absence as fatal. */
   required: boolean
+  /** `'pulumi'` = cella writes a version; `'operator'` = supplied out-of-band. */
   valueSource: RuntimeSecretValueSource
+  /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
   generation: RuntimeSecretGeneration
-  services: RuntimeSecretConsumer[]
+  /** Services that receive the secret in their per-VM `.env.runtime`. */
+  services: readonly RuntimeSecretConsumer[]
 }
 
-export const runtimeSecrets = [
-  {
-    id: 'databaseUrlRuntime',
-    secretName: 'database-url-runtime',
-    description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
-    envVar: 'DATABASE_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['backend', 'yjs', 'ai'],
-  },
-  {
-    id: 'databaseUrlAdmin',
-    secretName: 'database-url-admin',
-    description: 'PostgreSQL admin_role connection string (migrations, seeds, BYPASSRLS)',
-    envVar: 'DATABASE_ADMIN_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'databaseUrlCdc',
-    secretName: 'database-url-cdc',
-    description: 'PostgreSQL CDC worker connection string (admin_role with replication access)',
-    envVar: 'DATABASE_CDC_URL',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'manual',
-    services: ['cdc'],
-  },
-  {
-    id: 'cookieSecret',
-    secretName: 'cookie-secret',
-    description: 'Cookie signing secret',
-    envVar: 'COOKIE_SECRET',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'random',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'unsubscribeSecret',
-    secretName: 'unsubscribe-token-secret',
-    description: 'Email unsubscribe token secret',
-    envVar: 'UNSUBSCRIBE_SECRET',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'random',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'cdcSecret',
-    secretName: 'cdc-secret',
-    description: 'CDC authentication secret',
-    envVar: 'CDC_SECRET',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'random',
-    services: ['backend', 'cdc', 'ai'],
-  },
-  {
-    id: 'yjsSecret',
-    secretName: 'yjs-secret',
-    description: 'Yjs WebSocket authentication secret',
-    envVar: 'YJS_SECRET',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'random',
-    services: ['backend', 'yjs', 'ai'],
-  },
-  {
-    id: 'piiHashSecret',
-    secretName: 'pii-hash-secret',
-    description: 'HMAC pepper for hashing PII-derived identifiers',
-    envVar: 'PII_HASH_SECRET',
-    required: true,
-    valueSource: 'pulumi',
-    generation: 'random',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'adminEmail',
-    secretName: 'admin-email',
-    description: 'Primary administrative contact email',
-    envVar: 'ADMIN_EMAIL',
-    required: true,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'brevoApiKey',
-    secretName: 'brevo-api-key',
-    description: 'Brevo transactional email API key',
-    envVar: 'BREVO_API_KEY',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'scwAiApiKey',
-    secretName: 'scw-ai-api-key',
-    description: 'Scaleway AI API key for the AI worker',
-    envVar: 'SCW_AI_API_KEY',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'githubClientId',
-    secretName: 'github-client-id',
-    description: 'GitHub OAuth client ID',
-    envVar: 'GITHUB_CLIENT_ID',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-  {
-    id: 'githubClientSecret',
-    secretName: 'github-client-secret',
-    description: 'GitHub OAuth client secret',
-    envVar: 'GITHUB_CLIENT_SECRET',
-    required: false,
-    valueSource: 'operator',
-    generation: 'manual',
-    services: ['backend', 'ai'],
-  },
-] as const satisfies readonly RuntimeSecretDefinition[]
+/** A runtime secret definition: its config data plus the id (the config key). */
+export interface RuntimeSecretDefinition extends RuntimeSecretConfig {
+  id: string
+}
+
+/** Helper for `runtime-secrets.config.ts` — typed identity preserving literal keys. */
+export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecretConfig>>(secrets: T): T {
+  return secrets
+}
+
+/** Flattened, ordered runtime secret definitions derived from the fork config. */
+export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeSecretsConfig).map(([id, definition]) => ({
+  id,
+  ...definition,
+}))
+
+// Fail fast at load time on a fork misconfiguration, rather than as a missing
+// container at deploy time or a missing variable at runtime.
+{
+  const knownServices = new Set<string>(serviceNames)
+  const seenEnvVars = new Set<string>()
+  const seenSecretNames = new Set<string>()
+  for (const secret of runtimeSecrets) {
+    if (secret.services.length === 0) {
+      throw new Error(`runtime-secrets.config: secret '${secret.id}' has no services — assign at least one consumer or remove it.`)
+    }
+    for (const service of secret.services) {
+      if (!knownServices.has(service)) {
+        throw new Error(
+          `runtime-secrets.config: secret '${secret.id}' targets unknown service '${service}'. Known services: ${[...knownServices].join(', ')}.`,
+        )
+      }
+    }
+    if (seenEnvVars.has(secret.envVar)) {
+      throw new Error(`runtime-secrets.config: duplicate envVar '${secret.envVar}' (secret '${secret.id}').`)
+    }
+    seenEnvVars.add(secret.envVar)
+    if (seenSecretNames.has(secret.secretName)) {
+      throw new Error(`runtime-secrets.config: duplicate secretName '${secret.secretName}' (secret '${secret.id}').`)
+    }
+    seenSecretNames.add(secret.secretName)
+  }
+}
 
 export const runtimeSecretsById = new Map<string, RuntimeSecretDefinition>(runtimeSecrets.map((secret) => [secret.id, secret]))
 export const runtimeSecretsByEnvVar = new Map<string, RuntimeSecretDefinition>(runtimeSecrets.map((secret) => [secret.envVar, secret]))

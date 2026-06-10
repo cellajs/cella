@@ -10,7 +10,7 @@
 # `RELEASE_SHA` is baked in and surfaces as `X-App-Version` — that is what
 # the on-VM reconciler asserts after each cutover.
 #
-# Configurable env (set in infra/compose.yml `frontend` profile):
+# Configurable env (set in infra/compose/services.config.ts `frontend` entry):
 #   RELEASE_SHA  — bound to X-App-Version (defaulted to "dev" in Dockerfile)
 #   ORIGIN_HOST  — S3 REST hostname for the frontend bucket
 

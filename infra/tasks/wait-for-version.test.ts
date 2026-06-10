@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { isHealthy, parseArgs, pollForVersion, type ProbeResult } from './wait-for-version.js'
+import { isHealthy, parseArgs, pollForVersion, type ProbeResult } from './wait-for-version'
 
 const SHA = 'abc1234'
 

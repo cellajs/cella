@@ -1,8 +1,8 @@
 /**
  * "No unexpected public surface" sweep.
  *
- * Walks every `infra/resources/*.ts` file looking for patterns that historically
- * widen the public attack surface (open ingress, wildcard CORS, public buckets,
+ * Walks every `infra/resources/*.ts` file looking for patterns that widen the
+ * public attack surface (open ingress, wildcard CORS, public buckets,
  * Principal:'*' policies, public DB endpoints, public registries). Every match
  * MUST be present in `EXPECTED` below — otherwise the test fails and the
  * reviewer has to either justify the new surface or remove it.

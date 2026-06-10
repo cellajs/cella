@@ -49,6 +49,14 @@ const runtimePassword = rolePassword('runtime')
 const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false
 const dbPublicAcl = infraConfig.get('dbPublicAcl') ?? ''
 
+if (dbPublicEndpoint && !dbPublicAcl) {
+  throw new Error(
+    'Security: infra:dbPublicAcl must be set when infra:dbPublicEndpoint=true. ' +
+    'An open public endpoint with no ACL exposes the database to the internet. ' +
+    'Example: pulumi config set infra:dbPublicAcl "203.0.113.0/32"',
+  )
+}
+
 // ---------------------------------------------------------------------------
 // PostgreSQL Instance
 // ---------------------------------------------------------------------------

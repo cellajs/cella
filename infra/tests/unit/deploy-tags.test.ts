@@ -16,9 +16,8 @@ describe('deploy-tags module', () => {
   })
 
   it('does NOT seed placeholder objects — CI creates the tag on first roll', () => {
-    // The old design created a `scaleway.object.Item` per service with
-    // placeholder content then disowned it via ignoreChanges. Readers now
-    // treat an ABSENT object as "no release yet", so there must be no seeding.
+    // Readers treat an ABSENT object as "no release yet", so there must be no
+    // seeded `scaleway.object.Item` placeholder for any service.
     expect(src).not.toContain('new scaleway.object.Item')
     expect(src).not.toContain("content: 'bootstrap'")
   })

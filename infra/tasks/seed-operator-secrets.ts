@@ -1,5 +1,5 @@
-import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets.js'
-import { createSecretManagerClient } from '../lib/scaleway-secret-manager.js'
+import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
+import { createSecretManagerClient } from '../lib/scaleway-secret-manager'
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string

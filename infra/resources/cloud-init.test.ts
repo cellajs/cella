@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { deriveInfra } from '../naming.js'
-import { fakeConfig } from '../tests/helpers/fake-config.js'
-import { type CloudInitParams, renderCloudInit } from './cloud-init.js'
+import { deriveInfra } from '../naming'
+import { fakeConfig } from '../tests/helpers/fake-config'
+import { type CloudInitParams, renderCloudInit } from './cloud-init'
 
 // Derive the state bucket from the canonical fixture so the test name can never
 // drift from the fork slug (naming is a pure function of appConfig).
@@ -30,8 +30,8 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
 describe('renderCloudInit', () => {
   it('scrubs secrets from BOTH cloud-init logs', () => {
     const out = renderCloudInit(params())
-    // The scrub pattern and both target log files must survive refactors —
-    // this is the line that keeps creds out of the readable boot log.
+    // The scrub pattern and both target log files keep creds out of the readable
+    // boot log; assert both are present.
     expect(out).toMatch(/sed -i '\/SECRET\\\|PASSWORD\\\|API_KEY\\\|DATABASE_URL\\\|docker login\/Id' \/var\/log\/cloud-init-output\.log/)
     expect(out).toMatch(/sed -i '\/SECRET\\\|PASSWORD\\\|API_KEY\\\|DATABASE_URL\\\|docker login\/Id' \/var\/log\/cloud-init\.log/)
   })
@@ -49,9 +49,9 @@ describe('renderCloudInit', () => {
 
   it('runs the reconciler once then falls back to the last-good S3 tag, never sitting empty', () => {
     const out = renderCloudInit(params())
-    // No image tag is baked into cloud-init — a routine release must not change
-    // this script (that is the whole point of tag-out-of-cloud-init). The
-    // fallback below sources the tag at runtime from S3, it is not templated in.
+    // No image tag is baked into cloud-init: the fallback sources the tag at
+    // runtime from S3 rather than being templated in, so a routine release
+    // never changes this script.
     expect(out).toContain("export BACKEND_TAG=\"$fallback_tag\"")
     expect(out).not.toContain("BACKEND_TAG='")
     // Single reconciler attempt drives the happy path; a non-empty current.tag

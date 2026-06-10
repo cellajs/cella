@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setupCiKey } from './setup-ci-key.js'
+import { setupCiKey } from './setup-ci-key'
 
 type FetchArgs = { url: string; init: RequestInit }
 

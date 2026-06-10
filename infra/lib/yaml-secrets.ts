@@ -22,6 +22,9 @@ export const KNOWN_SECRET_KEYS: readonly string[] = [
   'infra:scwAiApiKey',
   'infra:adminPassword',
   'infra:runtimePassword',
+  // VM reader key — minimal-privilege identity for service VMs.
+  'infra:vmAccessKey',
+  'infra:vmSecretKey',
 ]
 
 /** Suffix patterns that always imply a secret value, regardless of namespace. */

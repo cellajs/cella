@@ -1,7 +1,7 @@
 /**
  * Decrypt Pulumi passphrase-encrypted stack secrets locally without `pulumi`
- * or any network call. Lets us recover stored credentials (e.g. the CI deploy
- * key) using just the passphrase + the local Pulumi.<stack>.yaml file.
+ * or any network call. Recovers stored credentials (e.g. the CI deploy key)
+ * from just the passphrase + the local Pulumi.<stack>.yaml file.
  *
  * Pulumi's passphrase secret manager uses:
  *   - PBKDF2-SHA256(passphrase, salt, 1_000_000 iterations) → 32-byte key

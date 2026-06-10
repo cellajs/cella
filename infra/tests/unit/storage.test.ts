@@ -12,7 +12,7 @@
  *     frontend URL (no '*').
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pulumi-mock.js'
+import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pulumi-mock'
 
 let h: MockHarness
 
@@ -23,7 +23,7 @@ beforeAll(async () => {
     // image-tag pin assertion (these tests don't render compute).
     config: { 'infra:applicationId': '00000000-0000-0000-0000-000000000001', 'bootstrap:applyInProgress': 'test' },
   })
-  await import('../../resources/storage.js')
+  await import('../../resources/storage')
   await flushPulumi()
 })
 

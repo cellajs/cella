@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type DiagReader, parseArgs, parseKeys, renderDiagnostics, selectDiagnostics } from './fetch-boot-diag.js'
+import { type DiagReader, parseArgs, parseKeys, renderDiagnostics, selectDiagnostics } from './fetch-boot-diag'
 
 // A realistic `aws s3 ls` block: `<date> <time> <size> <key>`.
 const LS = `

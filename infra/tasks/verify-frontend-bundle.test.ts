@@ -6,7 +6,7 @@ import {
   type ProbeResult,
   servedMatches,
   verifyBundle,
-} from './verify-frontend-bundle.js'
+} from './verify-frontend-bundle'
 
 const HTML = '<!doctype html><html><head><script type="module" src="/assets/index-abc123.js"></script></head></html>'
 

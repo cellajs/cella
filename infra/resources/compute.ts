@@ -10,17 +10,22 @@
  * replacement; LB health checks bridge the cutover. CDC uses deleteBeforeReplace
  * because it is a singleton — two replication slots must not run concurrently.
  *
- * Known limitation: Scaleway has no instance-attached IAM identities, so app
- * secrets and the registry-login credential are necessarily embedded in cloud-init
- * userdata. Anyone with `InstancesReadOnly` on the project can read them.
- * Break-glass access is the Scaleway serial console (no SSH listener is opened).
+ * Constraint: Scaleway has no instance-attached IAM identities, so app secrets
+ * and the registry-login credential are embedded in cloud-init userdata; anyone
+ * with `InstancesReadOnly` on the project can read them. Break-glass access is
+ * the Scaleway serial console (no SSH listener is opened).
+ *
+ * Credentials embedded in cloud-init use the dedicated `<slug>-vm-reader` IAM
+ * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate CI
+ * flow). That identity has only ContainerRegistryReadOnly + ObjectStorageReadOnly
+ * + SecretManagerReadOnly — no write access to any Scaleway resource.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appUrls, hasDomain, appConfig } from '../helpers'
-import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index.js'
-import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets.js'
-import { enabledServices, type ServiceName } from '../lib/services.js'
+import { naming, zone, region, tags, infra, mode, hasDomain, appConfig, vmAccessKey, vmSecretKey } from '../helpers'
+import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index'
+import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
+import { enabledServices, type ServiceName } from '../lib/services'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
 import { privateNetworkId } from './network'
@@ -29,15 +34,12 @@ import { secretIds } from './secrets'
 import { frontendBucketName } from './storage'
 
 // ---------------------------------------------------------------------------
-// Infra-only secrets still needed on the VM for bootstrap + registry/S3 access
+// VM reader credentials — minimal-privilege key for registry pull, S3 tag
+// reads, and Secret Manager access. Never the operator/CI key.
 // ---------------------------------------------------------------------------
 
-const scwSecretKey = infra.computeEnabled
-  ? new pulumi.Config('scaleway').requireSecret('secretKey')
-  : pulumi.secret('')
-const scwAccessKey = infra.computeEnabled
-  ? new pulumi.Config('scaleway').requireSecret('accessKey')
-  : pulumi.secret('')
+const scwSecretKey = vmSecretKey
+const scwAccessKey = vmAccessKey
 
 // ---------------------------------------------------------------------------
 // Security Group — fully closed inbound; LB reaches VMs via private network.
@@ -83,14 +85,14 @@ function buildRuntimeSecretsManifest(serviceName: string): pulumi.Output<string>
 }
 
 // ---------------------------------------------------------------------------
-// Compose file content (read from deploy/compose.yml at deploy time)
+// Compose file content (the generated deploy artifact, read at deploy time)
 // ---------------------------------------------------------------------------
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 const composeContent = fs.readFileSync(
-  path.resolve(import.meta.dirname, '../compose.yml'),
+  path.resolve(import.meta.dirname, '../compose.gen.yml'),
   'utf-8',
 )
 
@@ -133,8 +135,6 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
       const allEnv = env.join('\n')
 
       // Reconciler env file — single source of truth for the per-VM watcher.
-      // Reuses the existing Pulumi-owned creds in PR1; PR2 will scope these
-      // down to s3:GetObject on deploy/<service>.tag only.
       const reconcilerEnvFile = buildReconcilerEnv({
         service: service.name as ReconcilerService,
         tagBucket,
@@ -170,9 +170,9 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
 // Service definitions
 // ---------------------------------------------------------------------------
 
-const backendUrl = hasDomain ? appUrls.backend : 'http://localhost:4000'
-const frontendUrl = appUrls.frontend
-const aiUrl = hasDomain ? appUrls.ai : 'http://localhost:4003'
+const backendUrl = hasDomain ? appConfig.backendUrl : 'http://localhost:4000'
+const frontendUrl = appConfig.frontendUrl
+const aiUrl = hasDomain ? appConfig.aiUrl : 'http://localhost:4003'
 
 // CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
 // path. The backend rejects sources outside loopback or the VPC /24 (see
@@ -294,12 +294,11 @@ function createVm(service: ServiceConfig): ComputeInstance {
     cloudInit: buildCloudInit(service),
     ipIds: [ip.id],
   }, {
-    // cloud-init only runs on first boot; in-place updates would never apply
-    // new env/scripts to running VMs. Since the image tag is no longer baked
-    // into cloud-init (the on-VM reconciler pulls it from S3), this replace
-    // trigger now only fires for genuine cloud-init edits (reconciler script
-    // update, package install change, etc.) — not every release. That is the
-    // whole point of the tag-out-of-cloud-init refactor.
+    // cloud-init only runs on first boot, so a VM must be replaced to pick up
+    // new env/scripts. The image tag lives in S3 (pulled by the on-VM
+    // reconciler), not cloud-init, so this replace trigger fires only for
+    // genuine cloud-init edits (reconciler script, package install) — not for a
+    // routine release.
     replaceOnChanges: ['cloudInit'],
     // Delete old VM before creating new (IP can only be attached to one server)
     // CDC is additionally a singleton — must not run two at once.

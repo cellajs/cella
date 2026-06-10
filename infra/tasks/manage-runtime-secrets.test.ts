@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { manageRuntimeSecrets } from './manage-runtime-secrets.js'
+import { manageRuntimeSecrets } from './manage-runtime-secrets'
 
 const prompts = {
   select: vi.fn(),
@@ -13,7 +13,7 @@ const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
 const deleteSecret = vi.fn()
 
-vi.mock('../lib/scaleway-secret-manager.js', () => ({
+vi.mock('../lib/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
     listSecrets,
     getSecretByName,

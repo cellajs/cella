@@ -3,7 +3,7 @@
   "description": "Pulumi IaC for Scaleway infrastructure and Kubernetes workloads",
   "type": "module",
   "scripts": {
-    "bootstrap": "tsx bootstrap/index.ts",
+    "cli": "tsx cli/infra-cli.ts",
     "setup-ci-key": "tsx tasks/setup-ci-key.ts",
     "test": "vitest run",
     "test:integration": "INTEGRATION=1 vitest run tests/integration",
@@ -17,6 +17,8 @@
     "wait-for-images": "tsx tasks/wait-for-images.ts",
     "verify-frontend-bundle": "tsx tasks/verify-frontend-bundle.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
+    "compose:synth": "tsx compose/synth.ts",
+    "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
     "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics"

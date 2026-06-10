@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { manualRestoreCommands, scwConfigPathNone, stripScwProviderEnv } from './bootstrap-scw-env.js'
+import { manualRestoreCommands, scwConfigPathNone, stripScwProviderEnv } from './bootstrap-scw-env'
 
 describe('scwConfigPathNone', () => {
   it('resolves relative to infraDir', () => {

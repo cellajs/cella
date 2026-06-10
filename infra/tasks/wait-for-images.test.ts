@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IMAGE_REUSE, imageRef, imageServices, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images.js'
+import { IMAGE_REUSE, imageRef, imageServices, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images'
 
 const TAG = 'abc1234'
 

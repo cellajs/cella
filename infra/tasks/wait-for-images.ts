@@ -21,7 +21,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { imageServiceNames, serviceNames, services, type ServiceName } from '../lib/services.js'
+import { imageServiceNames, serviceNames, services, type ServiceName } from '../lib/services'
 import { getFlag, getNumFlag, sleep } from './cli'
 
 /**

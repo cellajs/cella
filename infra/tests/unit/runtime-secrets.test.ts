@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer, runtimeSecretsById } from '../../lib/runtime-secrets.js'
+import { defineRuntimeSecrets, runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer, runtimeSecretsById } from '../../lib/runtime-secrets'
+import runtimeSecretsConfig from '../../lib/runtime-secrets.config'
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8')
 const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'), 'utf-8')
@@ -81,7 +82,7 @@ describe('runtime secret schema alignment', () => {
       for (const service of secret.services) {
         if (service === 'ai') continue
         if (!(service in envSources)) continue
-        const source = envSources[service]
+        const source = envSources[service as keyof typeof envSources]
         expect(source, `missing env schema fixture for ${service}`).toBeTruthy()
         expect(
           source,
@@ -96,5 +97,40 @@ describe('runtime secret schema alignment', () => {
     expect(aiSecrets.length).toBeGreaterThan(0)
     expect(backendEnvSource).toContain('DATABASE_ADMIN_URL:')
     expect(backendEnvSource).toContain('SCW_AI_API_KEY:')
+  })
+})
+
+describe('runtime secret config seam', () => {
+  it('defineRuntimeSecrets is a typed identity that preserves the fork config', () => {
+    const config = defineRuntimeSecrets({
+      example: {
+        secretName: 'example-secret',
+        description: 'fixture',
+        envVar: 'EXAMPLE_SECRET',
+        required: false,
+        valueSource: 'operator',
+        generation: 'manual',
+        services: ['backend'],
+      },
+    })
+    expect(config).toEqual({
+      example: {
+        secretName: 'example-secret',
+        description: 'fixture',
+        envVar: 'EXAMPLE_SECRET',
+        required: false,
+        valueSource: 'operator',
+        generation: 'manual',
+        services: ['backend'],
+      },
+    })
+  })
+
+  it('derives runtimeSecrets from the fork config, keyed by id, preserving order', () => {
+    expect(runtimeSecrets.map((secret) => secret.id)).toEqual(Object.keys(runtimeSecretsConfig))
+    for (const secret of runtimeSecrets) {
+      const { id, ...rest } = secret
+      expect(rest).toEqual(runtimeSecretsConfig[id as keyof typeof runtimeSecretsConfig])
+    }
   })
 })

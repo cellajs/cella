@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGithubOriginRepo } from './github-sync.js'
+import { parseGithubOriginRepo } from './github-sync'
 
 describe('parseGithubOriginRepo', () => {
   it('parses https URL with .git suffix', () => {

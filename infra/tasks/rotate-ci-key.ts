@@ -1,6 +1,5 @@
 /**
- * rotate-ci-key — emit instructions for rotating the CI Scaleway API key
- * after the deploy-tags IAM split (P1.9 #34).
+ * rotate-ci-key — emit instructions for rotating the CI Scaleway API key.
  *
  * Scaleway API keys cannot be auto-rotated via Pulumi without losing the
  * state-bucket credentials mid-run. This task documents the manual flow

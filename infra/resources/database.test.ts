@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { installPulumiMocks } from '../tests/helpers/pulumi-mock.js'
+import { installPulumiMocks } from '../tests/helpers/pulumi-mock'
 
 // database.ts creates Scaleway resources at import time, so prime the Pulumi
 // runtime mocks before importing it. We only exercise the pure DSN formatter.
@@ -9,7 +9,7 @@ beforeAll(async () => {
   // `bootstrap:applyInProgress` disables the compute pin-guard so the module
   // imports without requiring pinned image tags.
   await installPulumiMocks({ stack: 'production', config: { 'bootstrap:applyInProgress': 'test' } })
-  ;({ formatPostgresUrl } = await import('./database.js'))
+  ;({ formatPostgresUrl } = await import('./database'))
 })
 
 describe('formatPostgresUrl', () => {

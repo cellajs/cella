@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSecretManagerClient } from './scaleway-secret-manager.js'
+import { createSecretManagerClient } from './scaleway-secret-manager'
 
 type FetchArgs = { url: string; init: RequestInit }
 

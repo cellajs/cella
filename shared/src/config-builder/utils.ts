@@ -4,6 +4,8 @@ function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
 
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Deep merges source objects into target, preserving nested structure. */
 export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
   if (!sources.length) return target;
@@ -11,6 +13,7 @@ export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...
 
   if (isObject(target) && source && isObject(source)) {
     for (const key in source) {
+      if (!Object.hasOwn(source, key) || FORBIDDEN_KEYS.has(key)) continue;
       if (isObject(source[key as keyof object])) {
         if (!target[key as keyof object]) Object.assign(target, { [key]: {} });
         mergeDeep(target[key as keyof object], source[key as keyof object]);

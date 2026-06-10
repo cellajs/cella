@@ -1,19 +1,28 @@
 import { createHash } from 'node:crypto'
 import { confirm } from '@inquirer/prompts'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../tasks/setup-ci-key.js'
+import type { appConfig as AppConfig } from 'shared'
+import type { Environment, StackState } from '../lib/bootstrap-stack-state'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../tasks/setup-ci-key'
 
-export type Mode = 'resume' | 'rotate' | 'apply' | 'clean' | 'secrets'
+/** Infra CLI operation modes */
+export type CliMode = 'resume' | 'rotate' | 'apply' | 'secrets'
 
-export interface BootstrapContext {
-  infraDir: string
-  stackShort: string
+/**
+ * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
+ */
+export interface InfraContext {
+  environment: Environment
   stackPath: string
   stackYaml?: string
-  state: 'fresh' | 'partial' | 'bootstrapped'
+  state: StackState
   hasCiKey: boolean
   applyBackupPath: string
+  appConfig: typeof AppConfig
 }
 
+/**
+ * Options for running a step in the infra CLI, including command execution settings and retry behavior.
+ */
 export interface StepOptions {
   cwd?: string
   retry?: boolean
@@ -27,8 +36,14 @@ export const policyFingerprint = () =>
     .digest('hex')
     .slice(0, 12)
 
+/**
+ * Gets an environment variable, or prompts for it if not set.
+ */
 export const envOr = async (envName: string, prompt: () => Promise<string>) => process.env[envName] || (await prompt())
 
+/**
+ * Creates a step runner for executing commands with retry and error handling.
+ */
 export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv) {
   const step = async (
     label: string,

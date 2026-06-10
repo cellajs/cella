@@ -6,7 +6,7 @@ import {
   reconcilerService,
   reconcilerServices,
   reconcilerTimer,
-} from './index.js'
+} from './index'
 
 describe('buildReconcilerEnv', () => {
   const baseInput = {
@@ -218,9 +218,9 @@ describe('reconciler files', () => {
   })
 
   it('uploads the migrate output on migrate_failed so the real cause is visible', () => {
-    // The one-shot migrator's stderr used to only reach journald, so a
-    // migrate_failed from CI was a black box. Capture its combined output and
-    // push it to boot-diag like the pull capture.
+    // The one-shot migrator's stderr otherwise reaches only journald, making a
+    // migrate_failed from CI a black box. Capture its combined output and push
+    // it to boot-diag like the pull capture.
     expect(reconcilerScript).toContain('upload_diag_text migrate-failed')
     expect(reconcilerScript).toContain('docker compose --profile "$COMPOSE_PROFILE" run --rm migrate 2>&1')
   })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from './setup-ci-key.js'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from './setup-ci-key'
+import { VM_PROJECT_PERMISSION_SETS } from './setup-vm-key'
 
 /**
  * Lock the CI key's permission sets. Any addition must be deliberate and visible
@@ -53,6 +54,31 @@ describe('CI key permission sets', () => {
     // Catches typos like `InstancesFullAcess` early.
     for (const p of PROJECT_PERMISSION_SETS) {
       expect(p, `permission '${p}' must end in FullAccess or ReadOnly`).toMatch(/(FullAccess|ReadOnly)$/)
+    }
+  })
+})
+
+describe('VM reader key permission sets', () => {
+  it('VM_PROJECT_PERMISSION_SETS exact membership snapshot', () => {
+    // Locked snapshot: VMs need exactly these three ReadOnly grants — nothing more.
+    // Any addition is a security regression requiring explicit code-review approval.
+    expect([...VM_PROJECT_PERMISSION_SETS].sort()).toEqual([
+      'ContainerRegistryReadOnly',
+      'ObjectStorageReadOnly',
+      'SecretManagerReadOnly',
+    ])
+  })
+
+  it('does not include any write or privilege-escalation permission', () => {
+    const all = [...VM_PROJECT_PERMISSION_SETS]
+    for (const forbidden of [...FORBIDDEN, 'FullAccess', 'InstancesFullAccess', 'LoadBalancersFullAccess']) {
+      expect(all, `VM key must not hold '${forbidden}'`).not.toContain(forbidden)
+    }
+  })
+
+  it('every VM permission set ends with ReadOnly', () => {
+    for (const p of VM_PROJECT_PERMISSION_SETS) {
+      expect(p, `VM permission '${p}' must end in ReadOnly`).toMatch(/ReadOnly$/)
     }
   })
 })
