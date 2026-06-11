@@ -11,15 +11,15 @@ import { queryClient } from '~/query/query-client';
 export const Route = createFileRoute('/_public')({
   staticData: { isAuth: false, boundary: 'public' },
   component: PublicLayout,
-  beforeLoad: async ({ location, cause }) => {
+  beforeLoad: ({ location, cause }) => {
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
-    try {
-      console.debug('[PublicLayout] Fetching me while entering public page:', location.pathname);
-
-      // Fetch and set user
-      await queryClient.ensureQueryData({ ...meQueryOptions() });
-    } catch (error) {
+    // Hydrate the current user in the background so public pages can show an
+    // authenticated state when a session exists. This MUST NOT block rendering:
+    // public pages (marketing, docs, about) have to paint immediately. Awaiting
+    // /me here would gate first paint on the round-trip — and, when /me fails as
+    // a network error, on the /health connectivity probe behind onError too.
+    queryClient.ensureQueryData({ ...meQueryOptions() }).catch((error) => {
       // A 401 on /me is expected for unauthenticated visitors on public pages — ignore silently
       if (error instanceof ApiError && error.status === 401) return;
 
@@ -27,6 +27,6 @@ export const Route = createFileRoute('/_public')({
         console.error(error);
         onError(error);
       }
-    }
+    });
   },
 });
