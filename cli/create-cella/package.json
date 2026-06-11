@@ -1,6 +1,6 @@
 {
   "name": "@cellajs/create-cella",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": false,
   "license": "MIT",
   "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
@@ -18,7 +18,13 @@
     "node": "24.x"
   },
   "type": "module",
-  "main": "./src/create-cella-cli.ts",
+  "main": "./dist/index.js",
+  "files": [
+    "configs",
+    "dist",
+    "index.js",
+    "README.md"
+  ],
   "imports": {
     "#/*": "./src/*"
   },
@@ -30,12 +36,13 @@
     "clean": "rimraf ./dist",
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "pnpm run test:release",
     "check": "pnpm ts && pnpm biome check --write .",
     "ts": "tsgo --pretty",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
+    "test:release": "pnpm run build && vitest run tests/release-artifact.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

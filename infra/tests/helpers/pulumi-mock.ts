@@ -49,6 +49,11 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production'
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production'
 
+  // helpers.ts derives the org id from the project (getProjectOutput) to scope
+  // IAM lookups, so it requires a project id. The real deploy env always carries
+  // SCW_DEFAULT_PROJECT_ID; mirror that here so module import doesn't throw.
+  process.env.SCW_DEFAULT_PROJECT_ID = process.env.SCW_DEFAULT_PROJECT_ID ?? 'mock-project-id'
+
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
   if (opts.config) {
     process.env.PULUMI_CONFIG = JSON.stringify(opts.config)
@@ -77,6 +82,10 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
         // IAM data sources (helpers.ts derives identity ids from these instead
         // of stored config). Return deterministic stub ids so resource modules
         // that consume them render without talking to Scaleway.
+        if (args.token.includes('getProject')) {
+          const projectId = String((args.inputs as { projectId?: string }).projectId ?? 'mock-project-id')
+          return { id: projectId, projectId, organizationId: 'mock-organization-id' }
+        }
         if (args.token.includes('getApplication')) {
           const name = String((args.inputs as { name?: string }).name ?? 'app')
           return { id: `${name}-id`, applicationId: `${name}-id`, name }
