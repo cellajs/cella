@@ -22,7 +22,7 @@ export async function runSecrets(context: InfraContext): Promise<void> {
   const secretKey =
     process.env.SCW_SECRET_KEY ||
     process.env.SCW_BOOTSTRAP_SECRET_KEY ||
-    (await password({ message: 'Scaleway secret key with Secret Manager access' }))
+    (await password({ message: 'Scaleway secret key (needs Secret Manager access)' }))
 
   const { appConfig } = context
   const path = `/${appConfig.slug}-${context.environment}/`

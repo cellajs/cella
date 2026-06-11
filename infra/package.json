@@ -17,7 +17,7 @@
     "wait-for-images": "tsx tasks/wait-for-images.ts",
     "verify-frontend-bundle": "tsx tasks/verify-frontend-bundle.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
-    "compose:synth": "tsx compose/synth.ts",
+    "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",

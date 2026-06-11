@@ -61,7 +61,9 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
       if (hint.kind === 'bootstrap-owned')
         console.error(`  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`)
       else
-        console.error(`  Add the matching permission set to PROJECT_PERMISSION_SETS in tasks/setup-ci-key.ts, then re-run bootstrap → Rotate CI.`)
+        console.error(
+          `  Add the matching permission set to PROJECT_PERMISSION_SETS in tasks/setup-ci-key.ts, then re-run bootstrap and choose ${pc.italic('"Rotate CI"')}.`,
+        )
     }
   }
 

@@ -44,7 +44,7 @@ async function loadContext(): Promise<InfraContext> {
   }
 }
 
-printHeader('cella infra cli')
+printHeader('infra cli')
 
 if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
   console.error('✗ pulumi CLI not found. Install: brew install pulumi/tap/pulumi')
@@ -85,7 +85,7 @@ const mode: CliMode =
         default: 'resume',
         choices: [
           { name: 'Resume', value: 'resume', description: 'Idempotent re-run; refreshes config & GitHub secrets. Cannot apply changes to DB/VPC/PN (CI key is read-only there).' },
-          { name: 'Rotate CI', value: 'rotate', description: 'Mint a fresh CI deploy key (existing one is deleted). Use after editing PROJECT_PERMISSION_SETS.' },
+          { name: 'Rotate CI', value: 'rotate', description: 'Mint a fresh CI deploy key (existing one is deleted). Use after editing the CI policy permission sets.' },
           { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; CI key is swapped out then restored.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
         ],
