@@ -95,8 +95,8 @@ export const infra = {
 // VMs must not hold the operator/CI key (which has write access to instances,
 // the load balancer, IAM, etc.). Instead they use a `<slug>-vm-reader` IAM
 // application with only ContainerRegistryReadOnly + ObjectStorageReadOnly +
-// SecretManagerReadOnly. These values are written to the stack by the bootstrap
-// "Rotate CI" flow (tasks/setup-vm-key.ts).
+// SecretManagerReadOnly + SecretManagerSecretAccess. These values are written to
+// the stack by the bootstrap "Rotate CI" flow (tasks/setup-vm-key.ts).
 //
 // requireSecret: fail at `pulumi preview` rather than silently embedding the
 // operator key into cloud-init, which would surface as a runtime security issue

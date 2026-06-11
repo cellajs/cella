@@ -423,6 +423,34 @@ jobs:
           pulumi config set --secret --stack "$STACK" scaleway:accessKey "$SCW_ACCESS_KEY"
           pulumi config set --secret --stack "$STACK" scaleway:secretKey "$SCW_SECRET_KEY"
 
+      - name: Sync VM reader creds from CI secrets
+        # The minimal-privilege VM reader identity (`<slug>-vm-reader`: registry +
+        # S3 + Secret Manager read-only) is required by `infra:vmAccessKey` /
+        # `infra:vmSecretKey` (helpers.ts → compute.ts) and `infra:vmApplicationId`
+        # (deploy-tags.ts bucket policy). Newer stacks get these from the bootstrap
+        # "Rotate CI" flow, but a stack bootstrapped before the VM-reader split has
+        # no values and `pulumi up` fails with "Missing required configuration
+        # variable 'infra:vmAccessKey'".
+        #
+        # Re-stamping from the GitHub Actions secret/variable pair on every deploy
+        # mirrors the Scaleway-creds sync above: idempotent (a no-op `pulumi up`
+        # when the values already match) and the single source of truth lives with
+        # the other CI secrets. Provision/rotate the key with
+        # `tsx infra/tasks/setup-vm-key.ts` and update the secrets.
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          VM_APPLICATION_ID: ${{ vars.VM_APPLICATION_ID }}
+          VM_ACCESS_KEY: ${{ secrets.VM_ACCESS_KEY }}
+          VM_SECRET_KEY: ${{ secrets.VM_SECRET_KEY }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+        run: |
+          pulumi config set --stack "$STACK" infra:vmApplicationId "$VM_APPLICATION_ID"
+          pulumi config set --secret --stack "$STACK" infra:vmAccessKey "$VM_ACCESS_KEY"
+          pulumi config set --secret --stack "$STACK" infra:vmSecretKey "$VM_SECRET_KEY"
+
       # Pulumi prep (checkout, install, login, stack select, secrets) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
       # before the deploy proceeds: the on-VM reconciler does `docker compose
