@@ -43,7 +43,15 @@ export const PROJECT_PERMISSION_SETS = [
 ] as const
 
 /** Permission sets granted at organization scope (DNS lives at org level). */
-export const ORG_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
+export const ORG_PERMISSION_SETS = [
+  'DomainsDNSFullAccess',
+  // Read-only. `pulumi up` derives the CI/VM application ids from the IAM API at
+  // runtime (SOVRUN §3.3, helpers.ts getApplicationOutput) and the deploy's
+  // "Verify VM reader IAM grant" step lists the VM reader's policies — both are
+  // org-scoped IAM reads, so the CI key needs IAMReadOnly. (Self-introspection
+  // via getApiKey works without it, but listing other applications does not.)
+  'IAMReadOnly',
+] as const
 
 export type SetupCiKeyOptions = ProvisionScopedKeyOptions
 export type CiKeyResult = ScopedKeyResult

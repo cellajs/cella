@@ -53,17 +53,29 @@ export const infraConfig = new pulumi.Config('infra')
 // deploy key can perform (CI's "Verify VM reader IAM grant" step already does).
 // ---------------------------------------------------------------------------
 
-// The IAM application lookup is org-scoped, but the provider only auto-resolves
-// an organization id when SCW_DEFAULT_ORGANIZATION_ID is set — which it is not
-// in CI (the deploy env carries access/secret key + project id only). Derive the
-// org id from the project instead (the in-program equivalent of the bootstrap
-// CLI's resolveOrgId REST call), so a name lookup never sends an empty org id.
-const scwProjectId =
-  process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID ?? new pulumi.Config('scaleway').get('projectId')
-if (!scwProjectId) {
-  throw new Error('Scaleway project ID not found. Set SCW_DEFAULT_PROJECT_ID in the environment (or scaleway:projectId in stack config).')
-}
-const organizationId = scaleway.account.getProjectOutput({ projectId: scwProjectId }).organizationId
+// The IAM application lookup is org-scoped. Prefer an explicit organization id
+// from the environment (CI sets SCW_DEFAULT_ORGANIZATION_ID from the synced
+// SCW_ORGANIZATION_ID secret) so the deploy never touches the Account API — the
+// least-privilege CI deploy key can read IAM but NOT `read project`. Only when
+// no org id is in the environment (e.g. local runs) do we resolve it from the
+// project (the in-program equivalent of the bootstrap CLI's resolveOrgId REST
+// call), so a name lookup never sends an empty org id.
+const envOrganizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? process.env.SCW_ORGANIZATION_ID
+const organizationId: pulumi.Input<string> = envOrganizationId
+  ? envOrganizationId
+  : (() => {
+      const scwProjectId =
+        process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID ?? new pulumi.Config('scaleway').get('projectId')
+      if (!scwProjectId) {
+        throw new Error(
+          'Scaleway organization ID not found. Set SCW_DEFAULT_ORGANIZATION_ID (preferred) or SCW_DEFAULT_PROJECT_ID in the environment (or scaleway:projectId in stack config).',
+        )
+      }
+      return scaleway.account.getProjectOutput({ projectId: scwProjectId }).apply((project) => {
+        if (!project.organizationId) throw new Error(`Could not resolve organization id from project '${scwProjectId}'.`)
+        return project.organizationId
+      })
+    })()
 
 /** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
 export const ciDeployApplicationId = scaleway.iam

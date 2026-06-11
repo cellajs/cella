@@ -426,11 +426,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           # Scaleway provider authenticates from these env vars (the CI deploy
           # key) — scaleway:accessKey/secretKey/projectId are no longer stored in
-          # Pulumi.<env>.yaml. SCW_PROJECT_ID is the GitHub secret synced by
-          # github-sync.ts alongside the key pair on every CI-key rotation.
+          # Pulumi.<env>.yaml. SCW_PROJECT_ID / SCW_ORGANIZATION_ID are GitHub
+          # secrets synced by github-sync.ts alongside the key pair on every
+          # CI-key rotation. The org id lets helpers.ts derive the IAM
+          # application ids without the Account API (the CI key can read IAM but
+          # not `read project`).
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: pulumi up --stack "$STACK" --yes
@@ -451,6 +455,7 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
           VM_READER_APP: ${{ needs.setup.outputs.vm_reader_app }}
         run: |
@@ -458,7 +463,10 @@ jobs:
           # source the project from the synced SCW_PROJECT_ID secret — neither
           # the app id nor the project id is stored in stack config anymore
           # (SOVRUN §3.3); the Pulumi program derives them from the IAM API.
-          pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID"
+          # Pass the org id so assert-vm-grants skips the Account `read project`
+          # call (the CI key lacks that permission) and lists IAM policies
+          # directly.
+          pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID" --organization-id "$SCW_DEFAULT_ORGANIZATION_ID"
 
       - name: Capture stack outputs
         id: outputs

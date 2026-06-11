@@ -49,10 +49,14 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production'
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production'
 
-  // helpers.ts derives the org id from the project (getProjectOutput) to scope
-  // IAM lookups, so it requires a project id. The real deploy env always carries
-  // SCW_DEFAULT_PROJECT_ID; mirror that here so module import doesn't throw.
+  // helpers.ts resolves the org id (to scope IAM lookups) env-first:
+  // SCW_DEFAULT_ORGANIZATION_ID when present (the CI deploy path), else it falls
+  // back to getProjectOutput from SCW_DEFAULT_PROJECT_ID (the local path). Clear
+  // any ambient org id so tests deterministically exercise the project fallback
+  // against the getProject mock below, and mirror CI by always carrying a project id.
   process.env.SCW_DEFAULT_PROJECT_ID = process.env.SCW_DEFAULT_PROJECT_ID ?? 'mock-project-id'
+  delete process.env.SCW_DEFAULT_ORGANIZATION_ID
+  delete process.env.SCW_ORGANIZATION_ID
 
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
   if (opts.config) {
