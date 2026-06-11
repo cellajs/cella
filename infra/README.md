@@ -162,6 +162,7 @@ deliberately split into **write at steady state** vs **read-only**:
 | Container Registry, Instances, Load Balancers, Edge Services, Object Storage, Secret Manager, Observability | `…FullAccess` | CI deploys mutate these on every run. |
 | **VPC, Private Network, RDB** | `…ReadOnly` | **Bootstrap key.** Created once at bootstrap, refreshed but never mutated by CI. |
 | DNS (`DomainsDNSFullAccess`, org scope) | Full | CI may add/update A records when modules change. |
+| IAM (`IAMReadOnly`, org scope) | Read-only | `pulumi up` ([`helpers.ts`](helpers.ts)) and the "Verify VM reader IAM grant" step look up the CI/VM applications and policies by name. Read-only — `IAMManager`/`IAMFullAccess` stay forbidden. |
 
 This means **any change to [`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts), or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`. That's intentional — destructive operations on data-bearing resources go through a human running `pulumi up` locally with the bootstrap key.
 

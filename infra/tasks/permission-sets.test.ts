@@ -40,7 +40,10 @@ describe('CI key permission sets', () => {
   })
 
   it('ORG_PERMISSION_SETS exact membership snapshot', () => {
-    expect([...ORG_PERMISSION_SETS]).toEqual(['DomainsDNSFullAccess'])
+    // IAMReadOnly: org-scoped IAM *read* so `pulumi up` (helpers.ts) and the
+    // deploy's "Verify VM reader IAM grant" step can look up applications/
+    // policies by name. Read-only — IAMManager/IAMFullAccess remain FORBIDDEN.
+    expect([...ORG_PERMISSION_SETS].sort()).toEqual(['DomainsDNSFullAccess', 'IAMReadOnly'])
   })
 
   it('does not include any privilege-escalation permission', () => {
