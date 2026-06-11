@@ -10,7 +10,7 @@ import { Command } from 'commander';
 import type { CellaCliConfig, RuntimeConfig, SyncService } from './config/types';
 import pc from './utils/colors';
 import { resolveUpstream } from './utils/config';
-import { NAME, printHeader, VERSION } from './utils/display';
+import { NAME, printHeader, setJsonMode, VERSION } from './utils/display';
 import { printWarnings, validateOverrides } from './utils/overrides';
 
 /** Service descriptions for inquirer prompt */
@@ -104,6 +104,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .option('--json', 'machine-readable JSON output for inspect / contributions (for tooling/agents)', () => {
       json = true;
     })
+    .option('--diff <path>', 'print the unified diff for a single contributed file, then exit (contributions)')
     .option('-V, --verbose', 'show detailed output during operations', () => {
       verbose = true;
     })
@@ -114,6 +115,10 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     .option('--coverage', 'regenerate test coverage before showing the stats summary (stats)');
 
   program.parse(process.argv);
+
+  // In machine-output modes (--json, --diff), reserve stdout for the payload/patch
+  // and route all human output (header, warnings, spinner) to stderr.
+  if (json || program.opts().diff) setJsonMode(true);
 
   // Print header
   printHeader();
@@ -157,6 +162,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
     logFile,
     list,
     json,
+    diff: opts.diff,
     verbose,
     fork: opts.fork,
     hard: opts.hard,

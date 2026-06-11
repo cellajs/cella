@@ -23,7 +23,15 @@ import { checkbox } from '@inquirer/prompts';
 import type { FileStatus, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { loadConfig } from '../utils/config';
-import { createSpinner, DIVIDER, showDiffInPager, spinnerFail, spinnerSuccess, warningMark } from '../utils/display';
+import {
+  createSpinner,
+  DIVIDER,
+  showDiffInPager,
+  spinnerFail,
+  spinnerSuccess,
+  warningMark,
+  writeStdout,
+} from '../utils/display';
 import { getCurrentBranch, git } from '../utils/git';
 import { buildContribBranch, countDetection, detectContributableFiles } from './contrib-core';
 import { printNoForksHint, type ValidatedFork, validateForkPath } from './fork-utils';
@@ -43,6 +51,10 @@ interface ContribItem {
   status?: FileStatus;
   /** Relative date of the fork's change (e.g. '3 days ago') */
   changedAt?: string;
+  /** Lines added in the fork vs cella base (null for binary files) */
+  additions?: number | null;
+  /** Lines removed in the fork vs cella base (null for binary files) */
+  deletions?: number | null;
   /** Whether file is selected for acceptance */
   checked: boolean;
 }
@@ -226,6 +238,37 @@ async function fetchForkBranch(cellaPath: string, forkPath: string, pullBranch: 
   return git(['rev-parse', 'FETCH_HEAD'], cellaPath);
 }
 
+/** Short sha + relative date of the fork's committed pullBranch HEAD (for the comparison banner). */
+async function forkRefMeta(cellaPath: string, forkRef: string): Promise<{ sha: string; date: string }> {
+  const out = await git(['log', '-1', '--format=%h%x09%cr', forkRef], cellaPath, { ignoreErrors: true });
+  const [sha = forkRef.slice(0, 7), date = 'unknown'] = out.split('\t');
+  return { sha, date };
+}
+
+/**
+ * Lines added/removed per file between cella base and the contrib branch.
+ * Binary files report null. Used to enrich `--json` output for triage.
+ */
+async function diffStat(
+  cellaPath: string,
+  baseRef: string,
+  ref: string,
+): Promise<Map<string, { additions: number | null; deletions: number | null }>> {
+  const out = await git(['diff', '--numstat', `${baseRef}..${ref}`], cellaPath, { ignoreErrors: true });
+  const stat = new Map<string, { additions: number | null; deletions: number | null }>();
+  for (const line of out.split('\n')) {
+    if (!line.trim()) continue;
+    const [a, d, ...rest] = line.split('\t');
+    const path = rest.join('\t');
+    if (!path) continue;
+    stat.set(path, {
+      additions: a === '-' ? null : Number(a),
+      deletions: d === '-' ? null : Number(d),
+    });
+  }
+  return stat;
+}
+
 // ── Main entry ───────────────────────────────────────────────────────────────
 
 /**
@@ -301,10 +344,13 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   createSpinner('pulling fork contributions...');
   const allItems: ContribItem[] = [];
   const buildErrors: string[] = [];
+  const forkBanners: { fork: string; pullBranch: string; sha: string; date: string }[] = [];
 
   for (const { fork, resolvedPath } of selectedForks) {
     try {
       const forkRef = await fetchForkBranch(config.forkPath, resolvedPath, fork.pullBranch);
+      const meta = await forkRefMeta(config.forkPath, forkRef);
+      forkBanners.push({ fork: fork.name, pullBranch: fork.pullBranch, sha: meta.sha, date: meta.date });
 
       // Read the fork's own owned folders so its fork-specific modules aren't offered back
       let forkTerritory: string[] = [];
@@ -327,28 +373,33 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
       );
       if (appliedFiles.length === 0) continue;
 
+      const stat = await diffStat(config.forkPath, baseRef, branch);
       const metaByPath = new Map(detection.files.map((f) => [f.path, f]));
       for (const path of [...detection.modified, ...detection.created]) {
-        const meta = metaByPath.get(path);
+        const fileMeta = metaByPath.get(path);
         allItems.push({
           path,
           fork: fork.name,
           ref: branch,
           deleted: false,
-          status: meta?.status,
-          changedAt: meta?.changedAt,
+          status: fileMeta?.status,
+          changedAt: fileMeta?.changedAt,
+          additions: stat.get(path)?.additions ?? null,
+          deletions: stat.get(path)?.deletions ?? null,
           checked: false,
         });
       }
       for (const path of detection.deleted) {
-        const meta = metaByPath.get(path);
+        const fileMeta = metaByPath.get(path);
         allItems.push({
           path,
           fork: fork.name,
           ref: branch,
           deleted: true,
-          status: meta?.status,
-          changedAt: meta?.changedAt,
+          status: fileMeta?.status,
+          changedAt: fileMeta?.changedAt,
+          additions: stat.get(path)?.additions ?? null,
+          deletions: stat.get(path)?.deletions ?? null,
           checked: false,
         });
       }
@@ -373,6 +424,37 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   const forkCount = new Set(allItems.map((i) => i.fork)).size;
   spinnerSuccess(`${allItems.length} files from ${forkCount} fork${forkCount > 1 ? 's' : ''}`);
 
+  // Make the comparison basis explicit: forks are compared at their committed pullBranch HEAD,
+  // not their working tree, so uncommitted fork edits never appear here. In JSON mode this routes
+  // to stderr; skipped for --list/--diff so their stdout stays clean for machine parsing.
+  if (!config.list && !config.diff) {
+    for (const b of forkBanners) {
+      console.info(
+        `  ${pc.dim(`${b.fork}: comparing committed '${b.pullBranch}' @ ${b.sha} (${b.date}) — uncommitted fork changes are not included`)}`,
+      );
+    }
+  }
+
+  // Print the unified diff for a single file, then exit (tooling/agent usage).
+  if (config.diff) {
+    const matches = allItems.filter((i) => i.path === config.diff);
+    if (matches.length === 0) {
+      console.error(pc.red(`no contribution found for path: ${config.diff}`));
+      process.exitCode = 1;
+      return;
+    }
+    for (const item of matches) {
+      if (forkCount > 1) console.info(pc.dim(`# ${item.fork}`));
+      const res = spawnSync('git', ['diff', `${baseRef}..${item.ref}`, '--', item.path], {
+        cwd: config.forkPath,
+        encoding: 'utf8',
+        maxBuffer: 50 * 1024 * 1024,
+      });
+      writeStdout(res.stdout);
+    }
+    return;
+  }
+
   // Machine-readable JSON output for tooling/agent usage
   if (config.json) {
     const out = allItems.map((item) => ({
@@ -381,8 +463,10 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
       status: item.status ?? null,
       kind: item.deleted ? 'deleted' : 'modified',
       changedAt: item.changedAt ?? null,
+      additions: item.additions ?? null,
+      deletions: item.deletions ?? null,
     }));
-    console.info(JSON.stringify(out, null, 2));
+    writeStdout(JSON.stringify(out, null, 2));
     return;
   }
 

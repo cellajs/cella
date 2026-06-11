@@ -1,16 +1,16 @@
-// Load backend/.env so DB_TEST_PORT (fork-specific) is available; optional in CI where env is set directly.
+// Load backend/.env so DB_TEST_PORT (fork-specific) is available; in CI it's set directly in process.env.
 try {
   process.loadEnvFile(new URL('./backend/.env', import.meta.url));
 } catch {
-  // .env not present — fall back to process.env / defaults below.
+  // .env not present (e.g. CI) — DB_TEST_PORT must come from process.env instead.
 }
 
-const port = process.env.DB_TEST_PORT ?? '5434';
+const port = process.env.DB_TEST_PORT;
+if (!port) {
+  throw new Error('DB_TEST_PORT is required (set it in backend/.env or the environment) to run database tests.');
+}
 
-export const testDatabaseUrl = process.env.DATABASE_TEST_URL ?? `postgres://postgres:postgres@0.0.0.0:${port}/postgres`;
-
-export const testRuntimeDatabaseUrl =
-  process.env.TEST_RUNTIME_DATABASE_URL ?? `postgres://runtime_role:dev_password@0.0.0.0:${port}/postgres`;
-
-export const testAdminRoleDatabaseUrl =
-  process.env.TEST_ADMIN_ROLE_DATABASE_URL ?? `postgres://admin_role:dev_password@0.0.0.0:${port}/postgres`;
+// URLs are derived from the required port and the standard dev role credentials (mirrors backend/compose.yaml).
+export const testDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/postgres`;
+export const testRuntimeDatabaseUrl = `postgres://runtime_role:dev_password@0.0.0.0:${port}/postgres`;
+export const testAdminRoleDatabaseUrl = `postgres://admin_role:dev_password@0.0.0.0:${port}/postgres`;
