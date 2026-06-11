@@ -53,17 +53,33 @@ export const infraConfig = new pulumi.Config('infra')
 // deploy key can perform (CI's "Verify VM reader IAM grant" step already does).
 // ---------------------------------------------------------------------------
 
+// The IAM application lookup is org-scoped, but the provider only auto-resolves
+// an organization id when SCW_DEFAULT_ORGANIZATION_ID is set — which it is not
+// in CI (the deploy env carries access/secret key + project id only). Derive the
+// org id from the project instead (the in-program equivalent of the bootstrap
+// CLI's resolveOrgId REST call), so a name lookup never sends an empty org id.
+const scwProjectId =
+  process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID ?? new pulumi.Config('scaleway').get('projectId')
+if (!scwProjectId) {
+  throw new Error('Scaleway project ID not found. Set SCW_DEFAULT_PROJECT_ID in the environment (or scaleway:projectId in stack config).')
+}
+const organizationId = scaleway.account.getProjectOutput({ projectId: scwProjectId }).organizationId
+
 /** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
-export const ciDeployApplicationId = scaleway.iam.getApplicationOutput({ name: `${appConfig.slug}-ci-deploy` }).apply((app) => {
-  if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-ci-deploy' not found — run the infra CLI bootstrap first.`)
-  return app.applicationId
-})
+export const ciDeployApplicationId = scaleway.iam
+  .getApplicationOutput({ name: `${appConfig.slug}-ci-deploy`, organizationId })
+  .apply((app) => {
+    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-ci-deploy' not found — run the infra CLI bootstrap first.`)
+    return app.applicationId
+  })
 
 /** VM reader application id — the `<slug>-vm-reader` principal baked into service VMs. */
-export const vmReaderApplicationId = scaleway.iam.getApplicationOutput({ name: `${appConfig.slug}-vm-reader` }).apply((app) => {
-  if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
-  return app.applicationId
-})
+export const vmReaderApplicationId = scaleway.iam
+  .getApplicationOutput({ name: `${appConfig.slug}-vm-reader`, organizationId })
+  .apply((app) => {
+    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
+    return app.applicationId
+  })
 
 // Principal string for whoever runs `pulumi up` (the operator key locally, the
 // CI key in CI), derived from the calling SCW_ACCESS_KEY so the deploy-tags

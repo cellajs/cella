@@ -139,11 +139,9 @@ Still cella-coupled:
 
 These are documented incidents/findings from running this system in production:
 
-1. **VM key split-brain** (resolved, §3.3): two independent writers of `infra:vm*` stack config
-   (deploy.yml sync step vs local CLI re-provision) caused a real failed deploy — GitHub env and
-   live IAM diverged, reconciler got 403 on tag reads. Fixed by giving the key a single custodian:
-   it now lives in Scaleway Secret Manager, written only by the bootstrap CLI and read back by the
-   Pulumi program at `pulumi up`.
+1. **VM key split-brain**: two independent writers of `infra:vm*` stack config (deploy.yml
+   sync step vs local CLI re-provision) caused a real failed deploy — GitHub env and live IAM
+   diverged, reconciler got 403 on tag reads. Needs a single source of truth for key custody.
 2. **Three overlapping secret tiers** (stack config secrets, pulumi-owned Secret Manager
    versions, operator-owned containers) with ordering hazards (seed-before-`pulumi up` 409s,
    `getSecretOutput` throwing on missing containers).
@@ -171,10 +169,9 @@ The inventory above is operationally solid but rests entirely on standing creden
 | Bootstrap key | Nowhere (session memory only) | — | Human present |
 
 > The provider/CI key was removed from `Pulumi.<env>.yaml`: the Scaleway provider now
-> authenticates from `SCW_*` env (GitHub secrets in CI, a pasted bootstrap key locally). The VM
-> reader key pair — previously the only remaining committed ciphertext — has since moved to
-> Secret Manager (§3.3), so nothing secret is committed to git anymore: `Pulumi.<env>.yaml` holds
-> only the KDF salt and a non-secret `infra:bootstrapComplete` breadcrumb.
+> authenticates from `SCW_*` env (GitHub secrets in CI, a pasted bootstrap key locally), so
+> the only ciphertext still committed to git is the VM reader key pair. Moving those to Secret
+> Manager (§3.3) would close the git-ciphertext surface entirely.
 
 Two structural gaps follow:
 
@@ -252,38 +249,19 @@ no executor architecture required.
 
 ### 3.3 Stack config: materialized, not stored
 
-`Pulumi.<env>.yaml` today holds **only** a passphrase-KDF salt (`encryptionsalt`) plus a single
-non-secret breadcrumb, `infra:bootstrapComplete` (an ISO timestamp the CLI uses to tell a
-fully-bootstrapped stack from an interrupted one —
-[bootstrap-stack-state.ts](../infra/lib/bootstrap-stack-state.ts) `detectStackState`). Every
-authoritative value has left config:
+`Pulumi.<env>.yaml` today holds a passphrase-KDF salt, **plaintext** identity values
+(IAM application ids, `operatorPrincipal`, `ciPolicyFingerprint`), and the passphrase-encrypted
+VM reader key pair (AES-256-GCM, PBKDF2-SHA256/1M, the format decoded in
+[pulumi-passphrase.ts](../infra/lib/pulumi-passphrase.ts)). The provider/CI key pair has already
+left config (now `SCW_*` env), and `scaleway:projectId` is env-sourced too — the legacy values
+linger only until the operator runs `pulumi config rm`. Three observations make the remainder a
+legitimate Sovrun concern:
 
-- The provider/CI key pair moved to `SCW_*` env (GitHub secrets in CI, pasted bootstrap key
-  locally), and `scaleway:projectId` is env-sourced too.
-- The plaintext identity values (IAM application ids, `operatorPrincipal`, `ciPolicyFingerprint`)
-  are **derived at runtime from the Scaleway IAM API** — the Pulumi program looks the
-  `<slug>-ci-deploy` / `<slug>-vm-reader` applications up by name
-  ([helpers.ts](../infra/helpers.ts)) and the CI verify step resolves the VM app by name too.
-- The VM reader key pair — the last secret that lived here, passphrase-encrypted — now lives in
-  the customer's **Scaleway Secret Manager** as the `vm-reader-key` secret under the
-  `/<slug>-<mode>/` path. The bootstrap CLI seeds it
-  ([seed-vm-reader-key.ts](../infra/tasks/seed-vm-reader-key.ts)) and the Pulumi program reads it
-  back at `pulumi up` (operator/CI key holds `SecretManagerSecretAccess`), decodes the base64 JSON
-  payload, and bakes the values into VM cloud-init exactly as before
-  ([helpers.ts](../infra/helpers.ts) `readVmReaderKey`). This also removes the §2.5 split-brain
-  (only one writer now: the CLI, into Secret Manager).
-
-The legacy `infra:vm*` / `infra:applicationId` keys linger in the live YAML only until the
-operator runs `pulumi config rm` (coexistence is non-fatal — nothing reads them anymore;
-`detectStackState` honours them as fallback markers so a pre-migration stack keeps reporting
-`bootstrapped` until its next Resume stamps `infra:bootstrapComplete`). Three observations made
-this a legitimate Sovrun concern:
-
-1. **It was already mostly derived, not authoritative.** The provider/CI key pair is no longer
+1. **It is already mostly derived, not authoritative.** The provider/CI key pair is no longer
    stored here at all — it was moved to `SCW_*` env (GitHub secrets in CI, pasted bootstrap key
-   locally), removing deploy.yml's per-run re-stamp step. The non-secret identity values are
-   derived from the IAM API on demand, and the VM key now materializes from Secret Manager. The
-   git copy was a cache pretending to be a source of truth.
+   locally), removing deploy.yml's per-run re-stamp step. The `infra:vm*` keys remain, and still
+   have two competing writers (the §2.5 split-brain incident). The git copy is a cache
+   pretending to be a source of truth.
 2. **Committing ciphertext is a real adoption objection** (§2.6).
 3. **Every secret in it has a natural home that already exists**: the customer's Scaleway
    Secret Manager (where operator runtime secrets live today).
@@ -294,19 +272,19 @@ workspace and discards after:
 - Non-secret identity values come from Sovrun's DB — they aren't secrets, storing them is fine
   and gives Sovrun the drift-detection surface the git file used to provide (§3.5).
 - Secret values are fetched at run time from the customer's Secret Manager using session/CI
-  credentials. The VM reader key now lives this way; the DB passwords already do — they
-  auto-generate as `random.RandomPassword` resources in Pulumi state, not in stack config (the
-  old orphaned `infra:dbPassword` key was removed).
+  credentials. The DB passwords already live this way — they auto-generate as
+  `random.RandomPassword` resources in Pulumi state, not in stack config (the old orphaned
+  `infra:dbPassword` key was removed).
 - Sovrun still stores **no secret values** — the §4 premise survives intact. As an optional
   tier, Sovrun can hold the customer's passphrase-encrypted blob as durable backup it cannot
   read (zero-knowledge escrow; customer keeps the passphrase).
 
 Costs and caveats: a bootstrap-ordering problem remains (the CI key that *reads* Secret
 Manager must be seeded somewhere first — the GitHub env secret keeps that role); losing the
-git-tracked file means losing "clone the repo, run the CLI offline" — the CLI now materializes
-the VM reader key from Secret Manager (the same code path a hosted executor needs). That
-symmetry is the tell that this was the right refactor: it fixed the split-brain (§2.5 item 1)
-by *removing* the second writer, rather than coordinating it.
+git-tracked file means losing "clone the repo, run the CLI offline" — the CLI must learn to
+materialize from Secret Manager too, which is the same code path a hosted executor needs.
+That symmetry is the tell that this is the right refactor: it fixes the split-brain (§2.5
+item 1) by *removing* the second writer, rather than coordinating it.
 
 ### 3.4 Passphrase custody models
 
