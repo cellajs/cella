@@ -11,7 +11,7 @@ import { flushStores } from '~/utils/flush-stores';
 export function SignOut() {
   const { t } = useTranslation();
 
-  const { force } = useSearch({ from: '/publicLayout/sign-out' });
+  const { force } = useSearch({ from: '/_public/sign-out' });
 
   const signOutTriggeredRef = useRef(false);
 

@@ -5,8 +5,8 @@ import { LegalNotice } from '~/modules/auth/legal-notice';
 export function EmailVerificationPage() {
   const { t } = useTranslation();
 
-  const { reason } = useParams({ from: '/publicLayout/authLayout/auth/email-verification/$reason' });
-  const { provider } = useSearch({ from: '/publicLayout/authLayout/auth/email-verification/$reason' });
+  const { reason } = useParams({ from: '/_public/auth/email-verification/$reason' });
+  const { provider } = useSearch({ from: '/_public/auth/email-verification/$reason' });
 
   return (
     <div className="text-center">

@@ -71,7 +71,7 @@ Cella is a flat-root monorepo.
 │   │   ├── lib               Library code & core helper functions
 │   │   ├── modules           Modular distribution of components (Zustand stores live per-module)
 │   │   ├── query             Query client with offline/realtime logic
-│   │   ├── routes            Code-based routes
+│   │   ├── routes            File-based routes (thin shims; logic in modules)
 │   │   ├── styling           Tailwind styling
 │   │   └── utils             Reusable functions
 │   └── vite                  Vite-related plugins & scripts

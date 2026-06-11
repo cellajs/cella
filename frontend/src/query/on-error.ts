@@ -113,7 +113,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
       // Flush sensitive stores and navigate to the sign-in page
       flushStores();
-      // Dynamic import breaks circular dep: query-client → on-error → router → route-tree → base-routes → query-client
+      // Dynamic import breaks circular dep: query-client → on-error → router → route tree → query-client
       import('~/routes/router').then(({ default: r }) => r.navigate(redirectOptions));
     }
   }

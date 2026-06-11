@@ -41,7 +41,7 @@ export function SignInStep() {
   const { email, resetSteps, restrictedMode, setStep, setSignedIn } = useAuthStore();
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);

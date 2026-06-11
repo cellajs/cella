@@ -27,7 +27,7 @@ function rowKeyGetter(row: Tenant) {
  */
 function TenantsTable() {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/appLayout/system/tenants' });
+  const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
   // Table state
   const { q, sort, order } = search;

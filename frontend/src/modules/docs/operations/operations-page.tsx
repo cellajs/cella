@@ -22,7 +22,7 @@ import { getHashUrl } from '../hash-url';
 function OperationsPage() {
   const { t } = useTranslation();
   // Get active tag from URL search param
-  const { operationTag: activeTag } = useSearch({ from: '/publicLayout/publicContentLayout/docs/operations' });
+  const { operationTag: activeTag } = useSearch({ from: '/_public/_content/docs/operations' });
 
   // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('operations');

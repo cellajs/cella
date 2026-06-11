@@ -26,6 +26,7 @@ import { naming, zone, region, tags, infra, mode, hasDomain, appConfig, vmAccess
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { enabledServices, type ServiceName } from '../lib/services'
+import { frontendCsp } from '../lib/frontend-csp'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
 import { privateNetworkId } from './network'
@@ -211,13 +212,14 @@ const composeEnvFor: Record<ServiceName, () => Record<string, pulumi.Input<strin
     BACKEND_URL: backendUrl,
     AI_API_URL: aiUrl,
   }),
-  // Reverse-proxy in front of the S3 frontend bucket. Adds the security headers
-  // Edge Services + S3 can't (HSTS, X-Frame-Options, etc.) and rewrites 404s to
-  // /index.html so SPA deep links resolve. Deliberately reads no app secret from
-  // .env beyond what cloud-init needs to pull the image.
+  // Reverse-proxy in front of the S3 frontend bucket. Adds the frontend's CSP
+  // plus transport-level security headers, and rewrites 404s to /index.html so
+  // SPA deep links resolve. Deliberately reads no app secret from .env beyond
+  // what cloud-init needs to pull the image.
   frontend: () => ({
     REGISTRY: registryEndpoint,
     APP_MODE: mode,
+    FRONTEND_CSP: frontendCsp,
     // S3 REST hostname Caddy reverse-proxies to. Bucket name is whatever
     // `naming.frontendBucket` resolves to (e.g. `<slug>-frontend`).
     ORIGIN_HOST: pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,

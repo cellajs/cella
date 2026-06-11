@@ -8,8 +8,8 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 const ViewPage = lazy(() => import('~/modules/page/view-page'));
 const UpdatePage = lazy(() => import('~/modules/page/update-page'));
 
-const docsPageApi = getRouteApi('/publicLayout/publicContentLayout/docs/page/$id');
-const docsPageEditApi = getRouteApi('/publicLayout/publicContentLayout/docs/page/$id/edit');
+const docsPageApi = getRouteApi('/_public/_content/docs/page/$id');
+const docsPageEditApi = getRouteApi('/_public/_content/docs/page_/$id/edit');
 
 export const DocsPageComponent = () => {
   const { id } = docsPageApi.useParams();

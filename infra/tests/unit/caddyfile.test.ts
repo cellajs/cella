@@ -21,6 +21,7 @@ const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket
 describe('frontend Caddyfile', () => {
   it('emits every required security header', () => {
     for (const header of [
+      'Content-Security-Policy',
       'Strict-Transport-Security',
       'X-Frame-Options',
       'X-Content-Type-Options',
@@ -45,6 +46,10 @@ describe('frontend Caddyfile', () => {
     // The rollout verifier asserts X-App-Version == GITHUB_SHA. If this
     // breaks, every deploy will hang for 5 minutes and then fail.
     expect(caddyfile).toMatch(/X-App-Version\s+"\{\$RELEASE_SHA\}"/)
+  })
+
+  it('binds CSP from the {$FRONTEND_CSP} env', () => {
+    expect(caddyfile).toMatch(/Content-Security-Policy\s+"\{\$FRONTEND_CSP\}"/)
   })
 
   it('serves /health locally (LB + reconciler depend on it)', () => {

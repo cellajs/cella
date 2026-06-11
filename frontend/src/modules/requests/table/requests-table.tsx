@@ -22,7 +22,7 @@ function rowKeyGetter(row: Request) {
 
 function RequestsTable() {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/appLayout/system/requests' });
+  const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
   // Table state
   const { q, sort, order } = search;

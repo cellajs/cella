@@ -15,7 +15,7 @@ export function SystemPage() {
       </div>
 
       <ScrollReset>
-        <PageTabNav parentRouteId="/appLayout/system" />
+        <PageTabNav parentRouteId="/_app/system" />
         <FocusViewContainer>
           <Outlet />
         </FocusViewContainer>

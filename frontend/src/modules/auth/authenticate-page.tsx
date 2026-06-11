@@ -27,7 +27,7 @@ function shouldShowDivider(): boolean {
 export function AuthenticatePage() {
   const { t } = useTranslation();
 
-  const { tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
+  const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { lastUser } = useUserStore();
   const { step, setStep, restrictedMode, setRestrictedMode, signedIn } = useAuthStore();

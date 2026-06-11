@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 export function AuthErrorPage() {
   const { t } = useTranslation();
 
-  const { error: errorType, tokenId } = useSearch({ from: '/publicLayout/authLayout/auth/error' });
+  const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
   const { email, error } = useAuthStore();
 

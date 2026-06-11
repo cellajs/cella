@@ -26,7 +26,7 @@ export function LegalPage() {
     [],
   );
 
-  const { subject: currentSubject } = useParams({ from: '/publicLayout/legal/$subject' });
+  const { subject: currentSubject } = useParams({ from: '/_public/legal/$subject' });
 
   // Get section IDs for the current subject
   const sectionIds = useMemo(
