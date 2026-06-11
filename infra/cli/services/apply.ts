@@ -30,8 +30,8 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   const bootAccess =
     process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
-    (await input({ message: 'Bootstrap access key (IAMManager + write on the resource you are changing)', validate: (v) => !!v.trim() || '(required)' }))
-  const bootSecret = process.env.SCW_BOOTSTRAP_SECRET_KEY || (await password({ message: 'Bootstrap secret key' }))
+    (await input({ message: 'Scaleway bootstrap access key (needs IAMManager + write on the resource you are changing)', validate: (v) => !!v.trim() || '(required)' }))
+  const bootSecret = process.env.SCW_BOOTSTRAP_SECRET_KEY || (await password({ message: 'Scaleway bootstrap secret key' }))
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 
