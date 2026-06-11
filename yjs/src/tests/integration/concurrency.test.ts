@@ -3,8 +3,9 @@ import pg from 'pg';
 import * as Y from 'yjs';
 import { createDoc, loadState, saveState, deleteState } from '../../data/storage';
 import type { DocContext } from '../../constants';
+import { testDatabaseUrl } from '../../../../test-db-config';
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:postgres@0.0.0.0:5434/postgres';
+const DATABASE_URL = testDatabaseUrl;
 
 const testTenantId = 'yjs-integ-tenant';
 const testUserId = 'yjs-integ-user';

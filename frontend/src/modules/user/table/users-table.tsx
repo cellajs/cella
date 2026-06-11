@@ -17,7 +17,7 @@ function rowKeyGetter(row: BaseUser) {
 }
 
 function UsersTable() {
-  const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/appLayout/system/users' });
+  const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
   // Table state
   const { q, role, sort, order } = search;

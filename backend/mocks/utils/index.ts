@@ -2,6 +2,7 @@ export { withFakerSeed } from './faker-seed';
 export { type BatchResponse, mockBatchResponse } from './mock-batch-response';
 export {
   generateMockContextIdColumns,
+  generateMockEntityBodyContextIdColumns,
   generateMockEntityContextIdColumns,
   type MockContextIdColumns,
   type MockEntityContextIdColumns,

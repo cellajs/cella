@@ -23,7 +23,15 @@ import {
 } from '@inquirer/core';
 import type { AnalyzedFile, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { createSpinner, DIVIDER, showDiffInPager, spinnerSuccess, spinnerText, warningMark } from '../utils/display';
+import {
+  createSpinner,
+  DIVIDER,
+  showDiffInPager,
+  spinnerSuccess,
+  spinnerText,
+  warningMark,
+  writeStdout,
+} from '../utils/display';
 import { runMergeEngine } from './merge-engine';
 
 /** Track temp directories for cleanup on process exit */
@@ -325,6 +333,17 @@ export async function runInspect(config: RuntimeConfig): Promise<void> {
   if (driftedFiles.length === 0) {
     console.info();
     console.info(`${pc.green('✓')} no drifted or diverged files — all fork changes are pinned or ignored`);
+    return;
+  }
+
+  // Machine-readable JSON output for tooling/agent usage
+  if (config.json) {
+    const out = driftedFiles.map((f) => ({
+      path: f.path,
+      status: f.status,
+      changedAt: f.changedAt ?? null,
+    }));
+    writeStdout(JSON.stringify(out, null, 2));
     return;
   }
 

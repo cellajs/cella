@@ -30,7 +30,7 @@ Cross-reference changed files against the fork's `cella.config.ts` pinned/ignore
 | `backend/src/db/schema/*.ts` | New columns, changed types, new indexes. Fork may have extra columns — merge carefully. |
 | `backend/src/routes.ts` | New route registrations, changed middleware chains. |
 | `backend/src/schemas/*` | Changed validation shapes that pinned route files depend on. |
-| `frontend/src/routes/route-tree.tsx` | New routes added upstream that fork may want. |
+| `frontend/src/routes/**` (file-based) | Routes are file-based: forks extend by adding their own route files (e.g. `_app/$tenantId.$organizationSlug/project/...`); the generated `routeTree.gen.ts` is sync-ignored and regenerated locally by the vite plugin. New upstream route files sync in automatically unless pinned. |
 | `package.json` files | New scripts, changed dependency versions (lockfile is regenerated separately). |
 
 ### 3. Apply entity pattern changes

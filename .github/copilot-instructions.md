@@ -36,8 +36,8 @@ Generated SDK in `sdk/gen/`, consumed via the `sdk` workspace package - **never 
 pnpm sdk
 ```
 
-### Frontend Routing (Code-based, not file-based)
-Routes in `frontend/src/routes/*.tsx` must be manually added to `frontend/src/routes/route-tree.tsx`. Use `createRoute` from TanStack Router.
+### Frontend Routing (File-based)
+Route files in `frontend/src/routes/` use `createFileRoute` and are auto-registered by the TanStack Router vite plugin into the generated `routeTree.gen.ts` (committed — never edit manually). Route files are thin shims; `beforeLoad` logic and components live in modules and are wired via `getRouteApi('<route id>')`.
 
 ### State Management
 - **Server state**: TanStack Query with query options in `frontend/src/modules/<module>/query.ts`
@@ -88,7 +88,7 @@ pnpm cella           # Sync changes from upstream cella to fork (useful for fork
 | API validation | `backend/src/modules/<module>/[module]-schema.ts` |
 | Generated types | `sdk/gen/` via `sdk` package exports |
 | Query keys/options | `frontend/src/modules/<module>/query.ts` |
-| Route definitions | `frontend/src/routes/` + `route-tree.tsx` |
+| Route definitions | `frontend/src/routes/` (file-based, auto-generated `routeTree.gen.ts`) |
 | UI react components | `frontend/src/modules/ui/` (Shadcn) |
 | Common react components | `frontend/src/modules/common/` |
 

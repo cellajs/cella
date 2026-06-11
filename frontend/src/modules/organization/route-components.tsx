@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getRouteApi, Outlet } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { Spinner } from '~/modules/common/spinner';
 import { organizationQueryOptions } from '~/modules/organization/query';
@@ -9,14 +9,10 @@ const MembersTable = lazy(() => import('~/modules/memberships/members-table/memb
 const AttachmentsTable = lazy(() => import('~/modules/attachment/table/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organization/organization-settings'));
 
-const orgRouteApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization');
-const orgMembersApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/members');
-const orgAttachmentsApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/attachments');
-const orgSettingsApi = getRouteApi('/appLayout/$tenantId/$organizationSlug/organization/settings');
-
-export const OrganizationLayoutComponent = () => {
-  return <Outlet />;
-};
+const orgRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization');
+const orgMembersApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/members');
+const orgAttachmentsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/attachments');
+const orgSettingsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/settings');
 
 export const OrganizationRouteComponent = () => {
   const { organization, tenantId } = orgRouteApi.useRouteContext();

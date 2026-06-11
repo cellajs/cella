@@ -18,11 +18,11 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "24.10.13",
+    "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
     "artillery": "^2.0.31",
     "artillery-plugin-ensure": "^1.25.0",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

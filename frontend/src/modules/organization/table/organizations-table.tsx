@@ -26,7 +26,7 @@ function OrganizationsTable() {
   const changeRole = useChangeEntityRoleMutation();
 
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({
-    from: '/appLayout/system/organizations',
+    from: '/_app/system/organizations',
   });
 
   // Table state

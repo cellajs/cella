@@ -22,7 +22,7 @@ type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
  */
 export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
-  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$organizationSlug', shouldThrow: false });
+  const orgMatch = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false });
   const tenantId = orgMatch?.params?.tenantId;
   const organizationId = orgMatch?.context?.organization?.id;
 

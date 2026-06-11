@@ -1,4 +1,5 @@
 import { defineProject } from 'vitest/config';
+import { testDatabaseUrl } from '../test-db-config';
 
 const testMode = process.env.TEST_MODE || 'core';
 
@@ -18,7 +19,7 @@ export default defineProject({
     env: {
       NODE_ENV: 'test',
       YJS_SECRET: 'test-yjs-secret-for-unit-tests',
-      DATABASE_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres',
+      DATABASE_URL: testDatabaseUrl,
       YJS_PORT: '0',
     },
   },

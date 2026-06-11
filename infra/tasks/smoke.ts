@@ -27,11 +27,12 @@ import { extractEntryAsset } from './verify-frontend-bundle'
 import { isHealthy } from './wait-for-version'
 
 /**
- * OWASP-recommended response headers that Caddy injects and S3 + Edge Services
- * cannot. A missing header means the Caddyfile regressed or the request
- * bypassed Caddy entirely. Compared case-insensitively.
+ * Response headers the frontend Caddy layer must inject. A missing header means
+ * the Caddyfile regressed or the request bypassed Caddy entirely. Compared
+ * case-insensitively.
  */
 export const SECURITY_HEADERS = [
+  'Content-Security-Policy',
   'Strict-Transport-Security',
   'X-Frame-Options',
   'X-Content-Type-Options',

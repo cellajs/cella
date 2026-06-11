@@ -10,10 +10,13 @@ import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/menu
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-const statusStyleMap: Record<HealthStatus, { dot: string; glow: string }> = {
-  healthy: { dot: 'bg-success', glow: '[--glow-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
-  degraded: { dot: 'bg-warning', glow: '[--glow-color:color-mix(in_oklch,var(--warning)_50%,transparent)]' },
-  unhealthy: { dot: 'bg-destructive', glow: '[--glow-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
+const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
+  healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
+  degraded: { dot: 'bg-warning', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--warning)_50%,transparent)]' },
+  unhealthy: {
+    dot: 'bg-destructive',
+    pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]',
+  },
 };
 
 function StatusCard({ label, status }: { label: string; status: HealthStatus }) {
@@ -21,9 +24,9 @@ function StatusCard({ label, status }: { label: string; status: HealthStatus }) 
     <div className="flex items-center gap-2 rounded-md border border-dashed px-4 py-2">
       <span
         className={cn(
-          'inline-block size-2 shrink-0 animate-[glow_3.5s_ease-in-out_infinite] rounded-full',
+          'inline-block size-2 shrink-0 animate-[status-pulse_3.5s_ease-in-out_infinite] rounded-full',
           statusStyleMap[status].dot,
-          statusStyleMap[status].glow,
+          statusStyleMap[status].pulse,
         )}
         aria-hidden="true"
       />

@@ -20,7 +20,7 @@ function OperationsTable() {
     order?: 'asc' | 'desc';
     tag?: string;
   }>({
-    from: '/publicLayout/publicContentLayout/docs/operations/table',
+    from: '/_public/_content/docs/operations_/table',
   });
 
   const q = search.q || '';

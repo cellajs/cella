@@ -13,9 +13,11 @@ See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, da
   - `backend/src/server.ts` creates the base app, mounts global middleware and the error handler (`appErrorHandler`).
   - Routes: `backend/src/modules/<module>/<module>-routes.ts` using `createXRoute`.
   - Handlers: `backend/src/modules/<module>/<module>-handlers.ts` using `.openapi()` on `OpenAPIHono`.
-- **Frontend (TanStack Router)** — **code-based, NOT file-based**:
-  - Routes in `frontend/src/routes/*.tsx` must be manually added to `frontend/src/routes/route-tree.tsx`.
-  - Layouts in `frontend/src/routes/base-routes.tsx`; router instance in `frontend/src/routes/router.ts`.
+- **Frontend (TanStack Router)** — **file-based**:
+  - Route files live in `frontend/src/routes/` and are auto-registered by the router vite plugin into the generated `frontend/src/routes/routeTree.gen.ts` (committed, not hand-edited).
+  - Route files are thin shims: path/staticData/glue only. Components and `beforeLoad` logic live in modules (`route-logic.ts`, `route-components.tsx`, `search-params-schemas.ts`), wired via `getRouteApi('<route id>')`.
+  - Layout directories: `_public/` (pathless public layout), `_app/` (pathless authenticated layout), `_public/_content/` (public content), `_app/$tenantId.$organizationSlug/` (org context). Trailing underscore (e.g. `page_.$id.edit.tsx`) opts out of parent component nesting.
+  - Router instance in `frontend/src/routes/router.ts`; shared route helpers in `frontend/src/routes/route-utils.tsx`.
 
 ## Middleware & guards
 Global middleware chain (`backend/src/middlewares/app.ts`): secureHeaders → OpenTelemetry → observability → Sentry → pino logger → CORS → CSRF → body-limit → gzip.

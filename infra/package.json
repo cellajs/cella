@@ -32,7 +32,9 @@
     "shared": "workspace:*"
   },
   "devDependencies": {
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@typescript/native-preview": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

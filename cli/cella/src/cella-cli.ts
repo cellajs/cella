@@ -128,6 +128,10 @@ async function main(): Promise<void> {
         const result = await runSync(config);
         if (config.settings.syncWithPackages !== false && result.success) {
           await runPackages(config);
+        } else if (config.settings.syncWithPackages !== false) {
+          console.warn(
+            `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync or packages.`,
+          );
         }
         break;
       }

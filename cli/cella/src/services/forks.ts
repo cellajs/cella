@@ -11,6 +11,7 @@ import { Separator, select } from '@inquirer/prompts';
 import type { ForkConfig, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { loadConfig } from '../utils/config';
+import { warningMark } from '../utils/display';
 import { getCommitInfo, getCurrentBranch, getStoredSyncRef, git, isClean } from '../utils/git';
 import { printNoForksHint, validateForkPath } from './fork-utils';
 
@@ -151,6 +152,7 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
     service: 'sync',
     logFile: config.logFile,
     list: false,
+    json: false,
     verbose: config.verbose,
     hard: config.hard,
   };
@@ -163,6 +165,10 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
   if (forkConfig.settings.syncWithPackages !== false && result.success) {
     const { runPackages } = await import('./packages');
     await runPackages(forkRuntimeConfig);
+  } else if (forkConfig.settings.syncWithPackages !== false) {
+    console.warn(
+      `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync or packages.`,
+    );
   }
 }
 

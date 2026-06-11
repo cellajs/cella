@@ -38,7 +38,9 @@ pnpm cella [options]
 |------|-------------|
 | `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks`, `contributions` |
 | `--fork <name>` | Sync/select a specific fork directly (skips interactive menu) |
-| `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting) |
+| `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting). For `contributions`, each line is tab-separated: `fork  status  kind  changedAt  path` |
+| `--json` | Machine-readable JSON output for `inspect` / `contributions` (for tooling/agents). For `contributions`, each item includes `fork`, `path`, `status`, `kind`, `changedAt`, `additions`, `deletions`. stdout is reserved for the JSON payload; all human output goes to stderr, so `cella --json … \| jq` pipes cleanly. |
+| `--diff <path>` | Print the unified diff for a single contributed file, then exit (`contributions`). stdout carries only the patch (human output goes to stderr), so it is safe to pipe to a pager or parser. Combine with `--fork <name>` to disambiguate when multiple forks touch the same path. |
 | `--log` | Write complete file list to `cella-sync.log` |
 | `-V, --verbose` | Show detailed output during operations |
 | `-v, --version` | Output the current version |

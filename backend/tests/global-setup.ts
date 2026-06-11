@@ -5,22 +5,17 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { env as dotenv } from '@dotenv-run/core';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { immutabilityTriggersSQL } from '#/db/immutability-triggers';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
+import { testDatabaseUrl } from '../../test-db-config';
 
 // Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env file — resolve root relative to this file so it works regardless of cwd
-dotenv({ root: path.resolve(__dirname, '../../..'), files: ['.env'] });
-
-// Use dedicated test database if available (port 5434), otherwise fall back to main database
-const DATABASE_TEST_URL = 'postgres://postgres:postgres@0.0.0.0:5434/postgres';
-const DATABASE_URL = process.env.DATABASE_TEST_URL || DATABASE_TEST_URL;
+const DATABASE_URL = testDatabaseUrl;
 
 /**
  * Check if Postgres is available and run migrations.
@@ -28,9 +23,9 @@ const DATABASE_URL = process.env.DATABASE_TEST_URL || DATABASE_TEST_URL;
  */
 export default async function globalSetup() {
   if (!DATABASE_URL) {
-    console.info(`\n${crossMark}  Skipping backend tests: DATABASE_URL not set`);
-    console.info('   Run `pnpm dev` to start Postgres, then run tests again.\n');
-    process.exit(0);
+    console.error(`\n${crossMark}  Backend tests require a database: DATABASE_URL not set`);
+    console.error('   Run `pnpm docker:test` (or `pnpm dev`) to start Postgres, then run tests again.\n');
+    process.exit(1);
   }
 
   // Try to connect to Postgres
@@ -41,10 +36,10 @@ export default async function globalSetup() {
     await client.query('SELECT 1');
     await client.end();
   } catch (error) {
-    console.info(`\n${crossMark}  Skipping backend tests: Cannot connect to Postgres`);
-    console.info(`   DATABASE_URL: ${DATABASE_URL}`);
-    console.info('   Run `pnpm dev` to start Postgres, then run tests again.\n');
-    process.exit(0);
+    console.error(`\n${crossMark}  Backend tests require Postgres but cannot connect`);
+    console.error(`   DATABASE_URL: ${DATABASE_URL}`);
+    console.error('   Run `pnpm docker:test` (or `pnpm dev`) to start Postgres, then run tests again.\n');
+    process.exit(1);
   }
 
   // Run migrations once for all tests

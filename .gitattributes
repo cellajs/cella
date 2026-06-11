@@ -3,5 +3,6 @@
 pnpm-lock.yaml merge=ours
 backend/openapi.yaml merge=ours
 backend/openapi.cache.json merge=ours
+backend/openapi.manifest.json merge=ours
 frontend/src/api.gen/** merge=ours
 sdk/gen/** merge=ours

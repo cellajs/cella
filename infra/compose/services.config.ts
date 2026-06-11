@@ -90,7 +90,7 @@ export default defineServices({
 
   frontend: {
     // Production-only reverse-proxy in front of the SPA bucket. Image built per
-    // release from infra/caddy/Dockerfile; only runtime knob is ORIGIN_HOST.
+    // release from infra/caddy/Dockerfile; runtime knobs are ORIGIN_HOST + CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
     port: 80,
     healthTimeoutSeconds: 90,
@@ -101,6 +101,7 @@ export default defineServices({
     includeStandardEnv: false,
     includeEnvFile: false,
     env: {
+      FRONTEND_CSP: '${FRONTEND_CSP}',
       ORIGIN_HOST: '${ORIGIN_HOST}',
     },
   },

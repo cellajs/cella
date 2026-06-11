@@ -3,7 +3,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
-import { routeTree } from '~/routes/route-tree';
+import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 
 /**

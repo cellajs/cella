@@ -63,3 +63,30 @@ export const generateMockEntityContextIdColumns = <E extends ProductEntityType>(
 
   return columns as MockEntityContextIdColumns<E>;
 };
+
+/** The root context entity type (parentless context, e.g. 'organization'), supplied by the route path. */
+const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t) === null) as ContextEntityType;
+
+/**
+ * Generates the context-entity id columns a product entity carries in a create-request body, derived
+ * from the hierarchy but excluding the root context (e.g. 'organization'), which is supplied by the
+ * route path rather than the body. In cella's default hierarchy this yields an empty object, so
+ * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a
+ * 'project') get those ids automatically, keeping security/API tests fork-agnostic.
+ */
+export const generateMockEntityBodyContextIdColumns = <E extends ProductEntityType>(
+  entityType: E,
+): Partial<MockEntityContextIdColumns<E>> => {
+  const columns = {} as Record<string, string>;
+
+  for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
+    if (ancestor === rootContextType) continue;
+    columns[appConfig.entityIdColumnKeys[ancestor]] = mockUuid();
+  }
+  for (const related of hierarchy.getRelatedContexts(entityType)) {
+    if (related === rootContextType) continue;
+    columns[appConfig.entityIdColumnKeys[related]] = mockUuid();
+  }
+
+  return columns as Partial<MockEntityContextIdColumns<E>>;
+};

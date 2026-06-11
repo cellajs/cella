@@ -89,6 +89,38 @@ class TerminalSpinner implements Spinner {
 let activeSpinner: Spinner | null = null;
 
 /**
+ * When true, stdout is reserved for machine-readable payloads (e.g. `--json`),
+ * so all human-facing output (header, warnings, steps, spinner) is routed to stderr.
+ */
+let jsonMode = false;
+
+/**
+ * Enable JSON mode: keep stdout clean for the JSON payload by sending every
+ * human-facing line (console.info/console.warn, header, spinner) to stderr.
+ * This makes `cella --json ... | jq` pipe cleanly.
+ */
+export function setJsonMode(enabled: boolean): void {
+  jsonMode = enabled;
+  if (!enabled) return;
+  const toStderr = (...args: unknown[]) => {
+    process.stderr.write(`${args.map((a) => (typeof a === 'string' ? a : String(a))).join(' ')}\n`);
+  };
+  console.info = toStderr;
+  console.log = toStderr;
+  console.warn = toStderr;
+}
+
+/** Whether JSON mode is active. */
+export function isJsonMode(): boolean {
+  return jsonMode;
+}
+
+/** Write a machine-readable payload to stdout (bypasses the stderr routing of JSON mode). */
+export function writeStdout(text: string): void {
+  process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
+}
+
+/**
  * Get the header line for CLI output.
  */
 function getHeader(): string {
@@ -127,7 +159,7 @@ function printStep(label: string, detail?: string): void {
  */
 export function createSpinner(text: string): Spinner {
   const isTestEnv = !!process.env.VITEST || process.env.NODE_ENV === 'test';
-  activeSpinner = new TerminalSpinner(text, isTestEnv);
+  activeSpinner = new TerminalSpinner(text, isTestEnv || jsonMode);
   activeSpinner.start();
   return activeSpinner;
 }

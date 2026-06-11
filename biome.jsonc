@@ -6,6 +6,7 @@
       "backend/mocks/**",
       "backend/emails/**",
       "frontend/src/**",
+      "!frontend/src/routes/routeTree.gen.ts",
       "frontend/storybook/**",
       "frontend/vite/**",
       "cli/cella/src/**",
@@ -43,7 +44,7 @@
     }
   },
   "linter": {
-    "includes": ["**", "!frontend/src/api.gen/**", "!sdk/gen/**"],
+    "includes": ["**", "!frontend/src/api.gen/**", "!sdk/gen/**", "!frontend/src/routes/routeTree.gen.ts"],
     "enabled": true,
     "domains": {
       "react": "recommended"
@@ -166,6 +167,7 @@
         "frontend/src/**/query-mutations.ts",
         "frontend/src/**/public-query.ts",
         "frontend/src/routes/**",
+        "frontend/src/**/route-logic.ts",
         "frontend/src/modules/auth/**",
         "frontend/src/modules/me/**",
         "frontend/src/**/*.test.ts",

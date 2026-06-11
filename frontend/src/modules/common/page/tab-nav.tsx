@@ -40,7 +40,8 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
 function useNavTabs(parentRouteId: string, filterTabIds?: string[]): PageTab[] {
   if (!parentRouteId) return [];
 
-  const routesById = router.routesById;
+  // Cast: generated FileRoutesById is a closed interface without index signature
+  const routesById = router.routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
   const parentRoute = routesById[parentRouteId];

@@ -53,6 +53,12 @@ export const legalConfig = {
   },
 } as const satisfies LegalTexts;
 
+/** All legal subjects, derived from the config keys. */
+export const legalSubjects = Object.keys(legalConfig) as [LegalSubject, ...LegalSubject[]];
+
+/** Default legal subject used when no or an unknown subject is requested. */
+export const defaultLegalSubject = legalSubjects[0];
+
 /**
  * Categories of personal data collected by the service.
  * Forks should update these to match their actual data collection.

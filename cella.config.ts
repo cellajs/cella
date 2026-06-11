@@ -26,7 +26,6 @@ export default defineConfig({
     { name: 'raak', localPath: '../raak', pullBranch: 'development', pushBranch: 'development' },
   ],
 
-  // TODO can we by default add ignoredFolder effectively for modules in backend/src/modules and frontend/src/modules if *-module.ts have owner: 'app'? THis way during sync forks can prevent accidental conflicts if cella created new modules that overrides fork code. And during contributions service, we can ignore changes to 'app' owned modules
   // File overrides
   overrides: {
     // Folders (or exact paths) the fork fully owns — never synced (existing or new)
@@ -34,7 +33,11 @@ export default defineConfig({
       "README.md",
       "bench",
       "infra/compose.gen.yml",
+      "infra/Pulumi.production.yaml",
+      "infra/Pulumi.staging.yaml",
       "sdk/gen",
+      "sdk/src/.generate-sdk.lock",
+      "frontend/src/routes/routeTree.gen.ts",
       "shared/config",
       "frontend/public/static/icons",
       "frontend/public/static/images",
@@ -62,9 +65,6 @@ export default defineConfig({
       "frontend/src/alert-config.tsx",
       "frontend/src/list-queries-config.tsx",
       "frontend/src/styling/gradients.css",
-      "frontend/src/routes/route-tree.tsx",
-      "frontend/src/routes/marketing-routes.ts",
-      "frontend/src/routes/organization-components.tsx",
       "frontend/src/modules/home/home-page.tsx",
       "frontend/src/modules/home/onboarding/onboarding-config.ts",
       "frontend/src/modules/home/onboarding/onboarding-seed.ts",

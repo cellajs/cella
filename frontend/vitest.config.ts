@@ -18,6 +18,10 @@ export default defineConfig({
   },
   test: {
     passWithNoTests: true,
+    // Applies when this config is flattened into a single `frontend` project by
+    // the root vitest config (which ignores the nested `projects` below). Keeps
+    // console noise silenced in both the root and standalone test runs.
+    setupFiles: ['./vitest.setup.ts'],
     projects: [
       // Node-side tests (vite plugins, helpers, etc.)
       {

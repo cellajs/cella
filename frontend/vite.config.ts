@@ -11,7 +11,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../shared';
-// import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
 
 import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
@@ -19,33 +19,6 @@ import { localesHMR } from './vite/locales-hmr';
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
-
-// Content Security Policy — emitted as <meta http-equiv> into index.html.
-// Note: frame-ancestors/X-Frame-Options/HSTS cannot be set via meta and remain a
-// platform-level gap on Edge Services + S3 (documented in infra/README.md).
-const cspOrigins = {
-  api: new URL(appConfig.backendUrl).origin,
-  yjs: new URL(appConfig.yjsUrl).origin.replace(/^http/, 'ws'),
-  ai: new URL(appConfig.aiUrl).origin,
-  s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
-  s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
-  s3Public: appConfig.s3.publicCDNUrl,
-  s3Private: appConfig.s3.privateCDNUrl,
-};
-const csp = [
-  `default-src 'self'`,
-  `script-src 'self' *.gleap.io`,
-  `worker-src 'self' blob:`,
-  `style-src 'self' 'unsafe-inline'`,
-  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3Host} ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private} https://*.transloadit.com wss://*.transloadit.com https://transloaditstatus.com *.gleap.io wss://ws.gleap.io`,
-  `img-src 'self' blob: https: data:`,
-  `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
-  `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,
-  `font-src 'self' data:`,
-  `object-src 'none'`,
-  `base-uri 'self'`,
-  `form-action 'self'`,
-].join('; ').replace(/\s+/g, ' ').trim();
 
 const viteConfig = {
   logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
@@ -83,7 +56,15 @@ const viteConfig = {
   },
   clearScreen: false,
   plugins: [
-    // TanStackRouterVite(),
+    // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
+    tanstackRouter({
+      target: 'react',
+      autoCodeSplitting: true,
+      routesDirectory: 'src/routes',
+      generatedRouteTree: 'src/routes/routeTree.gen.ts',
+      // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
+      routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
+    }),
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
@@ -109,7 +90,6 @@ const viteConfig = {
           color: appConfig.themeColor,
           url: appConfig.frontendUrl,
           apiUrl: appConfig.backendUrl,
-          csp,
         },
       },
     }),

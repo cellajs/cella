@@ -24,7 +24,7 @@ import { getHashUrl } from '../hash-url';
 function SchemasPage() {
   const { t } = useTranslation();
   // Get active schema tag from URL search param (hash)
-  const { schemaTag: activeSchemaTag } = useSearch({ from: '/publicLayout/publicContentLayout/docs/schemas' });
+  const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });
 
   // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('schemas');

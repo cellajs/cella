@@ -69,7 +69,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
         <PageTabNav
           title={organization.name}
           avatar={organization}
-          parentRouteId="/appLayout/$tenantId/$organizationSlug/organization"
+          parentRouteId="/_app/$tenantId/$organizationSlug/organization"
           filterTabIds={filterTabIds}
         />
         <FocusViewContainer>

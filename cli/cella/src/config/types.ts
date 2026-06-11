@@ -171,6 +171,12 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Non-interactive list output (for LLM/agent usage) */
   list: boolean;
 
+  /** Machine-readable JSON output (for tooling/agent usage) */
+  json: boolean;
+
+  /** Print the unified diff for a single contributed file, then exit (contributions; for tooling/agents) */
+  diff?: string;
+
   /** Show verbose output */
   verbose: boolean;
 

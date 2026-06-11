@@ -50,7 +50,7 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
   const { searchParamKey, additionalSearchParamKeys, renderContent, onAfterClose, options } = config;
 
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const orgMatch = useMatch({ from: '/appLayout/$tenantId/$organizationSlug', shouldThrow: false });
+  const orgMatch = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false });
   const organizationId = orgMatch?.context?.organization?.id;
   const value = searchParams[searchParamKey] ?? null;
   const close = useCloseOverlay(searchParamKey, additionalSearchParamKeys);
