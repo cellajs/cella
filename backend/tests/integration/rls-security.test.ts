@@ -28,6 +28,7 @@ import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type Tx } from '#/db/db';
 import { entityTables } from '#/tables';
+import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from '../../../test-db-config';
 
 /** Local read-only tenant context helper — mirrors tenantRead without importing it. */
 async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
@@ -63,7 +64,7 @@ const TEST_WORKSPACE_A = '00000000-0000-4000-a000-000000000010';
 const TEST_ACTIVITY_A = 'rls-activity-001';
 
 // Runtime role connection (subject to RLS)
-const RUNTIME_DB_URL = 'postgres://runtime_role:dev_password@0.0.0.0:5434/postgres';
+const RUNTIME_DB_URL = testRuntimeDatabaseUrl;
 let runtimeDb: NodePgDatabase;
 
 /** Whether runtime_role exists in the test database */
@@ -962,7 +963,7 @@ describe('RLS Security Tests', () => {
 
     beforeAll(async () => {
       if (!rolesAvailable) return;
-      const ADMIN_ROLE_DB_URL = 'postgres://admin_role:dev_password@0.0.0.0:5434/postgres';
+      const ADMIN_ROLE_DB_URL = testAdminRoleDatabaseUrl;
       adminRoleDb = drizzle({
         connection: { connectionString: ADMIN_ROLE_DB_URL, connectionTimeoutMillis: 5_000 },
       });

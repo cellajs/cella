@@ -14,6 +14,7 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getAttachments, getOrganizations } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
+import { testRuntimeDatabaseUrl } from '../../../test-db-config';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -22,7 +23,7 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './help
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 // Runtime role connection (subject to RLS policies)
-const RUNTIME_DB_URL = 'postgres://runtime_role:dev_password@0.0.0.0:5434/postgres';
+const RUNTIME_DB_URL = testRuntimeDatabaseUrl;
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
   if (Array.isArray(result)) return result;

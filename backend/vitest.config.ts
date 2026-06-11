@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { testDatabaseUrl } from '../test-db-config';
 
 /**
  * Vitest configuration for backend tests.
@@ -47,7 +48,7 @@ export default defineConfig({
       YJS_SECRET: 'test-yjs-secret-min16',
       PII_HASH_SECRET: 'test-pii-hash-secret-min16',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
-      DATABASE_URL: 'postgres://postgres:postgres@0.0.0.0:5434/postgres',
+      DATABASE_URL: testDatabaseUrl,
     },
   },
 });

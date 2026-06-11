@@ -17,6 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { env } from '#/env';
+import { generateMockEntityContextIdColumns } from '../../mocks/utils';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -60,6 +61,8 @@ async function createAttachment(tenantId: string, organizationId: string, create
       size: '1024',
       originalKey: `test/secret-${stamp}.pdf`,
       bucketName: 'test-bucket',
+      // Context ids derived from the hierarchy (e.g. { projectId } in forks); explicit ids below win.
+      ...generateMockEntityContextIdColumns('attachment'),
       tenantId,
       organizationId,
       createdBy,

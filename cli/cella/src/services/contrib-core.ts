@@ -83,9 +83,11 @@ export async function detectContributableFiles(
   const analyzed = await analyzeRefs(repoPath, baseRef, forkRef, mergeBase, predicates);
   await enrichChangeInfo(repoPath, analyzed, mergeBase, baseRef, forkRef);
 
-  // Base directory set for the sibling heuristic on created files
+  // Base directory set for the sibling heuristic on created files.
+  // Seed with '.' because the repo root always exists in cella, so new fork
+  // files at the root (e.g. a shared config) are offered rather than silently skipped.
   const baseFiles = await listFilesAtRef(repoPath, baseRef);
-  const baseDirs = new Set<string>();
+  const baseDirs = new Set<string>(['.']);
   for (const f of baseFiles) {
     let dir = dirname(f);
     while (dir !== '.') {
