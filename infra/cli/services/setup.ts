@@ -21,6 +21,13 @@ import { createStepRunner, envOr, policyFingerprint } from '../shared'
  */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey
+  // Self-heal: a stack bootstrapped before a required provisioned key existed
+  // (e.g. the VM reader key) is missing it and would fail at `pulumi up`
+  // (helpers.ts requireSecret). Detect-and-provision it on a plain Resume
+  // instead of only warning — no full CI rotation needed. Any future required
+  // provisioned key follows the same `needs<X> = !has<X>` pattern.
+  const hasVmKey = context.stackYaml?.includes('infra:vmApplicationId') ?? false
+  const needsVmKey = needsCiKey || !hasVmKey
   const pulumiPassphrase = await envOr('PULUMI_CONFIG_PASSPHRASE', () => password({ message: 'Pulumi passphrase' }))
 
   let scwAccessKey = ''
@@ -147,14 +154,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           `(stored ${stored}, expected ${expected}). Re-run bootstrap and choose Rotate CI to apply.`,
       )
     }
-    // Warn if the VM reader key was never provisioned (e.g. forked before C1 fix).
-    const hasVmKey = context.stackYaml?.includes('infra:vmApplicationId') ?? false
-    if (!hasVmKey) {
-      console.warn(
-        `  ${warningMark} VM reader key (infra:vmApplicationId) is missing from stack config. ` +
-          `Re-run bootstrap and choose ${pc.italic('"Rotate CI"')} to provision the minimal-privilege VM identity.`,
-      )
-    }
   } else {
     while (true) {
       try {
@@ -171,16 +170,27 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
 
-  // VM reader key — provisioned atomically with the CI key so both identities
-  // are always rotated together. Runs whenever needsCiKey is true (fresh + rotate).
+  // VM reader key — minimal-privilege identity baked into service VMs. Provisioned
+  // alongside the CI key on fresh/rotate, OR on its own to self-heal a stack that
+  // predates it (needsVmKey on a plain Resume). provisionScopedKey is idempotent:
+  // it reuses the `<slug>-vm-reader` app by name and just mints a fresh key, so a
+  // repeated heal rotates rather than duplicates. Minting the IAM app requires a
+  // key with IAMManager: on fresh/rotate scwSecretKey already is a bootstrap key;
+  // on a plain Resume the decrypted scwSecretKey is the read-only CI key, so
+  // prompt for a bootstrap key just for this step.
   let vmApplicationId = ''
   let vmAccessKey = ''
   let vmSecretKey = ''
-  if (needsCiKey && ciAccessKey) {
+  if (needsVmKey) {
+    const vmCallerSecretKey = needsCiKey
+      ? scwSecretKey
+      : await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
+          password({ message: 'Scaleway bootstrap secret key (needs IAMManager — to provision the missing VM reader key)' }),
+        )
     console.info('\n→ VM reader key (minimal-privilege identity for service VMs)')
     while (true) {
       try {
-        const key = await setupVmKey({ callerSecretKey: scwSecretKey, projectId: scwProjectId, slug: appConfig.slug })
+        const key = await setupVmKey({ callerSecretKey: vmCallerSecretKey, projectId: scwProjectId, slug: appConfig.slug })
         vmApplicationId = key.applicationId
         vmAccessKey = key.accessKey
         vmSecretKey = key.secretKey
@@ -235,6 +245,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   console.info(`\n${divider}`)
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} CI key in stack config unchanged.`)
+    if (vmApplicationId) {
+      console.info(`  ${checkMark} Provisioned previously-missing VM reader key: ${pc.cyanBright(vmApplicationId)}`)
+    }
   } else if (ciAccessKey && vmApplicationId) {
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmApplicationId)}`)
   } else if (ciAccessKey) {

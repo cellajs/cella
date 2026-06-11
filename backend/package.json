@@ -30,6 +30,7 @@
     "test": "cross-env TEST_MODE=core vitest run",
     "manual-migration": "tsx scripts/manual-migration.ts",
     "test:full": "cross-env TEST_MODE=full vitest run",
+    "seed:production": "node dist/seeds-bundle.js",
     "seed:k8s": "node dist/seeds-bundle.js",
     "geoip:download": "tsx scripts/download-geoip.ts",
     "s3:cors": "tsx scripts/set-bucket-cors.ts"

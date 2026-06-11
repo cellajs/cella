@@ -44,7 +44,7 @@ async function loadContext(): Promise<InfraContext> {
   }
 }
 
-printHeader('cella infra cli')
+printHeader('infra cli')
 
 if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
   console.error('✗ pulumi CLI not found. Install: brew install pulumi/tap/pulumi')
