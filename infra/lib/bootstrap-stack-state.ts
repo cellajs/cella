@@ -14,12 +14,22 @@ export interface StackProbe {
 
 /**
  * - `fresh`        — no stack file at all
- * - `partial`      — file exists but no CI access key has been minted yet
- * - `bootstrapped` — file exists and contains an scaleway:accessKey entry
+ * - `partial`      — file exists but no CI deploy key has been minted yet
+ * - `bootstrapped` — file exists and records a minted CI deploy key
+ *
+ * Nothing secret remains in stack config: the CI deploy key lives in the GitHub
+ * Environment (provider auth from SCW_* env), the identity ids are derived from
+ * the IAM API, and the VM reader key now lives in Secret Manager (SOVRUN §3.3).
+ * The marker is therefore a dedicated non-secret breadcrumb, `infra:bootstrapComplete`,
+ * stamped once the CI key is minted. Legacy markers (`infra:vmAccessKey`,
+ * `infra:applicationId`) are still honoured so stacks bootstrapped before this
+ * change keep reporting `bootstrapped` until the operator runs `pulumi config rm`.
  */
+const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const
+
 export function detectStackState(probe: StackProbe): StackState {
   if (probe.yamlText == null) return 'fresh'
-  return probe.yamlText.includes('scaleway:accessKey') ? 'bootstrapped' : 'partial'
+  return BOOTSTRAP_MARKERS.some((marker) => probe.yamlText!.includes(marker)) ? 'bootstrapped' : 'partial'
 }
 
 /**

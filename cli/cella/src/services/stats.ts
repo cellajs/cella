@@ -287,7 +287,7 @@ export async function runStats(
 ): Promise<void> {
   createSpinner('counting files...');
   const stats = await collectStats(forkPath);
-  spinnerSuccess(`counted ${stats.total} files · ${formatLoc(stats.totalLoc)} loc`);
+  spinnerSuccess('Finished counting by raw line of code');
 
   if (options.json) {
     console.info(JSON.stringify(stats, null, 2));

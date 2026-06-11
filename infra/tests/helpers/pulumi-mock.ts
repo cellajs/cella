@@ -74,6 +74,32 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
         }
       },
       call(args) {
+        // IAM data sources (helpers.ts derives identity ids from these instead
+        // of stored config). Return deterministic stub ids so resource modules
+        // that consume them render without talking to Scaleway.
+        if (args.token.includes('getApplication')) {
+          const name = String((args.inputs as { name?: string }).name ?? 'app')
+          return { id: `${name}-id`, applicationId: `${name}-id`, name }
+        }
+        if (args.token.includes('getApiKey')) {
+          return {
+            id: 'mock-access-key',
+            applicationId: 'mock-application-id',
+            userId: 'mock-user-id',
+            defaultProjectId: 'mock-project-id',
+          }
+        }
+        // Secret Manager data sources (helpers.ts readVmReaderKey reads the VM
+        // reader key from Secret Manager instead of stored config). getVersion
+        // returns the base64 JSON payload that readVmReaderKey decodes.
+        if (args.token.includes('getSecret')) {
+          const name = String((args.inputs as { name?: string }).name ?? 'secret')
+          return { id: `fr-par/${name}-id`, name }
+        }
+        if (args.token.includes('getVersion')) {
+          const payload = JSON.stringify({ accessKey: 'mock-vm-access', secretKey: 'mock-vm-secret' })
+          return { data: Buffer.from(payload).toString('base64') }
+        }
         return args.inputs as Record<string, unknown>
       },
     },

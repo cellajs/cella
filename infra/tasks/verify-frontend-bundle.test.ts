@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   classifyError,
   extractEntryAsset,
+  main,
   parseArgs,
   type ProbeResult,
   servedMatches,
@@ -112,3 +113,28 @@ describe('parseArgs', () => {
     expect(() => parseArgs([])).toThrow(/Usage/)
   })
 })
+
+describe('main', () => {
+  it('fails loudly (exit 1) when the local dist file cannot be read, never falling back to accept-any', async () => {
+    // A missing/unreadable dist file means the served bundle cannot be verified.
+    // Silently degrading to "accept any 200" once turned this gate into a no-op
+    // (a wrong cwd resolved --dist to a non-existent path), so it must hard-fail.
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit called')
+    }) as never)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    await expect(main(['--url', 'https://app', '--dist', '/nonexistent/does-not-exist.html'])).rejects.toThrow('process.exit called')
+
+    expect(exit).toHaveBeenCalledWith(1)
+    // Must bail BEFORE any network probe — the verification is meaningless.
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Could not read'))
+
+    exit.mockRestore()
+    error.mockRestore()
+    fetchSpy.mockRestore()
+  })
+})
+

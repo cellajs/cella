@@ -22,6 +22,7 @@ export const ALLOWED_KEYS = [
   'frontend_bucket',
   'state_bucket',
   'deploy_tags_bucket',
+  'vm_reader_app',
   'frontend_url',
   'backend_url',
   'yjs_url',
@@ -41,6 +42,10 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
     frontend_bucket: naming.frontendBucket,
     state_bucket: naming.pulumiStateBucket,
     deploy_tags_bucket: naming.deployTagsBucket,
+    // Deterministic IAM application name for the VM reader identity. CI's
+    // "Verify VM reader IAM grant" step resolves the application id by this
+    // name (the id is no longer stored in stack config — SOVRUN §3.3).
+    vm_reader_app: `${appConfig.slug}-vm-reader`,
     frontend_url: appConfig.frontendUrl,
     backend_url: appConfig.backendUrl,
     yjs_url: appConfig.yjsUrl,

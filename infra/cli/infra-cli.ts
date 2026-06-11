@@ -16,6 +16,7 @@ import { checkMark, warningMark } from 'shared/console'
 import { detectInterruptedApply, detectStackState, pickStackShort } from '../lib/bootstrap-stack-state'
 import { infraDir } from '../lib/paths'
 import { runApply } from './services/apply'
+import { runPreview } from './services/preview'
 import { runSecrets } from './services/secrets'
 import { runSetup } from './services/setup'
 import type { CliMode, InfraContext } from './shared'
@@ -63,12 +64,12 @@ const interrupted = detectInterruptedApply({
 if (interrupted) {
   console.warn(
     `${warningMark} ${pc.bold('Previous Apply infra change run was interrupted.')}\n` +
-      `  Stack credentials in Pulumi.${context.environment}.yaml may still hold the (now-revoked) bootstrap key.\n` +
+      `  Pulumi.${context.environment}.yaml may still carry the transient bootstrap:applyInProgress marker.\n` +
       `  Trace: ${interrupted.trace}\n`,
   )
   if (
     existsSync(context.applyBackupPath) &&
-    (await confirm({ message: 'Restore the pre-apply stack config (CI key) from the backup now?', default: true }))
+    (await confirm({ message: 'Restore the pre-apply stack config from the backup now (clears the apply marker)?', default: true }))
   ) {
     copyFileSync(context.applyBackupPath, context.stackPath)
     unlinkSync(context.applyBackupPath)
@@ -86,7 +87,8 @@ const mode: CliMode =
         choices: [
           { name: 'Resume', value: 'resume', description: 'Idempotent re-run; refreshes config & GitHub secrets. Cannot apply changes to DB/VPC/PN (CI key is read-only there).' },
           { name: 'Rotate CI', value: 'rotate', description: 'Mint a fresh CI deploy key (existing one is deleted). Use after editing the CI policy permission sets.' },
-          { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; CI key is swapped out then restored.' },
+          { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; provider auth is supplied via env.' },
+          { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
         ],
       })
@@ -94,6 +96,11 @@ const mode: CliMode =
 
 if (mode === 'apply') {
   await runApply(context)
+  process.exit(0)
+}
+
+if (mode === 'preview') {
+  await runPreview(context)
   process.exit(0)
 }
 

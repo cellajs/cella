@@ -286,8 +286,20 @@ chmod 0755 /usr/local/bin/runtime-secret-sync
 ${installReconcilerSnippet}
 mark 40-reconciler-installed
 
-/usr/local/bin/runtime-secret-sync
-mark 42-runtime-secrets-synced
+# Hydrate runtime secrets from Secret Manager into /opt/app/.env.runtime, and
+# REMEMBER whether it succeeded. A failure means this VM's IAM key cannot decrypt
+# the required secrets (the exact fault that took prod down). An app booted
+# without its runtime secrets only fails env validation and crash-loops behind a
+# 502, hiding the real cause — so a failed sync must block the app from booting,
+# not mask itself. The reconciler enforces this on every 20s tick (it die's
+# before rolling); the first-boot fallback below honours the same gate.
+RUNTIME_SECRETS_OK=0
+if /usr/local/bin/runtime-secret-sync; then
+  RUNTIME_SECRETS_OK=1
+  mark 42-runtime-secrets-synced
+else
+  mark 42-runtime-secrets-FAILED
+fi
 
 # Bring up the ingress proxy first so the host port is served before any app
 # container exists. The reconciler then rolls only the app (up -d --no-deps),
@@ -326,7 +338,17 @@ else
     set -a; . /etc/reconciler/reconciler.env; set +a
     aws --endpoint-url '${s3Endpoint}' s3 cp "s3://\${TAG_BUCKET}/\${TAG_KEY}" - 2>/dev/null | tr -d '[:space:]'
   )
-  if [[ -n "$fallback_tag" ]]; then
+  if [[ -n "$fallback_tag" && "$RUNTIME_SECRETS_OK" != "1" ]]; then
+    # A release IS published, but we could not hydrate the required runtime
+    # secrets (IAM grant missing/insufficient — the prod-down fault). Deliberately
+    # do NOT boot the app: a secret-less container only crash-loops behind a 502,
+    # masking the cause and never self-correcting. Leaving the box app-less keeps
+    # the LB backend unhealthy (clearly DOWN, not silently 502ing), and the 20s
+    # reconciler timer boots it the moment the grant is restored. Pulumi now
+    # manages that grant (infra/resources/vm-iam.ts) so this should never trip in
+    # practice — it is the loud, self-healing floor under that guarantee.
+    mark 50-secrets-unavailable-app-not-booted
+  elif [[ -n "$fallback_tag" ]]; then
     export ${service.toUpperCase()}_TAG="$fallback_tag"
     cd /opt/app
     PULL_OK=0

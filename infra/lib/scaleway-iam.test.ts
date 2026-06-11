@@ -134,4 +134,41 @@ describe('provisionScopedKey', () => {
 
     await expect(provisionScopedKey(baseOpts, config)).rejects.toThrow(/403.*forbidden/)
   })
+
+  it('skips all policy calls when managePolicy is false (policy owned by Pulumi)', async () => {
+    const { fn, calls } = makeFetch([
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] } },
+      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 's', application_id: 'app-1' } },
+    ])
+    vi.stubGlobal('fetch', fn)
+
+    const result = await provisionScopedKey(baseOpts, { ...config, managePolicy: false })
+
+    expect(result).toMatchObject({ accessKey: 'SCWNEW', applicationId: 'app-1' })
+    // No policy reads, deletes, or creates — Pulumi owns the policy resource.
+    expect(calls.some((c) => c.url.includes('/policies'))).toBe(false)
+  })
+
+  it('does not require buildRules when managePolicy is false', async () => {
+    const { fn } = makeFetch([
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] } },
+      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 's', application_id: 'app-1' } },
+    ])
+    vi.stubGlobal('fetch', fn)
+
+    const { buildRules: _drop, ...noRules } = config
+    await expect(provisionScopedKey(baseOpts, { ...noRules, managePolicy: false })).resolves.toMatchObject({ accessKey: 'SCWNEW' })
+  })
+
+  it('throws when managePolicy is enabled but buildRules is missing', async () => {
+    const { fn } = makeFetch([
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] } },
+    ])
+    vi.stubGlobal('fetch', fn)
+
+    const { buildRules: _drop, ...noRules } = config
+    await expect(provisionScopedKey(baseOpts, noRules)).rejects.toThrow(/buildRules is required/)
+  })
 })

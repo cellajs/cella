@@ -1,8 +1,11 @@
 /**
- * Create (or reuse) a scoped IAM application `<slug>-vm-reader` with a
- * minimal read-only policy, then mint a fresh API key (deleting any orphans).
+ * Create (or reuse) a scoped IAM application `<slug>-vm-reader` and mint a fresh
+ * API key (deleting any orphans). The application's IAM **policy** is NOT created
+ * here — it is declared as a Pulumi-managed `iam.Policy` resource
+ * (`infra/resources/vm-iam.ts`) so `pulumi up` reconciles the permission sets on
+ * every deploy and the VM's grant can never silently drift.
  *
- * The VM reader identity has exactly these capabilities:
+ * The VM reader identity is granted exactly these capabilities (by Pulumi):
  *   - ContainerRegistryReadOnly  — docker pull from the project registry
  *   - ObjectStorageReadOnly      — read deploy/<service>.tag from the deploy-tags bucket
  *   - SecretManagerReadOnly      — list/describe runtime secrets by ID
@@ -17,13 +20,16 @@
  * Standalone usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
  *
  * The shared provisioning flow lives in `lib/scaleway-iam.ts`; this file owns
- * only the VM-specific permission sets and policy rules.
+ * only the VM-specific permission sets, which Pulumi consumes via
+ * `VM_PROJECT_PERMISSION_SETS`.
  */
 
 import { fileURLToPath } from 'node:url'
 import pc from 'shared/cli-utils/colors'
 import { checkMark } from 'shared/console'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
+import { secretManagerPath } from '../lib/vm-reader-secret'
+import { seedVmReaderKey } from './seed-vm-reader-key'
 
 /**
  * Permission sets granted to the VM reader key at project scope.
@@ -48,7 +54,11 @@ export function setupVmKey(opts: SetupVmKeyOptions): Promise<VmKeyResult> {
     suffix: 'vm-reader',
     appDescription: 'Non-human principal for deployed service VMs — read-only registry + S3 + secrets',
     policyDescription: 'Minimal read-only policy for service VMs (auto-generated)',
-    buildRules: ({ projectId }) => [{ permission_set_names: VM_PROJECT_PERMISSION_SETS, project_ids: [projectId] }],
+    // The policy is a Pulumi-managed resource (infra/resources/vm-iam.ts), so this
+    // bootstrap flow provisions only the application + key. Pulumi reconciles the
+    // permission sets (VM_PROJECT_PERMISSION_SETS) on every `pulumi up`, which is
+    // what makes the VM grant drift-proof.
+    managePolicy: false,
   })
 }
 
@@ -69,14 +79,20 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.info('\n→ Setting up VM reader key')
   const result = await setupVmKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug })
 
+  // Store the key pair in Secret Manager (SOVRUN §3.3) — the Pulumi program
+  // reads it back at `pulumi up` to bake into VM cloud-init. No stack config.
+  const path = secretManagerPath(appConfig.slug, appConfig.mode)
+  await seedVmReaderKey({
+    secretKey,
+    projectId,
+    region: appConfig.s3.region,
+    path,
+    key: { accessKey: result.accessKey, secretKey: result.secretKey },
+  })
+
   const DIVIDER = pc.dim('─'.repeat(60))
   console.info(`\n${DIVIDER}`)
-  console.info(`${checkMark} ${pc.bold(pc.greenBright('VM key created.'))} ${pc.dim('Write these into Pulumi stack config now:')}\n`)
-  console.info(`  pulumi config set infra:vmApplicationId ${pc.cyanBright(result.applicationId)} \\`)
-  console.info('    --stack organization/infra/production')
-  console.info(`  pulumi config set --secret infra:vmAccessKey ${pc.cyanBright(result.accessKey)} \\`)
-  console.info('    --stack organization/infra/production')
-  console.info(`  pulumi config set --secret infra:vmSecretKey ${pc.cyanBright(result.secretKey)} \\`)
-  console.info('    --stack organization/infra/production\n')
+  console.info(`${checkMark} ${pc.bold(pc.greenBright('VM key created and stored in Secret Manager.'))}`)
+  console.info(pc.dim(`  secret: ${path}vm-reader-key · application id ${result.applicationId} (derived from IAM by name)\n`))
   console.info(DIVIDER)
 }

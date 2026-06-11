@@ -10,9 +10,10 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, appConfig, infraConfig } from '../helpers'
+import { naming, region, tags, isProduction, appConfig, infraConfig, ciDeployApplicationId } from '../helpers'
 
-const applicationId = infraConfig.require('applicationId')
+// Derived from IAM by name (SOVRUN §3.3) — was the stored `infra:applicationId`.
+const applicationId = ciDeployApplicationId
 
 // Days before stale, content-hashed frontend chunks under `assets/` are
 // expired by Object Storage. Must outlive any reasonable open browser tab on

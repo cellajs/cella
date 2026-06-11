@@ -3,76 +3,49 @@ import { confirm, input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
 import { extractProjectId } from '../../lib/bootstrap-stack-state'
-import { manualRestoreCommands, scwConfigPathNone, stripScwProviderEnv } from '../../lib/bootstrap-scw-env'
+import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
 import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
 import { syncGithubEnvironment } from '../../lib/github-sync'
-import { decryptStackSecrets } from '../../lib/pulumi-passphrase'
 import { infraDir } from '../../lib/paths'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
+import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
-import { setupCiKey } from '../../tasks/setup-ci-key'
+import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
+import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, setupCiKey } from '../../tasks/setup-ci-key'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { createStepRunner, envOr, policyFingerprint } from '../shared'
+import { createStepRunner, envOr, resolveVerifiedPassphrase } from '../shared'
 
 /**
  * Runs the first setup process for the infra CLI, including handling bootstrap keys, CI keys, and Pulumi stack configuration.
  */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey
-  // Self-heal: a stack bootstrapped before a required provisioned key existed
-  // (e.g. the VM reader key) is missing it and would fail at `pulumi up`
-  // (helpers.ts requireSecret). Detect-and-provision it on a plain Resume
-  // instead of only warning — no full CI rotation needed. Any future required
-  // provisioned key follows the same `needs<X> = !has<X>` pattern.
-  const hasVmKey = context.stackYaml?.includes('infra:vmApplicationId') ?? false
-  const needsVmKey = needsCiKey || !hasVmKey
-  const pulumiPassphrase = await envOr('PULUMI_CONFIG_PASSPHRASE', () => password({ message: 'Pulumi passphrase' }))
+  const pulumiPassphrase = await resolveVerifiedPassphrase(context.stackYaml)
 
-  let scwAccessKey = ''
-  let scwSecretKey = ''
-  let scwProjectId = ''
-  if (context.stackYaml) {
-    scwProjectId = extractProjectId(context.stackYaml) ?? ''
-  }
-  if (context.hasCiKey && mode === 'resume') {
-    try {
-      const decrypted = decryptStackSecrets(context.stackPath, pulumiPassphrase, ['scaleway:accessKey', 'scaleway:secretKey'])
-      scwAccessKey = decrypted['scaleway:accessKey'] ?? ''
-      scwSecretKey = decrypted['scaleway:secretKey'] ?? ''
-      if (scwAccessKey && scwSecretKey && scwProjectId) {
-        console.info(`${checkMark} Decrypted Scaleway creds from ${context.environment} stack (access key ${scwAccessKey})`)
-      }
-    } catch (error) {
-      console.error(`${warningMark} Could not decrypt stored creds: ${(error as Error).message}. Falling back to manual entry.`)
-    }
-  }
+  // Provider authentication and all IAM / Secret-Manager work use an operator
+  // bootstrap key supplied here. The CI deploy key is no longer stored in stack
+  // config (it lives only in GitHub secrets, minted once and unrecoverable), so
+  // it cannot be decrypted and reused — every interactive setup run authenticates
+  // with a freshly-pasted bootstrap key. The provider reads it from SCW_* env
+  // (childEnv below), not from stack config.
+  let scwProjectId = context.stackYaml ? (extractProjectId(context.stackYaml) ?? '') : ''
+  const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
+    input({ message: 'Scaleway bootstrap access key (needs IAMManager)', validate: (value) => !!value.trim() || '(required)' }),
+  )
+  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key (needs IAMManager)' }))
+  scwProjectId ||= await envOr('SCW_DEFAULT_PROJECT_ID', () =>
+    input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' }),
+  )
 
-  if (!scwAccessKey || !scwSecretKey || !scwProjectId) {
-    const needsBootstrapKey = mode === 'rotate' || context.state === 'fresh' || !context.hasCiKey
-    const roleLabel = needsBootstrapKey ? 'bootstrap ' : ''
-    const roleNote = needsBootstrapKey ? ' (needs IAMManager)' : ''
-    scwAccessKey ||= await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-      input({ message: `Scaleway ${roleLabel}access key${roleNote}`, validate: (value) => !!value.trim() || '(required)' }),
-    )
-    scwSecretKey ||= await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: `Scaleway ${roleLabel}secret key${roleNote}` }))
-    scwProjectId ||= await envOr('SCW_DEFAULT_PROJECT_ID', () =>
-      input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' }),
-    )
-  }
-
-  const needsStateBootstrapKey = context.hasCiKey && mode === 'resume'
-  const stateAccessKey = needsStateBootstrapKey
-    ? await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-        input({ message: 'Scaleway bootstrap access key (for Pulumi state bucket)', validate: (value) => !!value.trim() || '(required)' }),
-      )
-    : scwAccessKey
-  const stateSecretKey = needsStateBootstrapKey
-    ? await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key (for Pulumi state bucket)' }))
-    : scwSecretKey
+  // The bootstrap key above also holds the object-storage rights needed for the
+  // Pulumi state bucket, so reuse it rather than prompting for a second key.
+  const stateAccessKey = scwAccessKey
+  const stateSecretKey = scwSecretKey
 
 	const stackName = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 
@@ -132,7 +105,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync)
   }
 
-  await must('Set scaleway:projectId', 'pulumi', ['config', 'set', 'scaleway:projectId', scwProjectId, '--stack', stackName], spawnSync)
   await must('Initialize stack secrets', 'pnpm', ['init-stack-secrets', stackName], spawnSync)
 
   const runtimeSecretPath = `/${appConfig.slug}-${context.environment}/`
@@ -172,16 +144,31 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   let ciAccessKey = ''
   let ciSecretKey = ''
   let ciOrganizationId = ''
-  let ciApplicationId = ''
   if (!needsCiKey) {
     console.info('\n→ CI deploy key — skipped (already in stack config)')
-    const stored = context.stackYaml?.match(/(?:^|\n)\s*infra:ciPolicyFingerprint:\s*([^\s]+)/)?.[1]
-    const expected = policyFingerprint()
-    if (stored && stored !== expected) {
-      console.warn(
-        `  ${warningMark} CI policy permission sets have changed since the last rotation ` +
-          `(stored ${stored}, expected ${expected}). Re-run bootstrap and choose ${pc.italic('"Rotate CI"')} to apply.`,
-      )
+    // The CI policy permission sets are no longer fingerprinted into stack config
+    // (SOVRUN §3.3). Compare the live `<slug>-ci-deploy` grant against code instead,
+    // best-effort — advisory only, so a fresh project / IAM hiccup never blocks.
+    try {
+      const liveSets = await fetchAppPermissionSetsByName({
+        secretKey: scwSecretKey,
+        projectId: scwProjectId,
+        applicationName: `${appConfig.slug}-ci-deploy`,
+      })
+      if (liveSets) {
+        const expected: string[] = [...PROJECT_PERMISSION_SETS, ...ORG_PERMISSION_SETS].sort()
+        const missing = expected.filter((s) => !liveSets.includes(s))
+        const extra = liveSets.filter((s) => !expected.includes(s))
+        if (missing.length || extra.length) {
+          console.warn(
+            `  ${warningMark} CI policy permission sets have drifted from code` +
+              `${missing.length ? ` (missing: ${missing.join(', ')})` : ''}${extra.length ? ` (extra: ${extra.join(', ')})` : ''}. ` +
+              `Re-run bootstrap and choose ${pc.italic('"Rotate CI"')} to reconcile.`,
+          )
+        }
+      }
+    } catch {
+      // IAM unreachable (e.g. fresh project) — skip the advisory drift check.
     }
   } else {
     while (true) {
@@ -190,7 +177,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         ciAccessKey = key.accessKey
         ciSecretKey = key.secretKey
         ciOrganizationId = key.organizationId
-        ciApplicationId = key.applicationId
         break
       } catch (error) {
         console.error(`\n${warningMark} CI key setup failed: ${(error as Error).message}`)
@@ -201,15 +187,28 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   // VM reader key — minimal-privilege identity baked into service VMs. Provisioned
   // alongside the CI key on fresh/rotate, OR on its own to self-heal a stack that
-  // predates it (needsVmKey on a plain Resume). provisionScopedKey is idempotent:
+  // is missing it (needsVmKey on a plain Resume). provisionScopedKey is idempotent:
   // it reuses the `<slug>-vm-reader` app by name and just mints a fresh key, so a
   // repeated heal rotates rather than duplicates. Minting the IAM app requires a
   // key with IAMManager: on fresh/rotate scwSecretKey already is a bootstrap key;
-  // on a plain Resume the decrypted scwSecretKey is the read-only CI key, so
-  // prompt for a bootstrap key just for this step.
-  let vmApplicationId = ''
+  // on a plain Resume prompt for a bootstrap key just for this step.
+  //
+  // "Missing" is now a Secret Manager question, not a stack-config one (the key
+  // moved to Secret Manager, SOVRUN §3.3): a Resume re-mints only when no
+  // versioned `vm-reader-key` secret exists. On a SM error we assume present to
+  // avoid a needless rotation — a genuinely missing key surfaces at `pulumi up`.
+  let hasVmKey = false
+  if (!needsCiKey) {
+    try {
+      const client = createSecretManagerClient({ secretKey: scwSecretKey, region: appConfig.s3.region, projectId: scwProjectId })
+      const existing = await client.getSecretByName(VM_READER_SECRET_NAME, runtimeSecretPath)
+      hasVmKey = (existing?.version_count ?? 0) > 0
+    } catch {
+      hasVmKey = true
+    }
+  }
+  const needsVmKey = needsCiKey || !hasVmKey
   let vmAccessKey = ''
-  let vmSecretKey = ''
   if (needsVmKey) {
     const vmCallerSecretKey = needsCiKey
       ? scwSecretKey
@@ -220,9 +219,18 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     while (true) {
       try {
         const key = await setupVmKey({ callerSecretKey: vmCallerSecretKey, projectId: scwProjectId, slug: appConfig.slug })
-        vmApplicationId = key.applicationId
         vmAccessKey = key.accessKey
-        vmSecretKey = key.secretKey
+        // Store the key pair in Secret Manager (SOVRUN §3.3) rather than stack
+        // config; the Pulumi program reads it back at `pulumi up` (helpers.ts
+        // readVmReaderKey) to bake into VM cloud-init. vmCallerSecretKey is the
+        // bootstrap key, which also holds Secret Manager write access.
+        await seedVmReaderKey({
+          secretKey: vmCallerSecretKey,
+          projectId: scwProjectId,
+          region: appConfig.s3.region,
+          path: runtimeSecretPath,
+          key: { accessKey: key.accessKey, secretKey: key.secretKey },
+        })
         break
       } catch (error) {
         console.error(`\n${warningMark} VM key setup failed: ${(error as Error).message}`)
@@ -231,37 +239,19 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
 
-  if (ciAccessKey) {
-    await must('Set infra:applicationId', 'pulumi', ['config', 'set', 'infra:applicationId', ciApplicationId, '--stack', stackName], spawnSync)
-    await must('Set infra:ciPolicyFingerprint', 'pulumi', ['config', 'set', 'infra:ciPolicyFingerprint', policyFingerprint(), '--stack', stackName], spawnSync)
-    try {
-      const identityResponse = await fetch(`https://api.scaleway.com/iam/v1alpha1/api-keys/${scwAccessKey}`, {
-        headers: { 'X-Auth-Token': scwSecretKey },
-      })
-      if (identityResponse.ok) {
-        const identity = (await identityResponse.json()) as { user_id?: string; application_id?: string }
-        const principal = identity.user_id
-          ? `user_id:${identity.user_id}`
-          : identity.application_id
-            ? `application_id:${identity.application_id}`
-            : ''
-        if (principal) {
-          await must('Set infra:operatorPrincipal', 'pulumi', ['config', 'set', 'infra:operatorPrincipal', principal, '--stack', stackName], spawnSync)
-        }
-      }
-    } catch {
-      console.warn(`  ${warningMark} Could not resolve operator principal; deploy-tags seed may 403 on a fresh stack.`)
-    }
-    if (context.state !== 'fresh') {
-      await must('Set scaleway:accessKey', 'pulumi', ['config', 'set', '--secret', 'scaleway:accessKey', ciAccessKey, '--stack', stackName], spawnSync)
-      await must('Set scaleway:secretKey', 'pulumi', ['config', 'set', '--secret', 'scaleway:secretKey', ciSecretKey, '--stack', stackName], spawnSync)
-    }
-  }
-
-  if (vmApplicationId) {
-    await must('Set infra:vmApplicationId', 'pulumi', ['config', 'set', 'infra:vmApplicationId', vmApplicationId, '--stack', stackName], spawnSync)
-    await must('Set infra:vmAccessKey', 'pulumi', ['config', 'set', '--secret', 'infra:vmAccessKey', vmAccessKey, '--stack', stackName], spawnSync)
-    await must('Set infra:vmSecretKey', 'pulumi', ['config', 'set', '--secret', 'infra:vmSecretKey', vmSecretKey, '--stack', stackName], spawnSync)
+  // Identity ids (applicationId, vmApplicationId, operatorPrincipal) are derived
+  // from the IAM API and the VM reader key now lives in Secret Manager — nothing
+  // secret remains in stack config (SOVRUN §3.3). Record a single non-secret
+  // breadcrumb so the CLI can still distinguish a fully-bootstrapped stack from
+  // an interrupted one (lib/bootstrap-stack-state.ts detectStackState).
+  const bootstrapComplete = context.hasCiKey || !!ciAccessKey
+  if (bootstrapComplete) {
+    await must(
+      'Mark bootstrap complete',
+      'pulumi',
+      ['config', 'set', 'infra:bootstrapComplete', new Date().toISOString(), '--stack', stackName],
+      spawnSync,
+    )
   }
 
   await syncGithubEnvironment({
@@ -274,11 +264,11 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   console.info(`\n${divider}`)
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} CI key in stack config unchanged.`)
-    if (vmApplicationId) {
-      console.info(`  ${checkMark} Provisioned previously-missing VM reader key: ${pc.cyanBright(vmApplicationId)}`)
+    if (vmAccessKey) {
+      console.info(`  ${checkMark} Provisioned previously-missing VM reader key: ${pc.cyanBright(vmAccessKey)}`)
     }
-  } else if (ciAccessKey && vmApplicationId) {
-    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmApplicationId)}`)
+  } else if (ciAccessKey && vmAccessKey) {
+    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmAccessKey)}`)
   } else if (ciAccessKey) {
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`)
     console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate CI"')}.`)
@@ -321,7 +311,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       if (usingBootstrapKey) {
         console.info(`${pc.dim('  using bootstrap key for first provisioning (CI key has read-only on VPC/PN/RDB — cannot create them)')}`)
       }
-      const pulumiUpEnv: NodeJS.ProcessEnv = usingBootstrapKey ? childEnv : stripScwProviderEnv(childEnv)
+      // The Scaleway provider authenticates from SCW_* env (set in childEnv).
+      // On both fresh and resume runs that key is the operator bootstrap key.
+      const pulumiUpEnv: NodeJS.ProcessEnv = childEnv
       if (usingBootstrapKey) {
         const startedAt = new Date().toISOString()
         spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', stackName], {
@@ -347,21 +339,11 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         })
       }
       console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
-      if (usingBootstrapKey && ciAccessKey) {
-        await must('Set scaleway:accessKey', 'pulumi', ['config', 'set', '--secret', 'scaleway:accessKey', ciAccessKey, '--stack', stackName], spawnSync)
-        await must('Set scaleway:secretKey', 'pulumi', ['config', 'set', '--secret', 'scaleway:secretKey', ciSecretKey, '--stack', stackName], spawnSync)
-      }
     } else {
       console.info('  Re-run bootstrap any time to retry, or set the env vars manually:')
       console.info(
         `  ${pc.cyan(`cd infra && SCW_ACCESS_KEY=<scw-access> SCW_SECRET_KEY=<scw-secret> AWS_ACCESS_KEY_ID=<scw-access> AWS_SECRET_ACCESS_KEY=<scw-secret> PULUMI_CONFIG_PASSPHRASE='<passphrase>' pulumi up --stack ${stackName}`)}`,
       )
-      if (context.state === 'fresh' && ciAccessKey) {
-        console.info(`  ${pc.dim('After pulumi up succeeds, persist the CI key into stack config (the secret is shown only once):')}`)
-        for (const line of manualRestoreCommands(stackName, ciAccessKey, ciSecretKey)) {
-          console.info(`  ${pc.cyan(line)}`)
-        }
-      }
     }
   }
   if (needsCiKey && ciAccessKey) {

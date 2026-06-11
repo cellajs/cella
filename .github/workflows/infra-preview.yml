@@ -76,11 +76,13 @@ jobs:
       - name: Pulumi preview
         working-directory: infra
         env:
-          # AWS_* = state-bucket S3 access only. Scaleway provider credentials come
-          # from the encrypted `scaleway:accessKey` / `scaleway:secretKey` stack
-          # config values.
+          # AWS_* = state-bucket S3 access only. The Scaleway provider authenticates
+          # from SCW_* env (the CI deploy key) — scaleway:accessKey/secretKey/projectId
+          # are no longer stored in stack config.
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ steps.derive.outputs.pulumi_stack }}

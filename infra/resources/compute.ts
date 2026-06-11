@@ -34,6 +34,7 @@ import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { secretIds } from './secrets'
 import { frontendBucketName } from './storage'
+import { vmReaderPolicy } from './vm-iam'
 
 // ---------------------------------------------------------------------------
 // VM reader credentials — minimal-privilege key for registry pull, S3 tag
@@ -305,7 +306,25 @@ function createVm(service: ServiceConfig): ComputeInstance {
     replaceOnChanges: ['cloudInit'],
     // Delete old VM before creating new (IP can only be attached to one server)
     // CDC is additionally a singleton — must not run two at once.
+    //
+    // TODO(B-full / zero-downtime replacement): switch to create-before-destroy
+    // so a replacement VM must serve a healthy /health (X-App-Version == desired
+    // SHA) BEFORE the old VM is torn down, instead of the current
+    // delete-then-create gap that leaves the LB backend-less if the new VM fails
+    // to boot. Blocked on the pinned-IP model: both the public `Ip` and the
+    // reserved IPAM private IP (which the LB backend targets deterministically at
+    // plan time, see resources/loadbalancer.ts) can each attach to only one
+    // server, so a clean create-before-destroy needs per-generation IPs plus an
+    // LB-backend re-point — a deliberate redesign tracked for a follow-up session.
+    // Downtime during a replacement is currently acceptable; A (Pulumi-managed
+    // vm-reader grant) + C (CI preflight + reconciler hard-fail) already remove
+    // the *perpetual* downtime failure mode this TODO would further shrink.
     deleteBeforeReplace: true,
+    // Attach the Pulumi-managed VM reader IAM grant before the VM boots. On a
+    // fresh bootstrap this guarantees the permission sets exist when cloud-init
+    // runs its first `runtime-secret-sync`, so the very first boot can hydrate
+    // secrets instead of crash-looping until the next deploy.
+    dependsOn: [vmReaderPolicy],
   })
 
   // Attach the VM to the private network with the reserved IPAM IP pinned.
