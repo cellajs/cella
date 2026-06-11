@@ -50,8 +50,18 @@ export interface ScopedKeyConfig {
   appDescription: string
   /** Human-readable IAM policy description. */
   policyDescription: string
-  /** Builds the policy rules once the organization id is known. */
-  buildRules: (ctx: { projectId: string; organizationId: string }) => PolicyRule[]
+  /** Builds the policy rules once the organization id is known. Required unless `managePolicy` is false. */
+  buildRules?: (ctx: { projectId: string; organizationId: string }) => PolicyRule[]
+  /**
+   * Whether this flow owns the identity's IAM policy. Defaults to `true`.
+   *
+   * Set `false` when the policy is declared as a Pulumi-managed resource
+   * instead (so `pulumi up` reconciles its permission sets on every deploy and
+   * the grant can never drift). In that case this flow provisions only the
+   * application + API key and leaves the policy untouched — never deleting a
+   * policy it does not own.
+   */
+  managePolicy?: boolean
 }
 
 export interface ProvisionScopedKeyOptions {
@@ -139,24 +149,36 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   // 2. Find or create the policy. Always recreate when found so the rules stay
   //    in sync with the caller's permission sets — an existing policy silently
   //    loses new permissions if we just skip it.
-  const { policies } = await scw<{ policies: ScwPolicy[] }>(
-    callerSecretKey,
-    'GET',
-    `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
-  )
-  const existingPolicy = policies.find((p) => p.name === policyName)
-  if (existingPolicy) {
-    await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
-    log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
+  //
+  //    Skipped entirely when `managePolicy` is false: the policy is then owned
+  //    by a Pulumi-managed `iam.Policy` resource, so this flow must not create
+  //    (or delete) one — doing so would either race Pulumi or leave an orphan
+  //    second policy on the application.
+  if (config.managePolicy !== false) {
+    if (!config.buildRules) {
+      throw new Error('provisionScopedKey: buildRules is required when managePolicy is not false')
+    }
+    const { policies } = await scw<{ policies: ScwPolicy[] }>(
+      callerSecretKey,
+      'GET',
+      `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
+    )
+    const existingPolicy = policies.find((p) => p.name === policyName)
+    if (existingPolicy) {
+      await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
+      log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
+    }
+    await scw<ScwPolicy>(callerSecretKey, 'POST', `${IAM_BASE}/policies`, {
+      name: policyName,
+      organization_id: organizationId,
+      application_id: app.id,
+      description: config.policyDescription,
+      rules: config.buildRules({ projectId, organizationId }),
+    })
+    log(`  ${changeMark} Created IAM policy: ${policyName}`)
+  } else {
+    log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource) — skipping`)
   }
-  await scw<ScwPolicy>(callerSecretKey, 'POST', `${IAM_BASE}/policies`, {
-    name: policyName,
-    organization_id: organizationId,
-    application_id: app.id,
-    description: config.policyDescription,
-    rules: config.buildRules({ projectId, organizationId }),
-  })
-  log(`  ${changeMark} Created IAM policy: ${policyName}`)
 
   // 3. Delete any existing API keys before minting a new one. Scaleway only
   //    returns the secret_key at creation time, so pre-existing keys are

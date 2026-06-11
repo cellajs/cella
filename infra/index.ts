@@ -78,6 +78,7 @@ export const dbConnectionStringAdminPublic = database.connectionStringAdminPubli
 
 import * as compute from './resources/compute'
 import './resources/secrets'
+import './resources/vm-iam'
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
 

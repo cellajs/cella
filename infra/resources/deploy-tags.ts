@@ -36,29 +36,31 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, infraConfig } from '../helpers'
+import { naming, region, tags, isProduction, infraConfig, ciDeployApplicationId, vmReaderApplicationId, operatorPrincipal } from '../helpers'
 import { serviceNames, type ServiceName } from '../lib/services'
 
-const applicationId = infraConfig.require('applicationId')
+// CI deploy application id — derived from IAM by name (SOVRUN §3.3), was the
+// stored `infra:applicationId`. Gets full s3:* (seed + GC) on the bucket.
+const applicationId = ciDeployApplicationId
 
-// Optional CI application_id — when set, the bucket policy grants it
-// PutObject/GetObject on `deploy/*` only. Until rotated (P1.9), the CI key
-// reuses the Pulumi principal and these statements collapse to no-ops.
-const ciApplicationId = infraConfig.get('ciApplicationId') ?? applicationId
-// VM application_id — read-only on `deploy/<own>.tag`. Required: falling back
-// to applicationId (full s3:* access) defeats the IAM segregation that prevents
-// a compromised container from writing arbitrary deploy tags or reading other
-// services' tags.
-const vmApplicationId = infraConfig.require('vmApplicationId')
+// Optional override for a distinct CI principal; defaults to the CI deploy app.
+// Until split out (P1.9) the CI key reuses the same principal and these
+// statements collapse onto one application id.
+const ciApplicationId = infraConfig.get('ciApplicationId') ?? ciDeployApplicationId
+// VM application_id — read-only on `deploy/<own>.tag`. Derived from IAM by name
+// (was the stored `infra:vmApplicationId`); the IAM segregation it enforces
+// prevents a compromised container from writing arbitrary deploy tags or
+// reading other services' tags.
+const vmApplicationId = vmReaderApplicationId
 
 // Local `pulumi up` (bootstrap and the "Apply infra change" path) authenticates
 // as the operator's own Scaleway key — NOT the CI `applicationId`. Once this
 // policy is attached, Object Storage becomes authoritative and denies every
 // principal it does not name, so the operator key would 403 on the seed/GC
-// PutObject below. The bootstrap command records the operator's principal string
-// (`user_id:<id>` or `application_id:<id>`) as `infra:operatorPrincipal` so we
-// can grant it here. Absent in CI, where pulumi already runs as applicationId.
-const operatorPrincipal = infraConfig.get('operatorPrincipal')
+// PutObject below. `operatorPrincipal` is derived from the calling SCW_ACCESS_KEY
+// (helpers.ts) as `user_id:<id>` or `application_id:<id>` so we can grant it
+// here. Undefined when no access key is in the environment (e.g. CI, where
+// pulumi already runs as the CI applicationId and the grant is redundant).
 
 /** Services that ship as their own tag file. Derived from the canonical registry. */
 export const taggedServices = serviceNames

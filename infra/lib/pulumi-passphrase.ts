@@ -57,6 +57,22 @@ export function decryptStackSecrets(stackFilePath: string, passphrase: string, k
   return decryptStackSecretsFromText(readFileSync(stackFilePath, 'utf8'), passphrase, keys)
 }
 
+/**
+ * True when `passphrase` decrypts the stack's `encryptionsalt` check value.
+ * Returns false (never throws) when the header is missing or the passphrase is
+ * wrong, so callers can use it as a plain predicate. `yamlText` is the raw
+ * `Pulumi.<stack>.yaml` contents.
+ */
+export function verifyStackPassphrase(yamlText: string, passphrase: string): boolean {
+  const salt = yamlText.match(/^encryptionsalt:\s*(\S+)/m)?.[1]
+  if (!salt) return false
+  try {
+    return verify(deriveKey(passphrase, salt), salt)
+  } catch {
+    return false
+  }
+}
+
 /** Pure-string variant used by the test suite (no fs access). */
 export function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
   const saltMatch = text.match(/^encryptionsalt:\s*(\S+)/m)

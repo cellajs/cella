@@ -6,8 +6,10 @@
  * should import the pure derivations from `./naming` instead.
  */
 import * as pulumi from '@pulumi/pulumi'
+import * as scaleway from '@pulumiverse/scaleway'
 import { deriveInfra } from './naming'
 import { serviceEndpoints, servicesByName, type ServiceName } from './lib/services'
+import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/vm-reader-secret'
 
 // Derive APP_MODE from the Pulumi stack name (e.g. 'organization/infra/production'
 // → 'production') so appConfig picks the right env. Must run BEFORE importing shared.
@@ -39,6 +41,39 @@ export { appConfig }
 
 /** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
 export const infraConfig = new pulumi.Config('infra')
+
+// ---------------------------------------------------------------------------
+// Derived IAM identities — materialized from the Scaleway IAM API at run time
+// rather than pinned in stack config (SOVRUN §3.3, "materialized, not stored").
+//
+// The bootstrap CLI mints these applications under deterministic names
+// (`<slug>-ci-deploy`, `<slug>-vm-reader`) BEFORE the first `pulumi up`, so a
+// name lookup is authoritative and the git file no longer caches their ids.
+// These are IAM *reads*, which both the operator bootstrap key and the CI
+// deploy key can perform (CI's "Verify VM reader IAM grant" step already does).
+// ---------------------------------------------------------------------------
+
+/** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
+export const ciDeployApplicationId = scaleway.iam.getApplicationOutput({ name: `${appConfig.slug}-ci-deploy` }).apply((app) => {
+  if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-ci-deploy' not found — run the infra CLI bootstrap first.`)
+  return app.applicationId
+})
+
+/** VM reader application id — the `<slug>-vm-reader` principal baked into service VMs. */
+export const vmReaderApplicationId = scaleway.iam.getApplicationOutput({ name: `${appConfig.slug}-vm-reader` }).apply((app) => {
+  if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
+  return app.applicationId
+})
+
+// Principal string for whoever runs `pulumi up` (the operator key locally, the
+// CI key in CI), derived from the calling SCW_ACCESS_KEY so the deploy-tags
+// bucket can grant it. `undefined` when no access key is in the environment —
+// the bucket policy then omits the operator grant, matching the behaviour from
+// before this value was stored (in CI the caller is already `applicationId`).
+const callerAccessKey = process.env.SCW_ACCESS_KEY
+export const operatorPrincipal: pulumi.Output<string> | undefined = callerAccessKey
+  ? scaleway.iam.getApiKeyOutput({ accessKey: callerAccessKey }).apply((key) => (key.userId ? `user_id:${key.userId}` : `application_id:${key.applicationId}`))
+  : undefined
 
 // ---------------------------------------------------------------------------
 // Mode-aware defaults — forks only need to set secrets + scaleway:projectId
@@ -90,22 +125,35 @@ export const infra = {
 }
 
 // ---------------------------------------------------------------------------
-// VM reader credentials — dedicated minimal-privilege key for service VMs.
+// VM reader credentials — minimal-privilege key for registry pull, S3 tag
+// reads, and Secret Manager access. Never the operator/CI key.
 //
 // VMs must not hold the operator/CI key (which has write access to instances,
 // the load balancer, IAM, etc.). Instead they use a `<slug>-vm-reader` IAM
 // application with only ContainerRegistryReadOnly + ObjectStorageReadOnly +
-// SecretManagerReadOnly + SecretManagerSecretAccess. These values are written to
-// the stack by the bootstrap "Rotate CI" flow (tasks/setup-vm-key.ts).
+// SecretManagerReadOnly + SecretManagerSecretAccess.
 //
-// requireSecret: fail at `pulumi preview` rather than silently embedding the
-// operator key into cloud-init, which would surface as a runtime security issue
-// only after VMs are created.
+// The key pair lives in Scaleway Secret Manager (seeded by the bootstrap CLI),
+// NOT in stack config (SOVRUN §3.3). We read the latest version here — the
+// deploy actor (operator/CI key) holds SecretManagerSecretAccess — and bake the
+// values into VM cloud-init via resources/compute.ts. The container is resolved
+// by name+path (one infra secret path per stack) and the payload is JSON
+// `{ accessKey, secretKey }`, base64-encoded by the Secret Manager API.
+//
+// Skipped while bootstrap is mid-flight: the marker means compute is gated off
+// (helpers exports empty secrets), so there is nothing to bake and the secret
+// may not exist yet on the very first `pulumi up`.
 // ---------------------------------------------------------------------------
-export const vmAccessKey = !bootstrapInProgress
-  ? infraConfig.requireSecret('vmAccessKey')
-  : pulumi.secret('')
-export const vmSecretKey = !bootstrapInProgress
-  ? infraConfig.requireSecret('vmSecretKey')
-  : pulumi.secret('')
+function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
+  const secretPath = secretManagerPath(naming.slug, mode)
+  const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
+  const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
+    (data) => JSON.parse(Buffer.from(data, 'base64').toString('utf8')) as VmReaderKeyPayload,
+  )
+  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
+}
+
+const vmReaderKey = bootstrapInProgress ? undefined : readVmReaderKey()
+export const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
+export const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
 

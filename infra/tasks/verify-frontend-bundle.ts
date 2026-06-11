@@ -162,15 +162,19 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv)
-
-  let expectedAsset: string | undefined
+  
+  let html: string
   try {
-    expectedAsset = extractEntryAsset(readFileSync(args.dist, 'utf-8'))
-  } catch {
-    console.warn(`::warning::Could not read ${args.dist}; skipping hash verify`)
+    html = readFileSync(args.dist, 'utf-8')
+  } catch (err) {
+    console.error(`::error::Could not read ${args.dist}: ${(err as Error)?.message ?? 'unknown error'}`)
+    console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
+    process.exit(1)
   }
+
+  const expectedAsset = extractEntryAsset(html)
   if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`)
-  else console.warn('::warning::Could not extract entry asset; will accept any successful response')
+  else console.warn(`::warning::No hashed entry asset found in ${args.dist}; will accept any successful response`)
 
   const outcome = await verifyBundle({
     url: args.url,

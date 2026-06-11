@@ -1,6 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { __testing, decryptStackSecretsFromText } from './pulumi-passphrase'
+import { __testing, decryptStackSecretsFromText, verifyStackPassphrase } from './pulumi-passphrase'
 
 const { PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN, decryptV1, deriveKey } = __testing
 
@@ -105,5 +105,21 @@ describe('pulumi-passphrase round-trip', () => {
     // Encrypt with our helper, then decrypt back through the production decoder.
     const ct = encryptV1(key, 'PASSPHRASE-KAT-OK')
     expect(decryptV1(key, ct)).toBe('PASSPHRASE-KAT-OK')
+  })
+})
+
+describe('verifyStackPassphrase', () => {
+  it('returns true for the correct passphrase', () => {
+    const yaml = buildStackYaml('right-pass', { 'infra:cookieSecret': 'C' })
+    expect(verifyStackPassphrase(yaml, 'right-pass')).toBe(true)
+  })
+
+  it('returns false for a wrong passphrase', () => {
+    const yaml = buildStackYaml('right-pass', { 'infra:cookieSecret': 'C' })
+    expect(verifyStackPassphrase(yaml, 'wrong-pass')).toBe(false)
+  })
+
+  it('returns false (does not throw) when the encryptionsalt header is missing', () => {
+    expect(verifyStackPassphrase('config:\n  infra:x: y', 'whatever')).toBe(false)
   })
 })

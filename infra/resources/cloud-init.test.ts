@@ -71,6 +71,24 @@ describe('renderCloudInit', () => {
     expect(out).toContain('if [[ -n "$fallback_tag" ]]; then')
   })
 
+  it('refuses to boot the app on first boot when required runtime secrets cannot be hydrated', () => {
+    const out = renderCloudInit(params())
+    // The secret sync result is remembered, not fire-and-forget: a failure must
+    // gate the boot so a secret-less crash-loop (502) never masks a missing IAM
+    // grant — the fault that took prod down.
+    expect(out).toContain('RUNTIME_SECRETS_OK=0')
+    expect(out).toContain('if /usr/local/bin/runtime-secret-sync; then')
+    expect(out).toContain('RUNTIME_SECRETS_OK=1')
+    expect(out).toContain('mark 42-runtime-secrets-FAILED')
+    // Fallback path is gated: a published release + failed secret sync must NOT
+    // boot the app — it leaves the box app-less (clearly DOWN) and lets the
+    // reconciler timer converge once the grant is restored.
+    expect(out).toContain('if [[ -n "$fallback_tag" && "$RUNTIME_SECRETS_OK" != "1" ]]; then')
+    expect(out).toContain('mark 50-secrets-unavailable-app-not-booted')
+    // The actual boot now sits behind an elif, reachable only when secrets are OK.
+    expect(out).toContain('elif [[ -n "$fallback_tag" ]]; then')
+  })
+
   it('writes /opt/app/.env with mode 600 and the reconciler env with mode 0600', () => {
     const out = renderCloudInit(params())
     expect(out).toMatch(/chmod 600 \/opt\/app\/\.env/)

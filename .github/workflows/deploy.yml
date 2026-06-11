@@ -67,6 +67,7 @@ jobs:
       frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
       state_bucket: ${{ steps.derive.outputs.state_bucket }}
       deploy_tags_bucket: ${{ steps.derive.outputs.deploy_tags_bucket }}
+      vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
       region: ${{ steps.derive.outputs.region }}
       frontend_url: ${{ steps.derive.outputs.frontend_url }}
       backend_url: ${{ steps.derive.outputs.backend_url }}
@@ -363,12 +364,10 @@ jobs:
       - name: Select stack
         working-directory: infra
         env:
-          # AWS_* = state-bucket S3 access only. Scaleway provider credentials and
-          # projectId come from the encrypted `scaleway:accessKey` /
-          # `scaleway:secretKey` / `scaleway:projectId` stack config values (set
-          # by infra/tasks/bootstrap.ts, rotated by .github/workflows/rotate-ci-key.yml).
-          # Do NOT set SCW_DEFAULT_PROJECT_ID here — the provider would then see
-          # two sources for projectId and emit a "Multiple variable sources" warning.
+          # AWS_* = state-bucket S3 access only. `pulumi stack select` does not
+          # need Scaleway provider credentials — those are supplied as SCW_* env
+          # to the `pulumi up` step below (the provider no longer reads
+          # scaleway:accessKey/secretKey/projectId from stack config).
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
@@ -391,37 +390,6 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: pnpm init-stack-secrets "$STACK"
-
-      - name: Sync Scaleway provider creds from CI secrets
-        # Single source of truth for the VM-baked Scaleway key is the GitHub
-        # Actions secret pair (SCW_ACCESS_KEY / SCW_SECRET_KEY) — the same pair
-        # the rotation procedure updates (setup-ci-key.ts → github-sync.ts).
-        #
-        # The encrypted `scaleway:accessKey` / `scaleway:secretKey` stack-config
-        # values are what cloud-init bakes into every VM for the reconciler's S3
-        # access (deploy-tag reads, status/boot-diag writes) and the registry
-        # `docker login`. They used to be set ONLY by bootstrap.ts and never
-        # re-synced, so a CI-key rotation that updated the GitHub secrets but not
-        # the stack config left the VMs with a stale key: the reconciler could
-        # not read its deploy tag and never rolled the app container, while the
-        # public-Docker-Hub `caddy` ingress still answered the LB health check —
-        # so the LB stayed green while every real `/health` 502'd fleet-wide.
-        #
-        # Re-stamping the config from the CI secrets on every deploy removes that
-        # dual-source drift. It's a no-op (`pulumi up` shows the VMs unchanged)
-        # whenever the values already match; only an actual key change alters
-        # cloud-init and triggers the VM replacement that re-bakes the new creds.
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        run: |
-          pulumi config set --secret --stack "$STACK" scaleway:accessKey "$SCW_ACCESS_KEY"
-          pulumi config set --secret --stack "$STACK" scaleway:secretKey "$SCW_SECRET_KEY"
 
       # Pulumi prep (checkout, install, login, stack select, secrets) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
@@ -456,9 +424,41 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          # Scaleway provider authenticates from these env vars (the CI deploy
+          # key) — scaleway:accessKey/secretKey/projectId are no longer stored in
+          # Pulumi.<env>.yaml. SCW_PROJECT_ID is the GitHub secret synced by
+          # github-sync.ts alongside the key pair on every CI-key rotation.
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: pulumi up --stack "$STACK" --yes
+
+      - name: Verify VM reader IAM grant
+        # Belt-and-suspenders for the failure that took prod down: a VM whose key
+        # cannot decrypt runtime secrets crash-loops behind a 502 with no auto
+        # recovery. `pulumi up` above reconciles the Pulumi-managed vm-reader
+        # policy (infra/resources/vm-iam.ts), and this read-only check confirms
+        # the live application actually holds every required permission set
+        # BEFORE any VM that depends on it is rolled/replaced. Fails the deploy
+        # loudly (naming the missing sets) instead of letting a fleet-wide 502
+        # surface only after rollout.
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          VM_READER_APP: ${{ needs.setup.outputs.vm_reader_app }}
+        run: |
+          # Resolve the VM reader application id by its deterministic name and
+          # source the project from the synced SCW_PROJECT_ID secret — neither
+          # the app id nor the project id is stored in stack config anymore
+          # (SOVRUN §3.3); the Pulumi program derives them from the IAM API.
+          pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID"
 
       - name: Capture stack outputs
         id: outputs
@@ -914,7 +914,11 @@ jobs:
             echo "No FRONTEND_URL configured — skipping verify"
             exit 0
           fi
-          pnpm --filter infra verify-frontend-bundle --url "$FRONTEND_URL" --dist dist/index.html
+          # The artifact downloads to $GITHUB_WORKSPACE/dist, but `pnpm --filter
+          # infra` runs in infra/, so the --dist path must be absolute — a
+          # relative dist/index.html would resolve to a missing infra/dist and
+          # the task now hard-fails instead of silently accepting any response.
+          pnpm --filter infra verify-frontend-bundle --url "$FRONTEND_URL" --dist "$GITHUB_WORKSPACE/dist/index.html"
 
   # -------------------------------------------------------------------------
   # Smoke tests — last-mile sanity checks executed against the now-live

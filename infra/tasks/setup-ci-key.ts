@@ -79,11 +79,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const DIVIDER = pc.dim('─'.repeat(60))
   console.info(`\n${DIVIDER}`)
-  console.info(`${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim('Write these into Pulumi stack config now:')}\n`)
-  console.info(`  pulumi config set --secret scaleway:accessKey ${pc.cyanBright(result.accessKey)} \\`)
-  console.info('    --stack organization/infra/production')
-  console.info(`  pulumi config set --secret scaleway:secretKey ${pc.cyanBright(result.secretKey)} \\`)
-  console.info('    --stack organization/infra/production\n')
-  console.info(`  ${pc.dim('Next:')} commit ${pc.underline('infra/Pulumi.production.yaml')}, then revoke the bootstrap key.`)
+  console.info(`${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim('Push these to the GitHub deploy environment now:')}\n`)
+  console.info(`  gh secret set SCW_ACCESS_KEY --env production --body ${pc.cyanBright(result.accessKey)}`)
+  console.info(`  gh secret set SCW_SECRET_KEY --env production --body ${pc.cyanBright(result.secretKey)}`)
+  console.info(
+    `\n  ${pc.dim('The secret key is shown only once. CI authenticates the Scaleway provider from these')} ${pc.dim('SCW_* env vars — it is no longer stored in stack config. Then revoke the bootstrap key.')}`,
+  )
   console.info(DIVIDER)
 }

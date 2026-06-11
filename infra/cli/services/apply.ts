@@ -7,24 +7,27 @@ import { extractProjectId } from '../../lib/bootstrap-stack-state'
 import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
-import type { InfraContext } from '../shared'
+import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
 
-/** One-shot `pulumi up` using a freshly-supplied bootstrap key, with the CI
- *  key swapped out of stack config and restored afterwards. For applying
- *  changes to bootstrap-owned resources (DB / VPC / private network) without
+/** One-shot `pulumi up` using a freshly-supplied bootstrap key passed via
+ *  SCW_* env. For applying changes to bootstrap-owned resources (DB / VPC /
+ *  private network) that the read-only CI key cannot make, without
  *  permanently widening CI permissions. */
 export async function runApply(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} "Apply infra change" requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`)
     process.exit(1)
   }
-  console.info(pc.dim('\nApply infra change: swap CI key out for a bootstrap key, run pulumi up, restore CI key.\n'))
+  console.info(pc.dim('\nApply infra change: run pulumi up with a bootstrap key (supplied via env), then clear the apply marker.\n'))
 
-  const passphrase = process.env.PULUMI_CONFIG_PASSPHRASE || (await password({ message: 'Pulumi passphrase' }))
+  const passphrase = await resolveVerifiedPassphrase(context.stackYaml)
 
-  const projectId = (context.stackYaml && extractProjectId(context.stackYaml)) || ''
+  const projectId =
+    process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || (context.stackYaml && extractProjectId(context.stackYaml)) || ''
   if (!projectId) {
-    console.error(`${warningMark} scaleway:projectId not found in stack config.`)
+    console.error(
+      `${warningMark} Scaleway project ID not found. Set SCW_DEFAULT_PROJECT_ID (or, for legacy stacks, scaleway:projectId in stack config).`,
+    )
     process.exit(1)
   }
 
@@ -41,11 +44,13 @@ export async function runApply(context: InfraContext): Promise<void> {
   }
 
   console.warn(
-    `${pc.yellow(pc.bold('\u26A0  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run bootstrap — it will offer to restore the CI key from the backup snapshot.')}`,
+    `${pc.yellow(pc.bold('\u26A0  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run bootstrap — it will offer to clear the apply marker from the backup snapshot.')}`,
   )
 
   const applyEnv: NodeJS.ProcessEnv = {
     ...process.env,
+    SCW_ACCESS_KEY: bootAccess,
+    SCW_SECRET_KEY: bootSecret,
     SCW_DEFAULT_PROJECT_ID: projectId,
     SCW_PROJECT_ID: projectId,
     AWS_ACCESS_KEY_ID: bootAccess,
@@ -60,8 +65,13 @@ export async function runApply(context: InfraContext): Promise<void> {
   spawnSync('pulumi', ['login', loginUrl], { cwd: infraDir, env: applyEnv, stdio: 'inherit' })
   spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env: applyEnv, stdio: 'ignore' })
 
+  // Back up the stack file before setting the apply marker so an interrupted
+  // run is recoverable (infra-cli.ts offers to restore on the next launch).
+  // The bootstrap key reaches `pulumi up` via SCW_* env (applyEnv above), not
+  // stack config, so there is no credential to swap out or scrub afterwards —
+  // the backup/restore now only brackets the transient applyInProgress marker.
   copyFileSync(context.stackPath, context.applyBackupPath)
-  let swapped = false
+  let markerSet = false
   try {
     const startedAt = new Date().toISOString()
     const marker = spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', targetStack], {
@@ -69,28 +79,18 @@ export async function runApply(context: InfraContext): Promise<void> {
       env: applyEnv,
       stdio: 'inherit',
     })
-    const access = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:accessKey', bootAccess, '--stack', targetStack], {
-      cwd: infraDir,
-      env: applyEnv,
-      stdio: 'inherit',
-    })
-    const secret = spawnSync('pulumi', ['config', 'set', '--secret', 'scaleway:secretKey', bootSecret, '--stack', targetStack], {
-      cwd: infraDir,
-      env: applyEnv,
-      stdio: 'inherit',
-    })
-    if (marker.status !== 0 || access.status !== 0 || secret.status !== 0) throw new Error('Failed to swap stack credentials')
-    swapped = true
+    if (marker.status !== 0) throw new Error('Failed to set apply-in-progress marker')
+    markerSet = true
     while (true) {
       const code = await runPulumiUpWithHint(targetStack, infraDir, applyEnv)
       if (code === 0) break
       if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break
     }
   } finally {
-    if (swapped) {
-      console.info('\n→ Restoring CI key in stack config')
+    if (markerSet) {
+      console.info('\n→ Clearing apply-in-progress marker')
       copyFileSync(context.applyBackupPath, context.stackPath)
-      console.info(`${checkMark} CI key restored.`)
+      console.info(`${checkMark} Marker cleared.`)
     }
     try {
       unlinkSync(context.applyBackupPath)

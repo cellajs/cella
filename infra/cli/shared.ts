@@ -1,11 +1,12 @@
-import { createHash } from 'node:crypto'
-import { confirm } from '@inquirer/prompts'
+import { confirm, password } from '@inquirer/prompts'
+import pc from 'shared/cli-utils/colors'
+import { warningMark } from 'shared/console'
 import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/bootstrap-stack-state'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../tasks/setup-ci-key'
+import { verifyStackPassphrase } from '../lib/pulumi-passphrase'
 
 /** Infra CLI operation modes */
-export type CliMode = 'resume' | 'rotate' | 'apply' | 'secrets'
+export type CliMode = 'resume' | 'rotate' | 'apply' | 'secrets' | 'preview'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
@@ -29,17 +30,38 @@ export interface StepOptions {
   env?: NodeJS.ProcessEnv
 }
 
-/** Short hash of the permission sets the CI policy should have. */
-export const policyFingerprint = () =>
-  createHash('sha1')
-    .update(JSON.stringify([[...PROJECT_PERMISSION_SETS].sort(), [...ORG_PERMISSION_SETS].sort()]))
-    .digest('hex')
-    .slice(0, 12)
-
 /**
  * Gets an environment variable, or prompts for it if not set.
  */
 export const envOr = async (envName: string, prompt: () => Promise<string>) => process.env[envName] || (await prompt())
+
+/**
+ * Resolve the Pulumi passphrase, verified against the stack's `encryptionsalt`.
+ *
+ * A stale `PULUMI_CONFIG_PASSPHRASE` exported in the shell otherwise wins
+ * silently and surfaces later as a confusing `incorrect passphrase` deep inside
+ * `pulumi`. This checks the env value up front: if it decrypts the stack it is
+ * used without a prompt; if it is set but wrong, we warn and prompt anyway;
+ * and we keep prompting until a passphrase verifies. When the stack has no
+ * `encryptionsalt` (a brand-new stack with nothing encrypted yet) there is
+ * nothing to verify against, so we fall back to env-or-single-prompt.
+ */
+export async function resolveVerifiedPassphrase(stackYaml: string | undefined): Promise<string> {
+  const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)
+  if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => password({ message: 'Pulumi passphrase' }))
+
+  const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE
+  if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv
+  if (fromEnv) {
+    console.warn(`${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack — prompting instead.')}`)
+  }
+
+  while (true) {
+    const entered = await password({ message: 'Pulumi passphrase' })
+    if (verifyStackPassphrase(stackYaml, entered)) return entered
+    console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`)
+  }
+}
 
 /**
  * Creates a step runner for executing commands with retry and error handling.

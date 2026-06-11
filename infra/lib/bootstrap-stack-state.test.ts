@@ -6,18 +6,26 @@ describe('detectStackState', () => {
     expect(detectStackState({})).toBe('fresh')
   })
 
-  it('partial: file exists, no scaleway:accessKey yet', () => {
-    expect(detectStackState({ yamlText: 'config:\n  scaleway:projectId: abc\n' })).toBe('partial')
+  it('partial: file exists, no bootstrap marker yet', () => {
+    expect(detectStackState({ yamlText: 'config:\n  infra:cookieSecret:\n    secure: v1:...' })).toBe('partial')
   })
 
-  it('bootstrapped: file has a scaleway:accessKey entry', () => {
-    expect(detectStackState({ yamlText: 'config:\n  scaleway:accessKey:\n    secure: v1:...' })).toBe('bootstrapped')
+  it('bootstrapped: file records the bootstrapComplete breadcrumb', () => {
+    expect(detectStackState({ yamlText: 'config:\n  infra:bootstrapComplete: 2025-01-01T00:00:00.000Z\n' })).toBe('bootstrapped')
   })
 
-  it('does not mistake a comment mentioning scaleway:accessKey for the real key', () => {
+  it('bootstrapped: legacy infra:vmAccessKey marker still detected (pre-Secret-Manager stacks)', () => {
+    expect(detectStackState({ yamlText: 'config:\n  infra:vmAccessKey:\n    secure: v1:ww0JDbm...\n' })).toBe('bootstrapped')
+  })
+
+  it('bootstrapped: legacy infra:applicationId marker still detected', () => {
+    expect(detectStackState({ yamlText: 'config:\n  infra:applicationId: 11111111-2222-3333-4444-555555555555\n' })).toBe('bootstrapped')
+  })
+
+  it('does not mistake a comment mentioning a marker for the real entry', () => {
     // intentional: scanner is line-substring; we want to acknowledge the false-positive
     // surface in writing rather than silently miss it.
-    expect(detectStackState({ yamlText: '# TODO: scaleway:accessKey rotation' })).toBe('bootstrapped')
+    expect(detectStackState({ yamlText: '# TODO: infra:bootstrapComplete rotation' })).toBe('bootstrapped')
   })
 })
 
