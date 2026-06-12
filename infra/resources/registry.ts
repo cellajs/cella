@@ -5,7 +5,7 @@
  * registry credential. Namespace names must not contain hyphens.
  */
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region } from '../helpers'
+import { naming, region } from '../pulumi-context'
 
 // ---------------------------------------------------------------------------
 // Container Registry Namespace

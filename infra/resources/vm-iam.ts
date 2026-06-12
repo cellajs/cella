@@ -19,11 +19,12 @@
  * The application id is resolved from the Scaleway IAM API by name
  * (`<slug>-vm-reader`, SOVRUN §3.3) rather than read from stack config; we
  * attach this policy to it. The permission set list is the canonical
- * `VM_PROJECT_PERMISSION_SETS` (locked by `tasks/permission-sets.test.ts`).
+ * `VM_PROJECT_PERMISSION_SETS` (defined in `lib/permissions.ts`, locked by
+ * `tasks/permission-sets.test.ts`).
  */
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '../helpers'
-import { VM_PROJECT_PERMISSION_SETS } from '../tasks/setup-vm-key'
+import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
+import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '../pulumi-context'
 
 // Application the policy binds to — the non-human VM reader principal created by
 // bootstrap. Derived from IAM by name (SOVRUN §3.3), was the stored
@@ -59,7 +60,7 @@ export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),
   description: 'Read-only registry + object storage + secret manager grant for service VMs (managed by Pulumi)',
   applicationId: vmApplicationId,
-  // Set the org explicitly (resolved in helpers from env, else the project) so
+  // Set the org explicitly (resolved in pulumi-context from env, else the project) so
   // the create does not depend on the provider's default org env — the bootstrap
   // "Apply infra change" flow injects SCW_DEFAULT_PROJECT_ID but no org id, which
   // left the provider default empty and failed with "organization_id is wrongly

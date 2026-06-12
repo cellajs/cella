@@ -59,9 +59,9 @@ describe('service registry — instanceType', () => {
     expect(size).toEqual({ production: 'DEV1-M', staging: 'DEV1-S' })
   })
 
-  it('leaves other services on the fleet default (no per-service size)', () => {
+  it('requires a per-service instanceType on every service (DEV1-S for the workers)', () => {
     for (const slug of ['cdc', 'yjs', 'ai', 'frontend'] as const) {
-      expect(services.find((s) => s.slug === slug)?.instanceType).toBeUndefined()
+      expect(services.find((s) => s.slug === slug)?.instanceType).toBe('DEV1-S')
     }
   })
 })

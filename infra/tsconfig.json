@@ -1,19 +1,8 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "es2022",
     "lib": ["es2024", "dom"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "rootDir": "..",
-    "outDir": "./dist",
-    "skipLibCheck": true
+    "rootDir": ".."
   },
   "include": ["./**/*.ts", "../shared/index.ts", "../shared/src/**/*.ts"],
   "exclude": ["node_modules", "dist", "../shared/**/*.test.ts", "../shared/scripts/**"]

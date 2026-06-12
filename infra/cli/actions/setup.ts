@@ -2,11 +2,12 @@ import { spawnSync } from 'node:child_process'
 import { confirm, input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
-import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
+import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
 import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
 import { syncGithubEnvironment } from '../../lib/github-sync'
 import { infraDir } from '../../lib/paths'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissions'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
@@ -14,7 +15,7 @@ import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, setupCiKey } from '../../tasks/setup-ci-key'
+import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { createStepRunner, envOr, resolveVerifiedPassphrase } from '../shared'
@@ -32,12 +33,11 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // it cannot be decrypted and reused — every interactive setup run authenticates
   // with a freshly-pasted bootstrap key. The provider reads it from SCW_* env
   // (childEnv below), not from stack config.
-  let scwProjectId = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || ''
+  const scwProjectId = context.projectId
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
     input({ message: 'Scaleway bootstrap access key', validate: (value) => !!value.trim() || '(required)' }),
   )
   const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key' }))
-  scwProjectId ||= await input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' })
 
   // The bootstrap key above also holds the object-storage rights needed for the
   // Pulumi state bucket, so reuse it rather than prompting for a second key.
@@ -62,21 +62,17 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     scwAiApiKey = await password({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
   }
 
-  const modeLabel = mode === 'rotate' ? 'Rotate CI' : 'Resume'
+  const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume'
   if (!(await confirm({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0)
 
-  const childEnv: NodeJS.ProcessEnv = {
-    ...process.env,
-    SCW_ACCESS_KEY: scwAccessKey,
-    SCW_SECRET_KEY: scwSecretKey,
-    SCW_DEFAULT_PROJECT_ID: scwProjectId,
-    SCW_PROJECT_ID: scwProjectId,
-    AWS_ACCESS_KEY_ID: stateAccessKey,
-    AWS_SECRET_ACCESS_KEY: stateSecretKey,
-    PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
-    SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
-    SCW_PROFILE: '',
-  }
+  const childEnv = buildProviderEnv(infraDir, {
+    accessKey: scwAccessKey,
+    secretKey: scwSecretKey,
+    projectId: scwProjectId,
+    passphrase: pulumiPassphrase,
+    stateAccessKey,
+    stateSecretKey,
+  })
 
   const stateBucketEnv: NodeJS.ProcessEnv = {
     ...childEnv,
@@ -158,7 +154,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           console.warn(
             `  ${warningMark} CI policy permission sets have drifted from code` +
               `${missing.length ? ` (missing: ${missing.join(', ')})` : ''}${extra.length ? ` (extra: ${extra.join(', ')})` : ''}. ` +
-              `Re-run bootstrap and choose ${pc.italic('"Rotate CI"')} to reconcile.`,
+              `Re-run bootstrap and choose ${pc.italic('"Rotate keys"')} to reconcile.`,
           )
         }
       }
@@ -258,7 +254,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const divider = pc.dim('─'.repeat(60))
   console.info(`\n${divider}`)
   if (!needsCiKey) {
-    console.info(`${checkMark} ${pc.bold('Resume verified.')} CI key in stack config unchanged.`)
+    console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing deploy credentials left unchanged.`)
     if (vmAccessKey) {
       console.info(`  ${checkMark} Provisioned previously-missing VM reader key: ${pc.cyanBright(vmAccessKey)}`)
     }
@@ -266,9 +262,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmAccessKey)}`)
   } else if (ciAccessKey) {
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`)
-    console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate CI"')}.`)
+    console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate keys"')}.`)
   } else {
-    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate CI"')}.`)
+    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`)
   }
   console.info(divider)
 
@@ -294,7 +290,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
       )
     }
-    const runNow = await confirm({ message: 'Run pulumi up now?', default: isFirstProvision })
+    const runNow = await confirm({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
     if (runNow) {
       try {
         await ensureEdgePlan({ secretKey: scwSecretKey, projectId: scwProjectId })
@@ -302,7 +298,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         console.error(`\n${warningMark} Edge Services plan check failed: ${(error as Error).message}`)
         if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
       }
-      const { deriveInfra } = await import('../../naming')
+      const { deriveInfra } = await import('../../lib/naming')
       const { dnsZone, hasDomain } = deriveInfra(appConfig)
       if (hasDomain) {
         try {
@@ -345,7 +341,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       }
       console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
     } else {
-      console.info('  Re-run bootstrap any time to retry, or set the env vars manually:')
+      console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
+      console.info('  Manual fallback if needed:')
       console.info(
         `  ${pc.cyan(`cd infra && SCW_ACCESS_KEY=<scw-access> SCW_SECRET_KEY=<scw-secret> AWS_ACCESS_KEY_ID=<scw-access> AWS_SECRET_ACCESS_KEY=<scw-secret> PULUMI_CONFIG_PASSPHRASE='<passphrase>' pulumi up --stack ${stackName}`)}`,
       )

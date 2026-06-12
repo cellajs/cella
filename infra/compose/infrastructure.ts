@@ -12,7 +12,7 @@
  *   - `assembleCompose()`, which expands the service registry into the
  *     `ComposeFile` that `synth.ts` emits.
  *
- * See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
+ * See infra/README.md (Zero-downtime deploys).
  */
 import type { AppServiceConfig, AppServices, ServiceMeta, ComposeFile, ComposeService, HealthCheck } from './types'
 
@@ -48,12 +48,12 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     runMigrate: cfg.runMigrate ?? false,
     rolloverStrategy: cfg.rolloverStrategy,
     drainSeconds: cfg.drainSeconds ?? 0,
+    instanceType: cfg.instanceType,
   }
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.featureFlag) meta.featureFlag = cfg.featureFlag
-  if (cfg.instanceType) meta.instanceType = cfg.instanceType
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }

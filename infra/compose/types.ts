@@ -66,8 +66,8 @@ export interface ServiceMeta {
    * deployed; set = only deployed when that feature is on (yjs, ai).
    */
   featureFlag?: string
-  /** Per-service VM size; a fork resizes its fleet by editing this. */
-  instanceType?: ServiceInstanceType
+  /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
+  instanceType: ServiceInstanceType
   /**
    * Deploy-time env bindings: env var → value template resolved by the compute
    * module. Templates reference other services by slug with the `@{…}` sigil
@@ -174,10 +174,11 @@ export interface AppServiceConfig {
    */
   featureFlag?: string
   /**
-   * Per-service VM size — a fork resizes its fleet by editing this, without
-   * touching Pulumi config. A single type for all modes, or a per-mode map.
+   * Per-service VM size — a fork resizes its fleet by editing this. Required:
+   * every service declares its own box (there is no fleet-wide fallback). A
+   * single type for all modes, or a per-mode map.
    */
-  instanceType?: ServiceInstanceType
+  instanceType: ServiceInstanceType
   /**
    * Service-specific environment variables (e.g. cdc's `API_WS_URL`, ai's
    * `MODE: ai-worker`). Merged AFTER the standard env so it can override it.

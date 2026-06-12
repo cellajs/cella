@@ -7,7 +7,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, serviceHost, infra } from '../helpers'
+import { naming, region, serviceHost, infra } from '../pulumi-context'
 import { frontendBucketName } from './storage'
 
 let _pipelineId: pulumi.Output<string> | undefined

@@ -14,6 +14,15 @@ From your monorepo root:
 pnpm cella
 ```
 
+Run a service directly:
+
+```bash
+pnpm cella analyze
+pnpm cella sync --hard
+pnpm cella audit --check-overrides
+pnpm cella contributions --fork raak --json
+```
+
 ## Services
 
 | Service | Description |
@@ -23,6 +32,7 @@ pnpm cella
 | `sync` | Merge upstream changes into your app |
 | `packages` | Sync package.json keys with upstream |
 | `audit` | Check for outdated packages & vulnerabilities |
+| `stats` | Count files by category and workspace package |
 | `forks` * | Sync downstream to local fork repositories |
 | `contributions` * | Pull and adopt changes from local forks |
 
@@ -31,18 +41,24 @@ pnpm cella
 ## CLI Options
 
 ```bash
-pnpm cella [options]
+pnpm cella [service] [options]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--service <name>` | Choose service: `analyze`, `inspect`, `sync`, `packages`, `audit`, `forks`, `contributions` |
-| `--fork <name>` | Sync/select a specific fork directly (skips interactive menu) |
-| `--list` | Non-interactive output for `inspect` / `contributions` (one file per line, useful for scripting). For `contributions`, each line is tab-separated: `fork  status  kind  changedAt  path` |
-| `--json` | Machine-readable JSON output for `inspect` / `contributions` (for tooling/agents). For `contributions`, each item includes `fork`, `path`, `status`, `kind`, `changedAt`, `additions`, `deletions`. stdout is reserved for the JSON payload; all human output goes to stderr, so `cella --json … \| jq` pipes cleanly. |
-| `--diff <path>` | Print the unified diff for a single contributed file, then exit (`contributions`). stdout carries only the patch (human output goes to stderr), so it is safe to pipe to a pager or parser. Combine with `--fork <name>` to disambiguate when multiple forks touch the same path. |
-| `--log` | Write complete file list to `cella-sync.log` |
-| `-V, --verbose` | Show detailed output during operations |
+Service-specific help is available via `pnpm cella <service> --help`.
+
+| Service | Useful options |
+|---------|----------------|
+| analyze | `--log` |
+| inspect | `--list`, `--json` |
+| sync | `--log`, `--hard` |
+| packages | No command-specific flags |
+| audit | `--list`, `--force`, `--check-overrides` |
+| forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
+| contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
+| stats | `--coverage`, `-V, --verbose` |
+
+| Global flag | Description |
+|-------------|-------------|
 | `-v, --version` | Output the current version |
 | `-h, --help` | Display help message |
 
@@ -85,7 +101,7 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 
 ### Tips
 
-- Run `pnpm cella --service analyze` first to preview changes without applying
+- Run `pnpm cella analyze` first to preview changes without applying
 - Use `pinned` for files you fully control (modify, keep, or delete)
 - Use `ignored` for app-specific docs, assets, or config you fully own
 
@@ -103,7 +119,7 @@ During analysis and sync, files are displayed with status indicators:
 | ⨀ | `pinned` | Both changed, fork wins | Protected, keeping fork |
 | ◌ | `local` | Only in fork, never in upstream | No action needed |
 
-## Package.json Sync
+## Package.json sync
 
 The `packageJsonSync` setting controls which package.json sections are synced from upstream:
 
@@ -164,7 +180,7 @@ forks: [
 
 ### Pulling contributions
 
-Run `pnpm cella` and choose **contributions** (or `--service contributions`).
+Run `pnpm cella` and choose **contributions** (or run `pnpm cella contributions`).
 Select one or more forks; cella fetches each fork's `pullBranch`, builds a clean
 local `contrib/<fork>` branch containing only that fork's contributed files, and
 presents an interactive TUI:
@@ -179,18 +195,3 @@ presents an interactive TUI:
 | `q` | Quit |
 
 Accepted files are checked out from the contrib branch and staged — review and commit when ready.
-
-## Development
-
-```bash
-cd cli/cella
-
-# Type check
-pnpm ts
-
-# Run tests
-pnpm test
-
-# Run sync locally
-pnpm cella
-```

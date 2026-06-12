@@ -46,20 +46,26 @@ const baseOptions = {
 describe('manageRuntimeSecrets', () => {
   it('lists operator-managed secrets and reports presence', async () => {
     resetMocks()
-    prompts.select.mockResolvedValueOnce('list')
-    listSecrets.mockResolvedValueOnce([{ name: 'brevo-api-key', id: 'secret-1' }])
+    prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit')
+    // brevo-api-key has a version (content) → present; github-client-id exists as an
+    // empty container (0 versions) → empty, not present. Everything else is missing.
+    listSecrets.mockResolvedValueOnce([
+      { name: 'brevo-api-key', id: 'secret-1', version_count: 1 },
+      { name: 'github-client-id', id: 'secret-2', version_count: 0 },
+    ])
 
     await manageRuntimeSecrets(baseOptions)
 
     expect(listSecrets).toHaveBeenCalledWith('/demo-production/')
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'))
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('brevo-api-key'))
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/))
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/))
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'))
   })
 
   it('creates or updates a manual operator-managed secret', async () => {
     resetMocks()
-    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey')
+    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit')
     prompts.password.mockResolvedValueOnce('new-api-key')
     getSecretByName.mockResolvedValueOnce(undefined)
     ensureSecret.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' })
@@ -72,7 +78,7 @@ describe('manageRuntimeSecrets', () => {
 
   it('deletes an entire secret object only after confirmation', async () => {
     resetMocks()
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientSecret')
+    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('exit')
     prompts.confirm.mockResolvedValueOnce(true)
     getSecretByName.mockResolvedValueOnce({ id: 'secret-3', name: 'github-client-secret' })
 
@@ -83,7 +89,7 @@ describe('manageRuntimeSecrets', () => {
 
   it('cancels deletion when confirmation is declined', async () => {
     resetMocks()
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientId')
+    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientId').mockResolvedValueOnce('exit')
     prompts.confirm.mockResolvedValueOnce(false)
     getSecretByName.mockResolvedValueOnce({ id: 'secret-4', name: 'github-client-id' })
 

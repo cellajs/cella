@@ -40,7 +40,7 @@ export async function seedVmReaderKey(options: SeedVmReaderKeyOptions): Promise<
   await client.putSecretValue({
     secretId: container.id,
     value: JSON.stringify(options.key),
-    description: 'Seeded/rotated by infra bootstrap',
+    description: 'Seeded/rotated by infra cli',
     disablePrevious: true,
   })
   log(`seed ${VM_READER_SECRET_NAME}`)

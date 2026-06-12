@@ -1,0 +1,10 @@
+# Operating the reconciler
+
+The reconciler mechanism, exit codes (`0`–`6`), and concurrency model are documented in the header of [reconciler.sh](reconciler.sh). Per-VM state lives in `/var/lib/reconciler/` (`current.tag`, `previous.tag`, and for blue-green services `active.slot` + `last-failed-roll.log`); logs go to `journalctl -u reconciler.service`. VMs have no SSH listener — use the Scaleway serial console for break-glass access.
+
+Every roll also broadcasts a **status object** to `s3://<deploy-tags-bucket>/status/<service>.json` (phase, result, exit code, and a failure reason even on an unexpected exit) so CI and humans can see WHAT the reconciler is doing and WHY a roll failed without SSH. The CI `wait-for-version` poll reads it to surface the live phase, and to **fast-fail on a terminal rollout failure** (a bad release — compose-up/health/migrate, exit `4`/`5`/`6`) with the reconciler's reason. Infra transients (tag-fetch/pull, exit `2`/`3`) self-heal on the next 20s tick, so the poll keeps waiting through those. On a health failure the failed slot's logs are uploaded to `s3://<state-bucket>/boot-diag/<service>-failed-<ts>.log`, which `fetch-boot-diag` surfaces automatically.
+
+- **Diagnose a stuck deploy** — the CI `roll-backend` / `roll-rest` jobs poll `/health` for `X-App-Version == <SHA>` and upload boot-diag logs on failure. On the VM: `systemctl status reconciler.timer`, `journalctl -u reconciler.service`, `curl -sI 127.0.0.1:<port>/health` (app identity) and `curl -s 127.0.0.1:<port>/__ingress/health` (LB liveness).
+- **Force a re-roll / rollback** — rewrite the tag object (`deploy/<svc>.tag` in the deploy-tags bucket): write a sentinel SHA, wait 20s, then write the desired (or last-good) SHA. The reconciler picks it up within 20s.
+- **Freeze deploys** — `systemctl stop reconciler.timer` on the VM, or pause the deploy workflow in GitHub Actions.
+- **Rotate the CI key** — `pnpm --filter infra tsx tasks/rotate-ci-key.ts <stack>` (see [../tasks/rotate-ci-key.ts](../tasks/rotate-ci-key.ts)). It's the only credential CI holds and can only write the `deploy/` prefix.

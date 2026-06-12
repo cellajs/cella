@@ -22,7 +22,7 @@
  *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha>
  */
 import { pathToFileURL } from 'node:url'
-import { getFlag } from './cli'
+import { getFlag } from './args'
 import { extractEntryAsset } from './verify-frontend-bundle'
 import { isHealthy } from './wait-for-version'
 

@@ -12,7 +12,7 @@
 >
 > Read alongside [ARCHITECTURE.md](./ARCHITECTURE.md), [SYNC_ENGINE.md](./SYNC_ENGINE.md),
 > [SYNC_ENGINE_PACKAGING_PLAN.md](./SYNC_ENGINE_PACKAGING_PLAN.md), and
-> [infra/INFRA_ARCHITECTURE.md](../infra/INFRA_ARCHITECTURE.md).
+> [infra/README.md](../infra/README.md).
 
 ---
 
@@ -185,7 +185,7 @@ request (the Host header *is* the fork identity). Today it only fails to be gene
    fork is at SHA X". This is a simplification: **a frontend release no longer needs a container
    roll** — there is nothing per-fork to roll.
 3. **Make it a platform service.** Remove `frontend` from the per-fork compose registry
-   ([infra/compose/services.config.ts](../infra/compose/services.config.ts)) and run the generic
+   ([infra/config/services.config.ts](../infra/config/services.config.ts)) and run the generic
    proxy once in the platform tier (a STARDUST box behind the shared LB). Fork stacks no longer
    deploy a frontend VM, deploy-tag, or reconciler entry — only their bucket.
 
@@ -393,7 +393,7 @@ Two levers on the remaining costs:
 - **Backend is the main linear cost.** It's `DEV1-M` in production for the blue-green double-slot
   RAM requirement. For staging/demo forks, switch it to **in-place** rolling on a `DEV1-S`/STARDUST
   (a brief restart gap is acceptable) — a per-service field change in
-  [infra/compose/services.config.ts](../infra/compose/services.config.ts) plus the instance-type
+  [infra/config/services.config.ts](../infra/config/services.config.ts) plus the instance-type
   override. Keep blue-green + `DEV1-M` only for production forks.
 - **Managed Postgres is a fixed cost.** The pooler + DB/schema-per-fork lets ~10 forks ride one
   `DB-DEV-S`; scale only when aggregate load — not fork count — demands it.

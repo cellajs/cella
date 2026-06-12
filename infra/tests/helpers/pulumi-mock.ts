@@ -49,7 +49,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production'
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production'
 
-  // helpers.ts resolves the org id (to scope IAM lookups) env-first:
+  // pulumi-context.ts resolves the org id (to scope IAM lookups) env-first:
   // SCW_DEFAULT_ORGANIZATION_ID when present (the CI deploy path), else it falls
   // back to getProjectOutput from SCW_DEFAULT_PROJECT_ID (the local path). Clear
   // any ambient org id so tests deterministically exercise the project fallback
@@ -83,7 +83,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
         }
       },
       call(args) {
-        // IAM data sources (helpers.ts derives identity ids from these instead
+        // IAM data sources (pulumi-context.ts derives identity ids from these instead
         // of stored config). Return deterministic stub ids so resource modules
         // that consume them render without talking to Scaleway.
         if (args.token.includes('getProject')) {
@@ -102,7 +102,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
             defaultProjectId: 'mock-project-id',
           }
         }
-        // Secret Manager data sources (helpers.ts readVmReaderKey reads the VM
+        // Secret Manager data sources (pulumi-context.ts readVmReaderKey reads the VM
         // reader key from Secret Manager instead of stored config). getVersion
         // returns the base64 JSON payload that readVmReaderKey decodes.
         if (args.token.includes('getSecret')) {

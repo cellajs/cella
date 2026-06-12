@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from './setup-ci-key'
-import { VM_PROJECT_PERMISSION_SETS } from './setup-vm-key'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
 
 /**
  * Lock the CI key's permission sets. Any addition must be deliberate and visible
@@ -31,7 +30,6 @@ describe('CI key permission sets', () => {
       'InstancesFullAccess',
       'LoadBalancersFullAccess',
       'ObjectStorageFullAccess',
-      'ObservabilityFullAccess',
       'PrivateNetworksFullAccess',
       'RelationalDatabasesReadOnly',
       'SecretManagerFullAccess',

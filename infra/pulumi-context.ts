@@ -1,13 +1,16 @@
 /**
- * Pulumi helpers — binds shared appConfig + stack config to the Pulumi runtime.
+ * Pulumi context — binds shared appConfig + stack config to the Pulumi runtime.
  *
  * This file MUST run inside a Pulumi program (`pulumi up/preview/destroy`); it
  * calls `pulumi.getStack()` and `new pulumi.Config(...)`. Standalone scripts
- * should import the pure derivations from `./naming` instead.
+ * should import the pure derivations from `./lib/naming` instead.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { deriveInfra } from './naming'
+import generalConfig from './config/general.config'
+import type { Environment } from './lib/bootstrap-stack-state'
+import { resolvePerMode } from './lib/general-config'
+import { deriveInfra } from './lib/naming'
 import { serviceEndpoints, servicesByName, type ServiceName } from './lib/services'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/vm-reader-secret'
 
@@ -23,7 +26,7 @@ export const { naming, dnsZone, region, zone, tags, isProduction } = derived
 
 // Deploys are never run against a localhost config — fail fast here instead of
 // letting each resource module gate on `hasDomain` independently. The pure
-// `hasDomain` derivation stays in naming.ts for the bootstrap CLI's pre-deploy
+// `hasDomain` derivation stays in lib/naming.ts for the bootstrap CLI's pre-deploy
 // checks; inside the Pulumi program a real domain is simply a requirement.
 if (!derived.hasDomain) {
   throw new Error(
@@ -32,7 +35,7 @@ if (!derived.hasDomain) {
 }
 
 // Pure appConfig pass-throughs — exposed here so resource modules import mode
-// from one place (the Pulumi binding layer) rather than from naming.ts.
+// from one place (the Pulumi binding layer) rather than from lib/naming.ts.
 export const mode = appConfig.mode
 
 // Per-service public endpoints (host + URL), derived from the service registry
@@ -132,40 +135,32 @@ export const operatorPrincipal: pulumi.Output<string> | undefined = callerAccess
 // from declaring compute before images are pushed.
 const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
 
-// Fleet-wide default VM size. Per-service sizes (incl. per-mode) live in the
-// canonical registry (compose/services.config.ts `instanceType`). Backend runs
-// a larger box in production because its blue-green roll holds OLD + NEW slots
-// side-by-side during cutover, which DEV1-S (2 GB) cannot fit.
-// See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
-const FLEET_INSTANCE_TYPE = 'DEV1-S'
-
-// Per-service VM size resolution, highest precedence first:
-//   1. operator override  — pulumi config set --path infra:instanceTypes.<slug>
-//   2. registry default   — compose/services.config.ts `instanceType`
-//   3. fleet default      — infra:instanceType override, else FLEET_INSTANCE_TYPE
-const baseInstanceType = infraConfig.get('instanceType') ?? FLEET_INSTANCE_TYPE
-const instanceTypeOverrides: Record<string, string> = infraConfig.getObject<Record<string, string>>('instanceTypes') ?? {}
-
-/** Resolve a service's registry default size for the current deploy mode. */
-const registryInstanceType = (serviceName: string): string | undefined => {
+// VM size is per-service only — declared in the canonical registry
+// (config/services.config.ts `instanceType`, required on every service) and
+// resolved here for the current deploy mode. There is no fleet-wide knob and no
+// Pulumi config override: resizing a box is a one-line edit to the registry
+// followed by a normal CI deploy. Backend runs a larger box in production
+// because its blue-green roll holds OLD + NEW slots side-by-side during cutover,
+// which DEV1-S (2 GB) cannot fit. See infra/README.md (Zero-downtime deploys).
+const registryInstanceType = (serviceName: string): string => {
   const size = servicesByName.get(serviceName as ServiceName)?.instanceType
-  if (typeof size === 'string' || size === undefined) return size
-  return size[mode as 'production' | 'staging']
+  if (size === undefined) throw new Error(`Service '${serviceName}' has no instanceType in the registry (config/services.config.ts).`)
+  if (typeof size === 'string') return size
+  const sized = size[mode as 'production' | 'staging']
+  if (sized === undefined) throw new Error(`Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`)
+  return sized
 }
 
 export const infra = {
-  dbNodeType: infraConfig.get('dbNodeType') ?? 'DB-DEV-S',
-  dbVolumeSize: infraConfig.getNumber('dbVolumeSize') ?? 10,
-  // WAF defaults on in production only; everywhere else opt in via Pulumi config.
-  enableWaf: infraConfig.getBoolean('enableWaf') ?? isProduction,
-  // Edge Services is the S3-website + managed-cert SPA pipeline, superseded by a
-  // Caddy reverse-proxy on the `frontend` VM behind the LB. Off by default;
-  // enable only as a rollback path.
-  enableEdgeServices: infraConfig.getBoolean('enableEdgeServices') ?? false,
-  instanceType: baseInstanceType,
-  /** VM size for a given service — operator override, else registry default, else fleet default. */
-  instanceTypeFor: (serviceName: string): string =>
-    instanceTypeOverrides[serviceName] ?? registryInstanceType(serviceName) ?? baseInstanceType,
+  // Non-service capacity/feature knobs — values live in the fork-owned
+  // config/general.config.ts, resolved here for the active deploy mode.
+  dbNodeType: resolvePerMode(generalConfig.database.nodeType, mode as Environment),
+  dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, mode as Environment),
+  enableWaf: resolvePerMode(generalConfig.waf.enabled, mode as Environment),
+  enableEdgeServices: resolvePerMode(generalConfig.edgeServices.enabled, mode as Environment),
+  assetRetentionDays: resolvePerMode(generalConfig.assets.retentionDays, mode as Environment),
+  /** VM size for a given service — resolved from the registry for the current mode. */
+  instanceTypeFor: (serviceName: string): string => registryInstanceType(serviceName),
   computeEnabled: !computeDeferred,
 }
 

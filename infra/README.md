@@ -1,77 +1,141 @@
-# Infrastructure — deploy guide
+# Infrastructure
 
-Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
+Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
 
-> For architecture details and module reference see [INFRA_ARCHITECTURE.md](./INFRA_ARCHITECTURE.md).
+## Overview
 
-## File structure
+This infrastructure is built around three principles:
 
-The infra package is the deployment control plane for Cella: Pulumi program entrypoints, resource builders, bootstrap and verification tasks, plus the compose synthesis layer used on the VMs.
+1. **Pulumi provisions with most values from config files.** Pulumi modules create resources, but resource names, domains and sizing are derived from [config files](#configuration).
+2. **CI performs all routine deploys.** Pushing to `main` builds images and rolls the running services with zero downtime.
+3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a temporary bootstrap key is required only for the initial install and for changes to data-bearing resources (database, VPC, private network).
 
-```text
-infra/
-├── caddy/                  Caddy templates and assets for ingress / TLS setup
-├── cli/                    Interactive operator CLI (setup, rotate, apply, preview, secrets)
-├── compose/                Compose model, service wiring, and synthesis for the VM runtime stack
-├── lib/                    Shared infra utilities used across Pulumi resources and tasks
-├── reconciler/             On-VM deploy reconciler that applies image/tag updates in place
-├── resources/              Pulumi resource modules for network, database, compute, LB ...
-├── tasks/                  Operator-facing CLIs for bootstrap, rotation and more
-├── tests/                  Higher-level infra test coverage
-├── index.ts                Pulumi program entrypoint
-├── naming.ts               Central naming rules for infra resources
-└── Pulumi.*.yaml           Stack config and encrypted secrets per environment
+
+## How a deploy works
+
+The deployment lifecycle — what happens when you push to `main`:
+
+```
+Developer pushes to main
+        ↓
+GitHub Actions builds images
+        ↓
+Runs pulumi up
+        ↓
+Uploads image tag to the deploy-tags bucket
+        ↓
+On-VM reconciler detects the new tag
+        ↓
+Performs in-place or blue-green rollout
+        ↓
+Load balancer keeps serving traffic
 ```
 
-The `compose/` folder is the runtime assembly layer for application hosts. It defines the typed compose model, maps Cella services into that model, and synthesizes the generated compose file consumed by the reconciler and VM bootstrap flow. Read it as “how a machine should run the stack”, not as a directory of unrelated per-service files.
+At runtime, the load balancer never talks to the app container directly. Each VM runs a tiny **ingress** Caddy container that owns the LB-facing host port and forwards to the app container by its compose-network name (the app publishes no host port):
 
-## Operating model — two modes
-
-Long-lived infra credentials should not be stored. They live in your password manager and in GitHub Actions secrets, and are only ever read into a process's memory for the duration of a single command.
-
-| Mode | When | How |
-|---|---|---|
-| **A — Bootstrap** | Once for setup, and again whenever you rotate the CI deploy key. | Run `pnpm --filter infra bootstrap` (or `setup-ci-key` for rotation), paste credentials when prompted. Nothing is written to disk. |
-| **B — Routine (CI)** | **Every normal change.** Push to `main`, merge a PR, or click *Run workflow*. | GitHub Actions runs `pulumi up` using the secrets configured in the repo settings. **This is the default path.** |
-
-If you find yourself running Mode A more than once outside of a planned rotation, something is wrong with the workflow and not with you — open an issue.
-
-### Bootstrap modes
-
-When re-run, `pnpm --filter infra bootstrap` detects existing state from
-`Pulumi.<stack>.yaml` and offers these modes:
-
-| Mode | Effect |
-|---|---|
-| **Resume** | Re-runs idempotent steps (state bucket, secrets check, edge plan, DNS check, GitHub variable sync) using a freshly-pasted bootstrap key for provider/IAM auth. Does **not** touch the IAM policy. **Cannot apply changes to DB / VPC / private network** via the CI key (it is read-only on those). |
-| **Rotate CI** | Deletes the existing `<slug>-ci-deploy` API key and IAM policy, mints a fresh key, re-attaches the policy with current `PROJECT_PERMISSION_SETS`, pushes new secrets to GitHub. Use after rotating credentials **or after changing permission sets in `tasks/setup-ci-key.ts`**. |
-| **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key and supplies it to the provider via `SCW_*` env, then runs `pulumi up`. Leaves live compute up. See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
-| **Preview** | Read-only `pulumi preview --diff` using a Scaleway key (any key with read access) supplied via `SCW_*` env. Makes no changes; use it to validate provider auth and inspect drift before an Apply or a config cleanup. |
-| **Manage runtime secrets** | List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager. |
-| **Clean** | Wipes local state and starts over — see [Clean slate](#clean-slate). |
-
-> To tear down and rebuild the entire stack (with an optional DB snapshot and
-> upload backup), see [Destroy & rebuild](./DESTROY_REBUILD.md).
-
-> Resume prints a `⚠ CI policy permission sets have changed` warning when the
-> permission-set fingerprint in `Pulumi.<stack>.yaml` doesn't match the current
-> `PROJECT_PERMISSION_SETS` / `ORG_PERMISSION_SETS` constants. That means you
-> added or removed a permission set in `tasks/setup-ci-key.ts` — re-run and
-> pick **Rotate CI** to apply.
-
-## Mode A — Bootstrap (one-time)
-
-### 1. Install tools
-
-```bash
-brew install pulumi/tap/pulumi
+```
+Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
 ```
 
-### 2. Create a Scaleway project
+## The three credentials
 
-Create a project (e.g. `cella-apps`) in the [Scaleway console](https://console.scaleway.com/). Note the **Project ID** and **Organization ID**.
+The security model is defined by exactly three Scaleway API keys, in strictly descending privilege, each in a different store. Each key creates or provisions the next:
 
-### 3. Generate a bootstrap API key
+```
+Bootstrap key      (broad, short-lived; in your password manager only)
+    │ creates
+    ▼
+CI deploy key      (project-scoped write; in the GitHub Environment)
+    │ provisions
+    ▼
+VM reader key      (read-only; baked into each VM)
+    │ reads
+    ▼
+runtime secrets + images on the VM
+```
+
+| Key | Permissions | Lifetime | Where stored |
+|-----|-------------|----------|-------------|
+| **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes — revoked immediately after each use (initial bootstrap or manual rotation). Also required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
+| **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
+| **VM reader key** (`<slug>-vm-reader`) | Read-only registry / object storage / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
+
+Exact IAM permission sets and the bootstrap-owned boundary are documented in [Security & IAM reference](#security--iam-reference).
+
+## Routine deploys (CI)
+
+The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
+
+- **On push to `main`** — builds images, uploads the frontend, runs `pulumi up`, verifies the deployment.
+- **On manual dispatch** — same, against the chosen environment (`staging` or `production`).
+
+
+Routine deploys don't replace VMs. CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
+
+To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
+
+To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers — the workflow already targets it.
+
+
+## Rollout strategies
+
+Each service declares its roll strategy in the fork-owned service registry ([config/services.config.ts](config/services.config.ts)). The split is simple: **backend → blue-green, everything else → in-place.**
+
+| Strategy | Services | How |
+|----------|----------|-----|
+| **blue-green** | backend | Run two named slots (`backend-blue` / `backend-green`). Bring the idle slot up on the new tag, identity-gate it, then flip the ingress upstream to it and retire the old slot. |
+| **in-place** | frontend, ai, cdc, yjs | Recreate the single app container (`up -d --no-deps <svc>`). The ingress holds the listener open and retries the upstream across the ~seconds the container is restarting. |
+
+**Why backend is blue-green and the rest are in-place.** The backend is the critical path, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
+
+Only cloud-init changes (reconciler/package updates, an instance-type resize) replace the VM; the LB health checks handle that. Routine runtime secret changes don't — the reconciler refreshes `/opt/app/.env.runtime` each tick and rolls the service when that file changes, even if the image tag didn't.
+
+## Configuration
+
+All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy, no `pulumi config set`. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
+
+**Common questions:**
+- *Where do I change a VM size?* → `instanceType` in [config/services.config.ts](config/services.config.ts) (applied by the next CI deploy).
+- *Where do I change the database size?* → DB node type & volume in [config/general.config.ts](config/general.config.ts) (bootstrap-owned RDB — apply via [Changing infrastructure](#changing-infrastructure)).
+
+| File | Owns | Applied by |
+|------|------|------------|
+| [config/services.config.ts](config/services.config.ts) | Per-service VM size (`instanceType`, required), rollover, LB routing, env, feature flags | routine CI deploy |
+| [config/general.config.ts](config/general.config.ts) | DB node type & volume, WAF, Edge Services, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
+| [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
+
+What stays in Pulumi config (not committed fork data): secrets, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker.
+
+## Changing infrastructure
+
+Most config changes ship through a normal CI deploy. But **bootstrap-owned** resources — the database, VPC, and private network — can only be mutated with a temporary bootstrap key. 
+
+To apply a bootstrap-owned change (e.g. resize the database), re-run the CLI (`pnpm infra`) and choose **Apply infra change**. The action:
+
+1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)).
+2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
+3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
+4. Reminds you to revoke the bootstrap key.
+
+No stack file is mutated and no credential is written to disk, so an interrupted run needs no cleanup — `pulumi up` is idempotent, so just re-run Apply infra change to converge.
+
+
+## Fresh installation
+
+The interactive CLI ([cli/infra-cli.ts](cli/infra-cli.ts)) is launched with `pnpm infra`. It inspects the local `Pulumi.<stack>.yaml` to decide whether this is the start of a fresh installation or to manage an existing setup. On a fresh stack it skips the menu and runs a fresh install directly.
+
+### 1. Prerequisites
+
+- **A domain.** You need an external domain (set as `appConfig.domain`) set up through: https://console.scaleway.com/domains/external.
+- **Pulumi.** Install the CLI:
+
+  ```bash
+  brew install pulumi/tap/pulumi
+  ```
+- **GitHub CLI** (recommended). If you want bootstrap to create the GitHub Environment and sync the CI deploy secrets automatically, install `gh` and authenticate it first with `gh auth login`.
+- **Scaleway Project** Create a project (e.g. `cella-apps`) in the [Scaleway console](https://console.scaleway.com/). Note the **Project ID** and **Organization ID** and add them to your `backend/.env`.
+
+### 2. Generate a bootstrap API key
 
 This key is used *only* during bootstrap and is revoked immediately after. It needs to create IAM applications and policies (i.e. `IAMManager` plus enough to read your project).
 
@@ -81,115 +145,165 @@ This key is used *only* during bootstrap and is revoked immediately after. It ne
 
 Save the access key, secret key, project ID, and organization ID in your password manager for the duration of the bootstrap session only.
 
-### 4. Pick a Pulumi passphrase
+### 3. Pick a Pulumi passphrase
 
-Generate a strong passphrase (e.g. `openssl rand -base64 24`). Save it in your password manager *now* — Pulumi cannot recover it, and losing it means rebuilding the stack from scratch.
+Generate a strong passphrase (e.g. `openssl rand -base64 24`). Save it in your password manager, losing it means rebuilding the stack from scratch.
 
-### 5. Run bootstrap
+### 4. Run the infra CLI
 
 ```bash
-pnpm --filter infra bootstrap
+pnpm infra
 ```
 
-The script prompts for everything from steps 3 and 4, then runs the full chain in one process:
+The CLI:
 
-1. Creates the Pulumi state bucket in Scaleway Object Storage (idempotent).
-2. `pulumi login` against that bucket.
-3. `pulumi stack init` (or selects the existing stack).
-4. Sets `scaleway:projectId`.
-5. Prompts for optional values (`adminEmail`, `brevoApiKey`, `scwAiApiKey`) only if not already in the stack file.
-6. Initializes stack secrets idempotently — random-generates `dbPassword`, `cookieSecret`, `unsubscribeSecret`, `cdcSecret`, `yjsSecret`; populates env-sourced ones from the prompts. Existing values are never overwritten (see [Rotating a single stack secret](#rotating-a-single-stack-secret)).
-7. Subscribes the project to the Edge Services `starter` plan if not already subscribed.
-8. Registers `<domain>` as an external DNS zone on Scaleway if missing, then waits for it to become active. Scaleway emails you a TXT `_scaleway-challenge` record and the `ns0/ns1.dom.scw.cloud` NS delegation to publish at your current DNS provider — bootstrap polls until the zone flips to `active`.
-9. Creates a `<slug>-ci-deploy` IAM application with a least-privilege policy and a fresh API key. The key is **not** written to stack config — if the `gh` CLI is authenticated it creates the matching GitHub Environment (e.g. `production`) and writes the CI key and project/organization IDs as **environment-scoped** secrets, so they're only injected into deploy jobs, not every workflow run. Identity values (the CI/VM application ids, operator principal, CI policy fingerprint) are derived from the Scaleway IAM API at `pulumi up` time rather than stored in config. The minimal-privilege `<slug>-vm-reader` key baked into service VMs is provisioned here too and **seeded into Scaleway Secret Manager** (the `vm-reader-key` secret under `/<slug>-<mode>/`) instead of stack config; the Pulumi program reads it back at `pulumi up` and bakes it into VM cloud-init. No credential is written to `Pulumi.<env>.yaml` — bootstrap only stamps a non-secret `infra:bootstrapComplete` timestamp there so the CLI can tell a finished stack from an interrupted one.
-10. Offers to run `pulumi up` immediately to provision base infrastructure (registry, DB, network). Compute VMs are intentionally skipped at this stage — they are deployed by CI after images have been pushed.
+- Creates state storage
+- Initializes Pulumi
+- Creates required credentials
+- Configures GitHub (if available)
+- Optionally runs the first pulumi up
 
-### 6. Add GitHub Actions secrets
 
-If `gh` CLI was authenticated during bootstrap, all four Scaleway secrets are already set on the `production` environment. Otherwise add them manually under **Settings → Environments → `production` → Environment secrets** (preferred — environment-scoped) rather than repo-level secrets:
+### 5. Commit and push
+
+After the first local `pulumi up` finishes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push the Docker images, run `pulumi up` again, and bring the compute VMs up automatically.
+
+The first local `pulumi up` does **not** depend on GitHub secrets — but the CI run after you push does. If they're missing, the CI step fails and the VMs will not come up.
+
+If `gh` CLI was authenticated during bootstrap, it already set the GitHub Environment secrets it manages on `production`. Otherwise add them manually under **Settings → Environments → `production` → Environment secrets** (preferred — environment-scoped) rather than repo-level secrets:
 
 | Secret | Value | Scope | Set by bootstrap? |
 |---|---|---|---|
-| `SCW_ACCESS_KEY` | CI deploy key access key | environment | ✓ if `gh` auth |
-| `SCW_SECRET_KEY` | CI deploy key secret key | environment | ✓ if `gh` auth |
-| `PULUMI_CONFIG_PASSPHRASE` | The passphrase from step 4 | environment | manual |
-| `SCW_PROJECT_ID` | Scaleway project ID | environment | ✓ if `gh` auth |
-| `SCW_ORGANIZATION_ID` | Scaleway organization ID | environment | ✓ if `gh` auth |
+| `SCW_ACCESS_KEY` | CI deploy key access key | environment | ✓ if `gh` |
+| `SCW_SECRET_KEY` | CI deploy key secret key | environment | ✓ if `gh` |
+| `PULUMI_CONFIG_PASSPHRASE` | The passphrase | environment | manual |
+| `SCW_PROJECT_ID` | Scaleway project ID | environment | ✓ if `gh` |
+| `SCW_ORGANIZATION_ID` | Scaleway organization ID | environment | ✓ if `gh` |
 
-> **Naming note.** The bootstrap CLI prompts for `Scaleway bootstrap access key / secret key` — these are the **broad-permission bootstrap credentials** (with `IAMManager`) used to *mint* the CI deploy key. To skip the prompts, export `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` (not `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` — those names refer to the *output* CI key that gets stored in GitHub).
-
-### 7. Run initial infrastructure deploy
-
-Bootstrap will offer to run this automatically (using the bootstrap key still in memory — the CI key has read-only access to VPC / private network / RDB and cannot create them on a fresh stack). If you skipped it, run it manually now with the bootstrap key:
-
-```bash
-cd infra && \
-  SCW_ACCESS_KEY=<bootstrap-access-key> \
-  SCW_SECRET_KEY=<bootstrap-secret-key> \
-  AWS_ACCESS_KEY_ID=<bootstrap-access-key> \
-  AWS_SECRET_ACCESS_KEY=<bootstrap-secret-key> \
-  PULUMI_CONFIG_PASSPHRASE=<passphrase> \
-  pulumi up --stack organization/infra/production
-```
-
-(`SCW_*` authenticates the Scaleway provider; `AWS_*` authenticates the S3-compatible Pulumi state backend — same key, two protocols.)
-
-This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — the bootstrap command sets the transient `bootstrap:computeDeferred` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
-
-After this completes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push Docker images and run a second `pulumi up`. The marker is no longer set, so compute VMs come up on their own. **You do not need to run `pulumi up` a second time locally.**
-
-### 8. Revoke the bootstrap key
+### 6. Revoke the bootstrap key
 
 > **Do this immediately after bootstrap completes.**
 
-The bootstrap key has broad permissions and is no longer needed. In the Scaleway console:
-
 1. Go to [IAM → API Keys](https://console.scaleway.com/iam/api-keys) and delete the bootstrap key.
-2. Optionally delete the bootstrap IAM application entirely.
+2. Optionally delete the temporary bootstrap application too.
 
-The `<slug>-ci-deploy` application created by bootstrap is the only key that should remain.
+After bootstrap, only the long-lived deploy and VM keys should remain. From here on, **all routine deploys happen in CI**.
 
-From here on, **all routine deploys happen in CI** (Mode B).
+## Architecture reference
 
-### Permission sets granted to the CI deploy key
+### Layers
 
-Defined in [`tasks/setup-ci-key.ts`](tasks/setup-ci-key.ts) — `PROJECT_PERMISSION_SETS`
-(project scope) and `ORG_PERMISSION_SETS` (organization scope). The list is
-deliberately split into **write at steady state** vs **read-only**:
+The infrastructure is organised in 6 phases, deployed in dependency order ([index.ts](index.ts) composes the modules):
 
-| Resource family | CI key | Owned by |
-|---|---|---|
-| Container Registry, Instances, Load Balancers, Edge Services, Object Storage, Secret Manager, Observability | `…FullAccess` | CI deploys mutate these on every run. |
-| **VPC, Private Network, RDB** | `…ReadOnly` | **Bootstrap key.** Created once at bootstrap, refreshed but never mutated by CI. |
-| DNS (`DomainsDNSFullAccess`, org scope) | Full | CI may add/update A records when modules change. |
-| IAM (`IAMReadOnly`, org scope) | Read-only | `pulumi up` ([`helpers.ts`](helpers.ts)) and the "Verify VM reader IAM grant" step look up the CI/VM applications and policies by name. Read-only — `IAMManager`/`IAMFullAccess` stay forbidden. |
+| Layer | Module | Resources |
+|-------|--------|-----------|
+| 1 | `storage` | Frontend bucket (SPA hosting), public & private upload buckets |
+| 2 | `edge`, `dns` | Edge Services CDN pipeline, WAF, TLS certs, DNS records |
+| 3 | `network`, `registry` | VPC, private networks, container registry |
+| 4 | `database` | Managed PostgreSQL 17 |
+| 5 | `secrets`, `compute` | Secret Manager, Docker Compose VMs |
+| 6 | `loadbalancer` | Scaleway LB with TLS termination, host-header routing, DNS |
 
-This means **any change to [`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts), or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`. That's intentional — destructive operations on data-bearing resources go through a human running `pulumi up` locally with the bootstrap key.
+Application telemetry is exported to Maple.dev from the runtime services; no observability resources are provisioned in Pulumi.
 
-#### Applying a bootstrap-owned change
+### How config flows
 
-Re-run bootstrap and choose **Apply infra change**. The mode:
+```
+shared/config/config.default.ts   → appConfig (slug, domain, URLs, S3 settings)
+shared/config/config.production.ts → overrides for production mode
+        ↓
+infra/config/*.config.ts          → fork-owned sizing/feature knobs (VMs, DB, WAF, secrets map)
+        ↓
+infra/pulumi-context.ts           → derives all naming, domains, regions; binds config + appConfig
+        ↓
+infra/resources/*.ts              → uses naming + `infra` (resolved config) + infraConfig (secrets/break-glass)
+        ↓
+Pulumi.<stack>.yaml               → encrypted secrets + transient operator toggles only
+```
 
-1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Step 3](#3-generate-a-bootstrap-api-key)).
-2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
-3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
-4. Reminds you to revoke the bootstrap key.
+No resource names, domains, bucket names, or sizing are hardcoded in the Pulumi modules — everything flows from `appConfig` and the `config/` files.
 
-No stack file is mutated and no credential is written to disk, so an interrupted run needs no cleanup — `pulumi up` is idempotent, so just re-run Apply infra change to converge.
+### Stacks
 
-You can also supply `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` / `PULUMI_CONFIG_PASSPHRASE` as env vars to skip the prompts.
+Only `production` is supported out of the box, but additional stacks (e.g. `staging`) can be added. This will be documented later. 
 
-> The Scaleway provider authenticates from `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` / `SCW_DEFAULT_PROJECT_ID` env vars — provider credentials are no longer stored in stack config. Apply mode (and CI) simply set those env vars for the `pulumi up` invocation; there is no longer any key to swap into or restore from config.
+### File structure
 
-#### When CI fails with `insufficient permissions: write <resource>`
+```text
+infra/
+├── caddy/                  Caddy templates
+├── cli/                    Infra CLI
+├── compose/                Build and generate compose.gen.yml
+├── config/                 Where customisable config lives
+├── lib/                    Shared infra utilities used across Pulumi resources and tasks
+├── reconciler/             On-VM deploy reconciler that applies image/tag updates in place
+├── resources/              Pulumi resources: network, db, compute, LB ...
+├── tasks/                  Non-interactive operator/CI tasks (key setup, verification, waits)
+├── tests/                  Higher-level infra test coverage
 
-`pulumi up` (whether in CI or from `bootstrap`) inspects this error class and prints a hint:
+.github/workflows/          CI half of the deploy control plane
+├── deploy.yml              Build + push images, upload frontend, run `pulumi up`, roll services
+└── infra-preview.yml       `pulumi preview` on PRs touching infra/ or shared/
+```
 
-- If `<resource>` is bootstrap-owned (matches `private_network`, `vpc*`, `rdb*`, `instance_db`, `domain_zone`) → re-run bootstrap, choose **Apply infra change**.
-- Otherwise → add the matching permission set to `PROJECT_PERMISSION_SETS` in [`tasks/setup-ci-key.ts`](tasks/setup-ci-key.ts), then re-run bootstrap → **Rotate CI**.
+The `.github/workflows/` files are tightly coupled to this package: `deploy.yml` runs the same `pulumi up` the CLI does (authenticating with the CI deploy key) and then drives the on-VM reconciler via the deploy-tags bucket, while `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
 
-Note that some Scaleway resources are still backed by *legacy* IAM namespaces.
-For example, `scaleway:network:PrivateNetwork` requires `PrivateNetworksFullAccess` / `PrivateNetworksReadOnly` (not the modern `VPC*` sets) because the provider still calls the legacy `compute_private_networks` endpoint.
+## Security & IAM reference
+
+All IAM permission sets for the three credentials live in one annotated manifest:
+[`lib/permissions.ts`](lib/permissions.ts). It is the single source of truth — the
+provisioning tasks, the Pulumi VM-reader policy, and the `pulumi up` permission-error
+classifier all import from it, and [`tasks/permission-sets.test.ts`](tasks/permission-sets.test.ts)
+locks the exact membership so any change is visible in review. Read that file for the
+current grants and the per-set rationale (kept there rather than duplicated here, since
+the sets still change as the infra evolves).
+
+The key split is **write at steady state vs read-only**: the CI deploy key has
+`…FullAccess` on resources it mutates every deploy (registry, instances, LB, edge,
+object storage, secrets) but only `…ReadOnly` on the **bootstrap-owned**
+families (VPC, private network, RDB). So **any change to
+[`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts),
+or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`.
+That's intentional — destructive operations on data-bearing resources go through a human
+running `pulumi up` locally with the bootstrap key (see [Changing infrastructure](#changing-infrastructure)).
+The same bootstrap-owned boundary is encoded once as `BOOTSTRAP_OWNED_FRAGMENTS` in the manifest.
+
+
+## Advanced operations
+
+### Key rotation
+
+1. Generate a temporary bootstrap key. Personal API Key is fastest.
+
+2. Run the CLI and pick **Rotate keys**:
+
+   ```bash
+   pnpm infra
+   ```
+
+   This mints a fresh `<slug>-ci-deploy` key and (if `gh` is authenticated) pushes it to the `production` GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also mints a fresh `<slug>-vm-reader` key and writes it to Secret Manager. Neither key is written to stack config.
+
+3. The next CI deploy authenticates with the new CI key from the GitHub Environment — no commit needed. The new VM reader key is baked into VM cloud-init on the next `pulumi up`; because that changes the boot script, the VMs are replaced (the LB health checks bridge the transition).
+
+4. **Revoke the bootstrap key** in the Scaleway console.
+
+### Changing the Pulumi passphrase
+
+The passphrase encrypts the stack's secret outputs (e.g. the DB connection string) in the state bucket. To change it, re-encrypt the stack with the old passphrase in hand, then update the GitHub Environment:
+
+1. Re-encrypt the stack secrets with a new passphrase:
+
+   ```bash
+   cd infra
+   PULUMI_CONFIG_PASSPHRASE='<current passphrase>' pulumi stack change-secrets-provider passphrase
+   # prompts for the new passphrase, then re-encrypts state and Pulumi.<stack>.yaml
+   ```
+
+2. Update `PULUMI_CONFIG_PASSPHRASE` in the `production` GitHub Environment (Settings → Environments → production → Environment secrets) and in your password manager.
+
+3. Commit the updated `infra/Pulumi.<stack>.yaml` (the `encryptionsalt` changes).
+
+> Losing the current passphrase means you cannot decrypt existing secret outputs — there is no recovery, so you must hold it to perform this change.
 
 <a id="clean-slate"></a>
 ### Clean slate (start over from scratch)
@@ -199,107 +313,11 @@ For example, `scaleway:network:PrivateNetwork` requires `PrivateNetworksFullAcce
 3. (optional) Revoke the bootstrap API key in the Scaleway console.
 4. (optional) Delete IAM application `<slug>-ci-deploy` and its policy.
 5. (optional) Remove `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from the `production` GitHub Environment (Settings → Environments → production → Environment secrets).
-6. Re-run: `pnpm --filter infra bootstrap`
+6. Re-run: `pnpm infra`
 
-## Mode B — Routine deploys (CI)
+## Emergency procedures
 
-The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
-
-- **On push to `main`** — builds images, uploads the frontend, runs `pulumi up`, verifies the deployment.
-- **On manual dispatch** — same, against the chosen environment (`staging` or `production`).
-
-A separate workflow at [.github/workflows/infra-preview.yml](../.github/workflows/infra-preview.yml) runs `pulumi preview` on every PR that touches `infra/` or `shared/`, so you can review the plan before merging.
-
-Routine deploys don't replace VMs. CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [INFRA_ARCHITECTURE.md → Zero-downtime deploys](./INFRA_ARCHITECTURE.md#zero-downtime-deploys) for the rollover model and [Operating the reconciler](./INFRA_ARCHITECTURE.md#operating-the-reconciler) for diagnostics and rollback.
-
-To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
-
-To gate production behind manual approval, configure a [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) named `production` with required reviewers — the workflow already targets it.
-
-After the first deploy:
-
-```bash
-pulumi stack output serviceDomainUrls   # public URL per LB-exposed service
-pulumi stack output frontendBucketEndpoint
-
-# Run database migrations and initial seed. Requires PULUMI_CONFIG_PASSPHRASE
-# and Scaleway state-bucket credentials in your environment.
-DATABASE_URL=$(cd infra && pulumi stack output dbConnectionStringDirect --show-secrets) \
-DATABASE_ADMIN_URL=$DATABASE_URL \
-  pnpm --filter backend seed -- init
-```
-
-DNS records for api/yjs/ai are created automatically by the `loadbalancer` module if your domain is managed in Scaleway Domains. Otherwise point A records at the LB IP returned by `pulumi stack output`.
-
-## Key rotation
-
-The `<slug>-ci-deploy` API key (used by `pulumi up` to provision Scaleway resources) lives in the `production` GitHub Environment as the `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` secrets — the Scaleway provider authenticates from those env vars, not from stack config. You **should** rotate it periodically — every 90 days is a reasonable cadence, and immediately if there's any reason to believe it leaked.
-
-Rotation is intentionally **manual**. An automated rotator would require a permanent `IAMManager`-capable key sitting in GitHub Actions secrets — a strictly larger blast radius than the key it rotates, since `IAMManager` can manufacture arbitrary new credentials. Manual rotation with a short-lived bootstrap key is the same security model as the initial bootstrap.
-
-### Procedure
-
-1. Generate a temporary bootstrap key (see [Step 3](#3-generate-a-bootstrap-api-key) — Personal API Key is fastest).
-
-2. Run bootstrap and pick **Rotate CI**:
-
-   ```bash
-   pnpm --filter infra bootstrap
-   ```
-
-   This deletes the existing `<slug>-ci-deploy` API key, mints a fresh one, and (if `gh` is authenticated) pushes it to the `production` GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. The key is never written to stack config.
-
-3. The next CI deploy authenticates with the new key from the GitHub Environment — no commit needed.
-
-4. **Revoke the bootstrap key.** Same day.
-
-### Rotating a single stack secret
-
-Runtime secrets live in Scaleway Secret Manager (managed via the CLI's "Manage runtime
-secrets" mode), not in stack config. For the rare value that is still a Pulumi config
-secret, set it directly:
-
-```bash
-pulumi config set --secret infra:cookieSecret "$(openssl rand -base64 32)" \
-  --stack organization/infra/<stack>
-```
-
-### Local credential hygiene
-
-Bootstrap and apply-mode keep Scaleway credentials **in memory only** — they are
-never written to disk, and they neutralise any local `~/.config/scw/config.yaml`
-profile by pointing `SCW_CONFIG_PATH` at a non-existent file (see
-[`lib/bootstrap-scw-env.ts`](lib/bootstrap-scw-env.ts)). Keep it that way:
-
-- **Do not run `scw init`.** It writes your access + secret key in plaintext to
-  `~/.config/scw/config.yaml`. When you need the `scw` CLI ad-hoc, scope the
-  credentials to a subshell with a neutralised config instead:
-
-  ```bash
-  ( export SCW_CONFIG_PATH=/dev/null \
-      SCW_ACCESS_KEY=… SCW_SECRET_KEY=… SCW_DEFAULT_PROJECT_ID=… ; \
-    scw … )
-  ```
-
-- **Keep secrets out of shell history.** Setting `SCW_SECRET_KEY=…` or a
-  passphrase inline on the command line records the value in `~/.bash_history` /
-  `~/.zsh_history`. Either:
-  - add `export HISTCONTROL=ignorespace` to your shell rc and prefix any
-    secret-bearing command with a leading space, or
-  - pipe secrets so they never appear as arguments, e.g.
-    `gh secret set SCW_SECRET_KEY --env production < scw-secret.txt` (then delete the file).
-
-- **Don't stash Scaleway keys in `~/.aws/credentials`.** The S3 state backend
-  needs `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, but prefer exporting them
-  per-session over persisting a `[default]` profile — a stale profile silently
-  shadows whatever you intend to use and lingers long after the key is revoked.
-
-If a key does leak to disk: revoke it in the Scaleway console first, then scrub
-the file(s). Remember that **open shells re-flush their in-memory history on
-exit** — after editing `~/.bash_history`, run `history -c` in every open
-terminal (or close them) so the scrub isn't overwritten.
-
-## Emergency access to a VM
+### Emergency access to a VM
 
 There is **no inbound SSH** on the compute security group (closed by default). For break-glass:
 
@@ -309,9 +327,3 @@ There is **no inbound SSH** on the compute security group (closed by default). F
 4. Detach and document what was done.
 
 For routine debugging, ship logs / metrics out of the VM (via Cockpit) rather than opening shells.
-
-## Known platform limitations
-
-- **No instance-attached IAM identity (Scaleway).** Application secrets and the registry-login credential are necessarily embedded in cloud-init userdata. Anyone with `InstancesReadOnly` on the project can read them. See [resources/compute.ts](resources/compute.ts) for details. Mitigated by serial-console-only access (no SSH).
-
-- **Frontend security headers are injected by the frontend Caddy proxy.** The production frontend is no longer served directly from Edge Services. A dedicated frontend Caddy VM fronts the S3 bucket and emits the full browser-facing header set in [caddy/Caddyfile](caddy/Caddyfile), including CSP, HSTS, `X-Frame-Options`, `Permissions-Policy`, `Referrer-Policy`, and `Cross-Origin-Opener-Policy`. The CSP value is passed into that proxy at deploy time from [lib/frontend-csp.ts](lib/frontend-csp.ts), so production has a single HTTP-header source of enforcement.

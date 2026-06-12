@@ -21,7 +21,7 @@
     "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
-    "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics"
+    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1063.0",

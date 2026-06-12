@@ -89,14 +89,14 @@ inventing one.
 
 ### 2.3 What the CLI flows do (what the UI would wrap)
 
-From [infra-cli.ts](../infra/cli/infra-cli.ts) and `infra/cli/services/*`:
+From [infra-cli.ts](../infra/cli/infra-cli.ts) and `infra/cli/actions/*`:
 
 - **Resume** (idempotent re-run): ensure state bucket → `pulumi login` (S3 backend in the
   customer's project) → stack select → seed generated stack secrets → seed operator secrets to
   Scaleway Secret Manager → gap-check required secrets → provision/heal CI + VM keys → sync
   GitHub environment. 5–7 prompts, **all with env-var fallbacks** — the flow is already
   effectively headless.
-- **Rotate CI**: mint fresh CI key, delete old, re-sync GitHub.
+- **Rotate keys**: mint fresh CI and VM reader keys, delete old, re-sync GitHub.
 - **Apply infra change**: supply a fresh bootstrap key via `SCW_*` env → backup stack YAML →
   set `bootstrap:applyInProgress` marker → `pulumi up` → restore from backup (clears the
   marker). Crash-safe by construction (verbatim file backup, auto-restore offer on next run).
@@ -114,11 +114,11 @@ Already generic (derives from config, not hardcoded):
 
 - All resource naming flows from `appConfig.slug` through [naming.ts](../infra/naming.ts)
   (`deriveInfra`): buckets, registry namespace, IAM app names, secret paths, VM names.
-- The service set is a single typed registry (`infra/compose/services.config.ts` +
+- The service set is a single typed registry (`infra/config/services.config.ts` +
   `lib/services.ts`) with feature flags (`has.yjs`, `has.ai`), per-mode instance types,
   rollover strategy, LB routing, health ports. Every infra module derives from it.
 - Runtime secrets are a fork-owned declarative registry
-  ([runtime-secrets.config.ts](../infra/lib/runtime-secrets.config.ts)) mapping secret →
+  ([runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts)) mapping secret →
   consuming services, with `pulumi` vs `operator` value sources.
 - appConfig surface consumed by infra is small: `slug`, `mode`, `domain`, `s3.region`,
   feature flags.
@@ -542,7 +542,7 @@ deferred until after phase 3 with nothing wasted.
 
 ### Phase 1 — Headless core as a real seam
 
-- Extract the flow logic out of `infra/cli/services/*` into pure, prompt-injected functions
+- Extract the flow logic out of `infra/cli/actions/*` into pure, prompt-injected functions
   (the secrets flow already does this with `RuntimeSecretPrompts` — replicate the pattern for
   setup/rotate/apply). CLI becomes one thin adapter; a web UI becomes another.
 - Replace `spawnSync('pulumi', ...)` with the Pulumi Automation API (`LocalWorkspace`),

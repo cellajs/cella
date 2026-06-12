@@ -3,9 +3,9 @@
  *
  * Resources are imported and composed here in dependency order:
  * storage → edge/dns → network/registry → database → secrets/compute → loadbalancer.
- * Comment out a group to deploy incrementally (see INFRA_ARCHITECTURE.md).
+ * Comment out a group to deploy incrementally (see README.md → Architecture).
  */
-import { naming, region, mode } from './helpers'
+import { naming, region, mode } from './pulumi-context'
 
 console.info(`Pulumi stack: ${mode}`)
 console.info(`Slug: ${naming.slug}`)

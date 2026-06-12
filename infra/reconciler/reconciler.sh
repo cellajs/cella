@@ -269,7 +269,7 @@ bg_dump_logs() {
 # new tag, identity-gate it DIRECTLY (it has no host port — probe over the
 # compose network), then flip the ingress to it with `caddy reload` and retire
 # the old slot after a short drain. A bad release never touches the serving
-# slot. See infra/INFRA_ARCHITECTURE.md.
+# slot. See infra/README.md (Zero-downtime deploys).
 blue_green_roll() {
   ACTIVE_SLOT_FILE="$STATE_DIR/active.slot"
   active_slot="blue"

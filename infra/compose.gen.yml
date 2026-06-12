@@ -54,10 +54,10 @@ services:
       runMigrate: true
       rolloverStrategy: blue-green
       drainSeconds: 10
-      lbRoute: default
       instanceType:
         production: DEV1-M
         staging: DEV1-S
+      lbRoute: default
   backend-green:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
@@ -127,6 +127,7 @@ services:
       runMigrate: false
       rolloverStrategy: in-place
       drainSeconds: 0
+      instanceType: DEV1-S
       bindings:
         API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
   yjs:
@@ -158,6 +159,7 @@ services:
       runMigrate: false
       rolloverStrategy: in-place
       drainSeconds: 0
+      instanceType: DEV1-S
       lbRoute: host
       lbWebsockets: true
       featureFlag: yjs
@@ -194,6 +196,7 @@ services:
       runMigrate: false
       rolloverStrategy: in-place
       drainSeconds: 0
+      instanceType: DEV1-S
       lbRoute: host
       reusesImageOf: backend
       featureFlag: ai
@@ -222,6 +225,7 @@ services:
       runMigrate: false
       rolloverStrategy: in-place
       drainSeconds: 0
+      instanceType: DEV1-S
       lbRoute: host
 
 volumes:

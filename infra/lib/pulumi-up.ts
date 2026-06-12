@@ -7,6 +7,7 @@
 import { spawn } from 'node:child_process'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
+import { isBootstrapOwned } from './permissions'
 
 async function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   while (child.exitCode === null && child.signalCode === null) {
@@ -15,18 +16,6 @@ async function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number>
 
   return child.exitCode ?? 1
 }
-
-/** Resources whose permission set is intentionally NOT granted to the CI key
- *  (see PROJECT_PERMISSION_SETS in setup-ci-key.ts). When permission is denied
- *  on one of these, the fix is to use Apply mode, not to widen CI.
- *
- *  `policy` covers the VM reader IAM policy (resources/vm-iam.ts): creating or
- *  updating an IAM policy needs IAM *write*, which the CI key must never hold
- *  (IAMManager/IAMPolicyManager are forbidden privilege-escalation vectors —
- *  see tasks/permission-sets.test.ts). So its first creation, like VPC/PN/RDB,
- *  must run via a local `pulumi up` with the bootstrap key; CI only refreshes
- *  it afterwards. */
-const BOOTSTRAP_OWNED_RESOURCE = /private_network|^vpc|rdb|instance_db|domain_zone|policy/i
 
 export type PermissionHint =
   | { kind: 'bootstrap-owned'; resource: string }
@@ -40,7 +29,7 @@ export function classifyPermissionError(stderr: string): PermissionHint {
   const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i)
   if (!m?.[1]) return undefined
   const resource = m[1]
-  return BOOTSTRAP_OWNED_RESOURCE.test(resource)
+  return isBootstrapOwned(resource)
     ? { kind: 'bootstrap-owned', resource }
     : { kind: 'ci-grantable', resource }
 }
@@ -69,7 +58,7 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
         console.error(`  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`)
       else
         console.error(
-          `  Add the matching permission set to PROJECT_PERMISSION_SETS in tasks/setup-ci-key.ts, then re-run bootstrap and choose ${pc.italic('"Rotate CI"')}.`,
+          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run bootstrap and choose ${pc.italic('"Rotate keys"')}.`,
         )
     }
   }

@@ -24,7 +24,7 @@
 # process env, so the -e override (not the running process env) decides the new
 # upstream — then pushes the adapted JSON to the admin API below. The host
 # listener is untouched, so in-flight requests drain and new ones route to the
-# new slot. See infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
+# new slot. See infra/README.md (Zero-downtime deploys).
 {
 	# Loopback-only admin API — required for `caddy reload` (the blue-green
 	# flip). Bound to 127.0.0.1 inside the container and never published, so it

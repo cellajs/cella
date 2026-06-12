@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
-import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
+import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
 import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
 
@@ -19,11 +19,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml)
 
-  const projectId = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || ''
-  if (!projectId) {
-    console.error(`${warningMark} Scaleway project ID not found. Set SCW_PROJECT_ID in the repo .env (see backend/.env.example).`)
-    process.exit(1)
-  }
+  const { projectId } = context
 
   const accessKey =
     process.env.SCW_ACCESS_KEY ||
@@ -32,18 +28,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 
-  const previewEnv: NodeJS.ProcessEnv = {
-    ...process.env,
-    SCW_ACCESS_KEY: accessKey,
-    SCW_SECRET_KEY: secretKey,
-    SCW_DEFAULT_PROJECT_ID: projectId,
-    SCW_PROJECT_ID: projectId,
-    AWS_ACCESS_KEY_ID: accessKey,
-    AWS_SECRET_ACCESS_KEY: secretKey,
-    PULUMI_CONFIG_PASSPHRASE: passphrase,
-    SCW_CONFIG_PATH: scwConfigPathNone(infraDir),
-    SCW_PROFILE: '',
-  }
+  const previewEnv = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase })
 
   const { appConfig } = context
   const loginUrl = `s3://${appConfig.slug}-pulumi-state?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`

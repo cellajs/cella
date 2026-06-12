@@ -15,13 +15,13 @@
  * not IAM. A compromised container can exfiltrate its own secrets but cannot
  * provision infrastructure or escalate privileges.
  *
- * Used by the bootstrap command inside the "Rotate CI" path so both the CI key
+ * Used by the bootstrap command inside the "Rotate keys" path so both the CI key
  * and the VM key are provisioned atomically with a single IAM bootstrap credential.
  * Standalone usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
  *
- * The shared provisioning flow lives in `lib/scaleway-iam.ts`; this file owns
- * only the VM-specific permission sets, which Pulumi consumes via
- * `VM_PROJECT_PERMISSION_SETS`.
+ * The shared provisioning flow lives in `lib/scaleway-iam.ts`; the VM-specific
+ * permission sets live in `lib/permissions.ts` (the canonical IAM manifest),
+ * which Pulumi consumes via `VM_PROJECT_PERMISSION_SETS`.
  */
 
 import { fileURLToPath } from 'node:url'
@@ -30,21 +30,6 @@ import { checkMark } from 'shared/console'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
 import { secretManagerPath } from '../lib/vm-reader-secret'
 import { seedVmReaderKey } from './seed-vm-reader-key'
-
-/**
- * Permission sets granted to the VM reader key at project scope.
- *
- * Deliberately minimal: VMs only need to pull images, read their own deploy tag,
- * and fetch runtime secrets. Any wider grant is lateral-movement surface area.
- */
-export const VM_PROJECT_PERMISSION_SETS = [
-  'ContainerRegistryReadOnly',
-  'ObjectStorageReadOnly',
-  'SecretManagerReadOnly',
-  // Decrypt-and-read secret VALUES. SecretManagerReadOnly is metadata-only, so
-  // without this the VM's runtime-secret-sync 403s on every required secret.
-  'SecretManagerSecretAccess',
-] as const
 
 export type SetupVmKeyOptions = ProvisionScopedKeyOptions
 export type VmKeyResult = ScopedKeyResult

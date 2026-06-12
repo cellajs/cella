@@ -18,7 +18,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { getFlag } from './cli'
+import { getFlag } from './args'
 
 export interface DiagSelection {
   /** Recent stage/numbered markers, for a quick "how far did it get" overview. */

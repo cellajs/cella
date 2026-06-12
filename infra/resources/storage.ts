@@ -10,7 +10,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, appConfig, infraConfig, ciDeployApplicationId } from '../helpers'
+import { naming, region, tags, isProduction, appConfig, infra, ciDeployApplicationId } from '../pulumi-context'
 
 // Derived from IAM by name (SOVRUN §3.3) — was the stored `infra:applicationId`.
 const applicationId = ciDeployApplicationId
@@ -20,7 +20,7 @@ const applicationId = ciDeployApplicationId
 // a previous bundle (a tab may lazy-load a chunk it hasn't fetched yet).
 // Entry files (index.html, sw.js, manifest, etc.) live at the bucket root —
 // outside this prefix — so they are never touched by this rule.
-const assetRetentionDays = infraConfig.getNumber('assetRetentionDays') ?? 14
+const assetRetentionDays = infra.assetRetentionDays
 
 // ---------------------------------------------------------------------------
 // Frontend static files bucket (website hosting)

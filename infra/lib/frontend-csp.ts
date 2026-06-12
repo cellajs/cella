@@ -1,4 +1,4 @@
-import { appConfig } from '../helpers'
+import { appConfig } from '../pulumi-context'
 import { enabledServices } from './services'
 
 const enabledServiceSlugs = new Set(enabledServices(appConfig.has).map((service) => service.slug))

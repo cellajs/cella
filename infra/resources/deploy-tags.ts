@@ -36,7 +36,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, infraConfig, ciDeployApplicationId, vmReaderApplicationId, operatorPrincipal } from '../helpers'
+import { naming, region, tags, isProduction, infraConfig, ciDeployApplicationId, vmReaderApplicationId, operatorPrincipal } from '../pulumi-context'
 import { serviceNames, type ServiceName } from '../lib/services'
 
 // CI deploy application id — derived from IAM by name (SOVRUN §3.3), was the
@@ -58,7 +58,7 @@ const vmApplicationId = vmReaderApplicationId
 // policy is attached, Object Storage becomes authoritative and denies every
 // principal it does not name, so the operator key would 403 on the seed/GC
 // PutObject below. `operatorPrincipal` is derived from the calling SCW_ACCESS_KEY
-// (helpers.ts) as `user_id:<id>` or `application_id:<id>` so we can grant it
+// (pulumi-context.ts) as `user_id:<id>` or `application_id:<id>` so we can grant it
 // here. Undefined when no access key is in the environment (e.g. CI, where
 // pulumi already runs as the CI applicationId and the grant is redundant).
 

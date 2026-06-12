@@ -1,15 +1,15 @@
-/**
- * Pure, Pulumi-free derivations from appConfig. Touches no process.env or
- * @pulumi/pulumi, so it is safe to import from Pulumi modules, scripts, or tests.
- *
- * Holds account-global resource *names* plus derived facts (zone, tags,
- * `hasDomain`, `isProduction`). Not here: per-service public endpoints (keyed by
- * slug in `lib/services.ts`) and plain appConfig pass-throughs (in `helpers.ts`).
- */
-import type { appConfig as AppConfig } from '../shared'
+
+import type { appConfig as AppConfig } from '../../shared'
 
 type Cfg = typeof AppConfig
 
+/**
+ * Pure, Pulumi-free derivations from appConfig.
+ * 
+ * Holds account-global resource *names* plus derived facts (zone, tags,
+ * `hasDomain`, `isProduction`). Not here: per-service public endpoints (keyed by
+ * slug in `lib/services.ts`) and plain appConfig pass-throughs (in `pulumi-context.ts`).
+ */
 export function deriveInfra(appConfig: Cfg) {
   const prefix = appConfig.slug
   const region = appConfig.s3.region

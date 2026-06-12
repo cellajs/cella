@@ -23,7 +23,7 @@ export interface ManageRuntimeSecretsOptions {
 }
 
 type ManagedRuntimeSecret = RuntimeSecretDefinition
-type Action = 'list' | 'set' | 'delete' | 'rotate'
+type Action = 'list' | 'set' | 'delete' | 'rotate' | 'exit'
 
 const defaultLog = (message: string) => console.info(message)
 
@@ -52,95 +52,119 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   })
   const secrets = operatorManagedSecrets()
 
-  const action = await options.prompts.select<Action>({
-    message: 'Manage runtime secrets',
-    choices: [
-      { name: 'List', value: 'list', description: 'Show operator-managed runtime secrets and whether a secret object exists.' },
-      { name: 'Set or update', value: 'set', description: 'Create a new secret version for a selected runtime secret.' },
-      { name: 'Rotate', value: 'rotate', description: 'Generate a fresh random value for a selected runtime secret when supported.' },
-      { name: 'Delete', value: 'delete', description: 'Delete an entire runtime secret object after confirmation.' },
-    ],
-  })
+  // Loop the menu so an operator setting up a fresh environment can manage
+  // several secrets in one session instead of re-running the CLI per secret.
+  // Each leaf action returns here; "Exit" is the only way out.
+  while (true) {
+    const action = await options.prompts.select<Action>({
+      message: 'Manage runtime secrets',
+      choices: [
+        { name: 'List', value: 'list', description: 'Show operator-managed runtime secrets and whether a secret object exists.' },
+        { name: 'Set or update', value: 'set', description: 'Create a new secret version for a selected runtime secret.' },
+        { name: 'Rotate', value: 'rotate', description: 'Generate a fresh random value for a selected runtime secret when supported.' },
+        { name: 'Delete', value: 'delete', description: 'Delete an entire runtime secret object after confirmation.' },
+        { name: 'Exit', value: 'exit', description: 'Leave the runtime secrets menu.' },
+      ],
+    })
 
-  if (action === 'list') {
-    const existing = await client.listSecrets(options.path)
-    const byName = new Map(existing.map((secret) => [secret.name, secret]))
-    log(`\n${pc.bold('Runtime secrets')} ${pc.dim(options.path)}`)
-    for (const secret of secrets) {
-      const current = byName.get(secret.secretName)
-      const status = current ? `${checkMark} present` : `${tildeMark} missing`
-      log(`- ${secret.secretName} (${secret.envVar}) — ${status}; consumers: ${secret.services.join(', ')}`)
-    }
-    return
-  }
+    if (action === 'exit') return
 
-  if (action === 'rotate') {
-    const rotatable = secrets.filter((secret) => secret.generation === 'random')
-    if (rotatable.length === 0) {
-      log(`${tildeMark} No operator-managed runtime secrets support random rotation yet.`)
-      return
+    if (action === 'list') {
+      const existing = await client.listSecrets(options.path)
+      const byName = new Map(existing.map((secret) => [secret.name, secret]))
+      log(`\n${pc.bold('Runtime secrets')} ${pc.dim(options.path)}`)
+      for (const secret of secrets) {
+        const current = byName.get(secret.secretName)
+        // A secret *object* can exist with zero versions (created but never given a
+        // value). Only a versioned secret actually has content the services can read,
+        // so gate "present" on version_count — otherwise an empty container reports a
+        // false positive. The in-between state (object, no version) is called out
+        // explicitly so the operator knows to run "Set or update".
+        const status = !current
+          ? `${tildeMark} missing`
+          : (current.version_count ?? 0) > 0
+            ? `${checkMark} present`
+            : `${warningMark} empty (no version — run "Set or update")`
+        log(`- ${secret.secretName} (${secret.envVar}) — ${status}; consumers: ${secret.services.join(', ')}`)
+      }
+      continue
     }
+
+    if (action === 'rotate') {
+      const rotatable = secrets.filter((secret) => secret.generation === 'random')
+      if (rotatable.length === 0) {
+        log(`${tildeMark} No operator-managed runtime secrets support random rotation yet.`)
+        continue
+      }
+      const selectedId = await options.prompts.select<string>({
+        message: 'Select a runtime secret to rotate',
+        choices: rotatable.map(formatSecretChoice),
+      })
+      const secret = rotatable.find((entry) => entry.id === selectedId)!
+      const ensured = await client.ensureSecret({
+        name: secret.secretName,
+        path: options.path,
+        description: secret.description,
+      })
+      await client.putSecretValue({
+        secretId: ensured.id,
+        value: generateRandomRuntimeSecret(),
+        description: 'Rotated by bootstrap manage secrets',
+        disablePrevious: true,
+      })
+      log(`${checkMark} Rotated ${secret.secretName}`)
+      continue
+    }
+
     const selectedId = await options.prompts.select<string>({
-      message: 'Select a runtime secret to rotate',
-      choices: rotatable.map(formatSecretChoice),
+      message: action === 'delete' ? 'Select a runtime secret to delete' : 'Select a runtime secret to set',
+      choices: secrets.map(formatSecretChoice),
     })
-    const secret = rotatable.find((entry) => entry.id === selectedId)!
-    const ensured = await client.ensureSecret({
-      name: secret.secretName,
-      path: options.path,
-      description: secret.description,
-    })
+    const secret = secrets.find((entry) => entry.id === selectedId)!
+    const existingSecret = await client.getSecretByName(secret.secretName, options.path)
+
+    if (action === 'delete') {
+      if (!existingSecret) {
+        log(`${tildeMark} ${secret.secretName} does not exist in ${options.path}`)
+        continue
+      }
+      const confirmed = await options.prompts.confirm({
+        message: `${warningMark} Delete secret object ${secret.secretName} (${secret.envVar}) for ${secret.services.join(', ')}?`,
+        default: false,
+      })
+      if (!confirmed) {
+        log(`${tildeMark} Deletion cancelled.`)
+        continue
+      }
+      await client.deleteSecret(existingSecret.id)
+      log(`${checkMark} Deleted ${secret.secretName}`)
+      continue
+    }
+
+    // Trim so accidental leading/trailing whitespace (e.g. from a paste) never
+    // becomes part of the stored secret; validate on the trimmed length so an
+    // all-whitespace entry is rejected the same as an empty one.
+    const value = (
+      await options.prompts.password({
+        message: `New value for ${secret.secretName}`,
+        validate: (input) => input.trim().length > 0 || 'Value is required',
+      })
+    ).trim()
+    const ensured =
+      existingSecret ??
+      (await client.ensureSecret({
+        name: secret.secretName,
+        path: options.path,
+        description: secret.description,
+      }))
     await client.putSecretValue({
       secretId: ensured.id,
-      value: generateRandomRuntimeSecret(),
-      description: 'Rotated by bootstrap manage secrets',
+      value,
+      description: 'Updated by bootstrap manage secrets',
       disablePrevious: true,
     })
-    log(`${checkMark} Rotated ${secret.secretName}`)
-    return
+    log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(${value.length} chars)`)}`)
   }
-
-  const selectedId = await options.prompts.select<string>({
-    message: action === 'delete' ? 'Select a runtime secret to delete' : 'Select a runtime secret to set',
-    choices: secrets.map(formatSecretChoice),
-  })
-  const secret = secrets.find((entry) => entry.id === selectedId)!
-  const existingSecret = await client.getSecretByName(secret.secretName, options.path)
-
-  if (action === 'delete') {
-    if (!existingSecret) {
-      log(`${tildeMark} ${secret.secretName} does not exist in ${options.path}`)
-      return
-    }
-    const confirmed = await options.prompts.confirm({
-      message: `${warningMark} Delete secret object ${secret.secretName} (${secret.envVar}) for ${secret.services.join(', ')}?`,
-      default: false,
-    })
-    if (!confirmed) {
-      log(`${tildeMark} Deletion cancelled.`)
-      return
-    }
-    await client.deleteSecret(existingSecret.id)
-    log(`${checkMark} Deleted ${secret.secretName}`)
-    return
-  }
-
-  const value = await options.prompts.password({
-    message: `New value for ${secret.secretName}`,
-    validate: (input) => input.length > 0 || 'Value is required',
-  })
-  const ensured = existingSecret ?? await client.ensureSecret({
-    name: secret.secretName,
-    path: options.path,
-    description: secret.description,
-  })
-  await client.putSecretValue({
-    secretId: ensured.id,
-    value,
-    description: 'Updated by bootstrap manage secrets',
-    disablePrevious: true,
-  })
-  log(`${checkMark} Updated ${secret.secretName}`)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

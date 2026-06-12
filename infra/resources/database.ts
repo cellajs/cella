@@ -7,12 +7,12 @@
  * from stack-config secrets when set, otherwise generated and stored in state.
  *
  * Config consumed from appConfig: slug (via naming), mode (HA/backup logic)
- * Stack config: infra:dbNodeType, infra:dbVolumeSize
+ * Sizing (node type, volume) comes from config/general.config.ts via `infra`.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, infraConfig, infra, isProduction } from '../helpers'
+import { naming, region, infraConfig, infra, isProduction } from '../pulumi-context'
 import { privateNetworkId } from './network'
 
 const dbNodeType = infra.dbNodeType

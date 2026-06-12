@@ -1,4 +1,4 @@
-/** Tiny shared CLI helpers for the tsx deploy tasks (arg parsing + sleep). */
+/** Tiny shared CLI arg helpers for the tsx deploy tasks (arg parsing + sleep). */
 
 /** Value following `--flag`, or undefined if the flag is absent. */
 export function getFlag(argv: string[], flag: string): string | undefined {

@@ -1,10 +1,6 @@
 /**
  * Synth — emit `infra/compose.gen.yml` from the typed Compose model.
  *
- * Dependency-free serializer: it handles only the Compose constructs this repo
- * uses, so infra gains no new runtime dependency. Mirrors how `pnpm sdk` emits
- * the generated SDK and `pnpm generate` emits Drizzle migrations.
- *
  * Usage:
  *   tsx infra/compose/synth.ts            # write infra/compose.gen.yml
  *   tsx infra/compose/synth.ts --check    # exit 1 if the file is out of date
