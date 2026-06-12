@@ -61,7 +61,7 @@ export const infraConfig = new pulumi.Config('infra')
 // project (the in-program equivalent of the bootstrap CLI's resolveOrgId REST
 // call), so a name lookup never sends an empty org id.
 const envOrganizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? process.env.SCW_ORGANIZATION_ID
-const organizationId: pulumi.Input<string> = envOrganizationId
+export const organizationId: pulumi.Input<string> = envOrganizationId
   ? envOrganizationId
   : (() => {
       const scwProjectId =
@@ -107,13 +107,14 @@ export const operatorPrincipal: pulumi.Output<string> | undefined = callerAccess
 // Mode-aware defaults — forks only need to set secrets + scaleway:projectId
 // ---------------------------------------------------------------------------
 
-// Compute is on by default. It is skipped only while bootstrap tooling is
-// mid-flight: bootstrap sets `bootstrap:applyInProgress` before the initial
-// `pulumi up` (registry has no images yet, VMs would crash-loop) and during
-// "Apply infra change" mode, then clears it via a verbatim stack-file restore.
-// Gating on this marker stops a stray local `pulumi up` from tearing down
-// compute the way a missing `deployCompute=true` would.
-const bootstrapInProgress = new pulumi.Config('bootstrap').get('applyInProgress') !== undefined
+// Compute is on by default. It is deferred only during a FRESH provision: the
+// bootstrap CLI sets `bootstrap:computeDeferred` before the very first
+// `pulumi up` (the registry has no images yet, so VMs would crash-loop) and
+// clears it once base infra exists. An "Apply infra change" run on an already
+// bootstrapped stack must NOT set this — it would tear down live compute.
+// Gating on this marker also stops a stray local `pulumi up` mid-fresh-bootstrap
+// from declaring compute before images are pushed.
+const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
 
 // Fleet-wide default VM size. Per-service sizes (incl. per-mode) live in the
 // canonical registry (compose/services.config.ts `instanceType`). Backend runs
@@ -149,7 +150,7 @@ export const infra = {
   /** VM size for a given service — operator override, else registry default, else fleet default. */
   instanceTypeFor: (serviceName: string): string =>
     instanceTypeOverrides[serviceName] ?? registryInstanceType(serviceName) ?? baseInstanceType,
-  computeEnabled: !bootstrapInProgress,
+  computeEnabled: !computeDeferred,
 }
 
 // ---------------------------------------------------------------------------
@@ -168,9 +169,9 @@ export const infra = {
 // by name+path (one infra secret path per stack) and the payload is JSON
 // `{ accessKey, secretKey }`, base64-encoded by the Secret Manager API.
 //
-// Skipped while bootstrap is mid-flight: the marker means compute is gated off
-// (helpers exports empty secrets), so there is nothing to bake and the secret
-// may not exist yet on the very first `pulumi up`.
+// Skipped while compute is deferred during a fresh provision: the marker means
+// compute is gated off (helpers exports empty secrets), so there is nothing to
+// bake and the secret may not exist yet on the very first `pulumi up`.
 // ---------------------------------------------------------------------------
 function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
   const secretPath = secretManagerPath(naming.slug, mode)
@@ -181,7 +182,7 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
   return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
 }
 
-const vmReaderKey = bootstrapInProgress ? undefined : readVmReaderKey()
+const vmReaderKey = computeDeferred ? undefined : readVmReaderKey()
 export const vmAccessKey = vmReaderKey?.accessKey ?? pulumi.secret('')
 export const vmSecretKey = vmReaderKey?.secretKey ?? pulumi.secret('')
 

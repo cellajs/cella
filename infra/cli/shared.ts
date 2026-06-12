@@ -17,7 +17,6 @@ export interface InfraContext {
   stackYaml?: string
   state: StackState
   hasCiKey: boolean
-  applyBackupPath: string
   appConfig: typeof AppConfig
 }
 

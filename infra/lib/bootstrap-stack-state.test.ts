@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectInterruptedApply, detectStackState, extractApplyMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state'
+import { detectComputeDeferred, detectStackState, extractComputeDeferredMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state'
 
 describe('detectStackState', () => {
   it('fresh: no yaml at all', () => {
@@ -52,51 +52,30 @@ describe('extractProjectId', () => {
   })
 })
 
-describe('extractApplyMarker', () => {
+describe('extractComputeDeferredMarker', () => {
   it('reads the iso timestamp value', () => {
-    expect(extractApplyMarker('config:\n  bootstrap:applyInProgress: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z')
+    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z')
   })
 
   it('trims surrounding whitespace', () => {
-    expect(extractApplyMarker('config:\n  bootstrap:applyInProgress:   2026-05-27T10:00:00.000Z   \n')).toBe('2026-05-27T10:00:00.000Z')
+    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred:   2026-05-27T10:00:00.000Z   \n')).toBe('2026-05-27T10:00:00.000Z')
   })
 
   it('returns undefined when absent', () => {
-    expect(extractApplyMarker('config:\n  scaleway:projectId: abc\n')).toBeUndefined()
+    expect(extractComputeDeferredMarker('config:\n  scaleway:projectId: abc\n')).toBeUndefined()
   })
 })
 
-describe('detectInterruptedApply', () => {
-  const backupPath = '/tmp/Pulumi.production.yaml.apply-backup'
-
-  it('clean: no yaml, no backup', () => {
-    expect(detectInterruptedApply({ backupExists: false, backupPath })).toBeUndefined()
+describe('detectComputeDeferred', () => {
+  it('clean: no yaml', () => {
+    expect(detectComputeDeferred()).toBeUndefined()
   })
 
-  it('clean: yaml without marker, no backup', () => {
-    expect(detectInterruptedApply({ yamlText: 'config:\n  scaleway:projectId: abc\n', backupExists: false, backupPath })).toBeUndefined()
+  it('clean: yaml without marker', () => {
+    expect(detectComputeDeferred('config:\n  scaleway:projectId: abc\n')).toBeUndefined()
   })
 
-  it('detects YAML marker when no backup present', () => {
-    const r = detectInterruptedApply({
-      yamlText: 'config:\n  bootstrap:applyInProgress: 2026-05-27T10:00:00.000Z\n',
-      backupExists: false,
-      backupPath,
-    })
-    expect(r?.trace).toBe('YAML marker bootstrap:applyInProgress = 2026-05-27T10:00:00.000Z')
-  })
-
-  it('detects backup-only', () => {
-    const r = detectInterruptedApply({ backupExists: true, backupPath })
-    expect(r?.trace).toBe(`Backup file: ${backupPath}`)
-  })
-
-  it('backup file wins over YAML marker when both present', () => {
-    const r = detectInterruptedApply({
-      yamlText: 'config:\n  bootstrap:applyInProgress: 2026-05-27T10:00:00.000Z\n',
-      backupExists: true,
-      backupPath,
-    })
-    expect(r?.trace).toContain('Backup file')
+  it('returns the marker value when present', () => {
+    expect(detectComputeDeferred('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z')
   })
 })

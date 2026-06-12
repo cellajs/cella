@@ -316,7 +316,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       const pulumiUpEnv: NodeJS.ProcessEnv = childEnv
       if (usingBootstrapKey) {
         const startedAt = new Date().toISOString()
-        spawnSync('pulumi', ['config', 'set', 'bootstrap:applyInProgress', startedAt, '--stack', stackName], {
+        spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', stackName], {
           cwd: infraDir,
           env: pulumiUpEnv,
           stdio: 'inherit',
@@ -332,7 +332,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         if (!(await confirm({ message: 'Retry?', default: true }))) process.exit(code)
       }
       if (usingBootstrapKey && upOk) {
-        spawnSync('pulumi', ['config', 'rm', 'bootstrap:applyInProgress', '--stack', stackName], {
+        spawnSync('pulumi', ['config', 'rm', 'bootstrap:computeDeferred', '--stack', stackName], {
           cwd: infraDir,
           env: pulumiUpEnv,
           stdio: 'ignore',

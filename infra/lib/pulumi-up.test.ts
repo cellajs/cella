@@ -34,6 +34,13 @@ describe('classifyPermissionError', () => {
     })
   })
 
+  it('classifies bootstrap-owned resources (iam policy — needs IAM write, never granted to CI)', () => {
+    expect(classifyPermissionError('error: insufficient permissions: write policy: provider=scaleway@1.50.0')).toEqual({
+      kind: 'bootstrap-owned',
+      resource: 'policy',
+    })
+  })
+
   it('classifies CI-grantable resources', () => {
     expect(classifyPermissionError('insufficient permissions: write object_storage_bucket')).toEqual({
       kind: 'ci-grantable',
