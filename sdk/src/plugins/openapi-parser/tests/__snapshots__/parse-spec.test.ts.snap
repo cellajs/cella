@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "e0afebd3f9f96c66",
+  "inputHash": "a055351c2cde4404",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -9499,8 +9499,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "contentType": "application/json",
               "description": "Challenge created",
               "example": {
-                "manualKey": "ZEEY2N36QIFGDJ3KZL2U0JTJY5GGUNL8",
-                "totpUri": "otpauth://totp/App:user@example.com?secret=MGNEKSGGQO2Q7CMRC525Z7X2IGCP19Z3&issuer=App",
+                "manualKey": "EXAMPLE-BASE32-KEY",
+                "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App",
               },
               "schema": {
                 "contentType": "application/json",

@@ -8,6 +8,7 @@
  */
 
 import { checkMark, tildeMark } from 'shared/console'
+import { resolveProjectId } from './bootstrap-scw-env'
 
 const EDGE_BASE = 'https://api.scaleway.com/edge-services/v1beta1'
 
@@ -46,12 +47,12 @@ export async function ensureEdgePlan(opts: {
   return { changed: true, planName }
 }
 
-// Standalone CLI usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID required.
+// Standalone CLI usage: SCW_SECRET_KEY + SCW_PROJECT_ID required.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const secretKey = process.env.SCW_SECRET_KEY
-  const projectId = process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID
+  const projectId = resolveProjectId()
   if (!secretKey || !projectId) {
-    console.error('SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID required')
+    console.error('SCW_SECRET_KEY and SCW_PROJECT_ID required')
     process.exit(1)
   }
   ensureEdgePlan({ secretKey, projectId }).catch((err) => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { fakeConfig } from './tests/helpers/fake-config'
-import { serviceEndpoints } from './lib/services'
+import { fakeConfig } from '../tests/helpers/fake-config'
+import { serviceEndpoints } from './services'
 import { deriveInfra } from './naming'
 
 describe('deriveInfra', () => {

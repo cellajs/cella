@@ -1,9 +1,9 @@
-import { defineRuntimeSecrets } from './runtime-secrets'
+import { defineRuntimeSecrets } from '../lib/runtime-secrets'
 
 /**
  * The fork-owned runtime-secrets registry — the single place a fork maps an
  * application secret to the services that receive it, and declares whether it is
- * required or optional. Mirrors `compose/services.config.ts`: data only, while
+ * required or optional. Mirrors `config/services.config.ts`: data only, while
  * `runtime-secrets.ts` owns the machinery (Secret Manager provisioning, the
  * per-VM manifest, and the derived lookups).
  *

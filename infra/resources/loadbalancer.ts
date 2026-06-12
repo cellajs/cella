@@ -5,7 +5,7 @@
  * One LB-S sits on the main private network with a static public IPv4. HTTPS on
  * 443 fans out by Host header; each exposed service gets its own Let's Encrypt
  * cert and health check. WHICH services are exposed — and how — is derived from
- * the canonical service registry (`lbRoute` in `compose/services.config.ts`):
+ * the canonical service registry (`lbRoute` in `config/services.config.ts`):
  *  - 'default' — the LB's fallback backend (the API); DNS + cert, no route.
  *  - 'host'    — host-header routed; own DNS record + cert + route.
  *  - absent    — internal-only (cdc); nothing is created here.
@@ -21,7 +21,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, tags, dnsZone, serviceHost, infra, appConfig, endpoints } from '../helpers'
+import { naming, zone, tags, dnsZone, serviceHost, infra, appConfig, endpoints } from '../pulumi-context'
 import { enabledServices, type ServiceName } from '../lib/services'
 import { privateNetworkId } from './network'
 import { getInstanceIp } from './compute'
@@ -38,7 +38,7 @@ const _serviceUrls: Record<string, pulumi.Output<string>> = {}
 
 // ---------------------------------------------------------------------------
 // Guard — skip while compute is deferred (fresh bootstrap); without compute VMs
-// the LB has no backends to route to. A real domain is asserted in helpers.
+// the LB has no backends to route to. A real domain is asserted in pulumi-context.
 // ---------------------------------------------------------------------------
 
 if (infra.computeEnabled) {

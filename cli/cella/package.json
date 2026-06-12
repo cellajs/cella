@@ -24,7 +24,7 @@
   },
   "scripts": {
     "cella": "tsx index.ts",
-    "validate": "tsx index.ts --service analyze",
+    "validate": "tsx index.ts analyze",
     "check": "pnpm ts && pnpm biome check --write .",
     "ts": "tsgo --pretty",
     "lint": "biome check .",

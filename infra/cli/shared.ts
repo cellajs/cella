@@ -18,6 +18,7 @@ export interface InfraContext {
   state: StackState
   hasCiKey: boolean
   appConfig: typeof AppConfig
+  projectId: string
 }
 
 /**

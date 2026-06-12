@@ -7,7 +7,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { dnsZone, serviceHost } from '../helpers'
+import { dnsZone, serviceHost } from '../pulumi-context'
 import { pipelineId } from './edge'
 
 let _isApex = false

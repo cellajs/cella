@@ -2,8 +2,8 @@
  * Service registry adapter — re-exposes the typed Compose model as the
  * `ServiceDefinition` registry the rest of infra consumes.
  *
- * The canonical registry lives in `infra/compose/`: a fork edits
- * `compose/services.config.ts`, and `compose/compose.ts` derives the ordered
+ * The canonical registry lives in `infra/`: a fork edits
+ * `config/services.config.ts`, and `compose/compose.ts` derives the ordered
  * `x-service` metadata (`ServiceMeta[]`) from the assembled Compose model. This
  * module adapts that metadata to `ServiceDefinition` and is the single place
  * every other surface derives the service set from, so none re-declares
@@ -19,7 +19,7 @@
 import { services as composeServices, type ServiceName } from '../compose/compose'
 import type { ServiceMeta, ServiceInstanceType } from '../compose/types'
 // Type-only — erased at compile, so this module stays appConfig-free at runtime
-// (helpers.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
+// (pulumi-context.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
 import type { appConfig as AppConfig } from '../../shared'
 
 export type { ServiceName, ServiceInstanceType }
@@ -98,7 +98,7 @@ function publicUrl(slug: ServiceName, cfg: typeof AppConfig): string | undefined
 
 /**
  * Per-service public endpoints, derived from appConfig by the registry instead
- * of a hand-maintained parallel map in `naming.ts`. A service has an endpoint
+ * of a hand-maintained parallel map in `naming`. A service has an endpoint
  * iff it declares an `lbRoute` (cdc has none → internal-only, omitted here).
  *
  * Pure: pass the resolved appConfig. This module never reads appConfig eagerly

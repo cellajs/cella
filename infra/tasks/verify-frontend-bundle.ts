@@ -17,7 +17,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { getFlag, getNumFlag, sleep } from './cli'
+import { getFlag, getNumFlag, sleep } from './args'
 
 /** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */
 export function extractEntryAsset(html: string): string | undefined {

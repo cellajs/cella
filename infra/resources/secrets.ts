@@ -9,7 +9,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, mode, infraConfig } from '../helpers'
+import { naming, region, tags, mode, infraConfig } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
 

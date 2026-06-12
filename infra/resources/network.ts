@@ -7,7 +7,7 @@
  * Config consumed from appConfig: slug (via naming), s3.region
  */
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags } from '../helpers'
+import { naming, region, tags } from '../pulumi-context'
 
 // ---------------------------------------------------------------------------
 // VPC

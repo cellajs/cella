@@ -1,5 +1,10 @@
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
+const coverageReporters =
+  process.env.COVERAGE_REPORTERS === 'summary'
+    ? ['json-summary']
+    : ['text-summary', 'html', 'lcov', 'json-summary'];
+
 /**
  * Vitest configuration for unified monorepo testing.
  *
@@ -29,14 +34,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportOnFailure: true,
-      reporter: ['text-summary', 'html', 'lcov', 'json-summary'],
+      reporter: coverageReporters,
       include: [
         'backend/src/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',
         'shared/**/*.ts',
-        'infra/{src,tasks,modules,reconciler,caddy}/**/*.ts',
+        'infra/{cli,compose,config,lib,reconciler,resources,tasks,tests}/**/*.ts',
         'infra/*.ts',
         'sdk/src/**/*.ts',
       ],

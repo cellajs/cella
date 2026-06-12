@@ -8,8 +8,8 @@
  * and `serviceNames` here are computed from the Compose model, so they cannot
  * drift from it.
  */
+import appServices from '../config/services.config'
 import { assembleCompose } from './infrastructure'
-import appServices from './services.config'
 import type { ServiceMeta } from './types'
 
 /** The full Compose model — machinery + app services. Emitted by `synth.ts`. */

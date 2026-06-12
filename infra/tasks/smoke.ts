@@ -22,7 +22,7 @@
  *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha>
  */
 import { pathToFileURL } from 'node:url'
-import { getFlag } from './cli'
+import { getFlag } from './args'
 import { extractEntryAsset } from './verify-frontend-bundle'
 import { isHealthy } from './wait-for-version'
 
@@ -128,7 +128,27 @@ export interface SmokeOptions {
   expectedSha: string
   get: HttpGet
   log?: (msg: string) => void
+  /** Sleep between component-health retries. Injectable so tests run instantly. */
+  sleep?: (ms: number) => Promise<void>
+  /** Number of times to poll /health?depth=full before failing (default {@link COMPONENTS_RETRY_ATTEMPTS}). */
+  componentsRetryAttempts?: number
+  /** Delay between component-health polls in ms (default {@link COMPONENTS_RETRY_DELAY_MS}). */
+  componentsRetryDelayMs?: number
 }
+
+/**
+ * Component-health (check #6) retry budget. Right after a rollout the CDC
+ * worker's WebSocket can still be mid-reconnect (exponential backoff up to 30s),
+ * which the backend surfaces as a transient `cdc=unhealthy(worker_disconnected)`.
+ * Polling across roughly one backoff cycle lets that settle while a genuinely
+ * broken component stays bad for the whole budget and still fails the gate.
+ */
+export const COMPONENTS_RETRY_ATTEMPTS = 6
+export const COMPONENTS_RETRY_DELAY_MS = 8_000
+
+/** Default real sleep used when no injectable sleep is supplied. */
+const realSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
 
 export interface SmokeResult {
   name: string
@@ -139,6 +159,9 @@ export interface SmokeResult {
 /** Run all smoke checks, collecting every result (no short-circuit). */
 export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const { frontendUrl, backendUrl, expectedSha, get } = opts
+  const sleep = opts.sleep ?? realSleep
+  const componentsRetryAttempts = opts.componentsRetryAttempts ?? COMPONENTS_RETRY_ATTEMPTS
+  const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS
   const results: SmokeResult[] = []
 
   // 1. Frontend index.html references a hashed asset.
@@ -196,20 +219,34 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   }
 
   // 6. Backend reports every health component healthy (db / cdc / yjs / ai).
-  try {
-    const res = await get(`${backendUrl}/health?depth=full`)
-    if (!res.ok) {
-      results.push({ name: 'backend components healthy', ok: false, detail: `status=${res.status}` })
-    } else {
-      const issues = unhealthyComponents(res.body)
-      results.push(
-        issues.length === 0
-          ? { name: 'backend components healthy', ok: true }
-          : { name: 'backend components healthy', ok: false, detail: formatComponentIssues(issues) },
-      )
+  // Retried across one CDC-reconnect backoff cycle: right after a roll the
+  // worker's WebSocket can still be mid-reconnect, surfacing as a transient
+  // worker_disconnected. Pass on the first clean read; a genuinely broken
+  // component stays bad for the whole budget and still fails.
+  {
+    let lastDetail = 'no response'
+    let healthy = false
+    for (let attempt = 1; attempt <= componentsRetryAttempts; attempt++) {
+      try {
+        const res = await get(`${backendUrl}/health?depth=full`)
+        if (!res.ok) {
+          lastDetail = `status=${res.status}`
+        } else {
+          const issues = unhealthyComponents(res.body)
+          if (issues.length === 0) {
+            healthy = true
+            break
+          }
+          lastDetail = formatComponentIssues(issues)
+        }
+      } catch (err) {
+        lastDetail = (err as Error).message
+      }
+      if (attempt < componentsRetryAttempts) await sleep(componentsRetryDelayMs)
     }
-  } catch (err) {
-    results.push({ name: 'backend components healthy', ok: false, detail: (err as Error).message })
+    results.push(
+      healthy ? { name: 'backend components healthy', ok: true } : { name: 'backend components healthy', ok: false, detail: lastDetail },
+    )
   }
 
   return results

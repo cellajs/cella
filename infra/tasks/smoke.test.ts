@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   type ComponentIssue,
   formatComponentIssues,
@@ -152,6 +152,58 @@ describe('runSmoke', () => {
     const get = (url: string) => (url.endsWith('/openapi.json') ? Promise.resolve(res({ status: 404, ok: false })) : healthyGet(url))
     const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get })
     expect(results.find((r) => r.name === 'backend /openapi.json reachable')?.ok).toBe(false)
+  })
+
+  it('retries the component check and passes once the cdc worker reconnects', async () => {
+    const reconnecting = JSON.stringify({
+      status: 'unhealthy',
+      components: { api: { status: 'healthy' }, database: { status: 'healthy' }, cdc: { status: 'unhealthy', reason: 'worker_disconnected' } },
+    })
+    let depthFullCalls = 0
+    const get = (url: string) => {
+      if (url.includes('/health?depth=full')) {
+        depthFullCalls++
+        return Promise.resolve(res({ body: depthFullCalls < 3 ? reconnecting : HEALTHY_COMPONENTS }))
+      }
+      return healthyGet(url)
+    }
+    const sleep = vi.fn().mockResolvedValue(undefined)
+    const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get, sleep, componentsRetryDelayMs: 1 })
+
+    expect(results.find((r) => r.name === 'backend components healthy')?.ok).toBe(true)
+    expect(depthFullCalls).toBe(3)
+    expect(sleep).toHaveBeenCalledTimes(2)
+  })
+
+  it('fails the component check after exhausting retries, reporting the last issue', async () => {
+    const unhealthy = JSON.stringify({
+      status: 'unhealthy',
+      components: { api: { status: 'healthy' }, cdc: { status: 'unhealthy', reason: 'worker_disconnected' } },
+    })
+    let depthFullCalls = 0
+    const get = (url: string) => {
+      if (url.includes('/health?depth=full')) {
+        depthFullCalls++
+        return Promise.resolve(res({ body: unhealthy }))
+      }
+      return healthyGet(url)
+    }
+    const sleep = vi.fn().mockResolvedValue(undefined)
+    const results = await runSmoke({
+      frontendUrl: 'https://app',
+      backendUrl: 'https://api',
+      expectedSha: SHA,
+      get,
+      sleep,
+      componentsRetryAttempts: 3,
+      componentsRetryDelayMs: 1,
+    })
+
+    const components = results.find((r) => r.name === 'backend components healthy')
+    expect(components?.ok).toBe(false)
+    expect(components?.detail).toContain('cdc=unhealthy(worker_disconnected)')
+    expect(depthFullCalls).toBe(3)
+    expect(sleep).toHaveBeenCalledTimes(2)
   })
 })
 

@@ -1,6 +1,6 @@
 /**
  * Compute — one Docker Compose VM per enabled service from the canonical
- * registry (compose/services.config.ts).
+ * registry (config/services.config.ts).
  *
  * Each VM has a fully-closed inbound security group and is reachable only over the
  * main private network from the load balancer and database. Cloud-init installs
@@ -11,7 +11,7 @@
  * replacement; LB health checks bridge the cutover. VMs replace delete-before-
  * create because their pinned public + private IPs can each attach to only one
  * server (this also keeps singleton workers from briefly running twice — see
- * the registry entries in compose/services.config.ts).
+ * the registry entries in config/services.config.ts).
  *
  * Constraint: Scaleway has no instance-attached IAM identities, so app secrets
  * and the registry-login credential are embedded in cloud-init userdata; anyone
@@ -19,14 +19,14 @@
  * the Scaleway serial console (no SSH listener is opened).
  *
  * Credentials embedded in cloud-init use the dedicated `<slug>-vm-reader` IAM
- * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate CI
+ * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate keys
  * flow). That identity has only ContainerRegistryReadOnly + ObjectStorageReadOnly
  * + SecretManagerReadOnly + SecretManagerSecretAccess — no write access to any
  * Scaleway resource.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
@@ -184,7 +184,7 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
 
 /**
  * Pulumi-bound values for the `${VAR}` placeholders a service's compose blocks
- * reference. The registry (`compose/services.config.ts`) declares WHICH vars a
+ * reference. The registry (`config/services.config.ts`) declares WHICH vars a
  * service consumes; this pool binds the shared, app-wide ones. Service-specific
  * wiring (inter-service URLs, private-network addresses) is declared as
  * `bindings` templates on the registry entry itself and resolved generically
@@ -271,7 +271,7 @@ function resolveBinding(selfSlug: ServiceName, template: string): pulumi.Input<s
 // A blue-green service boots pointing at its initial active slot (`<slug>-blue`);
 // the reconciler flips the ingress upstream between slots on each deploy. An
 // in-place service is a single container named after the service. Derived from
-// the registry's rolloverStrategy — see infra/INFRA_ARCHITECTURE.md.
+// the registry's rolloverStrategy — see infra/README.md (Zero-downtime deploys).
 const bootSlotService = (name: string): string =>
   servicesByName.get(name as ServiceName)?.rolloverStrategy === 'blue-green' ? `${name}-blue` : name
 
@@ -295,7 +295,7 @@ function buildComposeEnv(svc: ServiceDefinition): Record<string, () => pulumi.In
     const supply = envPool[name]
     if (!supply) {
       throw new Error(
-        `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or envPool supplier defines a value for it — add a binding in compose/services.config.ts or a supplier in resources/compute.ts.`,
+        `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or envPool supplier defines a value for it — add a binding in config/services.config.ts or a supplier in resources/compute.ts.`,
       )
     }
     env[name] = supply

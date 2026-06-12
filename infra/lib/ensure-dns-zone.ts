@@ -25,6 +25,7 @@
 import { confirm } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, tildeMark, warningMark } from 'shared/console'
+import { resolveProjectId } from './bootstrap-scw-env'
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1'
 const CHALLENGE_NAME = '_scaleway-challenge'
@@ -121,13 +122,13 @@ export async function ensureDnsZone(opts: {
   }
 }
 
-// Standalone CLI usage: SCW_SECRET_KEY + SCW_DEFAULT_PROJECT_ID + DOMAIN required.
+// Standalone CLI usage: SCW_SECRET_KEY + SCW_PROJECT_ID + DOMAIN required.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const secretKey = process.env.SCW_SECRET_KEY
-  const projectId = process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID
+  const projectId = resolveProjectId()
   const domain = process.env.DOMAIN ?? process.argv[2]
   if (!secretKey || !projectId || !domain) {
-    console.error('SCW_SECRET_KEY, SCW_DEFAULT_PROJECT_ID and DOMAIN (env or argv[2]) required')
+    console.error('SCW_SECRET_KEY, SCW_PROJECT_ID and DOMAIN (env or argv[2]) required')
     process.exit(1)
   }
   ensureDnsZone({ secretKey, projectId, domain }).catch((err) => {

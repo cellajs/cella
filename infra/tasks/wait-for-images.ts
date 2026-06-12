@@ -22,7 +22,7 @@
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
 import { imageServiceNames, serviceNames, services, type ServiceName } from '../lib/services'
-import { getFlag, getNumFlag, sleep } from './cli'
+import { getFlag, getNumFlag, sleep } from './args'
 
 /**
  * Every service that has an entry in the canonical service registry

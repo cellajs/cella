@@ -12,7 +12,7 @@ let h: MockHarness
 
 beforeAll(async () => {
   // bootstrap:computeDeferred gates compute off, which keeps the
-  // image-tag pin assertion in helpers.ts from firing in unit tests that
+  // image-tag pin assertion in pulumi-context.ts from firing in unit tests that
   // don't care about compute.
   h = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } })
   await import('../../resources/network')

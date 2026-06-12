@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 // Guards for the in-host zero-downtime rollover wiring. These assert the two
 // deploy artifacts (the generated compose.gen.yml + ingress.Caddyfile)
 // keep the invariants the reconciler and load balancer depend on. See
-// infra/INFRA_ARCHITECTURE.md (Zero-downtime deploys).
+// infra/README.md (Zero-downtime deploys).
 
 const compose = fs.readFileSync(
   path.resolve(import.meta.dirname, '../compose.gen.yml'),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveInfra } from '../naming'
+import { deriveInfra } from '../lib/naming'
 import { fakeConfig } from '../tests/helpers/fake-config'
 import { type CloudInitParams, renderCloudInit } from './cloud-init'
 

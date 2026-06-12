@@ -4,7 +4,7 @@
  * fork or an existing setup, then offers a mode menu. Credentials live in
  * memory only — never written to disk. See infra/README.md.
  *
- * Usage: pnpm --filter infra bootstrap
+ * Usage: pnpm --filter infra cli
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -13,19 +13,24 @@ import { select } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { printHeader } from 'shared/cli-utils/display'
 import { warningMark } from 'shared/console'
+import { resolveProjectId } from '../lib/bootstrap-scw-env'
 import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/bootstrap-stack-state'
 import { infraDir } from '../lib/paths'
-import { runApply } from './services/apply'
-import { runPreview } from './services/preview'
-import { runSecrets } from './services/secrets'
-import { runSetup } from './services/setup'
+import { runApply } from './actions/apply'
+import { runPreview } from './actions/preview'
+import { runSecrets } from './actions/secrets'
+import { runSetup } from './actions/setup'
 import type { CliMode, InfraContext } from './shared'
 
-// Load the repo-root .env so infra-only repo envs (e.g. SCW_PROJECT_ID) are
-// available to the CLI and the child tasks it spawns. Mirrors backend/src/env.ts;
-// real environment variables still take precedence (CI sets SCW_* explicitly).
-const rootEnvFile = resolve(infraDir, '..', '.env')
-if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile)
+// Load infra-only repo envs (e.g. SCW_PROJECT_ID) so they reach the CLI and the
+// child tasks it spawns. The canonical location is backend/.env (same file the
+// backend loads and what backend/.env.example documents); the repo-root .env is
+// a fallback for forks that keep one there. Real environment variables still win
+// (loadEnvFile never overrides an already-set var), so CI's explicit SCW_* take
+// precedence, and backend/.env wins over the root fallback by loading first.
+for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
+  if (existsSync(envFile)) process.loadEnvFile(envFile)
+}
 
 async function loadContext(): Promise<InfraContext> {
   const environment = pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
@@ -40,6 +45,13 @@ async function loadContext(): Promise<InfraContext> {
   process.env.APP_MODE ??= environment
   const { appConfig } = await import('shared')
 
+  // Project id is required for every mode (it scopes all Scaleway API calls), so
+  // resolve it once here from the env files loaded above and fail fast if absent.
+  const projectId = resolveProjectId()
+  if (!projectId) {
+    throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env (or the repo-root .env) before running the infra CLI.')
+  }
+
   return {
     environment,
     stackPath,
@@ -47,6 +59,7 @@ async function loadContext(): Promise<InfraContext> {
     state,
     hasCiKey: state === 'bootstrapped',
     appConfig,
+    projectId,
   }
 }
 
@@ -78,7 +91,7 @@ const mode: CliMode =
         default: 'resume',
         choices: [
           { name: 'Resume', value: 'resume', description: 'Idempotent re-run; refreshes config & GitHub secrets. Cannot apply changes to DB/VPC/PN (CI key is read-only there).' },
-          { name: 'Rotate CI', value: 'rotate', description: 'Mint a fresh CI deploy key (existing one is deleted). Use after editing the CI policy permission sets.' },
+          { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
           { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; provider auth is supplied via env.' },
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },

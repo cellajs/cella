@@ -1,4 +1,4 @@
-import { defineServices } from './infrastructure'
+import { defineServices } from '../compose/infrastructure'
 
 /**
  * The fork-owned service registry — the single place a fork adds, removes, or
@@ -27,7 +27,9 @@ export default defineServices({
     runMigrate: true,
     drainSeconds: 10,
     lbRoute: 'default',
-    // Resize the backend per mode here — no Pulumi config edit needed.
+    // Per-service VM size (required on every service). Backend is the only box
+    // sized up in production: its blue-green roll holds OLD + NEW slots
+    // side-by-side during cutover, which DEV1-S (2 GB) cannot fit.
     instanceType: { production: 'DEV1-M', staging: 'DEV1-S' },
     env: {
       FRONTEND_URL: '${FRONTEND_URL}',
@@ -45,6 +47,7 @@ export default defineServices({
     // cdc holds a single PostgreSQL replication slot, so it MUST stay in-place
     // (two slots would double-consume it). No lbRoute → internal-only, reached
     // over the private network rather than the public LB.
+    instanceType: 'DEV1-S',
     env: {
       API_WS_URL: '${API_WS_URL}',
       BACKEND_URL: '${BACKEND_URL}',
@@ -69,6 +72,7 @@ export default defineServices({
     lbWebsockets: true,
     // Only deployed when the app enables collaborative editing (appConfig.has.yjs).
     featureFlag: 'yjs',
+    instanceType: 'DEV1-S',
     env: {
       BACKEND_URL: '${BACKEND_URL}',
       YJS_PORT: '4002',
@@ -86,6 +90,7 @@ export default defineServices({
     lbRoute: 'host',
     // Only deployed when the app enables the AI worker (appConfig.has.ai).
     featureFlag: 'ai',
+    instanceType: 'DEV1-S',
     env: {
       MODE: 'ai-worker',
       PORT: '4003',
@@ -112,6 +117,7 @@ export default defineServices({
     // The SPA proxy reads no app secret — no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
+    instanceType: 'DEV1-S',
     env: {
       FRONTEND_CSP: '${FRONTEND_CSP}',
       ORIGIN_HOST: '${ORIGIN_HOST}',

@@ -10,7 +10,7 @@
  */
 import { pathToFileURL } from 'node:url'
 import type { appConfig as AppConfig } from '../../shared'
-import { deriveInfra } from '../naming'
+import { deriveInfra } from '../lib/naming'
 
 type Cfg = typeof AppConfig
 

@@ -16,7 +16,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { getFlag, getNumFlag, sleep } from './cli'
+import { getFlag, getNumFlag, sleep } from './args'
 
 export interface ProbeResult {
   /** HTTP status of the response, or 0 if the request failed entirely. */

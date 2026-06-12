@@ -6,7 +6,7 @@ If you have a security issue to report, please contact us at [security@cellajs.c
 
 ## Security monitoring
 
-- `pnpm cella --service audit` — check for outdated packages, known CVEs, and unneeded `pnpm.overrides`
+- `pnpm cella audit` — check for outdated packages, known CVEs, and unneeded `pnpm.overrides`
 - `pnpm test:full` — run full test suite including authentication guards, RBAC, and protected route enforcement
 
 ## Resources

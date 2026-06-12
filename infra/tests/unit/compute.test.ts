@@ -57,7 +57,7 @@ describe('compute module source invariants', () => {
 
   it('sizes each VM via the per-service instanceTypeFor helper', () => {
     // VM size must be resolved per service (so backend can run a bigger box
-    // for blue-green 2x-RAM cutover) rather than the fleet-wide infra.instanceType.
+    // for blue-green 2x-RAM cutover) rather than a single fleet-wide size.
     expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(service\.name\)/)
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
@@ -87,7 +87,7 @@ describe('compute module source invariants', () => {
 
   it('contains no service-specific wiring — inter-service topology lives in registry bindings', () => {
     // cdc's API_WS_URL and ai's AI_API_URL are declared as @{…} binding
-    // templates in compose/services.config.ts; compute.ts only provides the
+    // templates in config/services.config.ts; compute.ts only provides the
     // generic resolver (url / privateIp / port vocabulary).
     for (const banned of ['cdc', "'ai'", 'API_WS_URL', 'AI_API_URL', 'aiUrl']) {
       expect(source, `service-specific token ${banned} must not appear in compute.ts`).not.toContain(banned)
