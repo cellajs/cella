@@ -36,7 +36,7 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'production'
+        default: 'staging'
         type: choice
         options:
           - staging
