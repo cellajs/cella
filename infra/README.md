@@ -255,14 +255,9 @@ Rotation is intentionally **manual**. An automated rotator would require a perma
 
 ### Rotating a single stack secret
 
-`init-stack-secrets` never overwrites an existing value. To rotate one:
-
-```bash
-pulumi config rm infra:cookieSecret --stack organization/infra/<stack>
-pnpm --filter infra init-stack-secrets organization/infra/<stack>
-```
-
-Or set it directly:
+Runtime secrets live in Scaleway Secret Manager (managed via the CLI's "Manage runtime
+secrets" mode), not in stack config. For the rare value that is still a Pulumi config
+secret, set it directly:
 
 ```bash
 pulumi config set --secret infra:cookieSecret "$(openssl rand -base64 32)" \

@@ -2,7 +2,6 @@ import { spawnSync } from 'node:child_process'
 import { confirm, input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
-import { extractProjectId } from '../../lib/bootstrap-stack-state'
 import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
 import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
@@ -33,14 +32,12 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // it cannot be decrypted and reused — every interactive setup run authenticates
   // with a freshly-pasted bootstrap key. The provider reads it from SCW_* env
   // (childEnv below), not from stack config.
-  let scwProjectId = context.stackYaml ? (extractProjectId(context.stackYaml) ?? '') : ''
+  let scwProjectId = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || ''
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
     input({ message: 'Scaleway bootstrap access key', validate: (value) => !!value.trim() || '(required)' }),
   )
   const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key' }))
-  scwProjectId ||= await envOr('SCW_DEFAULT_PROJECT_ID', () =>
-    input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' }),
-  )
+  scwProjectId ||= await input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' })
 
   // The bootstrap key above also holds the object-storage rights needed for the
   // Pulumi state bucket, so reuse it rather than prompting for a second key.
@@ -104,8 +101,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   } else {
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync)
   }
-
-  await must('Initialize stack secrets', 'pnpm', ['init-stack-secrets', stackName], spawnSync)
 
   const runtimeSecretPath = `/${appConfig.slug}-${context.environment}/`
   await seedOperatorSecrets({

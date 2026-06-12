@@ -54,6 +54,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.featureFlag) meta.featureFlag = cfg.featureFlag
   if (cfg.instanceType) meta.instanceType = cfg.instanceType
+  if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }
 

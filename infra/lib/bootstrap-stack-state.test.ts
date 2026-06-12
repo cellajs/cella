@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectComputeDeferred, detectStackState, extractComputeDeferredMarker, extractProjectId, pickStackShort } from './bootstrap-stack-state'
+import { detectComputeDeferred, detectStackState, extractComputeDeferredMarker, pickStackShort } from './bootstrap-stack-state'
 
 describe('detectStackState', () => {
   it('fresh: no yaml at all', () => {
@@ -37,18 +37,6 @@ describe('pickStackShort', () => {
 
   it('falls back to production when none exist', () => {
     expect(pickStackShort(() => false)).toBe('production')
-  })
-})
-
-describe('extractProjectId', () => {
-  it('reads the plaintext value', () => {
-    expect(
-      extractProjectId('config:\n  scaleway:projectId: e2e322db-aaaa-bbbb-cccc-ddddeeeeffff\n'),
-    ).toBe('e2e322db-aaaa-bbbb-cccc-ddddeeeeffff')
-  })
-
-  it('returns undefined when absent', () => {
-    expect(extractProjectId('config:\n  scaleway:secretKey:\n    secure: v1:...')).toBeUndefined()
   })
 })
 

@@ -68,17 +68,37 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/enabledServices\(appConfig\.has\)/)
   })
 
-  it('binds compose env from the registry placeholder scan + envPool (no per-service env maps)', () => {
+  it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
     // Per-service compose env is derived by scanning each service's compose
-    // blocks for ${VAR} placeholders and binding them from the shared envPool,
-    // so adding a service that reuses existing vars needs no compute.ts edit.
+    // blocks for ${VAR} placeholders, bound from the registry's `bindings`
+    // templates first and the shared envPool second, so adding a service never
+    // requires a compute.ts edit unless it introduces a genuinely new
+    // Pulumi-bound value.
     expect(source).toMatch(/const envPool:/)
     expect(source).toMatch(/composePlaceholders\(/)
     expect(source).toMatch(/block\.profiles\.includes\(/)
+    expect(source).toMatch(/svc\.bindings\?\.\[name\]/)
+    expect(source).toMatch(/resolveBinding\(/)
     // Unknown placeholders must fail fast rather than booting a broken VM.
-    expect(source).toMatch(/envPool defines no value/)
+    expect(source).toMatch(/defines a value for it/)
     // The old hand-maintained per-service map must not come back.
     expect(source).not.toMatch(/composeEnvFor/)
+  })
+
+  it('contains no service-specific wiring — inter-service topology lives in registry bindings', () => {
+    // cdc's API_WS_URL and ai's AI_API_URL are declared as @{…} binding
+    // templates in compose/services.config.ts; compute.ts only provides the
+    // generic resolver (url / privateIp / port vocabulary).
+    for (const banned of ['cdc', "'ai'", 'API_WS_URL', 'AI_API_URL', 'aiUrl']) {
+      expect(source, `service-specific token ${banned} must not appear in compute.ts`).not.toContain(banned)
+    }
+  })
+
+  it('reserves private IPs in a first pass so bindings have no VM creation-order constraints', () => {
+    expect(source).toMatch(/reservedIps\.set\(/)
+    expect(source).toMatch(/reservedPrivateIp\(/)
+    // The old backend-first special case must not come back.
+    expect(source).not.toMatch(/Create backend first/)
   })
 
   it('derives the ingress boot slot from the registry rollover strategy', () => {

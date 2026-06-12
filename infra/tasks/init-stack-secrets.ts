@@ -45,9 +45,15 @@ export type Spec =
   | { key: string; label: string; from: 'random'; bytes?: number }
   | { key: string; label: string; from: 'env'; envName: string; secret?: boolean }
 
-/** Declarative table of stack values to populate. Order is log order only. */
+/**
+ * Declarative table of stack values to populate. Order is log order only.
+ *
+ * DB passwords are deliberately absent: they auto-generate as
+ * `random.RandomPassword` resources in Pulumi state (resources/database.ts),
+ * not in stack config (SOVRUN §3.3 — "materialized, not stored"). The only
+ * value a fresh stack needs seeded here is the non-secret Scaleway project id.
+ */
 export const specs: Spec[] = [
-  { key: 'infra:dbPassword',        label: 'database password',  from: 'random', bytes: 24 },
   { key: 'scaleway:projectId',      label: 'Scaleway project ID',from: 'env', envName: 'SCW_PROJECT_ID', secret: false },
 ]
 

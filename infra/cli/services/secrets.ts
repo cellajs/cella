@@ -1,5 +1,4 @@
 import { confirm, input, password, select } from '@inquirer/prompts'
-import { extractProjectId } from '../../lib/bootstrap-stack-state'
 import { manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets'
 import type { InfraContext } from '../shared'
 
@@ -13,11 +12,11 @@ import type { InfraContext } from '../shared'
  * @returns Promise that resolves when secrets management is complete
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
-  // The stack file is the authoritative project for this stack and is always present in `secrets` mode;
-  // SCW_DEFAULT_PROJECT_ID only fills in when a fork stores projectId encrypted instead of plaintext.
+  // The project comes from the repo .env (SCW_PROJECT_ID, loaded by infra-cli.ts);
+  // prompt only as a last resort when it is not set.
   const projectId =
-    extractProjectId(context.stackYaml ?? '') ||
     process.env.SCW_DEFAULT_PROJECT_ID ||
+    process.env.SCW_PROJECT_ID ||
     (await input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' }))
   const secretKey =
     process.env.SCW_SECRET_KEY ||

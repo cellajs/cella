@@ -41,14 +41,6 @@ export function pickStackShort(exists: (shortName: string) => boolean, candidate
 }
 
 /**
- * Extract the scaleway:projectId from a Pulumi stack YAML (plaintext config).
- * Returns undefined when not present.
- */
-export function extractProjectId(yamlText: string): string | undefined {
-  return yamlText.match(/^\s*scaleway:projectId:\s*(\S+)/m)?.[1]
-}
-
-/**
  * Extract the plaintext `bootstrap:computeDeferred: <iso-timestamp>` marker.
  * The bootstrap CLI sets it before the first `pulumi up` of a FRESH provision
  * (no images exist yet, so compute is intentionally not declared) and clears it

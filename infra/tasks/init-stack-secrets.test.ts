@@ -8,7 +8,6 @@ import { specs } from './init-stack-secrets'
 describe('init-stack-secrets specs', () => {
   it('snapshot of keys + sources', () => {
     expect(specs.map((s) => ({ key: s.key, from: s.from }))).toEqual([
-      { key: 'infra:dbPassword',        from: 'random' },
       { key: 'scaleway:projectId',      from: 'env' },
     ])
   })

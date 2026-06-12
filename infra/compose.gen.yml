@@ -127,6 +127,8 @@ services:
       runMigrate: false
       rolloverStrategy: in-place
       drainSeconds: 0
+      bindings:
+        API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
     profiles: [yjs]
@@ -195,6 +197,8 @@ services:
       lbRoute: host
       reusesImageOf: backend
       featureFlag: ai
+      bindings:
+        AI_API_URL: '@{self.url}'
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]
