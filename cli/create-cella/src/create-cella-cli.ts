@@ -70,17 +70,19 @@ async function main(): Promise<void> {
   }
 
   // Scan sibling directories and prompt for port offset
-  const portOffset = await promptPortOffset(targetFolder, promptTheme, promptContext);
+  const portOffset = cli.options.portOffset ?? (await promptPortOffset(targetFolder, promptTheme, promptContext));
 
   // Prompt for admin email
-  const adminEmail = await input(
-    {
-      message: 'Admin email for initial seed user',
-      default: `admin@${projectName}.com`,
-      theme: promptTheme,
-    },
-    promptContext,
-  );
+  const adminEmail =
+    cli.options.adminEmail ??
+    (await input(
+      {
+        message: 'Admin email for initial seed user',
+        default: `admin@${projectName}.com`,
+        theme: promptTheme,
+      },
+      promptContext,
+    ));
 
   // Proceed with the project creation
   const createOptions: CreateOptions = {

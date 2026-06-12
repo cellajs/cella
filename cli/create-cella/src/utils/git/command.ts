@@ -50,7 +50,7 @@ export async function gitAddAll(repoPath: string): Promise<string> {
  * Creates a commit with the specified message.
  */
 export async function gitCommit(repoPath: string, message: string): Promise<string> {
-  return runGitCommand(['commit', '-m', message], repoPath);
+  return runGitCommand(['commit', '--quiet', '--no-verify', '-m', message], repoPath);
 }
 
 /**

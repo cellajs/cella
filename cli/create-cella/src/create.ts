@@ -15,6 +15,10 @@ function isLocalPath(path: string): boolean {
   return path.startsWith('/') || path.startsWith('./') || path.startsWith('../');
 }
 
+function shouldSkipStep(name: 'install' | 'generate' | 'git' | 'remote'): boolean {
+  return process.env[`CREATE_CELLA_SKIP_${name.toUpperCase()}`] === 'true';
+}
+
 export async function create({
   projectName,
   targetFolder,
@@ -73,16 +77,20 @@ export async function create({
     await cleanTemplate({ targetFolder, projectName, displayName, portOffset, adminEmail });
 
     // Install dependencies
-    progress.step('installing dependencies');
-    await install(packageManager);
+    if (!shouldSkipStep('install')) {
+      progress.step('installing dependencies');
+      await install(packageManager);
+    }
 
     // Generate SQL files
-    progress.step('generating migrations');
-    await generate(packageManager);
+    if (!shouldSkipStep('generate')) {
+      progress.step('generating migrations');
+      await generate(packageManager);
+    }
 
     // Initialize git repository
     const gitFolderPath = join(targetFolder, '.git');
-    if (!existsSync(gitFolderPath)) {
+    if (!shouldSkipStep('git') && !existsSync(gitFolderPath)) {
       progress.step('initializing git');
       await gitInit(targetFolder);
       await gitAddAll(targetFolder);
@@ -96,8 +104,10 @@ export async function create({
     }
 
     // Add upstream remote
-    progress.step('adding upstream remote');
-    await addRemote({ targetFolder, silent: true });
+    if (!shouldSkipStep('remote')) {
+      progress.step('adding upstream remote');
+      await addRemote({ targetFolder, silent: true });
+    }
 
     // Done
     progress.done(`created ${projectName}`);
