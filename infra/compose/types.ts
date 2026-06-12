@@ -68,6 +68,15 @@ export interface ServiceMeta {
   featureFlag?: string
   /** Per-service VM size; a fork resizes its fleet by editing this. */
   instanceType?: ServiceInstanceType
+  /**
+   * Deploy-time env bindings: env var → value template resolved by the compute
+   * module. Templates reference other services by slug with the `@{…}` sigil
+   * (distinct from compose's `${…}`): `@{<slug>.url}` (public URL),
+   * `@{<slug>.privateIp}` / `@{<slug>.port}` (private-network address), or
+   * `@{self.…}` for the service's own values. E.g. cdc's
+   * `API_WS_URL: 'ws://@{backend.privateIp}:@{backend.port}/internal/cdc'`.
+   */
+  bindings?: Readonly<Record<string, string>>
 }
 
 export interface HealthCheck {
@@ -176,6 +185,15 @@ export interface AppServiceConfig {
    * them here.
    */
   env?: Readonly<Record<string, string>>
+  /**
+   * Deploy-time values for this service's `${VAR}` env placeholders, expressed
+   * as templates over other services: `@{<slug>.url}`, `@{<slug>.privateIp}`,
+   * `@{<slug>.port}`, or `@{self.…}`. Resolved by the compute module when the
+   * VM's .env is written, so inter-service wiring stays declared here next to
+   * the env vars that consume it. Vars without a binding fall back to the
+   * compute module's shared env pool (FRONTEND_URL, BACKEND_URL, …).
+   */
+  bindings?: Readonly<Record<string, string>>
   /** Inject `NODE_ENV`/`APP_MODE`/`TZ`. Default true; set false for the SPA proxy. */
   includeStandardEnv?: boolean
   /** Mount `.env` + `.env.runtime`. Default true; set false for the SPA proxy. */

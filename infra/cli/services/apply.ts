@@ -3,7 +3,6 @@ import { confirm, input, password } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 import { adoptOrphanedPolicy } from '../../lib/adopt-orphaned-policy'
-import { extractProjectId } from '../../lib/bootstrap-stack-state'
 import { scwConfigPathNone } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
@@ -26,12 +25,9 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml)
 
-  const projectId =
-    process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || (context.stackYaml && extractProjectId(context.stackYaml)) || ''
+  const projectId = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT_ID || ''
   if (!projectId) {
-    console.error(
-      `${warningMark} Scaleway project ID not found. Set SCW_DEFAULT_PROJECT_ID (or, for legacy stacks, scaleway:projectId in stack config).`,
-    )
+    console.error(`${warningMark} Scaleway project ID not found. Set SCW_PROJECT_ID in the repo .env (see backend/.env.example).`)
     process.exit(1)
   }
 

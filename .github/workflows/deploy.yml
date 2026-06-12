@@ -379,19 +379,7 @@ jobs:
         # routine deploy leaves cloud-init (and therefore the VMs) untouched.
         run: pulumi stack select "$STACK"
 
-      - name: Ensure stack secrets exist
-        # Idempotent: only writes keys not already set. Keeps `pulumi up` from
-        # failing when a new required secret (e.g. piiHashSecret) is added to
-        # the backend env schema between deploys.
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        run: pnpm init-stack-secrets "$STACK"
-
-      # Pulumi prep (checkout, install, login, stack select, secrets) runs in
+      # Pulumi prep (checkout, install, login, stack select) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
       # before the deploy proceeds: the on-VM reconciler does `docker compose
       # pull` the moment roll-services writes the new SHA, and a fresh/replaced

@@ -8,8 +8,10 @@
  * and starts the service-specific compose profile.
  *
  * Replacement model: any change to image tag or userdata triggers a full VM
- * replacement; LB health checks bridge the cutover. CDC uses deleteBeforeReplace
- * because it is a singleton — two replication slots must not run concurrently.
+ * replacement; LB health checks bridge the cutover. VMs replace delete-before-
+ * create because their pinned public + private IPs can each attach to only one
+ * server (this also keeps singleton workers from briefly running twice — see
+ * the registry entries in compose/services.config.ts).
  *
  * Constraint: Scaleway has no instance-attached IAM identities, so app secrets
  * and the registry-login credential are embedded in cloud-init userdata; anyone
@@ -24,11 +26,11 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, appConfig, vmAccessKey, vmSecretKey } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../helpers'
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
-import { enabledServices, servicesByName, type ServiceName } from '../lib/services'
+import { enabledServices, servicesByName, type ServiceDefinition, type ServiceName } from '../lib/services'
 import { frontendCsp } from '../lib/frontend-csp'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
@@ -119,8 +121,9 @@ interface ServiceConfig {
   port: number
   /**
    * Compose env var suppliers (REGISTRY, URLs, ingress wiring). Lazy so values
-   * resolved during VM creation order (cdc's API_WS_URL needs the backend VM's
-   * private IP) are read at cloud-init build time, not registry-scan time.
+   * backed by Pulumi resources (reserved private IPs, bucket names) are only
+   * resolved when VMs are actually created (`infra.computeEnabled`), not at
+   * registry-scan time.
    */
   composeEnv: Record<string, () => pulumi.Input<string>>
 }
@@ -179,30 +182,17 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
 // Service definitions
 // ---------------------------------------------------------------------------
 
-// CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
-// path. The backend rejects sources outside loopback or the VPC /24 (see
-// backend/src/lib/cdc-websocket.ts), so we route over the private network
-// directly to the backend VM instead of through the public LB.
-// Resolved AFTER the backend VM is created, below — bespoke inter-service
-// topology (like the DB connection strings in secrets.ts), not registry data.
-let cdcWsUrl: pulumi.Input<string> | undefined
-
 /**
  * Pulumi-bound values for the `${VAR}` placeholders a service's compose blocks
  * reference. The registry (`compose/services.config.ts`) declares WHICH vars a
- * service consumes; this pool is the single place their deploy-time values are
- * bound. A new service reusing existing vars needs no edit here — only a
- * genuinely new Pulumi-bound value (a new bucket, a new inter-service URL)
- * adds one entry. Unknown placeholders fail fast at synth→deploy time.
+ * service consumes; this pool binds the shared, app-wide ones. Service-specific
+ * wiring (inter-service URLs, private-network addresses) is declared as
+ * `bindings` templates on the registry entry itself and resolved generically
+ * below — it never appears here. Unknown placeholders fail fast at deploy time.
  */
 const envPool: Record<string, () => pulumi.Input<string>> = {
   FRONTEND_URL: () => appConfig.frontendUrl,
   BACKEND_URL: () => appConfig.backendUrl,
-  AI_API_URL: () => appConfig.aiUrl,
-  API_WS_URL: () => {
-    if (!cdcWsUrl) throw new Error('compute: API_WS_URL read before the backend VM was created — backend must be created first.')
-    return cdcWsUrl
-  },
   // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
   FRONTEND_CSP: () => frontendCsp,
   ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
@@ -227,6 +217,51 @@ function composePlaceholders(slug: string): string[] {
   return [...vars]
 }
 
+// ---------------------------------------------------------------------------
+// Registry bindings — resolve `@{<slug>.<prop>}` templates from the registry's
+// `bindings` field (inter-service wiring declared next to the env vars that
+// consume it, SST-Linkable style). Supported properties:
+//   @{<slug>.url}        — the service's public URL (from the endpoint registry)
+//   @{<slug>.privateIp}  — the service VM's reserved private-network IP
+//   @{<slug>.port}       — the service's health/app port
+//   @{self.<prop>}       — the consuming service's own values
+// ---------------------------------------------------------------------------
+
+const BINDING_RE = /@\{([a-z]+)\.([a-zA-Z]+)\}/g
+const endpointBySlug = new Map(endpoints.map((e) => [e.slug, e]))
+
+function bindingPart(selfSlug: ServiceName, target: string, prop: string): pulumi.Input<string> {
+  const slug = (target === 'self' ? selfSlug : target) as ServiceName
+  const definition = servicesByName.get(slug)
+  if (!definition) throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`)
+  switch (prop) {
+    case 'privateIp':
+      return reservedPrivateIp(slug)
+    case 'port':
+      return String(definition.healthPort)
+    case 'url': {
+      const endpoint = endpointBySlug.get(slug)
+      if (!endpoint) throw new Error(`compute: binding @{${target}.url} on '${selfSlug}' — service '${slug}' has no public endpoint.`)
+      return endpoint.url
+    }
+    default:
+      throw new Error(`compute: unknown binding property '@{${target}.${prop}}' on '${selfSlug}'.`)
+  }
+}
+
+/** Resolve a binding template (`ws://@{backend.privateIp}:@{backend.port}/…`) to a Pulumi value. */
+function resolveBinding(selfSlug: ServiceName, template: string): pulumi.Input<string> {
+  const parts: pulumi.Input<string>[] = []
+  let last = 0
+  for (const match of template.matchAll(BINDING_RE)) {
+    parts.push(template.slice(last, match.index))
+    parts.push(bindingPart(selfSlug, match[1]!, match[2]!))
+    last = match.index + match[0].length
+  }
+  parts.push(template.slice(last))
+  return pulumi.all(parts).apply((vals) => vals.join(''))
+}
+
 // Ingress wiring — every VM runs a Caddy `ingress` container that publishes the
 // host port and forwards to the app container by its compose-network name. This
 // is what lets the reconciler roll the app (`up -d --no-deps <service>`) without
@@ -240,8 +275,9 @@ function composePlaceholders(slug: string): string[] {
 const bootSlotService = (name: string): string =>
   servicesByName.get(name as ServiceName)?.rolloverStrategy === 'blue-green' ? `${name}-blue` : name
 
-/** Compose env for one service: universal vars + ingress wiring + pool values for its placeholders. */
-function buildComposeEnv(slug: ServiceName, healthPort: number): Record<string, () => pulumi.Input<string>> {
+/** Compose env for one service: universal vars + ingress wiring + binding/pool values for its placeholders. */
+function buildComposeEnv(svc: ServiceDefinition): Record<string, () => pulumi.Input<string>> {
+  const { slug, healthPort } = svc
   const env: Record<string, () => pulumi.Input<string>> = {
     REGISTRY: () => registryEndpoint,
     APP_MODE: () => mode,
@@ -251,10 +287,15 @@ function buildComposeEnv(slug: ServiceName, healthPort: number): Record<string, 
   }
   for (const name of composePlaceholders(slug)) {
     if (INJECTED_VARS.has(name) || name.endsWith('_TAG')) continue
+    const template = svc.bindings?.[name]
+    if (template) {
+      env[name] = () => resolveBinding(slug, template)
+      continue
+    }
     const supply = envPool[name]
     if (!supply) {
       throw new Error(
-        `compute: service '${slug}' references \${${name}} in its compose blocks but envPool defines no value for it — add a supplier in resources/compute.ts.`,
+        `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or envPool supplier defines a value for it — add a binding in compose/services.config.ts or a supplier in resources/compute.ts.`,
       )
     }
     env[name] = supply
@@ -272,7 +313,7 @@ const services: ServiceConfig[] = enabledServices(appConfig.has).map((svc) => {
   if (placement !== 'dedicated-vm') {
     throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)
   }
-  return { name: svc.slug, profile: svc.slug, port: svc.healthPort, composeEnv: buildComposeEnv(svc.slug, svc.healthPort) }
+  return { name: svc.slug, profile: svc.slug, port: svc.healthPort, composeEnv: buildComposeEnv(svc) }
 })
 
 // ---------------------------------------------------------------------------
@@ -287,6 +328,18 @@ export interface ComputeInstance {
 
 const instances: ComputeInstance[] = []
 
+// Reserved IPAM private IPs, one per service VM — created in a first pass over
+// all services (before any VM) so `@{<slug>.privateIp}` bindings resolve at
+// plan time with no creation-order constraints between VMs.
+const reservedIps = new Map<ServiceName, scaleway.ipam.Ip>()
+
+/** Reserved private IP for a service, CIDR suffix stripped ("10.0.0.9/22" → "10.0.0.9"). */
+function reservedPrivateIp(slug: ServiceName): pulumi.Output<string> {
+  const ip = reservedIps.get(slug)
+  if (!ip) throw new Error(`compute: no reserved private IP for service '${slug}' — is it enabled and compute not deferred?`)
+  return ip.address.apply((addr) => addr.split('/')[0])
+}
+
 function createVm(service: ServiceConfig): ComputeInstance {
   // Each VM needs a public IP for internet access (package install, image pull)
   const ip = new scaleway.instance.Ip(`ip-${service.name}`, {
@@ -294,17 +347,12 @@ function createVm(service: ServiceConfig): ComputeInstance {
     tags,
   })
 
-  // Reserve a stable private IP from IPAM up front. Decoupling the IP from the
+  // Stable private IP reserved in the first pass. Decoupling the IP from the
   // instance lifecycle means it survives VM replacement (deleteBeforeReplace)
-  // and is known at plan-time, so LB backends can reference it deterministically
-  // instead of reading an auto-assigned DHCP address off the server after
-  // create (which the provider returns empty at create-time).
-  const reservedIp = new scaleway.ipam.Ip(`ipam-${service.name}`, {
-    sources: [{ privateNetworkId }],
-    isIpv6: false,
-    region,
-    tags,
-  })
+  // and is known at plan-time, so LB backends and inter-service bindings can
+  // reference it deterministically instead of reading an auto-assigned DHCP
+  // address off the server after create.
+  const reservedIp = reservedIps.get(service.name as ServiceName)!
 
   const server = new scaleway.instance.Server(`vm-${service.name}`, {
     name: naming.resource(service.name),
@@ -322,8 +370,8 @@ function createVm(service: ServiceConfig): ComputeInstance {
     // genuine cloud-init edits (reconciler script, package install) — not for a
     // routine release.
     replaceOnChanges: ['cloudInit'],
-    // Delete old VM before creating new (IP can only be attached to one server)
-    // CDC is additionally a singleton — must not run two at once.
+    // Delete old VM before creating new (the pinned public + private IPs can
+    // each attach to only one server).
     //
     // TODO(B-full / zero-downtime replacement): switch to create-before-destroy
     // so a replacement VM must serve a healthy /health (X-App-Version == desired
@@ -369,17 +417,22 @@ function createVm(service: ServiceConfig): ComputeInstance {
 }
 
 if (infra.computeEnabled) {
-  // Create backend first so we can wire CDC's API_WS_URL to its private IP.
-  const backendService = services.find((s) => s.name === 'backend')
-  if (!backendService) throw new Error("compute: the registry must include a 'backend' service — cdc and the LB default route depend on it.")
-  const backend = createVm(backendService)
-  cdcWsUrl = backend.privateIp.apply((ip) => `ws://${ip}:${backendService.port}/internal/cdc`)
-
-  // Create remaining services (cdc reads cdcWsUrl via its lazy envPool supplier).
+  // Phase 1 — reserve every VM's stable private IP up front, so inter-service
+  // `@{<slug>.privateIp}` bindings resolve regardless of VM creation order.
   for (const service of services) {
-    if (service.name === 'backend') continue
-    createVm(service)
+    reservedIps.set(
+      service.name as ServiceName,
+      new scaleway.ipam.Ip(`ipam-${service.name}`, {
+        sources: [{ privateNetworkId }],
+        isIpv6: false,
+        region,
+        tags,
+      }),
+    )
   }
+
+  // Phase 2 — create the VMs (order-independent; bindings read reserved IPs).
+  for (const service of services) createVm(service)
 }
 
 // ---------------------------------------------------------------------------

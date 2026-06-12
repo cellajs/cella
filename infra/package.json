@@ -11,7 +11,6 @@
     "up": "pulumi up",
     "destroy": "pulumi destroy",
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
-    "init-stack-secrets": "tsx tasks/init-stack-secrets.ts",
     "print-deploy-env": "tsx tasks/print-deploy-env.ts",
     "wait-for-version": "tsx tasks/wait-for-version.ts",
     "wait-for-images": "tsx tasks/wait-for-images.ts",

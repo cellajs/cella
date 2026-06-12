@@ -1,14 +1,3 @@
 encryptionsalt: v1:OB3eX2/Cavo=:v1:zUWCmiHoqAtbw5w9:nUhV6Y7FbTkk7Ok5ad1LipqvR6L/4Q==
 config:
-  infra:applicationId: bfe8e160-3c14-41d6-95ba-386f7a5aeaad
-  infra:operatorPrincipal: application_id:f60e5fe4-a047-4a7a-af07-7e233f536e8c
-  infra:ciPolicyFingerprint: 007ada11d823
-  infra:vmApplicationId: 2918501f-d970-46d1-8e73-bbe273c259c8
-  infra:vmAccessKey:
-    secure: v1:ww0JDbm+ETk6Nr1C:LUxgbqvpJEaw0Bixr1/jX0VQJyFDU3jaXBZEhQxZ7jO/uhiI
-  infra:vmSecretKey:
-    secure: v1:bmj/4nMgQCxl9qrj:sSiZLjBEd17MZkif298RYAbQ7++OF02Ljiyl40V/bp5JtM9fNC0KiCum7kqPrPS3nzVR4g==
-  infra:dbPassword:
-    secure: v1:UV+iE3KaFIDMypi+:3/zcoZ8nU5QVXErBBRYFmDGNEK4zSkH7/gG64BVCBm162kJMiQo4hkVOwsSiymK/
-  scaleway:projectId: 3ad2b2d5-a772-40a2-a82b-bd0cee9ebb12
   infra:bootstrapComplete: "2026-06-12T06:37:59.619Z"

@@ -50,6 +50,12 @@ export default defineServices({
       BACKEND_URL: '${BACKEND_URL}',
       CDC_HEALTH_PORT: '4001',
     },
+    // cdc → backend is a server-to-server WebSocket on the internal /internal/cdc
+    // path, straight to the backend VM over the private network (the backend
+    // rejects sources outside loopback / the VPC, so it can't go via the LB).
+    bindings: {
+      API_WS_URL: 'ws://@{backend.privateIp}:@{backend.port}/internal/cdc',
+    },
   },
 
   yjs: {
@@ -87,6 +93,10 @@ export default defineServices({
       BACKEND_URL: '${BACKEND_URL}',
       AI_API_URL: '${AI_API_URL}',
       SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45',
+    },
+    // The worker's own public URL (host-routed through the LB).
+    bindings: {
+      AI_API_URL: '@{self.url}',
     },
   },
 

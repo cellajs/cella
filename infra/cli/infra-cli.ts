@@ -21,6 +21,12 @@ import { runSecrets } from './services/secrets'
 import { runSetup } from './services/setup'
 import type { CliMode, InfraContext } from './shared'
 
+// Load the repo-root .env so infra-only repo envs (e.g. SCW_PROJECT_ID) are
+// available to the CLI and the child tasks it spawns. Mirrors backend/src/env.ts;
+// real environment variables still take precedence (CI sets SCW_* explicitly).
+const rootEnvFile = resolve(infraDir, '..', '.env')
+if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile)
+
 async function loadContext(): Promise<InfraContext> {
   const environment = pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)))
   const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`)
