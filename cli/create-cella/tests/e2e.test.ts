@@ -8,6 +8,11 @@ import { create } from '#/create';
 /**
  * E2E test for create-cella CLI.
  * This test does a full install and verifies the project is set up correctly.
+ *
+ * The cella template (backend, frontend, shared, ...) is downloaded from the github remote,
+ * but the placeholder config template ships with the create-cella package itself, so the
+ * locally-checked-out template asset is what gets validated here.
+ *
  * Note: This test is slow (~60s+) as it runs pnpm install and generate.
  */
 describe('create-cella e2e', () => {
@@ -31,7 +36,7 @@ describe('create-cella e2e', () => {
     if (existsSync(targetFolder)) {
       rmSync(targetFolder, { recursive: true, force: true });
     }
-  });
+  }, 60000); // Removing node_modules can take a while
 
   describe('project structure', () => {
     it('should create essential directories', () => {
@@ -56,30 +61,27 @@ describe('create-cella e2e', () => {
       const content = readFileSync(readmePath, 'utf-8');
       // Check for QUICKSTART.md content markers
       expect(content).toContain('# Quickstart');
-      expect(content).toContain('pnpm quick');
       expect(content).toContain('pnpm docker');
+      expect(content).toContain('pnpm dev');
     });
   });
 
   describe('.env files', () => {
-    it('should have root .env with project slug and ports', () => {
-      const envPath = join(targetFolder, '.env');
-      expect(existsSync(envPath)).toBe(true);
-
-      const content = readFileSync(envPath, 'utf-8');
-      expect(content).toContain(`PROJECT_SLUG=${projectName}`);
-      expect(content).not.toContain('ADMIN_EMAIL');
-      expect(content).not.toContain('FRONTEND_PORT');
-      expect(content).not.toContain('BACKEND_PORT');
-      expect(content).toContain('DB_PORT=5432');
-      expect(content).toContain('DB_TEST_PORT=5434');
+    it('should not have a root .env file', () => {
+      // The root .env was removed; backend/.env is now the single source of truth.
+      expect(existsSync(join(targetFolder, '.env'))).toBe(false);
     });
 
-    it('should have backend .env with correct admin email and ports', () => {
+    it('should have backend .env with project slug, ports and admin email', () => {
       const envPath = join(targetFolder, 'backend', '.env');
       expect(existsSync(envPath)).toBe(true);
 
       const content = readFileSync(envPath, 'utf-8');
+      // Docker compose variables (backend/.env is the single source of truth)
+      expect(content).toContain(`PROJECT_SLUG=${projectName}`);
+      expect(content).toContain('DB_PORT=5432');
+      expect(content).toContain('DB_TEST_PORT=5434');
+      // Backend runtime values
       expect(content).toContain(`ADMIN_EMAIL=admin@${projectName}.example.com`);
       expect(content).toContain('PORT=4000');
       expect(content).toContain('@0.0.0.0:5432/');

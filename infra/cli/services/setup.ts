@@ -35,9 +35,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // (childEnv below), not from stack config.
   let scwProjectId = context.stackYaml ? (extractProjectId(context.stackYaml) ?? '') : ''
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-    input({ message: 'Scaleway bootstrap access key (needs IAMManager)', validate: (value) => !!value.trim() || '(required)' }),
+    input({ message: 'Scaleway bootstrap access key', validate: (value) => !!value.trim() || '(required)' }),
   )
-  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key (needs IAMManager)' }))
+  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key' }))
   scwProjectId ||= await envOr('SCW_DEFAULT_PROJECT_ID', () =>
     input({ message: 'Scaleway project ID', validate: (value) => !!value.trim() || '(required)' }),
   )

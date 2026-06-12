@@ -42,16 +42,27 @@ export const PROJECT_PERMISSION_SETS = [
   'RelationalDatabasesReadOnly',
 ] as const
 
-/** Permission sets granted at organization scope (DNS lives at org level). */
-export const ORG_PERMISSION_SETS = [
-  'DomainsDNSFullAccess',
-  // Read-only. `pulumi up` derives the CI/VM application ids from the IAM API at
-  // runtime (SOVRUN §3.3, helpers.ts getApplicationOutput) and the deploy's
-  // "Verify VM reader IAM grant" step lists the VM reader's policies — both are
-  // org-scoped IAM reads, so the CI key needs IAMReadOnly. (Self-introspection
-  // via getApiKey works without it, but listing other applications does not.)
-  'IAMReadOnly',
-] as const
+// Org-level grants, split by Scaleway *scope type*. A single IAM policy rule may
+// only contain permission sets of ONE scope type — mixing them fails with
+// `permission sets must be of the same scope type`. So these become two separate
+// rules (both keyed by organization_id) in buildRules below.
+
+/** Project-scoped sets granted org-wide (all projects) — DNS is "Scoped by Project". */
+export const ORG_WIDE_PROJECT_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
+
+/**
+ * Organization-scoped sets — inherently org level ("Scoped by Organization").
+ *
+ * IAMReadOnly: `pulumi up` derives the CI/VM application ids from the IAM API at
+ * runtime (SOVRUN §3.3, helpers.ts getApplicationOutput) and the deploy's
+ * "Verify VM reader IAM grant" step lists the VM reader's policies — both are
+ * org-scoped IAM reads. (Self-introspection via getApiKey works without it, but
+ * listing other applications does not.)
+ */
+export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
+
+/** Union of all org-level grants — for audit/drift checks only (rule-agnostic). */
+export const ORG_PERMISSION_SETS = [...ORG_WIDE_PROJECT_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
 
 export type SetupCiKeyOptions = ProvisionScopedKeyOptions
 export type CiKeyResult = ScopedKeyResult
@@ -63,7 +74,11 @@ export function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
     buildRules: ({ projectId, organizationId }) => [
       { permission_set_names: PROJECT_PERMISSION_SETS, project_ids: [projectId] },
-      { permission_set_names: ORG_PERMISSION_SETS, organization_id: organizationId },
+      // Two org-keyed rules, one per scope type (Scaleway rejects mixing them in
+      // a single rule): DNS is project-scoped (granted across all projects),
+      // IAMReadOnly is organization-scoped.
+      { permission_set_names: ORG_WIDE_PROJECT_PERMISSION_SETS, organization_id: organizationId },
+      { permission_set_names: ORG_SCOPED_PERMISSION_SETS, organization_id: organizationId },
     ],
   })
 }
