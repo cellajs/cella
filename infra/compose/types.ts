@@ -57,6 +57,8 @@ export interface ServiceMeta {
   drainSeconds: number
   /** Public LB exposure; absent = internal-only. */
   lbRoute?: LbRoute
+  /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
+  lbWebsockets?: boolean
   /** Service whose image this one reuses (ai reuses backend); no own image built. */
   reusesImageOf?: string
   /**
@@ -146,6 +148,11 @@ export interface AppServiceConfig {
    * Omit for internal-only (no public LB backend — e.g. cdc).
    */
   lbRoute?: LbRoute
+  /**
+   * Keep LB connections long-lived (1h server/tunnel timeouts) for services
+   * speaking WebSockets through the LB (yjs). Only meaningful with `lbRoute`.
+   */
+  lbWebsockets?: boolean
   /**
    * Service whose image this one reuses, so CI builds no separate image for it
    * (ai reuses the backend image at the same SHA).

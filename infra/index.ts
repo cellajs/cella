@@ -87,8 +87,9 @@ export const computeInstances = compute.computeInstances.map((i) => i.name)
 // ---------------------------------------------------------------------------
 
 import * as lb from './resources/loadbalancer'
-import * as pulumi from '@pulumi/pulumi'
 
-export const apiDomainUrl = lb.apiDomainUrl ?? pulumi.output('')
-export const yjsDomainUrl = lb.yjsDomainUrl ?? pulumi.output('')
-export const aiDomainUrl = lb.aiDomainUrl ?? pulumi.output('')
+// Public URL per LB-exposed service slug (e.g. { backend: 'https://api.…', … }).
+// Empty object when no domain / compute. Consumers (CI summary, docs) read
+// slugs from this map instead of per-service named outputs, so a new service
+// needs no export added here.
+export const serviceDomainUrls = lb.serviceDomainUrls

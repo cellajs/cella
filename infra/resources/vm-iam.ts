@@ -21,9 +21,8 @@
  * attach this policy to it. The permission set list is the canonical
  * `VM_PROJECT_PERMISSION_SETS` (locked by `tasks/permission-sets.test.ts`).
  */
-import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, organizationId, tags, vmReaderApplicationId } from '../helpers'
+import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '../helpers'
 import { VM_PROJECT_PERMISSION_SETS } from '../tasks/setup-vm-key'
 
 // Application the policy binds to — the non-human VM reader principal created by
@@ -31,19 +30,6 @@ import { VM_PROJECT_PERMISSION_SETS } from '../tasks/setup-vm-key'
 // `infra:vmApplicationId`: without it the VMs have no IAM identity to grant,
 // which is the exact failure this module exists to prevent.
 const vmApplicationId = vmReaderApplicationId
-
-// Project the grant is scoped to. Matches the Scaleway provider's project,
-// which now authenticates from SCW_* env (the CI/operator key) rather than
-// stack config. Falls back to a legacy `scaleway:projectId` config value so
-// stacks bootstrapped before the env switch keep working during migration.
-const projectId =
-  process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID ?? new pulumi.Config('scaleway').get('projectId')
-if (!projectId) {
-  throw new Error(
-    'Scaleway project ID not found. Set SCW_DEFAULT_PROJECT_ID in the environment ' +
-      '(or, for legacy stacks, scaleway:projectId in stack config).',
-  )
-}
 
 /**
  * Build the single project-scoped policy rule for the VM reader.

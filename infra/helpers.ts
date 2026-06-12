@@ -19,7 +19,17 @@ const { appConfig } = await import('../shared')
 
 const derived = deriveInfra(appConfig)
 
-export const { naming, dnsZone, region, zone, tags, isProduction, hasDomain } = derived
+export const { naming, dnsZone, region, zone, tags, isProduction } = derived
+
+// Deploys are never run against a localhost config — fail fast here instead of
+// letting each resource module gate on `hasDomain` independently. The pure
+// `hasDomain` derivation stays in naming.ts for the bootstrap CLI's pre-deploy
+// checks; inside the Pulumi program a real domain is simply a requirement.
+if (!derived.hasDomain) {
+  throw new Error(
+    `Pulumi deploys require a real appConfig.domain (got '${appConfig.domain}'). Configure the domain for mode '${appConfig.mode}' before deploying.`,
+  )
+}
 
 // Pure appConfig pass-throughs — exposed here so resource modules import mode
 // from one place (the Pulumi binding layer) rather than from naming.ts.
@@ -42,6 +52,20 @@ export { appConfig }
 /** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
 export const infraConfig = new pulumi.Config('infra')
 
+/**
+ * Scaleway project id — the single source for the Pulumi program. Both deploy
+ * paths inject `SCW_DEFAULT_PROJECT_ID` (CI from the synced `SCW_PROJECT_ID`
+ * secret in deploy.yml; the infra CLI's apply/preview from stack context), so
+ * the program requires it strictly instead of carrying fallback chains.
+ */
+export const projectId: string = (() => {
+  const id = process.env.SCW_DEFAULT_PROJECT_ID
+  if (!id) {
+    throw new Error('SCW_DEFAULT_PROJECT_ID is not set — run deploys via CI or the infra CLI, which inject it from the single source of truth.')
+  }
+  return id
+})()
+
 // ---------------------------------------------------------------------------
 // Derived IAM identities — materialized from the Scaleway IAM API at run time
 // rather than pinned in stack config (SOVRUN §3.3, "materialized, not stored").
@@ -55,27 +79,19 @@ export const infraConfig = new pulumi.Config('infra')
 
 // The IAM application lookup is org-scoped. Prefer an explicit organization id
 // from the environment (CI sets SCW_DEFAULT_ORGANIZATION_ID from the synced
-// SCW_ORGANIZATION_ID secret) so the deploy never touches the Account API — the
+// SCW_ORGANIZATION_ID secret; the CLI's apply flow resolves and injects it
+// best-effort) so the deploy never touches the Account API — the
 // least-privilege CI deploy key can read IAM but NOT `read project`. Only when
 // no org id is in the environment (e.g. local runs) do we resolve it from the
 // project (the in-program equivalent of the bootstrap CLI's resolveOrgId REST
 // call), so a name lookup never sends an empty org id.
-const envOrganizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? process.env.SCW_ORGANIZATION_ID
+const envOrganizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID
 export const organizationId: pulumi.Input<string> = envOrganizationId
   ? envOrganizationId
-  : (() => {
-      const scwProjectId =
-        process.env.SCW_DEFAULT_PROJECT_ID ?? process.env.SCW_PROJECT_ID ?? new pulumi.Config('scaleway').get('projectId')
-      if (!scwProjectId) {
-        throw new Error(
-          'Scaleway organization ID not found. Set SCW_DEFAULT_ORGANIZATION_ID (preferred) or SCW_DEFAULT_PROJECT_ID in the environment (or scaleway:projectId in stack config).',
-        )
-      }
-      return scaleway.account.getProjectOutput({ projectId: scwProjectId }).apply((project) => {
-        if (!project.organizationId) throw new Error(`Could not resolve organization id from project '${scwProjectId}'.`)
-        return project.organizationId
-      })
-    })()
+  : scaleway.account.getProjectOutput({ projectId }).apply((project) => {
+      if (!project.organizationId) throw new Error(`Could not resolve organization id from project '${projectId}'.`)
+      return project.organizationId
+    })
 
 /** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
 export const ciDeployApplicationId = scaleway.iam

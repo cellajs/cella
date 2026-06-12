@@ -2,7 +2,7 @@
  * Source-level security invariants for the LB / DNS / Edge / DB / registry
  * / secrets resources.
  *
- * These resources either gate on `hasDomain` (LB, DNS, Edge) or read deeply from
+ * These resources either gate on deploy phase (LB, DNS, Edge) or read deeply from
  * stack config (DB), making a live render via the Pulumi mock harness brittle
  * and slow. Static checks here are intentionally narrow and target the few
  * security invariants that have caused production outages or audits in the

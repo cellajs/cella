@@ -2,17 +2,17 @@
  * Edge Services — CDN with TLS termination in front of the frontend SPA bucket.
  *
  * Pipeline stages: backend (S3 website origin) → TLS (managed Let's Encrypt) →
- * DNS (app FQDN) → head (entry point). Skipped entirely when no real domain is
- * configured (dev / localhost), since Edge Services requires a public FQDN.
+ * DNS (app FQDN) → head (entry point). Disabled by default (`infra:enableEdgeServices`);
+ * the frontend is normally served by the Caddy proxy VM behind the LB.
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, serviceHost, hasDomain, infra } from '../helpers'
+import { naming, region, serviceHost, infra } from '../helpers'
 import { frontendBucketName } from './storage'
 
 let _pipelineId: pulumi.Output<string> | undefined
 
-if (hasDomain && infra.enableEdgeServices) {
+if (infra.enableEdgeServices) {
   // ---------------------------------------------------------------------------
   // Pipeline
   // ---------------------------------------------------------------------------

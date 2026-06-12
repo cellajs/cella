@@ -68,21 +68,32 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/enabledServices\(appConfig\.has\)/)
   })
 
-  it('defines a compose-env factory for all five services (backend, cdc, yjs, ai, frontend)', () => {
-    for (const name of ['backend', 'cdc', 'yjs', 'ai', 'frontend']) {
-      expect(source).toMatch(new RegExp(`${name}:\\s*\\(\\)\\s*=>`))
-    }
+  it('binds compose env from the registry placeholder scan + envPool (no per-service env maps)', () => {
+    // Per-service compose env is derived by scanning each service's compose
+    // blocks for ${VAR} placeholders and binding them from the shared envPool,
+    // so adding a service that reuses existing vars needs no compute.ts edit.
+    expect(source).toMatch(/const envPool:/)
+    expect(source).toMatch(/composePlaceholders\(/)
+    expect(source).toMatch(/block\.profiles\.includes\(/)
+    // Unknown placeholders must fail fast rather than booting a broken VM.
+    expect(source).toMatch(/envPool defines no value/)
+    // The old hand-maintained per-service map must not come back.
+    expect(source).not.toMatch(/composeEnvFor/)
   })
 
-  it('frontend service does not receive backend secrets through composeEnv', () => {
-    // The .env file is still mounted via env_file: .env, but the frontend
-    // profile must not surface DB creds / cookie secrets / API keys via
-    // explicit composeEnv keys. This guards against accidental cross-wiring.
-    const frontendBlock = source.match(/frontend:\s*\(\)\s*=>\s*\(\{[\s\S]*?\}\)/)
-    expect(frontendBlock, 'could not locate frontend composeEnv factory').not.toBeNull()
-    const body = frontendBlock?.[0] ?? ''
+  it('derives the ingress boot slot from the registry rollover strategy', () => {
+    expect(source).toMatch(/rolloverStrategy === 'blue-green'/)
+    expect(source).not.toMatch(/name === 'backend'\s*\?\s*'backend-blue'/)
+  })
+
+  it('envPool does not bind backend secrets as compose env values', () => {
+    // The .env file is still mounted via env_file: .env, but secrets travel via
+    // the runtime-secrets manifest — never as envPool compose values.
+    const poolBlock = source.match(/const envPool:[\s\S]*?\n\}/)
+    expect(poolBlock, 'could not locate envPool').not.toBeNull()
+    const body = poolBlock?.[0] ?? ''
     for (const banned of ['DATABASE_URL', 'COOKIE_SECRET', 'BREVO_API_KEY', 'SCW_AI_API_KEY', 'YJS_SECRET', 'CDC_SECRET']) {
-      expect(body, `${banned} must not appear in frontend composeEnv`).not.toContain(banned)
+      expect(body, `${banned} must not appear in envPool`).not.toContain(banned)
     }
   })
 

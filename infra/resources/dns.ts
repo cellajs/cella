@@ -3,17 +3,17 @@
  *
  * Owns only the app subdomain CNAME (e.g. www → Edge Services pipeline). The API,
  * Yjs, AI and apex records live in the load balancer module because they depend
- * on the LB public IP. Skipped when no real domain is configured.
+ * on the LB public IP. Skipped while Edge Services is disabled (no pipeline).
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { dnsZone, hasDomain, serviceHost } from '../helpers'
+import { dnsZone, serviceHost } from '../helpers'
 import { pipelineId } from './edge'
 
 let _isApex = false
 let _appSubdomain = ''
 
-if (hasDomain && pipelineId) {
+if (pipelineId) {
   const appHost = serviceHost('frontend')
   _appSubdomain = appHost.replace(`.${dnsZone}`, '')
   _isApex = _appSubdomain === dnsZone || _appSubdomain === ''

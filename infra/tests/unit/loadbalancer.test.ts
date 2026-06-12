@@ -12,57 +12,68 @@ import { describe, expect, it } from 'vitest'
 
 const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 'utf-8')
 
-describe('loadbalancer module — www / frontend wiring', () => {
-  it('declares an app (www) DNS A record pointing at the LB IP', () => {
-    expect(src).toContain("new scaleway.domain.Record('app-dns'")
-    // DNS data is the LB public IP — same as the other records.
-    expect(src).toMatch(/'app-dns'[\s\S]*?data:\s*lbPublicIp/)
+describe('loadbalancer module — registry-driven wiring', () => {
+  it('derives the LB-exposed service set from the registry, never by name', () => {
+    expect(src).toMatch(/enabledServices\(appConfig\.has\)\.filter\(\(s\) => s\.lbRoute\)/)
+    // The default backend comes from the lbRoute 'default' declaration.
+    expect(src).toMatch(/lbRoute === 'default'/)
+    // No service-specific resource construction outside the loops.
+    expect(src).not.toMatch(/new scaleway\.loadbalancers\.Backend\('(backend|yjs|ai|frontend)-lb-backend'/)
   })
 
-  it('issues a Lets Encrypt certificate for the app domain', () => {
-    expect(src).toContain("new scaleway.loadbalancers.Certificate('app-cert'")
-    expect(src).toMatch(/'app-cert'[\s\S]*?commonName:\s*domains\.app/)
+  it('creates one DNS record per exposed service pointing at the LB IP', () => {
+    expect(src).toMatch(/new scaleway\.domain\.Record\(`\$\{baseName\(service\.slug\)\}-dns`/)
+    expect(src).toMatch(/data:\s*lbPublicIp/)
   })
 
-  it('creates an LB backend for the frontend VM on port 80', () => {
-    expect(src).toContain("new scaleway.loadbalancers.Backend('frontend-lb-backend'")
-    expect(src).toMatch(/'frontend-lb-backend'[\s\S]*?forwardPort:\s*80/)
-    expect(src).toMatch(/'frontend-lb-backend'[\s\S]*?serverIps:\s*\[frontendIp\]/)
+  it('issues a Lets Encrypt certificate per DNS record, depending on it', () => {
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{baseName\(slug\)\}-cert`/)
+    expect(src).toMatch(/commonName:\s*serviceHost\(slug\)/)
+    expect(src).toMatch(/dependsOn:\s*\[dns\]/)
+  })
+
+  it('creates one LB backend per exposed service on its declared port', () => {
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(`\$\{service\.slug\}-lb-backend`/)
+    expect(src).toMatch(/forwardPort:\s*service\.healthPort/)
+    expect(src).toMatch(/serverIps:\s*\[getInstanceIp\(service\.slug\)\]/)
   })
 
   it('all backends health-check the ingress liveness path (not the app /health)', () => {
     // The per-VM ingress proxy answers /__ingress/health locally and always
     // 200 while it is up, so an app rollover never drains the LB backend.
-    for (const backend of ['backend-lb-backend', 'yjs-lb-backend', 'ai-lb-backend', 'frontend-lb-backend']) {
-      expect(src).toMatch(
-        new RegExp(`'${backend}'[\\s\\S]*?healthCheckHttp:\\s*\\{\\s*uri:\\s*'/__ingress/health',\\s*code:\\s*200\\s*\\}`),
-      )
-    }
+    expect(src).toMatch(/healthCheckHttp:\s*\{\s*uri:\s*'\/__ingress\/health',\s*code:\s*200\s*\}/)
+    // Exactly one Backend construction site — the registry loop — so no
+    // backend can bypass the ingress health check.
+    expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(1)
   })
 
-  it('registers the app-cert on the HTTPS frontend', () => {
-    expect(src).toMatch(/allCertIds\.push\(appCert\.id\)/)
+  it('keeps WebSocket LB timeouts gated on the registry lbWebsockets knob', () => {
+    expect(src).toMatch(/service\.lbWebsockets \? \{ timeoutServer: '1h', timeoutTunnel: '1h' \}/)
   })
 
-  it('adds a host-header route from www to the frontend backend', () => {
-    expect(src).toContain("new scaleway.loadbalancers.Route('app-route'")
-    expect(src).toMatch(/'app-route'[\s\S]*?backendId:\s*frontendBackend\.id/)
-    expect(src).toMatch(/'app-route'[\s\S]*?matchHostHeader:\s*domains\.app/)
+  it('adds a host-header route for every host-routed service', () => {
+    expect(src).toMatch(/service\.lbRoute !== 'host'/)
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Route\(`\$\{baseName\(service\.slug\)\}-route`/)
+    expect(src).toMatch(/matchHostHeader:\s*serviceHost\(service\.slug\)/)
   })
 
-  it('pulls the frontend VM private IP from the compute module', () => {
-    expect(src).toMatch(/const\s+frontendIp\s*=\s*getInstanceIp\(['"]frontend['"]\)/)
+  it('keeps pre-refactor Pulumi resource names stable (regression guard)', () => {
+    // backend→api and frontend→app produce the original URNs (api-dns,
+    // api-cert, app-dns, app-cert, app-route) so no resource is replaced.
+    expect(src).toMatch(/legacyBaseNames:\s*Record<string,\s*string>\s*=\s*\{\s*backend:\s*'api',\s*frontend:\s*'app'\s*\}/)
   })
 
-  it('keeps existing api / yjs / ai / apex routes intact (regression guard)', () => {
-    expect(src).toContain("'api-dns'")
-    expect(src).toContain("'yjs-dns'")
-    expect(src).toContain("'ai-dns'")
-    expect(src).toContain("'api-cert'")
-    expect(src).toContain("'yjs-cert'")
-    expect(src).toContain("'ai-cert'")
-    expect(src).toContain("'backend-lb-backend'")
-    expect(src).toContain("'yjs-lb-backend'")
-    expect(src).toContain("'ai-lb-backend'")
+  it('skips dns/cert/route for a service whose host is the zone apex', () => {
+    expect(src).toMatch(/if \(host === dnsZone\) continue/)
+  })
+
+  it('registers the apex cert on the HTTPS frontend when app is not at apex', () => {
+    expect(src).toMatch(/if \(apexCert\) allCertIds\.push\(apexCert\.id\)/)
+  })
+
+  it('exports a public URL per exposed service via the generic map only', () => {
+    expect(src).toMatch(/export const serviceDomainUrls/)
+    // No per-service named exports — a new service needs no export added.
+    expect(src).not.toMatch(/export const (api|yjs|ai)DomainUrl/)
   })
 })
