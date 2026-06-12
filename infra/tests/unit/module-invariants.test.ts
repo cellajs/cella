@@ -122,9 +122,10 @@ describe('secrets module', () => {
   it('seeds stable pulumi-owned runtime secrets from stack config only as a migration fallback', () => {
     expect(secrets).toMatch(/new random\.RandomPassword\(/)
     expect(secrets).toContain('const configured = infraConfig.getSecret(configKey)')
-    for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret']) {
-      expect(secrets).toContain(`pulumiOwnedRuntimeSecret('${key}'`)
-    }
+    // Random-generated values come generically from the registry definition,
+    // not a hand-maintained per-key list.
+    expect(secrets).toContain("pulumiOwnedRuntimeSecret(definition.id, definition.secretName)")
+    expect(secrets).toMatch(/generation === 'random'/)
   })
 
   it('namespaces every secret under the slug/mode path', () => {

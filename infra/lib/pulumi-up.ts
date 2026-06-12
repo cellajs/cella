@@ -18,8 +18,15 @@ async function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number>
 
 /** Resources whose permission set is intentionally NOT granted to the CI key
  *  (see PROJECT_PERMISSION_SETS in setup-ci-key.ts). When permission is denied
- *  on one of these, the fix is to use Apply mode, not to widen CI. */
-const BOOTSTRAP_OWNED_RESOURCE = /private_network|^vpc|rdb|instance_db|domain_zone/i
+ *  on one of these, the fix is to use Apply mode, not to widen CI.
+ *
+ *  `policy` covers the VM reader IAM policy (resources/vm-iam.ts): creating or
+ *  updating an IAM policy needs IAM *write*, which the CI key must never hold
+ *  (IAMManager/IAMPolicyManager are forbidden privilege-escalation vectors —
+ *  see tasks/permission-sets.test.ts). So its first creation, like VPC/PN/RDB,
+ *  must run via a local `pulumi up` with the bootstrap key; CI only refreshes
+ *  it afterwards. */
+const BOOTSTRAP_OWNED_RESOURCE = /private_network|^vpc|rdb|instance_db|domain_zone|policy/i
 
 export type PermissionHint =
   | { kind: 'bootstrap-owned'; resource: string }

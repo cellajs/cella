@@ -10,7 +10,7 @@ import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode, infraConfig } from '../helpers'
-import { runtimeSecrets } from '../lib/runtime-secrets'
+import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
 
 /** Folder path for secret organization, e.g. '/cella-production/' */
@@ -67,15 +67,27 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
   }).result
 }
 
-const pulumiRuntimeSecretData: Record<string, pulumi.Input<string>> = {
+/**
+ * Pulumi-derived secret values that cannot be produced generically from the
+ * registry — currently only the database connection strings, which are built
+ * from database resources. Every other `valueSource: 'pulumi'` secret is
+ * resolved from its registry definition (`generation: 'random'` → a stable
+ * RandomPassword named after its `secretName`), so adding a new pulumi-owned
+ * random secret requires no edit here — only a registry entry.
+ */
+const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlAdmin: connectionStringAdmin,
   databaseUrlRuntime: connectionStringRuntime,
   databaseUrlCdc: connectionStringCdc,
-  cookieSecret: pulumiOwnedRuntimeSecret('cookieSecret', 'cookie-secret'),
-  unsubscribeSecret: pulumiOwnedRuntimeSecret('unsubscribeSecret', 'unsubscribe-token-secret'),
-  cdcSecret: pulumiOwnedRuntimeSecret('cdcSecret', 'cdc-secret'),
-  yjsSecret: pulumiOwnedRuntimeSecret('yjsSecret', 'yjs-secret'),
-  piiHashSecret: pulumiOwnedRuntimeSecret('piiHashSecret', 'pii-hash-secret'),
+}
+
+function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
+  const derived = derivedRuntimeSecretData[definition.id]
+  if (derived !== undefined) return derived
+  if (definition.generation === 'random') return pulumiOwnedRuntimeSecret(definition.id, definition.secretName)
+  throw new Error(
+    `secrets: pulumi-owned secret '${definition.id}' has generation 'manual' but no derived value — add it to derivedRuntimeSecretData.`,
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -87,7 +99,7 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
     ? createSecretContainer(definition.secretName, definition.description)
     : getExistingSecretContainer(definition.secretName)
   if (definition.valueSource === 'pulumi') {
-    createSecretVersion(definition.secretName, secret.id, pulumiRuntimeSecretData[definition.id]!)
+    createSecretVersion(definition.secretName, secret.id, pulumiRuntimeSecretData(definition))
   }
   return [definition.id, secret]
 }))

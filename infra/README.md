@@ -45,7 +45,7 @@ When re-run, `pnpm --filter infra bootstrap` detects existing state from
 |---|---|
 | **Resume** | Re-runs idempotent steps (state bucket, secrets check, edge plan, DNS check, GitHub variable sync) using a freshly-pasted bootstrap key for provider/IAM auth. Does **not** touch the IAM policy. **Cannot apply changes to DB / VPC / private network** via the CI key (it is read-only on those). |
 | **Rotate CI** | Deletes the existing `<slug>-ci-deploy` API key and IAM policy, mints a fresh key, re-attaches the policy with current `PROJECT_PERMISSION_SETS`, pushes new secrets to GitHub. Use after rotating credentials **or after changing permission sets in `tasks/setup-ci-key.ts`**. |
-| **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key and supplies it to the provider via `SCW_*` env, runs `pulumi up`, then clears the transient apply marker. See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
+| **Apply infra change** | One-shot `pulumi up` for bootstrap-owned changes (DB, VPC, private network). Prompts for a fresh bootstrap key and supplies it to the provider via `SCW_*` env, then runs `pulumi up`. Leaves live compute up. See [Applying a bootstrap-owned change](#applying-a-bootstrap-owned-change). |
 | **Preview** | Read-only `pulumi preview --diff` using a Scaleway key (any key with read access) supplied via `SCW_*` env. Makes no changes; use it to validate provider auth and inspect drift before an Apply or a config cleanup. |
 | **Manage runtime secrets** | List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager. |
 | **Clean** | Wipes local state and starts over — see [Clean slate](#clean-slate). |
@@ -134,7 +134,7 @@ cd infra && \
 
 (`SCW_*` authenticates the Scaleway provider; `AWS_*` authenticates the S3-compatible Pulumi state backend — same key, two protocols.)
 
-This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — the bootstrap command sets the transient `bootstrap:applyInProgress` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
+This creates the registry, database, network, load balancer, and other base resources. **Compute VMs are not deployed here** — the bootstrap command sets the transient `bootstrap:computeDeferred` marker around the initial `pulumi up`, which gates VMs off (registry has no images yet, so they would crash-loop). The marker is cleared automatically when the run succeeds.
 
 After this completes, commit the updated `infra/Pulumi.production.yaml` and push to `main`. CI will then build and push Docker images and run a second `pulumi up`. The marker is no longer set, so compute VMs come up on their own. **You do not need to run `pulumi up` a second time locally.**
 
@@ -172,12 +172,10 @@ Re-run bootstrap and choose **Apply infra change**. The mode:
 
 1. Prompts for the Pulumi passphrase and a fresh bootstrap key (broad permissions, see [Step 3](#3-generate-a-bootstrap-api-key)).
 2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
-3. Snapshots the current stack file verbatim to `Pulumi.<stack>.yaml.apply-backup` (gitignored), then sets a transient `bootstrap:applyInProgress` marker.
-4. Runs `pulumi up`.
-5. **Always** restores the snapshot over the stack file — even if `pulumi up` failed or was cancelled (`try/finally`) — which clears the apply marker, then deletes the snapshot.
-6. Reminds you to revoke the bootstrap key.
+3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
+4. Reminds you to revoke the bootstrap key.
 
-If the run is interrupted by a hard crash (kill -9, power loss, Ctrl-C) before step 5, the snapshot is left on disk. The next bootstrap run detects it and offers to restore it — clearing the leftover apply marker.
+No stack file is mutated and no credential is written to disk, so an interrupted run needs no cleanup — `pulumi up` is idempotent, so just re-run Apply infra change to converge.
 
 You can also supply `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` / `PULUMI_CONFIG_PASSPHRASE` as env vars to skip the prompts.
 

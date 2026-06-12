@@ -49,33 +49,22 @@ export function extractProjectId(yamlText: string): string | undefined {
 }
 
 /**
- * Extract the plaintext `bootstrap:applyInProgress: <iso-timestamp>` marker
- * written by apply-mode before swapping the CI key out. Returns undefined
- * when not present. Pure.
+ * Extract the plaintext `bootstrap:computeDeferred: <iso-timestamp>` marker.
+ * The bootstrap CLI sets it before the first `pulumi up` of a FRESH provision
+ * (no images exist yet, so compute is intentionally not declared) and clears it
+ * once base infra is up. Returns undefined when not present. Pure.
  */
-export function extractApplyMarker(yamlText: string): string | undefined {
-  return yamlText.match(/^\s*bootstrap:applyInProgress:\s*(.+)$/m)?.[1]?.trim()
-}
-
-export interface ApplyInterruptedTrace {
-  /** Human-readable description of where we detected the trace. */
-  trace: string
+export function extractComputeDeferredMarker(yamlText: string): string | undefined {
+  return yamlText.match(/^\s*bootstrap:computeDeferred:\s*(.+)$/m)?.[1]?.trim()
 }
 
 /**
- * Detect whether a prior "Apply infra change" run was interrupted between
- * swapping the CI key out and restoring it. Either signal is enough:
- *   - A verbatim stack-file backup (`Pulumi.<stack>.yaml.apply-backup`) is
- *     still on disk — apply-mode writes it before the swap and removes it
- *     after restore, so its presence means a run did not finish. This is the
- *     actionable trace: the backup restores the CI key byte-for-byte.
- *   - YAML marker `bootstrap:applyInProgress` is present in the stack file
- *     (secondary trace; normally cleared together with the backup).
- * Returns a trace descriptor when interrupted, or undefined when clean. Pure.
+ * Detect a leftover `bootstrap:computeDeferred` marker — the trace of a fresh
+ * provision whose initial `pulumi up` did not complete. While present, compute
+ * stays gated off (helpers.ts), which is correct until images are pushed; the
+ * next successful provisioning `pulumi up` clears it. Returns the marker value
+ * when present, or undefined when clean. Pure.
  */
-export function detectInterruptedApply(probe: { yamlText?: string; backupExists: boolean; backupPath: string }): ApplyInterruptedTrace | undefined {
-  if (probe.backupExists) return { trace: `Backup file: ${probe.backupPath}` }
-  const marker = probe.yamlText ? extractApplyMarker(probe.yamlText) : undefined
-  if (marker) return { trace: `YAML marker bootstrap:applyInProgress = ${marker}` }
-  return undefined
+export function detectComputeDeferred(yamlText?: string): string | undefined {
+  return yamlText ? extractComputeDeferredMarker(yamlText) : undefined
 }

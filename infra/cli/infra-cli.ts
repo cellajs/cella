@@ -7,13 +7,13 @@
  * Usage: pnpm --filter infra bootstrap
  */
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { confirm, select } from '@inquirer/prompts'
+import { select } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { printHeader } from 'shared/cli-utils/display'
-import { checkMark, warningMark } from 'shared/console'
-import { detectInterruptedApply, detectStackState, pickStackShort } from '../lib/bootstrap-stack-state'
+import { warningMark } from 'shared/console'
+import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/bootstrap-stack-state'
 import { infraDir } from '../lib/paths'
 import { runApply } from './services/apply'
 import { runPreview } from './services/preview'
@@ -40,7 +40,6 @@ async function loadContext(): Promise<InfraContext> {
     stackYaml,
     state,
     hasCiKey: state === 'bootstrapped',
-    applyBackupPath: resolve(infraDir, `Pulumi.${environment}.yaml.apply-backup`),
     appConfig,
   }
 }
@@ -56,26 +55,13 @@ const context = await loadContext()
 
 console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`)
 
-const interrupted = detectInterruptedApply({
-  yamlText: context.stackYaml,
-  backupExists: existsSync(context.applyBackupPath),
-  backupPath: context.applyBackupPath,
-})
-if (interrupted) {
+const deferredSince = detectComputeDeferred(context.stackYaml)
+if (deferredSince) {
   console.warn(
-    `${warningMark} ${pc.bold('Previous Apply infra change run was interrupted.')}\n` +
-      `  Pulumi.${context.environment}.yaml may still carry the transient bootstrap:applyInProgress marker.\n` +
-      `  Trace: ${interrupted.trace}\n`,
+    `${warningMark} ${pc.bold('Compute is currently deferred')} ${pc.dim(`(bootstrap:computeDeferred = ${deferredSince})`)}.\n` +
+      `  A fresh provision sets this so VMs are not declared until images exist;\n` +
+      `  it clears automatically on the next successful provisioning \`pulumi up\`.\n`,
   )
-  if (
-    existsSync(context.applyBackupPath) &&
-    (await confirm({ message: 'Restore the pre-apply stack config from the backup now (clears the apply marker)?', default: true }))
-  ) {
-    copyFileSync(context.applyBackupPath, context.stackPath)
-    unlinkSync(context.applyBackupPath)
-    console.info(`${checkMark} Stack config restored from backup. Re-run bootstrap to continue.`)
-    process.exit(0)
-  }
 }
 
 const mode: CliMode =

@@ -19,11 +19,11 @@ let h: MockHarness
 beforeAll(async () => {
   h = await installPulumiMocks({
     stack: 'production',
-    // bootstrap:applyInProgress gates compute off so helpers.ts skips the
+    // bootstrap:computeDeferred gates compute off so helpers.ts skips the
     // image-tag pin assertion (these tests don't render compute). The CI/VM
     // application ids are derived from the IAM API (stubbed in the mock harness),
     // no longer read from stack config.
-    config: { 'bootstrap:applyInProgress': 'test' },
+    config: { 'bootstrap:computeDeferred': 'test' },
   })
   await import('../../resources/storage')
   await flushPulumi()

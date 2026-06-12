@@ -7,24 +7,25 @@
  * runtime — just string parsing so it works on any backend.
  */
 
-/** Explicit list of config keys that MUST be encrypted in stack YAML. */
+import { runtimeSecrets } from './runtime-secrets'
+
+/**
+ * Explicit list of config keys that MUST be encrypted in stack YAML.
+ * Infra-plane keys are listed by hand; every runtime secret from the central
+ * registry is included automatically (any of them may transit stack config as
+ * a migration fallback or bootstrap seed), so a new registry entry needs no
+ * edit here.
+ */
 export const KNOWN_SECRET_KEYS: readonly string[] = [
   'scaleway:accessKey',
   'scaleway:secretKey',
   'infra:dbPassword',
-  'infra:cookieSecret',
-  'infra:unsubscribeSecret',
-  'infra:cdcSecret',
-  'infra:yjsSecret',
-  'infra:piiHashSecret',
-  'infra:adminEmail',
-  'infra:brevoApiKey',
-  'infra:scwAiApiKey',
   'infra:adminPassword',
   'infra:runtimePassword',
   // VM reader key — minimal-privilege identity for service VMs.
   'infra:vmAccessKey',
   'infra:vmSecretKey',
+  ...runtimeSecrets.map((secret) => `infra:${secret.id}`),
 ]
 
 /** Suffix patterns that always imply a secret value, regardless of namespace. */

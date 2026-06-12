@@ -33,7 +33,7 @@ export interface InstallOpts {
   project?: string
   stack?: string
   mode?: 'production' | 'staging' | 'development'
-  /** Stack config overrides, namespaced (e.g. `{ 'bootstrap:applyInProgress': '2026-01-01T00:00:00Z' }`). */
+  /** Stack config overrides, namespaced (e.g. `{ 'bootstrap:computeDeferred': '2026-01-01T00:00:00Z' }`). */
   config?: Record<string, string>
 }
 

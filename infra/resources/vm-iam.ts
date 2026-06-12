@@ -23,7 +23,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, tags, vmReaderApplicationId } from '../helpers'
+import { naming, organizationId, tags, vmReaderApplicationId } from '../helpers'
 import { VM_PROJECT_PERMISSION_SETS } from '../tasks/setup-vm-key'
 
 // Application the policy binds to — the non-human VM reader principal created by
@@ -73,6 +73,13 @@ export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),
   description: 'Read-only registry + object storage + secret manager grant for service VMs (managed by Pulumi)',
   applicationId: vmApplicationId,
+  // Set the org explicitly (resolved in helpers from env, else the project) so
+  // the create does not depend on the provider's default org env — the bootstrap
+  // "Apply infra change" flow injects SCW_DEFAULT_PROJECT_ID but no org id, which
+  // left the provider default empty and failed with "organization_id is wrongly
+  // formatted". CI already sets SCW_DEFAULT_ORGANIZATION_ID; this makes both paths
+  // converge on the same resolved org.
+  organizationId,
   rules: buildVmReaderPolicyRules(projectId),
   tags,
 })

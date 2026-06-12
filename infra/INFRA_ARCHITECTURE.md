@@ -111,7 +111,7 @@ All sizing has sensible defaults — DB/WAF in `helpers.ts`, per-service VM size
 | `backend` VM size (registry default) | DEV1-S | DEV1-M |
 | `enableWaf` | false | true |
 | `enableEdgeServices` | false | false |
-| `computeEnabled` | true (gated off only while `bootstrap:applyInProgress` is set) | true (same) |
+| `computeEnabled` | true (gated off only while `bootstrap:computeDeferred` is set) | true (same) |
 
 `instanceType` is the fleet-wide VM size. Per-service sizes live in the
 canonical registry (`compose/services.config.ts`, the `instanceType` field) so a

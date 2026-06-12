@@ -6,9 +6,9 @@ import { installPulumiMocks } from '../tests/helpers/pulumi-mock'
 let formatPostgresUrl: (user: string, pass: string, host: string, port: number | string, database: string) => string
 
 beforeAll(async () => {
-  // `bootstrap:applyInProgress` disables the compute pin-guard so the module
+  // `bootstrap:computeDeferred` disables the compute pin-guard so the module
   // imports without requiring pinned image tags.
-  await installPulumiMocks({ stack: 'production', config: { 'bootstrap:applyInProgress': 'test' } })
+  await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } })
   ;({ formatPostgresUrl } = await import('./database'))
 })
 
