@@ -59,6 +59,8 @@ export default defineServices({
     startPeriod: '10s',
     rolloverStrategy: 'in-place',
     lbRoute: 'host',
+    // WebSocket service — LB keeps connections open for up to an hour.
+    lbWebsockets: true,
     // Only deployed when the app enables collaborative editing (appConfig.has.yjs).
     featureFlag: 'yjs',
     env: {

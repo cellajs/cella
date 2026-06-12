@@ -477,7 +477,7 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: |
-          API_URL=$(pulumi stack output apiDomainUrl --stack "$STACK" 2>/dev/null || echo '')
+          API_URL=$(pulumi stack output serviceDomainUrls --stack "$STACK" 2>/dev/null | jq -r '.backend // empty' || echo '')
           FRONTEND_URL=$(pulumi stack output frontendBucketEndpoint --stack "$STACK" 2>/dev/null || echo '')
           PIPELINE_ID=$(pulumi stack output pipelineId --stack "$STACK" 2>/dev/null || echo '')
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
@@ -518,8 +518,10 @@ jobs:
           echo "- **Registry:** $(pulumi stack output registryEndpoint --stack "$STACK")" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend:** $(pulumi stack output frontendBucketEndpoint --stack "$STACK")" >> $GITHUB_STEP_SUMMARY
           echo "- **Cluster:** $(pulumi stack output clusterHost --stack "$STACK" 2>/dev/null || echo 'not deployed')" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Domain:** $(pulumi stack output apiDomainUrl --stack "$STACK" 2>/dev/null || echo 'no domain')" >> $GITHUB_STEP_SUMMARY
-          echo "- **Yjs Domain:** $(pulumi stack output yjsDomainUrl --stack "$STACK" 2>/dev/null || echo 'no domain')" >> $GITHUB_STEP_SUMMARY
+          # One line per LB-exposed service, straight from the registry-driven map.
+          pulumi stack output serviceDomainUrls --stack "$STACK" 2>/dev/null \
+            | jq -r 'to_entries[] | "- **\(.key) domain:** \(.value)"' >> $GITHUB_STEP_SUMMARY \
+            || echo "- **Domains:** no domain" >> $GITHUB_STEP_SUMMARY
 
   # -------------------------------------------------------------------------
   # Roll services — for each backend service (backend, cdc, yjs, ai):

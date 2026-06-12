@@ -209,3 +209,27 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     organizationId,
   }
 }
+
+/**
+ * Resolve the organization id from a project id via the Account API. Exported
+ * for callers outside the provisioning flow (e.g. the apply CLI, which needs
+ * the org id to look up an existing IAM policy). Throws with guidance when it
+ * cannot be resolved.
+ */
+export function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
+  return resolveOrgId(secretKey, projectId)
+}
+
+/**
+ * Find an IAM policy id by exact name within an organization, or undefined when
+ * none matches. Used to detect a pre-existing (orphaned) policy that must be
+ * adopted into Pulumi state rather than re-created.
+ */
+export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
+  const { policies } = await scw<{ policies: ScwPolicy[] }>(
+    secretKey,
+    'GET',
+    `${IAM_BASE}/policies?organization_id=${organizationId}&policy_name=${encodeURIComponent(name)}&page_size=20`,
+  )
+  return policies.find((p) => p.name === name)?.id
+}

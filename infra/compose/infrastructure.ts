@@ -50,6 +50,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     drainSeconds: cfg.drainSeconds ?? 0,
   }
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
+  if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.featureFlag) meta.featureFlag = cfg.featureFlag
   if (cfg.instanceType) meta.instanceType = cfg.instanceType

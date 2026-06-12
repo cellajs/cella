@@ -1,5 +1,6 @@
 /**
- * Compute — one Docker Compose VM per backend service (backend, cdc, yjs, ai).
+ * Compute — one Docker Compose VM per enabled service from the canonical
+ * registry (compose/services.config.ts).
  *
  * Each VM has a fully-closed inbound security group and is reachable only over the
  * main private network from the load balancer and database. Cloud-init installs
@@ -23,10 +24,11 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, mode, hasDomain, appConfig, vmAccessKey, vmSecretKey } from '../helpers'
+import { naming, zone, region, tags, infra, mode, appConfig, vmAccessKey, vmSecretKey } from '../helpers'
 import { buildInstallSnippet, buildReconcilerEnv, type ReconcilerService } from '../reconciler/index'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
-import { enabledServices, type ServiceName } from '../lib/services'
+import { composeConfig } from '../compose/compose'
+import { enabledServices, servicesByName, type ServiceName } from '../lib/services'
 import { frontendCsp } from '../lib/frontend-csp'
 import { renderCloudInit } from './cloud-init'
 import { deployTagsBucketName } from './deploy-tags'
@@ -115,14 +117,18 @@ interface ServiceConfig {
   profile: string
   /** App container's internal port; also the host port the ingress publishes. */
   port: number
-  /** Extra compose env vars (REGISTRY, URLs, tags) */
-  composeEnv: Record<string, pulumi.Input<string>>
+  /**
+   * Compose env var suppliers (REGISTRY, URLs, ingress wiring). Lazy so values
+   * resolved during VM creation order (cdc's API_WS_URL needs the backend VM's
+   * private IP) are read at cloud-init build time, not registry-scan time.
+   */
+  composeEnv: Record<string, () => pulumi.Input<string>>
 }
 
 function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
   const envLines = pulumi.all(
-    Object.entries(service.composeEnv).map(([k, v]) =>
-      pulumi.output(v).apply((val) => `${k}=${val}`),
+    Object.entries(service.composeEnv).map(([k, supply]) =>
+      pulumi.output(supply()).apply((val) => `${k}=${val}`),
     ),
   )
 
@@ -173,59 +179,52 @@ function buildCloudInit(service: ServiceConfig): pulumi.Output<string> {
 // Service definitions
 // ---------------------------------------------------------------------------
 
-const backendUrl = hasDomain ? appConfig.backendUrl : 'http://localhost:4000'
-const frontendUrl = appConfig.frontendUrl
-const aiUrl = hasDomain ? appConfig.aiUrl : 'http://localhost:4003'
-
 // CDC -> backend is a server-to-server WebSocket on the internal /internal/cdc
 // path. The backend rejects sources outside loopback or the VPC /24 (see
 // backend/src/lib/cdc-websocket.ts), so we route over the private network
 // directly to the backend VM instead of through the public LB.
-// Computed lazily after the backend VM is created, below.
-let cdcWsUrl: pulumi.Input<string> = 'ws://localhost:4000/internal/cdc'
+// Resolved AFTER the backend VM is created, below — bespoke inter-service
+// topology (like the DB connection strings in secrets.ts), not registry data.
+let cdcWsUrl: pulumi.Input<string> | undefined
 
-// Per-service compose env. The canonical registry (lib/services.ts) owns the
-// SET of services + their deploy knobs (profile, port, rollover, flags); this
-// map owns only the Pulumi-bound wiring (registry endpoint, inter-service URLs)
-// that can't live in the pure registry. cdc's API_WS_URL is a getter so it
-// reads the backend private IP resolved AFTER the backend VM is created (below).
-const composeEnvFor: Record<ServiceName, () => Record<string, pulumi.Input<string>>> = {
-  backend: () => ({
-    REGISTRY: registryEndpoint,
-    APP_MODE: mode,
-    FRONTEND_URL: frontendUrl,
-    BACKEND_URL: backendUrl,
-  }),
-  cdc: () => ({
-    REGISTRY: registryEndpoint,
-    APP_MODE: mode,
-    get API_WS_URL() { return cdcWsUrl },
-    BACKEND_URL: backendUrl,
-  }),
-  yjs: () => ({
-    REGISTRY: registryEndpoint,
-    APP_MODE: mode,
-    BACKEND_URL: backendUrl,
-  }),
-  ai: () => ({
-    REGISTRY: registryEndpoint,
-    APP_MODE: mode,
-    FRONTEND_URL: frontendUrl,
-    BACKEND_URL: backendUrl,
-    AI_API_URL: aiUrl,
-  }),
-  // Reverse-proxy in front of the S3 frontend bucket. Adds the frontend's CSP
-  // plus transport-level security headers, and rewrites 404s to /index.html so
-  // SPA deep links resolve. Deliberately reads no app secret from .env beyond
-  // what cloud-init needs to pull the image.
-  frontend: () => ({
-    REGISTRY: registryEndpoint,
-    APP_MODE: mode,
-    FRONTEND_CSP: frontendCsp,
-    // S3 REST hostname Caddy reverse-proxies to. Bucket name is whatever
-    // `naming.frontendBucket` resolves to (e.g. `<slug>-frontend`).
-    ORIGIN_HOST: pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
-  }),
+/**
+ * Pulumi-bound values for the `${VAR}` placeholders a service's compose blocks
+ * reference. The registry (`compose/services.config.ts`) declares WHICH vars a
+ * service consumes; this pool is the single place their deploy-time values are
+ * bound. A new service reusing existing vars needs no edit here — only a
+ * genuinely new Pulumi-bound value (a new bucket, a new inter-service URL)
+ * adds one entry. Unknown placeholders fail fast at synth→deploy time.
+ */
+const envPool: Record<string, () => pulumi.Input<string>> = {
+  FRONTEND_URL: () => appConfig.frontendUrl,
+  BACKEND_URL: () => appConfig.backendUrl,
+  AI_API_URL: () => appConfig.aiUrl,
+  API_WS_URL: () => {
+    if (!cdcWsUrl) throw new Error('compute: API_WS_URL read before the backend VM was created — backend must be created first.')
+    return cdcWsUrl
+  },
+  // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
+  FRONTEND_CSP: () => frontendCsp,
+  ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
+}
+
+// Vars satisfied outside the pool:
+//  - REGISTRY / APP_MODE        — universal, injected into every VM's .env;
+//  - INGRESS_PORT / UPSTREAM_*  — per-service ingress wiring, injected below;
+//  - *_TAG                      — image tags owned by the reconciler (S3 deploy
+//                                 tags), never written to .env by Pulumi.
+const INJECTED_VARS = new Set(['REGISTRY', 'APP_MODE', 'INGRESS_PORT', 'UPSTREAM_HOST', 'UPSTREAM_PORT'])
+const PLACEHOLDER_RE = /\$\{([A-Z][A-Z0-9_]*)(?::-[^}]*)?\}/g
+
+/** All `${VAR}` placeholders in the compose blocks that run on a service's VM. */
+function composePlaceholders(slug: string): string[] {
+  const vars = new Set<string>()
+  for (const block of Object.values(composeConfig.services)) {
+    if (!block.profiles.includes(slug)) continue
+    const texts = [block.image, ...(block.ports ?? []), ...Object.values(block.environment ?? {})]
+    for (const text of texts) for (const match of text.matchAll(PLACEHOLDER_RE)) vars.add(match[1]!)
+  }
+  return [...vars]
 }
 
 // Ingress wiring — every VM runs a Caddy `ingress` container that publishes the
@@ -234,11 +233,34 @@ const composeEnvFor: Record<ServiceName, () => Record<string, pulumi.Input<strin
 // the LB ever losing its backend. UPSTREAM_HOST is the compose service name;
 // INGRESS_PORT/UPSTREAM_PORT are the app's published/internal port (== healthPort).
 //
-// Backend uses blue-green slots (backend-blue / backend-green); its ingress
-// starts pointing at the initial active slot (blue), and the reconciler flips
-// the upstream between slots on each deploy. Every other service is a single
-// container named after the service. See infra/INFRA_ARCHITECTURE.md.
-const bootSlotService = (name: string): string => (name === 'backend' ? 'backend-blue' : name)
+// A blue-green service boots pointing at its initial active slot (`<slug>-blue`);
+// the reconciler flips the ingress upstream between slots on each deploy. An
+// in-place service is a single container named after the service. Derived from
+// the registry's rolloverStrategy — see infra/INFRA_ARCHITECTURE.md.
+const bootSlotService = (name: string): string =>
+  servicesByName.get(name as ServiceName)?.rolloverStrategy === 'blue-green' ? `${name}-blue` : name
+
+/** Compose env for one service: universal vars + ingress wiring + pool values for its placeholders. */
+function buildComposeEnv(slug: ServiceName, healthPort: number): Record<string, () => pulumi.Input<string>> {
+  const env: Record<string, () => pulumi.Input<string>> = {
+    REGISTRY: () => registryEndpoint,
+    APP_MODE: () => mode,
+    INGRESS_PORT: () => String(healthPort),
+    UPSTREAM_HOST: () => bootSlotService(slug),
+    UPSTREAM_PORT: () => String(healthPort),
+  }
+  for (const name of composePlaceholders(slug)) {
+    if (INJECTED_VARS.has(name) || name.endsWith('_TAG')) continue
+    const supply = envPool[name]
+    if (!supply) {
+      throw new Error(
+        `compute: service '${slug}' references \${${name}} in its compose blocks but envPool defines no value for it — add a supplier in resources/compute.ts.`,
+      )
+    }
+    env[name] = supply
+  }
+  return env
+}
 
 // Concrete VM service list, derived from the canonical registry: only the
 // services enabled for this app (feature flags) and placed on their own VM
@@ -250,11 +272,7 @@ const services: ServiceConfig[] = enabledServices(appConfig.has).map((svc) => {
   if (placement !== 'dedicated-vm') {
     throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)
   }
-  const composeEnv = composeEnvFor[svc.slug]()
-  composeEnv.INGRESS_PORT = String(svc.healthPort)
-  composeEnv.UPSTREAM_HOST = bootSlotService(svc.slug)
-  composeEnv.UPSTREAM_PORT = String(svc.healthPort)
-  return { name: svc.slug, profile: svc.slug, port: svc.healthPort, composeEnv }
+  return { name: svc.slug, profile: svc.slug, port: svc.healthPort, composeEnv: buildComposeEnv(svc.slug, svc.healthPort) }
 })
 
 // ---------------------------------------------------------------------------
@@ -352,11 +370,12 @@ function createVm(service: ServiceConfig): ComputeInstance {
 
 if (infra.computeEnabled) {
   // Create backend first so we can wire CDC's API_WS_URL to its private IP.
-  const backendService = services.find((s) => s.name === 'backend')!
+  const backendService = services.find((s) => s.name === 'backend')
+  if (!backendService) throw new Error("compute: the registry must include a 'backend' service — cdc and the LB default route depend on it.")
   const backend = createVm(backendService)
-  cdcWsUrl = backend.privateIp.apply((ip) => `ws://${ip}:4000/internal/cdc`)
+  cdcWsUrl = backend.privateIp.apply((ip) => `ws://${ip}:${backendService.port}/internal/cdc`)
 
-  // Create remaining services (cdc reads cdcWsUrl via the getter on composeEnv).
+  // Create remaining services (cdc reads cdcWsUrl via its lazy envPool supplier).
   for (const service of services) {
     if (service.name === 'backend') continue
     createVm(service)

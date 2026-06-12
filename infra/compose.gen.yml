@@ -157,6 +157,7 @@ services:
       rolloverStrategy: in-place
       drainSeconds: 0
       lbRoute: host
+      lbWebsockets: true
       featureFlag: yjs
   ai:
     image: ${REGISTRY}/backend:${AI_TAG:-latest}

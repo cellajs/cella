@@ -219,7 +219,7 @@ To gate production behind manual approval, configure a [GitHub Environment](http
 After the first deploy:
 
 ```bash
-pulumi stack output apiDomainUrl
+pulumi stack output serviceDomainUrls   # public URL per LB-exposed service
 pulumi stack output frontendBucketEndpoint
 
 # Run database migrations and initial seed. Requires PULUMI_CONFIG_PASSPHRASE

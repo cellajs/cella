@@ -277,6 +277,16 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   }
   console.info(divider)
 
+  // The VM reader IAM *policy* is Pulumi-managed (resources/vm-iam.ts), not minted
+  // here. After rotating, if a CI deploy fails with "insufficient permissions:
+  // write policy" the policy exists in Scaleway but not in Pulumi state — run
+  // "Apply infra change" once to adopt it (it imports the policy automatically).
+  if (mode === 'rotate' && vmAccessKey) {
+    console.info(
+      `  ${pc.dim(`Note: the VM reader IAM policy is reconciled by \`pulumi up\`. If a deploy reports ${pc.italic('"write policy"')}, run ${pc.italic('"Apply infra change"')} once to adopt it.`)}`,
+    )
+  }
+
   const canDeploy = context.hasCiKey || !!ciAccessKey
   if (canDeploy) {
     console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network — no compute yet)`)
