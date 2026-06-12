@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import {
   generateEnvConfigs,
   generateEnvFromExample,
   getBackendEnvReplacements,
-  getRootEnvReplacements,
   PLACEHOLDER_CONFIG,
   TO_CLEAN,
   TO_COPY,
@@ -13,6 +13,29 @@ import {
 } from '#/constants';
 
 const warningMark = pc.yellow('⚠');
+
+/**
+ * Resolve the placeholder config template that ships inside the create-cella package.
+ *
+ * The template is the CLI's own asset (listed in package.json `files`), NOT part of the
+ * downloaded fork. It must therefore be read relative to this module, which lives at:
+ *  - dev (tsx):   `<pkg>/src/utils/clean-template.ts`  → template at `../../<PLACEHOLDER_CONFIG>`
+ *  - bundled:     `<pkg>/dist/index.js`                → template at `../<PLACEHOLDER_CONFIG>`
+ */
+async function resolvePlaceholderConfigPath(): Promise<string> {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [path.resolve(here, '../..', PLACEHOLDER_CONFIG), path.resolve(here, '..', PLACEHOLDER_CONFIG)];
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      // try next candidate
+    }
+  }
+  // Fall back to the first candidate so the caller surfaces a clear ENOENT.
+  return candidates[0];
+}
 
 /**
  * Cleans the specified template by removing designated folders and files.
@@ -49,20 +72,10 @@ export async function cleanTemplate({
         // Replace config.default.ts with interpolated placeholder config
         await applyPlaceholderConfig(targetFolder, projectName);
 
-        // Generate root .env from .env.example (single source of truth for ports)
-        const rootReplacements = getRootEnvReplacements(projectName, portOffset);
-        const rootEnv = await generateEnvFromExample(path.resolve(targetFolder, '.env.example'), rootReplacements);
-        await fs.writeFile(
-          path.resolve(targetFolder, '.env'),
-          rootEnv ??
-            Object.entries(rootReplacements)
-              .map(([k, v]) => `${k}=${v}`)
-              .join('\n'),
-          'utf8',
-        );
-
-        // Generate backend .env from backend/.env.example
-        const backendReplacements = getBackendEnvReplacements(adminEmail, portOffset);
+        // Generate backend .env from backend/.env.example.
+        // The backend .env is the single source of truth for the project slug and DB ports
+        // (consumed by backend/compose.yaml). There is no root .env.
+        const backendReplacements = getBackendEnvReplacements(projectName, adminEmail, portOffset);
         const backendEnv = await generateEnvFromExample(
           path.resolve(targetFolder, 'backend/.env.example'),
           backendReplacements,
@@ -168,7 +181,7 @@ export async function copyFile(src: string, dest: string): Promise<void> {
 async function applyPlaceholderConfig(targetFolder: string, projectName: string): Promise<void> {
   const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const src = path.resolve(targetFolder, PLACEHOLDER_CONFIG);
+  const src = await resolvePlaceholderConfigPath();
   const dest = path.resolve(targetFolder, './shared/config/config.default.ts');
 
   try {

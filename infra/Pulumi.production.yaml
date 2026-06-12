@@ -11,4 +11,4 @@ config:
   infra:dbPassword:
     secure: v1:UV+iE3KaFIDMypi+:3/zcoZ8nU5QVXErBBRYFmDGNEK4zSkH7/gG64BVCBm162kJMiQo4hkVOwsSiymK/
   scaleway:projectId: 3ad2b2d5-a772-40a2-a82b-bd0cee9ebb12
-  infra:bootstrapComplete: "2026-06-11T19:59:36.041Z"
+  infra:bootstrapComplete: "2026-06-12T06:37:59.619Z"

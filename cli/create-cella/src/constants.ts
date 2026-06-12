@@ -43,9 +43,11 @@ export const TO_COPY: Record<string, string> = {
 
 /**
  * Placeholder config template that replaces `shared/config/config.default.ts` in new forks.
- * Contains `__project_name__` and `__project_slug__` tokens interpolated at create time.
+ * Ships inside the create-cella package (see package.json `files`) and is resolved relative
+ * to the package — NOT the downloaded fork. Contains `__project_name__` and `__project_slug__`
+ * tokens interpolated at create time.
  */
-export const PLACEHOLDER_CONFIG = './cli/create-cella/configs/default-config.ts.template';
+export const PLACEHOLDER_CONFIG = 'configs/default-config.ts.template';
 
 /**
  * Read a `.env.example` file and apply key=value replacements.
@@ -70,19 +72,21 @@ export async function generateEnvFromExample(
   });
 }
 
-/** Replacement map for root `.env` */
-export function getRootEnvReplacements(slug: string, portOffset: number): Record<string, string> {
-  return {
-    PROJECT_SLUG: slug,
-    DB_PORT: String(5432 + portOffset),
-    DB_TEST_PORT: String(5434 + portOffset),
-  };
-}
-
-/** Replacement map for `backend/.env` */
-export function getBackendEnvReplacements(adminEmail: string, portOffset: number): Record<string, string> {
+/**
+ * Replacement map for `backend/.env`.
+ * The backend `.env` is the single source of truth for the project slug, database
+ * ports (consumed by `backend/compose.yaml`), connection URLs, admin email and API port.
+ */
+export function getBackendEnvReplacements(
+  slug: string,
+  adminEmail: string,
+  portOffset: number,
+): Record<string, string> {
   const db = 5432 + portOffset;
   return {
+    PROJECT_SLUG: slug,
+    DB_PORT: String(db),
+    DB_TEST_PORT: String(5434 + portOffset),
     DATABASE_URL: `postgres://runtime_role:dev_password@0.0.0.0:${db}/postgres`,
     DATABASE_ADMIN_URL: `postgres://postgres:postgres@0.0.0.0:${db}/postgres`,
     DATABASE_CDC_URL: `postgres://admin_role:dev_password@0.0.0.0:${db}/postgres`,
@@ -101,14 +105,13 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
   const be = 4000 + portOffset;
 
   const header =
-    "import type { DeepPartial } from '../src/builder/types';\nimport type _default from './config.default';\n";
+    "import type { DeepPartial } from '../src/config-builder/types';\nimport type _default from './config.default';\n";
 
   // Per-environment specs: optional imports + object props (= prefix → raw TS expression)
   const envs: Record<string, { imports?: string; props: Record<string, string | boolean> }> = {
     development: {
       props: {
         slug: `${slug}-development`,
-        debug: false,
         domain: '',
         frontendUrl: `http://localhost:${fe}`,
         backendUrl: `http://localhost:${be}`,
@@ -118,7 +121,6 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
     staging: {
       props: {
         slug: `${slug}-staging`,
-        debug: false,
         domain: `${slug}.example.com`,
         frontendUrl: `https://staging.${slug}.example.com`,
         backendUrl: `https://api-staging.${slug}.example.com`,
@@ -135,7 +137,6 @@ export function generateEnvConfigs(slug: string, name: string, portOffset: numbe
     test: {
       imports: "import development from './config.development';\n",
       props: {
-        debug: false,
         domain: '',
         frontendUrl: '=development.frontendUrl',
         backendUrl: '=development.backendUrl',

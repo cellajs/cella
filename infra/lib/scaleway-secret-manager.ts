@@ -72,6 +72,18 @@ function buildSecretsUrl(region: string, query: URLSearchParams) {
   return `${SECRET_MANAGER_BASE}/regions/${region}/secrets${suffix}`
 }
 
+/**
+ * Scaleway stores secret folder paths in canonical form WITHOUT a trailing
+ * slash (it normalizes `/foo/` → `/foo`). Both the `path` list filter and the
+ * `path` returned on each secret use that form, so we must normalize before
+ * filtering or comparing — otherwise a container created by an earlier run
+ * (queried/compared as `/foo/`) is never found, breaking idempotency and
+ * triggering a `cannot have same secret name in same path` 400 on re-create.
+ */
+function normalizeSecretPath(path: string): string {
+  return path === '/' ? path : path.replace(/\/+$/, '')
+}
+
 export function createSecretManagerClient(options: SecretManagerClientOptions) {
   const fetchImpl = options.fetchImpl ?? fetch
 
@@ -81,7 +93,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         project_id: options.projectId,
         scheduled_for_deletion: 'false',
       })
-      if (path) query.set('path', path)
+      if (path) query.set('path', normalizeSecretPath(path))
       const response = await scw<SecretListResponse>(
         fetchImpl,
         options.secretKey,
@@ -92,8 +104,9 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
     },
 
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {
+      const wantPath = normalizeSecretPath(path)
       const secrets = await this.listSecrets(path)
-      return secrets.find((secret) => secret.name === name && secret.path === path)
+      return secrets.find((secret) => secret.name === name && normalizeSecretPath(secret.path) === wantPath)
     },
 
     async ensureSecret(input: EnsureSecretInput): Promise<SecretManagerSecret> {

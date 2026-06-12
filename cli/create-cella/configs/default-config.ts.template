@@ -9,7 +9,7 @@
  * NOTE: This file is NOT compiled or imported — it is copied and interpolated
  * as plain text. The import path below is relative to `shared/config/` (its destination).
  */
-import type { BaseAuthStrategies, BaseOAuthProviders, ConfigMode, RequiredConfig, S3Config } from '../src/builder/types';
+import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
 
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
@@ -20,22 +20,19 @@ export const config = {
    * ENTITY DATA MODEL
    ******************************************************************************/
 
-  /** All entity types in the app - must match hierarchy.allTypes. Explicit tuple for Drizzle compatibility. */
+  /** All entity types in the app - must match hierarchy.allTypes. */
   entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
 
-  /** Context entities with memberships - must match hierarchy.contextTypes. Explicit tuple for Drizzle compatibility. */
+  /** Context entities with memberships - must match hierarchy.contextTypes. */
   contextEntityTypes: ['organization'] as const,
-  
-  /** Product/content entities - must match hierarchy.productTypes. Explicit tuple for Drizzle compatibility. */
+
+  /** Product/content entities - must match hierarchy.productTypes. */
   productEntityTypes: ['attachment', 'page'] as const,
 
   /**
-   * Parentless product entities (no organization_id) - must match hierarchy.parentlessProductTypes.
-   * Explicit tuple required for Drizzle compatibility. Compile-time validated in shared/index.ts.
+   * Product entity types tracked for seen/unseen counts.
+   * Unseen counts are grouped by the parent context entity of each tracked type.
    */
-  parentlessProductEntityTypes: ['page'] as const,
-
-  /** Product entity types tracked for seen/unseen counts. Must be org-scoped (not parentless). */
   seenTrackedEntityTypes: ['attachment'] as const,
 
   /** Maps entity types to their ID column names - must match entityTypes */
@@ -53,11 +50,17 @@ export const config = {
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
 
   /**
+   * Entity embeddings: declares which entities are embedded as ID arrays inside
+   * other entities. Forks extend when adding new embedding relationships.
+   */
+  entityEmbeddings: [] as readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[],
+
+  /**
    * User menu structure of context entities with optional nested subentities.
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
   menuStructure: [
-    { entityType: 'organization',subentityType: null} as const,
+    { entityType: 'organization', subentityType: null } as const,
   ],
 
   /** Default restrictions for tenants (entity quotas and rate limits) */
@@ -72,17 +75,10 @@ export const config = {
     },
   } as const,
 
-  /** Public tenant for platform-wide content (pages, docs, etc.) */
-  publicTenant: { id: 'public',  name: 'Public' },
-
   /******************************************************************************
    * SYSTEM ROLES
    ******************************************************************************/
-  
-  /**
-   * System-wide roles stored in DB.
-   * Must include 'admin' for system administration access.
-   */
+
   systemRoles: ['admin'] as const,
 
   /******************************************************************************
@@ -99,7 +95,7 @@ export const config = {
   description: '__project_name__ — powered by Cella.',
   /** SEO keywords for search engines */
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant§ updates, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, baseui, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
   /******************************************************************************
    * URLS & ENDPOINTS
@@ -111,9 +107,13 @@ export const config = {
   backendUrl: 'https://api.__project_slug__.example.com',
   /** OAuth callback base URL */
   backendAuthUrl: 'https://api.__project_slug__.example.com/auth',
+  /** Yjs realtime relay URL */
+  yjsUrl: 'wss://yjs.__project_slug__.example.com',
+  /** AI service base URL */
+  aiUrl: 'https://ai.__project_slug__.example.com',
 
   /** About page URL */
-  aboutUrl: 'https://__project_slug__.example.com/about',
+  aboutUrl: '/about',
   /** Status page URL for uptime monitoring */
   statusUrl: 'https://status.__project_slug__.example.com',
   /** Canonical production URL */
@@ -128,23 +128,19 @@ export const config = {
    * EMAIL
    ******************************************************************************/
 
-  /** Email address for user support inquiries */
-  supportEmail: 'support@__project_slug__.example.com',
-
   /** From address for system notifications */
   senderEmail: 'notifications@__project_slug__.example.com',
-
-    /** Receive security warnings */
+  /** Email address for user support inquiries */
+  supportEmail: 'support@__project_slug__.example.com',
+  /** Receive security warnings */
   securityEmail: 'security@__project_slug__.example.com',
 
   /******************************************************************************
    * MODE & FLAGS
    ******************************************************************************/
-  
+
   /** Runtime mode - overridden per environment file */
   mode: 'development' as ConfigMode,
-  /** Enable debug logging and dev tools */
-  debug: false,
   /** Enable maintenance mode (blocks all requests) */
   maintenance: false,
   /** Cookie version - increment when changing cookie structure to invalidate old cookies */
@@ -160,13 +156,19 @@ export const config = {
    */
   has: {
     /** Progressive Web App support for preloading static assets and offline support */
-    pwa: true,
+    pwa: true as boolean,
     /** Allow users to sign up. If false, the app is by invitation only */
-    registrationEnabled: true,
+    selfRegistration: false as boolean,
     /** Suggest a waitlist for unknown emails when sign up is disabled */
-    waitlist: true,
+    waitlist: false as boolean,
     /** S3 fully configured - if false, files will be stored in local browser (IndexedDB) */
-    uploadEnabled: false,
+    uploadEnabled: false as boolean,
+    /** Customer support chat widget (Gleap). Unrelated to the AI module. */
+    chatSupport: false as boolean,
+    /** Yjs realtime collaboration */
+    yjs: false as boolean,
+    /** AI capability layer: tool registry + model runner + MCP endpoint. */
+    ai: false as boolean,
   },
 
   /******************************************************************************
@@ -177,13 +179,13 @@ export const config = {
    * Enabled authentication strategies.
    * TOTP can only be used as MFA fallback with passkey as primary.
    */
-  enabledAuthStrategies: ['password', 'passkey', 'totp'] satisfies BaseAuthStrategies[],
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
 
   /** Enabled OAuth providers - currently supports: github, google, microsoft */
-  enabledOAuthProviders: [] satisfies BaseOAuthProviders[],
+  enabledOAuthProviders: ['github'] as const,
 
   /** Token types used for verification flows */
-  tokenTypes: ['email-verification', 'oauth-verification', 'password-reset', 'invitation', 'confirm-mfa'] as const,
+  tokenTypes: ['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
 
   /** TOTP configuration for MFA */
   totpConfig: {
@@ -199,12 +201,8 @@ export const config = {
   /** API version prefix for endpoints */
   apiVersion: 'v1',
   /** API documentation description shown in Scalar */
-  apiDescription: `⚠️ ATTENTION: PRERELEASE!  
-                  This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
-                  Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
-
-                  The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
-
+  apiDescription: `⚠️ ATTENTION: PRERELEASE!
+                  This API is organized into modules based on logical domains.`,
 
   /******************************************************************************
    * REQUEST LIMITS
@@ -221,7 +219,7 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pages: 40,
+    pages: 100,
     pendingMemberships: 20,
   },
 
@@ -236,23 +234,11 @@ export const config = {
    * STORAGE & UPLOADS (S3)
    ******************************************************************************/
 
-  /** S3-compatible storage configuration */
+  /** S3-compatible storage configuration. Only region and host are required; the rest is derived from the slug. */
   s3: {
-    /** Prefix to namespace files when sharing a bucket across apps or envs */
-    bucketPrefix: '__project_slug__',
-    /** Public bucket name for publicly accessible files */
-    publicBucket: '',
-    /** Private bucket name for authenticated-only files */
-    privateBucket: '',
-    /** S3 region identifier */
     region: '',
-    /** S3 host endpoint */
     host: '',
-    /** CDN URL for private bucket (signed URLs) */
-    privateCDNUrl: '',
-    /** CDN URL for public bucket */
-    publicCDNUrl: '',
-  } satisfies S3Config,
+  } as S3ConfigInput,
 
   /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
@@ -275,30 +261,20 @@ export const config = {
    * Controls which attachments are cached locally for offline access.
    */
   localBlobStorage: {
-    enabled: true, // Enable local blob caching
-    maxFileSize: 10 * 1024 * 1024, // 10MB - files larger than this are not cached locally
-    maxTotalSize: 100 * 1024 * 1024, // 100MB - total cache size, LRU eviction when exceeded
-    allowedContentTypes: [] as string[], // Empty = all types allowed
-    excludedContentTypes: ['video/*'] as string[], // Excluded types (takes precedence over allowed)
-    downloadConcurrency: 2, // Max concurrent background downloads
-    uploadRetryAttempts: 3, // Max retry attempts for failed uploads
-    uploadRetryDelays: [60000, 300000, 900000] as const, // Retry delays in ms (1min, 5min, 15min)
+    enabled: true,
+    maxFileSize: 10 * 1024 * 1024,
+    maxTotalSize: 100 * 1024 * 1024,
+    allowedContentTypes: [] as string[],
+    excludedContentTypes: ['video/*'] as string[],
+    downloadConcurrency: 2,
+    uploadRetryAttempts: 3,
+    uploadRetryDelays: [60000, 300000, 900000] as const,
   },
 
   /******************************************************************************
    * THIRD-PARTY SERVICES
    ******************************************************************************/
 
-  /** Paddle client token for payments */
-  paddleToken: '',
-  /** Paddle price IDs for subscription products */
-  paddlePriceIds: {
-    donate: '',
-  },
-  /** Sentry DSN for error tracking */
-  sentryDsn: '',
-  /** Upload source maps to Sentry on build */
-  sentSentrySourceMaps: false,
   /** Gleap token for customer support widget */
   gleapToken: '',
   /** Google Maps API key */
@@ -320,9 +296,7 @@ export const config = {
       sidebarWidthCollapsed: '4rem',
       sheetPanelWidth: '20rem',
     },
-    colors: {
-      rose: '#e11d48',
-    },
+    colors: {},
     strokeWidth: 1.5,
     screenSizes: {
       xs: '420px',

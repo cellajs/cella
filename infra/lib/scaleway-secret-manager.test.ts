@@ -53,7 +53,9 @@ describe('createSecretManagerClient', () => {
 
     expect(secrets).toEqual([{ id: 'secret-1', name: 'cookie-secret', path: '/demo-production/' }])
     expect(calls[0]?.url).toContain('project_id=proj-1')
-    expect(calls[0]?.url).toContain('path=%2Fdemo-production%2F')
+    // Trailing slash is normalized away: Scaleway stores/filters paths without it.
+    expect(calls[0]?.url).toContain('path=%2Fdemo-production')
+    expect(calls[0]?.url).not.toContain('path=%2Fdemo-production%2F')
     expect(calls[0]?.url).toContain('scheduled_for_deletion=false')
   })
 
@@ -77,6 +79,25 @@ describe('createSecretManagerClient', () => {
     expect(secret.id).toBe('secret-1')
     expect(calls).toHaveLength(1)
     expect(calls[0]?.url).not.toContain('name=')
+  })
+
+  it('finds an existing container when stored path has no trailing slash but lookup uses one', async () => {
+    // Regression: Scaleway normalizes `/demo-production/` → `/demo-production`
+    // on store. A re-run that looks up with the trailing slash must still find
+    // the container, otherwise ensureSecret POSTs a duplicate (400).
+    const { fn } = makeFetch([
+      {
+        method: 'GET',
+        match: '/secret-manager/v1beta1/regions/nl-ams/secrets?',
+        body: { secrets: [{ id: 'secret-9', name: 'vm-reader-key', path: '/demo-production' }], total_count: 1 },
+      },
+    ])
+    vi.stubGlobal('fetch', fn)
+
+    const client = createSecretManagerClient({ ...baseOptions, fetchImpl: fn })
+    const secret = await client.getSecretByName('vm-reader-key', '/demo-production/')
+
+    expect(secret?.id).toBe('secret-9')
   })
 
   it('creates a new secret container when ensureSecret does not find one', async () => {
