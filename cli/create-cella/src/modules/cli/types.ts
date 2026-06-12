@@ -1,6 +1,8 @@
 /** CLI options parsed from command line arguments */
 export interface CLIOptions {
   template?: string;
+  portOffset?: number;
+  adminEmail?: string;
 }
 
 /** CLI configuration state */

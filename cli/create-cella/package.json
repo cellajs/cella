@@ -1,6 +1,6 @@
 {
   "name": "@cellajs/create-cella",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": false,
   "license": "MIT",
   "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
@@ -42,7 +42,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
-    "test:release": "pnpm run build && vitest run tests/release-artifact.test.ts",
+    "test:release": "pnpm run build && vitest run tests/release-artifact.test.ts tests/release-smoke.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

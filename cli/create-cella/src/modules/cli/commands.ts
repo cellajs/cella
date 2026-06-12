@@ -4,6 +4,20 @@ import { NAME, VERSION } from '#/constants';
 import { validateProjectName } from '#/utils/validate-project-name';
 import type { CLIConfig, CLIOptions } from './types';
 
+function parsePortOffset(value: string): number {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 490) {
+    throw new InvalidArgumentError('Port offset must be an integer between 0 and 490');
+  }
+
+  if (parsed % 10 !== 0) {
+    throw new InvalidArgumentError('Port offset must be a multiple of 10');
+  }
+
+  return parsed;
+}
+
 // Initialize CLI variables
 let directory: string | null = null;
 const newBranchName: string | null = null;
@@ -19,6 +33,8 @@ export const command = new Command(NAME)
   .usage('[directory] [options]')
   .helpOption('-h, --help', 'display this help message')
   .option('--template <path>', 'use a custom template (local path or github:user/repo)')
+  .option('--port-offset <number>', 'set the port offset (0-490 in steps of 10)', parsePortOffset)
+  .option('--admin-email <email>', 'set the admin email for the initial seed user')
   .action((name: string) => {
     const trimmedName = typeof name === 'string' ? name.trim() : name;
 

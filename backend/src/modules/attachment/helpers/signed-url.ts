@@ -3,14 +3,22 @@ import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { appConfig } from 'shared';
 import { env } from '#/env';
 
-const s3Client = new S3Client({
-  region: appConfig.s3.region,
-  endpoint: `https://${appConfig.s3.host}`,
-  credentials: {
-    accessKeyId: env.S3_ACCESS_KEY_ID,
-    secretAccessKey: env.S3_ACCESS_KEY_SECRET,
-  },
-});
+let s3Client: S3Client | undefined;
+
+function getS3Client(): S3Client {
+  if (s3Client) return s3Client;
+
+  s3Client = new S3Client({
+    region: appConfig.s3.region,
+    endpoint: `https://${appConfig.s3.host}`,
+    credentials: {
+      accessKeyId: env.S3_ACCESS_KEY_ID,
+      secretAccessKey: env.S3_ACCESS_KEY_SECRET,
+    },
+  });
+
+  return s3Client;
+}
 
 interface GetUrlOptions {
   isPublic: boolean;
@@ -42,5 +50,5 @@ export async function getSignedUrlFromKey(
   if (isPublic) return `https://${bucketName}.s3.nl-ams.scw.cloud/${Key}`;
 
   // Private, sign URL
-  return s3SignedUrl(s3Client, new GetObjectCommand({ Bucket: bucketName, Key }), { expiresIn });
+  return s3SignedUrl(getS3Client(), new GetObjectCommand({ Bucket: bucketName, Key }), { expiresIn });
 }

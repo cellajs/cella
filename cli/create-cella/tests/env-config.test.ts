@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateEnvConfigs, generateEnvFromExample, getBackendEnvReplacements } from '#/constants';
 
@@ -59,6 +59,22 @@ describe('generateEnvFromExample', () => {
   it('returns null when the example file does not exist', async () => {
     const result = await generateEnvFromExample(join(dir, 'missing.env.example'), {});
     expect(result).toBeNull();
+  });
+
+  it('applies project slug and port offsets to the real backend env template', async () => {
+    const result = await generateEnvFromExample(
+      resolve(import.meta.dirname, '../../../backend/.env.example'),
+      getBackendEnvReplacements('my-app', 'admin@my-app.example.com', 10),
+    );
+
+    expect(result).toContain('PROJECT_SLUG=my-app');
+    expect(result).toContain('DB_PORT=5442');
+    expect(result).toContain('DB_TEST_PORT=5444');
+    expect(result).toContain('DATABASE_URL=postgres://runtime_role:dev_password@0.0.0.0:5442/postgres');
+    expect(result).toContain('DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5442/postgres');
+    expect(result).toContain('DATABASE_CDC_URL=postgres://admin_role:dev_password@0.0.0.0:5442/postgres');
+    expect(result).toContain('ADMIN_EMAIL=admin@my-app.example.com');
+    expect(result).toContain('PORT=4010');
   });
 });
 
