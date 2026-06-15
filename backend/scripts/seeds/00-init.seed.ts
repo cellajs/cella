@@ -32,8 +32,8 @@ const isUserSeeded = async () => {
 /**
  * Seed an admin user to access app first time.
  * Works in all environments:
- * - Development: uses fixtures (admin-test@cellajs.com)
- * - Production: uses ADMIN_EMAIL env var
+ * - ADMIN_EMAIL env var takes precedence when set; otherwise falls back to the fixture default (admin-test@cellajs.com)
+ * - Production: ADMIN_EMAIL is required
  */
 export const initSeed = async () => {
   // Determine admin email: env var takes precedence, then fixture default
@@ -71,15 +71,9 @@ export const initSeed = async () => {
     .values(emailRecord)
     .onConflictDoNothing();
 
-  if (isProduction) {
-    console.info(
-      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
-    );
-  } else {
-    console.info(
-      ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
-    );
-  }
+  console.info(
+    ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
+  );
 };
 
 export const seedConfig: SeedScript = { name: 'init', run: initSeed, allowProduction: true };

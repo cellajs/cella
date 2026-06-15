@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { confirm, input, password } from '@inquirer/prompts'
+import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
@@ -11,6 +11,7 @@ import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissi
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
+import { maskedSecret } from '../prompts/masked-secret'
 import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
@@ -37,7 +38,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
     input({ message: 'Scaleway bootstrap access key', validate: (value) => !!value.trim() || '(required)' }),
   )
-  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => password({ message: 'Scaleway bootstrap secret key' }))
+  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
   // The bootstrap key above also holds the object-storage rights needed for the
   // Pulumi state bucket, so reuse it rather than prompting for a second key.
@@ -58,8 +59,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   let scwAiApiKey = ''
   if (isInitialBootstrap) {
     adminEmail = await input({ message: 'Admin email (optional, set later via "Manage runtime secrets")' })
-    brevoApiKey = adminEmail ? await password({ message: 'Brevo API key (optional)' }).catch(() => '') : ''
-    scwAiApiKey = await password({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
+    brevoApiKey = adminEmail ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : ''
+    scwAiApiKey = await maskedSecret({ message: 'Scaleway AI API key (optional, for the AI worker)' }).catch(() => '')
   }
 
   const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume'
@@ -204,7 +205,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     const vmCallerSecretKey = needsCiKey
       ? scwSecretKey
       : await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-          password({ message: 'Scaleway bootstrap secret key (needs IAMManager — to provision the missing VM reader key)' }),
+          maskedSecret({ message: 'Scaleway bootstrap secret key (needs IAMManager — to provision the missing VM reader key)' }),
         )
     console.info('\n→ VM reader key (minimal-privilege identity for service VMs)')
     while (true) {

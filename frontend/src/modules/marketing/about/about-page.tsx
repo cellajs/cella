@@ -23,7 +23,7 @@ export type AboutSectionId = (typeof aboutSectionIds)[number];
 
 const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
-export function AboutPage() {
+function AboutPage() {
   const { t } = useTranslation();
 
   const { copyToClipboard, copied } = useCopyToClipboard();
@@ -122,3 +122,5 @@ export function AboutPage() {
     </>
   );
 }
+
+export default AboutPage;

@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process'
-import { confirm, input, password } from '@inquirer/prompts'
+import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 import { adoptOrphanedPolicy } from '../../lib/adopt-orphaned-policy'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
+import { maskedSecret } from '../prompts/masked-secret'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { resolveOrganizationId } from '../../lib/scaleway-iam'
 import { deriveInfra } from '../../lib/naming'
@@ -30,7 +31,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   const bootAccess =
     process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
     (await input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }))
-  const bootSecret = process.env.SCW_BOOTSTRAP_SECRET_KEY || (await password({ message: 'Scaleway bootstrap secret key' }))
+  const bootSecret = process.env.SCW_BOOTSTRAP_SECRET_KEY || (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 

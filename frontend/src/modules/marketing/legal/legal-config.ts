@@ -148,7 +148,7 @@ export const subprocessors: Subprocessor[] = [
     name: 'Gleap',
     legalName: 'Gleap GmbH',
     website: 'https://gleap.io/',
-    servicesProvided: ['Customer support chat', 'Bug reporting'],
+    servicesProvided: ['Customer support', 'Bug reporting'],
     processingActivities: ['Collecting and storing support messages, feedback and browser context'],
     categoriesOfPersonalData: ['Email addresses', 'Support messages', 'Browser and page context'],
     purposes: ['Customer support', 'Bug reporting and feedback'],

@@ -1,9 +1,10 @@
-import { confirm, password } from '@inquirer/prompts'
+import { confirm } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/bootstrap-stack-state'
 import { verifyStackPassphrase } from '../lib/pulumi-passphrase'
+import { maskedSecret } from './prompts/masked-secret'
 
 /** Infra CLI operation modes */
 export type CliMode = 'resume' | 'rotate' | 'apply' | 'secrets' | 'preview'
@@ -48,7 +49,7 @@ export const envOr = async (envName: string, prompt: () => Promise<string>) => p
  */
 export async function resolveVerifiedPassphrase(stackYaml: string | undefined): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml)
-  if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => password({ message: 'Pulumi passphrase' }))
+  if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => maskedSecret({ message: 'Pulumi passphrase' }))
 
   const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE
   if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv
@@ -57,7 +58,7 @@ export async function resolveVerifiedPassphrase(stackYaml: string | undefined): 
   }
 
   while (true) {
-    const entered = await password({ message: 'Pulumi passphrase' })
+    const entered = await maskedSecret({ message: 'Pulumi passphrase' })
     if (verifyStackPassphrase(stackYaml, entered)) return entered
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`)
   }

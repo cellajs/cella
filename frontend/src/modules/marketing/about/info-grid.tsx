@@ -46,7 +46,7 @@ export function InfoGrid() {
         renderItem={(feature) => <InfoGridItem key={feature.id} {...feature} invertClassName={invertClass} />}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}
-        expandText="c:more_features"
+        expandText="c:more"
       />
     </div>
   );

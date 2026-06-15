@@ -24,7 +24,7 @@ export function Subprocessors() {
               </a>
             </TableCell>
             <TableCell>{subprocessor.country}</TableCell>
-            <TableCell className="whitespace-normal">{subprocessor.servicesProvided}</TableCell>
+            <TableCell className="whitespace-normal">{subprocessor.servicesProvided.join(', ')}</TableCell>
             <TableCell className="whitespace-normal">{subprocessor.categoriesOfPersonalData.join(', ')}</TableCell>
           </TableRow>
         ))}

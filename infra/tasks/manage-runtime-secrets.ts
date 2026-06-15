@@ -7,8 +7,15 @@ import { createSecretManagerClient } from '../lib/scaleway-secret-manager'
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string }
 
+/**
+ * Resolved by a selection prompt when the operator presses Esc to step back to
+ * the previous menu instead of choosing an option. A symbol so it can never
+ * collide with a real (string) secret id or action value.
+ */
+export const BACK = Symbol('runtime-secret-menu-back')
+
 export interface RuntimeSecretPrompts {
-  select<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T>
+  select<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T | typeof BACK>
   password(options: { message: string; validate?: (value: string) => true | string }): Promise<string>
   confirm(options: { message: string; default?: boolean }): Promise<boolean>
 }
@@ -52,9 +59,19 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   })
   const secrets = operatorManagedSecrets()
 
+  // Explain up front when a change actually reaches the running services, so an
+  // operator doesn't expect an instant deploy. Each VM's reconciler re-syncs the
+  // runtime secrets on its ~20s tick and rolls the affected services when a value
+  // changes (see infra/README.md). The trailing newline leaves a blank line
+  // before the menu.
+  log(
+    `${pc.dim('Changes are applied gradually, not instantly. Each VM re-syncs runtime secrets roughly every 20s and rolls')}\n` +
+      `${pc.dim('the affected services when a value changes, so updates go live within a minute — no redeploy needed.')}\n`,
+  )
+
   // Loop the menu so an operator setting up a fresh environment can manage
   // several secrets in one session instead of re-running the CLI per secret.
-  // Each leaf action returns here; "Exit" is the only way out.
+  // Each leaf action returns here; "Exit" (or Esc) is the only way out.
   while (true) {
     const action = await options.prompts.select<Action>({
       message: 'Manage runtime secrets',
@@ -67,7 +84,9 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
       ],
     })
 
-    if (action === 'exit') return
+    // Esc on the top menu behaves like "Exit" — there is no parent menu to return
+    // to (the infra CLI exits once secrets management is done).
+    if (action === BACK || action === 'exit') return
 
     if (action === 'list') {
       const existing = await client.listSecrets(options.path)
@@ -97,9 +116,10 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
         continue
       }
       const selectedId = await options.prompts.select<string>({
-        message: 'Select a runtime secret to rotate',
+        message: 'Select a runtime secret to rotate (Esc to go back)',
         choices: rotatable.map(formatSecretChoice),
       })
+      if (selectedId === BACK) continue
       const secret = rotatable.find((entry) => entry.id === selectedId)!
       const ensured = await client.ensureSecret({
         name: secret.secretName,
@@ -117,9 +137,10 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     }
 
     const selectedId = await options.prompts.select<string>({
-      message: action === 'delete' ? 'Select a runtime secret to delete' : 'Select a runtime secret to set',
+      message: action === 'delete' ? 'Select a runtime secret to delete (Esc to go back)' : 'Select a runtime secret to set (Esc to go back)',
       choices: secrets.map(formatSecretChoice),
     })
+    if (selectedId === BACK) continue
     const secret = secrets.find((entry) => entry.id === selectedId)!
     const existingSecret = await client.getSecretByName(secret.secretName, options.path)
 

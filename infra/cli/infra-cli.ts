@@ -49,7 +49,7 @@ async function loadContext(): Promise<InfraContext> {
   // resolve it once here from the env files loaded above and fail fast if absent.
   const projectId = resolveProjectId()
   if (!projectId) {
-    throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env (or the repo-root .env) before running the infra CLI.')
+    throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.')
   }
 
   return {

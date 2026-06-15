@@ -17,10 +17,9 @@ export const AppRouter = () => {
     return <Spinner className="mt-[45vh] h-12 w-12" />;
   }
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     console.debug('[AppRouter] Refreshing router');
-    queryClient.invalidateQueries();
-    router.invalidate();
+    await Promise.allSettled([queryClient.invalidateQueries(), router.invalidate()]);
   };
 
   return (

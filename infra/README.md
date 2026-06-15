@@ -10,6 +10,46 @@ This infrastructure is built around three principles:
 2. **CI performs all routine deploys.** Pushing to `main` builds images and rolls the running services with zero downtime.
 3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a temporary bootstrap key is required only for the initial install and for changes to data-bearing resources (database, VPC, private network).
 
+The key resources and how traffic flows between them:
+
+```
+                          ┌─────────────────────────────────────────┐
+        Users ──▶ DNS ──▶ │           Scaleway Load Balancer         │  TLS termination,
+                          │              (host-header routing)        │  host-header routing
+                          └─────────────────────────────────────────┘
+                              │                              │
+              api.<domain>    │                              │   <domain>
+                              ▼                              ▼
+   ┌───────────────────────────────────────────┐   ┌──────────────────────┐
+   │             Private network (VPC)           │   │   Edge Services CDN   │
+   │                                             │   │          +            │
+   │   ┌──────────┐  ┌──────────┐  ┌──────────┐  │   │   frontend bucket     │
+   │   │ backend  │  │  optional │  │  optional │  │   │   (SPA hosting)       │
+   │   │   VM     │  │  VM (cdc, │  │  VM (yjs, │  │   └──────────────────────┘
+   │   │          │  │   ai …)   │  │   …)      │  │
+   │   └────┬─────┘  └──────────┘  └──────────┘  │
+   │        │                                     │
+   │        ▼                                     │
+   │   ┌──────────────┐                           │
+   │   │ PostgreSQL    │   (managed, private)     │
+   │   └──────────────┘                           │
+   └───────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────────┐
+                    │  upload buckets       │
+                    │  (public + private)   │
+                    └──────────────────────┘
+```
+
+- **Load balancer** — single public entrypoint, terminates TLS and routes by host header (`api.<domain>` → backend VMs, `<domain>` → frontend).
+- **Private network (VPC)** — VMs and the database talk over private IPs; only the LB is publicly reachable (no inbound SSH).
+- **Frontend** — a static SPA bucket served through the Edge Services CDN, not a VM.
+- **Backend VM** — the critical API path; rolled blue-green.
+- **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VMs when enabled; rolled in-place.
+- **Database** — managed PostgreSQL reachable only from inside the private network.
+- **Buckets** — public and private object storage for uploads, plus the frontend SPA bucket.
+
 
 ## How a deploy works
 
@@ -189,6 +229,42 @@ If `gh` CLI was authenticated during bootstrap, it already set the GitHub Enviro
 
 After bootstrap, only the long-lived deploy and VM keys should remain. From here on, **all routine deploys happen in CI**.
 
+### 7. Create the first admin
+
+A fresh production database has **no users**, so there is no way to sign in to the deployed app yet. CI deploys only run schema migrations (the one-shot `migrate` companion) — they do **not** seed. You must create the first admin once, by hand.
+
+The backend image ships a bundled, production-safe seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts), the `seed:production` script). It applies migrations + DB roles and then inserts a single admin user (idempotent — it skips if the users table is already non-empty). The admin signs in via a magic link sent to `ADMIN_EMAIL`, so working outbound email and a mailbox you control are required.
+
+**Recommended — run it on a VM via the serial console** (no DB exposure, uses the image already on the box):
+
+1. After the first CI deploy has brought the compute VMs up, open a backend instance in the [Scaleway console](https://console.scaleway.com/instance/servers) → **Console** (serial console) and log in with the root password shown on the instance page.
+2. Run the seed once, supplying the admin email:
+
+   ```bash
+   cd /opt/app
+   docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init
+   ```
+
+   This reuses the `migrate` companion's image and `.env`/`.env.runtime` (which carry `DATABASE_ADMIN_URL`), overriding only the command to run the seed bundle.
+3. Open the app, request a magic link for `you@example.com`, and sign in.
+
+**Alternative — break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database, run the seed locally against `DATABASE_ADMIN_URL`, then close the endpoint again. This is heavier (two bootstrap-key `pulumi up` runs to open and re-close the RDB public endpoint) and briefly exposes the DB, so prefer the serial-console path:
+
+1. Open the DB public endpoint locked to your IP (bootstrap-owned RDB, see [Changing infrastructure](#changing-infrastructure)):
+
+   ```bash
+   cd infra
+   pulumi config set infra:dbPublicEndpoint true
+   pulumi config set infra:dbPublicAcl "<your.ip>/32"
+   # then Apply infra change (pnpm infra → Apply infra change) with a bootstrap key
+   ```
+2. Run the seed locally against the admin connection string:
+
+   ```bash
+   ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<admin connection string>' pnpm --filter backend seed:production init
+   ```
+3. **Close the endpoint again** — unset `infra:dbPublicEndpoint`/`infra:dbPublicAcl` and re-run Apply infra change, then revoke the bootstrap key.
+
 ## Architecture reference
 
 ### Layers
@@ -247,26 +323,6 @@ infra/
 ```
 
 The `.github/workflows/` files are tightly coupled to this package: `deploy.yml` runs the same `pulumi up` the CLI does (authenticating with the CI deploy key) and then drives the on-VM reconciler via the deploy-tags bucket, while `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
-
-## Security & IAM reference
-
-All IAM permission sets for the three credentials live in one annotated manifest:
-[`lib/permissions.ts`](lib/permissions.ts). It is the single source of truth — the
-provisioning tasks, the Pulumi VM-reader policy, and the `pulumi up` permission-error
-classifier all import from it, and [`tasks/permission-sets.test.ts`](tasks/permission-sets.test.ts)
-locks the exact membership so any change is visible in review. Read that file for the
-current grants and the per-set rationale (kept there rather than duplicated here, since
-the sets still change as the infra evolves).
-
-The key split is **write at steady state vs read-only**: the CI deploy key has
-`…FullAccess` on resources it mutates every deploy (registry, instances, LB, edge,
-object storage, secrets) but only `…ReadOnly` on the **bootstrap-owned**
-families (VPC, private network, RDB). So **any change to
-[`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts),
-or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`.
-That's intentional — destructive operations on data-bearing resources go through a human
-running `pulumi up` locally with the bootstrap key (see [Changing infrastructure](#changing-infrastructure)).
-The same bootstrap-owned boundary is encoded once as `BOOTSTRAP_OWNED_FRAGMENTS` in the manifest.
 
 
 ## Advanced operations
