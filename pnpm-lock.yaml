@@ -418,6 +418,9 @@ importers:
       pg:
         specifier: ^8.21.0
         version: 8.21.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
       shared:
         specifier: workspace:*
         version: link:../shared

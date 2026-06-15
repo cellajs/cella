@@ -18,9 +18,8 @@ export const extractIdentifiers = async (
     tenantId: null,
   };
 
-  // Extract email from JSON body only – use Hono's cached json() so the body stays available for the handler.
-  // The raw email is one-way hashed before being used as a rate-limit key so that PII never lands
-  // in the rate_limits table, in-memory caches, or logs (the rateLimitKey is logged on errors).
+  // Use Hono's cached json() so the body stays available for downstream handlers.
+  // Email is hashed before use as rate-limit key — PII never stored or logged.
   if (identifiersToExtract.includes('email') && ctx.req.header('content-type')?.includes('application/json')) {
     try {
       const body = (await ctx.req.json()) as { email?: string };

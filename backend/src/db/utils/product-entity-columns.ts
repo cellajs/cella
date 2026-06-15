@@ -1,8 +1,8 @@
 import { bigint, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
-import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
+import { usersTable } from '#/modules/user/user-db';
 import { stxColumns } from './stx-columns';
 
 /**

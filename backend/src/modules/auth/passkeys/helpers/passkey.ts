@@ -22,8 +22,8 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { passkeysTable } from '#/db/schema/passkeys';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 
 /**
  * Parses and validates passkey attestation data.

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { tenantsTable } from '#/db/schema/tenants';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { countDomainsByTenant } from '#/modules/tenants/tenants-queries';
 
 interface SelfCreateTenantInput {

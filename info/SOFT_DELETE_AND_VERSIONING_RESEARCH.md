@@ -91,7 +91,7 @@ Keep it on the **product entity** mixin only. Context entities (organizations) a
    - **Query helper:** a `notDeleted(table)` predicate every query must remember to include. Simple but easy to forget — exactly the bug class RLS is meant to catch.
    - **Postgres views** (`pages_live`): clean but doubles the surface and fights Drizzle's typing.
 
-2. **Unique constraints must ignore deleted rows.** Example: `pages` has `unique('pages_group_order').on(parentId, displayOrder)` ([backend/src/db/schema/pages.ts](../backend/src/db/schema/pages.ts)). After soft delete, a deleted page still occupies its `(parentId, displayOrder)` slot and blocks reuse. Convert affected uniques to **partial unique indexes**:
+2. **Unique constraints must ignore deleted rows.** Example: `pages` has `unique('pages_group_order').on(parentId, displayOrder)` ([backend/src/modules/page/page-db.ts](../backend/src/modules/page/page-db.ts)). After soft delete, a deleted page still occupies its `(parentId, displayOrder)` slot and blocks reuse. Convert affected uniques to **partial unique indexes**:
    ```sql
    CREATE UNIQUE INDEX pages_group_order ON pages (parent_id, display_order) WHERE deleted_at IS NULL;
    ```
@@ -331,7 +331,7 @@ softDeleteCascade(ctx, entityType, ids):
 ```
 
 - **Self-referential trees** (e.g. `pages.parentId`) need a **recursive CTE** to gather all descendant pages within the same table before marking them.
-- **Existing physical cascades that should mirror in soft form**: `attachments` has a composite FK `(tenantId, organizationId) → organizations` `ON DELETE CASCADE` ([backend/src/db/schema/attachments.ts](../backend/src/db/schema/attachments.ts)) — but orgs are context entities (hard-deleted, out of this scope). Within product entities the only self-cascade case today is the `pages` tree (currently `parentId … onDelete: 'set null'`).
+- **Existing physical cascades that should mirror in soft form**: `attachments` has a composite FK `(tenantId, organizationId) → organizations` `ON DELETE CASCADE` ([backend/src/modules/attachment/attachment-db.ts](../backend/src/modules/attachment/attachment-db.ts)) — but orgs are context entities (hard-deleted, out of this scope). Within product entities the only self-cascade case today is the `pages` tree (currently `parentId … onDelete: 'set null'`).
 - **Do it in the operation seam, not a trigger.** Keeping it in `deletePagesOp` / `deleteAttachmentsOp` means each cascaded `UPDATE` flows through WAL → CDC → SSE naturally (clients see each descendant disappear), it's debuggable, and it respects per-entity business rules. A trigger would be "magic," fight the immutability triggers, and risk surprising CDC floods.
 - **Batch the flood.** A cascade can mark many rows; reuse the existing **bulk-notification batching** (one SSE per `entityType/action/context`, per [ARCHITECTURE.md](./ARCHITECTURE.md)) so a cascade emits batched stamped updates, not a per-row storm.
 
@@ -347,7 +347,7 @@ softDeleteCascade(ctx, entityType, ids):
 
 ### 11.1 The key fact that makes this work
 
-The `activities` table is **partitioned by `pg_partman`, weekly, with 90-day retention** ([backend/src/db/schema/activities.ts](../backend/src/db/schema/activities.ts)). That 90-day window **is** the sync engine's catchup horizon: it's the furthest back an offline/reconnecting client can ever replay via `seqCursor`. The sync engine only has to faithfully represent changes **within** that horizon.
+The `activities` table is **partitioned by `pg_partman`, weekly, with 90-day retention** ([backend/src/modules/activities/activities-db.ts](../backend/src/modules/activities/activities-db.ts)). That 90-day window **is** the sync engine's catchup horizon: it's the furthest back an offline/reconnecting client can ever replay via `seqCursor`. The sync engine only has to faithfully represent changes **within** that horizon.
 
 ### 11.2 Today, "delete" is a special case in several places
 

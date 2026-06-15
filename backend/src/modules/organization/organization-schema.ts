@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { t } from 'i18next';
 import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { organizationsTable } from '#/db/schema/organizations';
-import { authStrategiesEnum } from '#/db/schema/sessions';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import {
   booleanTransformSchema,
   excludeArchivedQuerySchema,
@@ -22,7 +22,7 @@ import {
 } from '#/schemas';
 import { contextEntityIncludedSchema } from '#/schemas/context-entity-included';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockOrganizationResponse } from '../../../mocks/mock-organization';
+import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = contextEntityIncludedSchema('organization');
 

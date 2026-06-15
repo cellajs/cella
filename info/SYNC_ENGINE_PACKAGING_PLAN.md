@@ -107,7 +107,7 @@ exactly the "synced resource vs not" model expressed as CDC input.
 
 ### Schema generalization (one-time, package-internal)
 
-Today [activities.ts L30-31](../backend/src/db/schema/activities.ts#L30-L31) hardcodes
+Today [activities.ts L30-31](../backend/src/modules/activities/activities-db.ts#L30-L31) hardcodes
 `organizationId` + `projectId` — Raak's exact 2-level hierarchy frozen into DDL. The substrate
 package replaces those with hierarchy-agnostic columns:
 

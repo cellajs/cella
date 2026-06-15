@@ -3,6 +3,7 @@ import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, tenantGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
+import { mockStreamResponse } from '#/modules/me/me-mocks';
 import {
   appCatchupResponseSchema,
   errorResponseRefs,
@@ -10,7 +11,6 @@ import {
   streamCatchupBodySchema,
   tenantOnlyParamSchema,
 } from '#/schemas';
-import { mockStreamResponse } from '../../../mocks/mock-me';
 
 const entityRoutes = {
   /**

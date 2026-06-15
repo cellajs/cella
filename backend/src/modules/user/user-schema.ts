@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { usersTable } from '#/db/schema/users';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { usersTable } from '#/modules/user/user-db';
 import { languageSchema, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
-import { mockUserResponse } from '../../../mocks/mock-user';
+import { mockUserResponse } from './user-mocks';
 
 export const enabledOAuthProvidersEnum = z.enum([...appConfig.enabledOAuthProviders] as [
   EnabledOAuthProvider,

@@ -45,7 +45,7 @@ interface PartitionConfig {
 }
 
 // Define partition configurations - these must match the Drizzle schemas
-// See: backend/src/db/schema/sessions.ts, tokens.ts, unsubscribe-tokens.ts, activities.ts
+// See: modules/auth/sessions-db.ts, auth/tokens-db.ts, user/unsubscribe-tokens-db.ts, activities/activities-db.ts
 const partitionConfigs: PartitionConfig[] = [
   {
     name: 'sessions',

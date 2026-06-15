@@ -1,5 +1,5 @@
-import type { TenantModel } from '#/db/schema/tenants';
 import { TTLCache } from '#/lib/ttl-cache';
+import type { TenantModel } from '#/modules/tenants/tenants-db';
 
 const cache = new TTLCache<TenantModel>({
   maxSize: 1000,

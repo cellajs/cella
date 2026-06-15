@@ -2,8 +2,8 @@
  * Load-test membership generator — uses backend mocks for type-safe records.
  * Runs in Node.js (data-setup), not in k6.
  */
-import { mockContextMembership } from '../../../backend/mocks/mock-membership';
-import type { InsertMembershipModel } from '../../../backend/src/db/schema/memberships';
+import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import type { InsertMembershipModel } from '#/modules/memberships/memberships-db';
 import { ORG_ID, TENANT_ID, userId } from './ids';
 
 /**

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { domainsTable } from '#/db/schema/domains';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { domainsTable } from '#/modules/domains/domains-db';
 import { entityIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
 
 /**

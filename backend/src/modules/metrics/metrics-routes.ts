@@ -3,7 +3,7 @@ import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { publicCountsSchema } from '#/modules/metrics/metrics-schema';
 import { errorResponseRefs } from '#/schemas';
-import { mockPublicCountsResponse } from '../../../mocks/mock-metrics';
+import { mockPublicCountsResponse } from './metrics-mocks';
 
 const metricRouteConfig = {
   /**

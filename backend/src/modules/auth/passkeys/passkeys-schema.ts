@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { passkeysTable } from '#/db/schema/passkeys';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { maxLength } from '#/schemas';
 
 const passkeyTypeSchema = z.enum(['authentication', 'mfa']);

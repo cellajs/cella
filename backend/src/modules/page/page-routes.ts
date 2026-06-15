@@ -10,7 +10,7 @@ import {
   idsWithStxBodySchema,
   paginationSchema,
 } from '#/schemas';
-import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from '../../../mocks/mock-page';
+import { mockBatchPagesResponse, mockPageResponse, mockPaginatedPagesResponse } from './page-mocks';
 import {
   pageCreateManyStxBodySchema,
   pageCreateResponseSchema,

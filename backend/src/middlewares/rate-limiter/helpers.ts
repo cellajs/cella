@@ -3,10 +3,10 @@ import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
 import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
 import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
+import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
 
 type RateLimiterOptions = {

@@ -1,8 +1,8 @@
 import { appConfig, hierarchy } from 'shared';
 import type { ActivityAction } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
-import type { MembershipModel } from '#/db/schema/memberships';
+import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
+import type { MembershipModel } from '#/modules/memberships/memberships-db';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
 import { logEvent } from '../lib/pino';

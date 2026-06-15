@@ -1,10 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, ilike, or, type SQL, sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
-import { systemRolesTable } from '#/db/schema/system-roles';
-import { userCountersTable } from '#/db/schema/user-counters';
-import { usersTable } from '#/db/schema/users';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
+import { userCountersTable } from '#/modules/user/user-counters-db';
+import { usersTable } from '#/modules/user/user-db';
 import { buildUsersListQuery, countUsersList } from '#/modules/user/user-queries';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { getOrderColumn } from '#/utils/order-column';

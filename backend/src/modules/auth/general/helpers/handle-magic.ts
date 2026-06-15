@@ -4,13 +4,13 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
-import type { TokenModel } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
+import type { TokenModel } from '#/modules/auth/tokens-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
+import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {

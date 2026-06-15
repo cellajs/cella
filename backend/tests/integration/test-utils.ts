@@ -16,16 +16,16 @@ import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { baseDb as db, type PgDB } from '#/db/db';
-import { activitiesTable } from '#/db/schema/activities';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
 import { activityBus } from '#/lib/activity-bus';
+import { activitiesTable } from '#/modules/activities/activities-db';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
+import { tokensTable } from '#/modules/auth/tokens-db';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { usersTable } from '#/modules/user/user-db';
 
 /**
  * Run database migrations for integration tests.

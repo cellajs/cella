@@ -54,6 +54,15 @@ export default defineRuntimeSecrets({
     generation: 'manual',
     services: ['cdc'],
   },
+  databaseSslCa: {
+    secretName: 'database-ssl-ca',
+    description: 'PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance)',
+    envVar: 'DATABASE_SSL_CA',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'manual',
+    services: ['backend', 'yjs', 'ai', 'cdc'],
+  },
   cookieSecret: {
     secretName: 'cookie-secret',
     description: 'Cookie signing secret',

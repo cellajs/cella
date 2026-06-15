@@ -13,7 +13,7 @@ import { sql } from 'drizzle-orm';
 import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { contextCountersTable } from '#/db/schema/context-counters';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import type { AppCatchupResponse } from '#/schemas';
 import { defaultHeaders } from './fixtures';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';

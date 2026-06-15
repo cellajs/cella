@@ -19,8 +19,8 @@ import type { Context, Next } from 'hono';
 import { appConfig } from 'shared';
 import { vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { resetOrganizationMockEnforcers } from '../mocks/mock-organization';
-import { resetUserMockEnforcers } from '../mocks/mock-user';
+import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
+import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
 
 /**
  * Types

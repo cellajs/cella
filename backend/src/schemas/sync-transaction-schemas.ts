@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockStxBase, mockStxResponse } from '../../mocks/mock-entity-base';
+import { mockStxBase, mockStxResponse } from './sync-transaction-mocks';
 
 /**
  * Zod schema for StxBase (sync transaction base).

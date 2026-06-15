@@ -1,4 +1,4 @@
-import { activitiesTable } from '#/db/schema/activities';
+import { activitiesTable } from '#/modules/activities/activities-db';
 
 import { cdcDb } from '../lib/db';
 import { logEvent } from '../lib/pino';

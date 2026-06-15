@@ -7,9 +7,7 @@ import { specs } from './init-stack-secrets'
  */
 describe('init-stack-secrets specs', () => {
   it('snapshot of keys + sources', () => {
-    expect(specs.map((s) => ({ key: s.key, from: s.from }))).toEqual([
-      { key: 'scaleway:projectId',      from: 'env' },
-    ])
+    expect(specs.map((s) => ({ key: s.key, from: s.from }))).toEqual([])
   })
 
   it('every random spec generates at least 24 bytes of entropy', () => {
@@ -20,9 +18,9 @@ describe('init-stack-secrets specs', () => {
     }
   })
 
-  it('only scaleway:projectId is stored as a non-secret', () => {
+  it('no non-secret env keys remain (project id comes from the environment)', () => {
     const nonSecret = specs.filter((s) => s.from === 'env' && s.secret === false).map((s) => s.key)
-    expect(nonSecret).toEqual(['scaleway:projectId'])
+    expect(nonSecret).toEqual([])
   })
 
   it('every secret-shaped key uses the secret writer by default', () => {

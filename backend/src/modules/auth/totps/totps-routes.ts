@@ -2,9 +2,9 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { cookieSchema, errorResponseRefs } from '#/schemas';
-import { mockTotpKeyResponse } from '../../../../mocks/mock-auth';
 
 const authTotpsRoutes = {
   /**

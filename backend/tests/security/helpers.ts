@@ -8,8 +8,8 @@
 import { sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import { baseDb as db } from '#/db/db';
-import { organizationsTable } from '#/db/schema/organizations';
-import { mockOrganization } from '../../mocks/mock-organization';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import type { createAppClient } from '../test-client';
 

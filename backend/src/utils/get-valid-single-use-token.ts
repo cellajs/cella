@@ -3,8 +3,8 @@ import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { type TokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
 
 type Props = {

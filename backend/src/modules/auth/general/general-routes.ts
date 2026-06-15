@@ -4,9 +4,9 @@ import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
-import { mockTokenDataResponse } from '../../../../mocks/mock-auth';
 
 const authGeneralRoutes = {
   /**

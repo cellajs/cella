@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockStreamNotification } from '../../mocks/mock-entity-base';
+import { mockStreamNotification } from './stream-mocks';
 import { stxBaseSchema } from './sync-transaction-schemas';
 
 /** Reusable schema for embedded entity propagation hints */

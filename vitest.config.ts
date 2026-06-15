@@ -50,6 +50,7 @@ export default defineConfig({
         '**/*.{test,spec}.ts',
         '**/tests/**',
         '**/mocks/**',
+        '**/*-mocks.ts',
         '**/scripts/**',
         'sdk/gen/**',
       ],

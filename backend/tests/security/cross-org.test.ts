@@ -12,7 +12,7 @@
 
 import { createAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateMockEntityBodyContextIdColumns } from '../../mocks/utils';
+import { generateMockEntityBodyContextIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';

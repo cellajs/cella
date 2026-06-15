@@ -1,6 +1,6 @@
 import { and, eq, getColumns, inArray, isNull, min, or, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { pagesTable } from '#/db/schema/pages';
+import { pagesTable } from '#/modules/page/page-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 
 interface FindPageByIdOpts {

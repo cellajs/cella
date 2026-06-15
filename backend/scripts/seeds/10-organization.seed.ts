@@ -4,17 +4,17 @@ import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
 import { seedDb } from '#/db/db';
-import { domainsTable } from '#/db/schema/domains';
-import { emailsTable } from '#/db/schema/emails';
-import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
-import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
-import { tenantsTable } from '#/db/schema/tenants';
-import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { UserModel, usersTable } from '#/db/schema/users';
-import { getMembershipOrderOffset, mockContextMembership } from '../../mocks/mock-membership';
-import { mockOrganization } from '../../mocks/mock-organization';
-import { mockEmail, mockUnsubscribeToken, mockUser } from '../../mocks/mock-user';
-import { mockMany, setMockContext } from '../../mocks/utils';
+import { domainsTable } from '#/modules/domains/domains-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
+import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { UserModel, usersTable } from '#/modules/user/user-db';
+import { getMembershipOrderOffset, mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
+import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)

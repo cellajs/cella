@@ -1,6 +1,6 @@
 import { count, ilike, inArray, type SQL } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
-import { pagesTable } from '#/db/schema/pages';
+import { pagesTable } from '#/modules/page/page-db';
 import { buildPagesListQuery } from '#/modules/page/page-queries';
 import { coalesceAuditUsers, createdByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumn } from '#/utils/order-column';

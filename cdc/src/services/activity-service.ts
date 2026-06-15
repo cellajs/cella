@@ -1,4 +1,4 @@
-import type { InsertActivityModel } from '#/db/schema/activities';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { appConfig, hierarchy, isProductEntity } from 'shared';
 import { logEvent } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';

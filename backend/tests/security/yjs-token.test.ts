@@ -15,9 +15,9 @@
 import { getYjsToken, verifyYjsEntity } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { attachmentsTable } from '#/db/schema/attachments';
 import { env } from '#/env';
-import { generateMockEntityContextIdColumns } from '../../mocks/utils';
+import { generateMockEntityContextIdColumns } from '#/mocks';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';

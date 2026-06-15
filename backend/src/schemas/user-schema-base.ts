@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
-import { mockUserBase } from '../../mocks/mock-entity-base';
+import { mockUserBase } from './entity-base-mocks';
 
 // Re-export from dedicated file to avoid circular dependencies
 export { userMinimalBaseSchema } from '#/schemas/user-minimal-base';

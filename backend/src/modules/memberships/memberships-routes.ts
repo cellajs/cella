@@ -23,13 +23,13 @@ import {
   validIdSchema,
 } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
-import { mockContextEntityBase } from '../../../mocks/mock-entity-base';
+import { mockContextEntityBase } from '#/schemas/entity-base-mocks';
 import {
   mockMembershipInviteResponse,
   mockMembershipResponse,
   mockPaginatedInactiveMembershipsResponse,
   mockPaginatedMembersResponse,
-} from '../../../mocks/mock-membership';
+} from './memberships-mocks';
 
 const membershipRoutes = {
   /**

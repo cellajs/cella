@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
-import { mockPaginatedRequestsResponse, mockRequestResponse } from '../../../mocks/mock-request';
+import { mockPaginatedRequestsResponse, mockRequestResponse } from './requests-mocks';
 
 const requestRoutes = {
   /**

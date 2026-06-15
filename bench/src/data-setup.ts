@@ -13,10 +13,9 @@ import pg from 'pg';
 import { createHash } from 'node:crypto';
 import ora, { type Ora } from 'ora';
 import pc from 'picocolors';
-import { setMockContext } from '../../backend/mocks/utils';
+import { setMockContext } from '#/mocks';
 import {
   TENANT_ID,
-  ORG_ID,
   TOTAL_USERS,
   TOTAL_ATTACHMENTS,
   loadtestUser,
@@ -25,7 +24,6 @@ import {
   loadtestAttachment,
   loadtestOrgMembership,
   loadtestSession,
-  sessionId,
 } from './generators';
 
 // Set mock context so any mockNanoid() calls use 'lt-' prefix
@@ -76,11 +74,6 @@ function failSpinner(text: string) {
 
 function updateSpinner(text: string) {
   if (spinner) spinner.text = text;
-}
-
-function printStep(label: string, detail?: string) {
-  const msg = detail ? `${label} ${pc.dim(detail)}` : label;
-  console.info(`  ${pc.green('✓')} ${msg}`);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

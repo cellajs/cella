@@ -1,15 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { sessionsTable } from '#/db/schema/sessions';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersEnum, userSchema } from '#/modules/user/user-schema';
 import { booleanTransformSchema } from '#/schemas';
 import { contextEntityBaseSchema } from '#/schemas/entity-base';
-import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from '../../../mocks/mock-me';
+import { mockMeAuthDataResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 export const sessionSchema = createSelectSchema(sessionsTable)
   .omit({ secret: true })

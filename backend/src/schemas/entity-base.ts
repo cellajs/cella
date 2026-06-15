@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { contextEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockContextEntityBase, mockProductEntityBase } from '../../mocks/mock-entity-base';
+import { mockContextEntityBase, mockProductEntityBase } from './entity-base-mocks';
 
 /**
  * Core fields shared by all entities (id, name, timestamps).

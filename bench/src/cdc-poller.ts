@@ -35,7 +35,14 @@ async function poll(state: PollState) {
     const res = await fetch(CDC_HEALTH_URL);
     if (!res.ok) return;
 
-    const body = await res.json();
+    const body = (await res.json()) as {
+      metrics?: {
+        eventsProcessed: number;
+        processingLatency?: { p95?: number };
+        walLagBytes?: number;
+        batchSize?: { avg?: number };
+      };
+    };
     const m = body.metrics;
     if (!m) return;
 

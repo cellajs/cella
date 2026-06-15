@@ -1,7 +1,7 @@
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { productCountersTable } from '#/db/schema/product-counters';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { productCountersTable } from '#/modules/entities/product-counters-db';
 
 interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;

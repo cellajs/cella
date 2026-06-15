@@ -2,7 +2,8 @@
  * Load-test user generator — uses backend mocks for type-safe records.
  * Runs in Node.js (data-setup), not in k6.
  */
-import { mockEmail, mockUser } from '../../../backend/mocks/mock-user';
+import { mockEmail, mockUser } from '#/modules/user/user-mocks';
+import type { UserModel } from '#/modules/user/user-db';
 import { userId, userEmail, emailId, sessionId } from './ids';
 
 /**

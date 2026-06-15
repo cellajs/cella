@@ -1,9 +1,9 @@
 import type { HttpBindings } from '@hono/node-server';
 import type { DbOrTx } from '#/db/db';
-import type { OrganizationModel } from '#/db/schema/organizations';
-import type { TenantModel } from '#/db/schema/tenants';
-import type { UserModel } from '#/db/schema/users';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import type { OrganizationModel } from '#/modules/organization/organization-db';
+import type { TenantModel } from '#/modules/tenants/tenants-db';
+import type { UserModel } from '#/modules/user/user-db';
 
 /**
  * Set node server bindings.

@@ -2,9 +2,13 @@ import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ContextEntityType, hierarchy } from 'shared';
 import { defaultOrder, orderGap } from 'shared/display-order';
 import type { DbContext } from '#/core/context';
-import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/modules/entities/entities-queries';
 import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import {
+  type InsertMembershipModel,
+  type MembershipModel,
+  membershipsTable,
+} from '#/modules/memberships/memberships-db';
 import { type LogContext, logEvent } from '#/utils/logger';
 
 /**

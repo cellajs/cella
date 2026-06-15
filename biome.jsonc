@@ -3,7 +3,6 @@
     "includes": [
       "backend/src/**",
       "backend/tests/**",
-      "backend/mocks/**",
       "backend/emails/**",
       "frontend/src/**",
       "!frontend/src/routes/routeTree.gen.ts",
@@ -191,7 +190,7 @@
       }
     },
     {
-      "includes": ["backend/src/**", "backend/mocks/**", "backend/emails/**"],
+      "includes": ["backend/src/**", "backend/emails/**"],
       "linter": {
         "rules": {
           "style": {

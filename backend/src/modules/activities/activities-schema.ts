@@ -1,10 +1,10 @@
 import { z } from '@hono/zod-openapi';
 import { activityActions, activityEventTypes, appConfig } from 'shared';
-import { activitiesTable } from '#/db/schema/activities';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { activitiesTable } from '#/modules/activities/activities-db';
 import { paginationQuerySchema } from '#/schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
-import { mockActivityResponse } from '../../../mocks/mock-activity';
+import { mockActivityResponse } from './activities-mocks';
 
 /** Schema for activity actions enum - uses literal types from activityActions */
 export const activityActionSchema = z.enum(activityActions);

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { EntityTableMeta, ResourceTableMeta } from '../types';
 import { computeUnifiedDeltas, computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { InsertActivityModel } from '#/db/schema/activities';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 

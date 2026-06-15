@@ -1,10 +1,10 @@
 import { and, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import { getEntityCountsSelect } from '#/modules/entities/helpers/get-entity-counts';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';

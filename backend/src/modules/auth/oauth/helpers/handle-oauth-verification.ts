@@ -4,8 +4,8 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import type { TokenModel } from '#/db/schema/tokens';
+import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import type { TokenModel } from '#/modules/auth/tokens-db';
 
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
   // Token requires userId and oauthAccountId

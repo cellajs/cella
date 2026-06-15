@@ -55,7 +55,7 @@ export default defineConfig({
       "backend/package.json",
       "backend/src/tables.ts",
       "backend/src/routes.ts",
-      "backend/src/db/schema/memberships.ts",
+      "backend/src/modules/memberships/memberships-db.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",

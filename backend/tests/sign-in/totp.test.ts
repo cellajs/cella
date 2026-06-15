@@ -3,7 +3,7 @@ import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { totpsTable } from '#/db/schema/totps';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
   createMfaToken,

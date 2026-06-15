@@ -2,8 +2,8 @@
  * Load-test attachment generator — creates attachment records for benchmarking.
  * Runs in Node.js (data-setup), not in k6.
  */
-import { mockAttachment } from '../../../backend/mocks/mock-attachment';
-import type { InsertAttachmentModel } from '../../../backend/src/db/schema/attachments';
+import { mockAttachment } from '#/modules/attachment/attachment-mocks';
+import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { ORG_ID, TENANT_ID, attachmentId, userId } from './ids';
 
 /**

@@ -1,10 +1,6 @@
-// NOTE: The docs page scrolls inside <main class="overflow-auto"> (docs-layout.tsx), NOT the window.
-// TanStack Router's `scrollRestoration: true` (routes/router.ts) auto-tracks nested scroll containers
-// and restores their scrollTop on every location change — including our hash replaceState in
-// performScroll. That async restoration would snap the scroller back to its cached position right
-// after we scroll, which manifested as the "first click does nothing, second click works" bug
-// (the 2nd click doesn't change the hash, so no restoration fires). performScroll therefore drives
-// the real scroll container directly and re-asserts the scroll across a couple frames to win the race.
+// NOTE: The docs page scrolls inside <main class="overflow-auto">, NOT the window.
+// performScroll drives the real scroll container and re-asserts across two frames to
+// win the race against TanStack Router's async scrollRestoration on hash changes.
 
 /** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */
 const SPY_PREFIX = 'spy-';
@@ -167,10 +163,8 @@ export const registerSections = (ids: string[]) => {
   savedSection = '';
 
   // Scroll to initial hash if present.
-  // We allow this during a short init window even if some other (child) registration already
-  // set currentSection — otherwise a child component that registers first (e.g. when its
-  // suspense data is already cached) can pin the wrong section before the parent registers
-  // the section that matches the URL hash.
+  // Allow during init window even if a child set currentSection first — prevents early
+  // registration from overriding the parent's hash-matched section.
   const hash = location.hash.slice(1);
   const inInitWindow = Date.now() - initTime < 500;
   if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {
@@ -224,14 +218,8 @@ const findScrollParent = (el: HTMLElement): HTMLElement => {
 
 /** Scroll to element and update hash/state */
 const performScroll = (el: HTMLElement, id: string) => {
-  // The docs page scrolls inside <main class="overflow-auto">, not the window, so scrollIntoView()
-  // doesn't help — drive the real container directly.
+  // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
   const scroller = findScrollParent(el);
-  // The root scrolling element (<html>/<body>) reports getBoundingClientRect().top === -scrollTop
-  // (its box scrolls out of the viewport), unlike a normal overflow container whose rect top is a
-  // fixed viewport offset. Using its rect top here would count scrollTop twice and make upward
-  // clicks resolve to ≈ the current position (scroll aborts after a few px). For the root scroller
-  // the reference is simply the viewport top (0).
   const isRootScroller =
     scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body;
   const scrollerTop = isRootScroller ? 0 : scroller.getBoundingClientRect().top;
@@ -245,11 +233,7 @@ const performScroll = (el: HTMLElement, id: string) => {
     history.replaceState(null, '', `#${id}`);
   }
 
-  // TanStack Router's scrollRestoration auto-tracks nested scroll containers and restores the
-  // scroller's cached scrollTop whenever the location changes — including our hash replaceState
-  // above. That restoration runs async after the history change and would snap us back to the
-  // previous position (the "first click does nothing, second works" bug: the 2nd click doesn't
-  // change the hash, so no restoration fires). Re-assert the scroll for a couple frames so we win.
+  // Re-assert scroll across two frames to win the race against TanStack Router's async scrollRestoration.
   const applyScroll = () => scroller.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'instant' });
   applyScroll();
   requestAnimationFrame(() => {

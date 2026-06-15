@@ -2,10 +2,10 @@ import type { EntityRole } from 'shared';
 import { generateId } from 'shared/entity-id';
 import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { tokensTable } from '#/db/schema/tokens';
-import type { UserModel } from '#/db/schema/users';
-import { mockPastIsoDate } from '../../mocks/utils';
+import { mockPastIsoDate } from '#/mocks';
+import { tokensTable } from '#/modules/auth/tokens-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import type { UserModel } from '#/modules/user/user-db';
 
 /**
  * Create a membership invitation token for a user to join an organization

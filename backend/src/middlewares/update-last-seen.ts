@@ -1,5 +1,5 @@
 import { baseDb as db } from '#/db/db';
-import { userCountersTable } from '#/db/schema/user-counters';
+import { userCountersTable } from '#/modules/user/user-counters-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes

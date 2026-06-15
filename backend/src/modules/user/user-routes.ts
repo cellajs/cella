@@ -3,7 +3,7 @@ import { authGuard, crossTenantGuard, relatableGuard } from '#/middlewares/guard
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
 import { errorResponseRefs, paginationSchema, relatableUserIdParamSchema, slugQuerySchema } from '#/schemas';
-import { mockPaginatedUsersResponse, mockUserResponse } from '../../../mocks/mock-user';
+import { mockPaginatedUsersResponse, mockUserResponse } from './user-mocks';
 
 const userRoutes = {
   /**

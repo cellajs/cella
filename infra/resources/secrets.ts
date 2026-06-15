@@ -11,7 +11,7 @@ import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode, infraConfig } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
-import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc } from './database'
+import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
 
 /** Folder path for secret organization, e.g. '/cella-production/' */
 const secretPath = `/${naming.slug}-${mode}/`
@@ -69,16 +69,18 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
 
 /**
  * Pulumi-derived secret values that cannot be produced generically from the
- * registry — currently only the database connection strings, which are built
- * from database resources. Every other `valueSource: 'pulumi'` secret is
- * resolved from its registry definition (`generation: 'random'` → a stable
- * RandomPassword named after its `secretName`), so adding a new pulumi-owned
- * random secret requires no edit here — only a registry entry.
+ * registry — the database connection strings (built from database resources) and
+ * the database CA certificate (the RDB instance's own cert). Every other
+ * `valueSource: 'pulumi'` secret is resolved from its registry definition
+ * (`generation: 'random'` → a stable RandomPassword named after its
+ * `secretName`), so adding a new pulumi-owned random secret requires no edit
+ * here — only a registry entry.
  */
 const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlAdmin: connectionStringAdmin,
   databaseUrlRuntime: connectionStringRuntime,
   databaseUrlCdc: connectionStringCdc,
+  databaseSslCa: caCertificate,
 }
 
 function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {

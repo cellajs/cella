@@ -1,15 +1,15 @@
 import type { SeedScript } from '../types';
 import { seedDb } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
-import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { usersTable } from '#/db/schema/users';
+import { emailsTable } from '#/modules/user/emails-db';
+import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { usersTable } from '#/modules/user/user-db';
 import { env } from '#/env';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { mockAdmin, mockEmail, mockUnsubscribeToken } from '../../mocks/mock-user';
-import { setMockContext } from '../../mocks/utils';
+import { mockAdmin, mockEmail, mockUnsubscribeToken } from '#/modules/user/user-mocks';
+import { setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
-import { systemRolesTable } from '#/db/schema/system-roles';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { checkMark } from '#/utils/console';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)

@@ -1,8 +1,8 @@
 import { uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/entity-id';
-import { tenantsTable } from '#/db/schema/tenants';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
  * Creates base columns shared by all tenant-scoped entities (context entities, product entities).

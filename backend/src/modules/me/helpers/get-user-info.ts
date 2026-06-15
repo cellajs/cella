@@ -2,11 +2,11 @@ import type { z } from '@hono/zod-openapi';
 import { and, desc, eq, getColumns } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { DbContext, Env } from '#/core/context';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable } from '#/db/schema/sessions';
-import { totpsTable } from '#/db/schema/totps';
 import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
+import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
 import type { sessionSchema } from '#/modules/me/me-schema';
 
 /**

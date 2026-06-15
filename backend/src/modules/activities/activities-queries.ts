@@ -1,6 +1,6 @@
 import { and, count, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { activitiesTable } from '#/db/schema/activities';
+import { activitiesTable } from '#/modules/activities/activities-db';
 import { getOrderColumn } from '#/utils/order-column';
 
 interface BuildActivitiesListOpts {

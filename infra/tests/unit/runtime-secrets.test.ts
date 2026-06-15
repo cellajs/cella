@@ -56,10 +56,12 @@ describe('runtime secret registry', () => {
   it('assigns an exact, minimal runtime secret set per VM consumer', () => {
     expect(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar)).toEqual([
       'DATABASE_CDC_URL',
+      'DATABASE_SSL_CA',
       'CDC_SECRET',
     ])
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
+      'DATABASE_SSL_CA',
       'YJS_SECRET',
     ])
     expect(runtimeSecretsForConsumer('frontend')).toEqual([])

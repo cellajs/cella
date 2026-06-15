@@ -3,12 +3,12 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { emailsTable } from '#/db/schema/emails';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { tokensTable } from '#/db/schema/tokens';
-import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 

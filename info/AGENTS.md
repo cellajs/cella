@@ -99,6 +99,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - Zod v4 only: `import { z } from 'zod'`. In backend: `import { z } from '@hono/zod-openapi'`.
 - camelCase for variables/functions (including constants), PascalCase for components, kebab-case for files, snake_case for translation keys.
 - JSDoc on all exports. Backend: full JSDoc with params/response. Frontend: 1-3 lines. No standalone file-level comments above imports.
+- Code comments explain non-trivial logic only. Do not narrate decision history, what was considered and rejected, or how the code evolved — that belongs in commit messages, not source. A comment should describe *what* the code does and *why*, not *what it replaced* or *what it is not*.
 - Storybook: Stories in `stories/` folder within the module, named `<component-filename>.stories.tsx`.
 - Icons: lucide with Icon suffix (e.g., `PencilIcon`).
 - UI primitives: Base UI (`@base-ui/react`), **not** Radix. Shadcn-style components in `frontend/src/modules/ui/` wrap Base UI primitives.

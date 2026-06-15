@@ -8,37 +8,37 @@ This infrastructure is built around three principles:
 
 1. **Pulumi provisions with most values from config files.** Pulumi modules create resources, but resource names, domains and sizing are derived from [config files](#configuration).
 2. **CI performs all routine deploys.** Pushing to `main` builds images and rolls the running services with zero downtime.
-3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a temporary bootstrap key is required only for the initial install and for changes to data-bearing resources (database, VPC, private network).
+3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a bootstrap key is required for fresh install and changes to data-bearing resources.
 
 The key resources and how traffic flows between them:
 
 ```
                           ┌─────────────────────────────────────────┐
-        Users ──▶ DNS ──▶ │           Scaleway Load Balancer         │  TLS termination,
-                          │              (host-header routing)        │  host-header routing
+        Users ──▶ DNS ──▶ │           Scaleway Load Balancer        │  TLS termination,
+                          │           (host-header routing)         │  host-header routing
                           └─────────────────────────────────────────┘
                               │                              │
               api.<domain>    │                              │   <domain>
                               ▼                              ▼
-   ┌───────────────────────────────────────────┐   ┌──────────────────────┐
-   │             Private network (VPC)           │   │   Edge Services CDN   │
-   │                                             │   │          +            │
-   │   ┌──────────┐  ┌──────────┐  ┌──────────┐  │   │   frontend bucket     │
-   │   │ backend  │  │  optional │  │  optional │  │   │   (SPA hosting)       │
-   │   │   VM     │  │  VM (cdc, │  │  VM (yjs, │  │   └──────────────────────┘
-   │   │          │  │   ai …)   │  │   …)      │  │
-   │   └────┬─────┘  └──────────┘  └──────────┘  │
-   │        │                                     │
-   │        ▼                                     │
-   │   ┌──────────────┐                           │
-   │   │ PostgreSQL    │   (managed, private)     │
-   │   └──────────────┘                           │
+   ┌───────────────────────────────────────────┐  ┌──────────────────────┐
+   │             Private network (VPC)         │  │   Edge Services CDN  │
+   │                                           │  │          +           │
+   │  ┌──────────┐  ┌──────────┐  ┌──────────┐ │  │   frontend bucket    │
+   │  │ backend  │  │ optional │  │ optional │ │  │   (SPA hosting)      │
+   │  │   VM     │  │ VM (cdc, │  │ VM (yjs, │ │  └──────────────────────┘
+   │  │          │  │  ai …)   │  │  …)      │ │ 
+   │  └────┬─────┘  └──────────┘  └──────────┘ │
+   │       │                                   │
+   │       ▼                                   │
+   │  ┌──────────────┐                         │
+   │  │ PostgreSQL   │   (managed, private)    │
+   │  └──────────────┘                         │
    └───────────────────────────────────────────┘
                               │
                               ▼
                     ┌──────────────────────┐
-                    │  upload buckets       │
-                    │  (public + private)   │
+                    │  upload buckets      │
+                    │  (public + private)  │
                     └──────────────────────┘
 ```
 
@@ -100,8 +100,6 @@ runtime secrets + images on the VM
 | **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
 | **VM reader key** (`<slug>-vm-reader`) | Read-only registry / object storage / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
 
-Exact IAM permission sets and the bootstrap-owned boundary are documented in [Security & IAM reference](#security--iam-reference).
-
 ## Routine deploys (CI)
 
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
@@ -110,7 +108,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against the chosen environment (`staging` or `production`).
 
 
-Routine deploys don't replace VMs. CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
+CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -132,7 +130,7 @@ Only cloud-init changes (reconciler/package updates, an instance-type resize) re
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy, no `pulumi config set`. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
+All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
 
 **Common questions:**
 - *Where do I change a VM size?* → `instanceType` in [config/services.config.ts](config/services.config.ts) (applied by the next CI deploy).
@@ -156,8 +154,6 @@ To apply a bootstrap-owned change (e.g. resize the database), re-run the CLI (`p
 2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
 3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
 4. Reminds you to revoke the bootstrap key.
-
-No stack file is mutated and no credential is written to disk, so an interrupted run needs no cleanup — `pulumi up` is idempotent, so just re-run Apply infra change to converge.
 
 
 ## Fresh installation
@@ -281,6 +277,12 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | 6 | `loadbalancer` | Scaleway LB with TLS termination, host-header routing, DNS |
 
 Application telemetry is exported to Maple.dev from the runtime services; no observability resources are provisioned in Pulumi.
+
+### Database TLS
+
+Connections to the managed PostgreSQL use **verified** TLS in production: the database client pins the Scaleway RDB instance's CA certificate and rejects anything it can't verify (closing the man-in-the-middle gap that `rejectUnauthorized: false` would leave open). This is fully automated — `pulumi up` reads the instance cert and writes it to the `database-ssl-ca` runtime secret (`DATABASE_SSL_CA`), which the backend/yjs/cdc VMs receive like any other runtime secret. There is nothing to set by hand.
+
+If `DATABASE_SSL_CA` is missing in production the service **fails fast at boot** rather than downgrading security. To recover, run the CLI's **Apply infra change** (re-asserts the secret) or check the `database-ssl-ca` secret via **Manage runtime secrets**. Local development (`NODE_ENV=development`) skips verification, so no cert is needed.
 
 ### How config flows
 

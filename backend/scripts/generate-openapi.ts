@@ -13,7 +13,6 @@ const MANIFEST_PATH = resolve(import.meta.dirname, '../openapi.manifest.json');
 // Intentionally broad to avoid missing changes - false positives are safe, false negatives are not
 const OPENAPI_RELEVANT_PATHS = [
   'src/',
-  'mocks/',
 ];
 
 /** Get hash of git diff for relevant backend paths */
