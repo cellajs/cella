@@ -7,10 +7,12 @@
  * variant byte to avoid collisions.
  */
 
-/** Builds a deterministic UUID: 00000000-0000-4000-{variant}-{index padded to 12 hex chars} */
-const benchUuid = (variant: string, i: number) => `00000000-0000-4000-${variant}-${i.toString(16).padStart(12, '0')}`;
+import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/bench-identity';
 
-export const TENANT_ID = 'xbench';
+/** Builds a deterministic UUID: 00000000-0000-4000-{variant}-{index padded to 12 hex chars} */
+const benchUuid = (variant: string, i: number) => `${BENCH_UUID_PREFIX}${variant}-${i.toString(16).padStart(12, '0')}`;
+
+export const TENANT_ID = BENCH_TENANT_ID;
 export const ORG_ID = benchUuid('a001', 0);
 
 export const userId = (i: number) => benchUuid('a000', i);

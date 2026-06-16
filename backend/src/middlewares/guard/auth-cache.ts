@@ -11,7 +11,7 @@ export type MembershipCacheEntry = (MembershipBaseModel & { createdBy: string | 
 
 const sessionCache = new TTLCache<SessionCacheEntry>({
   maxSize: 5000,
-  defaultTtl: 30_000, // 30s — security-sensitive, short TTL
+  defaultTtl: 60_000, // 1 min — security-sensitive, kept short
   onDispose: (key, value) => {
     // Clean up reverse index when entry expires or is evicted
     const sessionIds = userIndex.get(value.user.id);
@@ -39,8 +39,8 @@ export const getMembershipCache = (userId: string): MembershipCacheEntry | undef
 };
 
 export const setSessionCache = (sessionId: string, userId: string, entry: SessionCacheEntry): void => {
-  // Jitter TTL ±20% (24-36s) to prevent synchronized expiry under load
-  const jitteredTtl = Math.round(30_000 * (0.8 + Math.random() * 0.4));
+  // Jitter TTL ±20% (48-72s) to prevent synchronized expiry under load
+  const jitteredTtl = Math.round(60_000 * (0.8 + Math.random() * 0.4));
   sessionCache.set(sessionId, entry, jitteredTtl);
 
   // Register in reverse index

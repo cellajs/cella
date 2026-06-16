@@ -14,14 +14,18 @@ import { baseDb } from './db';
  * hydration, response formatting, and ctx.json() belong outside.
  */
 export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext) => Promise<T>): Promise<T> {
-  return baseDb.transaction(async (tx) => {
-    await tx.execute(sql`SET TRANSACTION READ ONLY`);
-    await tx.execute(sql`
-      SELECT set_config('app.tenant_id', ${ctx.var.tenantId}, true),
-             set_config('app.user_id', ${ctx.var.userId}, true)
-    `);
-    return fn({ var: { ...ctx.var, db: tx } });
-  });
+  // Fold READ ONLY into BEGIN (drizzle emits `begin read only` in a single round trip)
+  // instead of a separate `SET TRANSACTION READ ONLY` statement — saves one DB round trip per read.
+  return baseDb.transaction(
+    async (tx) => {
+      await tx.execute(sql`
+        SELECT set_config('app.tenant_id', ${ctx.var.tenantId}, true),
+               set_config('app.user_id', ${ctx.var.userId}, true)
+      `);
+      return fn({ var: { ...ctx.var, db: tx } });
+    },
+    { accessMode: 'read only' },
+  );
 }
 
 /**

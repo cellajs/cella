@@ -1,15 +1,14 @@
 import { appConfig, type Severity } from 'shared';
+import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/bench-identity';
 import type { Env } from '#/core/context';
 import { eventLogger } from '#/lib/pino';
 
 const isProduction = appConfig.mode === 'production';
 
-const BENCH_TENANT_ID = 'xbench';
-
-/** Check if traffic originates from bench/load testing */
-export const isBenchTraffic = (url?: string, userId?: string) => {
+/** Check if traffic originates from bench/load testing (dev only). */
+export const isBenchTraffic = (userId?: string, tenantId?: string) => {
   if (isProduction) return false;
-  return url?.includes(`/${BENCH_TENANT_ID}/`) || userId?.startsWith('xbench-');
+  return tenantId === BENCH_TENANT_ID || userId?.startsWith(BENCH_UUID_PREFIX);
 };
 
 /** Narrow context type for logging — accepts full Hono ctx or any object with matching .var shape. */
@@ -29,8 +28,9 @@ const extractBase = (ctx: LogContext) => {
 };
 
 export const logEvent = (ctx: LogContext, severity: Severity, msg: string, meta?: object): void => {
-  // Suppress bench traffic logs (except errors)
-  if (severity !== 'error' && severity !== 'fatal' && ctx?.var && isBenchTraffic(undefined, ctx.var.userId)) return;
+  // Always log errors; for everything else, suppress bench traffic.
+  const isError = severity === 'error' || severity === 'fatal';
+  if (!isError && ctx?.var && isBenchTraffic(ctx.var.userId, ctx.var.tenantId)) return;
 
   eventLogger[severity]({ ...extractBase(ctx), ...(meta ?? {}), msg });
 };

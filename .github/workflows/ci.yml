@@ -98,8 +98,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
-  # Tests for the sync CLI tool
-  test-sync-cli:
+  # Tests for cella CLI
+  test-cella-cli:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -140,4 +140,4 @@ jobs:
         # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          pnpm cella --service analyze
+          pnpm cella analyze

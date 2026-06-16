@@ -16,7 +16,7 @@ import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCach
  * If no valid session is found, it responds with a 401 error.
  *
  * Uses two in-memory TTL caches:
- * - Session cache (30s TTL, keyed by sessionId): user + isSystemAdmin
+ * - Session cache (1 min TTL, keyed by sessionId): user + isSystemAdmin
  * - Membership cache (5 min TTL, keyed by userId): memberships array
  *   (actively invalidated on membership changes, long TTL is a safety net)
  *
