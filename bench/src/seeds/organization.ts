@@ -1,9 +1,10 @@
 /**
- * Load-test organization generator — uses backend mocks for type-safe records.
+ * Load-test organization seed helper — uses backend mocks for type-safe records.
  * Runs in Node.js (data-setup), not in k6.
  */
-import { mockOrganization } from '#/modules/organization/organization-mocks';
+
 import type { InsertOrganizationModel } from '#/modules/organization/organization-db';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { ORG_ID, TENANT_ID } from './ids';
 
 /**

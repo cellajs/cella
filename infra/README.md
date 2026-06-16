@@ -1,10 +1,10 @@
-# Infrastructure
+# infra cli
 
 Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
 
 ## Overview
 
-This infrastructure is built around three principles:
+The infrastructure is built around three principles:
 
 1. **Pulumi provisions with most values from config files.** Pulumi modules create resources, but resource names, domains and sizing are derived from [config files](#configuration).
 2. **CI performs all routine deploys.** Pushing to `main` builds images and rolls the running services with zero downtime.
@@ -42,13 +42,13 @@ The key resources and how traffic flows between them:
                     └──────────────────────┘
 ```
 
-- **Load balancer** — single public entrypoint, terminates TLS and routes by host header (`api.<domain>` → backend VMs, `<domain>` → frontend).
-- **Private network (VPC)** — VMs and the database talk over private IPs; only the LB is publicly reachable (no inbound SSH).
-- **Frontend** — a static SPA bucket served through the Edge Services CDN, not a VM.
+- **Load balancer** — single public entrypoint.
+- **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
+- **Frontend** — a static SPA bucket served through Edge Services CDN, not a VM.
 - **Backend VM** — the critical API path; rolled blue-green.
 - **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VMs when enabled; rolled in-place.
-- **Database** — managed PostgreSQL reachable only from inside the private network.
-- **Buckets** — public and private object storage for uploads, plus the frontend SPA bucket.
+- **Database** — managed PostgreSQL reachable only from inside private network.
+- **Buckets** — public and private object storage for uploads, plus frontend SPA bucket.
 
 
 ## How a deploy works
@@ -64,14 +64,14 @@ Runs pulumi up
         ↓
 Uploads image tag to the deploy-tags bucket
         ↓
-On-VM reconciler detects the new tag
+On-VM reconciler detects new tag
         ↓
 Performs in-place or blue-green rollout
         ↓
 Load balancer keeps serving traffic
 ```
 
-At runtime, the load balancer never talks to the app container directly. Each VM runs a tiny **ingress** Caddy container that owns the LB-facing host port and forwards to the app container by its compose-network name (the app publishes no host port):
+At runtime, load balancer never talks to app container directly. Each VM runs a tiny **ingress** Caddy container that owns LB-facing host port and forwards to app container by its compose-network name (app publishes no host port):
 
 ```
 Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
@@ -85,13 +85,13 @@ The security model is defined by exactly three Scaleway API keys, in strictly de
 Bootstrap key      (broad, short-lived; in your password manager only)
     │ creates
     ▼
-CI deploy key      (project-scoped write; in the GitHub Environment)
+CI deploy key      (project-scoped write; in GitHub Environment)
     │ provisions
     ▼
 VM reader key      (read-only; baked into each VM)
     │ reads
     ▼
-runtime secrets + images on the VM
+runtime secrets + images on VM
 ```
 
 | Key | Permissions | Lifetime | Where stored |
@@ -104,8 +104,8 @@ runtime secrets + images on the VM
 
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
 
-- **On push to `main`** — builds images, uploads the frontend, runs `pulumi up`, verifies the deployment.
-- **On manual dispatch** — same, against the chosen environment (`staging` or `production`).
+- **On push to `main`** — builds images, uploads frontend, runs `pulumi up`, verifies deployment.
+- **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
 CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
@@ -124,7 +124,7 @@ Each service declares its roll strategy in the fork-owned service registry ([con
 | **blue-green** | backend | Run two named slots (`backend-blue` / `backend-green`). Bring the idle slot up on the new tag, identity-gate it, then flip the ingress upstream to it and retire the old slot. |
 | **in-place** | frontend, ai, cdc, yjs | Recreate the single app container (`up -d --no-deps <svc>`). The ingress holds the listener open and retries the upstream across the ~seconds the container is restarting. |
 
-**Why backend is blue-green and the rest are in-place.** The backend is the critical path, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
+**Why backend is blue-green and the rest are in-place.** The backend is critical, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
 
 Only cloud-init changes (reconciler/package updates, an instance-type resize) replace the VM; the LB health checks handle that. Routine runtime secret changes don't — the reconciler refreshes `/opt/app/.env.runtime` each tick and rolls the service when that file changes, even if the image tag didn't.
 

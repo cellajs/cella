@@ -13,6 +13,8 @@
       "cli/create-cella/src/**",
       "cli/create-cella/tests/**",
       "packages/data-grid/src/**",
+      "bench/src/**",
+      "!bench/src/**/dist",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",

@@ -1,27 +1,33 @@
 #!/usr/bin/env tsx
+import process from 'node:process';
 /**
- * CDC Health Poller — standalone metrics collector.
+ * CDC Health Poller — metrics collector.
  *
- * Polls the CDC worker's /health endpoint during load tests and logs
+ * Polls the CDC worker's /health endpoint during load tests to capture
  * throughput (ops/s), p95 latency, WAL lag, and event counts.
  *
- * Usage: tsx src/cdc-poller.ts [--interval 3] [--duration 120]
+ * Bench starts this automatically in the background for every run (`--quiet`),
+ * so it stays silent unless CDC actually processed events — the developer never
+ * has to think about it. Run it standalone for live per-interval logging:
+ *
+ *   tsx src/cdc-poller.ts [--interval 3] [--duration 120] [--quiet]
  */
 import pc from 'picocolors';
-
-const CDC_HEALTH_URL = process.env.CDC_HEALTH_URL || 'http://localhost:4001/health?depth=full';
+import { CDC_HEALTH_URL } from './config';
 
 function parseArgs() {
   const args = process.argv.slice(2);
   let interval = 3;
   let duration = 0;
+  let quiet = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--interval' && args[i + 1]) interval = Number.parseInt(args[++i], 10);
     if (args[i] === '--duration' && args[i + 1]) duration = Number.parseInt(args[++i], 10);
+    if (args[i] === '--quiet') quiet = true;
   }
 
-  return { interval, duration };
+  return { interval, duration, quiet };
 }
 
 interface PollState {
@@ -30,7 +36,7 @@ interface PollState {
   samples: { opsPerSec: number; p95: number; walLag: number }[];
 }
 
-async function poll(state: PollState) {
+async function poll(state: PollState, quiet: boolean) {
   try {
     const res = await fetch(CDC_HEALTH_URL);
     if (!res.ok) return;
@@ -63,6 +69,8 @@ async function poll(state: PollState) {
 
     state.samples.push({ opsPerSec, p95, walLag });
 
+    if (quiet) return;
+
     console.info(
       `${pc.cyan('CDC')} ${pc.bold(String(opsPerSec))} ops/s | ` +
         `p95=${pc.yellow(String(p95))}ms | ` +
@@ -93,15 +101,17 @@ function printSummary(samples: PollState['samples']) {
 }
 
 async function main() {
-  const { interval, duration } = parseArgs();
+  const { interval, duration, quiet } = parseArgs();
   const state: PollState = { prevEvents: 0, prevTime: 0, samples: [] };
 
-  console.info(
-    `${pc.cyan('⧈ CDC poller')} polling ${CDC_HEALTH_URL} every ${interval}s` +
-      (duration > 0 ? ` for ${duration}s` : ''),
-  );
+  if (!quiet) {
+    console.info(
+      `${pc.cyan('⧈ CDC poller')} polling ${CDC_HEALTH_URL} every ${interval}s` +
+        (duration > 0 ? ` for ${duration}s` : ''),
+    );
+  }
 
-  const timer = setInterval(() => poll(state), interval * 1000);
+  const timer = setInterval(() => poll(state, quiet), interval * 1000);
 
   if (duration > 0) {
     setTimeout(() => {

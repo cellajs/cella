@@ -8,8 +8,7 @@
  */
 
 /** Builds a deterministic UUID: 00000000-0000-4000-{variant}-{index padded to 12 hex chars} */
-const benchUuid = (variant: string, i: number) =>
-  `00000000-0000-4000-${variant}-${i.toString(16).padStart(12, '0')}`;
+const benchUuid = (variant: string, i: number) => `00000000-0000-4000-${variant}-${i.toString(16).padStart(12, '0')}`;
 
 export const TENANT_ID = 'xbench';
 export const ORG_ID = benchUuid('a001', 0);
