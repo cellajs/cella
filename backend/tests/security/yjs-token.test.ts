@@ -13,6 +13,7 @@
  */
 
 import { getYjsToken, verifyYjsEntity } from 'sdk';
+import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
@@ -74,7 +75,7 @@ async function createAttachment(tenantId: string, organizationId: string, create
   return { attachment };
 }
 
-describe('Yjs token + verify-entity security', async () => {
+describe.skipIf(!appConfig.features.yjs)('Yjs token + verify-entity security', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
   let tenantB: TestTenant;

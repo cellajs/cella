@@ -1,5 +1,9 @@
 import type { MiddlewareHandler } from 'hono';
+import type { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+
+/** Feature flags that can gate a route, derived from appConfig.features */
+export type FeatureFlag = keyof typeof appConfig.features;
 
 /** Middleware that can be a single handler or array of handlers */
 export type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
@@ -42,6 +46,12 @@ export const extensionMap = {
   'x-tool': {
     id: 'xTool',
     description: 'Tool registration metadata for AI and MCP integrations',
+    required: false,
+    kind: 'metadata',
+  },
+  'x-feature': {
+    id: 'x-feature',
+    description: 'Feature flag gating the endpoint; route returns 404 when the flag is disabled',
     required: false,
     kind: 'metadata',
   },
@@ -98,6 +108,8 @@ export type XMiddlewareOptions = {
   xCache?: MiddlewareArray;
   /** Tool metadata (optional) - AI/MCP tool registration */
   'x-tool'?: XToolMetadata;
+  /** Feature flag (optional) - route 404s when the flag is disabled */
+  'x-feature'?: FeatureFlag;
 };
 
 /** Extension property IDs derived from XMiddlewareOptions */

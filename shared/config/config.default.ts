@@ -114,19 +114,17 @@ export const config = {
   maintenance: false,
   cookieVersion: 'v1',
 
-  /******************************************************************************
-   * FEATURE FLAGS
-   ******************************************************************************/
-
   has: {
     pwa: true as boolean,
     selfRegistration: false as boolean,
     waitlist: false as boolean,
     uploadEnabled: true as boolean,
-    /** Customer support chat widget (Gleap). Unrelated to the AI module. */
     chatSupport: false as boolean,
+  },
+
+  /** Optional modules/services - gate a deployable service and/or route surface (x-feature). */
+  features: {
     yjs: false as boolean,
-    /** AI capability layer: tool registry + model runner + MCP endpoint. */
     ai: false as boolean,
   },
 

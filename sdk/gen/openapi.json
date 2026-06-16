@@ -118,6 +118,13 @@
         "description": "Tool registration metadata for AI and MCP integrations",
         "required": false,
         "kind": "metadata"
+      },
+      {
+        "key": "x-feature",
+        "id": "x-feature",
+        "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
+        "required": false,
+        "kind": "metadata"
       }
     ]
   },
@@ -4788,6 +4795,12 @@
                               }
                             }
                           },
+                          "deleteOverflow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
                           "entitySeqs": {
                             "type": "object",
                             "additionalProperties": {
@@ -4994,6 +5007,12 @@
                               "items": {
                                 "type": "string"
                               }
+                            }
+                          },
+                          "deleteOverflow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "entitySeqs": {
@@ -10884,6 +10903,7 @@
             "cookieAuth": []
           }
         ],
+        "x-feature": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
@@ -10965,6 +10985,7 @@
             "cookieAuth": []
           }
         ],
+        "x-feature": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "verifyYjsEntity",
         "summary": "Verify Yjs entity access",
@@ -11026,6 +11047,79 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/mcp": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "x-feature": "ai",
+        "operationId": "handleMcp",
+        "tags": ["ai", "cella"],
+        "summary": "MCP endpoint",
+        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }

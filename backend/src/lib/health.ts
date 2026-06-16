@@ -98,12 +98,12 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
     components.cdc = { ...buildCdcComponent(), label: 'CDC' };
 
     const workerChecks = await Promise.all([
-      appConfig.has.yjs
+      appConfig.features.yjs
         ? probeWorker(workerUrls.yjs).then(
             (result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const,
           )
         : Promise.resolve(null),
-      appConfig.has.ai
+      appConfig.features.ai
         ? probeWorker(workerUrls.ai).then(
             (result) => ['ai', { ...mapProbeComponent(result, extractAiDetails), label: 'AI' }] as const,
           )

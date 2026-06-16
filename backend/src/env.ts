@@ -89,7 +89,7 @@ export const env = createEnv({
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
 
     SCW_AI_API_KEY: z.string().optional(),
-    AI_SECRET: z.string().min(16).optional(),
+
     MODE: z.enum(['api', 'ai-worker', 'migrate']).default('api'),
 
     // When true, the API server applies pending migrations + ensures DB roles

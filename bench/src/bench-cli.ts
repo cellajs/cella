@@ -31,18 +31,18 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import pc from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
-import { BACKEND_PORT, BASE_URL, createBenchProcessEnv, PG } from './config';
+import { BACKEND_PORT, BASE_URL, createBenchProcessEnv, DB_URL } from './config';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
 
 // Only services the app actually runs are health-checked. yjs and ai are
-// feature-flagged via appConfig.has, so they are skipped unless enabled.
+// feature-flagged via appConfig.features, so they are skipped unless enabled.
 const SERVICES = {
   backend: `${BASE_URL}/health`,
   cdc: `http://localhost:${BACKEND_PORT + 1}/health`,
-  ...(appConfig.has.yjs ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
-  ...(appConfig.has.ai ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
+  ...(appConfig.features.yjs ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
+  ...(appConfig.features.ai ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
 } as const;
 
 // ── CLI args ───────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 // ── Preflight ──────────────────────────────────────────────────────────────
 
 async function isPostgresReady(): Promise<boolean> {
-  const pool = new pg.Pool({ ...PG, connectionTimeoutMillis: 2000 });
+  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
   try {
     await pool.query('SELECT 1');
     return true;
@@ -139,10 +139,9 @@ async function assertInfrastructureReady(): Promise<void> {
 
   if (!(await isPostgresReady())) {
     spinner.fail('postgres is not reachable');
+    const { hostname, port } = new URL(DB_URL);
     console.error(
-      pc.dim(
-        `  Expected Postgres at ${PG.host}:${PG.port}. Start it with \`pnpm docker\` and seed with \`pnpm seed\`.`,
-      ),
+      pc.dim(`  Expected Postgres at ${hostname}:${port}. Start it with \`pnpm docker\` and seed with \`pnpm seed\`.`),
     );
     process.exit(1);
   }
@@ -166,7 +165,7 @@ async function assertInfrastructureReady(): Promise<void> {
 // ── Rate limits ────────────────────────────────────────────────────────────
 
 async function clearRateLimits(): Promise<void> {
-  const pool = new pg.Pool(PG);
+  const pool = new pg.Pool({ connectionString: DB_URL });
   try {
     await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%'");
   } catch {

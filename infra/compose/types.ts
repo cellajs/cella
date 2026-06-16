@@ -62,7 +62,7 @@ export interface ServiceMeta {
   /** Service whose image this one reuses (ai reuses backend); no own image built. */
   reusesImageOf?: string
   /**
-   * `appConfig.has.*` flag that gates this service per deploy. Absent = always
+   * `appConfig.features.*` flag that gates this service per deploy. Absent = always
    * deployed; set = only deployed when that feature is on (yjs, ai).
    */
   featureFlag?: string
@@ -168,7 +168,7 @@ export interface AppServiceConfig {
    */
   reusesImageOf?: string
   /**
-   * `appConfig.has.*` flag that gates this service per deploy. Omit to always
+   * `appConfig.features.*` flag that gates this service per deploy. Omit to always
    * deploy; set to deploy only when the app enables that feature. The block
    * stays in the registry either way — this is the runtime gate, not removal.
    */

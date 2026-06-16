@@ -70,7 +70,7 @@ export default defineServices({
     lbRoute: 'host',
     // WebSocket service — LB keeps connections open for up to an hour.
     lbWebsockets: true,
-    // Only deployed when the app enables collaborative editing (appConfig.has.yjs).
+    // Only deployed when the app enables collaborative editing (appConfig.features.yjs).
     featureFlag: 'yjs',
     instanceType: 'DEV1-S',
     env: {
@@ -88,7 +88,7 @@ export default defineServices({
     // Reuses the backend image at the same SHA; CI builds no separate ai image.
     reusesImageOf: 'backend',
     lbRoute: 'host',
-    // Only deployed when the app enables the AI worker (appConfig.has.ai).
+    // Only deployed when the app enables the AI worker (appConfig.features.ai).
     featureFlag: 'ai',
     instanceType: 'DEV1-S',
     env: {

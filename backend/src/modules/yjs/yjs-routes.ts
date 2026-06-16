@@ -29,6 +29,7 @@ const yjsRoutes = {
   getYjsToken: createXRoute({
     method: 'get',
     path: '/token',
+    'x-feature': 'yjs',
     xGuard: [authGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['yjs', 'cella'],
@@ -50,6 +51,7 @@ const yjsRoutes = {
   verifyEntity: createXRoute({
     method: 'get',
     path: '/verify-entity',
+    'x-feature': 'yjs',
     xGuard: [],
     tags: ['yjs', 'cella'],
     operationId: 'verifyYjsEntity',

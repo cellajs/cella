@@ -1,5 +1,8 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { XMiddlewareHandler } from '#/core/extensions';
+import type { MiddlewareHandler } from 'hono';
+import { appConfig } from 'shared';
+import { AppError } from '#/core/error';
+import type { FeatureFlag, XMiddlewareHandler } from '#/core/extensions';
 import {
   collectExtensionMiddleware,
   createSpecificationExtensions,
@@ -8,6 +11,18 @@ import {
   type XMiddlewareOptions,
 } from '#/core/extensions';
 import { publicGuard } from '#/middlewares/guard/public-guard';
+
+/**
+ * Build a feature-gate middleware for a route declaring `x-feature`.
+ * Runs before guards so a disabled feature 404s without exposing auth behavior.
+ * The flag is read per-request, so test config overrides are respected.
+ */
+const createFeatureGate =
+  (feature: FeatureFlag): MiddlewareHandler =>
+  async (_ctx, next) => {
+    if (!appConfig.features[feature]) throw new AppError(404, 'route_not_found', 'warn');
+    await next();
+  };
 
 type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
 
@@ -32,7 +47,11 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
       ? config.middleware
       : [config.middleware]
     : [];
-  const middleware = [...extensionMiddleware, ...existing];
+
+  // Feature gate (from declarative `x-feature`) runs first so disabled features 404 before guards.
+  const feature = config['x-feature'] as FeatureFlag | undefined;
+  const featureGate = feature ? [createFeatureGate(feature)] : [];
+  const middleware = [...featureGate, ...extensionMiddleware, ...existing];
 
   // Get specification extensions (x-*) from middleware
   const xMiddlewares = middleware.filter(

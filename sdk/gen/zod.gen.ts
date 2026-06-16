@@ -807,6 +807,7 @@ export const zPostPublicCatchupResponse = z.object({
     z.string(),
     z.object({
       deletedByType: z.record(z.string(), z.array(z.string())),
+      deleteOverflow: z.array(z.string()).optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
       childContextChanges: z
@@ -847,6 +848,7 @@ export const zPostAppCatchupResponse = z.object({
     z.string(),
     z.object({
       deletedByType: z.record(z.string(), z.array(z.string())),
+      deleteOverflow: z.array(z.string()).optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
       childContextChanges: z
@@ -1803,4 +1805,11 @@ export const zVerifyYjsEntityQuery = z.object({
  */
 export const zVerifyYjsEntityResponse = z.object({
   allowed: z.boolean(),
+});
+
+export const zHandleMcpBody = z.unknown();
+
+export const zHandleMcpPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
 });

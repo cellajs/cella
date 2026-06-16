@@ -1,10 +1,34 @@
 # Cella sync engine
 
-> **Architecture context**: Cella has a dynamic, hierarchical entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+> The [ARCHITECTURE.md](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
-## OpenAPI & React Query
+## TL;DR
 
-OpenAPI + React Query are the foundational layers throughout the codebase. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-pull_ sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
+```text
+User edits Task.title 
+        ▼
+Optimistic state applied
+        ▼
+PATCH /tasks/123
+        ▼
+Postgres commits
+        ▼
+CDC Worker observes WAL
+        ▼
+Assign seq = 42
+        ▼
+Emit notification
+        ▼
+SSE reaches browsers
+        ▼
+React Query fetches task
+        ▼
+UI updates
+```
+
+## Postgres, OpenAPI & React Query
+
+Postgres + OpenAPI + React Query are the foundational primitives. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-fetch sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
 
 | Entity type | Features | Example |
 |------|--------------|---------|
@@ -15,9 +39,9 @@ OpenAPI + React Query are the foundational layers throughout the codebase. This 
 
 ## Why a built-in sync engine?
 
-External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. 
+External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. Especially if you **do not want** to push all your app data through a sync engine.
 
-Lastly, internalizing the sync engine means you can make unique combos: think audit trail , API event bus, centralized counters and unified tracing.
+Hidden opportunities! We found out that internalizing the sync engine means you can make amazing combos: think audit trail, API event bus, unified count logic, schema evolution tolerance and unified tracing.
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
@@ -51,11 +75,6 @@ Postgres → CDC Worker → API Server → SSE → Client
 ---
 
 ## Core concepts
-
-### Philosophy
-- **Extend OpenAPI** - All features work through existing OpenAPI infrastructure
-- **React Query base** - Build on top of, not around, TanStack Query
-- **Progressive enhancement** - REST for basic stuff; for daily-use stuff you upgrade module into → offline → realtime
 
 ### Architecture overview
 - **Logical replication** - CDC Worker receives WAL changes, persists activities to `activitiesTable`, sends messages to API
@@ -219,7 +238,7 @@ Unauthenticated stream for public entities (e.g., pages).
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | No authentication required |
-| **Scope** | All public entity types (from `hierarchy.publicReadTypes`) |
+| **Scope** | All public entity types (from `hierarchy.publicStreamTypes`) |
 | **Cursor storage** | In-memory only (module-level variable) |
 
 **How catchup works:**

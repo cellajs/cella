@@ -9,6 +9,28 @@ import { propagateEmbeddings } from './propagation';
 import { getTenantIdForOrg } from './sync-priority';
 
 /**
+ * Above this many deletes for a single entity type, invalidate the whole list once
+ * instead of removing entities one id at a time (cheaper than N immutable cache rewrites).
+ * Mirrors the server-side enumeration cap, which signals larger bursts via `deleteOverflow`.
+ */
+const DELETE_INVALIDATE_THRESHOLD = 100;
+
+/**
+ * Remove deleted entities of one type from an org's caches. Above DELETE_INVALIDATE_THRESHOLD
+ * ids, invalidate the whole org list once instead of N per-id immutable cache rewrites.
+ */
+function removeDeletedFromOrg(entityType: string, ids: string[], organizationId: string): void {
+  if (ids.length === 0) return;
+  if (ids.length > DELETE_INVALIDATE_THRESHOLD) {
+    if (hasEntityQueryKeys(entityType)) {
+      cacheOps.invalidateEntityListForOrg(getEntityQueryKeys(entityType), organizationId, 'all');
+    }
+    return;
+  }
+  for (const entityId of ids) cacheOps.removeEntity(entityType, entityId, organizationId);
+}
+
+/**
  * Process app stream catchup response. For each org: remove deleted entities, store org-level
  * and child-context entitySeqs, and use server/client seq deltas to fetch only changed entities
  * via `seqCursor` (falling back to list invalidation on first session or when delta is too large).
@@ -47,14 +69,24 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   console.debug(`[CatchupProcessor] App catchup: ${scopes.length} orgs`);
 
   for (const organizationId of scopes) {
-    const { entitySeqs, deletedByType, childContextChanges } = changes[organizationId];
+    const { entitySeqs, deletedByType, deleteOverflow, childContextChanges } = changes[organizationId];
     // Resolve tenantId: prefer sync store (persisted, no cache dependency), fall back to query cache
     const tenantId = syncStore.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
 
-    // Step 1: Remove deleted entities from cache (grouped by entityType for targeted removal)
+    // Detect membership change via the s:membership seq counter (set BEFORE Step 2 overwrites it).
+    // Used to scope member-list invalidation to orgs that actually had a membership change.
+    const serverMembershipSeq = entitySeqs?.membership;
+    const membershipChanged =
+      serverMembershipSeq !== undefined && serverMembershipSeq !== syncStore.getOrgSeq(organizationId, 'membership');
+
+    // Step 1: Remove deleted entities from cache. Above a threshold (or when the server flags
+    // overflow), invalidate the whole list once instead of removing entities one id at a time.
     for (const [entityType, ids] of Object.entries(deletedByType)) {
-      for (const entityId of ids) {
-        cacheOps.removeEntity(entityType, entityId, organizationId);
+      removeDeletedFromOrg(entityType, ids, organizationId);
+    }
+    for (const entityType of deleteOverflow ?? []) {
+      if (hasEntityQueryKeys(entityType)) {
+        cacheOps.invalidateEntityListForOrg(getEntityQueryKeys(entityType), organizationId, 'all');
       }
     }
 
@@ -159,8 +191,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       }
     }
 
-    // Step 6: Invalidate org-scoped member queries (per-org)
-    membershipOps.invalidateMemberQueries(organizationId);
+    // Step 6: Invalidate org-scoped member queries only when membership actually changed
+    // (detected via the s:membership seq counter), so entity-only changes don't refetch member lists.
+    if (membershipChanged) membershipOps.invalidateMemberQueries(organizationId);
   }
 
   // Step 7: Refresh memberships — fetches getMyMemberships, invalidates context entity lists,
@@ -277,8 +310,9 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse, 
   console.debug(`[CatchupProcessor] Public catchup: ${scopes.length} entity types`);
 
   for (const entityType of scopes) {
-    const { deletedByType, entitySeqs } = changes[entityType];
+    const { deletedByType, deleteOverflow, entitySeqs } = changes[entityType];
     const deletedIds = deletedByType[entityType] ?? [];
+    const overflow = (deleteOverflow ?? []).includes(entityType);
     const serverSeq = entitySeqs?.[entityType] ?? 0;
     const clientSeq = syncStore.getPublicSeq(entityType);
     const delta = serverSeq - clientSeq;
@@ -286,9 +320,14 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse, 
     if (!hasEntityQueryKeys(entityType)) continue;
     const keys = getEntityQueryKeys(entityType);
 
-    // Phase 1: Remove deleted entities from cache
-    for (const entityId of deletedIds) {
-      cacheOps.removeEntity(entityType, entityId);
+    // Phase 1: Remove deleted entities from cache. Above a threshold (or on server-flagged
+    // overflow), invalidate the whole list once instead of per-id removal.
+    if (overflow || deletedIds.length > DELETE_INVALIDATE_THRESHOLD) {
+      cacheOps.invalidateEntityList(keys, 'all');
+    } else {
+      for (const entityId of deletedIds) {
+        cacheOps.removeEntity(entityType, entityId);
+      }
     }
 
     // Phase 2: Determine if creates/updates happened

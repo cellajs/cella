@@ -106,8 +106,23 @@ export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: strin
 
 // ── Activity queries ─────────────────────────────────────────────────────
 
-/** Scan activities for deletes and membership changes after a cursor (app stream). */
-export const findDeleteAndMembershipActivities = async (
+/**
+ * Max delete rows to enumerate per catchup before falling back to list invalidation.
+ * The delete scan requests `CAP + 1` rows so the caller can detect overflow (more deletes
+ * than we are willing to enumerate) and tell the client to invalidate the whole list instead
+ * of removing entities one id at a time.
+ */
+export const DELETE_ENUMERATE_CAP = 200;
+
+/**
+ * Scan product-entity delete activities after a cursor (app stream).
+ *
+ * Capped at `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow (more deletes than we
+ * enumerate) and fall back to client-side list invalidation. Membership changes are intentionally
+ * NOT scanned here — they are detected via the `s:membership` seq counter, so membership churn can
+ * never consume the delete budget.
+ */
+export const findDeleteActivities = async (
   { var: { db } }: DbContext,
   cursor: string,
   organizationIds: string[],
@@ -115,35 +130,37 @@ export const findDeleteAndMembershipActivities = async (
 ) => {
   return db
     .select({
+      id: activitiesTable.id,
       organizationId: activitiesTable.organizationId,
       subjectId: activitiesTable.subjectId,
       entityType: activitiesTable.entityType,
-      resourceType: activitiesTable.resourceType,
     })
     .from(activitiesTable)
     .where(
       and(
         gt(activitiesTable.id, cursor),
         inArray(activitiesTable.organizationId, organizationIds),
-        or(
-          // Product entity deletes
-          and(inArray(activitiesTable.entityType, productEntityTypes), sql`${activitiesTable.action} = 'delete'`),
-          // Any membership activity (create/update/delete)
-          eq(activitiesTable.resourceType, 'membership'),
-        ),
+        inArray(activitiesTable.entityType, productEntityTypes),
+        sql`${activitiesTable.action} = 'delete'`,
       ),
     )
-    .limit(1000);
+    .orderBy(activitiesTable.id)
+    .limit(DELETE_ENUMERATE_CAP + 1);
 };
 
-/** Scan activities for public entity deletes after a cursor. */
+/**
+ * Scan public entity deletes after a cursor.
+ *
+ * Capped at `DELETE_ENUMERATE_CAP + 1` for overflow detection (same contract as
+ * {@link findDeleteActivities}).
+ */
 export const findPublicDeleteActivities = async (
   { var: { db } }: DbContext,
   cursor: string,
   publicTypes: SharedEntityType[],
 ) => {
   return db
-    .select({ entityType: activitiesTable.entityType, subjectId: activitiesTable.subjectId })
+    .select({ id: activitiesTable.id, entityType: activitiesTable.entityType, subjectId: activitiesTable.subjectId })
     .from(activitiesTable)
     .where(
       and(
@@ -152,7 +169,8 @@ export const findPublicDeleteActivities = async (
         gt(activitiesTable.id, cursor),
       ),
     )
-    .limit(1000);
+    .orderBy(activitiesTable.id)
+    .limit(DELETE_ENUMERATE_CAP + 1);
 };
 
 /** Get the latest activity ID relevant to a user's organizations. */
@@ -170,7 +188,7 @@ export const findLatestUserActivityId = async (
         and(inArray(activitiesTable.entityType, entityTypes), inArray(activitiesTable.organizationId, organizationIds)),
       ),
     )
-    .orderBy(desc(activitiesTable.createdAt))
+    .orderBy(desc(activitiesTable.id))
     .limit(1);
 
   return result[0]?.id ?? null;

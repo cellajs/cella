@@ -2315,6 +2315,7 @@ export type PostPublicCatchupResponses = {
         deletedByType: {
           [key: string]: Array<string>;
         };
+        deleteOverflow?: Array<string>;
         entitySeqs?: {
           [key: string]: number;
         };
@@ -2467,6 +2468,7 @@ export type PostAppCatchupResponses = {
         deletedByType: {
           [key: string]: Array<string>;
         };
+        deleteOverflow?: Array<string>;
         entitySeqs?: {
           [key: string]: number;
         };
@@ -5084,3 +5086,49 @@ export type VerifyYjsEntityResponses = {
 };
 
 export type VerifyYjsEntityResponse = VerifyYjsEntityResponses[keyof VerifyYjsEntityResponses];
+
+export type HandleMcpData = {
+  body: unknown;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/mcp';
+};
+
+export type HandleMcpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
+
+export type HandleMcpResponses = {
+  /**
+   * JSON-RPC response
+   */
+  200: unknown;
+};

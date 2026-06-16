@@ -21,11 +21,18 @@ function stripExcludedColumns(rowData: CdcRowData): CdcRowData {
  * Generate a deterministic activity ID from LSN for idempotency.
  * Same LSN will always produce the same ID, preventing duplicates on replay.
  *
+ * A Postgres LSN is a 64-bit value printed as two unpadded 32-bit hex segments
+ * (e.g. "0/16B3748"). We zero-pad each segment to 8 hex digits so the resulting id
+ * is fixed-width (17 chars) and sorts lexicographically in true commit order. This
+ * lets cursor scans use plain `id > cursor` string comparison without numeric parsing.
+ *
  * @param lsn - Log Sequence Number from PostgreSQL WAL (e.g., "0/16B3748")
- * @returns LSN with slash replaced by dash for URL/ID safety (e.g., "0-16B3748")
+ * @returns Zero-padded, dash-joined LSN (e.g., "00000000-016B3748")
  */
 export function generateActivityId(lsn: string): string {
-  return lsn.replace('/', '-');
+  const [hi, lo] = lsn.split('/');
+  if (lo === undefined) return lsn; // not in LSN format — return unchanged
+  return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
 }
 
 /**

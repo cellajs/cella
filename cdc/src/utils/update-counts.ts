@@ -22,6 +22,9 @@ export interface CountDelta {
  *   - membership delete → -1 role, -1 total
  *   - membership update (role change) → -1 old role, +1 new role
  *
+ * Membership seq (s:membership on the org row):
+ *   - +1 on every membership / inactive_membership activity (change signal for catchup screening)
+ *
  * Inactive membership counts (m:pending):
  *   - create with rejectedAt=null → +1 pending
  *   - delete with rejectedAt=null → -1 pending
@@ -42,13 +45,21 @@ export function getCountDeltas(
   // Active memberships: track role counts + total
   if (tableMeta.kind === 'resource' && tableMeta.type === 'membership') {
     const delta = getMembershipDelta(action, newRow as MembershipModel, oldRow as MembershipModel | null);
-    return delta ? [delta] : [];
+    const deltas = delta ? [delta] : [];
+    // Bump the org-level membership seq on every membership activity so catchup can detect
+    // membership changes via O(1) counter screening (no activity scan needed).
+    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
+    return deltas;
   }
 
   // Inactive memberships: track pending count
   if (tableMeta.kind === 'resource' && tableMeta.type === 'inactive_membership') {
     const delta = getInactiveMembershipDelta(action, newRow as InactiveMembershipModel, oldRow as InactiveMembershipModel | null);
-    return delta ? [delta] : [];
+    const deltas = delta ? [delta] : [];
+    // Pending invitations appear in member lists too — bump the membership seq so the client
+    // refreshes them on catchup.
+    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
+    return deltas;
   }
 
   // Entities: track entity type counts on org + parent context

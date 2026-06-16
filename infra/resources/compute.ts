@@ -308,7 +308,7 @@ function buildComposeEnv(svc: ServiceDefinition): Record<string, () => pulumi.In
 // (`dedicated-vm`, the default). `placement: 'shared-workers'` is reserved for
 // the multi-fork "N worker containers on one shared VM" model and is not yet
 // implemented here — guard loudly rather than silently dropping a service.
-const services: ServiceConfig[] = enabledServices(appConfig.has).map((svc) => {
+const services: ServiceConfig[] = enabledServices(appConfig.features).map((svc) => {
   const placement = svc.placement ?? 'dedicated-vm'
   if (placement !== 'dedicated-vm') {
     throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)

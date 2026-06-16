@@ -54,8 +54,8 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
     // entries on these so a fork with the feature disabled (e.g. the cella
     // template itself) doesn't try to build/health-check a service whose
     // infra (DNS/LB/cert) is intentionally never provisioned.
-    has_yjs: String(appConfig.has.yjs),
-    has_ai: String(appConfig.has.ai),
+    has_yjs: String(appConfig.features.yjs),
+    has_ai: String(appConfig.features.ai),
   }
 }
 

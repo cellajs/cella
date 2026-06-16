@@ -15,7 +15,7 @@ export async function startAiWorker(): Promise<void> {
   const hasApiKey = !!env.SCW_AI_API_KEY;
 
   // Stop if ai is disabled via config
-  if (!appConfig.has.ai) {
+  if (!appConfig.features.ai) {
     logEvent('info', 'AI server disabled by appConfig');
     return;
   }

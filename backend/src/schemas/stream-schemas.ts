@@ -105,6 +105,12 @@ const childContextChangeSummarySchema = z.object({
  */
 export const catchupChangeSummarySchema = z.object({
   deletedByType: z.record(z.string(), z.array(z.string())),
+  /**
+   * Entity types whose deletes exceeded the server enumeration cap. The client should
+   * invalidate the whole list for these types (one refetch) instead of removing entities
+   * one id at a time. Deletes for these types are NOT present in `deletedByType`.
+   */
+  deleteOverflow: z.array(z.string()).optional(),
   /** Org-level entity seqs (change signal for quick screening). Managed by CDC worker. */
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   /** Org-level per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */

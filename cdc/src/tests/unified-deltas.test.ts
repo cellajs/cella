@@ -147,7 +147,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.seqContextKey).toBeNull();
     expect(plan.entityStamp).toBeNull();
     expect(plan.deltasByContextKey.size).toBe(1);
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 's:membership': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -159,7 +159,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 's:membership': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -172,7 +172,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 's:membership': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -184,7 +184,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': 1, 's:membership': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -197,7 +197,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
   });
 
   it('attachment with no organizationId: seq still computed, no count deltas', () => {

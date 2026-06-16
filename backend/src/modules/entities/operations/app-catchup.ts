@@ -6,7 +6,9 @@
  *   2. Sub-context: for changed orgs, drill into sub-context counters (precision)
  *
  * Entity seqs (from CDC worker) detect creates/updates.
- * Deletes and membership changes are always scanned from the activities table (cursor-bounded, watertight).
+ * Deletes are scanned from the activities table (cursor-bounded, capped — overflow falls back
+ * to client-side list invalidation). Membership changes are detected via the `s:membership` seq
+ * counter (O(1) screening), so membership churn never competes with the delete scan budget.
  *
  * When cursor is null (fresh connect), baselines are returned and membership
  * queries are always invalidated on the client side.
@@ -17,8 +19,9 @@ import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
 import {
+  DELETE_ENUMERATE_CAP,
   findContextCountersByKeys,
-  findDeleteAndMembershipActivities,
+  findDeleteActivities,
   findLatestUserActivityId,
 } from '#/modules/entities/entities-queries';
 import { collectSubContextIds } from '#/modules/entities/helpers/collect-sub-context-ids';
@@ -84,23 +87,32 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 3: Scan activities for deletes AND membership changes (cursor-bounded, watertight)
+  // Step 3: Scan product-entity deletes (cursor-bounded, capped). On overflow we flag the
+  // affected entity types for whole-list invalidation and leave the cursor unchanged, so the
+  // next catchup re-scans the same window (idempotent — invalidation is lossless on repeat).
+  // Membership changes are detected via the `s:membership` seq counter (screened in Step 2).
+  let deleteOverflow = false;
   if (cursor) {
-    const activityResults = await findDeleteAndMembershipActivities(dbCtx, cursor, organizationIdArray, [
+    const deleteRows = await findDeleteActivities(dbCtx, cursor, organizationIdArray, [
       ...appConfig.productEntityTypes,
     ]);
 
-    for (const row of activityResults) {
+    deleteOverflow = deleteRows.length > DELETE_ENUMERATE_CAP;
+    const rows = deleteOverflow ? deleteRows.slice(0, DELETE_ENUMERATE_CAP) : deleteRows;
+
+    for (const row of rows) {
       if (!row.organizationId || !changes[row.organizationId]) continue;
-
-      // Membership activity — org entry already exists, client will invalidate membership queries
-      if (row.resourceType === 'membership') continue;
-
-      // Product entity delete
       if (!row.subjectId || !row.entityType) continue;
+
       const scope = changes[row.organizationId];
-      if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
-      scope.deletedByType[row.entityType].push(row.subjectId);
+      if (deleteOverflow) {
+        // Too many deletes — flag the type for whole-list invalidation instead of per-id removal
+        if (!scope.deleteOverflow) scope.deleteOverflow = [];
+        if (!scope.deleteOverflow.includes(row.entityType)) scope.deleteOverflow.push(row.entityType);
+      } else {
+        if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
+        scope.deletedByType[row.entityType].push(row.subjectId);
+      }
     }
   }
 
@@ -111,6 +123,7 @@ export async function appCatchupOp(
   if (seqs) {
     for (const [orgId, scope] of Object.entries(changes)) {
       const hasDeletes = Object.keys(scope.deletedByType).length > 0;
+      const hasOverflow = (scope.deleteOverflow?.length ?? 0) > 0;
       const hasPropagation = scope.propagation && scope.propagation.length > 0;
       const seqsMatch =
         !scope.entitySeqs ||
@@ -118,15 +131,17 @@ export async function appCatchupOp(
           return seqs[`${orgId}:s:${entityType}`] === serverVal;
         });
 
-      if (seqsMatch && !hasDeletes && !hasPropagation) {
+      if (seqsMatch && !hasDeletes && !hasOverflow && !hasPropagation) {
         delete changes[orgId];
       }
     }
   }
 
-  // Step 6: Advance cursor (skip query if nothing changed)
+  // Step 6: Advance cursor. On delete overflow, keep the cursor unchanged so the next catchup
+  // re-scans the same window — activity ids are LSN-derived and not lexicographically sortable,
+  // so we cannot safely resume from a "last id"; re-scanning + invalidation is idempotent.
   let newCursor: string | null = cursor ?? null;
-  if (!cursor || Object.keys(changes).length > 0) {
+  if (!deleteOverflow && (!cursor || Object.keys(changes).length > 0)) {
     newCursor =
       (await findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
         ...appConfig.productEntityTypes,
