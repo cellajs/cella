@@ -16,7 +16,6 @@ export default defineConfig({
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
     fileLinkMode: 'file',
-    // upstreamLocalPath: '../cella',
   },
 
   // Top-down interaction with forks.

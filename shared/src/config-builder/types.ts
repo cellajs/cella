@@ -168,7 +168,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
-  entityEmbeddings: readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[];
+  entityEmbeddings: readonly {
+    readonly embeddedEntity: T['productEntityTypes'][number] & string;
+    readonly hostEntity: T['productEntityTypes'][number] & string;
+    readonly hostColumn: string;
+  }[];
   menuStructure: readonly MenuStructureItem[];
   defaultRestrictions: {
     quotas: Record<string, number>;

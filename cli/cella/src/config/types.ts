@@ -75,15 +75,9 @@ export interface SyncSettings {
    * How to link files in CLI output.
    * - 'commit' (default): Link to the commit that changed the file on GitHub.
    * - 'file': Link to the file in the repo at the upstream branch on GitHub.
-   * - 'local': Open the file in VS Code from a local upstream clone (requires upstreamLocalPath).
+   * - 'local': Open the upstream file in VS Code from the auto-managed upstream view worktree.
    */
   fileLinkMode?: 'commit' | 'file' | 'local';
-
-  /**
-   * Path to a local clone of the upstream repo for 'local' linkStyle.
-   * Example: '../cella' or '/Users/you/Sites/cella'
-   */
-  upstreamLocalPath?: string;
 }
 
 /**
@@ -278,6 +272,14 @@ export interface MergeResult {
     message: string;
     date: string;
   };
+  /** Commits included in this sync range (oldest-first when rendered) */
+  upstreamCommits?: Array<{
+    hash: string;
+    message: string;
+    date: string;
+  }>;
+  /** Files that were auto-merged by git (diverged without remaining conflicts) */
+  autoMergedFiles?: string[];
   /** Whether the sync was auto-committed (squash strategy with no conflicts) */
   autoCommitted?: boolean;
 }

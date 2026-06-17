@@ -448,7 +448,7 @@ export type Options<
  *
  * Returns auth health status including whether the client IP is rate-limited for email enumeration protection.
  *
- * **GET /auth/health** ·· [getAuthHealth](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/health) ·· [getAuthHealth](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/health) ·· _auth_cella_
+ * **GET /auth/health** ·· [getAuthHealth](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/health) ·· [getAuthHealth](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/health) ·· _auth_cella_
  *
  * @param {getAuthHealthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -476,7 +476,7 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
  *
  * Checks if a user with the specified email address exists in the system.
  *
- * **POST /auth/check-email** ·· [checkEmail](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email) ·· [checkEmail](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/check-email) ·· _auth_cella_
+ * **POST /auth/check-email** ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email) ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/check-email) ·· _auth_cella_
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -509,7 +509,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
  *
  * Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
  *
- * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· [invokeToken](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/invoke-token/{type}/{token}) ·· _auth_cella_
+ * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/invoke-token/{type}/{token}) ·· _auth_cella_
  *
  * @param {invokeTokenData} options
  * @param {enum} options.path.type - `enum`
@@ -538,7 +538,7 @@ export const invokeToken = <ThrowOnError extends boolean = true>(
  *
  * Get basic token data from single-use token session, It returns basic data if the session is still valid.
  *
- * **GET /auth/token/{type}/{id}** ·· [getTokenData](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· [getTokenData](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/token/{type}/{id}) ·· _auth_cella_
+ * **GET /auth/token/{type}/{id}** ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/token/{type}/{id}) ·· [getTokenData](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/token/{type}/{id}) ·· _auth_cella_
  *
  * @param {getTokenDataData} options
  * @param {enum} options.path.type - `enum`
@@ -568,7 +568,7 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
  *
  * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  *
- * **GET /auth/impersonation/start** ·· [startImpersonation](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/start) ·· [startImpersonation](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/start) ·· _auth_cella_
+ * **GET /auth/impersonation/start** ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/start) ·· [startImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/start) ·· _auth_cella_
  *
  * @param {startImpersonationData} options
  * @param {string} options.query.targetuserid - `string`
@@ -604,7 +604,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
  *
  * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  *
- * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/stop) ·· [stopImpersonation](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/stop) ·· _auth_cella_
+ * **GET /auth/impersonation/stop** ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/impersonation/stop) ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/impersonation/stop) ·· _auth_cella_
  *
  * @param {stopImpersonationData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -639,7 +639,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
  *
  * Resends an invitation email with token to a new user using the provided email address and token ID.
  *
- * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/resend-invitation) ·· [resendInvitationWithToken](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/resend-invitation) ·· _auth_cella_
+ * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/resend-invitation) ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/resend-invitation) ·· _auth_cella_
  *
  * @param {resendInvitationWithTokenData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -676,7 +676,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
  *
  * Signs out the *current user* and clears the active session.
  *
- * **POST /auth/sign-out** ·· [signOut](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· [signOut](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/sign-out) ·· _auth_cella_
+ * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/sign-out) ·· _auth_cella_
  *
  * @param {signOutData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -704,7 +704,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  *
  * Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.
  *
- * **POST /auth/magic/send** ·· [sendMagicLink](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/send) ·· [sendMagicLink](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/magic/send) ·· _auth_cella_
+ * **POST /auth/magic/send** ·· [sendMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/send) ·· [sendMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/magic/send) ·· _auth_cella_
  *
  * @param {sendMagicLinkData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -737,7 +737,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
  *
- * **POST /auth/totp/generate-key** ·· [generateTotpKey](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/totp/generate-key) ·· [generateTotpKey](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/totp/generate-key) ·· _auth_cella_
+ * **POST /auth/totp/generate-key** ·· [generateTotpKey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp/generate-key) ·· [generateTotpKey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/totp/generate-key) ·· _auth_cella_
  *
  * @param {generateTotpKeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -772,7 +772,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
  *
  * Delete TOTP credential for current user.
  *
- * **DELETE /auth/totp** ·· [deleteTotp](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/DELETE/auth/totp) ·· [deleteTotp](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/auth/totp) ·· _auth_cella_
+ * **DELETE /auth/totp** ·· [deleteTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/totp) ·· [deleteTotp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/auth/totp) ·· _auth_cella_
  *
  * @param {deleteTotpData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -807,7 +807,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
  *
  * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.
  *
- * **POST /auth/totp** ·· [createTotp](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/totp) ·· [createTotp](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/totp) ·· _auth_cella_
+ * **POST /auth/totp** ·· [createTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp) ·· [createTotp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/totp) ·· _auth_cella_
  *
  * @param {createTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -846,7 +846,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
  *
  * Validates the TOTP code and completes TOTP based authentication.
  *
- * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/totp-verification) ·· [signInWithTotp](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/totp-verification) ·· _auth_cella_
+ * **POST /auth/totp-verification** ·· [signInWithTotp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/totp-verification) ·· [signInWithTotp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/totp-verification) ·· _auth_cella_
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
@@ -879,7 +879,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  *
  * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
- * **POST /auth/passkey** ·· [createPasskey](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey) ·· [createPasskey](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey) ·· _auth_cella_
+ * **POST /auth/passkey** ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey) ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey) ·· _auth_cella_
  *
  * @param {createPasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
@@ -921,7 +921,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
  *
  * Delete a passkey by id from the *current user*.
  *
- * **DELETE /auth/passkey/{id}** ·· [deletePasskey](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/DELETE/auth/passkey/{id}) ·· [deletePasskey](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/auth/passkey/{id}) ·· _auth_cella_
+ * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/passkey/{id}) ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/auth/passkey/{id}) ·· _auth_cella_
  *
  * @param {deletePasskeyData} options
  * @param {string} options.path.id - `string`
@@ -957,7 +957,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
- * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey/generate-challenge) ·· [generatePasskeyChallenge](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey/generate-challenge) ·· _auth_cella_
+ * **POST /auth/passkey/generate-challenge** ·· [generatePasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey/generate-challenge) ·· [generatePasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey/generate-challenge) ·· _auth_cella_
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum=} options.body.type - `enum` (optional)
@@ -996,7 +996,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  *
  * Validates the signed challenge and completes passkey based authentication.
  *
- * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey-verification) ·· [signInWithPasskey](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey-verification) ·· _auth_cella_
+ * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey-verification) ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey-verification) ·· _auth_cella_
  *
  * @param {signInWithPasskeyData} options
  * @param {string=} options.body.credentialId - `string` (optional)
@@ -1034,7 +1034,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/github** ·· [github](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/github) ·· [github](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/github) ·· _auth_cella_
+ * **GET /auth/github** ·· [github](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github) ·· [github](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/github) ·· _auth_cella_
  *
  * @param {githubData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1063,7 +1063,7 @@ export const github = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/google** ·· [google](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/google) ·· [google](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/google) ·· _auth_cella_
+ * **GET /auth/google** ·· [google](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google) ·· [google](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/google) ·· _auth_cella_
  *
  * @param {googleData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1092,7 +1092,7 @@ export const google = <ThrowOnError extends boolean = true>(
  *
  * Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.
  *
- * **GET /auth/microsoft** ·· [microsoft](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft) ·· [microsoft](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/microsoft) ·· _auth_cella_
+ * **GET /auth/microsoft** ·· [microsoft](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft) ·· [microsoft](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/microsoft) ·· _auth_cella_
  *
  * @param {microsoftData} options
  * @param {enum=} options.query.type - `enum` (optional)
@@ -1121,7 +1121,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/github/callback** ·· [githubCallback](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/github/callback) ·· [githubCallback](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/github/callback) ·· _auth_cella_
+ * **GET /auth/github/callback** ·· [githubCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github/callback) ·· [githubCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/github/callback) ·· _auth_cella_
  *
  * @param {githubCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1153,7 +1153,7 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/google/callback** ·· [googleCallback](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/google/callback) ·· [googleCallback](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/google/callback) ·· _auth_cella_
+ * **GET /auth/google/callback** ·· [googleCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google/callback) ·· [googleCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/google/callback) ·· _auth_cella_
  *
  * @param {googleCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1182,7 +1182,7 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/microsoft/callback** ·· [microsoftCallback](http://localhost:3000/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft/callback) ·· [microsoftCallback](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/auth/microsoft/callback) ·· _auth_cella_
+ * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft/callback) ·· [microsoftCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/microsoft/callback) ·· _auth_cella_
  *
  * @param {microsoftCallbackData} options
  * @param {string} options.query.code - `string`
@@ -1211,7 +1211,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /me** ·· [deleteMe](http://localhost:3000/docs/operations?operationTag=me#tag/me/DELETE/me) ·· [deleteMe](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/me) ·· _me_cella_
+ * **DELETE /me** ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me) ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me) ·· _me_cella_
  *
  * @param {deleteMeData} options
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
@@ -1246,7 +1246,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
  *
  * Returns the *current user*.
  *
- * **GET /me** ·· [getMe](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me) ·· [getMe](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me) ·· _me_cella_
+ * **GET /me** ·· [getMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me) ·· [getMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me) ·· _me_cella_
  *
  * @param {getMeData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1281,7 +1281,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  *
  * Updates the *current user*.
  *
- * **PUT /me** ·· [updateMe](http://localhost:3000/docs/operations?operationTag=me#tag/me/PUT/me) ·· [updateMe](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/me) ·· _me_cella_
+ * **PUT /me** ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me) ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me) ·· _me_cella_
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
@@ -1328,7 +1328,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
  *
  * Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.
  *
- * **PUT /me/mfa** ·· [toggleMfa](http://localhost:3000/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· [toggleMfa](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/me/mfa) ·· _me_cella_
+ * **PUT /me/mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me/mfa) ·· _me_cella_
  *
  * @param {toggleMfaData} options
  * @param {object} options.body.passkeyData - `object`
@@ -1370,7 +1370,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
  *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
- * **GET /me/auth** ·· [getMyAuth](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· [getMyAuth](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me/auth) ·· _me_cella_
+ * **GET /me/auth** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/auth) ·· _me_cella_
  *
  * @param {getMyAuthData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1405,7 +1405,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of pending memberships with entity data.
  *
- * **GET /me/invitations** ·· [getMyInvitations](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· [getMyInvitations](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me/invitations) ·· _me_cella_
+ * **GET /me/invitations** ·· [getMyInvitations](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/invitations) ·· [getMyInvitations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/invitations) ·· _me_cella_
  *
  * @param {getMyInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1440,7 +1440,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
  *
- * **DELETE /me/sessions** ·· [deleteMySessions](http://localhost:3000/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [deleteMySessions](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
+ * **DELETE /me/sessions** ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *
  * @param {deleteMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1480,7 +1480,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
  *
  * Removes the *current user* from an entity they are a member of.
  *
- * **DELETE /me/leave** ·· [deleteMyMembership](http://localhost:3000/docs/operations?operationTag=me#tag/me/DELETE/me/leave) ·· [deleteMyMembership](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/me/leave) ·· _me_cella_
+ * **DELETE /me/leave** ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/leave) ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/leave) ·· _me_cella_
  *
  * @param {deleteMyMembershipData} options
  * @param {string} options.query.entityid - `string`
@@ -1517,7 +1517,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
  *
- * **GET /me/upload-token** ·· [getUploadToken](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
+ * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
  *
  * @param {getUploadTokenData} options
  * @param {string | boolean=} options.query.public - `string | boolean` (optional)
@@ -1555,7 +1555,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  *
- * **GET /me/unsubscribe** ·· [unsubscribeMe](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me/unsubscribe) ·· [unsubscribeMe](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me/unsubscribe) ·· _me_cella_
+ * **GET /me/unsubscribe** ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/unsubscribe) ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/unsubscribe) ·· _me_cella_
  *
  * @param {unsubscribeMeData} options
  * @param {string} options.query.token - `string`
@@ -1583,7 +1583,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(
  *
  * Returns all memberships for the *current user* across all context entities.
  *
- * **GET /me/memberships** ·· [getMyMemberships](http://localhost:3000/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· [getMyMemberships](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/me/memberships) ·· _me_cella_
+ * **GET /me/memberships** ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/memberships) ·· _me_cella_
  *
  * @param {getMyMembershipsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1618,7 +1618,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
  *
  * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).
  *
- * **GET /unseen/counts** ·· [getUnseenCounts](http://localhost:3000/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
+ * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
  *
  * @param {getUnseenCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1654,7 +1654,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
  * Checks whether a given slug is available within a tenant for the specified entity type.
  * Primarily used to prevent slug collisions before creating or updating an entity.
  *
- * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](http://localhost:3000/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· [checkSlug](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/entities/{tenantId}/check-slug) ·· _entities_cella_
+ * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/{tenantId}/check-slug) ·· _entities_cella_
  *
  * @param {checkSlugData} options
  * @param {string} options.path.tenantid - `string`
@@ -1696,7 +1696,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
  *
  * SSE stream for real-time public entity changes. No authentication required.
  *
- * **GET /entities/public/stream** ·· [getPublicStream](http://localhost:3000/docs/operations?operationTag=entities#tag/entities/GET/entities/public/stream) ·· [getPublicStream](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/entities/public/stream) ·· _entities_cella_
+ * **GET /entities/public/stream** ·· [getPublicStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/public/stream) ·· [getPublicStream](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/entities/public/stream) ·· _entities_cella_
  *
  * @param {getPublicStreamData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1723,7 +1723,7 @@ export const getPublicStream = <ThrowOnError extends boolean = true>(
  *
  * Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.
  *
- * **POST /entities/public/stream** ·· [postPublicCatchup](http://localhost:3000/docs/operations?operationTag=entities#tag/entities/POST/entities/public/stream) ·· [postPublicCatchup](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/entities/public/stream) ·· _entities_cella_
+ * **POST /entities/public/stream** ·· [postPublicCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/public/stream) ·· [postPublicCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/public/stream) ·· _entities_cella_
  *
  * @param {postPublicCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
@@ -1757,7 +1757,7 @@ export const postPublicCatchup = <ThrowOnError extends boolean = true>(
  *
  * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
  *
- * **GET /entities/app/stream** ·· [getAppStream](http://localhost:3000/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· [getAppStream](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/entities/app/stream) ·· _entities_cella_
+ * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/entities/app/stream) ·· _entities_cella_
  *
  * @param {getAppStreamData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1791,7 +1791,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
  *
  * Fetch missed entity and membership changes since last sync. Send cursor and per-scope seqs in the body.
  *
- * **POST /entities/app/stream** ·· [postAppCatchup](http://localhost:3000/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
+ * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
  *
  * @param {postAppCatchupData} options
  * @param {string=} options.body.cursor - `string` (optional)
@@ -1832,7 +1832,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
  *
  * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  *
- * **POST /system/invite** ·· [systemInvite](http://localhost:3000/docs/operations?operationTag=system#tag/system/POST/system/invite) ·· [systemInvite](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/system/invite) ·· _system_cella_
+ * **POST /system/invite** ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/invite) ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/invite) ·· _system_cella_
  *
  * @param {systemInviteData} options
  * @param {any[]=} options.body.emails - `any[]` (optional)
@@ -1872,7 +1872,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
- * **DELETE /system** ·· [deleteUsers](http://localhost:3000/docs/operations?operationTag=system#tag/system/DELETE/system) ·· [deleteUsers](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/system) ·· _system_cella_
+ * **DELETE /system** ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/DELETE/system) ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/system) ·· _system_cella_
  *
  * @param {deleteUsersData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -1912,7 +1912,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  *
  * Updates a *user* identified by ID.
  *
- * **PUT /system/{id}** ·· [updateUser](http://localhost:3000/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· [updateUser](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/system/{id}) ·· _system_cella_
+ * **PUT /system/{id}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/system/{id}) ·· _system_cella_
  *
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
@@ -1959,7 +1959,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  *
  * Sends a newsletter to members of one or more specified organizations.
  *
- * **POST /system/newsletter** ·· [sendNewsletter](http://localhost:3000/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· [sendNewsletter](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/system/newsletter) ·· _system_cella_
+ * **POST /system/newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/newsletter) ·· _system_cella_
  *
  * @param {sendNewsletterData} options
  * @param {string | boolean=} options.query.toself - `string | boolean` (optional)
@@ -2003,7 +2003,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of tenants. System admin access required.
  *
- * **GET /tenants** ·· [getTenants](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· [getTenants](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/tenants) ·· _tenants_cella_
+ * **GET /tenants** ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants) ·· _tenants_cella_
  *
  * @param {getTenantsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2045,7 +2045,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
  *
  * Creates a new tenant. System admin access required.
  *
- * **POST /tenants** ·· [createTenant](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· [createTenant](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/tenants) ·· _tenants_cella_
+ * **POST /tenants** ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants) ·· _tenants_cella_
  *
  * @param {createTenantData} options
  * @param {string=} options.body.name - `string` (optional)
@@ -2086,7 +2086,7 @@ export const createTenant = <ThrowOnError extends boolean = true>(
  *
  * Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.
  *
- * **POST /tenants/self** ·· [selfCreateTenant](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· [selfCreateTenant](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/tenants/self) ·· _tenants_cella_
+ * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/self) ·· _tenants_cella_
  *
  * @param {selfCreateTenantData} options
  * @param {string=} options.body.name - `string` (optional)
@@ -2126,7 +2126,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
  *
  * Updates a tenant by ID. System admin access required.
  *
- * **PUT /tenants/{tenantId}** ·· [updateTenant](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/PUT/tenants/{tenantId}) ·· [updateTenant](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/tenants/{tenantId}) ·· _tenants_cella_
+ * **PUT /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PUT/tenants/{tenantId}) ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/tenants/{tenantId}) ·· _tenants_cella_
  *
  * @param {updateTenantData} options
  * @param {string} options.path.tenantid - `string`
@@ -2172,7 +2172,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
  *
  * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
  *
- * **GET /tenants/{tenantId}/domains** ·· [getDomains](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains) ·· [getDomains](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains) ·· _tenants_cella_
+ * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains) ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains) ·· _tenants_cella_
  *
  * @param {getDomainsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2208,7 +2208,7 @@ export const getDomains = <ThrowOnError extends boolean = true>(
  *
  * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
  *
- * **POST /tenants/{tenantId}/domains** ·· [createDomain](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains) ·· [createDomain](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains) ·· _tenants_cella_
+ * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains) ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains) ·· _tenants_cella_
  *
  * @param {createDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2249,7 +2249,7 @@ export const createDomain = <ThrowOnError extends boolean = true>(
  *
  * Removes a domain from a tenant. System admin access required.
  *
- * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/DELETE/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/DELETE/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
  *
  * @param {deleteDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2286,7 +2286,7 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(
  *
  * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
  *
- * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains/{id}) ·· [getDomain](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
  *
  * @param {getDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2323,7 +2323,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
  *
  * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
  *
- * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](http://localhost:3000/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
+ * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
  *
  * @param {verifyDomainData} options
  * @param {string} options.path.tenantid - `string`
@@ -2360,7 +2360,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *requests* from the system by their IDs.
  *
- * **DELETE /requests** ·· [deleteRequests](http://localhost:3000/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· [deleteRequests](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/requests) ·· _requests_cella_
+ * **DELETE /requests** ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/requests) ·· _requests_cella_
  *
  * @param {deleteRequestsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -2400,7 +2400,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
  *
- * **GET /requests** ·· [getRequests](http://localhost:3000/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· [getRequests](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/requests) ·· _requests_cella_
+ * **GET /requests** ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/requests) ·· _requests_cella_
  *
  * @param {getRequestsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2441,7 +2441,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
  *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *
- * **POST /requests** ·· [createRequest](http://localhost:3000/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
+ * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
  *
  * @param {createRequestData} options
  * @param {string=} options.body.email - `string` (optional)
@@ -2477,7 +2477,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
  * Returns basic count metrics for entity types such as `users` and `organizations`.
  * This endpoint is public and uses a 1 minute in memory cache for performance.
  *
- * **GET /metrics/public** ·· [getPublicCounts](http://localhost:3000/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· [getPublicCounts](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/metrics/public) ·· _metrics_cella_
+ * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/metrics/public) ·· _metrics_cella_
  *
  * @param {getPublicCountsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -2505,7 +2505,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *organizations* by ID within a tenant.
  *
- * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](http://localhost:3000/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](http://localhost:3000/docs/operations?operationTag=context#tag/context/DELETE/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/DELETE/{tenantId}/organizations) ·· _organizations_cella_context_
  *
  * @param {deleteOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2546,7 +2546,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more new *organizations* within a tenant.
  *
- * **POST /{tenantId}/organizations** ·· [createOrganizations](http://localhost:3000/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· [createOrganizations](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/organizations) ·· [createOrganizations](http://localhost:3000/docs/operations?operationTag=context#tag/context/POST/{tenantId}/organizations) ·· _organizations_cella_context_
+ * **POST /{tenantId}/organizations** ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/POST/{tenantId}/organizations) ·· _organizations_cella_context_
  *
  * @param {createOrganizationsData} options
  * @param {string} options.path.tenantid - `string`
@@ -2586,7 +2586,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of *organizations*.
  *
- * **GET /organizations** ·· [getOrganizations](http://localhost:3000/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· [getOrganizations](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/organizations) ·· [getOrganizations](http://localhost:3000/docs/operations?operationTag=context#tag/context/GET/organizations) ·· _organizations_cella_context_
+ * **GET /organizations** ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/organizations) ·· _organizations_cella_context_
  *
  * @param {getOrganizationsData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2631,7 +2631,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  *
  * Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](http://localhost:3000/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](http://localhost:3000/docs/operations?operationTag=context#tag/context/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
@@ -2670,7 +2670,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
  *
  * Updates an *organization* within a tenant.
  *
- * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](http://localhost:3000/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](http://localhost:3000/docs/operations?operationTag=context#tag/context/PUT/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
+ * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/PUT/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
  * @param {updateOrganizationData} options
  * @param {string} options.path.tenantid - `string`
@@ -2727,7 +2727,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
  *
  * Delete one or more *pages* by ID.
  *
- * **DELETE /pages** ·· [deletePages](http://localhost:3000/docs/operations?operationTag=pages#tag/pages/DELETE/pages) ·· [deletePages](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/pages) ·· [deletePages](http://localhost:3000/docs/operations?operationTag=product#tag/product/DELETE/pages) ·· _pages_cella_product_
+ * **DELETE /pages** ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/DELETE/pages) ·· _pages_cella_product_
  *
  * @param {deletePagesData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
@@ -2768,7 +2768,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(
  *
  * Get all matching *pages*.
  *
- * **GET /pages** ·· [getPages](http://localhost:3000/docs/operations?operationTag=pages#tag/pages/GET/pages) ·· [getPages](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/pages) ·· [getPages](http://localhost:3000/docs/operations?operationTag=product#tag/product/GET/pages) ·· _pages_cella_product_
+ * **GET /pages** ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages) ·· _pages_cella_product_
  *
  * @param {getPagesData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2802,7 +2802,7 @@ export const getPages = <ThrowOnError extends boolean = true>(
  *
  * Insert one or more new *pages*. Returns created pages and any rejected items.
  *
- * **POST /pages** ·· [createPages](http://localhost:3000/docs/operations?operationTag=pages#tag/pages/POST/pages) ·· [createPages](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/pages) ·· [createPages](http://localhost:3000/docs/operations?operationTag=product#tag/product/POST/pages) ·· _pages_cella_product_
+ * **POST /pages** ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/pages) ·· _pages_cella_product_
  *
  * @param {createPagesData} options
  * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 409, 429
@@ -2841,7 +2841,7 @@ export const createPages = <ThrowOnError extends boolean = true>(
  *
  * Get a single *page* by ID. Cached using LRU - first request warms cache.
  *
- * **GET /pages/{id}** ·· [getPage](http://localhost:3000/docs/operations?operationTag=pages#tag/pages/GET/pages/{id}) ·· [getPage](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/pages/{id}) ·· [getPage](http://localhost:3000/docs/operations?operationTag=product#tag/product/GET/pages/{id}) ·· _pages_cella_product_
+ * **GET /pages/{id}** ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages/{id}) ·· _pages_cella_product_
  *
  * @param {getPageData} options
  * @param {string} options.path.id - `string`
@@ -2870,7 +2870,7 @@ export const getPage = <ThrowOnError extends boolean = true>(
  *
  * Update a single *page* by ID.
  *
- * **PUT /pages/{id}** ·· [updatePage](http://localhost:3000/docs/operations?operationTag=pages#tag/pages/PUT/pages/{id}) ·· [updatePage](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/pages/{id}) ·· [updatePage](http://localhost:3000/docs/operations?operationTag=product#tag/product/PUT/pages/{id}) ·· _pages_cella_product_
+ * **PUT /pages/{id}** ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/pages/{id}) ·· _pages_cella_product_
  *
  * @param {updatePageData} options
  * @param {string} options.path.id - `string`
@@ -2913,7 +2913,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(
  *
  * Returns a list of *users*.
  *
- * **GET /users/users** ·· [getUsers](http://localhost:3000/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
+ * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
  *
  * @param {getUsersData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -2955,7 +2955,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
  *
  * Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.
  *
- * **GET /users/users/{relatableUserId}** ·· [getUser](http://localhost:3000/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
+ * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
  *
  * @param {getUserData} options
  * @param {string} options.path.relatableuserid - `string`
@@ -2992,7 +2992,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  *
- * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](http://localhost:3000/docs/operations?operationTag=product#tag/product/DELETE/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/DELETE/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {deleteAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3035,7 +3035,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  *
  * Returns a paginated list of *attachments* for the organization.
  *
- * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](http://localhost:3000/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {getAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3078,7 +3078,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
  *
  * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  *
- * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](http://localhost:3000/docs/operations?operationTag=product#tag/product/POST/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
+ * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
  * @param {createAttachmentsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3119,7 +3119,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
  *
  * Generates and returns a presigned URL for accessing a private attachment file in S3. Public files should use the public CDN URL directly. Requires organization context.
  *
- * **GET /{tenantId}/{organizationId}/attachments/presigned-url** ·· [getPresignedUrl](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](http://localhost:3000/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments/presigned-url** ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· [getPresignedUrl](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/presigned-url) ·· _attachments_cella_product_
  *
  * @param {getPresignedUrlData} options
  * @param {string} options.path.tenantid - `string`
@@ -3157,7 +3157,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
  *
  * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
  *
- * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](http://localhost:3000/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
+ * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
  * @param {getAttachmentData} options
  * @param {string} options.path.tenantid - `string`
@@ -3195,7 +3195,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  *
  * Updates metadata of an *attachment*, such as its name or associated entity.
  *
- * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](http://localhost:3000/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](http://localhost:3000/docs/operations?operationTag=product#tag/product/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
+ * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
  * @param {updateAttachmentData} options
  * @param {string} options.path.tenantid - `string`
@@ -3240,7 +3240,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  *
- * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships) ·· [deleteMemberships](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
+ * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships) ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
  * @param {deleteMembershipsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3284,7 +3284,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
- * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
+ * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
  * @param {membershipInviteData} options
  * @param {string} options.path.tenantid - `string`
@@ -3329,7 +3329,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  *
- * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
+ * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *
  * @param {updateMembershipData} options
  * @param {string} options.path.tenantid - `string`
@@ -3375,7 +3375,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
  *
  * Accepting activates the associated membership. Rejecting simply removes the invitation token.
  *
- * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· [handleMembershipInvitation](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships_cella_
+ * **POST /{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}** ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· [handleMembershipInvitation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships/{id}/{acceptOrReject}) ·· _memberships_cella_
  *
  * @param {handleMembershipInvitationData} options
  * @param {string} options.path.id - `string`
@@ -3417,7 +3417,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  *
  * Retrieves members (users) of a context entity by ID, including their associated *membership* data.
  *
- * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
+ * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
  *
  * @param {getMembersData} options
  * @param {string} options.path.tenantid - `string`
@@ -3464,7 +3464,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
  *
  * Returns pending memberships for a context entity, identified by ID. This does not include pending invitations for non-existing users.
  *
- * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](http://localhost:3000/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
+ * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
  *
  * @param {getPendingMembershipsData} options
  * @param {string} options.path.tenantid - `string`
@@ -3509,7 +3509,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
  *
  * Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.
  *
- * **POST /{tenantId}/{organizationId}/seen** ·· [markSeen](http://localhost:3000/docs/operations?operationTag=seen#tag/seen/POST/{tenantId}/{organizationId}/seen) ·· [markSeen](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/seen) ·· _seen_cella_
+ * **POST /{tenantId}/{organizationId}/seen** ·· [markSeen](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/POST/{tenantId}/{organizationId}/seen) ·· [markSeen](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/seen) ·· _seen_cella_
  *
  * @param {markSeenData} options
  * @param {string} options.path.tenantid - `string`
@@ -3552,7 +3552,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
  *
  * Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.
  *
- * **GET /yjs/token** ·· [getYjsToken](http://localhost:3000/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
+ * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
  *
  * @param {getYjsTokenData} options
  * @param {string} options.query.entitytype - `string`
@@ -3590,7 +3590,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.
  *
- * **GET /yjs/verify-entity** ·· [verifyYjsEntity](http://localhost:3000/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/verify-entity) ·· [verifyYjsEntity](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/GET/yjs/verify-entity) ·· _yjs_cella_
+ * **GET /yjs/verify-entity** ·· [verifyYjsEntity](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/verify-entity) ·· [verifyYjsEntity](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/verify-entity) ·· _yjs_cella_
  *
  * @param {verifyYjsEntityData} options
  * @param {string} options.query.entitytype - `string`
@@ -3629,7 +3629,7 @@ export const verifyYjsEntity = <ThrowOnError extends boolean = true>(
  *
  * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
  *
- * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](http://localhost:3000/docs/operations?operationTag=ai#tag/ai/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](http://localhost:3000/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _ai_cella_
+ * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=ai#tag/ai/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _ai_cella_
  *
  * @param {handleMcpData} options
  * @param {string} options.path.tenantid - `string`

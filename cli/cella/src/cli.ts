@@ -107,7 +107,7 @@ const serviceDefinitions: ServiceDefinition[] = [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--hard', description: 'overwrite drifted files with upstream version (aggressive realignment)' },
     ],
-    menuDescription: () => 'merge upstream changes + sync packages',
+    menuDescription: () => 'merge upstream changes + sync package.json',
   },
   {
     name: 'audit',

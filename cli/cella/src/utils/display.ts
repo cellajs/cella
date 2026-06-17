@@ -5,7 +5,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
@@ -27,9 +27,9 @@ export interface LinkOptions {
   upstreamBranch?: string;
   /** File link mode: 'commit' links to commit, 'file' links to file in repo, 'local' opens in VS Code */
   fileLinkMode?: 'commit' | 'file' | 'local';
-  /** Path to local upstream clone for 'local' fileLinkMode (resolved relative to forkPath) */
-  upstreamLocalPath?: string;
-  /** Fork repository path for resolving relative upstreamLocalPath */
+  /** Absolute path to a checked-out worktree of the upstream ref, used for VS Code diff/open links */
+  upstreamViewPath?: string;
+  /** Fork repository path for resolving file paths */
   forkPath?: string;
 }
 
@@ -242,6 +242,53 @@ function hyperlink(label: string, url?: string): string {
 }
 
 /**
+ * Build a VS Code command URI that opens a file from the fork workspace.
+ */
+function getVsCodeOpenFileLink(filePath: string, options: LinkOptions): string {
+  const { forkPath } = options;
+  if (!forkPath) return filePath;
+
+  const target = pathToFileURL(resolve(forkPath, filePath)).toString();
+  const args = encodeURIComponent(JSON.stringify([target]));
+  const url = `command:vscode.open?${args}`;
+  return hyperlink(filePath, url);
+}
+
+/** Commit info used for sync progress output */
+export interface SyncCommitInfo {
+  hash: string;
+  message: string;
+  date: string;
+}
+
+/**
+ * Format the fetched-upstream detail block with clickable short commit hashes.
+ */
+export function formatFetchedUpstreamDetail(
+  commitCount: number,
+  commits: SyncCommitInfo[],
+  upstreamGitHubUrl?: string,
+  maxShownCommits = 50,
+): string {
+  const commitLabel = commitCount === 1 ? '1 new commit' : `${commitCount} new commits`;
+  const lines = [`${commitLabel} since last merge`];
+
+  const shown = commits.slice(0, maxShownCommits);
+  for (const commit of shown) {
+    const shortHash = commit.hash.slice(0, 7);
+    const commitUrl = upstreamGitHubUrl ? `${upstreamGitHubUrl}/commit/${commit.hash}` : undefined;
+    const hashLabel = hyperlink(shortHash, commitUrl);
+    lines.push(`  ${hashLabel} "${commit.message}" (${commit.date})`);
+  }
+
+  if (commitCount > shown.length) {
+    lines.push(`  ... and ${commitCount - shown.length} more`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Generate a link for a file based on link style.
  * Returns { label, url } for use with hyperlink().
  */
@@ -250,14 +297,15 @@ function getFileLink(
   commitHash: string | undefined,
   options: LinkOptions,
 ): { label: string; url?: string } {
-  const { upstreamGitHubUrl, upstreamBranch, fileLinkMode = 'commit', upstreamLocalPath, forkPath } = options;
+  const { upstreamGitHubUrl, upstreamBranch, fileLinkMode = 'commit', upstreamViewPath, forkPath } = options;
 
-  if (fileLinkMode === 'local' && upstreamLocalPath && forkPath) {
-    // Open file in VS Code: vscode://file/absolute/path/to/file
-    // Resolve upstreamLocalPath relative to forkPath
-    const absolutePath = resolve(forkPath, upstreamLocalPath, filePath);
-    const url = `vscode://file${absolutePath}`;
-    return { label: filePath.split('/').pop() || filePath, url };
+  if (fileLinkMode === 'local' && upstreamViewPath && forkPath) {
+    // Open the upstream version of the file from the auto-managed view worktree.
+    const absolutePath = resolve(upstreamViewPath, filePath);
+    if (existsSync(absolutePath)) {
+      const url = `vscode://file${absolutePath}`;
+      return { label: filePath.split('/').pop() || filePath, url };
+    }
   }
 
   if (!upstreamGitHubUrl) {
@@ -305,13 +353,16 @@ function formatFileDateInfo(
 
 /**
  * Build a VS Code command URI to open a visual diff for this file.
- * Only available when local upstream path mode is configured.
+ * Available whenever an upstream view worktree is present and the file exists in it.
  */
 function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
-  const { fileLinkMode = 'commit', upstreamLocalPath, forkPath } = options;
-  if (fileLinkMode !== 'local' || !upstreamLocalPath || !forkPath) return '';
+  const { upstreamViewPath, forkPath } = options;
+  if (!upstreamViewPath || !forkPath) return '';
 
-  const upstreamAbsolute = resolve(forkPath, upstreamLocalPath, filePath);
+  const upstreamAbsolute = resolve(upstreamViewPath, filePath);
+  // Skip the diff link for files absent upstream (e.g. local-only or newly deleted upstream).
+  if (!existsSync(upstreamAbsolute)) return '';
+
   const forkAbsolute = resolve(forkPath, filePath);
 
   const left = pathToFileURL(upstreamAbsolute).toString();
@@ -321,6 +372,38 @@ function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
   const url = `command:vscode.diff?${args}`;
 
   return ` ${pc.dim('·')} ${hyperlink('diff', url)}`;
+}
+
+/**
+ * Format merge-in-progress detail with conflicts and auto-merged file links.
+ */
+export function formatMergeInProgressDetail(
+  conflictCount: number,
+  autoMergedFiles: string[],
+  linkOptions: LinkOptions,
+  maxFiles = 100,
+): string {
+  const lines = [`${conflictCount} conflicts to resolve in IDE`];
+
+  if (autoMergedFiles.length === 0) {
+    return lines.join('\n');
+  }
+
+  lines.push('');
+  lines.push(`auto-merged files (${autoMergedFiles.length}):`);
+
+  const shown = autoMergedFiles.slice(0, maxFiles);
+  for (const filePath of shown) {
+    const fileLink = getVsCodeOpenFileLink(filePath, linkOptions);
+    const diffInfo = getVsCodeDiffLink(filePath, linkOptions);
+    lines.push(`  - ${fileLink}${diffInfo}`);
+  }
+
+  if (autoMergedFiles.length > shown.length) {
+    lines.push(`  ... + ${autoMergedFiles.length - shown.length} more`);
+  }
+
+  return lines.join('\n');
 }
 
 /** Display configuration for a file status */
@@ -517,7 +600,7 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
  */
 export function printSyncComplete(result: MergeResult): void {
   const updated = result.summary.behind + result.summary.diverged;
-  const merged = result.summary.diverged;
+  const merged = result.autoMergedFiles?.length ?? Math.max(0, result.summary.diverged - result.conflicts.length);
   const conflicts = result.conflicts.length;
 
   console.info();

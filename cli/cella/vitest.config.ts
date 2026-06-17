@@ -8,10 +8,10 @@ export default defineProject({
     },
   },
   test: {
+    name: 'cella',
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     testTimeout: 30000,
     fileParallelism: true,
-    silent: true,
   },
 });

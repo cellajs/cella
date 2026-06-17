@@ -1,10 +1,12 @@
 import { and, arrayOverlaps, getColumns, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ActivityAction, hierarchy, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { logEvent } from '../lib/pino';
 import type { CdcRowData } from '../types';
+
+type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
@@ -19,8 +21,8 @@ interface ResolvedEmbedding {
  * Map entityEmbeddings config → Drizzle column references at module init.
  * Throws on misconfiguration so problems surface at startup, not at runtime.
  */
-function resolveEmbeddings(): ReadonlyMap<string, ResolvedEmbedding[]> {
-  const map = new Map<string, ResolvedEmbedding[]>();
+function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
+  const map = new Map<ProductEntityType, ResolvedEmbedding[]>();
 
   for (const { embeddedEntity, hostEntity, hostColumn: hostColumnName } of appConfig.entityEmbeddings) {
     const hostTable = getEntityTable(hostEntity as Parameters<typeof getEntityTable>[0]);
@@ -49,30 +51,45 @@ function resolveEmbeddings(): ReadonlyMap<string, ResolvedEmbedding[]> {
 /** Pre-resolved embedding lookups, keyed by embedded entity type. */
 const embeddingsByEntity = resolveEmbeddings();
 
+/** True when an update event flips a row from live to soft-deleted (deletedAt newly set). */
+function isSoftDeleteTransition(rowData: CdcRowData, oldRowData: CdcRowData | null | undefined): boolean {
+  return oldRowData != null && oldRowData.deletedAt == null && rowData.deletedAt != null;
+}
+
 /**
  * Strip deleted embedded-entity IDs from host-entity array columns.
  *
  * Driven by `appConfig.entityEmbeddings` — adding a new embedding relationship
  * (e.g. tags on attachments) requires zero changes here.
  *
+ * Handles both hard deletes (`action === 'delete'`) and soft deletes (an UPDATE that
+ * sets `deletedAt`). Soft delete keeps the row, so without this the host arrays would
+ * keep dangling references to tombstoned entities.
+ *
  * Runs in CDC (not in the user request) to avoid row locks during delete handlers.
  * The GIN index on the host column ensures fast containment checks, and the
  * parent-scoping filter limits the UPDATE scope.
  */
 export async function cleanupEmbeddingReferences(
-  embeddedEntityType: string,
-  action: string,
-  events: { result: { rowData: CdcRowData } }[],
+  embeddedEntityType: ProductEntityType,
+  action: EmbeddingCleanupAction,
+  events: { result: { rowData: CdcRowData; oldRowData?: CdcRowData | null } }[],
 ): Promise<void> {
-  if (action !== 'delete') return;
-
   const embeddings = embeddingsByEntity.get(embeddedEntityType);
   if (!embeddings) return;
+
+  // Hard delete: every event is a removal. Soft delete: only events that flip deletedAt.
+  const relevantEvents =
+    action === 'delete'
+      ? events
+      : events.filter(({ result }) => isSoftDeleteTransition(result.rowData, result.oldRowData));
+
+  if (relevantEvents.length === 0) return;
 
   for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn } of embeddings) {
     // Group deleted IDs by parent scope (e.g. projectId)
     const byParent = new Map<string, string[]>();
-    for (const { result } of events) {
+    for (const { result } of relevantEvents) {
       const { id } = result.rowData;
       const parentId = result.rowData[parentColumnName];
       if (!id || typeof parentId !== 'string') {

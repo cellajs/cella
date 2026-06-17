@@ -6,11 +6,10 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 import type { MergeResult, RuntimeConfig } from '../config/types';
+import { refreshViewWorktree } from '../utils/cleanup';
 import pc from '../utils/colors';
+import { openVsCodeDiff } from '../utils/diff';
 import {
   createSpinner,
   type LinkOptions,
@@ -79,35 +78,6 @@ function printUnifiedDiff(config: RuntimeConfig, filePath: string): void {
   writeStdout(diffResult.stdout.toString());
 }
 
-function openVsCodeDiff(config: RuntimeConfig, filePath: string): void {
-  const forkFile = resolve(config.forkPath, filePath);
-  const upstreamLocalPath = config.settings.upstreamLocalPath;
-
-  if (upstreamLocalPath) {
-    const upstreamFile = resolve(config.forkPath, upstreamLocalPath, filePath);
-    spawnSync('code', ['--diff', upstreamFile, forkFile], { stdio: 'ignore' });
-    return;
-  }
-
-  // Fallback when local upstream clone is not configured: materialize upstream blob to temp file.
-  const tmpDir = mkdtempSync(join(tmpdir(), 'cella-analyze-diff-'));
-  const fileName = filePath.split('/').pop() || 'file';
-  const tmpFile = join(tmpDir, `upstream-${fileName}`);
-
-  const result = spawnSync('git', ['show', `${config.upstreamRef}:${filePath}`], {
-    cwd: config.forkPath,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
-
-  if (result.status !== 0) {
-    const stderr = result.stderr.toString().trim();
-    throw new Error(stderr || `failed to read upstream version for ${filePath}`);
-  }
-
-  writeFileSync(tmpFile, result.stdout);
-  spawnSync('code', ['--diff', tmpFile, forkFile], { stdio: 'ignore' });
-}
-
 /**
  * Run the analyze service (dry run).
  *
@@ -139,14 +109,6 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
     return result;
   }
 
-  if (config.openDiff) {
-    const file = findTargetFile(scopedFiles, config.openDiff) ?? findTargetFile(result.files, config.openDiff);
-    if (!file) throw new Error(`file not found in analysis results: ${config.openDiff}`);
-    openVsCodeDiff(config, file.path);
-    console.info(`${pc.green('✓')} opened VS Code diff for ${file.path}`);
-    return result;
-  }
-
   if (config.json) {
     const out = scopedFiles.map((f) => ({
       path: f.path,
@@ -167,12 +129,25 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
     return result;
   }
 
+  // Remaining paths (--open-diff and interactive output) render VS Code diff/open links,
+  // so materialize the upstream view worktree exactly once here. Machine-readable modes
+  // (--json/--list) and the unified --diff returned above and never pay this cost.
+  const upstreamViewPath = await refreshViewWorktree(config.forkPath, config.upstreamRef);
+
+  if (config.openDiff) {
+    const file = findTargetFile(scopedFiles, config.openDiff) ?? findTargetFile(result.files, config.openDiff);
+    if (!file) throw new Error(`file not found in analysis results: ${config.openDiff}`);
+    openVsCodeDiff(config.forkPath, config.upstreamRef, upstreamViewPath, file.path);
+    console.info(`${pc.green('✓')} opened VS Code diff for ${file.path}`);
+    return result;
+  }
+
   // Build link options from result and config
   const linkOptions: LinkOptions = {
     upstreamGitHubUrl: result.upstreamGitHubUrl,
     upstreamBranch: result.upstreamBranch,
     fileLinkMode: config.settings.fileLinkMode,
-    upstreamLocalPath: config.settings.upstreamLocalPath,
+    upstreamViewPath,
     forkPath: config.forkPath,
   };
 

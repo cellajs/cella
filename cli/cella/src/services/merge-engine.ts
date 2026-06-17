@@ -19,9 +19,11 @@ import {
   cleanupWorktree,
   detectLeftoverWorktree,
   getWorktreePath,
+  refreshViewWorktree,
   registerWorktree,
 } from '../utils/cleanup';
 import { resolveUpstream } from '../utils/config';
+import { formatFetchedUpstreamDetail, formatMergeInProgressDetail } from '../utils/display';
 import {
   batchGitRm,
   batchRestoreToHead,
@@ -41,6 +43,7 @@ import {
   getStagedNewFiles,
   gitMv,
   gitRm,
+  listCommitsBetween,
   merge,
   mergeAbort,
   removeFileFromWorktree,
@@ -77,15 +80,6 @@ function getGitHubBaseUrl(remoteUrl: string): string | null {
   return null;
 }
 
-/**
- * Convert a git remote URL to a GitHub commit URL.
- * Supports both SSH (git@github.com:org/repo.git) and HTTPS formats.
- */
-function getGitHubCommitUrl(remoteUrl: string, commitHash: string): string | null {
-  const baseUrl = getGitHubBaseUrl(remoteUrl);
-  return baseUrl ? `${baseUrl}/commit/${commitHash}` : null;
-}
-
 /** Build analyzer predicates for the sync direction (local = fork, incoming = upstream). */
 function syncPredicates(config: RuntimeConfig): AnalyzePredicates {
   return {
@@ -114,7 +108,12 @@ async function applyDirectMerge(
   mergeBaseRef: string,
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
-): Promise<{ resolved: number; remainingConflicts: string[]; analyzedFiles: AnalyzedFile[] }> {
+): Promise<{
+  resolved: number;
+  remainingConflicts: string[];
+  analyzedFiles: AnalyzedFile[];
+  autoMergedFiles: string[];
+}> {
   // Phase 1: Pre-analyze using git refs (invisible to IDE).
   // analyzeRefs only uses git plumbing (ls-tree, diff-tree) on refs,
   // not the working tree, so results are identical before or after merge.
@@ -319,6 +318,10 @@ async function applyDirectMerge(
 
   // Get remaining conflicts (these have markers for IDE)
   const remainingConflicts = await getConflictedFiles(forkPath);
+  const remainingConflictSet = new Set(remainingConflicts);
+  const autoMergedFiles = analyzedFiles
+    .filter((file) => file.status === 'diverged' && !remainingConflictSet.has(file.path))
+    .map((file) => file.path);
 
   // Phase 6: Safety net — clean up any ignored files still staged after merge.
   // During a merge, batchGitRm can silently fail on newly-added files, leaving
@@ -334,7 +337,7 @@ async function applyDirectMerge(
     }
   }
 
-  return { resolved, remainingConflicts, analyzedFiles };
+  return { resolved, remainingConflicts, analyzedFiles, autoMergedFiles };
 }
 
 /**
@@ -425,14 +428,18 @@ export async function runMergeEngine(
     // Get upstream commit info and count commits since merge-base
     const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
     const commitCount = await countCommitsBetween(forkPath, mergeBase, upstreamRef);
-    const shortHash = upstreamCommit.hash.slice(0, 7);
-    const githubUrl = getGitHubCommitUrl(config.settings.upstreamUrl, upstreamCommit.hash);
-    const commitLabel = commitCount === 1 ? '1 new commit' : `${commitCount} new commits`;
+    const commitListMax = 50;
+    const commitSkip = commitCount > commitListMax ? commitCount - commitListMax : 0;
+    const upstreamCommits =
+      commitCount > 0
+        ? await listCommitsBetween(forkPath, mergeBase, upstreamRef, {
+            oldestFirst: true,
+            skip: commitSkip,
+            limit: commitListMax,
+          })
+        : [];
 
-    // Build multi-line info for fetched upstream
-    let commitInfo = `${commitLabel} since last merge`;
-    commitInfo += `\n  ${shortHash} "${upstreamCommit.message}" (${upstreamCommit.date})`;
-    if (githubUrl) commitInfo += `\n  ${githubUrl}`;
+    const commitInfo = formatFetchedUpstreamDetail(commitCount, upstreamCommits, upstreamGitHubUrl ?? undefined);
 
     onStep?.('fetched upstream', commitInfo);
 
@@ -444,6 +451,7 @@ export async function runMergeEngine(
         resolved: _resolved,
         remainingConflicts,
         analyzedFiles,
+        autoMergedFiles,
       } = await applyDirectMerge(forkPath, upstreamRef, mergeBase, config, onProgress);
 
       const summary = calculateSummary(analyzedFiles);
@@ -457,7 +465,24 @@ export async function runMergeEngine(
         // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
         // When user commits, it becomes a merge commit (self-healing ancestry).
         await storeLastSyncRef(forkPath, upstreamCommit.hash);
-        onStep?.('merge in progress', `${remainingConflicts.length} conflicts to resolve in IDE`);
+        // Materialize the upstream view worktree so auto-merged files get clickable
+        // VS Code diff links (byte-consistent with the fetched upstream ref).
+        const upstreamViewPath = await refreshViewWorktree(forkPath, upstreamRef);
+        onStep?.(
+          'merge in progress',
+          formatMergeInProgressDetail(
+            remainingConflicts.length,
+            autoMergedFiles,
+            {
+              upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
+              upstreamBranch: config.settings.upstreamBranch,
+              fileLinkMode: config.settings.fileLinkMode,
+              upstreamViewPath,
+              forkPath,
+            },
+            100,
+          ),
+        );
       } else if (totalResolved > 0) {
         const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
         if (isSquash) {
@@ -482,6 +507,8 @@ export async function runMergeEngine(
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,
+        upstreamCommits,
+        autoMergedFiles,
       };
     }
     // ANALYZE MODE: Use worktree to preview changes without affecting fork
@@ -531,6 +558,7 @@ export async function runMergeEngine(
       upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
       forkGitHubUrl: forkGitHubUrl ?? undefined,
       upstreamCommit,
+      upstreamCommits,
     };
   } catch (error) {
     // Clean up on error

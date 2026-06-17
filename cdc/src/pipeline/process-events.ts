@@ -1,4 +1,5 @@
 import { activitiesTable } from '#/modules/activities/activities-db';
+import { isProductEntity } from 'shared';
 
 import { cdcDb } from '../lib/db';
 import { logEvent } from '../lib/pino';
@@ -181,7 +182,10 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     }
 
     // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
-    await cleanupEmbeddingReferences(events[0].result.tableMeta.type, action, events);
+    const { tableMeta } = events[0].result;
+    if (tableMeta.kind === 'entity' && isProductEntity(tableMeta.type) && (action === 'update' || action === 'delete')) {
+      await cleanupEmbeddingReferences(tableMeta.type, action, events);
+    }
 
     cdcMetrics.recordProcessing(events.length, performance.now() - startMs);
 

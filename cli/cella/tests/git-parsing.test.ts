@@ -15,6 +15,7 @@ import {
   getFileHashesAtRef,
   getStoredSyncRef,
   isAncestor,
+  listCommitsBetween,
   storeLastSyncRef,
 } from '../src/utils/git';
 
@@ -151,6 +152,43 @@ describe('git parsing', () => {
       expect(changes.has('brand-new.ts')).toBe(true);
       expect(changes.get('initial.txt')!.status).toBe('M');
       expect(changes.get('brand-new.ts')!.status).toBe('A');
+    });
+  });
+
+  describe('listCommitsBetween', () => {
+    it('should return commits oldest-first by default', async () => {
+      const baseRef = exec('git rev-parse HEAD', repoPath);
+
+      fs.writeFileSync(path.join(repoPath, 'a.txt'), 'a\n');
+      exec('git add -A && git commit -m "commit A"', repoPath);
+
+      fs.writeFileSync(path.join(repoPath, 'b.txt'), 'b\n');
+      exec('git add -A && git commit -m "commit B"', repoPath);
+
+      fs.writeFileSync(path.join(repoPath, 'c.txt'), 'c\n');
+      exec('git add -A && git commit -m "commit C"', repoPath);
+
+      const commits = await listCommitsBetween(repoPath, baseRef, 'HEAD');
+
+      expect(commits).toHaveLength(3);
+      expect(commits.map((c) => c.message)).toEqual(['commit A', 'commit B', 'commit C']);
+    });
+
+    it('should support skip and limit for showing the most recent window', async () => {
+      const baseRef = exec('git rev-parse HEAD', repoPath);
+
+      for (const n of [1, 2, 3, 4, 5]) {
+        fs.writeFileSync(path.join(repoPath, `n${n}.txt`), `${n}\n`);
+        exec(`git add -A && git commit -m "commit ${n}"`, repoPath);
+      }
+
+      const commits = await listCommitsBetween(repoPath, baseRef, 'HEAD', {
+        oldestFirst: true,
+        skip: 2,
+        limit: 3,
+      });
+
+      expect(commits.map((c) => c.message)).toEqual(['commit 3', 'commit 4', 'commit 5']);
     });
   });
 
