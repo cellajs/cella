@@ -23,8 +23,10 @@ const coverageReporters =
  */
 export default defineConfig({
   test: {
+    passWithNoTests: true,
     projects: [
       'backend',
+      'bench',
       'cli/cella',
       'shared',
       'yjs',
@@ -39,6 +41,7 @@ export default defineConfig({
       reporter: coverageReporters,
       include: [
         'backend/src/**/*.ts',
+        'bench/src/**/*.ts',
         'cli/cella/src/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',

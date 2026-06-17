@@ -4,8 +4,8 @@
  * Reads the cached `coverage/coverage-summary.json` produced by the
  * `json-summary` Vitest reporter (see root vitest.config.ts) and renders a
  * compact overview. The audit service never runs tests itself — it only reads
- * the artifact from the last `pnpm coverage` run, warning when it is stale or
- * missing.
+ * the artifact from the last default `pnpm test` run, warning when it is stale
+ * or missing.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -59,12 +59,12 @@ function formatAge(ms: number): string {
 }
 
 /**
- * Re-run the full coverage suite via `pnpm coverage`. Output is streamed so the
+ * Re-run the full coverage suite via `pnpm test`. Output is streamed so the
  * user sees progress (Docker boot, test run, etc.). Returns true on success.
  */
 export function refreshCoverage(forkPath: string): boolean {
-  console.info(pc.dim('running `pnpm coverage` (this spins up Docker and runs the full suite)...'));
-  const result = spawnSync('pnpm', ['coverage'], { cwd: forkPath, stdio: 'inherit' });
+  console.info(pc.dim('running `pnpm test` (this spins up Docker and runs the full suite)...'));
+  const result = spawnSync('pnpm', ['test'], { cwd: forkPath, stdio: 'inherit' });
   return result.status === 0;
 }
 
@@ -72,7 +72,7 @@ export function refreshCoverage(forkPath: string): boolean {
  * Print a compact coverage overview from the cached summary file.
  *
  * @param forkPath - Repository root.
- * @param options.refresh - When true, run `pnpm coverage` first to regenerate
+ * @param options.refresh - When true, run `pnpm test` first to regenerate
  *   the cache before rendering.
  */
 export function printCoverageSummary(forkPath: string, options: { refresh?: boolean } = {}): void {
@@ -88,7 +88,7 @@ export function printCoverageSummary(forkPath: string, options: { refresh?: bool
 
   if (!fs.existsSync(file)) {
     console.info(pc.bold('coverage'));
-    console.info(pc.yellow('  no coverage data found — run `pnpm coverage` to generate it'));
+    console.info(pc.yellow('  no coverage data found — run `pnpm test` to generate it'));
     console.info();
     return;
   }
@@ -100,7 +100,7 @@ export function printCoverageSummary(forkPath: string, options: { refresh?: bool
     mtimeMs = fs.statSync(file).mtimeMs;
   } catch {
     console.info(pc.bold('coverage'));
-    console.info(pc.yellow('  could not read coverage-summary.json — run `pnpm coverage` to regenerate'));
+    console.info(pc.yellow('  could not read coverage-summary.json — run `pnpm test` to regenerate'));
     console.info();
     return;
   }
@@ -125,7 +125,7 @@ export function printCoverageSummary(forkPath: string, options: { refresh?: bool
   const ageLabel = formatAge(ageMs);
   console.info(pc.bold('coverage'), pc.dim(`(updated ${ageLabel})`));
   if (stale) {
-    console.info(pc.yellow('  ⚠ data is older than 7 days — run `pnpm coverage` to refresh'));
+    console.info(pc.yellow('  ⚠ data is older than 7 days — run `pnpm test` to refresh'));
   }
 
   // Overall totals.

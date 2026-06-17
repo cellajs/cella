@@ -10,57 +10,46 @@ Cella supports two test modes to balance speed vs. coverage:
 
 | Mode | Database | Docker | Integration Tests | CLI Tests | Use Case |
 |------|----------|--------|-------------------|-----------|----------|
-| `core` | PostgreSQL | ✅ | ❌ | ❌ | Standard CI/pre-commit |
-| `full` | PostgreSQL | ✅ | ✅ | ✅ | Complete validation |
+| `core` | PostgreSQL | ✅ | ❌ | ❌ | Faster explicit narrow run |
+| `full` | PostgreSQL | ✅ | ✅ | ✅ | Default complete validation |
 
 These align with development modes:
 
 | Dev Command | Test Command | Description |
 |-------------|--------------|-------------|
 | `pnpm dev` | `pnpm test:core` | PostgreSQL + CDC Worker |
-| `pnpm dev` | `pnpm test:full` | PostgreSQL + CDC Worker (incl. CDC integration tests) |
+| `pnpm dev` | `pnpm test` / `pnpm test:full` | PostgreSQL + CDC Worker (incl. CDC integration tests) |
 
-### Core Mode (`pnpm test:core` or `pnpm test`)
+### Core Mode (`pnpm test:core`)
 
 - **Database**: PostgreSQL in Docker container (port 5434)
 - **Requirements**: Docker running
-- **Coverage**: All backend and frontend tests, excludes CDC integration tests
+- **Coverage**: Root workspace backend and frontend tests, excludes CDC integration tests and frontend Storybook browser tests
 
 Best for:
 - Standard development workflow
 - Pre-commit validation
-- CI pipeline default
+- Faster explicit validation when you do not need CDC/CLI coverage
 
 ```bash
 pnpm test:core
-# or simply
-pnpm test
 ```
 
-### Full Mode (`pnpm test:full`)
+### Full Mode (`pnpm test` or `pnpm test:full`)
 - **Database**: PostgreSQL in Docker container
 - **Requirements**: Docker running, CDC Worker available
-- **Coverage**: All tests including CDC integration tests and CLI workspace
+- **Coverage**: Root workspace tests including CDC integration tests and CLI workspace, plus `coverage/coverage-summary.json`; frontend Storybook browser tests are not part of the root run
 
 Best for:
-- Pre-release validation
+- Default validation path
 - Complete CI pipeline
 - Testing CDC Worker → WebSocket → ActivityBus flow end-to-end
 
 ```bash
-pnpm test:full
+pnpm test
 ```
 
-## Infrastructure
 
-Vitest workspace (`vitest.config.ts`) runs backend, CLI, shared, yjs, cdc, infra, frontend, and sdk tests from a single `pnpm vitest` command (or `--project=backend` for isolation).
-
-`backend/tests/global-setup.ts` runs Drizzle migrations against the dedicated test database (Docker Compose `test` profile, port 5434) before any tests. Exits gracefully with a helpful message if Postgres is unavailable.
-
-### Notable test suites
-
-* `backend/tests/integration/rls-security.test.ts`: Full RLS regression tests using two DB connections (`adminDb` as superuser, `runtimeDb` as `runtime_role`) verifying data isolation across tenants, orgs, and public access. Requires `pnpm test:full`.
-* `backend/src/permissions/permission-manager/check.perf.test.ts`: Permission manager performance tests.
 
 ## Writing Tests
 

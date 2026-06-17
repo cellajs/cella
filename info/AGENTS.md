@@ -123,5 +123,5 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
-- `pnpm test`: Run the default test suite (alias for `test:core`). `pnpm test:full` runs the broader full-mode suite, including integration tests such as CDC-related flows.
+- `pnpm test`: Run the default full test suite and emit summary coverage output. Use `pnpm test:core` for the narrower core-mode suite without CDC/CLI coverage.
 - `pnpm cella`: run Cella CLI to sync with upstream or downstream: [cli/cella/README.md](../cli/cella/README.md)
