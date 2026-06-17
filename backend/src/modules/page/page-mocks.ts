@@ -76,6 +76,8 @@ export const mockPage = (): InsertPageModel => {
     createdBy: null,
     updatedAt: createdAt,
     updatedBy: null,
+    deletedAt: null,
+    deletedBy: null,
     seq: faker.number.int({ min: 1, max: 500 }),
     stx: mockStx(),
   };
@@ -106,6 +108,8 @@ export const mockPageResponse = (key = 'page:default'): PageModel =>
       createdBy: userId,
       updatedAt: createdAt,
       updatedBy: userId,
+      deletedAt: null,
+      deletedBy: null,
       seq: faker.number.int({ min: 1, max: 500 }),
       stx: mockStx(),
     };

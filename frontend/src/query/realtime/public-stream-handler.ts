@@ -40,7 +40,7 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     if (seq > current) store.setPublicSeq(entityType, seq);
   }
 
-  // DELETE BATCH: remove each entity from caches directly
+  // Legacy hard-delete batch: product soft deletes use update notifications + seq-range tombstones.
   if (message.deletedIds?.length) {
     for (const id of message.deletedIds) {
       cacheOps.removeEntity(entityType, id);
@@ -49,7 +49,7 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     return;
   }
 
-  // CREATE/UPDATE BATCH: single range fetch
+  // Create/update batch: range fetch also handles soft-delete tombstones.
   if (message.batchUntilSeq && hasEntityQueryKeys(entityType)) {
     const keys = getEntityQueryKeys(entityType);
     const seqCursor = `${seq},${message.batchUntilSeq}`;
@@ -73,6 +73,18 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     case 'create':
     case 'update':
       if (!subjectId) return;
+      if (seq !== null && seq !== undefined) {
+        const seqCursor = `${seq},${seq}`;
+        cacheOps
+          .fetchRangeAndPatch(entityType, null, null, seqCursor, keys, message.cacheToken ?? undefined)
+          .then((success) => {
+            if (!success) cacheOps.invalidateEntityList(keys, 'all');
+            if (message.propagation) propagateEmbeddings(message.propagation);
+          })
+          .catch((err) => console.warn('[PublicStream] Entity range fetch failed:', err));
+        break;
+      }
+
       // Fetch single entity and patch both detail and list caches
       cacheOps
         .fetchEntityAndUpdateList(subjectId, keys, action, undefined, undefined, entityType)

@@ -10,7 +10,7 @@
  * These tests are the primary safety net for cross-org data leaks.
  */
 
-import { createAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
+import { createAttachments, deleteAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateMockEntityBodyContextIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
@@ -158,6 +158,25 @@ describe('Cross-organization API isolation', async () => {
         body: { name: 'Org A Updated' },
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
+      expect(response.status).toBe(200);
+    });
+
+    it('should allow User A to soft-delete their own attachment', async () => {
+      const id = '00000000-0000-4000-a000-00000000d001';
+
+      const createRes = await call(createAttachments, {
+        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+        body: [attachmentBody(id)],
+        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+      });
+      expect(createRes.response.status).toBe(201);
+
+      const { response } = await call(deleteAttachments, {
+        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+        body: { ids: [id], stx: { mutationId: `${id}-delete`, sourceId: 'cross-org' } },
+        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+      });
+
       expect(response.status).toBe(200);
     });
   });

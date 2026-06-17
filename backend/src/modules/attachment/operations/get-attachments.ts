@@ -1,8 +1,8 @@
 import type { z } from '@hono/zod-openapi';
-import { and, count, eq, getColumns, ilike, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
-import { tenantRead } from '#/db/tenant-context';
+import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -18,6 +18,10 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const { q, sort, order, limit, offset, seqCursor } = input;
 
   const filters: SQL[] = [eq(attachmentsTable.organizationId, organizationId)];
+
+  if (!seqCursor) {
+    filters.push(isNull(attachmentsTable.deletedAt));
+  }
 
   // Sequence-based delta sync filter
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
@@ -39,7 +43,9 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
     contentType: attachmentsTable.contentType,
   });
 
-  const { rawItems, total } = await tenantRead(ctx, async (readCtx) => {
+  const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
+
+  const { rawItems, total } = await read(ctx, async (readCtx) => {
     const { db } = readCtx.var;
     const { createdBy: _cb, updatedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
 

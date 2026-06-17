@@ -1,4 +1,4 @@
-import { bigint, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
@@ -16,6 +16,8 @@ export const productEntityColumns = <T extends ProductEntityType>(entityType: T)
   keywords: varchar({ length: maxLength.html }).notNull().default(''),
   createdBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
   updatedBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
+  deletedAt: timestamp('deleted_at', { mode: 'string' }),
+  deletedBy: uuid('deleted_by').references(() => usersTable.id, { onDelete: 'set null' }),
   /** Sequence number within (parent context, entityType) scope. Set by CDC worker, used for delta sync. */
   seq: bigint('seq', { mode: 'number' }).notNull().default(0),
 });

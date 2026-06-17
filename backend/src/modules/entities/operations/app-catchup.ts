@@ -5,10 +5,8 @@
  *   1. Org-level: O(1) entitySeqs check per org (quick screening)
  *   2. Sub-context: for changed orgs, drill into sub-context counters (precision)
  *
- * Entity seqs (from CDC worker) detect creates/updates.
- * Deletes are scanned from the activities table (cursor-bounded, capped — overflow falls back
- * to client-side list invalidation). Membership changes are detected via the `s:membership` seq
- * counter (O(1) screening), so membership churn never competes with the delete scan budget.
+ * Entity seqs (from CDC worker) detect creates/updates/soft deletes. Membership changes are
+ * detected via the `s:membership` seq counter (O(1) screening).
  *
  * When cursor is null (fresh connect), baselines are returned and membership
  * queries are always invalidated on the client side.
@@ -18,12 +16,7 @@ import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
-import {
-  DELETE_ENUMERATE_CAP,
-  findContextCountersByKeys,
-  findDeleteActivities,
-  findLatestUserActivityId,
-} from '#/modules/entities/entities-queries';
+import { findContextCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
 import { collectSubContextIds } from '#/modules/entities/helpers/collect-sub-context-ids';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
@@ -87,39 +80,11 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 3: Scan product-entity deletes (cursor-bounded, capped). On overflow we flag the
-  // affected entity types for whole-list invalidation and leave the cursor unchanged, so the
-  // next catchup re-scans the same window (idempotent — invalidation is lossless on repeat).
-  // Membership changes are detected via the `s:membership` seq counter (screened in Step 2).
-  let deleteOverflow = false;
-  if (cursor) {
-    const deleteRows = await findDeleteActivities(dbCtx, cursor, organizationIdArray, [
-      ...appConfig.productEntityTypes,
-    ]);
-
-    deleteOverflow = deleteRows.length > DELETE_ENUMERATE_CAP;
-    const rows = deleteOverflow ? deleteRows.slice(0, DELETE_ENUMERATE_CAP) : deleteRows;
-
-    for (const row of rows) {
-      if (!row.organizationId || !changes[row.organizationId]) continue;
-      if (!row.subjectId || !row.entityType) continue;
-
-      const scope = changes[row.organizationId];
-      if (deleteOverflow) {
-        // Too many deletes — flag the type for whole-list invalidation instead of per-id removal
-        if (!scope.deleteOverflow) scope.deleteOverflow = [];
-        if (!scope.deleteOverflow.includes(row.entityType)) scope.deleteOverflow.push(row.entityType);
-      } else {
-        if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
-        scope.deletedByType[row.entityType].push(row.subjectId);
-      }
-    }
-  }
-
-  // Step 4: Build propagation hints for embedding relationships
+  // Step 3: Build propagation hints for embedding relationships.
+  // Soft-deleted embedded sources are returned as removal hints by seq-delta lookup.
   await buildPropagationHints(changes, seqs);
 
-  // Step 5: Prune orgs with no changes (seqs match client and no deletes/propagation)
+  // Step 4: Prune orgs with no changes (seqs match client and no propagation)
   if (seqs) {
     for (const [orgId, scope] of Object.entries(changes)) {
       const hasDeletes = Object.keys(scope.deletedByType).length > 0;
@@ -137,11 +102,9 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 6: Advance cursor. On delete overflow, keep the cursor unchanged so the next catchup
-  // re-scans the same window — activity ids are LSN-derived and not lexicographically sortable,
-  // so we cannot safely resume from a "last id"; re-scanning + invalidation is idempotent.
+  // Step 5: Advance cursor.
   let newCursor: string | null = cursor ?? null;
-  if (!deleteOverflow && (!cursor || Object.keys(changes).length > 0)) {
+  if (!cursor || Object.keys(changes).length > 0) {
     newCursor =
       (await findLatestUserActivityId(dbCtx, Array.from(organizationIds), [
         ...appConfig.productEntityTypes,

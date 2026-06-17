@@ -76,8 +76,8 @@ Scalars resolve silently via HLC comparison; set fields are conflict-free; descr
 On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 1. **Phase A (catchup)** — fast, synchronous, before SSE opens:
-   - Patches deletes directly into detail + list caches (no invalidation)
-   - Compares entity-type seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
+   - Applies any legacy hard-delete IDs directly
+   - Compares entity-type seqs and delta-fetches changed ranges; soft-delete tombstones remove cached product entities
    - Handles membership changes
    - **Cache integrity check**: compares server entity counts vs cached totals
 
@@ -87,7 +87,7 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
    - Without `offlineAccess`, other orgs refetch naturally via React Query hooks on navigation
 
 3. **Live SSE** — handles individual notifications with priority routing:
-   - High priority (current org): fetch single entity + patch into list caches
+   - High priority (current org): range fetch the notified seq and patch into list caches
    - Low priority (other orgs): mark stale, refetch on next access
 
 Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.

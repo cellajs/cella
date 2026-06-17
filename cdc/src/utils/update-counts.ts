@@ -64,7 +64,8 @@ export function getCountDeltas(
 
   // Entities: track entity type counts on org + parent context
   if (tableMeta.kind === 'entity' && organizationId) {
-    const deltas = getEntityDeltas(action, organizationId, tableMeta.type, newRow, oldRow);
+    const countAction = isSoftDeleteTransition(newRow, oldRow) ? 'delete' : action;
+    const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow);
 
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {
@@ -113,6 +114,10 @@ function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
   if (!row) return [];
   const v = row[key];
   return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function isSoftDeleteTransition(newRow: CdcRowData, oldRow: CdcRowData | null): boolean {
+  return oldRow !== null && oldRow.deletedAt == null && newRow.deletedAt != null;
 }
 
 /**

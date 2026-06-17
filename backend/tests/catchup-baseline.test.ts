@@ -13,6 +13,7 @@ import { sql } from 'drizzle-orm';
 import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { activitiesTable } from '#/modules/activities/activities-db';
 import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import type { AppCatchupResponse } from '#/schemas';
 import { defaultHeaders } from './fixtures';
@@ -21,6 +22,8 @@ import { createAppClient } from './test-client';
 import { mockFetchRequest, setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+const legacyProductDeleteActivityId = '00000000-00000001';
 
 describe('Catchup baseline', async () => {
   const call = await createAppClient();
@@ -41,9 +44,23 @@ describe('Catchup baseline', async () => {
         target: contextCountersTable.contextKey,
         set: { counts: { 's:task': 42, 's:attachment': 7, 'e:task': 100, 'e:attachment': 15, 'm:admin': 1 } },
       });
+
+    await db.insert(activitiesTable).values({
+      id: legacyProductDeleteActivityId,
+      tenantId: tenant.tenantId,
+      userId: tenant.user.id,
+      entityType: 'attachment',
+      resourceType: null,
+      action: 'delete',
+      tableName: 'attachments',
+      type: 'attachment.deleted',
+      subjectId: '00000000-0000-4000-a000-00000000d311',
+      organizationId: tenant.organization.id,
+    });
   });
 
   afterAll(async () => {
+    await db.delete(activitiesTable).where(sql`id = ${legacyProductDeleteActivityId}`);
     await db.delete(contextCountersTable).where(sql`context_key = ${tenant.organization.id}`);
     await clearSecurityTestData();
   });
@@ -95,6 +112,24 @@ describe('Catchup baseline', async () => {
     const { changes } = result.data as AppCatchupResponse;
 
     // Org should be pruned — seqs match, no deletes
+    expect(changes[tenant.organization.id]).toBeUndefined();
+  });
+
+  it('does not report product delete activities when seqs match', async () => {
+    const result = await call(postAppCatchup, {
+      body: {
+        cursor: '00000000-00000000',
+        seqs: {
+          [`${tenant.organization.id}:s:task`]: 42,
+          [`${tenant.organization.id}:s:attachment`]: 7,
+        },
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+
+    expect(result.response.status).toBe(200);
+
+    const { changes } = result.data as AppCatchupResponse;
     expect(changes[tenant.organization.id]).toBeUndefined();
   });
 

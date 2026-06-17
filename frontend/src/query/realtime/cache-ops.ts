@@ -52,6 +52,11 @@ function hasParentContextChanged(cached: ItemData, incoming: ItemData): boolean 
   return false;
 }
 
+function isSoftDeleted(entity: ItemData): boolean {
+  const deletedAt = (entity as unknown as Record<string, unknown>).deletedAt;
+  return typeof deletedAt === 'string' && deletedAt.length > 0;
+}
+
 /**
  * Whether `queryKey` is the canonical scope key for `entity`.
  * Keys shaped like [entityType, 'list', ...ancestorIds] match when every string segment
@@ -324,6 +329,11 @@ export async function fetchRangeAndPatch(
 
     // Upsert each entity into list caches and detail cache
     for (const entity of items) {
+      if (isSoftDeleted(entity)) {
+        removeEntity(entityType, entity.id, organizationId ?? undefined);
+        continue;
+      }
+
       // Skip entities with pending mutations to preserve optimistic state
       if (hasPendingMutationForEntity(entityType, entity.id)) {
         console.debug(`[CacheOps] Delta fetch: skipping ${entityType}:${entity.id} — has pending mutation`);

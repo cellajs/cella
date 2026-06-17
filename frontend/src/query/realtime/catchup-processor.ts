@@ -8,11 +8,7 @@ import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getTenantIdForOrg } from './sync-priority';
 
-/**
- * Above this many deletes for a single entity type, invalidate the whole list once
- * instead of removing entities one id at a time (cheaper than N immutable cache rewrites).
- * Mirrors the server-side enumeration cap, which signals larger bursts via `deleteOverflow`.
- */
+/** Compatibility threshold for legacy hard-delete batches. Product soft deletes use seq tombstones. */
 const DELETE_INVALIDATE_THRESHOLD = 100;
 
 /**
@@ -31,11 +27,10 @@ function removeDeletedFromOrg(entityType: string, ids: string[], organizationId:
 }
 
 /**
- * Process app stream catchup response. For each org: remove deleted entities, store org-level
+ * Process app stream catchup response. For each org: apply legacy hard-delete removals, store org-level
  * and child-context entitySeqs, and use server/client seq deltas to fetch only changed entities
  * via `seqCursor` (falling back to list invalidation on first session or when delta is too large).
- * Deletes from `deletedByType` are always patched directly. Org-level seqs act as a fallback for
- * entity types without child-context data (e.g. org-scoped attachments).
+ * Soft-deleted product entities are returned by the seq fetch as tombstones and removed by cache-ops.
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes } = response;
@@ -79,7 +74,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     const membershipChanged =
       serverMembershipSeq !== undefined && serverMembershipSeq !== syncStore.getOrgSeq(organizationId, 'membership');
 
-    // Step 1: Remove deleted entities from cache. Above a threshold (or when the server flags
+    // Step 1: Remove legacy hard-deleted entities from cache. Above a threshold (or when the server flags
     // overflow), invalidate the whole list once instead of removing entities one id at a time.
     for (const [entityType, ids] of Object.entries(deletedByType)) {
       removeDeletedFromOrg(entityType, ids, organizationId);
@@ -113,7 +108,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           const clientContextSeq = syncStore.getContextSeq(organizationId, contextId, entityType);
           if (serverContextSeq === clientContextSeq) continue; // Skip unchanged context/entityType
 
-          const deletedForType = deletedByType[entityType] ?? [];
           const keys = getEntityQueryKeys(entityType);
 
           if (clientContextSeq === 0) {
@@ -122,8 +116,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
             console.debug(`[CatchupProcessor] Context ${contextId}: ${entityType} first session → full refetch`);
           } else {
             const contextDelta = serverContextSeq - clientContextSeq;
-            if (contextDelta > deletedForType.length) {
-              // Creates/updates in this child context — delta fetch using context-scoped seq
+            if (contextDelta > 0) {
               const seqCursor = String(clientContextSeq + 1);
               const patched = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys);
               if (!patched) {
@@ -131,10 +124,6 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
               }
               console.debug(
                 `[CatchupProcessor] Context ${contextId}: ${entityType} delta=${contextDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
-              );
-            } else if (deletedForType.length > 0) {
-              console.debug(
-                `[CatchupProcessor] Context ${contextId}: ${entityType} only ${deletedForType.length} deletes (patched)`,
               );
             }
           }
@@ -155,10 +144,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         const clientEntitySeq = syncStore.getOrgSeq(organizationId, entityType);
         if (serverEntitySeq === clientEntitySeq) continue;
 
-        const deletedForType = deletedByType[entityType] ?? [];
         const entityDelta = serverEntitySeq - clientEntitySeq;
 
-        if (entityDelta > deletedForType.length) {
+        if (entityDelta > 0) {
           const keys = getEntityQueryKeys(entityType);
 
           if (clientEntitySeq === 0) {
@@ -171,13 +159,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
               cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
             }
             console.debug(
-              `[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta}, deletes=${deletedForType.length} → ${patched ? 'delta patched' : 'invalidated'}`,
+              `[CatchupProcessor] Org ${organizationId}: ${entityType} delta=${entityDelta} → ${patched ? 'delta patched' : 'invalidated'}`,
             );
           }
-        } else if (deletedForType.length > 0) {
-          console.debug(
-            `[CatchupProcessor] Org ${organizationId}: ${entityType} only ${deletedForType.length} deletes (patched)`,
-          );
         }
       }
     }
@@ -285,9 +269,10 @@ function getCachedListTotal(
 }
 
 /**
- * Process public stream catchup response. Removes deleted entities, then uses the server vs
+ * Process public stream catchup response. Applies legacy hard-delete removals, then uses the server vs
  * stored seq delta to delta-fetch creates/updates via `seqCursor` (falls back to full list
- * invalidation on first session or when delta fetch is unavailable).
+ * invalidation on first session or when delta fetch is unavailable). Soft deletes arrive as tombstones
+ * in the seq result and are removed by cache-ops.
  */
 export async function processPublicCatchup(response: PostPublicCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes } = response;
@@ -330,9 +315,8 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse, 
       }
     }
 
-    // Phase 2: Determine if creates/updates happened
-    if (delta > deletedIds.length) {
-      // Creates/updates — try delta fetch, fall back to invalidation
+    // Phase 2: Fetch seq changes, including tombstones for soft deletes
+    if (delta > 0) {
       if (clientSeq === 0) {
         cacheOps.invalidateEntityList(keys, 'all');
         console.debug(`[CatchupProcessor] Public ${entityType}: first session → full refetch`);
@@ -343,7 +327,7 @@ export async function processPublicCatchup(response: PostPublicCatchupResponse, 
           cacheOps.invalidateEntityList(keys, 'all');
         }
         console.debug(
-          `[CatchupProcessor] Public ${entityType}: delta=${delta}, deletes=${deletedIds.length} → ${patched ? 'delta patched' : 'invalidated'}`,
+          `[CatchupProcessor] Public ${entityType}: delta=${delta} → ${patched ? 'delta patched' : 'invalidated'}`,
         );
       }
     } else if (deletedIds.length > 0) {

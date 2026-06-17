@@ -1,10 +1,11 @@
+import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
   doublePrecision,
   index,
   snakeCase,
   timestamp,
-  unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -39,7 +40,7 @@ export const pagesTable = snakeCase.table(
     index('pages_seq_idx').on(table.seq),
     index('pages_created_by_idx').on(table.createdBy),
     index('pages_updated_by_idx').on(table.updatedBy),
-    unique('pages_group_order').on(table.parentId, table.displayOrder),
+    uniqueIndex('pages_group_order').on(table.parentId, table.displayOrder).where(sql`${table.deletedAt} IS NULL`),
   ],
 );
 

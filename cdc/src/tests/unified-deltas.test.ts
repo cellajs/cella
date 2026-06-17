@@ -101,7 +101,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.deltasByContextKey.size).toBe(2);
   });
 
-  it('attachment delete: no seq stamp, decrement entity count on org', () => {
+  it('attachment hard delete: no seq stamp, decrement entity count on org', () => {
     const plan = computeUnifiedDeltas(
       mockResult({
         tableMeta: attachmentEntry(),
@@ -116,6 +116,39 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.entityStamp).toBeNull();
 
     expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.deltasByContextKey.size).toBe(1);
+  });
+
+  it('attachment soft delete update: seq stamp and decrement entity count on org', () => {
+    const plan = computeUnifiedDeltas(
+      mockResult({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
+      }),
+    );
+
+    expect(plan.seqContextKey).toBe('org-1');
+    expect(plan.seqKey).toBe('s:attachment');
+    expect(plan.entityStamp).toEqual({ tableName: 'attachments', entityId: 'att-1' });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:attachment': 1, 'e:attachment': -1 });
+    expect(plan.deltasByContextKey.size).toBe(1);
+  });
+
+  it('already deleted attachment update: seq stamp without count delta', () => {
+    const plan = computeUnifiedDeltas(
+      mockResult({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:05:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+      }),
+    );
+
+    expect(plan.seqContextKey).toBe('org-1');
+    expect(plan.seqKey).toBe('s:attachment');
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:attachment': 1 });
     expect(plan.deltasByContextKey.size).toBe(1);
   });
 
@@ -284,6 +317,31 @@ describe('computeBatchUnifiedDeltas', () => {
     const plan = computeBatchUnifiedDeltas(events);
 
     expect(plan.seqGroups).toHaveLength(0);
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+  });
+
+  it('batch of attachment soft deletes: seq group and count deltas accumulated', () => {
+    const events = [
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
+      }),
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-2', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-2', organizationId: 'org-1', deletedAt: null },
+      }),
+    ];
+
+    const plan = computeBatchUnifiedDeltas(events);
+
+    expect(plan.seqGroups).toHaveLength(1);
+    expect(plan.seqGroups[0].contextKey).toBe('org-1');
+    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
+    expect(plan.seqGroups[0].count).toBe(2);
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -2 });
   });
 

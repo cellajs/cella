@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, getTableName, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
@@ -18,6 +18,10 @@ export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$infer
 
 function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
   return 'slug' in table;
+}
+
+function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { deletedAt: Parameters<typeof isNull>[0] } {
+  return 'deletedAt' in table;
 }
 
 // ── Context counter queries ──────────────────────────────────────────────
@@ -226,7 +230,8 @@ export async function resolveEntity<T extends EntityType>(
 ): Promise<EntityModel<T> | undefined> {
   const table = getEntityTable(entityType);
 
-  const condition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
+  const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
+  const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
   const [entity] = await db
     .select()
@@ -245,12 +250,13 @@ export async function resolveEntities<T extends EntityType>(
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
+  const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
   const entities = await db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
-    .where(inArray(table.id, ids));
+    .where(condition);
   return entities as Array<EntityModel<T>>;
 }
 
@@ -269,4 +275,35 @@ export const findChangedEntityIds = async (
     .where(sql`seq > ${afterSeq} AND organization_id = ${organizationId}`);
 
   return rows.map((r) => r.id);
+};
+
+/** Fetch IDs of entities that changed since a seq, split into live updates and soft-delete tombstones. */
+export const findChangedEntityDeltaIds = async (
+  { var: { db } }: DbContext,
+  entityType: EntityType,
+  organizationId: string,
+  afterSeq: number,
+) => {
+  const table = getEntityTable(entityType);
+  const tableName = getTableName(table);
+  const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
+
+  const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
+    SELECT id, ${deletedAtSelect} AS "deletedAt"
+    FROM ${sql.raw(`"${tableName}"`)}
+    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}
+  `);
+
+  const updatedIds: string[] = [];
+  const deletedIds: string[] = [];
+
+  for (const row of result.rows) {
+    if (row.deletedAt) {
+      deletedIds.push(row.id);
+    } else {
+      updatedIds.push(row.id);
+    }
+  }
+
+  return { updatedIds, deletedIds };
 };

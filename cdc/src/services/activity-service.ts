@@ -112,7 +112,7 @@ export function sendBatchMessageToApi(
     });
   }
 
-  // Collect deleted IDs
+  // Collect physical-delete IDs. Product soft deletes are update events with seq-stamped tombstones.
   const deletedIds = isDelete ? events.map((e) => e.activity.subjectId).filter(Boolean) as string[] : undefined;
 
   // Generate batch cache token for product entities

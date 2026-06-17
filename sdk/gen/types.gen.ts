@@ -138,7 +138,7 @@ export type StreamNotification = {
    */
   batchUntilSeq: number | null;
   /**
-   * Entity IDs in a delete batch
+   * Entity IDs in a legacy hard-delete batch
    */
   deletedIds: Array<string> | null;
   /**
@@ -457,6 +457,8 @@ export type Page = {
     ({
       [key: string]: unknown;
     } | null);
+  deletedAt: string | null;
+  deletedBy: string | null;
   seq: number;
   status: 'unpublished' | 'published' | 'archived';
   renderMode: 'default' | 'overview' | 'nodeOnly';
@@ -486,6 +488,8 @@ export type Attachment = {
     ({
       [key: string]: unknown;
     } | null);
+  deletedAt: string | null;
+  deletedBy: string | null;
   seq: number;
   public: boolean;
   bucketName: string;
