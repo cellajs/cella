@@ -152,7 +152,10 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions' | 'stats';
+export type SyncService = 'analyze' | 'sync' | 'audit' | 'forks' | 'contributions' | 'stats';
+
+/** Analyze output scope for interactive and machine-readable flows */
+export type AnalyzeScope = 'all' | 'risk' | 'protected';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -176,6 +179,12 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Print the unified diff for a single contributed file, then exit (contributions; for tooling/agents) */
   diff?: string;
+
+  /** Open a VS Code side-by-side diff for one file, then exit (analyze) */
+  openDiff?: string;
+
+  /** Scope of files returned in analyze list/json output */
+  scope?: AnalyzeScope;
 
   /** Show verbose output */
   verbose: boolean;

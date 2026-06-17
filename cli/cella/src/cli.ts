@@ -7,7 +7,7 @@
 import process from 'node:process';
 import { select } from '@inquirer/prompts';
 import { Command } from 'commander';
-import type { CellaCliConfig, RuntimeConfig, SyncService } from './config/types';
+import type { AnalyzeScope, CellaCliConfig, RuntimeConfig, SyncService } from './config/types';
 import pc from './utils/colors';
 import { resolveUpstream } from './utils/config';
 import { NAME, printHeader, setJsonMode, VERSION } from './utils/display';
@@ -20,12 +20,22 @@ type CliServiceSelection = {
 
 type CliOptionState = Pick<
   RuntimeConfig,
-  'logFile' | 'verbose' | 'list' | 'json' | 'diff' | 'fork' | 'hard' | 'force' | 'checkOverrides' | 'coverage'
+  | 'logFile'
+  | 'verbose'
+  | 'list'
+  | 'json'
+  | 'diff'
+  | 'openDiff'
+  | 'scope'
+  | 'fork'
+  | 'hard'
+  | 'force'
+  | 'checkOverrides'
+  | 'coverage'
 >;
 
 type MenuContext = {
   hasForks: boolean;
-  syncWithPackages: boolean;
 };
 
 type ServiceOptionDefinition = {
@@ -47,6 +57,8 @@ const defaultOptions: CliOptionState = {
   list: false,
   json: false,
   diff: undefined,
+  openDiff: undefined,
+  scope: undefined,
   fork: undefined,
   hard: false,
   force: false,
@@ -55,12 +67,18 @@ const defaultOptions: CliOptionState = {
 };
 
 function readOptions(opts: Record<string, unknown>): CliOptionState {
+  const scope = typeof opts.scope === 'string' ? opts.scope : undefined;
+  const normalizedScope: AnalyzeScope | undefined =
+    scope === 'all' || scope === 'risk' || scope === 'protected' ? scope : undefined;
+
   return {
     logFile: opts.log === true,
     verbose: opts.verbose === true,
     list: opts.list === true,
     json: opts.json === true,
     diff: typeof opts.diff === 'string' ? opts.diff : undefined,
+    openDiff: typeof opts.openDiff === 'string' ? opts.openDiff : undefined,
+    scope: normalizedScope,
     fork: typeof opts.fork === 'string' ? opts.fork : undefined,
     hard: opts.hard === true,
     force: opts.force === true,
@@ -73,14 +91,13 @@ const serviceDefinitions: ServiceDefinition[] = [
   {
     name: 'analyze',
     description: 'dry run to see what would change on sync',
-    options: [{ flags: '--log', description: 'write complete file list to cella-sync.log' }],
-  },
-  {
-    name: 'inspect',
-    description: 'review drifted files, view diffs, pin files',
     options: [
+      { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--list', description: 'non-interactive output for tooling (one file per line)' },
       { flags: '--json', description: 'machine-readable output for tooling/agents' },
+      { flags: '--scope <scope>', description: 'analyze scope for --list/--json: all|risk|protected' },
+      { flags: '--diff <path>', description: 'print unified diff for one file, then exit' },
+      { flags: '--open-diff <path>', description: 'open VS Code side-by-side diff for one file, then exit' },
     ],
   },
   {
@@ -90,13 +107,7 @@ const serviceDefinitions: ServiceDefinition[] = [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--hard', description: 'overwrite drifted files with upstream version (aggressive realignment)' },
     ],
-    menuDescription: (context) =>
-      context.syncWithPackages ? 'merge upstream changes + sync packages' : 'merge upstream changes into your app',
-  },
-  {
-    name: 'packages',
-    description: 'sync package.json keys with upstream',
-    includeInMenu: (context) => !context.syncWithPackages,
+    menuDescription: () => 'merge upstream changes + sync packages',
   },
   {
     name: 'audit',
@@ -142,7 +153,6 @@ const serviceDefinitions: ServiceDefinition[] = [
 function getMenuContext(userConfig: CellaCliConfig): MenuContext {
   return {
     hasForks: (userConfig.forks?.length ?? 0) > 0,
-    syncWithPackages: userConfig.settings.syncWithPackages !== false,
   };
 }
 
@@ -198,6 +208,8 @@ function buildProgram(setSelection: (selection: CliServiceSelection) => void): C
         '',
         'Examples:',
         '  $ cella analyze',
+        '  $ cella analyze --json --scope risk',
+        '  $ cella analyze --open-diff frontend/src/routes/index.tsx',
         '  $ cella sync --hard',
         '  $ cella audit --check-overrides',
         '  $ cella contributions --fork raak --json',

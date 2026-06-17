@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { AnalysisSummary, AnalyzedFile, FileStatus, MergeResult } from '../config/types';
 import pc from './colors';
@@ -302,6 +303,26 @@ function formatFileDateInfo(
   return date ? pc.dim(` ≠ ${date} ${linkLabel}`) : '';
 }
 
+/**
+ * Build a VS Code command URI to open a visual diff for this file.
+ * Only available when local upstream path mode is configured.
+ */
+function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
+  const { fileLinkMode = 'commit', upstreamLocalPath, forkPath } = options;
+  if (fileLinkMode !== 'local' || !upstreamLocalPath || !forkPath) return '';
+
+  const upstreamAbsolute = resolve(forkPath, upstreamLocalPath, filePath);
+  const forkAbsolute = resolve(forkPath, filePath);
+
+  const left = pathToFileURL(upstreamAbsolute).toString();
+  const right = pathToFileURL(forkAbsolute).toString();
+  const title = `${filePath} (upstream vs fork)`;
+  const args = encodeURIComponent(JSON.stringify([left, right, title]));
+  const url = `command:vscode.diff?${args}`;
+
+  return ` ${pc.dim('·')} ${hyperlink('diff', url)}`;
+}
+
 /** Display configuration for a file status */
 interface StatusConfig {
   icon: string;
@@ -400,7 +421,8 @@ function printFileGroup(
     const commit = useUpstream ? file.upstreamCommit : file.changedCommit;
     const date = useUpstream ? file.upstreamChangedAt : file.changedAt;
     const dateInfo = formatFileDateInfo(file.path, commit, date, linkOptions);
-    console.info(`  ${config.icon} ${file.path}${dateInfo}`);
+    const diffInfo = getVsCodeDiffLink(file.path, linkOptions);
+    console.info(`  ${config.icon} ${file.path}${dateInfo}${diffInfo}`);
   }
 
   if (filtered.length > maxLines) {

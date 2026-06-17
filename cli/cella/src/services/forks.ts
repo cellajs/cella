@@ -167,7 +167,7 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
     await runPackages(forkRuntimeConfig);
   } else if (forkConfig.settings.syncWithPackages !== false) {
     console.warn(
-      `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync or packages.`,
+      `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync.`,
     );
   }
 }

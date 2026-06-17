@@ -14,7 +14,6 @@ import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
-import { runInspect } from './services/inspect';
 import { runPackages } from './services/packages';
 import { runStats } from './services/stats';
 import { runSync } from './services/sync';
@@ -104,9 +103,9 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for packages/audit/forks/contributions/stats which don't need clean working dir)
-    if (!['packages', 'audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
-      const isReadOnly = config.service === 'analyze' || config.service === 'inspect';
+    // Run preflight checks (except for audit/forks/contributions/stats which don't need clean working dir)
+    if (!['audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
+      const isReadOnly = config.service === 'analyze';
       await preflight(forkPath, userConfig.settings.workingBranch, {
         skipCleanCheck: isReadOnly,
         warnOnBranch: isReadOnly,
@@ -120,25 +119,17 @@ async function main(): Promise<void> {
         break;
       }
 
-      case 'inspect':
-        await runInspect(config);
-        break;
-
       case 'sync': {
         const result = await runSync(config);
         if (config.settings.syncWithPackages !== false && result.success) {
           await runPackages(config);
         } else if (config.settings.syncWithPackages !== false) {
           console.warn(
-            `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync or packages.`,
+            `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync.`,
           );
         }
         break;
       }
-
-      case 'packages':
-        await runPackages(config);
-        break;
 
       case 'audit':
         await runAudit(config, { force: config.force, checkOverrides: config.checkOverrides });

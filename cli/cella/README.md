@@ -28,9 +28,7 @@ pnpm cella contributions --fork raak --json
 | Service | Description |
 |---------|-------------|
 | `analyze` | Dry run to see what would change on sync |
-| `inspect` | Review drifted files, view diffs, pin files |
 | `sync` | Merge upstream changes into your app |
-| `packages` | Sync package.json keys with upstream |
 | `audit` | Check for outdated packages & vulnerabilities |
 | `stats` | Count files by category and workspace package |
 | `forks` * | Sync downstream to local fork repositories |
@@ -48,10 +46,8 @@ Service-specific help is available via `pnpm cella <service> --help`.
 
 | Service | Useful options |
 |---------|----------------|
-| analyze | `--log` |
-| inspect | `--list`, `--json` |
+| analyze | `--log`, `--list`, `--json`, `--scope <all\|risk\|protected>`, `--diff <path>`, `--open-diff <path>` |
 | sync | `--log`, `--hard` |
-| packages | No command-specific flags |
 | audit | `--list`, `--force`, `--check-overrides` |
 | forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
 | contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
