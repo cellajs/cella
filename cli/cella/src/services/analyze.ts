@@ -13,6 +13,7 @@ import { openVsCodeDiff } from '../utils/diff';
 import {
   createSpinner,
   type LinkOptions,
+  printAheadPreview,
   printDivergedPreview,
   printDriftedWarning,
   printPinnedPreview,
@@ -129,9 +130,10 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
     return result;
   }
 
-  // Remaining paths (--open-diff and interactive output) render VS Code diff/open links,
-  // so materialize the upstream view worktree exactly once here. Machine-readable modes
-  // (--json/--list) and the unified --diff returned above and never pay this cost.
+  // Remaining paths (--open-diff and interactive output) need the upstream view
+  // worktree for VS Code file links and exact `code --diff` commands, so
+  // materialize it exactly once here. Machine-readable modes (--json/--list)
+  // and the unified --diff return above and never pay this cost.
   const upstreamViewPath = await refreshViewWorktree(config.forkPath, config.upstreamRef);
 
   if (config.openDiff) {
@@ -153,6 +155,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
 
   // Print file lists first (analyze shows file lists for review)
   printSyncFiles(result.files, linkOptions);
+  printAheadPreview(result.files, linkOptions);
   printDriftedWarning(result.files, linkOptions);
   printDivergedPreview(result.files, linkOptions);
   printPinnedPreview(result.files, linkOptions);

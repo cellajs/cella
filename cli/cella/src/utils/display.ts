@@ -8,7 +8,6 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { AnalysisSummary, AnalyzedFile, FileStatus, MergeResult } from '../config/types';
 import pc from './colors';
@@ -241,16 +240,19 @@ function hyperlink(label: string, url?: string): string {
   return `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
 }
 
+function quoteShellArg(value: string): string {
+  return `'${value.split("'").join("'\\''")}'`;
+}
+
 /**
- * Build a VS Code command URI that opens a file from the fork workspace.
+ * Build a VS Code deep link that opens a file from the fork workspace.
  */
 function getVsCodeOpenFileLink(filePath: string, options: LinkOptions): string {
   const { forkPath } = options;
   if (!forkPath) return filePath;
 
-  const target = pathToFileURL(resolve(forkPath, filePath)).toString();
-  const args = encodeURIComponent(JSON.stringify([target]));
-  const url = `command:vscode.open?${args}`;
+  const absolutePath = resolve(forkPath, filePath);
+  const url = `vscode://file${absolutePath}`;
   return hyperlink(filePath, url);
 }
 
@@ -352,10 +354,16 @@ function formatFileDateInfo(
 }
 
 /**
- * Build a VS Code command URI to open a visual diff for this file.
- * Available whenever an upstream view worktree is present and the file exists in it.
+ * Build a copyable `code --diff` command for this file.
+ * `command:` URIs only execute inside trusted VS Code markdown/webviews, while
+ * terminal OSC 8 links are opened as external URLs and cannot run them.
  */
 function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
+  const showTerminalDiffCommands = false;
+  // TODO: Re-enable rendered diff commands once we have a terminal UX that is
+  // clearly actionable without implying click support that VS Code cannot honor.
+  if (!showTerminalDiffCommands) return '';
+
   const { upstreamViewPath, forkPath } = options;
   if (!upstreamViewPath || !forkPath) return '';
 
@@ -365,13 +373,7 @@ function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
 
   const forkAbsolute = resolve(forkPath, filePath);
 
-  const left = pathToFileURL(upstreamAbsolute).toString();
-  const right = pathToFileURL(forkAbsolute).toString();
-  const title = `${filePath} (upstream vs fork)`;
-  const args = encodeURIComponent(JSON.stringify([left, right, title]));
-  const url = `command:vscode.diff?${args}`;
-
-  return ` ${pc.dim('·')} ${hyperlink('diff', url)}`;
+  return ` ${pc.dim('·')} ${pc.dim(`code --diff ${quoteShellArg(upstreamAbsolute)} ${quoteShellArg(forkAbsolute)}`)}`;
 }
 
 /**
@@ -528,6 +530,17 @@ export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions):
 }
 
 /**
+ * Print protected fork changes preview for analyze mode.
+ * These files differ from upstream but are protected by ignored/pinned config.
+ */
+export function printAheadPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+  printFileGroup(files, 'ahead', linkOptions, {
+    title: `${pc.blue('↑ protected in fork')}`,
+    hint: 'these files have fork changes and are protected by pinned or ignored config.',
+  });
+}
+
+/**
  * Print drifted files warning.
  */
 export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOptions): void {
@@ -615,5 +628,27 @@ export function printSyncComplete(result: MergeResult): void {
     console.info();
     console.info(pc.dim('  review staged changes and commit to finish the sync.'));
   }
+  console.info();
+}
+
+/**
+ * Print warnings for aggressive sync flags (--hard / --unpinned) after completion.
+ *
+ * Explains what each active flag did and its consequence, and adds a shared
+ * caution to cherry-pick deliberately when either is used.
+ */
+export function printFlagWarnings(options: { hard?: boolean; unpinned?: boolean }): void {
+  const { hard, unpinned } = options;
+  if (!hard && !unpinned) return;
+
+  if (hard) {
+    console.info(pc.yellow('⚠ --hard used: drifted files were treated as behind, overwriting with incoming.'));
+  }
+  if (unpinned) {
+    console.info(
+      pc.yellow('⚠ --unpinned used: pinned files in cella.config.ts were ignored, this can result in more drifts.'),
+    );
+  }
+  console.info(pc.yellow('  Be extra careful & cherrypick what you want only.'));
   console.info();
 }

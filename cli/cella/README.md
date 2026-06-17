@@ -47,7 +47,7 @@ Service-specific help is available via `pnpm cella <service> --help`.
 | Service | Useful options |
 |---------|----------------|
 | analyze | `--log`, `--list`, `--json`, `--scope <all\|risk\|protected>`, `--diff <path>`, `--open-diff <path>` |
-| sync | `--log`, `--hard` |
+| sync | `--log`, `--hard`, `--unpinned` |
 | audit | `--list`, `--force`, `--check-overrides` |
 | forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
 | contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
@@ -100,6 +100,15 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 - Run `pnpm cella analyze` first to preview changes without applying
 - Use `pinned` for files you fully control (modify, keep, or delete)
 - Use `ignored` for app-specific docs, assets, or config you fully own
+
+### Aggressive sync flags
+
+Two opt-in flags make `sync` more aggressive. Both resurface full upstream history (natural merge-base, not the last-sync point), so expect a larger diff and a post-run warning — cherry-pick deliberately. They compose (`--hard --unpinned`).
+
+| Flag | Effect |
+|------|--------|
+| `--hard` | Overwrites `drifted` files with upstream (local-only changes are replaced) |
+| `--unpinned` | Ignores `pinned` files so upstream surfaces as `behind`/`diverged`; `package.json` stays pinned |
 
 ## Status Indicators
 

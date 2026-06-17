@@ -39,6 +39,7 @@ import {
   getCommitInfo,
   getConflictedFiles,
   getEffectiveMergeBase,
+  getMergeBase,
   getRemoteUrl,
   getStagedNewFiles,
   gitMv,
@@ -51,7 +52,7 @@ import {
   restoreToHead,
   storeLastSyncRef,
 } from '../utils/git';
-import { isIgnored, isPinned } from '../utils/overrides';
+import { isIgnored, isPinnedForSync } from '../utils/overrides';
 import { type AnalyzePredicates, analyzeRefs, enrichChangeInfo } from './analyze-core';
 
 /** Progress callback type - receives message and optional detail for sub-line */
@@ -84,7 +85,7 @@ function getGitHubBaseUrl(remoteUrl: string): string | null {
 function syncPredicates(config: RuntimeConfig): AnalyzePredicates {
   return {
     isIgnored: (path) => isIgnored(path, config),
-    isPinned: (path) => isPinned(path, config),
+    isPinned: (path) => isPinnedForSync(path, config, config.unpinned),
     hard: config.hard,
   };
 }
@@ -288,7 +289,7 @@ async function applyDirectMerge(
   const gitConflicts = await getConflictedFiles(forkPath);
   for (const filePath of gitConflicts) {
     const fileIsIgnored = isIgnored(filePath, config);
-    const fileIsPinned = isPinned(filePath, config);
+    const fileIsPinned = isPinnedForSync(filePath, config, config.unpinned);
 
     if (fileIsIgnored) {
       const existsInFork = await fileExistsAtRef(forkPath, 'HEAD', filePath);
@@ -421,9 +422,13 @@ export async function runMergeEngine(
     const forkOriginUrl = await getRemoteUrl(forkPath, 'origin');
     const forkGitHubUrl = forkOriginUrl ? getGitHubBaseUrl(forkOriginUrl) : null;
 
-    // Get effective merge base (handles stale base from previous squash syncs)
-    const effectiveBase = await getEffectiveMergeBase(forkPath, 'HEAD', upstreamRef);
-    const mergeBase = effectiveBase.base;
+    // Get effective merge base (handles stale base from previous squash syncs).
+    // --hard and --unpinned use the natural merge-base instead, resurfacing the
+    // full upstream history so previously-hidden drift/pins reappear consistently.
+    const aggressive = config.hard === true || config.unpinned === true;
+    const mergeBase = aggressive
+      ? await getMergeBase(forkPath, 'HEAD', upstreamRef)
+      : (await getEffectiveMergeBase(forkPath, 'HEAD', upstreamRef)).base;
 
     // Get upstream commit info and count commits since merge-base
     const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
@@ -465,8 +470,8 @@ export async function runMergeEngine(
         // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
         // When user commits, it becomes a merge commit (self-healing ancestry).
         await storeLastSyncRef(forkPath, upstreamCommit.hash);
-        // Materialize the upstream view worktree so auto-merged files get clickable
-        // VS Code diff links (byte-consistent with the fetched upstream ref).
+        // Materialize the upstream view worktree so auto-merged files get exact
+        // `code --diff` commands (byte-consistent with the fetched upstream ref).
         const upstreamViewPath = await refreshViewWorktree(forkPath, upstreamRef);
         onStep?.(
           'merge in progress',

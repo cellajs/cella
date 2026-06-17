@@ -48,10 +48,11 @@ export function getViewWorktreePath(repoPath: string): string {
  * Refresh the persistent "upstream view" worktree used for VS Code diffs.
  *
  * Unlike the sync worktree, this one must survive process exit so asynchronous
- * `code --diff` invocations and clickable diff links keep working after the CLI
- * returns. It is therefore NOT registered for signal cleanup. Instead, each run
- * removes the previous worktree and recreates it at the current upstream ref, so
- * a leftover is simply cleaned up when the next process starts.
+ * `code --diff` invocations and copyable diff commands printed by the CLI still
+ * point at valid files after the process returns. It is therefore NOT registered
+ * for signal cleanup. Instead, each run removes the previous worktree and
+ * recreates it at the current upstream ref, so a leftover is simply cleaned up
+ * when the next process starts.
  *
  * @returns Absolute path to the checked-out upstream worktree.
  */

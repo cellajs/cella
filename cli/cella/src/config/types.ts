@@ -189,6 +189,14 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;
 
+  /**
+   * Disable pinned files (cella.config.ts pinnedFiles) for this sync so upstream
+   * versions surface as behind/diverged. package.json files stay pinned (handled
+   * by the packages service). Like --hard, uses the natural merge-base to resurface
+   * full upstream history.
+   */
+  unpinned?: boolean;
+
   /** Bypass pnpm metadata cache for fresh registry data (audit service) */
   force?: boolean;
 

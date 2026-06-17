@@ -51,6 +51,19 @@ export function isPinned(filePath: string, config: CellaCliConfig): boolean {
   return files.includes(filePath);
 }
 
+/**
+ * Resolve effective pin status for a sync run, honoring the --unpinned flag.
+ *
+ * When `unpinned` is true, configured pins are disabled so upstream versions
+ * surface as behind/diverged — but package.json files stay pinned (their content
+ * is reconciled separately by the packages service).
+ */
+export function isPinnedForSync(filePath: string, config: CellaCliConfig, unpinned?: boolean): boolean {
+  if (isPackageJson(filePath)) return true;
+  if (unpinned) return false;
+  return isPinned(filePath, config);
+}
+
 /** Validation warning */
 interface ConfigWarning {
   type: 'pinned-glob' | 'pinned-not-found' | 'ignored-not-found';

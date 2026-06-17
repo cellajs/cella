@@ -18,6 +18,8 @@ import { entityCache } from './app-entity-cache';
 import { validateSignedCacheToken } from './token-signer';
 
 /**
+ * TODO implement, currently its not used by any route
+ *
  * Batch-resolve cache middleware for list endpoints.
  * Intercepts requests with a batch cache token and assembles the response
  * from individually cached entities when all are available.

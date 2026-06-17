@@ -29,6 +29,7 @@ type CliOptionState = Pick<
   | 'scope'
   | 'fork'
   | 'hard'
+  | 'unpinned'
   | 'force'
   | 'checkOverrides'
   | 'coverage'
@@ -61,6 +62,7 @@ const defaultOptions: CliOptionState = {
   scope: undefined,
   fork: undefined,
   hard: false,
+  unpinned: false,
   force: false,
   checkOverrides: false,
   coverage: false,
@@ -81,6 +83,7 @@ function readOptions(opts: Record<string, unknown>): CliOptionState {
     scope: normalizedScope,
     fork: typeof opts.fork === 'string' ? opts.fork : undefined,
     hard: opts.hard === true,
+    unpinned: opts.unpinned === true,
     force: opts.force === true,
     checkOverrides: opts.checkOverrides === true,
     coverage: opts.coverage === true,
@@ -106,6 +109,7 @@ const serviceDefinitions: ServiceDefinition[] = [
     options: [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--hard', description: 'overwrite drifted files with upstream version (aggressive realignment)' },
+      { flags: '--unpinned', description: 'ignore pinned files (except package.json) to resurface upstream changes' },
     ],
     menuDescription: () => 'merge upstream changes + sync package.json',
   },
@@ -211,6 +215,7 @@ function buildProgram(setSelection: (selection: CliServiceSelection) => void): C
         '  $ cella analyze --json --scope risk',
         '  $ cella analyze --open-diff frontend/src/routes/index.tsx',
         '  $ cella sync --hard',
+        '  $ cella sync --unpinned',
         '  $ cella audit --check-overrides',
         '  $ cella contributions --fork raak --json',
       ].join('\n'),
