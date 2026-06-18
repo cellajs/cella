@@ -1,3 +1,4 @@
+import { type PeerCertificate, checkServerIdentity as tlsCheckServerIdentity } from 'node:tls';
 import type { DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import { env } from '../env';
@@ -32,7 +33,24 @@ const sslConfig =
               "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
           );
         }
-        return { ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'), rejectUnauthorized: true };
+        return {
+          ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'),
+          rejectUnauthorized: true,
+          // Scaleway's managed PostgreSQL presents a self-signed, per-instance
+          // certificate whose CN is the private endpoint host (e.g. an IP like
+          // 10.0.0.2) with no subjectAltName. We connect by that same private
+          // IP, but Node's default identity check only matches IP literals
+          // against `iPAddress` SAN entries — it ignores the CN — so it would
+          // reject the connection ("IP is not in the cert's altnames") even
+          // though we pin the exact CA. Authentication is already guaranteed by
+          // `rejectUnauthorized` verifying the chain against that pinned CA; we
+          // additionally assert the presented cert's CN equals the host we
+          // dialed, then fall back to Node's default check for anything else.
+          checkServerIdentity: (host: string, cert: PeerCertificate) => {
+            if (cert.subject?.CN === host) return undefined;
+            return tlsCheckServerIdentity(host, cert);
+          },
+        };
       })()
     : undefined;
 
