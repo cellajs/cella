@@ -1,10 +1,12 @@
 import { registerBenchSeed } from '../registry';
-import { TOTAL_USERS } from './ids';
+import { CORE_ID_VARIANTS } from './ids';
 import { loadtestUser } from './user';
+
+export const TOTAL_USERS = 1200;
 
 registerBenchSeed({
   table: 'users',
   order: 20,
-  cleanupWhere: `id::text LIKE '00000000-0000-4000-a000%'`,
+  idVariant: CORE_ID_VARIANTS.user,
   rows: ({ now }) => Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestUser(i), createdAt: now })),
 });

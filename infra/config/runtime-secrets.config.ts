@@ -56,7 +56,8 @@ export default defineRuntimeSecrets({
   },
   databaseSslCa: {
     secretName: 'database-ssl-ca',
-    description: 'PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance)',
+    description:
+      'base64-encoded PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance; base64 keeps the multi-line PEM deliverable through the line-based .env.runtime)',
     envVar: 'DATABASE_SSL_CA',
     required: true,
     valueSource: 'pulumi',

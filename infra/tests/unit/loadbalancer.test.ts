@@ -35,15 +35,25 @@ describe('loadbalancer module — registry-driven wiring', () => {
   it('creates one LB backend per exposed service on its declared port', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(`\$\{service\.slug\}-lb-backend`/)
     expect(src).toMatch(/forwardPort:\s*service\.healthPort/)
-    expect(src).toMatch(/serverIps:\s*\[getInstanceIp\(service\.slug\)\]/)
+    expect(src).toMatch(/serverIps:\s*serviceGenerationIps\(service\.slug\)/)
   })
 
-  it('all backends health-check the ingress liveness path (not the app /health)', () => {
-    // The per-VM ingress proxy answers /__ingress/health locally and always
-    // 200 while it is up, so an app rollover never drains the LB backend.
-    expect(src).toMatch(/healthCheckHttp:\s*\{\s*uri:\s*'\/__ingress\/health',\s*code:\s*200\s*\}/)
-    // Exactly one Backend construction site — the registry loop — so no
-    // backend can bypass the ingress health check.
+  it('lets Pulumi own the server list so pulumi up re-points the LB to the new generation', () => {
+    // serverIps comes from the active VM generation(s); Pulumi must NOT ignore
+    // the field, or a generation replacement would leave the LB pointing at the
+    // deleted old VMs. (The cutover task is the future zero-downtime owner, but
+    // it is not wired into CI, so Pulumi owns serverIps for self-contained applies.)
+    expect(src).not.toMatch(/ignoreChanges:\s*\['serverIps'\]/)
+  })
+
+  it('health-checks the app\'s own /health (no ingress hop)', () => {
+    // The app binds the host port directly in the immutable-node model, so the
+    // LB health-checks its real /health — a crashed generation is marked down.
+    expect(src).toMatch(/uri:\s*'\/health'/)
+    expect(src).not.toContain('__ingress/health')
+    // onMarkedDownAction follows the service drainPolicy.
+    expect(src).toMatch(/onMarkedDownAction:/)
+    // Exactly one Backend construction site — the registry loop.
     expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(1)
   })
 

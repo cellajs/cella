@@ -13,7 +13,7 @@ import { wsClient } from '../network/websocket-client';
 
 import { handleDataMessage } from './handle-message';
 
-const { reconnection } = RESOURCE_LIMITS;
+const { reconnection, slotTakeover } = RESOURCE_LIMITS;
 
 // ================================
 // Replication service setup
@@ -124,15 +124,27 @@ export function setupBackpressure(): void {
  * Subscribe to the replication slot with automatic reconnection.
  */
 export async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
+  // During a rolling deploy the new worker contends for the slot the old worker
+  // still holds, so subscribe() rejects until the old worker releases it. For the
+  // first `slotTakeover.maxAttempts` retries (the handoff window) retry at the
+  // tightened `slotTakeover.retryDelayMs` so the takeover is sub-second; after
+  // that, settle to the normal `reconnection` cadence so a steady-state reconnect
+  // does not hammer Postgres. A first boot with no old worker acquires the slot
+  // immediately, so the fast cadence only ever applies under real contention.
+  let attempt = 0;
   while (true) {
     try {
       logEvent('info', `Subscribing to replication slot...`);
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
     } catch (error) {
-      logEvent('warn', `Subscription error, retrying in ${reconnection.retryDelayMs / 1000}s...`, { error: getErrorMessage(error) });
+      attempt += 1;
+      const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
+      const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
+      const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
+      logEvent('warn', `Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, { error: getErrorMessage(error) });
       replicationState.markStopped();
-      await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
   }
 }

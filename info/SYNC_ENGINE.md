@@ -167,7 +167,7 @@ Clients handle three notification shapes from the live SSE stream:
 |-------|-----------|----------------|
 | **Single entity** | `seq` set, `batchUntilSeq` null | Range fetch that seq and patch caches; tombstones remove cached entities |
 | **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`; live rows upsert, tombstones remove |
-| **Hard-delete batch** | `deletedIds` set | Compatibility path for physical deletes; remove IDs directly |
+| **Hard delete** | `action: 'delete'` | Physical delete (rare, e.g. DB admin); invalidate the scoped list to reconcile — soft deletes arrive as `update` tombstones instead |
 
 Batch notifications carry a `cacheToken` that maps to all entities in the batch, enabling the server's TTL entity cache to serve all subscribers from a single DB query.
 
@@ -192,7 +192,6 @@ interface StreamNotification {
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
   cacheToken: string | null;                    // HMAC-signed token for LRU cache access (entities only)
   batchUntilSeq: number | null;                 // Last seq in batch (null = single entity notification)
-  deletedIds: string[] | null;                  // Legacy hard-delete IDs for delete batches (null = not a delete batch)
   propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
 }
 
@@ -246,7 +245,6 @@ Unauthenticated stream for public entities (e.g., pages).
 The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId (app) or entityType (public). Each value is a shared summary shape:
 ```typescript
 interface CatchupChangeSummary {
-  deletedByType: Record<string, string[]>; // Legacy hard-delete IDs grouped by entityType, usually empty for products
   entitySeqs?: Record<string, number>;     // Entity-type seqs from context_counters counts JSONB (managed by CDC worker)
   entityCounts?: Record<string, number>;   // Live entity totals (e:{type} keys) for cache integrity
 }
@@ -255,8 +253,7 @@ interface CatchupChangeSummary {
 The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup — fast, in connect flow before SSE opens):**
-- Applies any legacy hard-delete IDs directly; product soft deletes arrive as tombstone rows in seq delta fetches
-- Compares entity-type `serverEntitySeq` (from `context_counters.counts['s:{type}']`, managed by CDC worker) with stored `clientEntitySeq`
+- Compares entity-type `serverEntitySeq` (from `context_counters.counts['s:{type}']`, managed by CDC worker) with stored `clientEntitySeq`; product soft deletes arrive as tombstone rows in seq delta fetches
 - If creates/updates detected for an entity type → invalidates active list queries (`invalidateEntityList(keys, 'active')`) so mounted queries refetch immediately
 - **Cache integrity check**: Compares server `entityCounts` (from `context_counters.counts['e:{type}']`) with cached list totals — if counts diverge despite matching seqs, invalidates the affected list queries
 - Updates stored entity-type seqs

@@ -1,8 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import type { Organization } from 'sdk';
 
-// TODO review this pattern
-
 // These hooks use getRouteApi with string route IDs instead of importing route objects directly.
 // This avoids circular imports between route files and component modules, which cause Vite HMR failures.
 

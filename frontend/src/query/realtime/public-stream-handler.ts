@@ -40,15 +40,6 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
     if (seq > current) store.setPublicSeq(entityType, seq);
   }
 
-  // Legacy hard-delete batch: product soft deletes use update notifications + seq-range tombstones.
-  if (message.deletedIds?.length) {
-    for (const id of message.deletedIds) {
-      cacheOps.removeEntity(entityType, id);
-    }
-    if (message.propagation) propagateEmbeddings(message.propagation);
-    return;
-  }
-
   // Create/update batch: range fetch also handles soft-delete tombstones.
   if (message.batchUntilSeq && hasEntityQueryKeys(entityType)) {
     const keys = getEntityQueryKeys(entityType);
@@ -95,9 +86,10 @@ export function handlePublicStreamNotification(message: StreamNotification): voi
       break;
 
     case 'delete':
-      if (!subjectId) return;
-      // Remove from detail and list caches directly (no refetch needed)
-      cacheOps.removeEntity(entityType, subjectId);
+      // Physical hard delete (rare — e.g. a DB admin). Soft deletes arrive as 'update' tombstones;
+      // a hard delete leaves no row or tombstone to fetch, so invalidate the list to reconcile.
+      // Covers single and batch deletes.
+      cacheOps.invalidateEntityList(keys, 'all');
       if (message.propagation) propagateEmbeddings(message.propagation);
       break;
   }

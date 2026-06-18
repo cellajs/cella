@@ -16,6 +16,7 @@
     "wait-for-images": "tsx tasks/wait-for-images.ts",
     "verify-frontend-bundle": "tsx tasks/verify-frontend-bundle.ts",
     "assert-vm-grants": "tsx tasks/assert-vm-grants.ts",
+    "assert-secrets-deliverable": "tsx tasks/assert-secrets-deliverable.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
@@ -24,12 +25,12 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1063.0",
+    "@aws-sdk/client-s3": "catalog:",
     "@inquirer/core": "^11.2.1",
     "@inquirer/prompts": "^8.5.1",
-    "@pulumi/pulumi": "^3.245.0",
+    "@pulumi/pulumi": "catalog:",
     "@pulumi/random": "^4.21.0",
-    "@pulumiverse/scaleway": "^1.50.0",
+    "@pulumiverse/scaleway": "^1.50.1",
     "shared": "workspace:*"
   },
   "devDependencies": {

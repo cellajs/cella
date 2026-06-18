@@ -66,7 +66,6 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     stx,
     cacheToken,
     batchUntilSeq: event.batchUntilSeq ?? null,
-    deletedIds: event.deletedIds ?? null,
     propagation,
   };
 }

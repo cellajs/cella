@@ -46,10 +46,11 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     healthPort: cfg.port,
     healthTimeoutSeconds: cfg.healthTimeoutSeconds,
     runMigrate: cfg.runMigrate ?? false,
-    rolloverStrategy: cfg.rolloverStrategy,
+    replacementStrategy: cfg.replacementStrategy,
     drainSeconds: cfg.drainSeconds ?? 0,
     instanceType: cfg.instanceType,
   }
+  if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
@@ -61,15 +62,16 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
 /**
  * Expand one fork app-service entry into a full Compose service block.
  *
- * `extraEnv` is machinery-injected env (e.g. the blue-green slots' synthetic
- * `RUN_MIGRATIONS_ON_BOOT=false`, gated by the `migrate` companion); `withMeta`
- * is false for the idle blue-green slot, a pure expansion that carries no
- * logical-service `x-service`.
+ * `extraEnv` is machinery-injected env (e.g. a `runMigrate` service's synthetic
+ * `RUN_MIGRATIONS_ON_BOOT=false`, since its one-shot `migrate` companion owns
+ * migrations). Under the immutable-node model the app container binds the host
+ * port directly (the per-VM ingress proxy is gone) and the LB health-checks the
+ * app's own `/health`.
  */
 function appBlock(
   slug: string,
   cfg: AppServiceConfig,
-  opts: { extraEnv?: Record<string, string>; withMeta?: boolean } = {},
+  opts: { extraEnv?: Record<string, string> } = {},
 ): ComposeService {
   const environment = {
     ...(cfg.includeStandardEnv === false ? {} : STANDARD_ENV),
@@ -80,22 +82,23 @@ function appBlock(
     image: cfg.image,
     profiles: [slug],
     restart: 'unless-stopped',
-    expose: [String(cfg.port)],
+    // Publish the host port directly — the LB targets it and health-checks the
+    // app's real `/health` (no ingress hop in the immutable-node model).
+    ports: [`${cfg.port}:${cfg.port}`],
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
     ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
     environment,
     healthcheck: healthcheck(cfg.port, cfg.startPeriod),
   }
-  if (opts.withMeta !== false) block['x-service'] = metaFrom(slug, cfg)
+  block['x-service'] = metaFrom(slug, cfg)
   return block
 }
 
 /**
- * One-shot schema migrator derived from a `blue-green` service that opts into
- * `runMigrate`. Reuses the service image via `MODE=migrate`; applies migrations
- * + ensures DB roles, then exits. Run by the reconciler BEFORE the idle slot
- * rolls and gated on exit 0, so the slot health window is pure boot time. No
- * port/healthcheck (not long-running).
+ * One-shot schema migrator derived from a service that opts into `runMigrate`.
+ * Reuses the service image via `MODE=migrate`; applies migrations + ensures DB
+ * roles, then exits. Run at the new generation's boot BEFORE the app starts
+ * (expand-before-cutover), gated on exit 0. No port/healthcheck (not long-running).
  */
 function migrateBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   return {
@@ -108,74 +111,30 @@ function migrateBlock(slug: string, cfg: AppServiceConfig): ComposeService {
 }
 
 // ---------------------------------------------------------------------------
-// Machinery — hand-authored, cella-owned. The ingress proxy and the blue-green
-// expansion. Not fork data; driven by the fork's service registry.
+// Machinery — hand-authored, cella-owned. The one-shot migrate companion and
+// the compose assembly. Not fork data; driven by the fork's service registry.
 // ---------------------------------------------------------------------------
 
 /**
- * Per-VM ingress reverse proxy. Started once at boot and left running; the
- * reconciler never recreates it. Owns the host port and forwards to the active
- * app container over the compose network, so an app rollover never drops the LB
- * backend. No `x-service` → not a logical service. Runs on every service VM, so
- * its profiles are the full set of fork service slugs.
- */
-function ingressBlock(slugs: readonly string[]): ComposeService {
-  return {
-    image: 'caddy:2-alpine',
-    profiles: [...slugs],
-    restart: 'unless-stopped',
-    ports: ['${INGRESS_PORT}:${INGRESS_PORT}'],
-    environment: {
-      INGRESS_PORT: '${INGRESS_PORT}',
-      UPSTREAM_HOST: '${UPSTREAM_HOST}',
-      UPSTREAM_PORT: '${UPSTREAM_PORT}',
-    },
-    volumes: ['./ingress.Caddyfile:/etc/caddy/Caddyfile:ro', 'ingress_data:/data', 'ingress_config:/config'],
-    healthcheck: {
-      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${INGRESS_PORT}/__ingress/health'],
-      interval: '30s',
-      timeout: '5s',
-      retries: 3,
-      start_period: '5s',
-    },
-  }
-}
-
-/** Volumes owned by the ingress proxy. */
-const INFRA_VOLUMES = { ingress_data: null, ingress_config: null } as const
-
-/**
- * Env injected into both blue-green slots when the service runs migrations: the
- * one-shot `migrate` companion handles schema changes before the slot rolls, so
- * the slots themselves must NOT migrate on boot.
+ * Env injected into a `runMigrate` service's app block: its one-shot `migrate`
+ * companion owns schema changes (run at new-generation boot before the app), so
+ * the app container itself must NOT migrate on boot.
  */
 const MIGRATE_GATED_ENV: Record<string, string> = { RUN_MIGRATIONS_ON_BOOT: 'false' }
 
 /**
- * Assemble the full `ComposeFile` from the fork's service registry. The ingress
- * proxy is emitted first (it runs on every service VM), then each service in
- * declaration order.
- *
- * A `blue-green` service (the backend) expands into the cella zero-downtime
- * mechanism: two named slots — `<slug>-blue` (active, carries `x-service`) and
- * `<slug>-green` (idle, a pure expansion) — that only ONE serves at a time while
- * the reconciler flips the ingress upstream between them; plus, if it opts into
- * `runMigrate`, a one-shot `migrate` companion run before the roll. An
- * `in-place` service emits a single block.
+ * Assemble the full `ComposeFile` from the fork's service registry. Under the
+ * immutable-node model each service is a single app block that binds the host
+ * port directly (no per-VM ingress proxy); zero-downtime overlap happens at the
+ * load balancer between VM generations, not inside the VM. A `runMigrate`
+ * service additionally emits a one-shot `migrate` companion, run at the new
+ * generation's boot before the app starts.
  */
 export function assembleCompose(appServices: AppServices): ComposeFile {
-  const services: Record<string, ComposeService> = {
-    ingress: ingressBlock(Object.keys(appServices)),
-  }
+  const services: Record<string, ComposeService> = {}
   for (const [slug, cfg] of Object.entries(appServices)) {
-    if (cfg.rolloverStrategy === 'blue-green') {
-      const extraEnv = cfg.runMigrate ? MIGRATE_GATED_ENV : undefined
-      services[`${slug}-blue`] = appBlock(slug, cfg, { extraEnv, withMeta: true })
-      services[`${slug}-green`] = appBlock(slug, cfg, { extraEnv, withMeta: false })
-      if (cfg.runMigrate) services.migrate = migrateBlock(slug, cfg)
-    } else {
-      services[slug] = appBlock(slug, cfg)
-    }
+    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.runMigrate ? MIGRATE_GATED_ENV : undefined })
+    if (cfg.runMigrate) services.migrate = migrateBlock(slug, cfg)
   }
-  return { services, volumes: INFRA_VOLUMES }
+  return { services }
 }

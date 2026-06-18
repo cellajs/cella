@@ -80,7 +80,12 @@ const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = {
   databaseUrlAdmin: connectionStringAdmin,
   databaseUrlRuntime: connectionStringRuntime,
   databaseUrlCdc: connectionStringCdc,
-  databaseSslCa: caCertificate,
+  // The RDB CA is a multi-line PEM. Runtime secrets are delivered to VMs via
+  // `.env.runtime` (a docker-compose env_file), which is line-based and rejects
+  // multi-line values — a multi-line secret fails `runtime-secret-sync` and
+  // blocks the app from booting. Store it base64-encoded (single line); the app
+  // db clients decode it back to PEM. See backend/src/db/db.ts.
+  databaseSslCa: pulumi.output(caCertificate).apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
 }
 
 function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {

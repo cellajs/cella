@@ -62,125 +62,124 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   }
 
   const spinner = createSpinner('checking for outdated packages & vulnerabilities...');
+  try {
+    // Clear pnpm metadata cache when force is set to get fresh registry data
+    if (options.force) {
+      spinner.text = 'clearing pnpm metadata cache...';
+      clearCache();
+      spawnSync('pnpm', ['cache', 'delete', '*'], {
+        cwd: forkPath,
+        stdio: 'ignore',
+      });
+      spinner.text = 'checking for outdated packages & vulnerabilities...';
+    }
 
-  // Clear pnpm metadata cache when force is set to get fresh registry data
-  if (options.force) {
-    spinner.text = 'clearing pnpm metadata cache...';
-    clearCache();
-    spawnSync('pnpm', ['cache', 'delete', '*'], {
-      cwd: forkPath,
-      stdio: 'ignore',
-    });
-    spinner.text = 'checking for outdated packages & vulnerabilities...';
-  }
+    // Run outdated check and audit in parallel
+    const [outdatedPackages, auditResult] = await Promise.all([getOutdatedPackages(forkPath), runPnpmAudit(forkPath)]);
 
-  // Run outdated check and audit in parallel
-  const [outdatedPackages, auditResult] = await Promise.all([
-    Promise.resolve(getOutdatedPackages(forkPath)),
-    Promise.resolve(runPnpmAudit(forkPath)),
-  ]);
+    const packageNames = Object.keys(outdatedPackages);
+    const vulnMap = buildVulnerabilityMap(auditResult);
 
-  const packageNames = Object.keys(outdatedPackages);
-  const vulnMap = buildVulnerabilityMap(auditResult);
+    if (packageNames.length === 0 && vulnMap.size === 0) {
+      spinnerSuccess('all packages are up to date and secure');
+      return;
+    }
 
-  if (packageNames.length === 0 && vulnMap.size === 0) {
-    spinnerSuccess('all packages are up to date and secure');
-    return;
-  }
+    // Load cache for changelog URLs
+    const cache = loadCache();
 
-  // Load cache for changelog URLs
-  const cache = loadCache();
+    spinner.text = `found ${packageNames.length} outdated package(s) - fetching metadata...`;
 
-  spinner.text = `found ${packageNames.length} outdated package(s) - fetching metadata...`;
-
-  // Pre-cache package.json reads for dependent names
-  const dependentNameCache = new Map<string, string>();
-  for (const name of packageNames) {
-    for (const dep of outdatedPackages[name].dependentPackages) {
-      if (!dependentNameCache.has(dep.location)) {
-        const packageJsonPath = path.join(dep.location, 'package.json');
-        try {
-          const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-          dependentNameCache.set(dep.location, pkgJson.name || path.basename(dep.location));
-        } catch {
-          dependentNameCache.set(dep.location, path.basename(dep.location));
+    // Pre-cache package.json reads for dependent names
+    const dependentNameCache = new Map<string, string>();
+    for (const name of packageNames) {
+      for (const dep of outdatedPackages[name].dependentPackages) {
+        if (!dependentNameCache.has(dep.location)) {
+          const packageJsonPath = path.join(dep.location, 'package.json');
+          try {
+            const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+            dependentNameCache.set(dep.location, pkgJson.name || path.basename(dep.location));
+          } catch {
+            dependentNameCache.set(dep.location, path.basename(dep.location));
+          }
         }
       }
     }
-  }
 
-  // Fetch metadata for all packages in parallel (with concurrency limit)
-  const enhancedPackages: EnhancedPackageInfo[] = [];
-  const batchSize = 10;
+    // Fetch metadata for all packages in parallel (with concurrency limit)
+    const enhancedPackages: EnhancedPackageInfo[] = [];
+    const batchSize = 10;
 
-  for (let i = 0; i < packageNames.length; i += batchSize) {
-    const batch = packageNames.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map(async (name) => {
-        const pkg = outdatedPackages[name];
-        const metadata = await fetchNpmMetadata(name);
-        const repoUrl = getRepoUrl(metadata);
-        const changelogUrl = await findChangelogUrl(repoUrl, name, cache);
+    for (let i = 0; i < packageNames.length; i += batchSize) {
+      const batch = packageNames.slice(i, i + batchSize);
+      const results = await Promise.all(
+        batch.map(async (name) => {
+          const pkg = outdatedPackages[name];
+          const metadata = await fetchNpmMetadata(name);
+          const repoUrl = getRepoUrl(metadata);
+          const changelogUrl = await findChangelogUrl(repoUrl, name, cache);
 
-        // Detect workspaces where this package is pinned (exact version, no ^ or ~)
-        const pinnedIn: string[] = [];
-        for (const d of pkg.dependentPackages) {
-          try {
-            const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
-            const spec = pkgJson[pkg.dependencyType]?.[name] || '';
-            if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
-              pinnedIn.push(d.name);
+          // Detect workspaces where this package is pinned (exact version, no ^ or ~)
+          const pinnedIn: string[] = [];
+          for (const d of pkg.dependentPackages) {
+            try {
+              const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
+              const spec = pkgJson[pkg.dependencyType]?.[name] || '';
+              if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
+                pinnedIn.push(d.name);
+              }
+            } catch {
+              // skip
             }
-          } catch {
-            // skip
           }
-        }
 
-        return {
-          name,
-          current: pkg.current,
-          latest: pkg.latest,
-          dependents: pkg.dependentPackages.map((d) => d.name),
-          dependentLocations: pkg.dependentPackages.map((d) => d.location),
-          isDev: pkg.dependencyType === 'devDependencies',
-          isMajorUpdate: isMajorVersionChange(pkg.current, pkg.latest),
-          pinnedIn,
-          repoUrl,
-          changelogUrl,
-          releasesUrl: getReleasesUrl(repoUrl),
-          vulnerabilities: vulnMap.get(name) || [],
-        };
-      }),
-    );
-    enhancedPackages.push(...results);
-  }
+          return {
+            name,
+            current: pkg.current,
+            latest: pkg.latest,
+            dependents: pkg.dependentPackages.map((d) => d.name),
+            dependentLocations: pkg.dependentPackages.map((d) => d.location),
+            isDev: pkg.dependencyType === 'devDependencies',
+            isMajorUpdate: isMajorVersionChange(pkg.current, pkg.latest),
+            pinnedIn,
+            repoUrl,
+            changelogUrl,
+            releasesUrl: getReleasesUrl(repoUrl),
+            vulnerabilities: vulnMap.get(name) || [],
+          };
+        }),
+      );
+      enhancedPackages.push(...results);
+    }
 
-  // Save updated cache
-  saveCache(cache);
+    // Save updated cache
+    saveCache(cache);
 
-  // Sort: by dependents (primary), then alphabetically (secondary)
-  enhancedPackages.sort((a, b) => {
-    const depA = formatDependents(a.dependents);
-    const depB = formatDependents(b.dependents);
-    const depCompare = depA.localeCompare(depB);
-    if (depCompare !== 0) return depCompare;
-    return a.name.localeCompare(b.name);
-  });
+    // Sort: by dependents (primary), then alphabetically (secondary)
+    enhancedPackages.sort((a, b) => {
+      const depA = formatDependents(a.dependents);
+      const depB = formatDependents(b.dependents);
+      const depCompare = depA.localeCompare(depB);
+      if (depCompare !== 0) return depCompare;
+      return a.name.localeCompare(b.name);
+    });
 
-  // Stop spinner
-  spinner.stop();
+    spinner.stop();
 
-  // Print results
-  if (enhancedPackages.length > 0) {
-    printOutdatedResults(enhancedPackages, dependentNameCache, forkPath);
-  }
-  printVulnerabilityResults(auditResult, vulnMap);
+    // Print results
+    if (enhancedPackages.length > 0) {
+      printOutdatedResults(enhancedPackages, dependentNameCache, forkPath);
+    }
+    printVulnerabilityResults(auditResult, vulnMap);
 
-  // Interactive update prompt (skip in non-interactive/list mode)
-  // Show when there are outdated packages OR vulnerabilities to fix
-  const hasVulns = vulnMap.size > 0;
-  if ((enhancedPackages.length > 0 || hasVulns) && !config.list) {
-    await promptForUpdates(enhancedPackages, forkPath, auditResult);
+    // Interactive update prompt (skip in non-interactive/list mode)
+    // Show when there are outdated packages OR vulnerabilities to fix
+    const hasVulns = vulnMap.size > 0;
+    if ((enhancedPackages.length > 0 || hasVulns) && !config.list) {
+      await promptForUpdates(enhancedPackages, forkPath, auditResult);
+    }
+  } finally {
+    spinner.stop();
   }
 }
 
@@ -430,26 +429,18 @@ async function promptForUpdates(
     }
   }
 
+  const catalogPackages = readCatalogPackageNames(forkPath);
+
   // Group selected packages by workspace
-  const workspacePackages = new Map<string, { filter: string; packages: string[] }>();
+  const workspacePackages = new Map<string, { packages: string[] }>();
   for (const pkgName of selectedPackages) {
     const pkg = packages.find((p) => p.name === pkgName);
     if (!pkg) continue;
 
     for (let i = 0; i < pkg.dependents.length; i++) {
       const dependent = pkg.dependents[i];
-      const location = pkg.dependentLocations[i];
       if (!workspacePackages.has(dependent)) {
-        // Read the workspace package name from package.json for --filter
-        const pkgJsonPath = path.join(location, 'package.json');
-        let filterName = dependent;
-        try {
-          const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
-          filterName = pkgJson.name || dependent;
-        } catch {
-          // Use dependent name as fallback
-        }
-        workspacePackages.set(dependent, { filter: filterName, packages: [] });
+        workspacePackages.set(dependent, { packages: [] });
       }
       workspacePackages.get(dependent)?.packages.push(pkgName);
     }
@@ -471,20 +462,35 @@ async function promptForUpdates(
     }
   }
 
-  // Build pnpm update commands and run with inherited stdio so user sees pnpm output directly
-  const commands: string[] = [];
-  for (const [workspace, { filter, packages: pkgs }] of workspacePackages) {
+  // Summarize impacted workspaces before running a single workspace-wide update.
+  // With catalogMode=strict, per-workspace updates can raise the catalog version
+  // before other direct consumers are updated, causing catalog mismatch failures.
+  for (const [workspace, { packages: pkgs }] of workspacePackages) {
     const pkgList = pkgs.join(', ');
     console.info(`${pc.cyan('↑')} ${pc.bold(workspace)}: ${pc.dim(pkgList)}`);
-    commands.push(`pnpm --filter ${filter} up --latest ${pkgs.join(' ')}`);
   }
 
   if (selectedPackages.length > 0) {
     console.info();
 
-    // Run combined command with inherited stdio so pnpm output streams directly to terminal
-    const combined = commands.join(' && ');
-    const result = spawnSync('sh', ['-c', combined], {
+    const selectedCatalogPackages = selectedPackages.filter((pkgName) => catalogPackages.has(pkgName));
+
+    if (selectedCatalogPackages.length > 0) {
+      console.info(pc.dim(`normalizing catalog consumers: ${selectedCatalogPackages.join(', ')}`));
+      const normalizeResult = spawnSync('pnpm', ['-r', 'up', ...selectedCatalogPackages], {
+        cwd: forkPath,
+        stdio: 'inherit',
+      });
+
+      console.info();
+      if (normalizeResult.status !== 0) {
+        console.error(pc.red(`✗ catalog normalization failed (exit code ${normalizeResult.status})`));
+        return;
+      }
+    }
+
+    // Run one recursive update so pnpm can rewrite catalogs and direct consumers atomically.
+    const result = spawnSync('pnpm', ['-r', 'up', '--latest', ...selectedPackages], {
       cwd: forkPath,
       stdio: 'inherit',
     });
@@ -581,6 +587,47 @@ function parseYamlOverrides(content: string): Record<string, string> {
 }
 
 /**
+ * Parses the top-level default 'catalog:' block from pnpm-workspace.yaml.
+ * Simple line-based parser for flat key: value entries — avoids a YAML dependency.
+ */
+function parseYamlCatalog(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const lines = content.split('\n');
+  let inCatalog = false;
+
+  for (const line of lines) {
+    if (/^catalog:\s*$/.test(line)) {
+      inCatalog = true;
+      continue;
+    }
+
+    if (inCatalog) {
+      if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
+        break;
+      }
+
+      const match = line.match(/^\s+(.+?):\s+['"]?([^'"]+)['"]?\s*$/);
+      if (match) {
+        const key = match[1].replace(/^['"]|['"]$/g, '');
+        result[key] = match[2];
+      }
+    }
+  }
+
+  return result;
+}
+
+function readCatalogPackageNames(forkPath: string): Set<string> {
+  const workspacePath = path.join(forkPath, 'pnpm-workspace.yaml');
+  try {
+    const content = fs.readFileSync(workspacePath, 'utf-8');
+    return new Set(Object.keys(parseYamlCatalog(content)));
+  } catch {
+    return new Set();
+  }
+}
+
+/**
  * Reads all pnpm.overrides from package.json and pnpm-workspace.yaml.
  * Returns a map of override key -> { target version, source file }.
  */
@@ -629,7 +676,7 @@ async function checkOverrides(forkPath: string): Promise<void> {
   }
 
   // Run audit to see current vulnerabilities
-  const auditResult = runPnpmAudit(forkPath);
+  const auditResult = await runPnpmAudit(forkPath);
 
   // Build set of currently vulnerable package names from advisories
   const activeAdvisoryPackages = new Set<string>();

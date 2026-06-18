@@ -407,6 +407,40 @@ jobs:
           SERVICES=$(echo "$BUILD_IMAGES_MATRIX" | jq -r '[.[].service] | join(",")')
           pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --services "$SERVICES"
 
+      - name: Set generation + release SHA (immutable-node)
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          RUN_NUMBER: ${{ github.run_number }}
+          HAS_YJS: ${{ needs.setup.outputs.yjs_url != '' && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          # Immutable-node model: each deploy provisions a NEW VM generation
+          # `vm-<svc>-<gen>` with the image SHA baked into its cloud-init. The
+          # generation number is the monotonic CI run number (no state to
+          # persist between runs); the SHA is this commit. compute.ts reads
+          # these to name + bake each generation; Pulumi's state deletes the
+          # previous generation. The SHA must be a pinned commit, never :latest.
+          case "$IMAGE_TAG" in
+            ''|latest|*:latest)
+              echo "::error::refusing to deploy a non-pinned image tag '$IMAGE_TAG'"
+              exit 1
+              ;;
+          esac
+          # ai reuses the backend image at the same SHA; cdc/frontend always
+          # deploy; yjs only when enabled. Setting config for a disabled service
+          # is harmless (compute only reads enabled ones), so the list is fixed.
+          # Keys are underscore-flat under the `infra` namespace — a colon in the
+          # key would collide with Pulumi's `<namespace>:<key>` syntax.
+          for svc in backend cdc frontend yjs ai; do
+            pulumi config set "infra:gen_$svc" "$RUN_NUMBER" --stack "$STACK"
+            pulumi config set "infra:sha_$svc" "$IMAGE_TAG" --stack "$STACK"
+          done
+
       - name: Pulumi up
         working-directory: infra
         env:
@@ -455,6 +489,28 @@ jobs:
           # call (the CI key lacks that permission) and lists IAM policies
           # directly.
           pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID" --organization-id "$SCW_DEFAULT_ORGANIZATION_ID"
+
+      - name: Verify runtime secrets are deliverable
+        # Second belt-and-suspenders preflight for a prod-down class: a `required`
+        # runtime secret that cannot be written into the line-based
+        # /opt/app/.env.runtime (e.g. a raw multi-line PEM) fails the on-VM
+        # runtime-secret-sync, which by design blocks the service from booting —
+        # exactly how a multi-line DATABASE_SSL_CA took the backend down. `pulumi
+        # up` writing the value isn't enough; this read-only check fetches each
+        # required secret the way a VM will and asserts it is single-line and
+        # present BEFORE any VM rolls, failing the deploy with the offending env
+        # vars instead of after a fleet-wide outage. Scoped to the services this
+        # fork actually deploys (verify_rollout_matrix) so a disabled service's
+        # optional secret never trips it.
+        working-directory: infra
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          REGION: ${{ needs.setup.outputs.region }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SERVICES_MATRIX: ${{ needs.setup.outputs.verify_rollout_matrix }}
+        run: |
+          SERVICES=$(echo "$SERVICES_MATRIX" | jq -r '[.[].service] | join(",")')
+          pnpm --filter infra assert-secrets-deliverable --region "$REGION" --project-id "$SCW_DEFAULT_PROJECT_ID" --services "$SERVICES"
 
       - name: Capture stack outputs
         id: outputs
@@ -512,26 +568,17 @@ jobs:
             || echo "- **Domains:** no domain" >> $GITHUB_STEP_SUMMARY
 
   # -------------------------------------------------------------------------
-  # Roll services — for each backend service (backend, cdc, yjs, ai):
-  #   1. PUT the new image SHA into s3://<deploy_tags_bucket>/deploy/<svc>.tag
-  #   2. Poll the public health endpoint until X-App-Version == SHA
+  # Verify the rollout — `pulumi up` above already provisioned the new VM
+  # generation per service (image SHA baked into cloud-init, the migrate
+  # companion run at the backend generation's boot). These jobs only confirm
+  # each public service serves the expected SHA (X-App-Version == SHA).
   #
-  # Matrix runs in parallel; `fail-fast: true` cancels siblings the moment one
-  # service refuses to roll, so a broken cdc/yjs deploy doesn't have to wait
-  # 5 minutes on a separately-stuck backend before the workflow turns red.
+  # Backend first (it owns the expand migration), then the rest in parallel.
+  # cdc has no public health endpoint; its replacement is confirmed indirectly
+  # by the backend coming up healthy (the cdc worker reconnects to it).
   #
-  # Tag rollback: re-running the workflow on the previous commit re-PUTs the
-  # old SHA. The on-VM reconciler sees the change and rolls back the same way
-  # it rolled forward — no separate code path. CI doesn't try to "undo" on
-  # failure; that would race the reconciler's own rollback (which only the VM
-  # has the local context to do safely).
-  # -------------------------------------------------------------------------
-  # -------------------------------------------------------------------------
-  # Roll backend FIRST — backend is the schema owner. Its reconciler runs the
-  # expand (additive) migration before swapping the app container, so the
-  # backend deploy-tag write + health gate MUST go green before any other
-  # service rolls. This guarantees the new schema is present before ai/yjs/cdc/
-  # frontend pick up code that may depend on it. roll-rest gates on this job.
+  # Rollback: re-run the workflow on the previous commit — it provisions a new
+  # generation from that SHA the same way it rolled forward (no separate path).
   # -------------------------------------------------------------------------
   roll-backend:
     runs-on: ubuntu-latest
@@ -556,16 +603,10 @@ jobs:
           - service: backend
             health_url: ${{ needs.setup.outputs.backend_url }}
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
       REGION: ${{ needs.setup.outputs.region }}
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       SERVICE: ${{ matrix.service }}
     steps:
-      # Checkout + Node are needed for the wait-for-version task below. The
-      # deploy-tag write only needs the preinstalled aws CLI, but keeping setup
-      # at the top means both steps share one toolchain install.
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
@@ -581,52 +622,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra...
 
-      - name: Write deploy tag for ${{ matrix.service }}
-        run: |
-          ENDPOINT="https://s3.$REGION.scw.cloud"
-          # Immutability guard: the reconciler pulls whatever SHA we publish
-          # here, and Pulumi can no longer reject a mutable tag at plan time
-          # (image tags left cloud-init entirely). So the write path is now the
-          # sole gate — refuse to publish an empty value or a mutable :latest.
-          case "$EXPECTED_SHA" in
-            ''|latest|*:latest)
-              echo "::error::refusing to publish non-pinned tag '$EXPECTED_SHA' to deploy/$SERVICE.tag"
-              exit 1
-              ;;
-          esac
-          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
-          # Plain text body, no newline — reconciler reads it as-is.
-          printf '%s' "$EXPECTED_SHA" \
-            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
-                --content-type 'text/plain'
-
       - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
         if: matrix.health_url != ''
         env:
           # URLs come from setup outputs (derived from shared/ appConfig).
           # appConfig URLs are canonical https:// origins; CI probes /health
-          # directly without any scheme transformation.
+          # directly. `pulumi up` already provisioned the new generation (SHA
+          # baked into cloud-init); this only confirms it is serving. Frontend
+          # (Caddy) returns 200, backend/yjs/ai 204; both emit X-App-Version.
           BASE: ${{ matrix.health_url }}
-        # Status/header poll lives in infra/tasks/wait-for-version.ts (unit
-        # tested) instead of an inline awk loop. Frontend (Caddy) returns 200,
-        # backend/yjs/ai return 204; both emit X-App-Version. 100 × 3s = 5 min
-        # budget per service; the matrix runs in parallel. The status triple
-        # lets the poll fast-fail on a reconciler-reported failure (and surface
-        # its phase/reason) instead of blindly waiting out the whole budget.
-        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA" --status-bucket "$TAG_BUCKET" --service "$SERVICE" --region "$REGION"
-
-      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
-        if: failure()
-        env:
-          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
-        # Key selection (which stage markers / latest full log to show) lives in
-        # the unit-tested infra/tasks/fetch-boot-diag.ts; the aws calls are the
-        # only side effect. roll-backend already has Node installed above.
-        run: pnpm --filter infra fetch-boot-diag --bucket "$STATE_BUCKET" --service "$SERVICE" --region "$REGION"
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
 
   # -------------------------------------------------------------------------
   # Roll the remaining services — runs ONLY after roll-backend is green, so the
-  # expand migration has already been applied. These four roll in parallel.
+  # expand migration (run at the backend generation's boot) is applied. These
+  # roll in parallel.
   # -------------------------------------------------------------------------
   roll-rest:
     runs-on: ubuntu-latest
@@ -650,16 +660,10 @@ jobs:
         # the backend image at this SHA; the probe confirms the AI LB serves it.
         include: ${{ fromJSON(needs.setup.outputs.roll_rest_matrix) }}
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
       REGION: ${{ needs.setup.outputs.region }}
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       SERVICE: ${{ matrix.service }}
     steps:
-      # Checkout + Node are needed for the wait-for-version task below. The
-      # deploy-tag write only needs the preinstalled aws CLI, but keeping setup
-      # at the top means both steps share one toolchain install.
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
@@ -675,48 +679,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra...
 
-      - name: Write deploy tag for ${{ matrix.service }}
-        run: |
-          ENDPOINT="https://s3.$REGION.scw.cloud"
-          # Immutability guard: the reconciler pulls whatever SHA we publish
-          # here, and Pulumi can no longer reject a mutable tag at plan time
-          # (image tags left cloud-init entirely). So the write path is now the
-          # sole gate — refuse to publish an empty value or a mutable :latest.
-          case "$EXPECTED_SHA" in
-            ''|latest|*:latest)
-              echo "::error::refusing to publish non-pinned tag '$EXPECTED_SHA' to deploy/$SERVICE.tag"
-              exit 1
-              ;;
-          esac
-          echo "Publishing $EXPECTED_SHA to s3://$TAG_BUCKET/deploy/$SERVICE.tag"
-          # Plain text body, no newline — reconciler reads it as-is.
-          printf '%s' "$EXPECTED_SHA" \
-            | aws --endpoint-url "$ENDPOINT" s3 cp - "s3://$TAG_BUCKET/deploy/$SERVICE.tag" \
-                --content-type 'text/plain'
-
       - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
         if: matrix.health_url != ''
         env:
-          # URLs come from setup outputs (derived from shared/ appConfig).
-          # appConfig URLs are canonical https:// origins; CI probes /health
-          # directly without any scheme transformation.
           BASE: ${{ matrix.health_url }}
-        # Status/header poll lives in infra/tasks/wait-for-version.ts (unit
-        # tested) instead of an inline awk loop. Frontend (Caddy) returns 200,
-        # backend/yjs/ai return 204; both emit X-App-Version. 100 × 3s = 5 min
-        # budget per service; the matrix runs in parallel. The status triple
-        # lets the poll fast-fail on a reconciler-reported failure (and surface
-        # its phase/reason) instead of blindly waiting out the whole budget.
-        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA" --status-bucket "$TAG_BUCKET" --service "$SERVICE" --region "$REGION"
-
-      - name: Fetch ${{ matrix.service }} boot diagnostics on failure
-        if: failure()
-        env:
-          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
-        # Key selection (which stage markers / latest full log to show) lives in
-        # the unit-tested infra/tasks/fetch-boot-diag.ts; the aws calls are the
-        # only side effect. roll-rest already has Node installed above.
-        run: pnpm --filter infra fetch-boot-diag --bucket "$STATE_BUCKET" --service "$SERVICE" --region "$REGION"
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
 
   # -------------------------------------------------------------------------
   # Verify rollout — backward-compatible alias that depends on the roll jobs.
@@ -742,10 +709,6 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.setup.outputs.verify_rollout_matrix) }}
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-      TAG_BUCKET: ${{ needs.setup.outputs.deploy_tags_bucket }}
-      REGION: ${{ needs.setup.outputs.region }}
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       SERVICE: ${{ matrix.service }}
     steps:

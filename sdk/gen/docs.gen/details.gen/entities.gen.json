@@ -138,17 +138,11 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }",
+              "description": "Per-entityType change summary: { [entityType]: { entitySeqs? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "deletedByType": {
-                    "type": "object",
-                    "required": true,
-                    "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
-                  },
-                  "deleteOverflow": { "type": "array", "required": false, "itemType": "string" },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
@@ -358,17 +352,11 @@
             "changes": {
               "type": "object",
               "required": true,
-              "description": "Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }",
+              "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }",
               "additionalProperties": {
                 "type": "object",
                 "required": false,
                 "properties": {
-                  "deletedByType": {
-                    "type": "object",
-                    "required": true,
-                    "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
-                  },
-                  "deleteOverflow": { "type": "array", "required": false, "itemType": "string" },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
@@ -450,7 +438,7 @@
         "example": {
           "changes": {
             "org-example-id": {
-              "deletedByType": {}
+              "entitySeqs": { "attachment": 1 }
             }
           },
           "cursor": "d9909rsl2y2ii9vbcsc2ywg7"

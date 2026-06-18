@@ -4,7 +4,6 @@ import { signCacheToken } from '#/middlewares/entity-cache/token-signer';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
-import type { ContextEntityIdColumns } from '#/permissions/permission-manager/types';
 import { logEvent } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
 import { createStreamDispatcher } from '../stream/dispatcher';
@@ -43,7 +42,7 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
 
     // Build permission subject with all ancestor context IDs from the event
     try {
-      const subject = buildSubject(event.entityType, event as Partial<ContextEntityIdColumns>, { id: event.subjectId });
+      const subject = buildSubject(event.entityType, event, { id: event.subjectId });
 
       return checkPermission(subscriber.memberships, 'read', subject, { isSystemAdmin: subscriber.isSystemAdmin })
         .isAllowed;

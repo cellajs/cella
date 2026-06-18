@@ -408,12 +408,6 @@
           "required": true,
           "description": "Last seq for a batched notification — client should fetch range"
         },
-        "deletedIds": {
-          "type": ["array", "null"],
-          "required": true,
-          "description": "Entity IDs in a legacy hard-delete batch",
-          "itemType": "string"
-        },
         "propagation": {
           "type": ["object", "null"],
           "required": true,
@@ -474,7 +468,6 @@
         "fieldTimestamps": {}
       },
       "batchUntilSeq": null,
-      "deletedIds": null,
       "propagation": null
     }
   },

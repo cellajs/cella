@@ -9,18 +9,12 @@ import { getAttachmentOp } from '#/modules/attachment/operations/get-attachment'
 import { getAttachmentsOp } from '#/modules/attachment/operations/get-attachments';
 import { getPresignedUrlOp } from '#/modules/attachment/operations/get-presigned-url';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
-import { canPerEntityType } from '#/permissions';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(attachmentRoutes.getAttachments, async (ctx) => {
-  const query = ctx.req.valid('query');
-  canPerEntityType(ctx, 'read', {
-    entityType: 'attachment',
-    organizationId: ctx.var.organization.id,
-  });
-  const result = await getAttachmentsOp(ctx, query);
+  const result = await getAttachmentsOp(ctx, ctx.req.valid('query'));
   assertSuccess(result, 'attachment');
   return ctx.json(result.data, 200);
 });

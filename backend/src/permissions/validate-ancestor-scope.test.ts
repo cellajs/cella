@@ -1,7 +1,7 @@
 import { appConfig, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
-import type { SubjectForPermission } from '#/permissions/permission-manager/types';
+import type { ContextScope, SubjectForPermission } from '#/permissions/permission-manager/types';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /** Assert that a function throws an AppError with the given type */
@@ -18,15 +18,18 @@ const expectAppError = (fn: () => void, type: string) => {
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: string,
-  overrides?: Record<string, string | null | undefined>,
+  overrides?: Partial<Record<keyof ContextScope, string | null | undefined>>,
 ): SubjectForPermission => {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
-  const subject: SubjectForPermission = { entityType: entityType as SubjectForPermission['entityType'] };
+  const contextIds: Partial<Record<keyof ContextScope, string | null | undefined>> = {};
   for (const ancestor of ancestors) {
-    const idKey = appConfig.entityIdColumnKeys[ancestor];
-    (subject as Record<string, unknown>)[idKey] = `test-${ancestor}-id`;
+    contextIds[ancestor] = `test-${ancestor}-id`;
   }
-  if (overrides) Object.assign(subject, overrides);
+  if (overrides) Object.assign(contextIds, overrides);
+  const subject: SubjectForPermission = {
+    entityType: entityType as SubjectForPermission['entityType'],
+    contextIds: contextIds as ContextScope,
+  };
   return subject;
 };
 
@@ -50,12 +53,12 @@ describe('validateAncestorScope', () => {
         const idKey = appConfig.entityIdColumnKeys[ancestor];
 
         it(`passes when ${idKey} is explicitly null`, () => {
-          expect(() => validateAncestorScope(buildRawSubject(entityType, { [idKey]: null }))).not.toThrow();
+          expect(() => validateAncestorScope(buildRawSubject(entityType, { [ancestor]: null }))).not.toThrow();
         });
 
         it(`throws when ${idKey} is undefined (missing)`, () => {
           expectAppError(
-            () => validateAncestorScope(buildRawSubject(entityType, { [idKey]: undefined })),
+            () => validateAncestorScope(buildRawSubject(entityType, { [ancestor]: undefined })),
             'missing_scope',
           );
         });
@@ -78,7 +81,7 @@ describe('validateAncestorScope', () => {
 
         it(`throws when ${idKey} is undefined (missing)`, () => {
           expectAppError(
-            () => validateAncestorScope(buildRawSubject(entityType, { [idKey]: undefined })),
+            () => validateAncestorScope(buildRawSubject(entityType, { [ancestor]: undefined })),
             'missing_scope',
           );
         });
@@ -99,13 +102,13 @@ if (deepProduct) {
 
     it(`cannot bypass ${mostSpecificAncestor} scope for ${deepProduct} by omitting ${idKey}`, () => {
       expectAppError(
-        () => validateAncestorScope(buildRawSubject(deepProduct, { [idKey]: undefined })),
+        () => validateAncestorScope(buildRawSubject(deepProduct, { [mostSpecificAncestor]: undefined })),
         'missing_scope',
       );
     });
 
     it(`explicitly null ${idKey} is allowed for ${deepProduct} (org-level scope)`, () => {
-      expect(() => validateAncestorScope(buildRawSubject(deepProduct, { [idKey]: null }))).not.toThrow();
+      expect(() => validateAncestorScope(buildRawSubject(deepProduct, { [mostSpecificAncestor]: null }))).not.toThrow();
     });
   });
 }

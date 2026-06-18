@@ -108,7 +108,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
+CI builds the image, records the release SHA in stack config, and `pulumi up` provisions a **new immutable VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. The load balancer is health-gated onto the new generation and the old one is retired. See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -117,16 +117,25 @@ To gate production behind manual approval, configure a [GitHub Environment](http
 
 ## Rollout strategies
 
-Each service declares its roll strategy in the fork-owned service registry ([config/services.config.ts](config/services.config.ts)). The split is simple: **backend → blue-green, everything else → in-place.**
+Every deploy is an **immutable-node replacement**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path (there is no on-VM reconciler and no in-VM blue/green). Each service declares its cutover strategy in the fork-owned registry ([config/services.config.ts](config/services.config.ts)).
 
-| Strategy | Services | How |
+| `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **blue-green** | backend | Run two named slots (`backend-blue` / `backend-green`). Bring the idle slot up on the new tag, identity-gate it, then flip the ingress upstream to it and retire the old slot. |
-| **in-place** | frontend, ai, cdc, yjs | Recreate the single app container (`up -d --no-deps <svc>`). The ingress holds the listener open and retries the upstream across the ~seconds the container is restarting. |
+| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation, health-gate it, then atomically point the LB backend at it (`SetBackendServers`) and drain + destroy the old generation. The overlap drives dropped connections to ≈0. |
+| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The new generation boots warm and contends for the slot the old worker releases on drain (handoff is lossless — the slot retains the WAL position). |
 
-**Why backend is blue-green and the rest are in-place.** The backend is critical, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
+**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP — `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket — sessions shed, clients re-dial and resync from durable state) for yjs.
 
-Only cloud-init changes (reconciler/package updates, an instance-type resize) replace the VM; the LB health checks handle that. Routine runtime secret changes don't — the reconciler refreshes `/opt/app/.env.runtime` each tick and rolls the service when that file changes, even if the image tag didn't.
+The zero-downtime cutover is driven by [tasks/cutover.ts](tasks/cutover.ts) (a pure, unit-tested expand→health→contract→drain core). A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+
+### Runtime secret delivery
+
+Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` that the on-VM `runtime-secret-sync` writes from Secret Manager at boot. Because an `env_file` is line-based, **every secret value must be a single line**. Multi-line values (e.g. a PEM certificate) must be stored **base64-encoded** and decoded by the consuming service — this is what `DATABASE_SSL_CA` does (encoded in [resources/secrets.ts](resources/secrets.ts), decoded in the db clients). A `required` secret that can't be delivered fails the sync, which by design blocks the service from booting rather than letting it crash-loop behind a 502.
+
+Two safeguards keep a runtime-secret change from causing the kind of full outage a mis-delivered secret would otherwise trigger. They were added after a multi-line secret (`DATABASE_SSL_CA`) bricked a backend rollout, and they sit alongside the single-line/base64 contract above:
+
+1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates — metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Under immutable releases every change already replaces the VM, so there is no out-of-band channel to maintain; the first-boot `runtime-secret-sync` reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
+2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up` — and before any VM is rolled or replaced — the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and asserted against the on-VM Python sync.
 
 ## Configuration
 
@@ -280,7 +289,7 @@ Application telemetry is exported to Maple.dev from the runtime services; no obs
 
 ### Database TLS
 
-Connections to the managed PostgreSQL use **verified** TLS in production: the database client pins the Scaleway RDB instance's CA certificate and rejects anything it can't verify (closing the man-in-the-middle gap that `rejectUnauthorized: false` would leave open). This is fully automated — `pulumi up` reads the instance cert and writes it to the `database-ssl-ca` runtime secret (`DATABASE_SSL_CA`), which the backend/yjs/cdc VMs receive like any other runtime secret. There is nothing to set by hand.
+Connections to the managed PostgreSQL use **verified** TLS in production: the database client pins the Scaleway RDB instance's CA certificate and rejects anything it can't verify (closing the man-in-the-middle gap that `rejectUnauthorized: false` would leave open). This is fully automated — `pulumi up` reads the instance cert and writes it (base64-encoded, since the PEM is multi-line — see [Runtime secret delivery](#runtime-secret-delivery)) to the `database-ssl-ca` runtime secret (`DATABASE_SSL_CA`), which the backend/yjs/cdc VMs receive like any other runtime secret and decode back to PEM. There is nothing to set by hand.
 
 If `DATABASE_SSL_CA` is missing in production the service **fails fast at boot** rather than downgrading security. To recover, run the CLI's **Apply infra change** (re-asserts the secret) or check the `database-ssl-ca` secret via **Manage runtime secrets**. Local development (`NODE_ENV=development`) skips verification, so no cert is needed.
 

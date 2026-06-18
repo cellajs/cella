@@ -5,6 +5,10 @@ export type ContextEntityIdColumns = {
   [K in ContextEntityType as EntityIdColumnKeys[K]]: string | null;
 };
 
+export type ContextScope = Partial<Record<ContextEntityType, string | null>>;
+
+export type ResolvedContextIds = Partial<Record<ContextEntityType, string>>;
+
 /**
  * Subject (entity) for permission evaluation.
  *
@@ -20,7 +24,9 @@ export type SubjectForPermission = {
   id?: string;
   /** The user who created this entity. Enables implicit "owner" relation for `'own'` policies. */
   createdBy?: string | null;
-} & Partial<ContextEntityIdColumns>;
+  /** Ancestor context IDs keyed by context entity type. `null` means explicitly not scoped to that context. */
+  contextIds: ContextScope;
+};
 
 /** Source that granted an action — either a context membership or an implicit relation. */
 export type GrantSource =
@@ -36,7 +42,7 @@ export interface PermissionDecision<T extends MembershipBaseModel = MembershipBa
   subject: {
     entityType: ContextEntityType | ProductEntityType;
     id?: string;
-    contextIds: Partial<Record<ContextEntityType, string>>;
+    contextIds: ResolvedContextIds;
   };
   orderedContexts: ContextEntityType[];
   primaryContext: ContextEntityType;

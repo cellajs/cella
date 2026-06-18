@@ -50,6 +50,28 @@ Permission values:
 
 ## Permission check flow
 
+Permission subjects carry context scope in `contextIds`, keyed by context entity type:
+
+```typescript
+const subject: SubjectForPermission = {
+  entityType: 'attachment',
+  id: 'att_123',
+  contextIds: {
+    organization: 'org_123',
+  },
+  createdBy: 'user_123',
+};
+```
+
+Boundary code that starts from DB rows, route params, or activity events can use `buildSubject()` to normalize
+column-shaped input such as `{ organizationId: 'org_123' }` into this domain shape. Permission internals should read
+`subject.contextIds.organization`, not DB column names like `subject.organizationId`.
+
+Ancestor scope is explicit:
+- `undefined` means a required ancestor scope was omitted and throws `missing_scope`
+- `null` means intentionally not scoped to that ancestor context
+- `string` means scoped to that concrete context ID
+
 `getAllDecisions(policies, memberships, subject, options)` returns a `PermissionDecision`:
 
 1. **Resolve contexts**: Product entities check ancestor contexts; context entities check self + ancestors
@@ -91,6 +113,8 @@ On the frontend, `computeCan()` produces a three-state map: `true | false | 'own
 2. Add entity type to `appConfig.entityTypes`
 3. Define policies in the `configureAccessPolicies` switch (use `'own'` for ownership-scoped actions)
 4. Create DB schema in `backend/src/db/schema/`
+5. Pass ancestor scope through `contextIds` on permission subjects, or use `buildSubject()` when starting from
+  column-shaped data (`organizationId`, `projectId`, etc.)
 
 ## Key files
 

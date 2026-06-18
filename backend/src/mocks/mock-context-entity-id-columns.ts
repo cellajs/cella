@@ -73,10 +73,13 @@ const rootContextType = hierarchy.contextTypes.find((t) => hierarchy.getParent(t
  * route path rather than the body. In cella's default hierarchy this yields an empty object, so
  * cella-origin request-body mocks are unchanged; forks that add deeper context relations (e.g. a
  * 'project') get those ids automatically, keeping security/API tests fork-agnostic.
+ *
+ * The non-root ancestor ids are required (they are always populated), so this satisfies create-body
+ * schemas where deeper ancestors (e.g. `projectId`) are mandatory.
  */
 export const generateMockEntityBodyContextIdColumns = <E extends ProductEntityType>(
   entityType: E,
-): Partial<MockEntityContextIdColumns<E>> => {
+): Omit<MockEntityContextIdColumns<E>, 'organizationId'> => {
   const columns = {} as Record<string, string>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
@@ -88,5 +91,5 @@ export const generateMockEntityBodyContextIdColumns = <E extends ProductEntityTy
     columns[appConfig.entityIdColumnKeys[related]] = mockUuid();
   }
 
-  return columns as Partial<MockEntityContextIdColumns<E>>;
+  return columns as Omit<MockEntityContextIdColumns<E>, 'organizationId'>;
 };

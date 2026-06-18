@@ -97,7 +97,7 @@ export const mockStreamResponse = (key = 'stream:default') =>
     return {
       changes: {
         'org-example-id': {
-          deletedByType: {},
+          entitySeqs: { attachment: 1 },
         },
       },
       cursor,

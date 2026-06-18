@@ -45,6 +45,7 @@ export default defineConfig({
       NODE_ENV: 'test',
       COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',
       UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
+      CDC_SECRET: 'test-cdc-secret-min16chars',
       YJS_SECRET: 'test-yjs-secret-min16',
       PII_HASH_SECRET: 'test-pii-hash-secret-min16',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',

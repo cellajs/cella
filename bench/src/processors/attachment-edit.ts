@@ -5,8 +5,8 @@
  */
 import { nanoid } from 'nanoid';
 import { uuidv7 } from 'uuidv7';
-import { attachmentId, ORG_ID, TENANT_ID } from '../config';
-import { TOTAL_ATTACHMENTS } from '../seeds/ids';
+import { TOTAL_ATTACHMENTS } from '../seeds/attachment.bench';
+import { attachmentId, ORG_ID, TENANT_ID } from '../seeds/ids';
 
 export { authenticate } from './auth';
 

@@ -22,7 +22,7 @@ export default defineConfig({
   // - pullBranch: branch cella pulls contributions from (contributions service)
   // - pushBranch: branch cella syncs changes into (forks service)
   forks: [
-    { name: 'raak', localPath: '../raak', pullBranch: 'development', pushBranch: 'development' },
+    { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'development', pushBranch: 'development' },
   ],
 
   // File overrides

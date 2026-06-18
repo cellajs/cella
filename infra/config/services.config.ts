@@ -21,16 +21,16 @@ export default defineServices({
     port: 4000,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
-    // Zero-downtime: expanded into backend-blue/backend-green slots and a
-    // one-shot `migrate` companion.
-    rolloverStrategy: 'blue-green',
+    // Immutable-node cutover: a new generation is health-gated, the LB overlaps
+    // both generations, then contracts to the new one. The one-shot `migrate`
+    // companion runs at the new generation's boot (expand-before-cutover).
+    replacementStrategy: 'lb-overlap',
+    drainPolicy: 'requests',
     runMigrate: true,
     drainSeconds: 10,
     lbRoute: 'default',
-    // Per-service VM size (required on every service). Backend is the only box
-    // sized up in production: its blue-green roll holds OLD + NEW slots
-    // side-by-side during cutover, which DEV1-S (2 GB) cannot fit.
-    instanceType: { production: 'DEV1-M', staging: 'DEV1-S' },
+    // Per-service VM size (required on every service).
+    instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
@@ -43,11 +43,12 @@ export default defineServices({
     port: 4001,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    rolloverStrategy: 'in-place',
-    // cdc holds a single PostgreSQL replication slot, so it MUST stay in-place
-    // (two slots would double-consume it). No lbRoute → internal-only, reached
-    // over the private network rather than the public LB.
-    instanceType: 'DEV1-S',
+    // cdc holds a single PostgreSQL replication slot, so it MUST cut over
+    // exclusively (two active consumers would double-consume it). The new
+    // generation boots warm and contends for the slot the old one releases on
+    // drain. No lbRoute → internal-only, reached over the private network.
+    replacementStrategy: 'exclusive',
+    instanceType: 'STARDUST1-S',
     env: {
       API_WS_URL: '${API_WS_URL}',
       BACKEND_URL: '${BACKEND_URL}',
@@ -66,13 +67,17 @@ export default defineServices({
     port: 4002,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    rolloverStrategy: 'in-place',
+    replacementStrategy: 'lb-overlap',
+    // WebSocket clients reconnect to the new generation and resync from durable
+    // CRDT state rather than having sessions held open during drain.
+    drainPolicy: 'reconnect',
+    drainSeconds: 5,
     lbRoute: 'host',
     // WebSocket service — LB keeps connections open for up to an hour.
     lbWebsockets: true,
     // Only deployed when the app enables collaborative editing (appConfig.features.yjs).
     featureFlag: 'yjs',
-    instanceType: 'DEV1-S',
+    instanceType: 'STARDUST1-S',
     env: {
       BACKEND_URL: '${BACKEND_URL}',
       YJS_PORT: '4002',
@@ -84,13 +89,15 @@ export default defineServices({
     port: 4003,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
-    rolloverStrategy: 'in-place',
+    replacementStrategy: 'lb-overlap',
+    drainPolicy: 'requests',
+    drainSeconds: 10,
     // Reuses the backend image at the same SHA; CI builds no separate ai image.
     reusesImageOf: 'backend',
     lbRoute: 'host',
     // Only deployed when the app enables the AI worker (appConfig.features.ai).
     featureFlag: 'ai',
-    instanceType: 'DEV1-S',
+    instanceType: 'STARDUST1-S',
     env: {
       MODE: 'ai-worker',
       PORT: '4003',
@@ -112,12 +119,13 @@ export default defineServices({
     port: 80,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    rolloverStrategy: 'in-place',
+    replacementStrategy: 'lb-overlap',
+    drainPolicy: 'requests',
     lbRoute: 'host',
     // The SPA proxy reads no app secret — no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
-    instanceType: 'DEV1-S',
+    instanceType: 'STARDUST1-S',
     env: {
       FRONTEND_CSP: '${FRONTEND_CSP}',
       ORIGIN_HOST: '${ORIGIN_HOST}',

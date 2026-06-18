@@ -21,8 +21,8 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
-    "artillery": "^2.0.31",
-    "artillery-plugin-ensure": "^1.25.0",
+    "artillery": "catalog:",
+    "artillery-plugin-ensure": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

@@ -98,7 +98,6 @@ export function sendBatchMessageToApi(
   if (events.length === 0) return;
 
   const first = events[0];
-  const isDelete = first.activity.action === 'delete';
 
   // Collect seqs for min/max range (create/update batches)
   const seqs = events.map((e) => e.seq).filter((s): s is number => s !== undefined);
@@ -111,9 +110,6 @@ export function sendBatchMessageToApi(
       minSeq, batchUntilSeq, seqCount: seqs.length, expected: batchUntilSeq - minSeq + 1,
     });
   }
-
-  // Collect physical-delete IDs. Product soft deletes are update events with seq-stamped tombstones.
-  const deletedIds = isDelete ? events.map((e) => e.activity.subjectId).filter(Boolean) as string[] : undefined;
 
   // Generate batch cache token for product entities
   const batchToken = first.activity.entityType && isProductEntity(first.activity.entityType) ? nanoid() : null;
@@ -131,7 +127,7 @@ export function sendBatchMessageToApi(
 
   // Build payload using the first event as representative, enriched with batch fields
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
-  const activity = { ...base.activity, batchUntilSeq, deletedIds };
+  const activity = { ...base.activity, batchUntilSeq };
 
   const payload = {  ...base, activity, cacheToken: batchToken, batchReservations };
 

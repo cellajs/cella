@@ -57,7 +57,6 @@ export async function publicCatchupOp(
 
     if (!seqs || serverSeq !== clientSeq) {
       changes[entityType] = {
-        deletedByType: {},
         entitySeqs: { [entityType]: serverSeq },
       };
     }

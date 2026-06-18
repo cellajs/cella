@@ -3,32 +3,12 @@
 # Deploy machinery and rationale live in infrastructure.ts.
 
 services:
-  ingress:
-    image: caddy:2-alpine
-    profiles: [backend, cdc, yjs, ai, frontend]
-    restart: unless-stopped
-    ports:
-      - ${INGRESS_PORT}:${INGRESS_PORT}
-    environment:
-      INGRESS_PORT: ${INGRESS_PORT}
-      UPSTREAM_HOST: ${UPSTREAM_HOST}
-      UPSTREAM_PORT: ${UPSTREAM_PORT}
-    volumes:
-      - ./ingress.Caddyfile:/etc/caddy/Caddyfile:ro
-      - ingress_data:/data
-      - ingress_config:/config
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:${INGRESS_PORT}/__ingress/health']
-      interval: '30s'
-      timeout: '5s'
-      retries: 3
-      start_period: '5s'
-  backend-blue:
+  backend:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
     restart: unless-stopped
-    expose:
-      - '4000'
+    ports:
+      - '4000:4000'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -52,36 +32,13 @@ services:
       healthPort: 4000
       healthTimeoutSeconds: 240
       runMigrate: true
-      rolloverStrategy: blue-green
+      replacementStrategy: lb-overlap
       drainSeconds: 10
       instanceType:
         production: DEV1-M
         staging: DEV1-S
+      drainPolicy: requests
       lbRoute: default
-  backend-green:
-    image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
-    profiles: [backend]
-    restart: unless-stopped
-    expose:
-      - '4000'
-    stop_grace_period: '30s'
-    env_file:
-      - .env
-      - .env.runtime
-    environment:
-      NODE_ENV: production
-      APP_MODE: ${APP_MODE:-production}
-      TZ: UTC
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
-      RUN_MIGRATIONS_ON_BOOT: 'false'
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
-      interval: '30s'
-      timeout: '5s'
-      retries: 3
-      start_period: '15s'
   migrate:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
@@ -101,8 +58,8 @@ services:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
     restart: unless-stopped
-    expose:
-      - '4001'
+    ports:
+      - '4001:4001'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -125,7 +82,7 @@ services:
       healthPort: 4001
       healthTimeoutSeconds: 90
       runMigrate: false
-      rolloverStrategy: in-place
+      replacementStrategy: exclusive
       drainSeconds: 0
       instanceType: DEV1-S
       bindings:
@@ -134,8 +91,8 @@ services:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
     profiles: [yjs]
     restart: unless-stopped
-    expose:
-      - '4002'
+    ports:
+      - '4002:4002'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -157,9 +114,10 @@ services:
       healthPort: 4002
       healthTimeoutSeconds: 90
       runMigrate: false
-      rolloverStrategy: in-place
-      drainSeconds: 0
+      replacementStrategy: lb-overlap
+      drainSeconds: 5
       instanceType: DEV1-S
+      drainPolicy: reconnect
       lbRoute: host
       lbWebsockets: true
       featureFlag: yjs
@@ -167,8 +125,8 @@ services:
     image: ${REGISTRY}/backend:${AI_TAG:-latest}
     profiles: [ai]
     restart: unless-stopped
-    expose:
-      - '4003'
+    ports:
+      - '4003:4003'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -194,9 +152,10 @@ services:
       healthPort: 4003
       healthTimeoutSeconds: 240
       runMigrate: false
-      rolloverStrategy: in-place
-      drainSeconds: 0
+      replacementStrategy: lb-overlap
+      drainSeconds: 10
       instanceType: DEV1-S
+      drainPolicy: requests
       lbRoute: host
       reusesImageOf: backend
       featureFlag: ai
@@ -206,8 +165,8 @@ services:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]
     restart: unless-stopped
-    expose:
-      - '80'
+    ports:
+      - '80:80'
     stop_grace_period: '30s'
     environment:
       FRONTEND_CSP: ${FRONTEND_CSP}
@@ -223,11 +182,8 @@ services:
       healthPort: 80
       healthTimeoutSeconds: 90
       runMigrate: false
-      rolloverStrategy: in-place
+      replacementStrategy: lb-overlap
       drainSeconds: 0
       instanceType: DEV1-S
+      drainPolicy: requests
       lbRoute: host
-
-volumes:
-  ingress_data:
-  ingress_config:

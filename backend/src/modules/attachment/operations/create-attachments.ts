@@ -16,8 +16,6 @@ export async function createAttachmentsOp(ctx: AuthContext, input: CreateAttachm
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
 
-  canCreateEntity(ctx, { entityType: 'attachment', organizationId: organization.id });
-
   if (attachmentRestrictions !== 0 && input.length > attachmentRestrictions) {
     return { success: false as const, error: 'restrict_by_org', status: 429 as const };
   }
@@ -38,18 +36,23 @@ export async function createAttachmentsOp(ctx: AuthContext, input: CreateAttachm
     return { success: false as const, error: 'restrict_by_org', status: 429 as const };
   }
 
-  const attachmentsToInsert = input.map(({ stx, ...att }) => ({
-    ...att,
-    convertedKey: att.convertedKey || null,
-    convertedContentType: att.convertedContentType || null,
-    thumbnailKey: att.thumbnailKey || null,
-    groupId: att.groupId || null,
-    tenantId: organization.tenantId,
-    organizationId: organization.id,
-    createdAt: getIsoDate(),
-    createdBy: ctx.var.user.id,
-    stx: buildStx(stx),
-  }));
+  const attachmentsToInsert = input.map(({ stx, ...att }) => {
+    const attachment = {
+      ...att,
+      convertedKey: att.convertedKey || null,
+      convertedContentType: att.convertedContentType || null,
+      thumbnailKey: att.thumbnailKey || null,
+      groupId: att.groupId || null,
+      tenantId: organization.tenantId,
+      organizationId: organization.id,
+      createdAt: getIsoDate(),
+      createdBy: ctx.var.user.id,
+      stx: buildStx(stx),
+    };
+
+    canCreateEntity(ctx, { entityType: 'attachment', contextIds: { organization: organization.id } });
+    return attachment;
+  });
 
   const createdAttachments = await tenantContext(ctx, (txCtx) =>
     insertAttachments(txCtx, { attachments: attachmentsToInsert }),

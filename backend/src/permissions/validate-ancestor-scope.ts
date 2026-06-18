@@ -19,15 +19,14 @@ export const validateAncestorScope = (entity: SubjectForPermission) => {
   const ancestors = hierarchy.getOrderedAncestors(entity.entityType);
 
   for (const ancestor of ancestors) {
-    const idKey = appConfig.entityIdColumnKeys[ancestor];
-    const value = entity[idKey as keyof SubjectForPermission];
+    const value = entity.contextIds[ancestor];
 
     // undefined = caller forgot to provide scope → error
     // null = explicitly "not in this context" → allowed (engine skips this context)
     if (value === undefined) {
       throw new AppError(400, 'missing_scope', 'error', {
         entityType: entity.entityType,
-        meta: { missingContext: ancestor, missingKey: idKey },
+        meta: { missingContext: ancestor, missingKey: appConfig.entityIdColumnKeys[ancestor] },
       });
     }
   }

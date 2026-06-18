@@ -1,6 +1,6 @@
 import { appConfig } from '../config-builder/app-config';
 import { getContextRoles } from '../entity-guards';
-import type { ContextEntityType, EntityRole, EntityType, ProductEntityType } from '../../types';
+import type { ContextEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
 import type {
   AccessPolicies,
   AccessPolicyCallback,
@@ -22,8 +22,14 @@ const createContextPolicyBuilder = (
   const builder = {} as ContextPolicyBuilder;
 
   for (const role of roles) {
-    builder[role as EntityRole] = (permissions: EntityActionPermissions) => {
-      entries.push({ contextType, role: role as EntityRole, permissions });
+    builder[role as EntityRole] = (permissions: Partial<EntityActionPermissions>) => {
+      // Normalize to a full record so the engine always reads an explicit value: any action the
+      // policy omits defaults to 0 (denied). Omitting an action is therefore equivalent to `0`.
+      const fullPermissions = {} as EntityActionPermissions;
+      for (const action of appConfig.entityActions as readonly EntityActionType[]) {
+        fullPermissions[action] = permissions[action] ?? 0;
+      }
+      entries.push({ contextType, role: role as EntityRole, permissions: fullPermissions });
     };
   }
 

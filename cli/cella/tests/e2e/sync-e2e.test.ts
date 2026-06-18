@@ -530,8 +530,8 @@ describe('sync e2e', () => {
       expect(fs.existsSync(viewPath)).toBe(true);
       expect(fs.existsSync(path.join(viewPath, 'shared.ts'))).toBe(true);
 
-      // The merge-in-progress detail emitted a clickable VS Code diff link.
-      expect(logs.join('\n')).toContain('command:vscode.diff');
+      // The merge-in-progress detail emitted a clickable VS Code file link.
+      expect(logs.join('\n')).toContain('vscode://file');
 
       // Clean up the persistent view worktree (lives in tmpdir, outside testDir).
       fs.rmSync(viewPath, { recursive: true, force: true });

@@ -143,7 +143,6 @@ interface CdcMessage {
     tenantId: string | null;         // optional multi-tenant marker
     seq: number | null;              // synced entities only
     batchUntilSeq: number | null;
-    deletedIds: string[] | null;
     stx: StxBase | null;
   };
   rowData: Record<string, unknown> | null;

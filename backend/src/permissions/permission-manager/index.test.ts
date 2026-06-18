@@ -44,6 +44,23 @@ const createTestMembership = (
   ...overrides,
 });
 
+const organizationSubject = (id: string): SubjectForPermission => ({
+  entityType: 'organization',
+  id,
+  contextIds: {},
+});
+
+const attachmentSubject = (
+  id: string,
+  organizationId: string,
+  overrides?: Partial<SubjectForPermission>,
+): SubjectForPermission => ({
+  entityType: 'attachment',
+  id,
+  contextIds: { organization: organizationId },
+  ...overrides,
+});
+
 /**
  * These tests use appConfig.hierarchy which defines:
  * - organization: context entity with roles ['admin', 'member']
@@ -147,7 +164,7 @@ describe('checkPermission', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
+    const subject = organizationSubject('org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.create).toBe(true);
@@ -160,7 +177,7 @@ describe('checkPermission', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'organization', id: 'org1', organizationId: 'org1' };
+    const subject = organizationSubject('org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.create).toBe(false);
@@ -173,7 +190,7 @@ describe('checkPermission', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.create).toBe(true);
@@ -186,7 +203,7 @@ describe('checkPermission', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org2', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.create).toBe(false);
@@ -210,7 +227,7 @@ describe('permission inheritance from organization context', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.delete).toBe(true);
@@ -220,7 +237,7 @@ describe('permission inheritance from organization context', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const { can } = getAllDecisions(policies, memberships, subject);
 
     expect(can.delete).toBe(false);
@@ -241,7 +258,7 @@ describe('PermissionDecision action attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const decision = getAllDecisions(policies, memberships, subject);
 
     // Check actions structure exists
@@ -268,7 +285,7 @@ describe('PermissionDecision action attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const decision = getAllDecisions(policies, memberships, subject);
 
     expect(decision.subject.entityType).toBe('attachment');
@@ -280,7 +297,7 @@ describe('PermissionDecision action attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const decision = getAllDecisions(policies, memberships, subject);
 
     // Derive expected contexts from hierarchy rather than hardcoding
@@ -296,7 +313,7 @@ describe('PermissionDecision action attribution', () => {
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin' }),
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member' }),
     ];
-    const subject: SubjectForPermission = { entityType: 'attachment', id: 'att1', organizationId: 'org1' };
+    const subject = attachmentSubject('att1', 'org1');
     const decision = getAllDecisions(policies, memberships, subject);
 
     // Both admin and member grant read permission
@@ -348,12 +365,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId,
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.update).toBe(true);
@@ -364,12 +378,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: otherUserId, // Not the actor
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.create).toBe(true);
@@ -380,12 +391,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: otherUserId, // Created by someone else
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.create).toBe(true);
@@ -400,12 +408,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: otherUserId, // Someone else created it
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.update).toBe(false);
@@ -416,12 +421,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId, // Same user, but userId not passed in options
-    };
+    });
     // No userId in options — own check cannot succeed
     const { can } = getAllDecisions(ownPolicies, memberships, subject);
 
@@ -433,12 +435,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: null,
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.update).toBe(false);
@@ -449,12 +448,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       // createdBy intentionally omitted
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.update).toBe(false);
@@ -465,12 +461,9 @@ describe('own permission policy — ownership-scoped access', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org2', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId,
-    };
+    });
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     expect(can.create).toBe(false);
@@ -496,12 +489,9 @@ describe('own permission — grant attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId,
-    };
+    });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     // Update was granted via 'own' → should be attributed to relation:owner
@@ -519,12 +509,9 @@ describe('own permission — grant attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: userId,
-    };
+    });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     // Create is unconditional 1 → membership grant
@@ -541,12 +528,9 @@ describe('own permission — grant attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: 'user-other', // Not the actor
-    };
+    });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     // Update/delete denied — no grants at all
@@ -560,12 +544,9 @@ describe('own permission — grant attribution', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'admin', userId }),
     ];
-    const subject: SubjectForPermission = {
-      entityType: 'attachment',
-      id: 'att1',
-      organizationId: 'org1',
+    const subject = attachmentSubject('att1', 'org1', {
       createdBy: 'user-other',
-    };
+    });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
     // Admin policy is unconditional 1, so grant is membership-based
@@ -596,9 +577,9 @@ describe('own permission — batch subjects', () => {
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
     const subjects: SubjectForPermission[] = [
-      { entityType: 'attachment', id: 'att-own', organizationId: 'org1', createdBy: userId },
-      { entityType: 'attachment', id: 'att-other', organizationId: 'org1', createdBy: 'user-other' },
-      { entityType: 'attachment', id: 'att-null', organizationId: 'org1', createdBy: null },
+      attachmentSubject('att-own', 'org1', { createdBy: userId }),
+      attachmentSubject('att-other', 'org1', { createdBy: 'user-other' }),
+      attachmentSubject('att-null', 'org1', { createdBy: null }),
     ];
 
     const results = getAllDecisions(ownPolicies, memberships, subjects, { userId });

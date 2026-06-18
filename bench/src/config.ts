@@ -6,14 +6,11 @@
 
 import process from 'node:process';
 import { appConfig } from 'shared';
-import { attachmentId, ORG_ID, TENANT_ID, userEmail, userId } from './seeds/ids';
 
 // Load backend/.env for the offset-aware DATABASE_* URLs; absent in CI.
 try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {}
-
-export { attachmentId, ORG_ID, TENANT_ID, userEmail, userId };
 
 export const BASE_URL = appConfig.backendUrl;
 

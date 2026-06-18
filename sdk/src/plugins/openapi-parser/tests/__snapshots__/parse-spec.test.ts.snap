@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "e58b669a18a43ad7",
+  "inputHash": "607616af5b8f97bc",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -3538,7 +3538,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "cacheToken": "V9Umhb9C4l3EKNwaUqHHn49KRYOFMDbd",
           "contextId": "67b4d7ec-f6a8-40d0-905c-ee1180d3e4a2",
           "contextType": null,
-          "deletedIds": null,
           "entityType": "attachment",
           "organizationId": "a9fc6f05-cf39-41b4-8378-e8c3a3796f6a",
           "propagation": null,
@@ -3598,15 +3597,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "required": true,
               "type": [
                 "string",
-                "null",
-              ],
-            },
-            "deletedIds": {
-              "description": "Entity IDs in a legacy hard-delete batch",
-              "itemType": "string",
-              "required": true,
-              "type": [
-                "array",
                 "null",
               ],
             },
@@ -10878,20 +10868,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": false,
                           "type": "object",
                         },
-                        "deleteOverflow": {
-                          "itemType": "string",
-                          "required": false,
-                          "type": "array",
-                        },
-                        "deletedByType": {
-                          "additionalProperties": {
-                            "itemType": "string",
-                            "required": false,
-                            "type": "array",
-                          },
-                          "required": true,
-                          "type": "object",
-                        },
                         "entityCounts": {
                           "additionalProperties": {
                             "required": false,
@@ -10949,7 +10925,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "required": false,
                       "type": "object",
                     },
-                    "description": "Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }",
+                    "description": "Per-entityType change summary: { [entityType]: { entitySeqs? } }",
                     "required": true,
                     "type": "object",
                   },
@@ -11098,7 +11074,9 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "example": {
                 "changes": {
                   "org-example-id": {
-                    "deletedByType": {},
+                    "entitySeqs": {
+                      "attachment": 1,
+                    },
                   },
                 },
                 "cursor": "d9909rsl2y2ii9vbcsc2ywg7",
@@ -11133,20 +11111,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                             "type": "object",
                           },
                           "required": false,
-                          "type": "object",
-                        },
-                        "deleteOverflow": {
-                          "itemType": "string",
-                          "required": false,
-                          "type": "array",
-                        },
-                        "deletedByType": {
-                          "additionalProperties": {
-                            "itemType": "string",
-                            "required": false,
-                            "type": "array",
-                          },
-                          "required": true,
                           "type": "object",
                         },
                         "entityCounts": {
@@ -11206,7 +11170,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "required": false,
                       "type": "object",
                     },
-                    "description": "Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }",
+                    "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }",
                     "required": true,
                     "type": "object",
                   },

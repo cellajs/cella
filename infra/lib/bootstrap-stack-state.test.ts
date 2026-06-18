@@ -25,7 +25,7 @@ describe('detectStackState', () => {
   it('does not mistake a comment mentioning a marker for the real entry', () => {
     // intentional: scanner is line-substring; we want to acknowledge the false-positive
     // surface in writing rather than silently miss it.
-    expect(detectStackState({ yamlText: '# TODO: infra:bootstrapComplete rotation' })).toBe('bootstrapped')
+    expect(detectStackState({ yamlText: '# todo: infra:bootstrapComplete rotation' })).toBe('bootstrapped')
   })
 })
 
