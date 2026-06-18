@@ -14,7 +14,7 @@ import { formatFetchedUpstreamDetail, formatMergeInProgressDetail } from '../src
 
 /** A short OSC-8 hyperlink contains the URL between the open/close sequences. */
 const VSCODE_DIFF = 'command:vscode.diff';
-const VSCODE_OPEN = 'command:vscode.open';
+const VSCODE_FILE = 'vscode://file';
 
 function makeCommits(count: number) {
   return Array.from({ length: count }, (_, i) => ({
@@ -83,14 +83,14 @@ describe('formatMergeInProgressDetail', () => {
     expect(out).toContain('... + 1 more');
   });
 
-  it('emits a VS Code diff link when the file exists in the view worktree', () => {
+  it('emits a VS Code file link when the file exists in the view worktree', () => {
     fs.writeFileSync(path.join(viewDir, 'a.ts'), 'upstream\n');
     const options: LinkOptions = { upstreamViewPath: viewDir, forkPath: forkDir };
 
     const out = formatMergeInProgressDetail(1, ['a.ts'], options);
 
-    expect(out).toContain(VSCODE_OPEN); // fork file open link
-    expect(out).toContain(VSCODE_DIFF); // upstream-vs-fork diff link
+    expect(out).toContain(VSCODE_FILE); // fork file open link
+    expect(out).not.toContain(VSCODE_DIFF); // terminal diff commands are intentionally suppressed
   });
 
   it('omits the diff link for files absent from the view worktree', () => {
@@ -99,7 +99,7 @@ describe('formatMergeInProgressDetail', () => {
 
     const out = formatMergeInProgressDetail(1, ['b.ts'], options);
 
-    expect(out).toContain(VSCODE_OPEN); // open link still rendered
+    expect(out).toContain(VSCODE_FILE); // open link still rendered
     expect(out).not.toContain(VSCODE_DIFF); // but no diff link
   });
 

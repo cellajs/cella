@@ -40,9 +40,13 @@ export type AccessPolicies = Partial<Record<ContextEntityType | ProductEntityTyp
 /**
  * Context builder for fluent access policy configuration.
  * Maps entity roles to their permission setters.
+ *
+ * Permissions are partial: any action you omit defaults to `0` (denied). This lets a policy list
+ * only the actions it grants — e.g. a context entity's own ("self") rows can omit `create`, since
+ * an entity can never be created from inside itself (creation is granted on ancestor rows).
  */
 export type ContextPolicyBuilder = {
-  [R in EntityRole]: (permissions: EntityActionPermissions) => void;
+  [R in EntityRole]: (permissions: Partial<EntityActionPermissions>) => void;
 };
 
 /**

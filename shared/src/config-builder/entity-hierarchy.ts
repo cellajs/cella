@@ -143,9 +143,20 @@ class EntityHierarchyBuilder<
   }
 
   /**
-   * Add a product entity. `parent: null` marks a parentless (tenant-scoped only) product;
-   * a context parent links it into that context's ancestor chain. Optional `relatedContexts`
-   * declare non-ancestor context references (nullable id columns).
+   * Add a product entity.
+   *
+   * Every product has exactly one **home context**: its `parent`. The home is where each row
+   * physically lives — it becomes a non-null `<context>Id` column (see `contextRelationColumns`)
+   * and is the most-specific link in the entity's ancestor chain used for permissions and
+   * public-read inheritance. A product can never have more than one home.
+   *
+   * `parent` is therefore required and critical for any non-public product: without a home there
+   * is no context to derive access from. The only products allowed to be parentless (`parent: null`,
+   * tenant-scoped only) are public ones — they MUST declare a `publicRead` mode. This is enforced
+   * at build time.
+   *
+   * Optional `relatedContexts` declare non-ancestor context references (nullable id columns); they
+   * are cross-links, not homes.
    */
   product<N extends string, P extends TContexts | null, const RC extends readonly TContexts[] = []>(
     name: N,
@@ -160,6 +171,7 @@ class EntityHierarchyBuilder<
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
+    this.validateProductHome(name, options.parent, options.publicRead);
     this.validatePublicRead(name, options.parent, options.publicRead);
     this.validateRelatedContexts(name, options.parent, options.relatedContexts);
     return new EntityHierarchyBuilder<
@@ -210,6 +222,22 @@ class EntityHierarchyBuilder<
       throw new Error(
         `EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a context entity, ` +
           `but it is a ${parentEntry.kind} entity.`,
+      );
+    }
+  }
+
+  /**
+   * Enforce the single-home invariant: a non-public product must have a parent (home context).
+   * A product with no parent has no context to derive permissions from, so it is only valid when
+   * it is explicitly public (declares a `publicRead` mode). This keeps "parent is required" true
+   * for every product that relies on membership-based access.
+   */
+  private validateProductHome(name: string, parent: string | null, publicRead?: PublicReadMode): void {
+    if (parent === null && !publicRead) {
+      throw new Error(
+        `EntityHierarchy: product "${name}" has no parent and is not public. ` +
+          'A non-public product needs a parent (its home context) to derive permissions from. ' +
+          "Give it a context parent, or mark it public with a publicRead mode (e.g. 'always').",
       );
     }
   }

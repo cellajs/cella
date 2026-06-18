@@ -6,6 +6,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { basename } from 'node:path';
 import type { MergeResult, RuntimeConfig } from '../config/types';
 import { refreshViewWorktree } from '../utils/cleanup';
 import pc from '../utils/colors';
@@ -54,8 +55,10 @@ function findTargetFile(files: MergeResult['files'], targetPath: string) {
 }
 
 function printUnifiedDiff(config: RuntimeConfig, filePath: string): void {
-  const forkName = 'fork/';
-  const upstreamName = 'upstream/';
+  // Label the upstream side 'cella/' and the local side with the repo's folder name
+  // so the diff reads cella/<path> vs <fork>/<path> instead of opaque a/ and b/.
+  const upstreamName = 'cella/';
+  const forkName = `${basename(config.forkPath)}/`;
 
   const diffResult = spawnSync(
     'git',

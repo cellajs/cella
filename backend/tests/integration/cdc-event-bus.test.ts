@@ -29,7 +29,6 @@ const mockEventWithData = (key: string): ActivityEvent =>
     cacheToken: null,
     seq: null,
     batchUntilSeq: null,
-    deletedIds: null,
     propagation: null,
     trace: null,
   }) as ActivityEvent;
@@ -41,7 +40,7 @@ import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockUser } from '#/modules/user/user-mocks';
-import { clearDatabase, ensureCdcSetup, waitForEvent } from './test-utils';
+import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {
   beforeAll(async () => {
@@ -90,14 +89,16 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () =
 
 /**
  * Full CDC flow tests.
- * These require the CDC worker to be running with WebSocket connection.
- * Skip in CI unless CDC is available.
+ * These start the CDC worker pipeline in-process so the suite runs in `pnpm test`
+ * without depending on a separately running worker.
  */
-describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
+describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
+  let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let testOrg: { id: string; slug: string; tenantId: string };
   let testUser: { id: string; email: string };
 
   beforeAll(async () => {
+    cdcHarness = await startInProcessCdcWorker();
     await clearDatabase();
 
     // Create tenant first (orgs require tenant FK)
@@ -117,6 +118,7 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
   });
 
   afterAll(async () => {
+    await cdcHarness?.stop();
     await clearDatabase();
   });
 
@@ -131,8 +133,13 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
     const event = await eventPromise;
 
     expect(event.type).toBe('membership.created');
+    expect(event.resourceType).toBe('membership');
     expect(event.subjectId).toBe(membershipData.id);
-    expect(event.organizationId).toBe(testOrg.id);
+    expect(event.rowData).toMatchObject({
+      contextType: 'organization',
+      contextId: testOrg.id,
+      organizationId: testOrg.id,
+    });
   });
 
   it('should stamp attachments.seq and bump context_counters.s:attachment on UPDATE', async () => {
@@ -162,7 +169,19 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
       return row;
     };
 
+    let inserted: Awaited<ReturnType<typeof readAttachment>> | undefined;
+    await waitFor(
+      async () => {
+        inserted = await readAttachment();
+        const counter = await readCounter();
+        return !!inserted && inserted.seq > 0 && counter > 0;
+      },
+      15_000,
+      'CDC insert stamp on attachment',
+    );
+
     const beforeCounter = await readCounter();
+    const beforeSeq = inserted!.seq;
 
     // Backend-style UPDATE: bump summary AND set stx.changedFields so CDC processes it
     await db.execute(sql`
@@ -173,13 +192,15 @@ describe.skipIf(!process.env.CDC_WORKER_RUNNING)('Full CDC Flow', () => {
     `);
 
     // Poll for CDC to stamp the row (counter UPSERT + entity stamp)
-    const deadline = Date.now() + 15000;
     let stamped: Awaited<ReturnType<typeof readAttachment>> | undefined;
-    while (Date.now() < deadline) {
-      stamped = await readAttachment();
-      if (stamped && stamped.seq > 0) break;
-      await new Promise((r) => setTimeout(r, 100));
-    }
+    await waitFor(
+      async () => {
+        stamped = await readAttachment();
+        return !!stamped && stamped.seq > beforeSeq;
+      },
+      15_000,
+      'CDC seq stamp on attachment update',
+    );
 
     expect(stamped, 'attachment row should exist').toBeDefined();
     expect(stamped!.seq, 'seq should be stamped by CDC').toBeGreaterThan(0);

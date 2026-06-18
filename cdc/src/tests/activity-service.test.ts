@@ -89,7 +89,8 @@ describe('sendBatchMessageToApi', () => {
     const payload = vi.mocked(wsClient.send).mock.calls[0][0] as Record<string, unknown>;
     const activity = payload.activity as Record<string, unknown>;
     expect(activity.batchUntilSeq).toBeUndefined();
-    expect(activity.deletedIds).toEqual(['entity-1', 'entity-2']);
+    expect(activity.action).toBe('delete');
+    expect(activity.deletedIds).toBeUndefined();
     expect(logEvent).not.toHaveBeenCalledWith('error', expect.any(String), expect.any(Object));
   });
 });

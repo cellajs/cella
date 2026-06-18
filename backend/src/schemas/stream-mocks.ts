@@ -32,6 +32,5 @@ export const mockStreamNotification = (key = 'stream-notification:default') =>
     cacheToken: faker.string.alphanumeric(32),
     stx: mockStxBase(`${key}:stx`),
     batchUntilSeq: null,
-    deletedIds: null,
     propagation: null,
   }));

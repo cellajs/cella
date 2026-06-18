@@ -32,8 +32,9 @@ export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) 
 
   const org = ctx.var.organization;
 
-  // Defense in depth check: if entity has organizationId, it must match context organization
-  if (org && 'organizationId' in entity && entity.organizationId && entity.organizationId !== org.id) {
+  // Defense in depth check: if entity has an organization scope, it must match context organization
+  const organizationId = entity.contextIds.organization;
+  if (org && organizationId && organizationId !== org.id) {
     throw new AppError(409, 'organization_mismatch', 'error', { entityType });
   }
 };

@@ -92,6 +92,14 @@ export interface ForkConfig {
   name: string;
   /** Local path to the fork repository (relative to this config or absolute) */
   localPath: string;
+  /**
+   * Git remote URL of the fork (e.g. 'git@github.com:org/fork.git').
+   * When set, the contributions service fetches the fork's `pullBranch` from this
+   * remote (the authoritative committed ref) instead of the local clone, so the
+   * comparison no longer depends on the local checkout being up to date. The local
+   * clone is still used to read the fork's owned-folder territory when available.
+   */
+  remoteUrl?: string;
   /** Fork branch that cella pulls contributions from (contributions service) */
   pullBranch: string;
   /** Fork branch that cella syncs changes into (forks service) */

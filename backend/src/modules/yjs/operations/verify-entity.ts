@@ -1,10 +1,11 @@
 import { eq, sql } from 'drizzle-orm';
-import type { EntityType } from 'shared';
+import { type EntityType, isContextEntity, isProductEntity } from 'shared';
 import { baseDb } from '#/db/db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { checkPermission } from '#/permissions';
-import type { SubjectForPermission } from '#/permissions/permission-manager/types';
+import { buildSubject } from '#/permissions/build-subject';
+import type { ContextEntityIdColumns } from '#/permissions/permission-manager/types';
 
 export async function verifyEntityOp(params: {
   entityType: string;
@@ -34,8 +35,19 @@ export async function verifyEntityOp(params: {
     return { allowed: false };
   }
 
+  if (!isContextEntity(entityType) && !isProductEntity(entityType)) {
+    return { allowed: false };
+  }
+
   // Check actual update permission — this evaluates the full ancestor chain (project → organization)
-  const subject = result.entity as SubjectForPermission;
+  const createdBy =
+    'createdBy' in result.entity && (typeof result.entity.createdBy === 'string' || result.entity.createdBy === null)
+      ? result.entity.createdBy
+      : undefined;
+  const subject = buildSubject(entityType, result.entity as Partial<ContextEntityIdColumns>, {
+    id: result.entity.id,
+    createdBy,
+  });
   const { isAllowed } = checkPermission(result.memberships, 'update', subject);
 
   return { allowed: isAllowed };

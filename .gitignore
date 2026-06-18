@@ -53,6 +53,7 @@ scripts/migration/
 frontend/stats.html
 .junie
 .claude
+.custom
 
 # Cella
 *storybook.log
@@ -62,7 +63,6 @@ storybook-static
 # GeoIP databases (downloaded at build/dev time, not committed)
 backend/geoip/*.mmdb
 
-
 # Terraform
 *.tfvars
 !*.tfvars.example
@@ -70,6 +70,7 @@ terraform.tfstate*
 .terraform/
 .terraform.lock.hcl
 *.tfplan
+
 # Test coverage output
 coverage/
 *.lcov

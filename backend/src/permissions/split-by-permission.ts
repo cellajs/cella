@@ -5,6 +5,7 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntities } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -38,7 +39,8 @@ export const splitByPermission = async (
 
   // Check permissions for all entities in a single batch operation.
   // userId enables 'own' policy evaluation per entity.
-  const { results } = checkPermission(memberships, action, entities, { isSystemAdmin, userId });
+  const subjects = entities.map((entity) => buildSubjectFromEntity(entityType, entity));
+  const { results } = checkPermission(memberships, action, subjects, { isSystemAdmin, userId });
 
   // Partition into allowed and disallowed
   const allowedIds: string[] = [];

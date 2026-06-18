@@ -20,18 +20,15 @@
  * [vitest.config.ts](../../../vitest.config.ts).
  */
 
-import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
-import { PgoutputPlugin } from 'pg-logical-replication';
 import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
-import { drainBuffers } from '../../pipeline/handle-message';
-import { createReplicationService, ensureReplicationSlot, setupBackpressure } from '../../pipeline/replication';
 import { replicationState } from '../../services/replication-state';
 import { wsClient } from '../../network/websocket-client';
+import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const WS_PORT = Number(new URL(process.env.API_WS_URL ?? 'ws://127.0.0.1:4788').port || 4788);
 
@@ -52,16 +49,6 @@ async function probeReady(): Promise<boolean> {
 
 const READY = await probeReady();
 
-/** Poll a predicate until it holds or the deadline passes. */
-async function waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs: number, label: string): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await predicate()) return;
-    await sleep(50);
-  }
-  throw new Error(`Timeout waiting for: ${label}`);
-}
-
 /** Current retained WAL for the CDC slot, in bytes. */
 async function slotLagBytes(): Promise<number> {
   const res = await cdcDb.execute<{ lag: string | null }>(
@@ -69,13 +56,6 @@ async function slotLagBytes(): Promise<number> {
         FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
   );
   return Number(res.rows[0]?.lag ?? 0);
-}
-
-async function slotActive(): Promise<boolean> {
-  const res = await cdcDb.execute<{ active: boolean }>(
-    sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
-  return res.rows[0]?.active ?? false;
 }
 
 /** Insert a tracked `tenant` row (minimal columns) → one activity dispatched. */
@@ -93,8 +73,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   let wss: any = null;
   /** Activity messages received by the stub WS receiver (excludes health pushes). */
   let activityMsgs: Array<{ subjectId: string | null }> = [];
-  // biome-ignore lint/suspicious/noExplicitAny: pg-logical-replication service
-  let service: any;
+  let harness: CdcPipelineHarness | null = null;
 
   /** Start (or restart) the stub WS receiver on the worker's configured port. */
   async function startStubWs(): Promise<void> {
@@ -129,47 +108,15 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   beforeAll(async () => {
     ({ WebSocketServer } = await import('ws'));
 
-    // Drop a leftover slot from a previous run; bail if one is actively held.
-    const existing = await cdcDb.execute<{ active: boolean }>(
-      sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-    );
-    if (existing.rows[0]?.active) {
-      throw new Error(`Replication slot '${CDC_SLOT_NAME}' is already active — another worker is using the test DB`);
-    }
-    if (existing.rows.length) {
-      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
-    }
-
     await startStubWs();
 
     // Bring up the worker pipeline directly (no infinite reconnect loop, so teardown is clean).
-    await ensureReplicationSlot();
-    service = createReplicationService();
-    replicationState.service = service;
-    setupBackpressure();
-    wsClient.connect();
-    replicationState.status = 'active';
-    const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME] });
-    // subscribe() stays pending while streaming; it resolves on service.stop().
-    service.subscribe(plugin, CDC_SLOT_NAME).catch(() => {});
-
-    await waitFor(() => wsClient.isConnected(), 15_000, 'worker WS connected');
-    await waitFor(() => slotActive(), 15_000, 'replication slot active');
+    harness = await startCdcPipeline();
   }, 30_000);
 
   afterAll(async () => {
-    wsClient.close();
-    await service?.stop().catch(() => {});
-    await drainBuffers().catch(() => {});
+    await harness?.stop();
     await stopStubWs();
-    // Drop the slot so reruns start clean (service.stop releases the active flag first).
-    await waitFor(async () => !(await slotActive()), 10_000, 'slot released').catch(() => {});
-    await cdcDb
-      .execute(
-        sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
-            WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})`,
-      )
-      .catch(() => {});
   });
 
   it('delivers a tracked change downstream and advances the slot', async () => {

@@ -12,6 +12,7 @@
 import { SESSION_COOKIE_NAME } from '../config';
 import { sessionId } from '../seeds/ids';
 import { hashToken, sessionToken } from '../seeds/session-auth';
+import { TOTAL_USERS } from '../seeds/user.bench';
 
 let userCounter = 0;
 
@@ -32,7 +33,7 @@ function buildCookie(userIndex: number): string {
 // ── Authenticate ───────────────────────────────────────────────────────────
 
 export async function authenticate(context: { vars: Record<string, unknown> }, _events: unknown) {
-  const userIndex = userCounter++ % 1200;
+  const userIndex = userCounter++ % TOTAL_USERS;
   context.vars.cookie = buildCookie(userIndex);
   context.vars.userIndex = userIndex;
 }

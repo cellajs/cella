@@ -37,7 +37,7 @@ pnpm test:core
 
 ### Full Mode (`pnpm test` or `pnpm test:full`)
 - **Database**: PostgreSQL in Docker container
-- **Requirements**: Docker running, CDC Worker available
+- **Requirements**: Docker running
 - **Coverage**: Root workspace tests including CDC integration tests and CLI workspace, plus `coverage/coverage-summary.json`; frontend Storybook browser tests are not part of the root run
 
 Best for:

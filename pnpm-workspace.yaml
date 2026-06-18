@@ -13,23 +13,10 @@ allowBuilds:
 allowUnusedPatches: true
 blockExoticSubdeps: true
 catalog:
-  '@ag-ui/core': ^0.0.56
-  '@aws-sdk/client-s3': ^3.1065.0
-  '@aws-sdk/s3-request-presigner': ^3.1065.0
-  '@storybook/addon-a11y': ^10.4.3
-  '@storybook/addon-docs': ^10.4.3
-  '@storybook/addon-vitest': ^10.4.3
-  '@storybook/react-vite': ^10.4.3
-  '@tailwindcss/typography': ^0.5.20
   '@types/node': 24.10.13
   '@typescript/native-preview': 7.0.0-dev.20260610.1
   cross-env: ^10.1.0
-  dompurify: ^3.4.9
   hono: ^4.12.25
-  isbot: ^5.1.42
-  rate-limiter-flexible: ^11.2.0
-  react-hook-form: ^7.78.0
-  storybook: ^10.4.3
   tsup: ^8.5.1
   tsx: ^4.22.4
   typescript: ^6.0.3
@@ -45,6 +32,7 @@ minimumReleaseAgeExclude:
   - esbuild@0.25.0
   - protobufjs@8.2.0
   - uuid@11.1.1
+  - '@pulumiverse/scaleway@1.50.1'
 overrides:
   esbuild@<0.25.0: ^0.25.0
   protobufjs@>=8.0.0 <8.2.0: ^8.2.0

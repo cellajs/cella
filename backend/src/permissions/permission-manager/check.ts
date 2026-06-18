@@ -13,7 +13,13 @@ import {
 import { env } from '#/env';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
-import type { ActionAttribution, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types';
+import type {
+  ActionAttribution,
+  PermissionCheckOptions,
+  PermissionDecision,
+  ResolvedContextIds,
+  SubjectForPermission,
+} from './types';
 import { validateMembership, validateSubject } from './validation';
 
 /** Membership index: Map from `${contextType}:${contextId}` to memberships */
@@ -69,7 +75,7 @@ const getOrBuildPolicyIndex = (
 /**
  * Extracts the context ID from subject for a given contextType:
  * - If `subject.entityType === contextType` and subject has `id`: returns `subject.id`
- * - Otherwise: returns `subject[entityIdColumnKeys[contextType]]` (e.g., subject.organizationId)
+ * - Otherwise: returns `subject.contextIds[contextType]` (e.g., subject.contextIds.organization)
  */
 const getSubjectContextId = (
   subject: SubjectForPermission,
@@ -78,8 +84,7 @@ const getSubjectContextId = (
   if (subject.entityType === contextType && subject.id) {
     return subject.id;
   }
-  const contextIdKey = appConfig.entityIdColumnKeys[contextType];
-  return subject[contextIdKey];
+  return subject.contextIds[contextType];
 };
 
 /**
@@ -119,7 +124,7 @@ const checkWithIndices = <T extends MembershipBaseModel>(
     );
 
     const can = { ...allActionsAllowed };
-    const contextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
+    const contextIds: ResolvedContextIds = primaryContextId ? { [primaryContext]: primaryContextId } : {};
 
     return {
       subject: { entityType: subject.entityType, id: subject.id, contextIds },
@@ -135,7 +140,7 @@ const checkWithIndices = <T extends MembershipBaseModel>(
   const actions = createActionRecord((): ActionAttribution => ({ enabled: false, grantedBy: [] }));
 
   // Collect resolved context IDs for debugging
-  const contextIds: Partial<Record<ContextEntityType, string>> = {};
+  const contextIds: ResolvedContextIds = {};
 
   // Walk through each context level (most specific first, then ancestors)
   for (const contextType of orderedContexts) {
@@ -235,10 +240,10 @@ const checkWithIndices = <T extends MembershipBaseModel>(
  *
  * - `options.systemRole`: If 'admin', grants all permissions regardless of memberships.
  *
- * ## Example: Checking "attachment" with organizationId="org1"
+ * ## Example: Checking "attachment" with contextIds.organization="org1"
  * 1. orderedContexts = [organization] (attachment's ancestor)
  * 2. primaryContext = organization
- * 3. Find user's memberships where contextType=organization AND organizationId=org1
+ * 3. Find user's memberships where contextType=organization AND contextId=org1
  * 4. For each membership, look up permissions and attribute each granted action
  * 5. Derive `can` from actions, capture first membership
  */

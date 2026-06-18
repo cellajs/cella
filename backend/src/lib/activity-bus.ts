@@ -32,7 +32,6 @@ export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'>
   cacheToken: string | null;
   seq: number | null;
   batchUntilSeq: number | null;
-  deletedIds: string[] | null;
   propagation: PropagationHint | null;
   trace: SyncTraceContext | null;
 }

@@ -138,10 +138,6 @@ export type StreamNotification = {
    */
   batchUntilSeq: number | null;
   /**
-   * Entity IDs in a legacy hard-delete batch
-   */
-  deletedIds: Array<string> | null;
-  /**
    * Embedded entity propagation hint for cross-entity cache invalidation
    */
   propagation: {
@@ -2312,14 +2308,10 @@ export type PostPublicCatchupResponses = {
    */
   200: {
     /**
-     * Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }
+     * Per-entityType change summary: { [entityType]: { entitySeqs? } }
      */
     changes: {
       [key: string]: {
-        deletedByType: {
-          [key: string]: Array<string>;
-        };
-        deleteOverflow?: Array<string>;
         entitySeqs?: {
           [key: string]: number;
         };
@@ -2465,14 +2457,10 @@ export type PostAppCatchupResponses = {
    */
   200: {
     /**
-     * Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }
+     * Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }
      */
     changes: {
       [key: string]: {
-        deletedByType: {
-          [key: string]: Array<string>;
-        };
-        deleteOverflow?: Array<string>;
         entitySeqs?: {
           [key: string]: number;
         };

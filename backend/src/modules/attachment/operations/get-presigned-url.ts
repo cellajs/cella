@@ -5,6 +5,7 @@ import { tenantRead } from '#/db/tenant-context';
 import { findAttachmentByKey } from '#/modules/attachment/attachment-queries';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { checkPermission } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 export async function getPresignedUrlOp(ctx: AuthContext, key: string): Promise<OperationResult<string>> {
   const attachment = await tenantRead(ctx, async (readCtx) => {
@@ -17,7 +18,8 @@ export async function getPresignedUrlOp(ctx: AuthContext, key: string): Promise<
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const memberships = ctx.var.memberships;
 
-    const { isAllowed } = checkPermission(memberships, 'read', attachment);
+    const subject = buildSubjectFromEntity('attachment', attachment);
+    const { isAllowed } = checkPermission(memberships, 'read', subject, { isSystemAdmin });
 
     if (!isSystemAdmin && !isAllowed) {
       return { success: false, error: 'forbidden', status: 403 };

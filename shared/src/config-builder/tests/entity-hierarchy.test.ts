@@ -74,6 +74,25 @@ describe('EntityHierarchyBuilder', () => {
         createEntityHierarchy(roles).user().context('organization', { parent: null, roles: [] });
       }).toThrow('must have at least one role');
     });
+
+    it('throws if a parentless product is not public', () => {
+      expect(() => {
+        createEntityHierarchy(roles)
+          .user()
+          .context('organization', { parent: null, roles: roles.all })
+          .product('page', { parent: null });
+      }).toThrow('has no parent and is not public');
+    });
+
+    it('allows a parentless product when it declares a publicRead mode', () => {
+      expect(() => {
+        createEntityHierarchy(roles)
+          .user()
+          .context('organization', { parent: null, roles: roles.all })
+          .product('page', { parent: null, publicRead: 'always' })
+          .build();
+      }).not.toThrow();
+    });
   });
 
   describe('hierarchy queries (raak-like model)', () => {
@@ -91,7 +110,7 @@ describe('EntityHierarchyBuilder', () => {
       .product('task', { parent: 'project' })
       .product('label', { parent: 'project' })
       .product('attachment', { parent: 'project' }) // Scoped to project, inherits org
-      .product('page', { parent: null })
+      .product('page', { parent: null, publicRead: 'always' }) // Global, parentless → must be public
       .build();
 
     it('getKind returns correct kind', () => {

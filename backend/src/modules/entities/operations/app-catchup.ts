@@ -51,7 +51,6 @@ export async function appCatchupOp(
     const { entitySeqs, entityCounts } = parseCounterCounts(allCounters.get(organizationId));
 
     changes[organizationId] = {
-      deletedByType: {},
       entitySeqs: Object.keys(entitySeqs).length > 0 ? entitySeqs : undefined,
       entityCounts: Object.keys(entityCounts).length > 0 ? entityCounts : undefined,
     };
@@ -87,8 +86,6 @@ export async function appCatchupOp(
   // Step 4: Prune orgs with no changes (seqs match client and no propagation)
   if (seqs) {
     for (const [orgId, scope] of Object.entries(changes)) {
-      const hasDeletes = Object.keys(scope.deletedByType).length > 0;
-      const hasOverflow = (scope.deleteOverflow?.length ?? 0) > 0;
       const hasPropagation = scope.propagation && scope.propagation.length > 0;
       const seqsMatch =
         !scope.entitySeqs ||
@@ -96,7 +93,7 @@ export async function appCatchupOp(
           return seqs[`${orgId}:s:${entityType}`] === serverVal;
         });
 
-      if (seqsMatch && !hasDeletes && !hasOverflow && !hasPropagation) {
+      if (seqsMatch && !hasPropagation) {
         delete changes[orgId];
       }
     }

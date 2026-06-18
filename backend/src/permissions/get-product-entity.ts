@@ -5,6 +5,7 @@ import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import { checkPermission } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Result type for product entity validation including the can object.
@@ -48,7 +49,8 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action.
-  const { isAllowed } = checkPermission(memberships, action, entity, { isSystemAdmin, userId });
+  const subject = buildSubjectFromEntity(entityType, entity);
+  const { isAllowed } = checkPermission(memberships, action, subject, { isSystemAdmin, userId });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

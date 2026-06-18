@@ -100,7 +100,6 @@ export const zStreamNotification = z.object({
   stx: zStxBase.and(z.record(z.string(), z.unknown())).nullable(),
   cacheToken: z.string().nullable(),
   batchUntilSeq: z.int().nullable(),
-  deletedIds: z.array(z.string()).nullable(),
   propagation: z
     .object({
       sourceType: z.string(),
@@ -810,8 +809,6 @@ export const zPostPublicCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
-      deletedByType: z.record(z.string(), z.array(z.string())),
-      deleteOverflow: z.array(z.string()).optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
       childContextChanges: z
@@ -851,8 +848,6 @@ export const zPostAppCatchupResponse = z.object({
   changes: z.record(
     z.string(),
     z.object({
-      deletedByType: z.record(z.string(), z.array(z.string())),
-      deleteOverflow: z.array(z.string()).optional(),
       entitySeqs: z.record(z.string(), z.int()).optional(),
       entityCounts: z.record(z.string(), z.int()).optional(),
       childContextChanges: z

@@ -6,7 +6,7 @@ export const CDC_PUBLICATION_NAME = "cdc_pub";
 /**
  * Replication slot name for CDC.
  */
-export const CDC_SLOT_NAME = "cdc_slot";
+export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? "cdc_slot";
 
 /**
  * CDC Resource Limits and Thresholds

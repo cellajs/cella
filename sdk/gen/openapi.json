@@ -719,13 +719,6 @@
             "type": ["integer", "null"],
             "description": "Last seq for a batched notification — client should fetch range"
           },
-          "deletedIds": {
-            "type": ["array", "null"],
-            "items": {
-              "type": "string"
-            },
-            "description": "Entity IDs in a legacy hard-delete batch"
-          },
           "propagation": {
             "type": ["object", "null"],
             "properties": {
@@ -773,7 +766,6 @@
           "stx",
           "cacheToken",
           "batchUntilSeq",
-          "deletedIds",
           "propagation"
         ],
         "description": "Realtime notification delivered via SSE for entity and membership changes.",
@@ -794,7 +786,6 @@
             "fieldTimestamps": {}
           },
           "batchUntilSeq": null,
-          "deletedIds": null,
           "propagation": null
         },
         "x-tags": ["data", "entities", "cella"]
@@ -4808,21 +4799,6 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "deletedByType": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "deleteOverflow": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
                           "entitySeqs": {
                             "type": "object",
                             "additionalProperties": {
@@ -4890,10 +4866,9 @@
                               "required": ["sourceType", "targetType", "field", "update", "remove"]
                             }
                           }
-                        },
-                        "required": ["deletedByType"]
+                        }
                       },
-                      "description": "Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }"
+                      "description": "Per-entityType change summary: { [entityType]: { entitySeqs? } }"
                     },
                     "cursor": {
                       "type": ["string", "null"],
@@ -5022,21 +4997,6 @@
                       "additionalProperties": {
                         "type": "object",
                         "properties": {
-                          "deletedByType": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "deleteOverflow": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
                           "entitySeqs": {
                             "type": "object",
                             "additionalProperties": {
@@ -5104,10 +5064,9 @@
                               "required": ["sourceType", "targetType", "field", "update", "remove"]
                             }
                           }
-                        },
-                        "required": ["deletedByType"]
+                        }
                       },
-                      "description": "Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }"
+                      "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }"
                     },
                     "cursor": {
                       "type": ["string", "null"],
@@ -5119,7 +5078,9 @@
                 "example": {
                   "changes": {
                     "org-example-id": {
-                      "deletedByType": {}
+                      "entitySeqs": {
+                        "attachment": 1
+                      }
                     }
                   },
                   "cursor": "d9909rsl2y2ii9vbcsc2ywg7"

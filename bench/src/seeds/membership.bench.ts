@@ -1,6 +1,7 @@
 import { registerBenchSeed } from '../registry';
-import { TENANT_ID, TOTAL_USERS } from './ids';
+import { TENANT_ID } from './ids';
 import { loadtestOrgMembership } from './membership';
+import { TOTAL_USERS } from './user.bench';
 
 registerBenchSeed({
   table: 'memberships',

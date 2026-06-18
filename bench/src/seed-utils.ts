@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import type { BenchSeed, TableBenchSeed } from './registry';
+import { type BenchSeed, getBenchSeedCleanupWhere, type TableBenchSeed } from './registry';
 
 const BATCH_SIZE = 200;
 
@@ -65,5 +65,5 @@ export async function cleanupBenchSeed(client: pg.PoolClient, seed: BenchSeed): 
     return;
   }
 
-  await client.query(`DELETE FROM ${seed.table} WHERE ${seed.cleanupWhere}`);
+  await client.query(`DELETE FROM ${seed.table} WHERE ${getBenchSeedCleanupWhere(seed)}`);
 }

@@ -49,7 +49,6 @@ export const streamNotificationSchema = z
       .int()
       .nullable()
       .describe('Last seq for a batched notification — client should fetch range'),
-    deletedIds: z.array(z.string()).nullable().describe('Entity IDs in a legacy hard-delete batch'),
     propagation: propagationHintSchema
       .nullable()
       .describe('Embedded entity propagation hint for cross-entity cache invalidation'),
@@ -94,24 +93,14 @@ const childContextChangeSummarySchema = z.object({
  * - entitySeqs (org-level): quick screening — "did anything change for this entity type in this org?"
  * - childContextChanges: precision drill-down — per-child-context entitySeqs for delta fetch
  *
- * - deletedByType: legacy hard-delete IDs grouped by entityType for targeted cache removal
- *
  * Client logic:
  * 1. Compare org-level entitySeqs for quick skip (unchanged → skip entirely)
  * 2. For changed orgs, iterate childContextChanges to find which child contexts changed
  * 3. Delta fetch only for changed (childContext, entityType) pairs
  * - product soft deletes are seq-stamped updates; seqCursor delta fetch returns tombstones
- * - deletedByType entries, when present for hard deletes, are applied directly (cache patching)
  * - On catchup: always invalidate membership queries (lightweight, deduplicated by React Query)
  */
 export const catchupChangeSummarySchema = z.object({
-  deletedByType: z.record(z.string(), z.array(z.string())),
-  /**
-   * Entity types whose legacy hard deletes exceeded the server enumeration cap. The client should
-   * invalidate the whole list for these types (one refetch) instead of removing entities
-   * one id at a time. Deletes for these types are NOT present in `deletedByType`.
-   */
-  deleteOverflow: z.array(z.string()).optional(),
   /** Org-level entity seqs (change signal for quick screening). Managed by CDC worker. */
   entitySeqs: z.record(z.string(), z.number().int()).optional(),
   /** Org-level per-entityType total counts from context_counters (e:{type} keys). Used for cache integrity checks. */
@@ -130,7 +119,7 @@ export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
  */
 export const appCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
-    description: 'Per-org change summary: { [organizationId]: { deletedByType, entitySeqs?, entityCounts? } }',
+    description: 'Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }',
   }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
 });
@@ -143,7 +132,7 @@ export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;
  */
 export const publicCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
-    description: 'Per-entityType change summary: { [entityType]: { deletedByType, entitySeqs? } }',
+    description: 'Per-entityType change summary: { [entityType]: { entitySeqs? } }',
   }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
 });

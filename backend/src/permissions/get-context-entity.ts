@@ -4,6 +4,7 @@ import { AppError } from '#/core/error';
 import { type EntityModel, resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
  * Result type for context entity validation including the can object.
@@ -48,7 +49,8 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   // Step 2: Check permission for the requested action (system admin bypass is handled inside)
-  const { isAllowed, membership } = checkPermission(memberships, action, entity, { isSystemAdmin });
+  const subject = buildSubjectFromEntity(entityType, entity);
+  const { isAllowed, membership } = checkPermission(memberships, action, subject, { isSystemAdmin });
 
   if (!isAllowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

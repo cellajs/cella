@@ -69,7 +69,7 @@ const createSubjects = (count: number): SubjectForPermission[] =>
   Array.from({ length: count }, (_, i) => ({
     entityType: 'attachment' as const,
     id: `attachment${i}`,
-    organizationId: `org${i % 20}`,
+    contextIds: { organization: `org${i % 20}` },
   }));
 
 /** Run function multiple times and return average execution time in ms */

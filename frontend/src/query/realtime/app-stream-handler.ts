@@ -55,16 +55,6 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     if (!isProductEntity(entityType))
       return console.error('Unknown entityType in app stream notification:', entityType);
 
-    // Legacy hard-delete batch: product soft deletes use update notifications + seq-range tombstones.
-    if (notification.deletedIds?.length) {
-      for (const id of notification.deletedIds) {
-        cacheOps.removeEntity(entityType, id, organizationId ?? undefined);
-        handleDeleteUnseenCount(entityType, id, notification.contextId ?? null);
-      }
-      if (notification.propagation) propagateEmbeddings(notification.propagation);
-      return;
-    }
-
     // Create/update batch: range fetch also handles soft-delete tombstones.
     if (notification.batchUntilSeq && seq != null && organizationId && hasEntityQueryKeys(entityType)) {
       const keys = getEntityQueryKeys(entityType);
@@ -169,7 +159,7 @@ function handleEntityNotification(
   // but still patch stx metadata so subsequent mutations read fresh versions.
   // Deletes are excluded: the row's stx reflects its last writer, not the deleter,
   // so an unrelated user (the creator) would otherwise short-circuit and skip the removal.
-  // removeEntity is idempotent, so a self-echo on delete is harmless.
+  // Delete invalidation is idempotent, so a self-echo on delete is harmless.
   if (action !== 'delete' && stx?.sourceId === sourceId) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
     console.debug('[handleEntityNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
@@ -232,9 +222,12 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Remove from detail and list caches directly (no refetch needed)
-      cacheOps.removeEntity(entityType, entityId, organizationId);
-
+      // Physical hard delete (rare — e.g. a DB admin). Product soft deletes are 'update' events
+      // reconciled via seq-range tombstones; a hard delete leaves no row or tombstone to fetch,
+      // so mark the detail stale and invalidate the org-scoped list to reconcile — consistent
+      // with the catchup count-integrity invalidation flow. Covers single and batch deletes.
+      cacheOps.invalidateEntityDetail(entityId, keys, 'none');
+      cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
       handleDeleteUnseenCount(entityType, entityId, contextId);
       if (propagation) propagateEmbeddings(propagation);
       break;
