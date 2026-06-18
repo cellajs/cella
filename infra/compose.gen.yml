@@ -35,7 +35,7 @@ services:
       replacementStrategy: lb-overlap
       drainSeconds: 10
       instanceType:
-        production: DEV1-M
+        production: DEV1-S
         staging: DEV1-S
       drainPolicy: requests
       lbRoute: default

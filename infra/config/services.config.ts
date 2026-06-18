@@ -48,7 +48,7 @@ export default defineServices({
     // generation boots warm and contends for the slot the old one releases on
     // drain. No lbRoute → internal-only, reached over the private network.
     replacementStrategy: 'exclusive',
-    instanceType: 'STARDUST1-S',
+    instanceType: 'DEV1-S',
     env: {
       API_WS_URL: '${API_WS_URL}',
       BACKEND_URL: '${BACKEND_URL}',
@@ -77,7 +77,7 @@ export default defineServices({
     lbWebsockets: true,
     // Only deployed when the app enables collaborative editing (appConfig.features.yjs).
     featureFlag: 'yjs',
-    instanceType: 'STARDUST1-S',
+    instanceType: 'DEV1-S',
     env: {
       BACKEND_URL: '${BACKEND_URL}',
       YJS_PORT: '4002',
@@ -97,7 +97,7 @@ export default defineServices({
     lbRoute: 'host',
     // Only deployed when the app enables the AI worker (appConfig.features.ai).
     featureFlag: 'ai',
-    instanceType: 'STARDUST1-S',
+    instanceType: 'DEV1-S',
     env: {
       MODE: 'ai-worker',
       PORT: '4003',
@@ -125,7 +125,7 @@ export default defineServices({
     // The SPA proxy reads no app secret — no standard env, no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
-    instanceType: 'STARDUST1-S',
+    instanceType: 'DEV1-S',
     env: {
       FRONTEND_CSP: '${FRONTEND_CSP}',
       ORIGIN_HOST: '${ORIGIN_HOST}',
