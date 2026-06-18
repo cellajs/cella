@@ -36,5 +36,15 @@ try {
 } catch (error) {
   const msg = error instanceof Error ? error.message : String(error);
   console.error(pc.red(`${timestamp()} [migrate] ✗ Migration failed: ${msg}`));
+  // Drizzle wraps the underlying pg/driver error as `cause`; its message holds
+  // the real reason (TLS identity mismatch, auth failure, missing role, …),
+  // which the top-level message omits. Surface it so a failed migrate on a
+  // no-SSH VM is diagnosable from the serial console alone.
+  const cause = error instanceof Error ? error.cause : undefined;
+  if (cause) {
+    const causeMsg =
+      cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
+    console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
+  }
   process.exit(1);
 }

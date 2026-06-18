@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type DiagReader, parseArgs, parseKeys, renderDiagnostics, selectDiagnostics } from './fetch-boot-diag'
+import { type DiagReader, parseArgs, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag'
 
 // A realistic `aws s3 ls` block: `<date> <time> <size> <key>`.
 const LS = `
@@ -127,6 +127,59 @@ describe('renderDiagnostics', () => {
     const failIdx = logs.indexOf('::group::⚠️ backend-pull-failed-20260602T094500Z.log')
     const markerIdx = logs.indexOf('::group::Stage markers (backend-*)')
     expect(failIdx).toBeLessThan(markerIdx)
+  })
+
+  it('renders plain headers (no ::group:: markup) in plain style', () => {
+    const logs: string[] = []
+    const reader: DiagReader = { list: () => '', cat: (key) => `BODY(${key})` }
+    const sel = { markers: ['backend-stage-1-pull'], stageDetailKeys: ['backend-stage-1-pull'], latestFull: 'backend-20260531T090509-boot.log', failureKeys: [] }
+
+    renderDiagnostics('backend', sel, reader, (m) => logs.push(m), 'plain')
+
+    expect(logs.some((l) => l.includes('::group::') || l.includes('::endgroup::'))).toBe(false)
+    expect(logs).toContain('\n=== Stage markers (backend-*) ===')
+    expect(logs).toContain('BODY(backend-20260531T090509-boot.log)')
+  })
+
+  it('warns with a plain prefix when no full log exists in plain style', () => {
+    const logs: string[] = []
+    renderDiagnostics('cdc', { markers: [], stageDetailKeys: [], latestFull: undefined, failureKeys: [] }, { list: () => '', cat: () => '' }, (m) => logs.push(m), 'plain')
+    expect(logs).toContain('! No cdc full boot-diag log uploaded')
+  })
+
+  it('annotates inline when reading a single object fails, without aborting', () => {
+    const logs: string[] = []
+    const reader: DiagReader = {
+      list: () => '',
+      cat: (key) => {
+        if (key.includes('boot.log')) throw new Error('NoSuchKey')
+        return `BODY(${key})`
+      },
+    }
+    const sel = { markers: [], stageDetailKeys: ['backend-stage-1-pull'], latestFull: 'backend-20260531T090509-boot.log', failureKeys: [] }
+
+    renderDiagnostics('backend', sel, reader, (m) => logs.push(m), 'plain')
+
+    // The good object still renders and the failing one is annotated, not thrown.
+    expect(logs).toContain('BODY(backend-stage-1-pull)')
+    expect(logs.some((l) => l.includes('<<failed to read backend-20260531T090509-boot.log: NoSuchKey>>'))).toBe(true)
+  })
+})
+
+describe('summarizeBundles', () => {
+  const keys = [
+    'backend-stage-1-pull',
+    'backend-20260531T090509-boot.log',
+    'backend-failed-20260602T093000Z.log',
+    'cdc-stage-1-pull',
+  ]
+
+  it('counts owned objects and failure captures per service', () => {
+    expect(summarizeBundles(keys, ['backend', 'cdc', 'yjs'])).toEqual([
+      { service: 'backend', total: 3, failures: 1, latestFull: 'backend-20260531T090509-boot.log' },
+      { service: 'cdc', total: 1, failures: 0, latestFull: undefined },
+      { service: 'yjs', total: 0, failures: 0, latestFull: undefined },
+    ])
   })
 })
 

@@ -81,41 +81,109 @@ export interface DiagReader {
   cat(key: string): string
 }
 
-/** Default reader shelling out to the preinstalled aws CLI (no shell). */
+/**
+ * Default reader shelling out to the preinstalled aws CLI (no shell). Unlike a
+ * bare `.stdout ?? ''`, this surfaces the *reason* a read failed — a missing aws
+ * binary, bad credentials, or the wrong bucket — instead of silently returning
+ * an empty string that the renderer would misreport as "no logs uploaded". The
+ * `list` failure throws (without it nothing else can run); a per-object `cat`
+ * failure is left for the renderer to annotate inline so one unreadable object
+ * doesn't abort the whole dump.
+ */
 export function createAwsReader(endpoint: string, bucket: string): DiagReader {
   const prefix = `s3://${bucket}/boot-diag/`
+  const run = (args: string[], what: string): string => {
+    const res = spawnSync('aws', args, { encoding: 'utf-8' })
+    if (res.error) {
+      if ((res.error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error('aws CLI not found on PATH — install the AWS CLI to read boot diagnostics')
+      }
+      throw new Error(`aws ${what} failed: ${res.error.message}`)
+    }
+    if (res.status !== 0) {
+      throw new Error(`aws ${what} exited ${res.status}: ${(res.stderr ?? '').trim() || '(no stderr)'}`)
+    }
+    return res.stdout ?? ''
+  }
   return {
-    list: () => spawnSync('aws', ['--endpoint-url', endpoint, 's3', 'ls', prefix], { encoding: 'utf-8' }).stdout ?? '',
-    cat: (key) => spawnSync('aws', ['--endpoint-url', endpoint, 's3', 'cp', `${prefix}${key}`, '-'], { encoding: 'utf-8' }).stdout ?? '',
+    list: () => run(['--endpoint-url', endpoint, 's3', 'ls', prefix], `s3 ls ${prefix}`),
+    cat: (key) => run(['--endpoint-url', endpoint, 's3', 'cp', `${prefix}${key}`, '-'], `s3 cp ${key}`),
   }
 }
 
-/** Print the selected diagnostics as collapsible Actions log groups. */
-export function renderDiagnostics(service: string, sel: DiagSelection, reader: DiagReader, log: (msg: string) => void = console.info): void {
+/** Per-service rollup of what diagnostics exist, for the `--list` overview. */
+export interface BundleSummary {
+  service: string
+  /** Total boot-diag objects owned by this service. */
+  total: number
+  /** How many of them are reconciler failure captures (the ones that matter). */
+  failures: number
+  /** Latest full boot transcript key, if any. */
+  latestFull?: string
+}
+
+/**
+ * Summarise the boot-diag prefix per service — a quick "what's here" overview so
+ * a caller (or Copilot) can see which services have evidence and which have a
+ * failure capture worth opening, without dumping every body.
+ */
+export function summarizeBundles(keys: string[], serviceNames: readonly string[]): BundleSummary[] {
+  return serviceNames.map((service) => {
+    const svc = escapeRe(service)
+    const owned = keys.filter((k) => new RegExp(`^${svc}-`).test(k))
+    const sel = selectDiagnostics(keys, service)
+    return { service, total: owned.length, failures: sel.failureKeys.length, latestFull: sel.latestFull }
+  })
+}
+
+/**
+ * Print the selected diagnostics. `style` controls presentation: `'ci'` emits
+ * GitHub Actions collapsible `::group::` log groups (the default, for the deploy
+ * workflow); `'plain'` emits readable section headers for a local terminal. A
+ * per-object read that fails is annotated inline rather than aborting the dump.
+ */
+export function renderDiagnostics(
+  service: string,
+  sel: DiagSelection,
+  reader: DiagReader,
+  log: (msg: string) => void = console.info,
+  style: 'ci' | 'plain' = 'ci',
+): void {
+  const open = (title: string) => log(style === 'ci' ? `::group::${title}` : `\n=== ${title} ===`)
+  const close = () => style === 'ci' && log('::endgroup::')
+  const warn = (msg: string) => log(style === 'ci' ? `::warning::${msg}` : `! ${msg}`)
+  const safeCat = (key: string): string => {
+    try {
+      return reader.cat(key)
+    } catch (err) {
+      return `<<failed to read ${key}: ${err instanceof Error ? err.message : String(err)}>>`
+    }
+  }
+
   // Failure captures first — this is usually the actual answer (pull/auth error
   // or the failed slot's logs), so surface it before the boot transcript.
   for (const key of sel.failureKeys ?? []) {
-    log(`::group::⚠️ ${key}`)
-    log(reader.cat(key))
-    log('::endgroup::')
+    open(`⚠️ ${key}`)
+    log(safeCat(key))
+    close()
   }
 
-  log(`::group::Stage markers (${service}-*)`)
+  open(`Stage markers (${service}-*)`)
   for (const marker of sel.markers) log(marker)
-  log('::endgroup::')
+  close()
 
   for (const key of sel.stageDetailKeys) {
-    log(`::group::${key}`)
-    log(reader.cat(key))
-    log('::endgroup::')
+    open(key)
+    log(safeCat(key))
+    close()
   }
 
   if (sel.latestFull) {
-    log(`::group::${service} boot diagnostics (${sel.latestFull})`)
-    log(reader.cat(sel.latestFull))
-    log('::endgroup::')
+    open(`${service} boot diagnostics (${sel.latestFull})`)
+    log(safeCat(sel.latestFull))
+    close()
   } else {
-    log(`::warning::No ${service} full boot-diag log uploaded`)
+    warn(`No ${service} full boot-diag log uploaded`)
   }
 }
 
@@ -140,7 +208,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { bucket, service, region } = parseArgs(argv)
   const reader = createAwsReader(`https://s3.${region}.scw.cloud`, bucket)
   const selection = selectDiagnostics(parseKeys(reader.list()), service)
-  renderDiagnostics(service, selection, reader)
+  // CI gets collapsible groups; a manual local run gets plain headers.
+  renderDiagnostics(service, selection, reader, console.info, process.env.GITHUB_ACTIONS === 'true' ? 'ci' : 'plain')
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
