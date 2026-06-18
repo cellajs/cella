@@ -1,13 +1,13 @@
 import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { pagesTable } from '#/db/schema/pages';
-import { requestsTable } from '#/db/schema/requests';
-import { tenantsTable } from '#/db/schema/tenants';
-import { usersTable } from '#/db/schema/users';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { pagesTable } from '#/modules/page/page-db';
+import { requestsTable } from '#/modules/requests/requests-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { usersTable } from '#/modules/user/user-db';
 
 // Base table shape constraints for generic resolvers
 export type TableWithId = AnyPgTable & { id: PgColumn };

@@ -1,8 +1,8 @@
 import { appConfig, hierarchy } from 'shared';
 import type { ActivityAction } from 'shared';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { InactiveMembershipModel } from '#/db/schema/inactive-memberships';
-import type { MembershipModel } from '#/db/schema/memberships';
+import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
+import type { MembershipModel } from '#/modules/memberships/memberships-db';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
 import { logEvent } from '../lib/pino';
@@ -21,6 +21,9 @@ export interface CountDelta {
  *   - membership create → +1 role, +1 total
  *   - membership delete → -1 role, -1 total
  *   - membership update (role change) → -1 old role, +1 new role
+ *
+ * Membership seq (s:membership on the org row):
+ *   - +1 on every membership / inactive_membership activity (change signal for catchup screening)
  *
  * Inactive membership counts (m:pending):
  *   - create with rejectedAt=null → +1 pending
@@ -42,18 +45,27 @@ export function getCountDeltas(
   // Active memberships: track role counts + total
   if (tableMeta.kind === 'resource' && tableMeta.type === 'membership') {
     const delta = getMembershipDelta(action, newRow as MembershipModel, oldRow as MembershipModel | null);
-    return delta ? [delta] : [];
+    const deltas = delta ? [delta] : [];
+    // Bump the org-level membership seq on every membership activity so catchup can detect
+    // membership changes via O(1) counter screening (no activity scan needed).
+    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
+    return deltas;
   }
 
   // Inactive memberships: track pending count
   if (tableMeta.kind === 'resource' && tableMeta.type === 'inactive_membership') {
     const delta = getInactiveMembershipDelta(action, newRow as InactiveMembershipModel, oldRow as InactiveMembershipModel | null);
-    return delta ? [delta] : [];
+    const deltas = delta ? [delta] : [];
+    // Pending invitations appear in member lists too — bump the membership seq so the client
+    // refreshes them on catchup.
+    if (organizationId) deltas.push({ contextKey: organizationId, deltas: { 's:membership': 1 } });
+    return deltas;
   }
 
   // Entities: track entity type counts on org + parent context
   if (tableMeta.kind === 'entity' && organizationId) {
-    const deltas = getEntityDeltas(action, organizationId, tableMeta.type, newRow, oldRow);
+    const countAction = isSoftDeleteTransition(newRow, oldRow) ? 'delete' : action;
+    const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow);
 
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {
@@ -102,6 +114,10 @@ function getArrayValue(row: CdcRowData | undefined, key: string): string[] {
   if (!row) return [];
   const v = row[key];
   return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function isSoftDeleteTransition(newRow: CdcRowData, oldRow: CdcRowData | null): boolean {
+  return oldRow !== null && oldRow.deletedAt == null && newRow.deletedAt != null;
 }
 
 /**

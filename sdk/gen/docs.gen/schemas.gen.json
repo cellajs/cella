@@ -91,6 +91,15 @@
           },
           "extendsRef": "#/components/schemas/UserMinimalBase"
         },
+        "deletedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "deletedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
         "seq": {
           "type": "integer",
           "required": true,
@@ -155,6 +164,8 @@
       "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
       "updatedAt": "2024-10-12T17:43:05.360Z",
       "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+      "deletedAt": null,
+      "deletedBy": null,
       "seq": 123,
       "stx": {
         "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -400,7 +411,7 @@
         "deletedIds": {
           "type": ["array", "null"],
           "required": true,
-          "description": "Entity IDs in a delete batch",
+          "description": "Entity IDs in a legacy hard-delete batch",
           "itemType": "string"
         },
         "propagation": {
@@ -1198,21 +1209,20 @@
       "entityType": "organization",
       "name": "Spencer, Pouros and Bergnaum",
       "slug": "spencer-pouros-and-bergnaum",
-      "description": "Sustainable systematic software",
       "shortName": "Spencer,",
-      "country": "Tajikistan",
-      "timezone": "Antarctica/Syowa",
+      "country": "Sweden",
+      "timezone": "Europe/Vaduz",
       "defaultLanguage": "en",
       "languages": ["en"],
       "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-      "color": "#6af7b9",
+      "color": "#cda6af",
       "thumbnailUrl": null,
-      "logoUrl": null,
       "bannerUrl": null,
+      "logoUrl": null,
       "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
       "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
       "authStrategies": ["passkey"],
-      "chatSupport": false,
+      "chatSupport": true,
       "createdAt": "2024-12-25T15:29:47.111Z",
       "createdBy": null,
       "updatedAt": "2024-12-25T15:29:47.111Z",
@@ -1333,6 +1343,15 @@
           },
           "extendsRef": "#/components/schemas/UserMinimalBase"
         },
+        "deletedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "deletedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
         "seq": {
           "type": "integer",
           "required": true,
@@ -1388,6 +1407,8 @@
       "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
       "updatedAt": "2024-08-06T10:28:33.226Z",
       "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+      "deletedAt": null,
+      "deletedBy": null,
       "seq": 434,
       "stx": {
         "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { domainsTable } from '#/db/schema/domains';
-import { type TenantModel, tenantsTable } from '#/db/schema/tenants';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { domainsTable } from '#/modules/domains/domains-db';
+import { type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { type LogContext, logEvent } from '#/utils/logger';
 
 /**

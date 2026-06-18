@@ -1,4 +1,5 @@
-import { activitiesTable } from '#/db/schema/activities';
+import { activitiesTable } from '#/modules/activities/activities-db';
+import { isProductEntity } from 'shared';
 
 import { cdcDb } from '../lib/db';
 import { logEvent } from '../lib/pino';
@@ -149,10 +150,15 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     // Apply deltas SECOND — only after activities are safely persisted
     await applyBatchUnifiedDeltas(batchPlan);
 
+    const stamped = prepared.map((item) => ({
+      ...item,
+      seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq,
+    }));
+
     circuitBreaker.recordSuccess(tableName);
 
     // Log each activity creation
-    for (const { activityWithId, lsn } of prepared) {
+    for (const { activityWithId, lsn } of stamped) {
       logEvent('trace', `Activity created from CDC`, {
         type: activityWithId.type,
         subjectId: activityWithId.subjectId,
@@ -164,19 +170,22 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     // Send via WebSocket — single vs batch payload
     if (isBatch) {
-      const batchInfos: BatchEventInfo[] = prepared.map(({ activityWithId, rowData, seq }) => ({
+      const batchInfos: BatchEventInfo[] = stamped.map(({ activityWithId, rowData, seq }) => ({
         activity: activityWithId,
         rowData,
         seq,
       }));
       sendBatchMessageToApi(batchInfos, traceCtx);
     } else {
-      const { activityWithId, rowData, seq } = prepared[0];
+      const { activityWithId, rowData, seq } = stamped[0];
       sendMessageToApi(activityWithId, rowData, traceCtx, seq);
     }
 
     // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
-    await cleanupEmbeddingReferences(events[0].result.tableMeta.type, action, events);
+    const { tableMeta } = events[0].result;
+    if (tableMeta.kind === 'entity' && isProductEntity(tableMeta.type) && (action === 'update' || action === 'delete')) {
+      await cleanupEmbeddingReferences(tableMeta.type, action, events);
+    }
 
     cdcMetrics.recordProcessing(events.length, performance.now() - startMs);
 

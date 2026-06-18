@@ -5,7 +5,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 import packageJson from '../../package.json' with { type: 'json' };
@@ -26,9 +26,9 @@ export interface LinkOptions {
   upstreamBranch?: string;
   /** File link mode: 'commit' links to commit, 'file' links to file in repo, 'local' opens in VS Code */
   fileLinkMode?: 'commit' | 'file' | 'local';
-  /** Path to local upstream clone for 'local' fileLinkMode (resolved relative to forkPath) */
-  upstreamLocalPath?: string;
-  /** Fork repository path for resolving relative upstreamLocalPath */
+  /** Absolute path to a checked-out worktree of the upstream ref, used for VS Code diff/open links */
+  upstreamViewPath?: string;
+  /** Fork repository path for resolving file paths */
   forkPath?: string;
 }
 
@@ -240,6 +240,56 @@ function hyperlink(label: string, url?: string): string {
   return `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
 }
 
+function quoteShellArg(value: string): string {
+  return `'${value.split("'").join("'\\''")}'`;
+}
+
+/**
+ * Build a VS Code deep link that opens a file from the fork workspace.
+ */
+function getVsCodeOpenFileLink(filePath: string, options: LinkOptions): string {
+  const { forkPath } = options;
+  if (!forkPath) return filePath;
+
+  const absolutePath = resolve(forkPath, filePath);
+  const url = `vscode://file${absolutePath}`;
+  return hyperlink(filePath, url);
+}
+
+/** Commit info used for sync progress output */
+export interface SyncCommitInfo {
+  hash: string;
+  message: string;
+  date: string;
+}
+
+/**
+ * Format the fetched-upstream detail block with clickable short commit hashes.
+ */
+export function formatFetchedUpstreamDetail(
+  commitCount: number,
+  commits: SyncCommitInfo[],
+  upstreamGitHubUrl?: string,
+  maxShownCommits = 50,
+): string {
+  const commitLabel = commitCount === 1 ? '1 new commit' : `${commitCount} new commits`;
+  const lines = [`${commitLabel} since last merge`];
+
+  const shown = commits.slice(0, maxShownCommits);
+  for (const commit of shown) {
+    const shortHash = commit.hash.slice(0, 7);
+    const commitUrl = upstreamGitHubUrl ? `${upstreamGitHubUrl}/commit/${commit.hash}` : undefined;
+    const hashLabel = hyperlink(shortHash, commitUrl);
+    lines.push(`  ${hashLabel} "${commit.message}" (${commit.date})`);
+  }
+
+  if (commitCount > shown.length) {
+    lines.push(`  ... and ${commitCount - shown.length} more`);
+  }
+
+  return lines.join('\n');
+}
+
 /**
  * Generate a link for a file based on link style.
  * Returns { label, url } for use with hyperlink().
@@ -249,14 +299,15 @@ function getFileLink(
   commitHash: string | undefined,
   options: LinkOptions,
 ): { label: string; url?: string } {
-  const { upstreamGitHubUrl, upstreamBranch, fileLinkMode = 'commit', upstreamLocalPath, forkPath } = options;
+  const { upstreamGitHubUrl, upstreamBranch, fileLinkMode = 'commit', upstreamViewPath, forkPath } = options;
 
-  if (fileLinkMode === 'local' && upstreamLocalPath && forkPath) {
-    // Open file in VS Code: vscode://file/absolute/path/to/file
-    // Resolve upstreamLocalPath relative to forkPath
-    const absolutePath = resolve(forkPath, upstreamLocalPath, filePath);
-    const url = `vscode://file${absolutePath}`;
-    return { label: filePath.split('/').pop() || filePath, url };
+  if (fileLinkMode === 'local' && upstreamViewPath && forkPath) {
+    // Open the upstream version of the file from the auto-managed view worktree.
+    const absolutePath = resolve(upstreamViewPath, filePath);
+    if (existsSync(absolutePath)) {
+      const url = `vscode://file${absolutePath}`;
+      return { label: filePath.split('/').pop() || filePath, url };
+    }
   }
 
   if (!upstreamGitHubUrl) {
@@ -300,6 +351,61 @@ function formatFileDateInfo(
   const link = getFileLink(filePath, commit, linkOptions);
   const linkLabel = link.label ? hyperlink(link.label, link.url) : '';
   return date ? pc.dim(` ≠ ${date} ${linkLabel}`) : '';
+}
+
+/**
+ * Build a copyable `code --diff` command for this file.
+ * `command:` URIs only execute inside trusted VS Code markdown/webviews, while
+ * terminal OSC 8 links are opened as external URLs and cannot run them.
+ */
+function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
+  const showTerminalDiffCommands = false;
+  // TODO: Re-enable rendered diff commands once we have a terminal UX that is
+  // clearly actionable without implying click support that VS Code cannot honor.
+  if (!showTerminalDiffCommands) return '';
+
+  const { upstreamViewPath, forkPath } = options;
+  if (!upstreamViewPath || !forkPath) return '';
+
+  const upstreamAbsolute = resolve(upstreamViewPath, filePath);
+  // Skip the diff link for files absent upstream (e.g. local-only or newly deleted upstream).
+  if (!existsSync(upstreamAbsolute)) return '';
+
+  const forkAbsolute = resolve(forkPath, filePath);
+
+  return ` ${pc.dim('·')} ${pc.dim(`code --diff ${quoteShellArg(upstreamAbsolute)} ${quoteShellArg(forkAbsolute)}`)}`;
+}
+
+/**
+ * Format merge-in-progress detail with conflicts and auto-merged file links.
+ */
+export function formatMergeInProgressDetail(
+  conflictCount: number,
+  autoMergedFiles: string[],
+  linkOptions: LinkOptions,
+  maxFiles = 100,
+): string {
+  const lines = [`${conflictCount} conflicts to resolve in IDE`];
+
+  if (autoMergedFiles.length === 0) {
+    return lines.join('\n');
+  }
+
+  lines.push('');
+  lines.push(`auto-merged files (${autoMergedFiles.length}):`);
+
+  const shown = autoMergedFiles.slice(0, maxFiles);
+  for (const filePath of shown) {
+    const fileLink = getVsCodeOpenFileLink(filePath, linkOptions);
+    const diffInfo = getVsCodeDiffLink(filePath, linkOptions);
+    lines.push(`  - ${fileLink}${diffInfo}`);
+  }
+
+  if (autoMergedFiles.length > shown.length) {
+    lines.push(`  ... + ${autoMergedFiles.length - shown.length} more`);
+  }
+
+  return lines.join('\n');
 }
 
 /** Display configuration for a file status */
@@ -400,7 +506,8 @@ function printFileGroup(
     const commit = useUpstream ? file.upstreamCommit : file.changedCommit;
     const date = useUpstream ? file.upstreamChangedAt : file.changedAt;
     const dateInfo = formatFileDateInfo(file.path, commit, date, linkOptions);
-    console.info(`  ${config.icon} ${file.path}${dateInfo}`);
+    const diffInfo = getVsCodeDiffLink(file.path, linkOptions);
+    console.info(`  ${config.icon} ${file.path}${dateInfo}${diffInfo}`);
   }
 
   if (filtered.length > maxLines) {
@@ -419,6 +526,17 @@ function printFileGroup(
 export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'behind', linkOptions, {
     title: pc.cyan('↓ behind on upstream'),
+  });
+}
+
+/**
+ * Print protected fork changes preview for analyze mode.
+ * These files differ from upstream but are protected by ignored/pinned config.
+ */
+export function printAheadPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+  printFileGroup(files, 'ahead', linkOptions, {
+    title: `${pc.blue('↑ protected in fork')}`,
+    hint: 'these files have fork changes and are protected by pinned or ignored config.',
   });
 }
 
@@ -495,7 +613,7 @@ export function writeLogFile(forkPath: string, files: AnalyzedFile[]): string {
  */
 export function printSyncComplete(result: MergeResult): void {
   const updated = result.summary.behind + result.summary.diverged;
-  const merged = result.summary.diverged;
+  const merged = result.autoMergedFiles?.length ?? Math.max(0, result.summary.diverged - result.conflicts.length);
   const conflicts = result.conflicts.length;
 
   console.info();
@@ -510,5 +628,27 @@ export function printSyncComplete(result: MergeResult): void {
     console.info();
     console.info(pc.dim('  review staged changes and commit to finish the sync.'));
   }
+  console.info();
+}
+
+/**
+ * Print warnings for aggressive sync flags (--hard / --unpinned) after completion.
+ *
+ * Explains what each active flag did and its consequence, and adds a shared
+ * caution to cherry-pick deliberately when either is used.
+ */
+export function printFlagWarnings(options: { hard?: boolean; unpinned?: boolean }): void {
+  const { hard, unpinned } = options;
+  if (!hard && !unpinned) return;
+
+  if (hard) {
+    console.info(pc.yellow('⚠ --hard used: drifted files were treated as behind, overwriting with incoming.'));
+  }
+  if (unpinned) {
+    console.info(
+      pc.yellow('⚠ --unpinned used: pinned files in cella.config.ts were ignored, this can result in more drifts.'),
+    );
+  }
+  console.info(pc.yellow('  Be extra careful & cherrypick what you want only.'));
   console.info();
 }

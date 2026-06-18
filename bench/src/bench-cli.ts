@@ -2,40 +2,47 @@
 /**
  * Bench CLI — single-command orchestrator for Artillery load tests.
  *
- * Starts all required infrastructure (Docker Postgres, backend, CDC, yjs),
- * seeds test data, clears rate limits, and runs the selected scenario.
+ * Expects the app's services to be running already (`pnpm dev`) and Postgres
+ * seeded with app data (`pnpm seed`). Verifies they are reachable, seeds bench
+ * test data, clears rate limits, and runs the selected scenario.
  *
  * Usage:
- *   pnpm bench                                        # interactive
- *   pnpm bench -- --scenario attachment-edit           # direct
- *   pnpm bench -- --scenario attachment-edit --skip-seed     # skip seeding
- *   pnpm bench -- --skip-services                      # use already-running services
- *   pnpm bench -- --keep-services                      # don't stop services after run
- *   pnpm bench -- --scenario attachment-edit --save-baseline  # save results as baseline
+ *   pnpm bench                                  # interactive picker
+ *   pnpm bench attachment-edit                  # run a scenario directly
+ *   pnpm bench attachment-edit --skip-seed      # skip bench data seeding
+ *   pnpm bench help                             # list available scenarios
+ *
+ * The scenario name is a positional argument. The legacy `--scenario <name>`
+ * flag is still accepted as an alias.
+ *
+ * Each run is automatically saved to .baselines/<scenario>.json and compared
+ * against the previous run — no flag required.
  */
 
-import { execFileSync, execSync, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { basename, dirname, resolve } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { select } from '@inquirer/prompts';
-import pg from 'pg';
 import ora from 'ora';
+import pg from 'pg';
+import { appConfig } from 'shared';
 import pc from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
+import { BACKEND_PORT, BASE_URL, createBenchProcessEnv, DB_URL } from './config';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
-const WORKSPACE_ROOT = resolve(BENCH_ROOT, '..');
-const BACKEND_DIR = resolve(WORKSPACE_ROOT, 'backend');
 
-const PG = { host: '0.0.0.0', port: 5433, user: 'postgres', password: 'postgres', database: 'postgres' };
-
+// Only services the app actually runs are health-checked. yjs and ai are
+// feature-flagged via appConfig.features, so they are skipped unless enabled.
 const SERVICES = {
-  backend: 'http://localhost:4000/health',
-  cdc: 'http://localhost:4001/health',
-  yjs: 'http://localhost:4002/health',
+  backend: `${BASE_URL}/health`,
+  cdc: `http://localhost:${BACKEND_PORT + 1}/health`,
+  ...(appConfig.features.yjs ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
+  ...(appConfig.features.ai ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
 } as const;
 
 // ── CLI args ───────────────────────────────────────────────────────────────
@@ -44,31 +51,21 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let scenario: string | undefined;
   let skipSeed = false;
-  let skipServices = false;
-  let keepServices = false;
-  let poller = false;
-  let saveBaseline = false;
+  let help = false;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--scenario' && args[i + 1]) scenario = args[++i];
-    if (args[i] === '--skip-seed') skipSeed = true;
-    if (args[i] === '--skip-services') skipServices = true;
-    if (args[i] === '--keep-services') keepServices = true;
-    if (args[i] === '--poller') poller = true;
-    if (args[i] === '--save-baseline') saveBaseline = true;
+    const arg = args[i];
+    if (arg === '--scenario' && args[i + 1]) scenario = args[++i];
+    else if (arg === '--skip-seed') skipSeed = true;
+    else if (arg === 'help' || arg === '--help' || arg === '-h') help = true;
+    // First bare (non-flag) argument is the scenario name.
+    else if (!arg.startsWith('-') && scenario === undefined) scenario = arg;
   }
 
-  return { scenario, skipSeed, skipServices, keepServices, poller, saveBaseline };
+  return { scenario, skipSeed, help };
 }
 
 // ── Scenario discovery ─────────────────────────────────────────────────────
-
-const descriptions: Record<string, string> = {
-  'page-load': 'Page-load reads (60 arrivals/s, ~2700 req/s)',
-  'attachment-edit': 'Attachment edit step-up (25→100 arrivals/s, ~1200 req/s)',
-  'get-me': 'GET /me sustained (100 arrivals/s, ~2000 req/s)',
-  'sign-in': 'Sign-in throughput (10→50 arrivals/s)',
-};
 
 function discoverScenarios(): string[] {
   const dir = resolve(BENCH_ROOT, 'scenarios');
@@ -78,14 +75,40 @@ function discoverScenarios(): string[] {
     .sort();
 }
 
+/**
+ * Short description for a scenario, read from the first comment line of its YAML.
+ * Keeps the picker in sync with whatever scenarios exist — no hardcoded map to
+ * edit when a fork adds a scenario.
+ */
+function scenarioDescription(name: string): string {
+  try {
+    const content = readFileSync(resolve(BENCH_ROOT, 'scenarios', `${name}.yaml`), 'utf-8');
+    const firstComment = content.split('\n').find((line) => line.trim().startsWith('#'));
+    return firstComment ? firstComment.replace(/^\s*#+\s?/, '').trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+/** Print usage and the list of available scenarios (for `pnpm bench help`). */
+function printUsage(scenarios: string[]): void {
+  console.info(`${pc.bold('Usage:')} pnpm bench [scenario] [--skip-seed]\n`);
+  console.info('Run without a scenario for an interactive picker.\n');
+  console.info(pc.bold('Scenarios:'));
+  for (const name of scenarios) {
+    console.info(`  ${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`);
+  }
+  console.info();
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-// ── Postgres ───────────────────────────────────────────────────────────────
+// ── Preflight ──────────────────────────────────────────────────────────────
 
 async function isPostgresReady(): Promise<boolean> {
-  const pool = new pg.Pool({ ...PG, connectionTimeoutMillis: 2000 });
+  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
   try {
     await pool.query('SELECT 1');
     return true;
@@ -96,32 +119,6 @@ async function isPostgresReady(): Promise<boolean> {
   }
 }
 
-async function ensurePostgres(): Promise<void> {
-  const spinner = ora('checking postgres...').start();
-
-  if (await isPostgresReady()) {
-    spinner.succeed('postgres already running');
-    return;
-  }
-
-  spinner.text = 'starting postgres (docker compose up db)...';
-  execSync('docker compose up db -d', { cwd: BACKEND_DIR, stdio: 'pipe' });
-
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    if (await isPostgresReady()) {
-      spinner.succeed('postgres ready');
-      return;
-    }
-    await sleep(500);
-  }
-
-  spinner.fail('postgres did not start within 30s');
-  process.exit(1);
-}
-
-// ── Service health ─────────────────────────────────────────────────────────
-
 async function isServiceHealthy(url: string): Promise<boolean> {
   try {
     const res = await fetch(url);
@@ -131,80 +128,44 @@ async function isServiceHealthy(url: string): Promise<boolean> {
   }
 }
 
-async function allServicesHealthy(): Promise<boolean> {
-  const checks = await Promise.all(Object.values(SERVICES).map(isServiceHealthy));
-  return checks.every(Boolean);
-}
+/**
+ * Fail-fast preflight. Bench expects Postgres seeded with app data and the
+ * backend/cdc services (plus yjs/ai when enabled) already running via `pnpm dev` — it does not start
+ * them. Services are polled briefly to tolerate `dev` still compiling, then we
+ * exit with an actionable message rather than hanging or producing empty runs.
+ */
+async function assertInfrastructureReady(): Promise<void> {
+  const spinner = ora('checking infrastructure...').start();
 
-async function waitForServices(): Promise<void> {
-  const spinner = ora('waiting for services...').start();
-  const deadline = Date.now() + 60_000;
+  if (!(await isPostgresReady())) {
+    spinner.fail('postgres is not reachable');
+    const { hostname, port } = new URL(DB_URL);
+    console.error(
+      pc.dim(`  Expected Postgres at ${hostname}:${port}. Start it with \`pnpm docker\` and seed with \`pnpm seed\`.`),
+    );
+    process.exit(1);
+  }
 
+  const deadline = Date.now() + 15_000;
   for (const [name, url] of Object.entries(SERVICES)) {
-    while (Date.now() < deadline) {
-      if (await isServiceHealthy(url)) break;
+    while (!(await isServiceHealthy(url))) {
+      if (Date.now() >= deadline) {
+        spinner.fail(`${name} is not reachable`);
+        console.error(pc.dim(`  Expected ${name} at ${url}. Start services with \`pnpm dev\` first.`));
+        process.exit(1);
+      }
+      spinner.text = `waiting for ${name}...`;
       await sleep(1000);
     }
-    if (Date.now() >= deadline) {
-      spinner.fail(`${name} did not become healthy within 60s`);
-      process.exit(1);
-    }
-    spinner.text = `${name} ready`;
   }
 
-  spinner.succeed('all services ready');
-}
-
-// ── Port cleanup ───────────────────────────────────────────────────────────
-
-function killStalePorts(): void {
-  for (const port of [4000, 4001, 4002]) {
-    try {
-      const pids = execSync(`lsof -ti :${port} 2>/dev/null`, { encoding: 'utf-8' }).trim();
-      if (pids) {
-        execSync(`echo "${pids}" | xargs kill -9 2>/dev/null`, { stdio: 'pipe' });
-        console.info(`  ${pc.dim(`killed stale process(es) on port ${port}`)}`);
-      }
-    } catch {
-      // No processes on this port — fine
-    }
-  }
-}
-
-// ── Service orchestration ──────────────────────────────────────────────────
-
-function startServices(): ChildProcess {
-  console.info(`${pc.cyan('▸')} starting backend, cdc, yjs...\n`);
-
-  const child = spawn(
-    'pnpm',
-    ['-r', '--parallel', '--stream', '--filter', 'backend', '--filter', 'cdc', '--filter', 'yjs', 'dev'],
-    {
-      cwd: WORKSPACE_ROOT,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, DEV_MODE: 'full', PINO_LOG_LEVEL: 'warn' },
-    },
-  );
-
-  // Collect output for debugging if health checks fail
-  const logs: string[] = [];
-  child.stdout?.on('data', (data: Buffer) => logs.push(data.toString()));
-  child.stderr?.on('data', (data: Buffer) => logs.push(data.toString()));
-
-  child.on('close', (code) => {
-    if (code && code !== 0) {
-      console.error(pc.red(`\nservices exited with code ${code}`));
-      console.error(pc.dim(logs.slice(-20).join('')));
-    }
-  });
-
-  return child;
+  spinner.succeed('infrastructure ready');
 }
 
 // ── Rate limits ────────────────────────────────────────────────────────────
 
 async function clearRateLimits(): Promise<void> {
-  const pool = new pg.Pool(PG);
+  const pool = new pg.Pool({ connectionString: DB_URL });
   try {
     await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%'");
   } catch {
@@ -239,7 +200,11 @@ function seedDatabase(): Promise<{ output: string }> {
 function runArtillery(name: string): { exitCode: number; reportPath: string } {
   const reportPath = resolve(tmpdir(), `artillery-${name}-${Date.now()}.json`);
   try {
-    execFileSync('npx', ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath], { cwd: BENCH_ROOT, stdio: 'inherit' });
+    execFileSync('npx', ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath], {
+      cwd: BENCH_ROOT,
+      stdio: 'inherit',
+      env: createBenchProcessEnv(),
+    });
     return { exitCode: 0, reportPath };
   } catch (err) {
     const code = (err as { status?: number }).status ?? 1;
@@ -249,8 +214,25 @@ function runArtillery(name: string): { exitCode: number; reportPath: string } {
   }
 }
 
-function startCdcPoller(): ChildProcess {
-  return spawn('tsx', ['src/cdc-poller.ts'], { cwd: BENCH_ROOT, stdio: 'inherit' });
+/**
+ * Background CDC health poller.
+ *
+ * Runs automatically for every scenario — no flag, no developer awareness. It
+ * collects throughput/latency samples silently (`--quiet`) and only emits a
+ * summary if CDC actually processed events, so read-only scenarios stay clean.
+ * A separate process is required because `runArtillery` blocks the event loop
+ * via synchronous `execFileSync`. Returns the process and a promise resolving to
+ * the collected summary output once the poller has flushed and exited.
+ */
+function startCdcPoller(): { proc: ChildProcess; summary: Promise<string> } {
+  const proc = spawn('tsx', ['src/cdc-poller.ts', '--quiet'], {
+    cwd: BENCH_ROOT,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  const chunks: string[] = [];
+  proc.stdout?.on('data', (data: Buffer) => chunks.push(data.toString()));
+  const summary = new Promise<string>((res) => proc.on('close', () => res(chunks.join(''))));
+  return { proc, summary };
 }
 
 // ── Baselines ──────────────────────────────────────────────────────────────
@@ -331,7 +313,9 @@ function saveBaseline(metrics: BaselineMetrics): void {
   writeFileSync(file, `${JSON.stringify(runs, null, 2)}\n`);
 
   const count = runs.length;
-  console.info(`\n${pc.green('✓')} baseline saved → ${pc.dim(`.baselines/${metrics.scenario}.json`)} ${pc.dim(`(${count} run${count === 1 ? '' : 's'})`)}`);  
+  console.info(
+    `\n${pc.green('✓')} baseline saved → ${pc.dim(`.baselines/${metrics.scenario}.json`)} ${pc.dim(`(${count} run${count === 1 ? '' : 's'})`)}`,
+  );
 }
 
 function formatDelta(current: number, baseline: number, lowerIsBetter: boolean): string {
@@ -346,11 +330,36 @@ function formatDelta(current: number, baseline: number, lowerIsBetter: boolean):
 
 function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | null): void {
   const rows: [string, string, string, string][] = [
-    ['Requests', String(current.requests), baseline ? String(baseline.requests) : '-', baseline ? formatDelta(current.requests, baseline.requests, false) : ''],
-    ['Req/s', String(current.requestRate), baseline ? String(baseline.requestRate) : '-', baseline ? formatDelta(current.requestRate, baseline.requestRate, false) : ''],
-    ['Mean (ms)', String(current.mean), baseline ? String(baseline.mean) : '-', baseline ? formatDelta(current.mean, baseline.mean, true) : ''],
-    ['p95 (ms)', String(current.p95), baseline ? String(baseline.p95) : '-', baseline ? formatDelta(current.p95, baseline.p95, true) : ''],
-    ['p99 (ms)', String(current.p99), baseline ? String(baseline.p99) : '-', baseline ? formatDelta(current.p99, baseline.p99, true) : ''],
+    [
+      'Requests',
+      String(current.requests),
+      baseline ? String(baseline.requests) : '-',
+      baseline ? formatDelta(current.requests, baseline.requests, false) : '',
+    ],
+    [
+      'Req/s',
+      String(current.requestRate),
+      baseline ? String(baseline.requestRate) : '-',
+      baseline ? formatDelta(current.requestRate, baseline.requestRate, false) : '',
+    ],
+    [
+      'Mean (ms)',
+      String(current.mean),
+      baseline ? String(baseline.mean) : '-',
+      baseline ? formatDelta(current.mean, baseline.mean, true) : '',
+    ],
+    [
+      'p95 (ms)',
+      String(current.p95),
+      baseline ? String(baseline.p95) : '-',
+      baseline ? formatDelta(current.p95, baseline.p95, true) : '',
+    ],
+    [
+      'p99 (ms)',
+      String(current.p99),
+      baseline ? String(baseline.p99) : '-',
+      baseline ? formatDelta(current.p99, baseline.p99, true) : '',
+    ],
     ['Errors', String(current.errors), baseline ? String(baseline.errors) : '-', ''],
     ['VUs failed', String(current.vusersFailed), baseline ? String(baseline.vusersFailed) : '-', ''],
   ];
@@ -370,7 +379,7 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
   }
 
   if (!baseline) {
-    console.info(`\n  ${pc.dim('No baseline found. Use --save-baseline to create one.')}`);
+    console.info(`\n  ${pc.dim('No previous run to compare against — saving this run as the first baseline.')}`);
   } else {
     console.info(`  ${pc.dim(`baseline from ${baseline.timestamp}`)}`);
   }
@@ -387,7 +396,9 @@ function registerCleanup(fn: () => void) {
 
 function cleanup() {
   for (const fn of cleanupFns) {
-    try { fn(); } catch {}
+    try {
+      fn();
+    } catch {}
   }
   cleanupFns.length = 0;
 }
@@ -395,17 +406,28 @@ function cleanup() {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  process.on('SIGINT', () => { cleanup(); process.exit(130); });
-  process.on('SIGTERM', () => { cleanup(); process.exit(143); });
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.on('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
 
-  printHeader('cella bench');
+  printHeader('bench cli');
 
   const scenarios = discoverScenarios();
-  const { scenario: cliScenario, skipSeed, skipServices, keepServices, poller, saveBaseline: shouldSave } = parseArgs();
+  const { scenario: cliScenario, skipSeed, help } = parseArgs();
 
   if (scenarios.length === 0) {
     console.error(pc.red('No scenarios found in scenarios/'));
     process.exit(1);
+  }
+
+  if (help) {
+    printUsage(scenarios);
+    process.exit(0);
   }
 
   if (cliScenario && !scenarios.includes(cliScenario)) {
@@ -416,23 +438,7 @@ async function main() {
 
   // ── 1. Infrastructure ──
 
-  if (!skipServices) {
-    await ensurePostgres();
-
-    // Skip starting services if they're already healthy (e.g. running in another terminal)
-    if (await allServicesHealthy()) {
-      console.info(`  ${pc.green('✓')} services already running\n`);
-    } else {
-      killStalePorts();
-      const servicesProcess = startServices();
-
-      if (!keepServices) {
-        registerCleanup(() => servicesProcess.kill('SIGTERM'));
-      }
-
-      await waitForServices();
-    }
-  }
+  await assertInfrastructureReady();
 
   // ── 2. Scenario selection ──
 
@@ -442,7 +448,9 @@ async function main() {
   if (!skipSeed && cliScenario) {
     const seedSpinner = ora('seeding database...').start();
     seedPromise = seedDatabase()
-      .then(() => { seedSpinner.succeed('database ready'); })
+      .then(() => {
+        seedSpinner.succeed('database ready');
+      })
       .catch((err: Error) => {
         seedSpinner.fail('database seed failed');
         console.error(err.message);
@@ -459,7 +467,7 @@ async function main() {
     const choices = [
       ...scenarios.map((name) => ({
         value: name,
-        name: `${name.padEnd(22)}${pc.dim(descriptions[name] ?? '')}`,
+        name: `${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`,
       })),
       { type: 'separator' as const, separator: '─'.repeat(40) },
       { value: 'exit', name: pc.red(`exit${' '.repeat(18)}${pc.dim('quit without running')}`) },
@@ -478,7 +486,9 @@ async function main() {
   if (!skipSeed && !seedPromise) {
     const seedSpinner = ora('seeding database...').start();
     seedPromise = seedDatabase()
-      .then(() => { seedSpinner.succeed('database ready'); })
+      .then(() => {
+        seedSpinner.succeed('database ready');
+      })
       .catch((err: Error) => {
         seedSpinner.fail('database seed failed');
         console.error(err.message);
@@ -495,11 +505,10 @@ async function main() {
 
   // ── 4. CDC poller ──
 
-  let pollerProcess: ChildProcess | undefined;
-  if (poller || selected.startsWith('cdc-')) {
-    console.info(`${pc.cyan('▸')} starting CDC health poller...\n`);
-    pollerProcess = startCdcPoller();
-  }
+  // Always runs in the background, silently. Stays invisible unless CDC actually
+  // processed events during the run — no flag, no developer awareness needed.
+  const cdcPoller = startCdcPoller();
+  registerCleanup(() => cdcPoller.proc.kill('SIGINT'));
 
   // ── 5. Run Artillery ──
 
@@ -509,15 +518,19 @@ async function main() {
     const { exitCode, reportPath } = runArtillery(selected);
     artilleryExitCode = exitCode;
 
+    // Stop the poller and flush its summary (printed only if CDC saw events).
+    cdcPoller.proc.kill('SIGINT');
+    const cdcSummary = (await cdcPoller.summary).trimEnd();
+    if (cdcSummary) console.info(cdcSummary);
+
     // ── 6. Baseline comparison ──
     const metrics = extractMetrics(reportPath, selected);
     if (metrics) {
       const baseline = loadBaseline(selected);
       printComparison(metrics, baseline);
-      if (shouldSave) saveBaseline(metrics);
+      saveBaseline(metrics);
     }
   } finally {
-    pollerProcess?.kill('SIGINT');
     cleanup();
   }
 

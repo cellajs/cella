@@ -1,5 +1,21 @@
 import { config } from '../../../../shared/config/config.default';
+import { generateOperationHash } from '../openapi-parser/file-generators';
 import type { TsdocPlugin } from './types';
+
+/**
+ * Build a deep link to the frontend docs for a single operation/tag.
+ *
+ * The format must stay in sync with the docs operations route, which reads the
+ * `operationTag` search param to expand the tag and uses {@link generateOperationHash}
+ * for the anchor fragment.
+ *
+ * @example
+ * buildOperationDocsUrl('post', '/auth/check-email', 'auth')
+ * // https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email
+ */
+export function buildOperationDocsUrl(method: string, path: string, tag: string): string {
+  return `${config.frontendUrl}/docs/operations?operationTag=${tag}#${generateOperationHash(method, path, [tag])}`;
+}
 
 /**
  * Handler function for the `tsdoc` plugin.
@@ -30,9 +46,7 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
     ];
 
     // Generate @see links to docs
-    const seeTags = tags.map(
-      (tag) => `[${operation.id}](${config.backendUrl}/docs#tag/${tag}/${operation.method}${path})`,
-    );
+    const seeTags = tags.map((tag) => `[${operation.id}](${buildOperationDocsUrl(operation.method, path, tag)})`);
 
     // Compose TSDoc enhancements
     const tsdocEnhancements = [

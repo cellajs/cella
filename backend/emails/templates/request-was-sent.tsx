@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import type { requestTypeEnum } from '#/db/schema/requests';
+import type { requestTypeEnum } from '#/modules/requests/requests-db';
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
 import i18n from '../i18n';
 import { defineEmailTemplate } from '../types';

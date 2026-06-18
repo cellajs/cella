@@ -118,7 +118,7 @@ Code-level audit of the Raak codebase against the [OWASP Top 10:2025](https://ow
 
 | Issue | Risk | Recommendation |
 |-------|------|----------------|
-| TOTP secrets stored unencrypted in DB (`db/schema/totps.ts`) | Medium | Encrypt at rest with application-level envelope encryption |
+| TOTP secrets stored unencrypted in DB (`modules/auth/totps/totps-db.ts`) | Medium | Encrypt at rest with application-level envelope encryption |
 | Auth tokens stored unencrypted in DB (`db/schema/tokens.ts`) | Low | Tokens are short-lived (2h–5min) with hashed lookup; encryption would add defense-in-depth |
 
 ---

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { systemInvite } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { tokensTable } from '#/db/schema/tokens';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';

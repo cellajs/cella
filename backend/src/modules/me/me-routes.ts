@@ -11,6 +11,7 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { mockUserResponse } from '#/modules/user/user-mocks';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
   batchResponseSchema,
@@ -25,8 +26,7 @@ import {
   mockMeResponse,
   mockPaginatedInvitationsResponse,
   mockUploadTokenResponse,
-} from '../../../mocks/mock-me';
-import { mockUserResponse } from '../../../mocks/mock-user';
+} from './me-mocks';
 
 const meRoutes = {
   /**

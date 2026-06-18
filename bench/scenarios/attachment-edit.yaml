@@ -3,7 +3,7 @@
 # Each VU loops 20 times (persistent connections, k6-style).
 # Steps up: 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak).
 config:
-  target: "http://localhost:4000"
+  target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/attachment-edit.ts"
   phases:
     - duration: 10

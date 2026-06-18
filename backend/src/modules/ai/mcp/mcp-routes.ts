@@ -5,6 +5,7 @@ import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = {
   handleMcp: createXRoute({
+    'x-feature': 'ai',
     operationId: 'handleMcp',
     method: 'post',
     path: '/',

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockUserMinimalBase } from '../../mocks/mock-entity-base';
+import { mockUserMinimalBase } from './entity-base-mocks';
 
 /**
  * Minimal user schema for references (e.g. createdBy, updatedBy).

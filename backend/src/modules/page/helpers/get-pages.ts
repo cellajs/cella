@@ -1,6 +1,6 @@
-import { count, ilike, inArray, type SQL } from 'drizzle-orm';
+import { count, ilike, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
-import { pagesTable } from '#/db/schema/pages';
+import { pagesTable } from '#/modules/page/page-db';
 import { buildPagesListQuery } from '#/modules/page/page-queries';
 import { coalesceAuditUsers, createdByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumn } from '#/utils/order-column';
@@ -23,6 +23,10 @@ export const getPages = async (opts: GetPagesOpts) => {
   const matchMode = 'all';
 
   const filters: SQL[] = [];
+
+  if (!seqCursor) {
+    filters.push(isNull(pagesTable.deletedAt));
+  }
 
   filters.push(...seqCursorFilters(pagesTable.seq, seqCursor));
 
@@ -48,7 +52,7 @@ export const getPages = async (opts: GetPagesOpts) => {
             inArray(createdByUser.email, searchTerms),
           ];
 
-    filters.push(...qFilters);
+    filters.push(or(...qFilters) as SQL);
   }
 
   const orderColumn = getOrderColumn(sort, pagesTable.status, order, {

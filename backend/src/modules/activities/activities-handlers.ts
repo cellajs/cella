@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { eq, ilike } from 'drizzle-orm';
 import type { Env } from '#/core/context';
-import { activitiesTable } from '#/db/schema/activities';
+import { activitiesTable } from '#/modules/activities/activities-db';
 import { buildActivitiesListQuery, countActivitiesList } from '#/modules/activities/activities-queries';
 import activityRoutes from '#/modules/activities/activities-routes';
 import '#/modules/activities/activities-module';

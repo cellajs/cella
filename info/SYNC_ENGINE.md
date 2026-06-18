@@ -1,10 +1,34 @@
 # Cella sync engine
 
-> **Architecture context**: Cella has a dynamic, hierarchical entity model—a 'fork' can have different and/or extended entity config. See [ARCHITECTURE.md](./ARCHITECTURE.md).
+> The [ARCHITECTURE.md](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
-## OpenAPI & React Query
+## TL;DR
 
-OpenAPI + React Query are the foundational layers throughout the codebase. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-pull_ sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
+```text
+User edits Task.title 
+        ▼
+Optimistic state applied
+        ▼
+PATCH /tasks/123
+        ▼
+Postgres commits
+        ▼
+CDC Worker observes WAL
+        ▼
+Assign seq = 42
+        ▼
+Emit notification
+        ▼
+SSE reaches browsers
+        ▼
+React Query fetches task
+        ▼
+UI updates
+```
+
+## Postgres, OpenAPI & React Query
+
+Postgres + OpenAPI + React Query are the foundational primitives. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-fetch sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
 
 | Entity type | Features | Example |
 |------|--------------|---------|
@@ -15,9 +39,9 @@ OpenAPI + React Query are the foundational layers throughout the codebase. This 
 
 ## Why a built-in sync engine?
 
-External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. 
+External sync solutions typically have their own patterns for operations, authorization, and caching. This creates either an all-or-nothing approach or the DX of having dual patterns. Especially if you **do not want** to push all your app data through a sync engine.
 
-Lastly, internalizing the sync engine means you can make unique combos: think audit trail , API event bus, centralized counters and unified tracing.
+Hidden opportunities! We found out that internalizing the sync engine means you can make amazing combos: think audit trail, API event bus, unified count logic, schema evolution tolerance and unified tracing.
 
 | Concern | External services | Built-in approach |
 |---------|-------------------|-------------------|
@@ -52,21 +76,16 @@ Postgres → CDC Worker → API Server → SSE → Client
 
 ## Core concepts
 
-### Philosophy
-- **Extend OpenAPI** - All features work through existing OpenAPI infrastructure
-- **React Query base** - Build on top of, not around, TanStack Query
-- **Progressive enhancement** - REST for basic stuff; for daily-use stuff you upgrade module into → offline → realtime
-
 ### Architecture overview
 - **Logical replication** - CDC Worker receives WAL changes, persists activities to `activitiesTable`, sends messages to API
 - **ActivityBus** - Receives CDC messages via WebSocket, emits events to internal handlers
-- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, seqs }` to the stream endpoint; server compares per-scope seqs, returns gap summary (server seqs, deleted IDs). Client then calls REST list endpoints with `?seqCursor=min,max` to fetch only changed entities in the known seq range.
+- **Catchup via POST + delta fetch** - Client POSTs `{ cursor, seqs }` to the stream endpoint; server compares per-scope seqs and returns a gap summary. Client then calls REST list endpoints with `?seqCursor=min,max` to fetch changed entities in the known seq range, including soft-delete tombstones.
 - **Live stream** - SSE sends lightweight notifications - with cache token - to clients
 - **Notify + fetch pattern** - SSE notifications trigger priority-based entity fetches; TTL cache enables efficient fan-out
 - **React Query as merge point** - Initial/prefetch load and notification-triggered fetches feed into the same cache
 
 ### Realtime mechanics
-- **Gap detection** - Entity-type sequence numbers (`seq`) detect missed entity changes; deletes always scanned
+- **Gap detection** - Entity-type sequence numbers (`seq`) detect missed product entity changes, including soft deletes
 - **Single-writer multi-tab** - One leader tab owns SSE connection and mutations, broadcast for follower
 - **TTL entity cache** - Server-side cache with request coalescing for efficient notification-triggered fetches
 - **Fetch prioritizer** - Client schedules fetches based on user's current view (high/medium/low priority)
@@ -146,9 +165,9 @@ Clients handle three notification shapes from the live SSE stream:
 
 | Shape | Detection | Client behavior |
 |-------|-----------|----------------|
-| **Single entity** | `seq` set, `batchUntilSeq` null | Fetch single entity by ID, upsert into caches |
-| **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`, upsert all into caches |
-| **Delete batch** | `deletedIds` set | Remove each ID from detail + list caches directly (no fetch) |
+| **Single entity** | `seq` set, `batchUntilSeq` null | Range fetch that seq and patch caches; tombstones remove cached entities |
+| **Create/update batch** | `batchUntilSeq` set | Range fetch via `seqCursor=seq,batchUntilSeq`; live rows upsert, tombstones remove |
+| **Hard-delete batch** | `deletedIds` set | Compatibility path for physical deletes; remove IDs directly |
 
 Batch notifications carry a `cacheToken` that maps to all entities in the batch, enabling the server's TTL entity cache to serve all subscribers from a single DB query.
 
@@ -173,7 +192,7 @@ interface StreamNotification {
   stx: StxBase | null;                          // Sync transaction metadata (entities only)
   cacheToken: string | null;                    // HMAC-signed token for LRU cache access (entities only)
   batchUntilSeq: number | null;                 // Last seq in batch (null = single entity notification)
-  deletedIds: string[] | null;                  // Deleted entity IDs for delete batches (null = not a delete batch)
+  deletedIds: string[] | null;                  // Legacy hard-delete IDs for delete batches (null = not a delete batch)
   propagation: PropagationHint | null;          // Embedded entity propagation hint (null = no propagation)
 }
 
@@ -219,7 +238,7 @@ Unauthenticated stream for public entities (e.g., pages).
 | Aspect | Implementation |
 |--------|----------------|
 | **Auth** | No authentication required |
-| **Scope** | All public entity types (from `hierarchy.publicReadTypes`) |
+| **Scope** | All public entity types (from `hierarchy.publicStreamTypes`) |
 | **Cursor storage** | In-memory only (module-level variable) |
 
 **How catchup works:**
@@ -227,16 +246,16 @@ Unauthenticated stream for public entities (e.g., pages).
 The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId (app) or entityType (public). Each value is a shared summary shape:
 ```typescript
 interface CatchupChangeSummary {
-  deletedByType: Record<string, string[]>; // Deleted IDs grouped by entityType (always scanned, watertight)
+  deletedByType: Record<string, string[]>; // Legacy hard-delete IDs grouped by entityType, usually empty for products
   entitySeqs?: Record<string, number>;     // Entity-type seqs from context_counters counts JSONB (managed by CDC worker)
-  entityCounts?: Record<string, number>;   // Entity-type total counts (e:{type} keys) for cache integrity
+  entityCounts?: Record<string, number>;   // Live entity totals (e:{type} keys) for cache integrity
 }
 ```
 
 The client processes catchup in a two-phase sync cycle:
 
 **Phase A (catchup — fast, in connect flow before SSE opens):**
-- Processes deletes by patching both detail and list caches directly (no invalidation, no refetch)
+- Applies any legacy hard-delete IDs directly; product soft deletes arrive as tombstone rows in seq delta fetches
 - Compares entity-type `serverEntitySeq` (from `context_counters.counts['s:{type}']`, managed by CDC worker) with stored `clientEntitySeq`
 - If creates/updates detected for an entity type → invalidates active list queries (`invalidateEntityList(keys, 'active')`) so mounted queries refetch immediately
 - **Cache integrity check**: Compares server `entityCounts` (from `context_counters.counts['e:{type}']`) with cached list totals — if counts diverge despite matching seqs, invalidates the affected list queries
@@ -325,26 +344,26 @@ Replaying the same mutation (same `stx.mutationId`) produces the same result wit
 
 ## Offline sync
 
-### Gap detection (seq + always-scan deletes)
+### Gap detection (seq + tombstones)
 
-Uses entity-type sequence numbers (`seq`) for **create/update detection** and always-scan deletes for **watertight delete detection**.
+Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete detection**. Product deletes are one-way tombstone updates (`deleted_at` set), so they are stamped and fetched like any other product entity mutation.
 
 **Sequence architecture:**
-- **`seq`** — Per-entity row sequence stamped by the CDC worker after processing each WAL event. The worker atomically increments `context_counters.counts['s:{entityType}']` and writes the new value back to `entity.seq`. This is the **sole source of truth** for detecting creates/updates. New entities start with `seq = 0` until CDC stamps them (typically within ~50-200ms).
+- **`seq`** — Per-entity row sequence stamped by the CDC worker after processing each product-entity create/update, including soft-delete updates. The worker atomically increments `context_counters.counts['s:{entityType}']` and writes the new value back to `entity.seq`. This is the **sole source of truth** for detecting product entity changes. New entities start with `seq = 0` until CDC stamps them (typically within ~50-200ms).
 - **Hierarchy-aware scoping** — The CDC worker resolves the entity's direct parent column (derived from `hierarchy.getParent()`) as the context key. For example, `attachment.parent = 'organization'` → key = `organization_id`; `task.parent = 'project'` → key = `project_id`. Parentless entities use `'public:<entityType>'`. This means seq is scoped to the nearest context entity, avoiding unnecessary refetches for sibling contexts the user can't access.
-- **Membership detection** — Membership changes are detected via cursor-bounded activity scan (same scan used for deletes). No counter needed — the client unconditionally refreshes membership queries on every catchup.
-- **Delete detection** — Deletes are always scanned from the activities table (cursor-bounded). The CDC worker only stamps seq on INSERT/UPDATE, so deletes bypass it entirely. This is by design: always scanning is watertight with no edge cases.
+- **Membership detection** — Membership changes are detected via the org-level `s:membership` counter and standard membership invalidation.
+- **Delete detection** — Product deletes are detected as seq-stamped tombstone rows (`deletedAt != null`) returned by `seqCursor` delta fetches. Physical hard deletes are reserved for post-horizon purge and are not part of normal product sync convergence.
 - **`seqCursor`** — Query parameter on list endpoints. Always a bounded range: `seqCursor=min,max` (both inclusive, e.g. `seqCursor=4,6` → `seq >= 4 AND seq <= 6`). The catchup response provides `serverEntitySeq` as the upper bound; batch notifications provide `batchUntilSeq`. Open-ended fetches are not supported — every caller must know its exact seq range.
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether creates/updates happened. Deletes are always included via activities scan.
+1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether product entity mutations happened. The delta fetch includes tombstone rows, and the client removes those entities from cache.
 
 2. **Live (SSE):** Each product entity notification includes `seq`, scoped to its entity type + context (e.g., tasks within a project). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
 **How it works — scenario:**
 
-A project has tasks. `seq` is stamped by the CDC worker on INSERT/UPDATE only — deletes don't bump seq.
+A project has tasks. `seq` is stamped by the CDC worker on product INSERT/UPDATE, including soft-delete updates.
 
 ```
 Server timeline (project-123, tasks):        seq
@@ -353,27 +372,26 @@ Server timeline (project-123, tasks):        seq
   Task C created                              3
   ── client goes offline (clientSeq = 3) ──
   Task D created                              4
-  Task B deleted                              ✗ (no seq bump)
-  Task A updated                              5
-  Task E created                              6
+  Task B soft-deleted                         5
+  Task A updated                              6
+  Task E created                              7
   ── client reconnects ──
 ```
 
 Catchup POST returns for this scope:
 ```
-serverSeq: 6, deletedByType: { task: ["B"] }
+serverSeq: 7
 ```
 
 Client logic:
 ```
-delta       = serverSeq - clientSeq = 6 - 3 = 3  (3 seq bumps while away)
-deletes     = 1                                    (task B)
-delta > deletes → true → creates/updates happened → delta fetch with seqCursor=4,6
+delta       = serverSeq - clientSeq = 7 - 3 = 4
+delta > 0 → delta fetch with seqCursor=4,7
 ```
 
-The delta fetch (`GET /tasks?seqCursor=4,6`) returns tasks D, A, E (seq 4, 5, 6). Task B is removed from cache via `deletedByType`. Client stores `clientSeq = 6`.
+The delta fetch (`GET /tasks?seqCursor=4,7`) returns tasks D, B, A, E. Task B has `deletedAt` set, so the client removes it from detail and list caches. The client stores `clientSeq = 7`.
 
-**Why deletes don't bump seq:** A delete removes the row — there's nothing to stamp. Instead, deletes are tracked via `activitiesTable` scan.
+**Why tombstones remain:** the soft-deleted row must remain queryable by `seqCursor` until the hard-purge window is beyond the activities/catchup horizon.
 
 
 ### Cache freshness strategy (staleTime)

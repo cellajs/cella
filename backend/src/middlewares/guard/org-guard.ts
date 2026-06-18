@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { organizationsTable } from '#/db/schema/organizations';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { getOrgCache, setOrgCache } from './org-cache';
 
 /**

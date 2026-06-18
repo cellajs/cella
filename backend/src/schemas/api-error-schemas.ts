@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import type { Severity } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockApiError } from '../../mocks/mock-error';
+import { mockApiError } from './api-error-mocks';
 import { entityTypeSchema } from './common-schemas';
 
 /** Severity levels array for zod enum */

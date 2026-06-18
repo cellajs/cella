@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
 import {
   passkeyChallengeBodySchema,
   passkeyChallengeSchema,
@@ -10,7 +11,6 @@ import {
   passkeyVerificationBodySchema,
 } from '#/modules/auth/passkeys/passkeys-schema';
 import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
-import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '../../../../mocks/mock-auth';
 
 const authPasskeysRoutes = {
   /**

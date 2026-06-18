@@ -11,16 +11,62 @@ import { basename, join } from 'node:path';
 import process from 'node:process';
 import pc from './colors';
 import { warningMark } from './display';
-import { listWorktrees, mergeAbort, removeWorktree } from './git';
+import { createWorktree, listWorktrees, mergeAbort, removeWorktree } from './git';
 
-/** Worktree directory prefix in system temp */
-const WORKTREE_PREFIX = 'cella-sync-';
+/**
+ * Managed worktree kinds and their system-temp directory prefixes.
+ *
+ * - `sync`: ephemeral merge preview worktree. Registered for signal cleanup and
+ *   removed when the process exits.
+ * - `view`: persistent "upstream view" worktree backing VS Code diff/open links.
+ *   Must outlive the process, so it is refreshed (removed + recreated) on the next
+ *   run instead of being cleaned up on exit.
+ */
+const WORKTREE_PREFIXES = {
+  sync: 'cella-sync-',
+  view: 'cella-view-',
+} as const;
 
-/** Get the worktree path in system temp directory (invisible to VSCode) */
+type WorktreeKind = keyof typeof WORKTREE_PREFIXES;
+
+/** Build the system-temp worktree path for a kind, keyed by repo name for uniqueness. */
+function buildWorktreePath(kind: WorktreeKind, repoPath: string): string {
+  return join(tmpdir(), `${WORKTREE_PREFIXES[kind]}${basename(repoPath)}`);
+}
+
+/** Get the ephemeral sync worktree path in system temp directory (invisible to VSCode). */
 export function getWorktreePath(repoPath: string): string {
-  // Use repo name in temp path for uniqueness
-  const repoName = basename(repoPath);
-  return join(tmpdir(), `${WORKTREE_PREFIX}${repoName}`);
+  return buildWorktreePath('sync', repoPath);
+}
+
+/** Get the persistent upstream-view worktree path in system temp. */
+export function getViewWorktreePath(repoPath: string): string {
+  return buildWorktreePath('view', repoPath);
+}
+
+/**
+ * Refresh the persistent "upstream view" worktree used for VS Code diffs.
+ *
+ * Unlike the sync worktree, this one must survive process exit so asynchronous
+ * `code --diff` invocations and copyable diff commands printed by the CLI still
+ * point at valid files after the process returns. It is therefore NOT registered
+ * for signal cleanup. Instead, each run removes the previous worktree and
+ * recreates it at the current upstream ref, so a leftover is simply cleaned up
+ * when the next process starts.
+ *
+ * @returns Absolute path to the checked-out upstream worktree.
+ */
+export async function refreshViewWorktree(repoPath: string, upstreamRef: string): Promise<string> {
+  const viewPath = getViewWorktreePath(repoPath);
+
+  // Remove any leftover from a previous run before recreating at the current ref.
+  await removeWorktree(repoPath, viewPath);
+  if (existsSync(viewPath)) {
+    rmSync(viewPath, { recursive: true, force: true });
+  }
+
+  await createWorktree(repoPath, viewPath, upstreamRef);
+  return viewPath;
 }
 
 /** Track if cleanup is registered */
@@ -79,10 +125,11 @@ export async function cleanupLeftoverWorktrees(repoPath: string): Promise<void> 
     await cleanupWorktree(repoPath, worktreePath);
   }
 
-  // Also prune any orphaned git worktree references
+  // Also prune any orphaned git worktree references for our managed prefixes.
+  const prefixes = Object.values(WORKTREE_PREFIXES);
   const worktrees = await listWorktrees(repoPath);
   for (const wt of worktrees) {
-    if (wt.includes(WORKTREE_PREFIX) && !existsSync(wt)) {
+    if (prefixes.some((prefix) => wt.includes(prefix)) && !existsSync(wt)) {
       await removeWorktree(repoPath, wt);
     }
   }

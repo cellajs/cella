@@ -1,7 +1,7 @@
 import { and, count, eq, inArray } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { seenByTable } from '#/db/schema/seen-by';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { seenByTable } from '#/modules/seen/seen-by-db';
 
 interface FindContextCountersOpts {
   contextIds: string[];

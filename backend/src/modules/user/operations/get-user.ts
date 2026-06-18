@@ -1,8 +1,8 @@
 import { eq, type SQL } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { usersTable } from '#/db/schema/users';
 import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
+import { usersTable } from '#/modules/user/user-db';
 import { findUser } from '#/modules/user/user-queries';
 
 interface GetUserOpts {

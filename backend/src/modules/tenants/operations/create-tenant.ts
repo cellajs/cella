@@ -1,7 +1,7 @@
 import type { AuthContext } from '#/core/context';
-import type { tenantsTable } from '#/db/schema/tenants';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
+import type { tenantsTable } from '#/modules/tenants/tenants-db';
 import { countDomainsByTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 
 interface CreateTenantInput {

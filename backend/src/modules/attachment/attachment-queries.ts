@@ -1,7 +1,7 @@
-import { and, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { productCountersTable } from '#/db/schema/product-counters';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { productCountersTable } from '#/modules/entities/product-counters-db';
 
 interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;
@@ -51,14 +51,26 @@ export const updateAttachment = async (ctx: AuthContext, { id, values }: UpdateA
 
 interface DeleteAttachmentsByIdsOpts {
   ids: string[];
+  deletedBy: string;
+  deletedAt: string;
 }
 
-/** Delete attachments by IDs. */
-export const deleteAttachmentsByIds = async (ctx: AuthContext, { ids }: DeleteAttachmentsByIdsOpts) => {
+/** Soft-delete attachments by IDs. */
+export const deleteAttachmentsByIds = async (
+  ctx: AuthContext,
+  { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
+) => {
   const { db, organizationId } = ctx.var;
   return db
-    .delete(attachmentsTable)
-    .where(and(inArray(attachmentsTable.id, ids), eq(attachmentsTable.organizationId, organizationId)));
+    .update(attachmentsTable)
+    .set({ deletedAt, deletedBy, updatedAt: deletedAt, updatedBy: deletedBy })
+    .where(
+      and(
+        inArray(attachmentsTable.id, ids),
+        eq(attachmentsTable.organizationId, organizationId),
+        isNull(attachmentsTable.deletedAt),
+      ),
+    );
 };
 
 interface FindAttachmentByKeyOpts {

@@ -1,13 +1,13 @@
 import { and, desc, eq, getColumns, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { emailsTable } from '#/db/schema/emails';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
-import { totpsTable } from '#/db/schema/totps';
-import { usersTable } from '#/db/schema/users';
+import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
+import { tokensTable } from '#/modules/auth/tokens-db';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
+import { usersTable } from '#/modules/user/user-db';
 
 interface FindUserByEmailOpts {
   email: string;

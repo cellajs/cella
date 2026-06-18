@@ -14,7 +14,7 @@ const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 
 
 describe('loadbalancer module — registry-driven wiring', () => {
   it('derives the LB-exposed service set from the registry, never by name', () => {
-    expect(src).toMatch(/enabledServices\(appConfig\.has\)\.filter\(\(s\) => s\.lbRoute\)/)
+    expect(src).toMatch(/enabledServices\(appConfig\.features\)\.filter\(\(s\) => s\.lbRoute\)/)
     // The default backend comes from the lbRoute 'default' declaration.
     expect(src).toMatch(/lbRoute === 'default'/)
     // No service-specific resource construction outside the loops.

@@ -13,6 +13,9 @@ dotenv({
  */
 const envSchema = z.object({
   DATABASE_CDC_URL: z.url(),
+  // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.
+  // Auto-provisioned by `pulumi up`; required in production.
+  DATABASE_SSL_CA: z.string().optional(),
 
   API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),

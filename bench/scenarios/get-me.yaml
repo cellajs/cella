@@ -3,7 +3,7 @@
 # Each VU loops 20 times, hitting the /me endpoint.
 # Sustained at 100 arrivals/s (~2000 req/s).
 config:
-  target: "http://localhost:4000"
+  target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/auth.ts"
   phases:
     - duration: 10

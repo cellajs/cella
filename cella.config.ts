@@ -16,7 +16,6 @@ export default defineConfig({
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
     fileLinkMode: 'file',
-    // upstreamLocalPath: '../cella',
   },
 
   // Top-down interaction with forks.
@@ -31,20 +30,19 @@ export default defineConfig({
     // Folders (or exact paths) the fork fully owns — never synced (existing or new)
     ignoredFolders: [
       "README.md",
-      "bench",
       "infra/compose.gen.yml",
       "infra/Pulumi.production.yaml",
       "infra/Pulumi.staging.yaml",
       "sdk/gen",
       "sdk/src/.generate-sdk.lock",
-      "frontend/src/routes/routeTree.gen.ts",
       "shared/config",
+      "backend/drizzle",
       "frontend/public/static/icons",
       "frontend/public/static/images",
       "frontend/public/static/logo",
       "frontend/public/static/screenshots",
       "frontend/src/modules/common/bg-animation",
-      "backend/drizzle",
+      "frontend/src/routes/routeTree.gen.ts",
     ],
     // Exact files pinned to fork; prefer fork version during merge conflicts
     pinnedFiles: [
@@ -55,7 +53,7 @@ export default defineConfig({
       "backend/package.json",
       "backend/src/tables.ts",
       "backend/src/routes.ts",
-      "backend/src/db/schema/memberships.ts",
+      "backend/src/modules/memberships/memberships-db.ts",
       "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",

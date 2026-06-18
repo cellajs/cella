@@ -1,8 +1,8 @@
 import { and, count, eq, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { systemRolesTable } from '#/db/schema/system-roles';
-import { usersTable } from '#/db/schema/users';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { memberSelect } from '#/modules/user/helpers/select';
+import { usersTable } from '#/modules/user/user-db';
 
 interface BuildUsersListOpts {
   filters: SQL[];

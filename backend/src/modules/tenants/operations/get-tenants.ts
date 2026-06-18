@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, ilike, type SQL } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
-import { tenantsTable } from '#/db/schema/tenants';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getTenantsList } from '#/modules/tenants/tenants-queries';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
 import { prepareStringForILikeFilter } from '#/utils/sql';

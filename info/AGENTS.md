@@ -99,6 +99,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - Zod v4 only: `import { z } from 'zod'`. In backend: `import { z } from '@hono/zod-openapi'`.
 - camelCase for variables/functions (including constants), PascalCase for components, kebab-case for files, snake_case for translation keys.
 - JSDoc on all exports. Backend: full JSDoc with params/response. Frontend: 1-3 lines. No standalone file-level comments above imports.
+- Code comments explain non-trivial logic only. Do not narrate decision history, what was considered and rejected, or how the code evolved — that belongs in commit messages, not source. A comment should describe *what* the code does and *why*, not *what it replaced* or *what it is not*.
 - Storybook: Stories in `stories/` folder within the module, named `<component-filename>.stories.tsx`.
 - Icons: lucide with Icon suffix (e.g., `PencilIcon`).
 - UI primitives: Base UI (`@base-ui/react`), **not** Radix. Shadcn-style components in `frontend/src/modules/ui/` wrap Base UI primitives.
@@ -122,5 +123,5 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
-- `pnpm test`: Run the default test suite (alias for `test:core`). `pnpm test:full` runs the broader full-mode suite, including integration tests such as CDC-related flows.
+- `pnpm test`: Run the default full test suite and emit summary coverage output. Use `pnpm test:core` for the narrower core-mode suite without CDC/CLI coverage.
 - `pnpm cella`: run Cella CLI to sync with upstream or downstream: [cli/cella/README.md](../cli/cella/README.md)

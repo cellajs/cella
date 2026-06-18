@@ -86,7 +86,7 @@
   {
     "name": "yjs",
     "description": "Endpoints for Yjs collaborative editing support. Provides auth tokens for the Yjs relay worker and\n    accepts client-computed derived fields from collaborative editing sessions.",
-    "count": 2,
+    "count": 0,
     "kind": "module"
   }
 ]

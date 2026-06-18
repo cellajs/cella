@@ -103,6 +103,15 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -168,6 +177,8 @@
               "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "updatedAt": "2024-11-21T04:00:59.122Z",
               "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 318,
               "stx": {
                 "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
@@ -197,6 +208,8 @@
               "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
               "updatedAt": "2024-10-29T08:46:20.790Z",
               "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 447,
               "stx": {
                 "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
@@ -383,6 +396,15 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -459,6 +481,8 @@
               "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
               "updatedAt": "2024-04-19T14:04:35.773Z",
               "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 348,
               "stx": {
                 "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -488,6 +512,8 @@
               "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
               "updatedAt": "2024-02-25T13:01:35.301Z",
               "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 276,
               "stx": {
                 "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -601,6 +627,15 @@
                     },
                     "extendsRef": "#/components/schemas/UserMinimalBase"
                   },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -677,6 +712,8 @@
               "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
               "updatedAt": "2024-04-19T14:04:35.773Z",
               "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 348,
               "stx": {
                 "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -706,6 +743,8 @@
               "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
               "updatedAt": "2024-02-25T13:01:35.301Z",
               "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "deletedAt": null,
+              "deletedBy": null,
               "seq": 276,
               "stx": {
                 "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -1103,6 +1142,15 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "deletedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deletedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
             "seq": {
               "type": "integer",
               "required": true,
@@ -1162,6 +1210,8 @@
           "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
           "updatedAt": "2024-10-12T17:43:05.360Z",
           "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
           "seq": 123,
           "stx": {
             "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -1322,6 +1372,15 @@
               },
               "extendsRef": "#/components/schemas/UserMinimalBase"
             },
+            "deletedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deletedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
             "seq": {
               "type": "integer",
               "required": true,
@@ -1381,6 +1440,8 @@
           "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
           "updatedAt": "2024-10-12T17:43:05.360Z",
           "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
           "seq": 123,
           "stx": {
             "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",

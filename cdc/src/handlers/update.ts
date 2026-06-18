@@ -22,6 +22,14 @@ function getStxChangedFields(row: Record<string, unknown>): string[] | null {
   return null;
 }
 
+function isSoftDeleteTransition(rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null): boolean {
+  return oldRowData !== null && oldRowData.deletedAt == null && rowData.deletedAt != null;
+}
+
+function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Record<string, unknown> | null): boolean {
+  return oldRowData?.deletedAt != null && rowData.deletedAt != null;
+}
+
 /**
  * Handle an UPDATE message and create an activity with entity data.
  */
@@ -48,6 +56,8 @@ export function handleUpdate(
 
   // Skip CDC's own seq stamps (only seq/stx changed, no user mutation)
   if (userChangedFields && userChangedFields.length === 0) return null;
+
+  if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
   // Skip CDC-driven embedding cleanup (e.g. label array stripped after label delete).
   // Cleanup writes strip stx.changedFields (see embedding-cleanup.ts), so

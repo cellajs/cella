@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 
 /**
  * Guard middleware that checks if the requesting user is relatable to a target user.

@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { totpsTable } from '#/db/schema/totps';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig;
 

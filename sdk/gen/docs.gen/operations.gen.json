@@ -1918,51 +1918,5 @@
       "module": ["seen"],
       "owner": ["cella"]
     }
-  },
-  {
-    "id": "getYjsToken",
-    "hash": "tag/yjs/GET/yjs/token",
-    "method": "get",
-    "path": "/yjs/token",
-    "tags": ["yjs"],
-    "summary": "Get Yjs token",
-    "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["authGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["yjs"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "verifyYjsEntity",
-    "hash": "tag/yjs/GET/yjs/verify-entity",
-    "method": "get",
-    "path": "/yjs/verify-entity",
-    "tags": ["yjs"],
-    "summary": "Verify Yjs entity access",
-    "description": "Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": [],
-      "xRateLimiter": [],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["yjs"],
-      "owner": ["cella"]
-    }
   }
 ]

@@ -9,9 +9,9 @@
  */
 
 import { eq, sql } from 'drizzle-orm';
+import { activitiesTable } from '#/modules/activities/activities-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { baseDb } from './db';
-import { activitiesTable } from './schema/activities';
-import { tenantsTable } from './schema/tenants';
 
 const hasDb = typeof baseDb.select === 'function';
 

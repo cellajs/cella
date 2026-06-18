@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';

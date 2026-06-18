@@ -16,6 +16,7 @@ import type {
   GenSchemaTagSummary,
   GenTagSummary,
 } from '../../../../frontend/src/modules/docs/types';
+import { appConfig } from '../../../../shared';
 import { config } from '../../../../shared/config/config.default';
 import { generateOperationHash } from './file-generators';
 import { resolveSchema, resolveSchemaProperty } from './schema-resolvers';
@@ -23,6 +24,13 @@ import type { OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenAp
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
 const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
+
+/** Feature modules (appConfig.features) that resolve to false in this build's effective config. */
+const disabledFeatures = new Set(
+  Object.entries(appConfig.features)
+    .filter(([, enabled]) => !enabled)
+    .map(([flag]) => flag),
+);
 
 /**
  * Result of parsing an OpenAPI spec.
@@ -96,6 +104,11 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       for (const method of httpMethods) {
         const op = pathItem[method];
         if (!op?.operationId) continue;
+
+        // Skip operations gated by a feature flag that is disabled in this build.
+        // Keeps the SDK a stable superset while the docs reflect the effective config.
+        const feature = op['x-feature' as `x-${string}`];
+        if (typeof feature === 'string' && disabledFeatures.has(feature)) continue;
 
         // Strip excluded tags (e.g., ownership tags) from operation tags
         const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));

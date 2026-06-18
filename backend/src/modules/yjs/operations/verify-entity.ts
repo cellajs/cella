@@ -1,8 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import type { EntityType } from 'shared';
 import { baseDb } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { checkPermission } from '#/permissions';
 import type { SubjectForPermission } from '#/permissions/permission-manager/types';
 

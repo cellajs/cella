@@ -1,7 +1,7 @@
 import { and, eq, exists, inArray } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { membershipsTable } from '#/db/schema/memberships';
-import { usersTable } from '#/db/schema/users';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { usersTable } from '#/modules/user/user-db';
 
 /**
  * Builds an EXISTS filter that limits user rows to those sharing at least one

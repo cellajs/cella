@@ -1,7 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
-import { domainsTable } from '#/db/schema/domains';
-import { tenantsTable } from '#/db/schema/tenants';
+import { domainsTable } from '#/modules/domains/domains-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** List all domains for a tenant, ordered by domain name. */
 export const findDomainsByTenant = async (ctx: AuthContext) => {

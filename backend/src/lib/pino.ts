@@ -9,9 +9,7 @@ const redactedFields = [
   '**.credentialId', // Passkey credentials
 ];
 
-// In production, we use the default pino logger
-// Check both NODE_ENV and appConfig.mode — NODE_ENV=production in containers
-// disables pino-pretty worker threads even when APP_MODE=development.
+// Check both NODE_ENV and appConfig.mode — NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
 const isTest = appConfig.mode === 'test';
 

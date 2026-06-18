@@ -158,6 +158,14 @@ new scaleway.databases.Privilege('runtime-privilege', {
 /** Database instance ID */
 export const instanceId = instance.id
 
+/**
+ * Instance CA certificate (PEM) for verifying the TLS connection to the managed
+ * PostgreSQL. Scaleway issues a per-instance, self-signed CA; this output feeds
+ * the `database-ssl-ca` runtime secret (resources/secrets.ts) so app services
+ * can pin it and verify the connection instead of skipping verification.
+ */
+export const caCertificate = instance.certificate
+
 /** Database name */
 export const databaseName = database.name
 

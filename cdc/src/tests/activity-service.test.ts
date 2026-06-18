@@ -10,9 +10,34 @@ vi.mock('shared/nanoid', () => ({
   nanoidTenant: () => 'mock-t',
 }));
 
-import { sendBatchMessageToApi } from '../services/activity-service';
+import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
 import { wsClient } from '../network/websocket-client';
 import { logEvent } from '../lib/pino';
+
+describe('generateActivityId', () => {
+  it('zero-pads both LSN segments to a fixed 17-char width', () => {
+    expect(generateActivityId('0/16B3748')).toBe('00000000-016B3748');
+    expect(generateActivityId('0/16B3748')).toHaveLength(17);
+    expect(generateActivityId('1/0')).toBe('00000001-00000000');
+  });
+
+  it('is deterministic (same LSN → same id) for idempotent replay', () => {
+    expect(generateActivityId('A/FF')).toBe(generateActivityId('A/FF'));
+  });
+
+  it('sorts lexicographically in true commit order across digit-width changes', () => {
+    // "0/9F" commits before "0/100"; unpadded string compare would invert this.
+    const earlier = generateActivityId('0/9F');
+    const later = generateActivityId('0/100');
+    expect(earlier < later).toBe(true);
+  });
+
+  it('sorts correctly across a 32-bit segment rollover', () => {
+    const before = generateActivityId('0/FFFFFFFF');
+    const after = generateActivityId('1/00000000');
+    expect(before < after).toBe(true);
+  });
+});
 
 describe('sendBatchMessageToApi', () => {
   beforeEach(() => {

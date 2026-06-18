@@ -1,8 +1,14 @@
-import { CircleIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-const refreshTimeout = 5000;
+// Hold the indicator still briefly, then glide it off-screen (ms).
+const exitHold = 100;
+const exitDuration = 450;
+
+/**
+ * Lifecycle of the indicator: dormant, actively refreshing, or animating away.
+ */
+type Phase = 'idle' | 'refreshing' | 'exiting';
 
 /**
  * Find the nearest scrollable ancestor of a given element.
@@ -38,15 +44,16 @@ export function PullToRefresh({
   isDisabled = false,
 }: Props) {
   const [pullPosition, setPullPosition] = useState(0);
-  // Tracks whether refresh was triggered by pull gesture (to scope spinner to pull-to-refresh only)
-  const [wasTriggered, setWasTriggered] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
 
   const pullStartRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Whether any query actually fetched during the current refresh cycle.
+  const sawFetchRef = useRef(false);
 
-  const isRefreshing = wasTriggered && isFetching;
-
+  const isRefreshing = phase === 'refreshing';
+  // Indicator stays styled as a spinner through both refreshing and exiting.
+  const isActive = phase !== 'idle';
   const isPulling = pullPosition > 0;
 
   // Disable when UI is locked (dialog, dropdown, sheet open)
@@ -68,6 +75,7 @@ export function PullToRefresh({
       const pullArea = window.innerHeight * 0.4;
 
       if (touch.clientY <= pullArea) {
+        setPhase('idle'); // cancel any in-progress exit animation
         pullStartRef.current = touch.screenY;
         isDraggingRef.current = true;
       }
@@ -116,36 +124,26 @@ export function PullToRefresh({
       return;
     }
 
-    // Trigger refresh — keep pullPosition until isRefreshing takes over
-    setWasTriggered(true);
-    onRefresh();
+    // Enter the refreshing state immediately, even on routes without active query observers.
+    setPhase('refreshing');
+    setPullPosition(0);
+    sawFetchRef.current = false;
 
-    // Safety timeout: clear triggered flag after 5s in case isFetching never settles
-    timeoutRef.current = setTimeout(() => setWasTriggered(false), refreshTimeout);
+    Promise.resolve(onRefresh()).finally(() => {
+      // Static routes have nothing to refetch — skip the animation and hard-reload.
+      if (!sawFetchRef.current) {
+        window.location.reload();
+        return;
+      }
+      // Otherwise glide the indicator away (CSS handles the hold + exit timing).
+      setPhase('exiting');
+    });
   }, [isDisabled, pullPosition, refreshThreshold, onRefresh]);
 
-  // Once isRefreshing is active, clear pullPosition so the indicator transitions to the refreshing position
+  // Remember if any fetch actually ran during this refresh cycle.
   useEffect(() => {
-    if (isRefreshing && pullPosition > 0) {
-      setPullPosition(0);
-    }
-  }, [isRefreshing, pullPosition]);
-
-  // Clear triggered flag once fetching completes after a pull-to-refresh
-  useEffect(() => {
-    if (wasTriggered && !isFetching) {
-      // Small delay to avoid flicker if fetching briefly dips to 0 between invalidations
-      const id = setTimeout(() => setWasTriggered(false), 100);
-      return () => clearTimeout(id);
-    }
-  }, [wasTriggered, isFetching]);
-
-  // Cleanup safety timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+    if (isRefreshing && isFetching) sawFetchRef.current = true;
+  }, [isRefreshing, isFetching]);
 
   useEffect(() => {
     if (isDisabled) return;
@@ -173,35 +171,58 @@ export function PullToRefresh({
     };
   }, [isPulling]);
 
-  const radius = 16;
-  const stroke = 3;
-  const circumference = 2 * Math.PI * radius;
-
   // First 30px of pull just shows the empty circle, progress starts after that
   const emptyPhase = 30;
   const progressPull = Math.max(0, pullPosition - emptyPhase);
   const clamped = Math.min(progressPull, refreshThreshold);
   const progress = clamped / refreshThreshold;
+
+  // Rings thicken inward (outer edge fixed at radius 20) as the user drags, and
+  // thicken further once refreshing. backgroundStroke drives the shared radius.
+  const stroke = isActive ? 6 : 3 + progress * 1.5;
+  // Background extends 2px beyond the foreground on each side for padding.
+  const backgroundStroke = stroke + 4;
+  const radius = 20 - backgroundStroke / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  // While refreshing the ring "explodes" into evenly spaced dashes that spin.
+  const explodedSegments = 16;
+  const explodedSegment = circumference / explodedSegments;
+  const explodedDash = explodedSegment * 0.65;
+  const explodedGap = explodedSegment * 0.35;
+  const explodedDashArray = `${explodedDash} ${explodedGap}`;
+
   const strokeDashoffset = circumference * (1 - progress);
 
-  if (!isPulling && !isRefreshing) return null;
+  if (!isPulling && phase === 'idle') return null;
+
+  const isExiting = phase === 'exiting';
+  const top = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
+  const opacity = isExiting ? 0 : isActive || pullPosition > 0 ? 1 : 0;
+  const transition = isDraggingRef.current
+    ? 'none'
+    : isExiting
+      ? `top ${exitDuration}ms ease-in ${exitHold}ms, opacity ${exitDuration}ms ease-in ${exitHold}ms`
+      : 'top 0.3s ease-out, opacity 0.3s ease-out';
 
   return (
     <div
+      onTransitionEnd={(e) => {
+        if (isExiting && e.propertyName === 'opacity') setPhase('idle');
+      }}
       style={{
-        top: isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120),
-        opacity: isRefreshing || pullPosition > 0 ? 1 : 0,
-        transition: isDraggingRef.current ? 'none' : 'top 0.3s ease-out, opacity 0.3s ease-out',
+        top,
+        opacity,
+        transition,
       }}
       className="fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
     >
-      <CircleIcon className="absolute size-8 text-muted-foreground/50" strokeWidth={4} />
       <svg
-        className={`h-8 w-8 ${isRefreshing ? 'animate-spin' : ''}`}
+        className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}
         viewBox="0 0 40 40"
         style={{
-          transform: isRefreshing ? undefined : `rotate(${pullPosition * 2}deg)`,
-          transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
+          transform: isActive ? undefined : `rotate(${pullPosition * 2}deg)`,
+          transition: isActive ? 'none' : 'transform 0.1s ease-out',
         }}
       >
         <title>Pull to refresh</title>
@@ -211,11 +232,22 @@ export function PullToRefresh({
           r={radius}
           fill="none"
           stroke="currentColor"
+          strokeWidth={backgroundStroke}
+          className="text-muted-foreground/50"
+          style={{ transition: 'stroke-width 0.15s ease-out' }}
+        />
+        <circle
+          cx="20"
+          cy="20"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
           strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={isRefreshing ? 0 : strokeDashoffset}
-          strokeLinecap="round"
+          strokeDasharray={isActive ? explodedDashArray : circumference}
+          strokeDashoffset={isActive ? 0 : strokeDashoffset}
+          strokeLinecap={isActive ? 'butt' : 'round'}
           className="text-foreground"
+          style={{ transition: 'stroke-width 0.15s ease-out' }}
         />
       </svg>
     </div>

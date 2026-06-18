@@ -60,21 +60,19 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     [ATTR_SERVICE_VERSION]: serviceVersion,
   });
 
-  // Metric exporter (always created — falls back to default OTLP endpoint without Maple key)
-  const metricExporter = mapleApiKey
-    ? new OTLPMetricExporter({
-        url: `${MAPLE_INGEST_BASE}/metrics`,
-        headers: { 'x-maple-ingest-key': mapleApiKey },
-      })
-    : new OTLPMetricExporter();
 
-  const metricReader = new PeriodicExportingMetricReader({
-    exporter: metricExporter,
-    exportIntervalMillis: metricIntervalMs,
-  });
+  const metricReader = mapleApiKey
+    ? new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter({
+          url: `${MAPLE_INGEST_BASE}/metrics`,
+          headers: { 'x-maple-ingest-key': mapleApiKey },
+        }),
+        exportIntervalMillis: metricIntervalMs,
+      })
+    : undefined;
 
   const meterProvider = new SdkMeterProvider({
-    readers: [metricReader],
+    readers: metricReader ? [metricReader] : [],
     resource,
   });
 

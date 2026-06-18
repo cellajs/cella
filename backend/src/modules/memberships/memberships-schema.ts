@@ -1,16 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { membershipsTable } from '#/db/schema/memberships';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { contextEntityTypeSchema, paginationQuerySchema, validEmailSchema, validIdSchema } from '#/schemas';
 import { userBaseSchema, userMinimalBaseSchema } from '#/schemas/user-schema-base';
-import {
-  mockInactiveMembershipResponse,
-  mockMembershipBase,
-  mockMembershipResponse,
-} from '../../../mocks/mock-membership';
+import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
 /** Schema for entity roles enum - uses literal types from appConfig */
 const entityRoleSchema = z.enum(roles.all);

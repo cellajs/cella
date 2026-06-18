@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
-import { systemRolesTable } from '#/db/schema/system-roles';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { updateLastSeenAt } from '../update-last-seen';
 import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
@@ -16,7 +16,7 @@ import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCach
  * If no valid session is found, it responds with a 401 error.
  *
  * Uses two in-memory TTL caches:
- * - Session cache (30s TTL, keyed by sessionId): user + isSystemAdmin
+ * - Session cache (1 min TTL, keyed by sessionId): user + isSystemAdmin
  * - Membership cache (5 min TTL, keyed by userId): memberships array
  *   (actively invalidated on membership changes, long TTL is a safety net)
  *

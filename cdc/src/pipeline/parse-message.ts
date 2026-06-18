@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import type { InsertActivityModel } from '#/db/schema/activities';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { handleDelete, handleInsert, handleUpdate } from '../handlers';
 import type { CdcRowData } from '../types';
 import type { TableMeta } from '../types';

@@ -9,6 +9,7 @@ import type { MergeResult, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import {
   createSpinner,
+  printFlagWarnings,
   printSummary,
   printSyncComplete,
   spinnerFail,
@@ -55,6 +56,8 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   }
 
   printSyncComplete(result);
+
+  printFlagWarnings({ hard: config.hard, unpinned: config.unpinned });
 
   return result;
 }

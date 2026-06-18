@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { domainsTable } from '#/db/schema/domains';
-import { tenantsTable } from '#/db/schema/tenants';
+import { domainsTable } from '#/modules/domains/domains-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 interface GetTenantsListOpts {
   filters: SQL[];

@@ -4,21 +4,21 @@ import { appConfig, type EntityRole } from 'shared';
 import { generateId } from 'shared/entity-id';
 import { nanoid } from 'shared/nanoid';
 import { baseDb as db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
-import { sessionsTable } from '#/db/schema/sessions';
-import { systemRolesTable } from '#/db/schema/system-roles';
-import { tenantsTable } from '#/db/schema/tenants';
-import { tokensTable } from '#/db/schema/tokens';
-import { totpsTable } from '#/db/schema/totps';
-import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { type UserModel, usersTable } from '#/db/schema/users';
+import { mockPastIsoDate } from '#/mocks';
+import { sessionsTable } from '#/modules/auth/sessions-db';
+import { tokensTable } from '#/modules/auth/tokens-db';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { type OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { type UserModel, usersTable } from '#/modules/user/user-db';
+import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
 import type { apiErrorSchema } from '#/schemas';
 import { encodeLowerCased } from '#/utils/oslo';
-import { mockOrganization } from '../mocks/mock-organization';
-import { mockEmail, mockUnsubscribeToken, mockUser } from '../mocks/mock-user';
-import { mockPastIsoDate } from '../mocks/utils';
 
 /**
  * Types for test responses

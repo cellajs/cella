@@ -1,5 +1,5 @@
-import type { OrganizationModel } from '#/db/schema/organizations';
 import { TTLCache } from '#/lib/ttl-cache';
+import type { OrganizationModel } from '#/modules/organization/organization-db';
 
 const cacheKey = (tenantId: string, orgId: string) => `${tenantId}:${orgId}`;
 

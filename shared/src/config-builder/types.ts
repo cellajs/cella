@@ -44,12 +44,20 @@ export interface RequestLimitsConfig {
   [key: string]: number;
 }
 
-export interface FeatureFlagsConfig {
+export interface HasFlagsConfig {
   pwa: boolean;
   selfRegistration: boolean;
   waitlist: boolean;
   uploadEnabled: boolean;
   chatSupport: boolean;
+}
+
+/**
+ * Optional backend modules/services, each gating a deployable service (infra
+ * `featureFlag`) and/or a route surface (`x-feature`). Distinct from
+ * `HasFlagsConfig`, which holds in-app UX/behavior toggles.
+ */
+export interface FeatureModulesConfig {
   yjs: boolean;
   ai: boolean;
 }
@@ -160,7 +168,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
-  entityEmbeddings: readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[];
+  entityEmbeddings: readonly {
+    readonly embeddedEntity: T['productEntityTypes'][number] & string;
+    readonly hostEntity: T['productEntityTypes'][number] & string;
+    readonly hostColumn: string;
+  }[];
   menuStructure: readonly MenuStructureItem[];
   defaultRestrictions: {
     quotas: Record<string, number>;
@@ -209,8 +221,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   maintenance: boolean;
   cookieVersion: string;
 
-  // Feature flags
-  has: FeatureFlagsConfig;
+  // Feature flags (in-app UX/behavior toggles)
+  has: HasFlagsConfig;
+
+  // Optional modules/services (gate deployable services and/or route surfaces)
+  features: FeatureModulesConfig;
 
   // Authentication
   enabledAuthStrategies: readonly BaseAuthStrategies[];

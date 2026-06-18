@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { ilike } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
-import { requestsTable } from '#/db/schema/requests';
+import { requestsTable } from '#/modules/requests/requests-db';
 import { getRequestsList } from '#/modules/requests/requests-queries';
 import type { requestListQuerySchema } from '#/modules/requests/requests-schema';
 import { prepareStringForILikeFilter } from '#/utils/sql';

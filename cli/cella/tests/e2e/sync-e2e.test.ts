@@ -4,7 +4,7 @@
  * These tests create real git repos and run the actual sync services
  * to verify end-to-end behavior.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runAnalyze } from '../../src/services/analyze';
 import { runSync } from '../../src/services/sync';
 import {
@@ -467,6 +467,74 @@ describe('sync e2e', () => {
       expect(content).not.toBeNull();
       expect(content).toContain('<<<<<<<');
       expect(content).toContain('>>>>>>>');
+    });
+
+    it('materializes a view worktree and emits diff links for auto-merged files', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const { execSync } = await import('node:child_process');
+      const { getViewWorktreePath } = await import('../../src/utils/cleanup');
+
+      // Shared multi-line file present at the merge base in BOTH repos.
+      const baseLines = `${Array.from({ length: 9 }, (_, i) => `line ${i + 1}`).join('\n')}\n`;
+      makeCommit(env.upstreamPath, { files: { 'shared.ts': baseLines }, message: 'chore: add shared' });
+
+      // Sync shared.ts into the fork and finalize so it becomes part of the merge base.
+      fetchUpstream(env.forkPath);
+      await runSync(buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' }));
+      try {
+        execSync('git add -A && git commit --allow-empty -m "sync: shared"', { cwd: env.forkPath });
+      } catch {
+        // Ignore if nothing to commit
+      }
+
+      // Upstream: conflicting README edit + non-overlapping edit at the TOP of shared.ts.
+      makeCommit(env.upstreamPath, {
+        files: {
+          'README.md': '# Upstream Version\nupstream conflict line\n',
+          'shared.ts': baseLines.replace('line 1', 'line 1 (upstream)'),
+        },
+        message: 'feat: upstream changes',
+      });
+
+      // Fork: conflicting README edit + non-overlapping edit at the BOTTOM of shared.ts.
+      makeCommit(env.forkPath, {
+        files: {
+          'README.md': '# Fork Version\nfork conflict line\n',
+          'shared.ts': baseLines.replace('line 9', 'line 9 (fork)'),
+        },
+        message: 'feat: fork changes',
+      });
+
+      fetchUpstream(env.forkPath);
+
+      // Capture human-facing output to assert the diff link is rendered.
+      const logs: string[] = [];
+      const spy = vi.spyOn(console, 'info').mockImplementation((...args: unknown[]) => {
+        logs.push(args.map((a) => (typeof a === 'string' ? a : String(a))).join(' '));
+      });
+
+      let result: Awaited<ReturnType<typeof runSync>>;
+      try {
+        result = await runSync(buildRuntimeConfig(env, { service: 'sync' }));
+      } finally {
+        spy.mockRestore();
+      }
+
+      // README conflicts; shared.ts auto-merges cleanly.
+      expect(result.conflicts).toContain('README.md');
+      expect(result.autoMergedFiles).toContain('shared.ts');
+
+      // The view worktree persists (outside the fork) and holds the upstream version.
+      const viewPath = getViewWorktreePath(env.forkPath);
+      expect(fs.existsSync(viewPath)).toBe(true);
+      expect(fs.existsSync(path.join(viewPath, 'shared.ts'))).toBe(true);
+
+      // The merge-in-progress detail emitted a clickable VS Code diff link.
+      expect(logs.join('\n')).toContain('command:vscode.diff');
+
+      // Clean up the persistent view worktree (lives in tmpdir, outside testDir).
+      fs.rmSync(viewPath, { recursive: true, force: true });
     });
   });
 

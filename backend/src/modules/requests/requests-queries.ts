@@ -1,9 +1,9 @@
 import { and, count, eq, getColumns, inArray, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { emailsTable } from '#/db/schema/emails';
-import { type RequestModel, requestsTable } from '#/db/schema/requests';
-import { usersTable } from '#/db/schema/users';
+import { type RequestModel, requestsTable } from '#/modules/requests/requests-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
+import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumn } from '#/utils/order-column';
 
 interface FindUserByEmailOpts {

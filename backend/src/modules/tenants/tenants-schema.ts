@@ -9,8 +9,8 @@
 
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/db/schema/tenants';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { paginationQuerySchema, validNameSchema } from '#/schemas';
 
 /** Tenant status enum values */

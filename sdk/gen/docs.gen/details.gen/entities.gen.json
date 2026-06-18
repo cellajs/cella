@@ -148,6 +148,7 @@
                     "required": true,
                     "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
                   },
+                  "deleteOverflow": { "type": "array", "required": false, "itemType": "string" },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,
@@ -367,6 +368,7 @@
                     "required": true,
                     "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
                   },
+                  "deleteOverflow": { "type": "array", "required": false, "itemType": "string" },
                   "entitySeqs": {
                     "type": "object",
                     "required": false,

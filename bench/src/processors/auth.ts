@@ -9,20 +9,11 @@
  *   cookie = "{hashedToken}.{sessionId}."
  * where hashedToken = SHA-256 hex of the deterministic token string.
  */
-import { createHash } from 'node:crypto';
 import { SESSION_COOKIE_NAME } from '../config';
-import { sessionId } from '../generators/ids';
+import { sessionId } from '../seeds/ids';
+import { hashToken, sessionToken } from '../seeds/session-auth';
 
 let userCounter = 0;
-
-/** Deterministic session token per user index — must match data-setup.ts. */
-function sessionToken(index: number): string {
-  return `xbench-session-token-${String(index).padStart(12, '0')}`;
-}
-
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
 
 // ── Session cache ──────────────────────────────────────────────────────────
 const cookieCache = new Map<number, string>();
@@ -40,10 +31,7 @@ function buildCookie(userIndex: number): string {
 
 // ── Authenticate ───────────────────────────────────────────────────────────
 
-export async function authenticate(
-  context: { vars: Record<string, unknown> },
-  _events: unknown,
-) {
+export async function authenticate(context: { vars: Record<string, unknown> }, _events: unknown) {
   const userIndex = userCounter++ % 1200;
   context.vars.cookie = buildCookie(userIndex);
   context.vars.userIndex = userIndex;

@@ -35,9 +35,15 @@ export const tenantMatch = (t: { tenantId: unknown }) => sql`
 `;
 
 /** Tenant-scoped read: matching tenant (fail-closed). */
-export const tenantReadCondition = (t: { tenantId: unknown }) => sql`
-  ${tenantMatch(t)}
-`;
+export const tenantReadCondition = (t: { tenantId: unknown; deletedAt?: unknown }) => {
+  const includeDeleted = sql`current_setting('app.include_deleted', true) = 'true'`;
+  const liveRow = t.deletedAt ? sql`AND (${t.deletedAt} IS NULL OR ${includeDeleted})` : sql``;
+
+  return sql`
+    ${tenantMatch(t)}
+    ${liveRow}
+  `;
+};
 
 /**
  * Tenant-scoped SELECT policy for product entity tables.

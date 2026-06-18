@@ -75,15 +75,9 @@ export interface SyncSettings {
    * How to link files in CLI output.
    * - 'commit' (default): Link to the commit that changed the file on GitHub.
    * - 'file': Link to the file in the repo at the upstream branch on GitHub.
-   * - 'local': Open the file in VS Code from a local upstream clone (requires upstreamLocalPath).
+   * - 'local': Open the upstream file in VS Code from the auto-managed upstream view worktree.
    */
   fileLinkMode?: 'commit' | 'file' | 'local';
-
-  /**
-   * Path to a local clone of the upstream repo for 'local' linkStyle.
-   * Example: '../cella' or '/Users/you/Sites/cella'
-   */
-  upstreamLocalPath?: string;
 }
 
 /**
@@ -152,7 +146,10 @@ export function defineConfig(config: CellaCliConfig): CellaCliConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'inspect' | 'sync' | 'packages' | 'audit' | 'forks' | 'contributions' | 'stats';
+export type SyncService = 'analyze' | 'sync' | 'audit' | 'forks' | 'contributions' | 'stats';
+
+/** Analyze output scope for interactive and machine-readable flows */
+export type AnalyzeScope = 'all' | 'risk' | 'protected';
 
 /** Runtime configuration with all resolved values */
 export interface RuntimeConfig extends CellaCliConfig {
@@ -177,6 +174,12 @@ export interface RuntimeConfig extends CellaCliConfig {
   /** Print the unified diff for a single contributed file, then exit (contributions; for tooling/agents) */
   diff?: string;
 
+  /** Open a VS Code side-by-side diff for one file, then exit (analyze) */
+  openDiff?: string;
+
+  /** Scope of files returned in analyze list/json output */
+  scope?: AnalyzeScope;
+
   /** Show verbose output */
   verbose: boolean;
 
@@ -185,6 +188,14 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Overwrite drifted files with upstream version (aggressive realignment) */
   hard?: boolean;
+
+  /**
+   * Disable pinned files (cella.config.ts pinnedFiles) for this sync so upstream
+   * versions surface as behind/diverged. package.json files stay pinned (handled
+   * by the packages service). Like --hard, uses the natural merge-base to resurface
+   * full upstream history.
+   */
+  unpinned?: boolean;
 
   /** Bypass pnpm metadata cache for fresh registry data (audit service) */
   force?: boolean;
@@ -269,6 +280,14 @@ export interface MergeResult {
     message: string;
     date: string;
   };
+  /** Commits included in this sync range (oldest-first when rendered) */
+  upstreamCommits?: Array<{
+    hash: string;
+    message: string;
+    date: string;
+  }>;
+  /** Files that were auto-merged by git (diverged without remaining conflicts) */
+  autoMergedFiles?: string[];
   /** Whether the sync was auto-committed (squash strategy with no conflicts) */
   autoCommitted?: boolean;
 }

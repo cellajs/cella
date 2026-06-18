@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { EntityTableMeta, ResourceTableMeta } from '../types';
 import { computeUnifiedDeltas, computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { InsertActivityModel } from '#/db/schema/activities';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.deltasByContextKey.size).toBe(2);
   });
 
-  it('attachment delete: no seq stamp, decrement entity count on org', () => {
+  it('attachment hard delete: no seq stamp, decrement entity count on org', () => {
     const plan = computeUnifiedDeltas(
       mockResult({
         tableMeta: attachmentEntry(),
@@ -116,6 +116,39 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.entityStamp).toBeNull();
 
     expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -1 });
+    expect(plan.deltasByContextKey.size).toBe(1);
+  });
+
+  it('attachment soft delete update: seq stamp and decrement entity count on org', () => {
+    const plan = computeUnifiedDeltas(
+      mockResult({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
+      }),
+    );
+
+    expect(plan.seqContextKey).toBe('org-1');
+    expect(plan.seqKey).toBe('s:attachment');
+    expect(plan.entityStamp).toEqual({ tableName: 'attachments', entityId: 'att-1' });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:attachment': 1, 'e:attachment': -1 });
+    expect(plan.deltasByContextKey.size).toBe(1);
+  });
+
+  it('already deleted attachment update: seq stamp without count delta', () => {
+    const plan = computeUnifiedDeltas(
+      mockResult({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:05:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+      }),
+    );
+
+    expect(plan.seqContextKey).toBe('org-1');
+    expect(plan.seqKey).toBe('s:attachment');
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:attachment': 1 });
     expect(plan.deltasByContextKey.size).toBe(1);
   });
 
@@ -147,7 +180,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.seqContextKey).toBeNull();
     expect(plan.entityStamp).toBeNull();
     expect(plan.deltasByContextKey.size).toBe(1);
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:admin': 1, 'm:total': 1, 's:membership': 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -159,7 +192,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:total': -1, 's:membership': 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -172,7 +205,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:member': -1, 'm:admin': 1, 's:membership': 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -184,7 +217,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': 1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': 1, 's:membership': 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -197,7 +230,7 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1 });
+    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
   });
 
   it('attachment with no organizationId: seq still computed, no count deltas', () => {
@@ -284,6 +317,31 @@ describe('computeBatchUnifiedDeltas', () => {
     const plan = computeBatchUnifiedDeltas(events);
 
     expect(plan.seqGroups).toHaveLength(0);
+    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -2 });
+  });
+
+  it('batch of attachment soft deletes: seq group and count deltas accumulated', () => {
+    const events = [
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
+      }),
+      mockEvent({
+        tableMeta: attachmentEntry(),
+        action: 'update',
+        rowData: { id: 'att-2', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
+        oldRowData: { id: 'att-2', organizationId: 'org-1', deletedAt: null },
+      }),
+    ];
+
+    const plan = computeBatchUnifiedDeltas(events);
+
+    expect(plan.seqGroups).toHaveLength(1);
+    expect(plan.seqGroups[0].contextKey).toBe('org-1');
+    expect(plan.seqGroups[0].seqKey).toBe('s:attachment');
+    expect(plan.seqGroups[0].count).toBe(2);
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': -2 });
   });
 

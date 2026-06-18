@@ -2,7 +2,7 @@ import { createXRoute } from '#/core/x-routes';
 import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { activityListQuerySchema, activitySchema } from '#/modules/activities/activities-schema';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
-import { mockPaginatedActivitiesResponse } from '../../../mocks/mock-activity';
+import { mockPaginatedActivitiesResponse } from './activities-mocks';
 
 const activityRoutes = {
   /**

@@ -154,6 +154,59 @@ export async function countCommitsBetween(cwd: string, fromRef: string, toRef: s
   return Number.parseInt(output.trim(), 10) || 0;
 }
 
+/** Commit metadata for a single log entry */
+export interface CommitRangeEntry {
+  hash: string;
+  message: string;
+  date: string;
+}
+
+/**
+ * List commits in a ref range.
+ *
+ * By default this returns commits oldest-first to match GitHub compare ordering.
+ * Supports skip+limit pagination so callers can show only the most recent N commits
+ * without fetching the entire range.
+ */
+export async function listCommitsBetween(
+  cwd: string,
+  fromRef: string,
+  toRef: string,
+  options: {
+    oldestFirst?: boolean;
+    skip?: number;
+    limit?: number;
+  } = {},
+): Promise<CommitRangeEntry[]> {
+  const { oldestFirst = true, skip = 0, limit } = options;
+  const args = ['log', '--format=%H%x1f%s%x1f%ar'];
+
+  if (oldestFirst) args.push('--reverse');
+  args.push(`${fromRef}..${toRef}`);
+
+  const output = await git(args, cwd, { ignoreErrors: true });
+  if (!output) return [];
+
+  const commits: CommitRangeEntry[] = [];
+  for (const line of output.split('\n')) {
+    if (!line) continue;
+    const [hash, message, date] = line.split('\x1f');
+    if (!hash || !message || !date) continue;
+    commits.push({ hash, message, date });
+  }
+
+  const normalizedSkip = Math.max(0, skip);
+  const normalizedLimit = typeof limit === 'number' && limit > 0 ? limit : undefined;
+
+  if (normalizedSkip === 0 && normalizedLimit === undefined) {
+    return commits;
+  }
+
+  const start = Math.min(normalizedSkip, commits.length);
+  const end = normalizedLimit === undefined ? commits.length : Math.min(start + normalizedLimit, commits.length);
+  return commits.slice(start, end);
+}
+
 /**
  * File change info with date and commit hash.
  */

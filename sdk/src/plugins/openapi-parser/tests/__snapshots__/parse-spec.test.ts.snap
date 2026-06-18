@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "a055351c2cde4404",
+  "inputHash": "e58b669a18a43ad7",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -115,6 +115,13 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "description": "Tool registration metadata for AI and MCP integrations",
           "id": "xTool",
           "key": "x-tool",
+          "kind": "metadata",
+          "required": false,
+        },
+        {
+          "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
+          "id": "x-feature",
+          "key": "x-feature",
           "kind": "metadata",
           "required": false,
         },
@@ -2997,6 +3004,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "convertedKey": null,
           "createdAt": "2024-10-12T17:43:05.360Z",
           "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
           "description": null,
           "entityType": "attachment",
           "filename": "rightfully_lest_noted.mp3",
@@ -3087,6 +3096,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "required": true,
               "type": [
                 "object",
+                "null",
+              ],
+            },
+            "deletedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "deletedBy": {
+              "format": "uuid",
+              "required": true,
+              "type": [
+                "string",
                 "null",
               ],
             },
@@ -3578,7 +3602,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               ],
             },
             "deletedIds": {
-              "description": "Entity IDs in a delete batch",
+              "description": "Entity IDs in a legacy hard-delete batch",
               "itemType": "string",
               "required": true,
               "type": [
@@ -4602,13 +4626,12 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
             "passkey",
           ],
           "bannerUrl": null,
-          "chatSupport": false,
-          "color": "#6af7b9",
-          "country": "Tajikistan",
+          "chatSupport": true,
+          "color": "#cda6af",
+          "country": "Sweden",
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
           "defaultLanguage": "en",
-          "description": "Sustainable systematic software",
           "entityType": "organization",
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "included": {
@@ -4647,7 +4670,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "slug": "spencer-pouros-and-bergnaum",
           "tenantId": "d1lgzb",
           "thumbnailUrl": null,
-          "timezone": "Antarctica/Syowa",
+          "timezone": "Europe/Vaduz",
           "updatedAt": "2024-12-25T15:29:47.111Z",
           "updatedBy": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
@@ -5013,6 +5036,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         "example": {
           "createdAt": "2024-08-06T10:28:33.226Z",
           "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "deletedAt": null,
+          "deletedBy": null,
           "description": "[{"id":"wv1pvo6ikw8yaifq40mapyzk","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Pecco vulticulus cunctatio dolorum.","styles":{}}],"children":[]},{"id":"xwx21e333ngqujcbpukfple6","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"h3tnk9zpovjd1ic979l5apjd","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"AI-driven optimal concept","styles":{}}],"children":[]},{"id":"fixisx6z8hucvnngw4r6gjfz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.","styles":{}}],"children":[]},{"id":"tcsht8b45feprfkhrd8bblxz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Animadverto maxime theatrum esse amo statua adfectus.","styles":{}}],"children":[]},{"id":"zubypddo8vfjx4d5px26kw7k","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.","styles":{}}],"children":[]},{"id":"q8bqakccdhvdb8s40m4i46ag","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adiuvo brevis conturbo alveus ver ait deserunt decet.","styles":{}}],"children":[]},{"id":"l7dazo02dcpq1pli45kzw5po","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vestrum solus cohors trucido ad vorax voluptatum.","styles":{}}],"children":[]},{"id":"4mygjrjwhp4cvi7x941wz85b","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conor ullam conculco turpis cui tametsi.","styles":{}}],"children":[]},{"id":"avgoyfos69bvat094q3skvku","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.","styles":{}}],"children":[]}]",
           "displayOrder": 61.84,
           "entityType": "page",
@@ -5074,6 +5099,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "required": true,
               "type": [
                 "object",
+                "null",
+              ],
+            },
+            "deletedAt": {
+              "required": true,
+              "type": [
+                "string",
+                "null",
+              ],
+            },
+            "deletedBy": {
+              "format": "uuid",
+              "required": true,
+              "type": [
+                "string",
                 "null",
               ],
             },
@@ -6744,6 +6784,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "vice.mar",
@@ -6773,6 +6815,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "bah_oof_truthfully.css",
@@ -6870,6 +6914,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -7238,6 +7297,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "ugh_besides.svgz",
@@ -7267,6 +7328,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "instead_volleyball.jpe",
@@ -7364,6 +7427,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -7567,6 +7645,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "ugh_besides.svgz",
@@ -7596,6 +7676,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "convertedKey": null,
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": null,
                     "entityType": "attachment",
                     "filename": "instead_volleyball.jpe",
@@ -7693,6 +7775,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -8165,6 +8262,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "convertedKey": null,
                 "createdAt": "2024-10-12T17:43:05.360Z",
                 "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                "deletedAt": null,
+                "deletedBy": null,
                 "description": null,
                 "entityType": "attachment",
                 "filename": "rightfully_lest_noted.mp3",
@@ -8257,6 +8356,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": true,
                     "type": [
                       "object",
+                      "null",
+                    ],
+                  },
+                  "deletedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deletedBy": {
+                    "format": "uuid",
+                    "required": true,
+                    "type": [
+                      "string",
                       "null",
                     ],
                   },
@@ -8571,6 +8685,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "convertedKey": null,
                 "createdAt": "2024-10-12T17:43:05.360Z",
                 "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                "deletedAt": null,
+                "deletedBy": null,
                 "description": null,
                 "entityType": "attachment",
                 "filename": "rightfully_lest_noted.mp3",
@@ -8663,6 +8779,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": true,
                     "type": [
                       "object",
+                      "null",
+                    ],
+                  },
+                  "deletedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deletedBy": {
+                    "format": "uuid",
+                    "required": true,
+                    "type": [
+                      "string",
                       "null",
                     ],
                   },
@@ -10747,6 +10878,11 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": false,
                           "type": "object",
                         },
+                        "deleteOverflow": {
+                          "itemType": "string",
+                          "required": false,
+                          "type": "array",
+                        },
                         "deletedByType": {
                           "additionalProperties": {
                             "itemType": "string",
@@ -10998,6 +11134,11 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           },
                           "required": false,
                           "type": "object",
+                        },
+                        "deleteOverflow": {
+                          "itemType": "string",
+                          "required": false,
+                          "type": "array",
                         },
                         "deletedByType": {
                           "additionalProperties": {
@@ -14454,12 +14595,11 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     ],
                     "bannerUrl": null,
                     "chatSupport": false,
-                    "color": "#bc1f77",
-                    "country": "Slovakia",
+                    "color": "#dbcbc1",
+                    "country": "Singapore",
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": null,
                     "defaultLanguage": "en",
-                    "description": "Sharable maximized support",
                     "entityType": "organization",
                     "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                     "included": {
@@ -14498,7 +14638,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "slug": "conroy-kerluke-and-rowe",
                     "tenantId": "fyc7n2",
                     "thumbnailUrl": null,
-                    "timezone": "Asia/Kabul",
+                    "timezone": "Asia/Kuala_Lumpur",
                     "updatedAt": "2024-04-19T14:04:35.773Z",
                     "updatedBy": null,
                     "websiteUrl": "https://conroy-kerluke-and-rowe.example",
@@ -14510,12 +14650,11 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     ],
                     "bannerUrl": null,
                     "chatSupport": false,
-                    "color": "#39ae6d",
-                    "country": "Romania",
+                    "color": "#2ad39a",
+                    "country": "Pakistan",
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": null,
                     "defaultLanguage": "en",
-                    "description": "Progressive coherent artificial intelligence",
                     "entityType": "organization",
                     "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                     "included": {
@@ -14554,7 +14693,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "slug": "lemke-bode-and-reichel-klocko",
                     "tenantId": "dwpxxb",
                     "thumbnailUrl": null,
-                    "timezone": "Indian/Reunion",
+                    "timezone": "America/Aruba",
                     "updatedAt": "2024-02-25T13:01:35.301Z",
                     "updatedBy": null,
                     "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
@@ -15159,13 +15298,12 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "passkey",
                     ],
                     "bannerUrl": null,
-                    "chatSupport": false,
-                    "color": "#b6e6ee",
-                    "country": "Portugal",
+                    "chatSupport": true,
+                    "color": "#dfeb6e",
+                    "country": "Bahamas",
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "createdBy": null,
                     "defaultLanguage": "en",
-                    "description": "Business-focused explicit support",
                     "entityType": "organization",
                     "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                     "included": {
@@ -15204,7 +15342,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "slug": "anderson-ferry",
                     "tenantId": "6eo7z7",
                     "thumbnailUrl": null,
-                    "timezone": "Pacific/Efate",
+                    "timezone": "America/Moncton",
                     "updatedAt": "2024-11-21T04:00:59.122Z",
                     "updatedBy": null,
                     "websiteUrl": "https://anderson-ferry.example",
@@ -15215,13 +15353,12 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                       "passkey",
                     ],
                     "bannerUrl": null,
-                    "chatSupport": true,
-                    "color": "#b87a1e",
-                    "country": "Chile",
+                    "chatSupport": false,
+                    "color": "#a3cb87",
+                    "country": "Argentina",
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "createdBy": null,
                     "defaultLanguage": "en",
-                    "description": "Automated responsive portal",
                     "entityType": "organization",
                     "id": "772a771f-c150-465e-9635-46594859fc3d",
                     "included": {
@@ -15260,7 +15397,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "slug": "wiegand-harber-and-stark-abshire",
                     "tenantId": "yzrul7",
                     "thumbnailUrl": null,
-                    "timezone": "Europe/Samara",
+                    "timezone": "Europe/Gibraltar",
                     "updatedAt": "2024-10-29T08:46:20.790Z",
                     "updatedBy": null,
                     "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
@@ -15720,13 +15857,12 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   "passkey",
                 ],
                 "bannerUrl": null,
-                "chatSupport": false,
-                "color": "#6af7b9",
-                "country": "Tajikistan",
+                "chatSupport": true,
+                "color": "#cda6af",
+                "country": "Sweden",
                 "createdAt": "2024-12-25T15:29:47.111Z",
                 "createdBy": null,
                 "defaultLanguage": "en",
-                "description": "Sustainable systematic software",
                 "entityType": "organization",
                 "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                 "included": {
@@ -15765,7 +15901,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "slug": "spencer-pouros-and-bergnaum",
                 "tenantId": "d1lgzb",
                 "thumbnailUrl": null,
-                "timezone": "Antarctica/Syowa",
+                "timezone": "Europe/Vaduz",
                 "updatedAt": "2024-12-25T15:29:47.111Z",
                 "updatedBy": null,
                 "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
@@ -16324,13 +16460,12 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   "passkey",
                 ],
                 "bannerUrl": null,
-                "chatSupport": false,
-                "color": "#6af7b9",
-                "country": "Tajikistan",
+                "chatSupport": true,
+                "color": "#cda6af",
+                "country": "Sweden",
                 "createdAt": "2024-12-25T15:29:47.111Z",
                 "createdBy": null,
                 "defaultLanguage": "en",
-                "description": "Sustainable systematic software",
                 "entityType": "organization",
                 "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                 "included": {
@@ -16369,7 +16504,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                 "slug": "spencer-pouros-and-bergnaum",
                 "tenantId": "d1lgzb",
                 "thumbnailUrl": null,
-                "timezone": "Antarctica/Syowa",
+                "timezone": "Europe/Vaduz",
                 "updatedAt": "2024-12-25T15:29:47.111Z",
                 "updatedBy": null,
                 "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
@@ -16819,6 +16954,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-11-21T04:00:59.122Z",
                     "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"yvjbbm5piweg2q4gqa3vx9cf","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Abduco deduco occaecati cubicularis.","styles":{}}],"children":[]},{"id":"ctrmzc53x7z222ydtq57iu31","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vindico audacia perspiciatis supra derideo chirographum. Rem dolorum magni deleniti quisquam crustulum. Defendo vitae amicitia. Celo pecco denuncio cum abbas.","styles":{}}],"children":[]},{"id":"oaqf10oe7y51pr5lcu4lmdeo","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Profit-focused zero trust benchmark","styles":{}}],"children":[]},{"id":"6fxcwzg7pdsllfn51vpq8cnf","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Stultus consequuntur conitor a peccatus.","styles":{}}],"children":[]},{"id":"ksrox8rpubibp4ljoerjtgyu","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Clibanus temptatio catena depereo comprehendo excepturi vallum tot suadeo.","styles":{}}],"children":[]},{"id":"y8snmw3q0ts7h7wl6gb11wlo","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Soleo crapula defendo anser debitis.","styles":{}}],"children":[]},{"id":"70lcr6a6hpfcpxxlqco70wm7","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Caelum cattus placeat.","styles":{}}],"children":[]},{"id":"pri9cieri2spxog2ydmwz53d","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Abundans delego ambulo usitas cumque ceno cruciamentum doloribus unus.","styles":{}}],"children":[]},{"id":"253gmh22maakkpjiu759cx3h","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Eveniet praesentium tepesco stillicidium supra aedificium blanditiis nulla. Vulpes uberrime aequitas vicinus porro. Debilito peccatus pauci crepusculum.","styles":{}}],"children":[]}]",
                     "displayOrder": 96.89,
                     "entityType": "page",
@@ -16841,6 +16978,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-10-29T08:46:20.790Z",
                     "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"37syiavgc67t5nr6k4huj5qv","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Crapula bestia auxilium non sui desino.","styles":{}}],"children":[]},{"id":"syauxcwuwjsrzvzac8qx1h9s","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Aut concedo vel praesentium universe pecus accusator. Amplus antea concedo sumo repellendus deorsum.","styles":{}}],"children":[]},{"id":"hgvcj0rs3xtuk03gxco9kzp2","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Digitized tangible website","styles":{}}],"children":[]},{"id":"8uzj99km4ainrhsjli4rvg8n","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tergo tenax adiuvo voluptates.","styles":{}}],"children":[]},{"id":"5ee92ta8rpig1rxpmc6pv1fv","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tamquam voluptatum vicinus perferendis molestias aliqua.","styles":{}}],"children":[]},{"id":"11ppu88to0zzdvgboowucm8w","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Acsi umquam voluntarius tyrannus quis peccatus ulciscor tunc corrupti.","styles":{}}],"children":[]},{"id":"e2m08ewazjctj7glz1gzaexz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Eius antepono stabilis similique odio ex abscido dolor.","styles":{}}],"children":[]},{"id":"637rlgzp7mi918d0fjixbcae","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Stultus quod centum deprecator defluo deinde aureus.","styles":{}}],"children":[]},{"id":"lw7armq5i2e6x9rosj7i2yn6","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Absens ater commemoro vulariter vicinus decens eos colligo.","styles":{}}],"children":[]},{"id":"gl1y7io4uobwejsz1uuex7e3","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Avaritia eius cursus.","styles":{}}],"children":[]},{"id":"u9ctrdgg4kaumw3zxhnizc7z","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Temperantia antea cibus deputo paulatim exercitationem censura voco delectatio. Derideo confero deputo triduana surgo claudeo acer hic commodo voluptas. Necessitatibus tutamen corrigo suppellex capio copia aufero corrupti canis copiose.\\nCrur somniculosus sum ventito dolorem bestia vobis comptus fugiat. Testimonium assumenda fugit cunabula. Iusto comburo coruscus appositus cum talus candidus conicio venustas aequitas.","styles":{}}],"children":[]}]",
                     "displayOrder": 67.77,
                     "entityType": "page",
@@ -16909,6 +17048,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -17191,6 +17345,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"0p6kfz7rauzy6zwhhoizpinj","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Atavus tergiversatio tersus suadeo colo benigne id.","styles":{}}],"children":[]},{"id":"ne3h55lgj31d63n9apx99a5a","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cilicium textilis cervus alo tactus. Colligo audio substantia coepi laudantium. Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"5cyj5s37irnjjhhc4mupuqz0","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Stand-alone systemic process improvement","styles":{}}],"children":[]},{"id":"xm36um7v2n0dmwpblyotm2bb","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Quas sollers vivo caritas ventosus creptio occaecati advoco.","styles":{}}],"children":[]},{"id":"9cersdww4bfs8s5tco33lcgs","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amplitudo altus caput defleo.","styles":{}}],"children":[]},{"id":"rwsv2ecfgeerhda905bt3n6v","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cernuus apostolus convoco stultus templum ago urbs torqueo.","styles":{}}],"children":[]},{"id":"ihgxgoyl7ocb37kjsew1md90","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Itaque territo decet commodi succedo vapulus ut. Delibero stillicidium consuasor vetus nostrum conculco clibanus barba rerum admiratio. Triduana in subvenio curis cilicium.","styles":{}}],"children":[]},{"id":"9rjbqpuyaty5hb1zfo81varo","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adamo cunae aufero via hic vix.","styles":{}}],"children":[]},{"id":"uwkn7st6anzhmosdcr56zljv","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Umerus ademptio amet bardus peior libero.","styles":{}}],"children":[]},{"id":"lt8pyofk8kpwlvc29mx4klcd","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Calcar amissio complectus absorbeo.","styles":{}}],"children":[]},{"id":"7i7bpsljy61q7zd9iyy206g5","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cariosus cubitum arguo turbo demum avaritia pax aduro. Minus volutabrum brevis aeneus acceptus aggredior. Cinis bibo abduco adeptio.\\nSpeculum alienus ulterius tamen una depraedor curtus. Aeternus vulnero textilis teneo patria denuo conscendo teneo spectaculum modi. Summopere commodo dolorem minima validus sed.","styles":{}}],"children":[]}]",
                     "displayOrder": 4.18,
                     "entityType": "page",
@@ -17213,6 +17369,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"8wbwob9s8r85nah671ybl6y4","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Curvo perspiciatis defendo adinventitias.","styles":{}}],"children":[]},{"id":"wztvbcy21q04oq81k5rbzt4y","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vulnus subseco vomica auxilium ascit cuppedia abbas amo patior credo. Aestus degero cicuta aranea approbo depraedor inventore cervus adversus. Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"pob5r5tp1lpahn69ym92qh3r","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Realigned composite architecture","styles":{}}],"children":[]},{"id":"zr0yjbednvd5gs836nelud6h","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus una audio aufero abscido sordeo.","styles":{}}],"children":[]},{"id":"m8827w318qwfuflmp0ndq9u5","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Accusamus enim cunabula combibo curtus trucido.","styles":{}}],"children":[]},{"id":"qmuo72edxo1kgq21dhh7cq7p","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"A voveo vito.","styles":{}}],"children":[]},{"id":"ul9qu68s7bk6yiz04y97bwd5","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Carbo cohaero ultra cupressus casus.","styles":{}}],"children":[]},{"id":"3i7o7kdrafg5eczfdkp6l22j","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Crur curia absum molestiae terga carbo colligo amita. Incidunt audio comitatus.","styles":{}}],"children":[]},{"id":"6rkct63zbj5vosl8hdyhcuvu","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.","styles":{}}],"children":[]},{"id":"vu46fy30q4ioqervg3e3hp1p","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Clibanus audax vinculum verbum cubo.","styles":{}}],"children":[]},{"id":"e3sgwqgzn5g4nl3n1hygl6gf","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Averto eveniet appono coadunatio id comitatus statua molestias.","styles":{}}],"children":[]},{"id":"t9cc4m0m3pcjsymzo23ke5u9","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Natus vox cibo virtus arma ipsam. Solutio ab absens depono peior. Accusamus adamo theologus ventosus avarus contra acsi doloremque volutabrum eveniet.","styles":{}}],"children":[]}]",
                     "displayOrder": 26.25,
                     "entityType": "page",
@@ -17281,6 +17439,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -17469,6 +17642,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-04-19T14:04:35.773Z",
                     "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"0p6kfz7rauzy6zwhhoizpinj","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Atavus tergiversatio tersus suadeo colo benigne id.","styles":{}}],"children":[]},{"id":"ne3h55lgj31d63n9apx99a5a","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cilicium textilis cervus alo tactus. Colligo audio substantia coepi laudantium. Apparatus suasoria valde voveo quis adaugeo.","styles":{}}],"children":[]},{"id":"5cyj5s37irnjjhhc4mupuqz0","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Stand-alone systemic process improvement","styles":{}}],"children":[]},{"id":"xm36um7v2n0dmwpblyotm2bb","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Quas sollers vivo caritas ventosus creptio occaecati advoco.","styles":{}}],"children":[]},{"id":"9cersdww4bfs8s5tco33lcgs","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Amplitudo altus caput defleo.","styles":{}}],"children":[]},{"id":"rwsv2ecfgeerhda905bt3n6v","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cernuus apostolus convoco stultus templum ago urbs torqueo.","styles":{}}],"children":[]},{"id":"ihgxgoyl7ocb37kjsew1md90","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Itaque territo decet commodi succedo vapulus ut. Delibero stillicidium consuasor vetus nostrum conculco clibanus barba rerum admiratio. Triduana in subvenio curis cilicium.","styles":{}}],"children":[]},{"id":"9rjbqpuyaty5hb1zfo81varo","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adamo cunae aufero via hic vix.","styles":{}}],"children":[]},{"id":"uwkn7st6anzhmosdcr56zljv","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Umerus ademptio amet bardus peior libero.","styles":{}}],"children":[]},{"id":"lt8pyofk8kpwlvc29mx4klcd","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Calcar amissio complectus absorbeo.","styles":{}}],"children":[]},{"id":"7i7bpsljy61q7zd9iyy206g5","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cariosus cubitum arguo turbo demum avaritia pax aduro. Minus volutabrum brevis aeneus acceptus aggredior. Cinis bibo abduco adeptio.\\nSpeculum alienus ulterius tamen una depraedor curtus. Aeternus vulnero textilis teneo patria denuo conscendo teneo spectaculum modi. Summopere commodo dolorem minima validus sed.","styles":{}}],"children":[]}]",
                     "displayOrder": 4.18,
                     "entityType": "page",
@@ -17491,6 +17666,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                   {
                     "createdAt": "2024-02-25T13:01:35.301Z",
                     "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                    "deletedAt": null,
+                    "deletedBy": null,
                     "description": "[{"id":"8wbwob9s8r85nah671ybl6y4","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Curvo perspiciatis defendo adinventitias.","styles":{}}],"children":[]},{"id":"wztvbcy21q04oq81k5rbzt4y","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vulnus subseco vomica auxilium ascit cuppedia abbas amo patior credo. Aestus degero cicuta aranea approbo depraedor inventore cervus adversus. Vos tendo avaritia utrum admoneo desino tres subiungo conqueror cavus.","styles":{}}],"children":[]},{"id":"pob5r5tp1lpahn69ym92qh3r","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"Realigned composite architecture","styles":{}}],"children":[]},{"id":"zr0yjbednvd5gs836nelud6h","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Cupressus una audio aufero abscido sordeo.","styles":{}}],"children":[]},{"id":"m8827w318qwfuflmp0ndq9u5","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Accusamus enim cunabula combibo curtus trucido.","styles":{}}],"children":[]},{"id":"qmuo72edxo1kgq21dhh7cq7p","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"A voveo vito.","styles":{}}],"children":[]},{"id":"ul9qu68s7bk6yiz04y97bwd5","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Carbo cohaero ultra cupressus casus.","styles":{}}],"children":[]},{"id":"3i7o7kdrafg5eczfdkp6l22j","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Crur curia absum molestiae terga carbo colligo amita. Incidunt audio comitatus.","styles":{}}],"children":[]},{"id":"6rkct63zbj5vosl8hdyhcuvu","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vinitor charisma cimentarius tubineus comminor temporibus conturbo vorago.","styles":{}}],"children":[]},{"id":"vu46fy30q4ioqervg3e3hp1p","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Clibanus audax vinculum verbum cubo.","styles":{}}],"children":[]},{"id":"e3sgwqgzn5g4nl3n1hygl6gf","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Averto eveniet appono coadunatio id comitatus statua molestias.","styles":{}}],"children":[]},{"id":"t9cc4m0m3pcjsymzo23ke5u9","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Natus vox cibo virtus arma ipsam. Solutio ab absens depono peior. Accusamus adamo theologus ventosus avarus contra acsi doloremque volutabrum eveniet.","styles":{}}],"children":[]}]",
                     "displayOrder": 26.25,
                     "entityType": "page",
@@ -17559,6 +17736,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                           "required": true,
                           "type": [
                             "object",
+                            "null",
+                          ],
+                        },
+                        "deletedAt": {
+                          "required": true,
+                          "type": [
+                            "string",
+                            "null",
+                          ],
+                        },
+                        "deletedBy": {
+                          "format": "uuid",
+                          "required": true,
+                          "type": [
+                            "string",
                             "null",
                           ],
                         },
@@ -17910,6 +18102,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+                "deletedAt": null,
+                "deletedBy": null,
                 "description": "[{"id":"wv1pvo6ikw8yaifq40mapyzk","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Pecco vulticulus cunctatio dolorum.","styles":{}}],"children":[]},{"id":"xwx21e333ngqujcbpukfple6","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"h3tnk9zpovjd1ic979l5apjd","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"AI-driven optimal concept","styles":{}}],"children":[]},{"id":"fixisx6z8hucvnngw4r6gjfz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.","styles":{}}],"children":[]},{"id":"tcsht8b45feprfkhrd8bblxz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Animadverto maxime theatrum esse amo statua adfectus.","styles":{}}],"children":[]},{"id":"zubypddo8vfjx4d5px26kw7k","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.","styles":{}}],"children":[]},{"id":"q8bqakccdhvdb8s40m4i46ag","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adiuvo brevis conturbo alveus ver ait deserunt decet.","styles":{}}],"children":[]},{"id":"l7dazo02dcpq1pli45kzw5po","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vestrum solus cohors trucido ad vorax voluptatum.","styles":{}}],"children":[]},{"id":"4mygjrjwhp4cvi7x941wz85b","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conor ullam conculco turpis cui tametsi.","styles":{}}],"children":[]},{"id":"avgoyfos69bvat094q3skvku","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.","styles":{}}],"children":[]}]",
                 "displayOrder": 61.84,
                 "entityType": "page",
@@ -17973,6 +18167,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": true,
                     "type": [
                       "object",
+                      "null",
+                    ],
+                  },
+                  "deletedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deletedBy": {
+                    "format": "uuid",
+                    "required": true,
+                    "type": [
+                      "string",
                       "null",
                     ],
                   },
@@ -18309,6 +18518,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
               "example": {
                 "createdAt": "2024-08-06T10:28:33.226Z",
                 "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+                "deletedAt": null,
+                "deletedBy": null,
                 "description": "[{"id":"wv1pvo6ikw8yaifq40mapyzk","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":2},"content":[{"type":"text","text":"Pecco vulticulus cunctatio dolorum.","styles":{}}],"children":[]},{"id":"xwx21e333ngqujcbpukfple6","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.","styles":{}}],"children":[]},{"id":"h3tnk9zpovjd1ic979l5apjd","type":"heading","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left","level":3},"content":[{"type":"text","text":"AI-driven optimal concept","styles":{}}],"children":[]},{"id":"fixisx6z8hucvnngw4r6gjfz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.","styles":{}}],"children":[]},{"id":"tcsht8b45feprfkhrd8bblxz","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Animadverto maxime theatrum esse amo statua adfectus.","styles":{}}],"children":[]},{"id":"zubypddo8vfjx4d5px26kw7k","type":"bulletListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.","styles":{}}],"children":[]},{"id":"q8bqakccdhvdb8s40m4i46ag","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Adiuvo brevis conturbo alveus ver ait deserunt decet.","styles":{}}],"children":[]},{"id":"l7dazo02dcpq1pli45kzw5po","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Vestrum solus cohors trucido ad vorax voluptatum.","styles":{}}],"children":[]},{"id":"4mygjrjwhp4cvi7x941wz85b","type":"numberedListItem","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Conor ullam conculco turpis cui tametsi.","styles":{}}],"children":[]},{"id":"avgoyfos69bvat094q3skvku","type":"paragraph","props":{"textColor":"default","backgroundColor":"default","textAlignment":"left"},"content":[{"type":"text","text":"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.","styles":{}}],"children":[]}]",
                 "displayOrder": 61.84,
                 "entityType": "page",
@@ -18372,6 +18583,21 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": true,
                     "type": [
                       "object",
+                      "null",
+                    ],
+                  },
+                  "deletedAt": {
+                    "required": true,
+                    "type": [
+                      "string",
+                      "null",
+                    ],
+                  },
+                  "deletedBy": {
+                    "format": "uuid",
+                    "required": true,
+                    "type": [
+                      "string",
                       "null",
                     ],
                   },

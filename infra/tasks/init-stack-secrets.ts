@@ -48,14 +48,15 @@ export type Spec =
 /**
  * Declarative table of stack values to populate. Order is log order only.
  *
- * DB passwords are deliberately absent: they auto-generate as
- * `random.RandomPassword` resources in Pulumi state (resources/database.ts),
- * not in stack config (SOVRUN §3.3 — "materialized, not stored"). The only
- * value a fresh stack needs seeded here is the non-secret Scaleway project id.
+ * Currently empty: nothing needs seeding into stack config. DB passwords
+ * auto-generate as `random.RandomPassword` resources in Pulumi state
+ * (resources/database.ts), and the Scaleway project id is injected from the
+ * environment (`SCW_DEFAULT_PROJECT_ID`, read natively by the provider and by
+ * pulumi-context.ts) — never stored in stack config (SOVRUN §3.3 —
+ * "materialized, not stored"). The table is retained as the extension point for
+ * any future fork-seeded value, guarded by the snapshot test.
  */
-export const specs: Spec[] = [
-  { key: 'scaleway:projectId',      label: 'Scaleway project ID',from: 'env', envName: 'SCW_PROJECT_ID', secret: false },
-]
+export const specs: Spec[] = []
 
 export function main(stackArg = process.argv[2] ?? process.env.STACK): void {
   if (specs.every((spec) => hasConfig(spec.key, stackArg))) {

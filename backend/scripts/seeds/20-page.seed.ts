@@ -1,9 +1,9 @@
 import type { SeedScript } from '../types';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { seedDb } from '#/db/db';
-import { pagesTable } from '#/db/schema/pages';
-import { mockPage } from '../../mocks/mock-page';
-import { mockMany, setMockContext } from '../../mocks/utils';
+import { pagesTable } from '#/modules/page/page-db';
+import { mockPage } from '#/modules/page/page-mocks';
+import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use admin connection for privileged operations

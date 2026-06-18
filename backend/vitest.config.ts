@@ -18,7 +18,7 @@ import { testDatabaseUrl } from '../test-db-config';
 
 const testMode = process.env.TEST_MODE || 'core';
 
-const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts', 'mocks/**/*.test.ts'];
+const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts'];
 const excludePatterns = ['**/node_modules/**'];
 if (testMode === 'core') excludePatterns.push('tests/integration/**');
 

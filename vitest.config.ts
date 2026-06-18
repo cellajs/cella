@@ -15,6 +15,7 @@ const coverageReporters =
  * ```bash
  * pnpm vitest                     # Run all package tests
  * pnpm vitest --project=backend   # Run only backend tests
+ * pnpm vitest --project=cella      # Run only the CLI package tests
  * pnpm vitest run --coverage      # Run all tests with merged coverage
  * ```
  *
@@ -22,8 +23,11 @@ const coverageReporters =
  */
 export default defineConfig({
   test: {
+    passWithNoTests: true,
     projects: [
       'backend',
+      'bench',
+      'cli/cella',
       'shared',
       'yjs',
       'cdc',
@@ -37,6 +41,8 @@ export default defineConfig({
       reporter: coverageReporters,
       include: [
         'backend/src/**/*.ts',
+        'bench/src/**/*.ts',
+        'cli/cella/src/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',
@@ -50,6 +56,7 @@ export default defineConfig({
         '**/*.{test,spec}.ts',
         '**/tests/**',
         '**/mocks/**',
+        '**/*-mocks.ts',
         '**/scripts/**',
         'sdk/gen/**',
       ],

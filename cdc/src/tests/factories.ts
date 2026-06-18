@@ -1,5 +1,5 @@
-import { mockActivity } from '../../../backend/mocks/mock-activity';
-import type { InsertActivityModel } from '#/db/schema/activities';
+import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent, EntityTableMeta, ResourceTableMeta } from '../types';
 import type { BatchEventInfo } from '../services/activity-service';

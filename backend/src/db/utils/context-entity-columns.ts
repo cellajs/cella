@@ -1,8 +1,8 @@
 import { uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ContextEntityType } from 'shared';
-import { usersTable } from '#/db/schema/users';
 import { maxLength } from '#/db/utils/constraints';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
+import { usersTable } from '#/modules/user/user-db';
 
 /**
  * Creates base columns shared by all context entities.

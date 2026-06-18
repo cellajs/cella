@@ -2,9 +2,9 @@ import { getTableName } from 'drizzle-orm';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
 import { entityTables } from '#/tables';
-import { inactiveMembershipsTable } from '#/db/schema/inactive-memberships';
-import { membershipsTable } from '#/db/schema/memberships';
-import { yjsDocumentsTable } from '#/db/schema/yjs-documents';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import { logMigrationResult, upsertMigration } from './helpers/drizzle-utils';
 import type { GenerateScript } from '../types';
 

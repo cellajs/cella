@@ -3,6 +3,7 @@ import { createXRoute } from '#/core/x-routes';
 import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
+import { mockUserResponse } from '#/modules/user/user-mocks';
 import {
   batchResponseSchema,
   booleanTransformSchema,
@@ -10,9 +11,8 @@ import {
   errorResponseRefs,
   idsBodySchema,
 } from '#/schemas';
-import { mockSystemInviteResponse } from '../../../mocks/mock-system';
-import { mockUserResponse } from '../../../mocks/mock-user';
 import { userSchema, userUpdateBodySchema } from '../user/user-schema';
+import { mockSystemInviteResponse } from './system-mocks';
 
 const systemRoutes = {
   /**

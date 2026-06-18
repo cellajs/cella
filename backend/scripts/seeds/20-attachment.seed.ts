@@ -3,9 +3,9 @@ import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { seedDb } from '#/db/db';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { organizationsTable } from '#/db/schema/organizations';
-import { mockStx, mockUuid, setMockContext, withFakerSeed } from '../../mocks/utils';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use admin connection for privileged operations

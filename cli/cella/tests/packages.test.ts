@@ -83,7 +83,7 @@ describe('packages merge', () => {
       overrides: { pinnedFiles: [], ignoredFolders: [] },
       forkPath,
       upstreamRef: 'cella-upstream/main',
-      service: 'packages',
+      service: 'sync',
       logFile: false,
       list: false,
       json: false,

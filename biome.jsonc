@@ -3,7 +3,6 @@
     "includes": [
       "backend/src/**",
       "backend/tests/**",
-      "backend/mocks/**",
       "backend/emails/**",
       "frontend/src/**",
       "!frontend/src/routes/routeTree.gen.ts",
@@ -14,6 +13,8 @@
       "cli/create-cella/src/**",
       "cli/create-cella/tests/**",
       "packages/data-grid/src/**",
+      "bench/src/**",
+      "!bench/src/**/dist",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
@@ -191,7 +192,7 @@
       }
     },
     {
-      "includes": ["backend/src/**", "backend/mocks/**", "backend/emails/**"],
+      "includes": ["backend/src/**", "backend/emails/**"],
       "linter": {
         "rules": {
           "style": {

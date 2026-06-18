@@ -3,7 +3,7 @@
 # Each VU loops 15 times, fetching /me + /me/memberships + /organizations.
 # Steps up: 40 → 50 → 60 arrivals/s (~2700 req/s peak).
 config:
-  target: "http://localhost:4000"
+  target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/auth.ts"
   phases:
     - duration: 10

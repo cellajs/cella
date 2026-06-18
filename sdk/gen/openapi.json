@@ -118,6 +118,13 @@
         "description": "Tool registration metadata for AI and MCP integrations",
         "required": false,
         "kind": "metadata"
+      },
+      {
+        "key": "x-feature",
+        "id": "x-feature",
+        "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
+        "required": false,
+        "kind": "metadata"
       }
     ]
   },
@@ -717,7 +724,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Entity IDs in a delete batch"
+            "description": "Entity IDs in a legacy hard-delete batch"
           },
           "propagation": {
             "type": ["object", "null"],
@@ -1823,21 +1830,20 @@
           "entityType": "organization",
           "name": "Spencer, Pouros and Bergnaum",
           "slug": "spencer-pouros-and-bergnaum",
-          "description": "Sustainable systematic software",
           "shortName": "Spencer,",
-          "country": "Tajikistan",
-          "timezone": "Antarctica/Syowa",
+          "country": "Sweden",
+          "timezone": "Europe/Vaduz",
           "defaultLanguage": "en",
           "languages": ["en"],
           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-          "color": "#6af7b9",
+          "color": "#cda6af",
           "thumbnailUrl": null,
-          "logoUrl": null,
           "bannerUrl": null,
+          "logoUrl": null,
           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "authStrategies": ["passkey"],
-          "chatSupport": false,
+          "chatSupport": true,
           "createdAt": "2024-12-25T15:29:47.111Z",
           "createdBy": null,
           "updatedAt": "2024-12-25T15:29:47.111Z",
@@ -1923,6 +1929,13 @@
               }
             ]
           },
+          "deletedAt": {
+            "type": ["string", "null"]
+          },
+          "deletedBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
           "seq": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -1960,6 +1973,8 @@
           "keywords",
           "createdBy",
           "updatedBy",
+          "deletedAt",
+          "deletedBy",
           "seq",
           "status",
           "renderMode",
@@ -1983,6 +1998,8 @@
           "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
           "updatedAt": "2024-08-06T10:28:33.226Z",
           "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+          "deletedAt": null,
+          "deletedBy": null,
           "seq": 434,
           "stx": {
             "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
@@ -2047,6 +2064,13 @@
                 "type": ["object", "null"]
               }
             ]
+          },
+          "deletedAt": {
+            "type": ["string", "null"]
+          },
+          "deletedBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
           },
           "seq": {
             "type": "integer",
@@ -2113,6 +2137,8 @@
           "keywords",
           "createdBy",
           "updatedBy",
+          "deletedAt",
+          "deletedBy",
           "seq",
           "public",
           "bucketName",
@@ -2148,6 +2174,8 @@
           "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
           "updatedAt": "2024-10-12T17:43:05.360Z",
           "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
           "seq": 123,
           "stx": {
             "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -4789,6 +4817,12 @@
                               }
                             }
                           },
+                          "deleteOverflow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
                           "entitySeqs": {
                             "type": "object",
                             "additionalProperties": {
@@ -4995,6 +5029,12 @@
                               "items": {
                                 "type": "string"
                               }
+                            }
+                          },
+                          "deleteOverflow": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "entitySeqs": {
@@ -6901,21 +6941,20 @@
                           "entityType": "organization",
                           "name": "Spencer, Pouros and Bergnaum",
                           "slug": "spencer-pouros-and-bergnaum",
-                          "description": "Sustainable systematic software",
                           "shortName": "Spencer,",
-                          "country": "Tajikistan",
-                          "timezone": "Antarctica/Syowa",
+                          "country": "Sweden",
+                          "timezone": "Europe/Vaduz",
                           "defaultLanguage": "en",
                           "languages": ["en"],
                           "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                          "color": "#6af7b9",
+                          "color": "#cda6af",
                           "thumbnailUrl": null,
-                          "logoUrl": null,
                           "bannerUrl": null,
+                          "logoUrl": null,
                           "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                           "authStrategies": ["passkey"],
-                          "chatSupport": false,
+                          "chatSupport": true,
                           "createdAt": "2024-12-25T15:29:47.111Z",
                           "createdBy": null,
                           "updatedAt": "2024-12-25T15:29:47.111Z",
@@ -6978,17 +7017,16 @@
                       "entityType": "organization",
                       "name": "Conroy, Kerluke and Rowe",
                       "slug": "conroy-kerluke-and-rowe",
-                      "description": "Sharable maximized support",
                       "shortName": "Conroy,",
-                      "country": "Slovakia",
-                      "timezone": "Asia/Kabul",
+                      "country": "Singapore",
+                      "timezone": "Asia/Kuala_Lumpur",
                       "defaultLanguage": "en",
                       "languages": ["en"],
                       "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
-                      "color": "#bc1f77",
+                      "color": "#dbcbc1",
                       "thumbnailUrl": null,
-                      "logoUrl": null,
                       "bannerUrl": null,
+                      "logoUrl": null,
                       "websiteUrl": "https://conroy-kerluke-and-rowe.example",
                       "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
                       "authStrategies": ["passkey"],
@@ -7030,17 +7068,16 @@
                       "entityType": "organization",
                       "name": "Lemke, Bode and Reichel-Klocko",
                       "slug": "lemke-bode-and-reichel-klocko",
-                      "description": "Progressive coherent artificial intelligence",
                       "shortName": "Lemke,",
-                      "country": "Romania",
-                      "timezone": "Indian/Reunion",
+                      "country": "Pakistan",
+                      "timezone": "America/Aruba",
                       "defaultLanguage": "en",
                       "languages": ["en"],
                       "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
-                      "color": "#39ae6d",
+                      "color": "#2ad39a",
                       "thumbnailUrl": null,
-                      "logoUrl": null,
                       "bannerUrl": null,
+                      "logoUrl": null,
                       "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
                       "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
                       "authStrategies": ["passkey"],
@@ -7335,21 +7372,20 @@
                       "entityType": "organization",
                       "name": "Anderson - Ferry",
                       "slug": "anderson-ferry",
-                      "description": "Business-focused explicit support",
                       "shortName": "Anderson",
-                      "country": "Portugal",
-                      "timezone": "Pacific/Efate",
+                      "country": "Bahamas",
+                      "timezone": "America/Moncton",
                       "defaultLanguage": "en",
                       "languages": ["en"],
                       "notificationEmail": "notifications@anderson-ferry.example",
-                      "color": "#b6e6ee",
+                      "color": "#dfeb6e",
                       "thumbnailUrl": null,
-                      "logoUrl": null,
                       "bannerUrl": null,
+                      "logoUrl": null,
                       "websiteUrl": "https://anderson-ferry.example",
                       "welcomeText": "Welcome to Anderson - Ferry!",
                       "authStrategies": ["passkey"],
-                      "chatSupport": false,
+                      "chatSupport": true,
                       "createdAt": "2024-11-21T04:00:59.122Z",
                       "createdBy": null,
                       "updatedAt": "2024-11-21T04:00:59.122Z",
@@ -7387,21 +7423,20 @@
                       "entityType": "organization",
                       "name": "Wiegand, Harber and Stark-Abshire",
                       "slug": "wiegand-harber-and-stark-abshire",
-                      "description": "Automated responsive portal",
                       "shortName": "Wiegand,",
-                      "country": "Chile",
-                      "timezone": "Europe/Samara",
+                      "country": "Argentina",
+                      "timezone": "Europe/Gibraltar",
                       "defaultLanguage": "en",
                       "languages": ["en"],
                       "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
-                      "color": "#b87a1e",
+                      "color": "#a3cb87",
                       "thumbnailUrl": null,
-                      "logoUrl": null,
                       "bannerUrl": null,
+                      "logoUrl": null,
                       "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
                       "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
                       "authStrategies": ["passkey"],
-                      "chatSupport": true,
+                      "chatSupport": false,
                       "createdAt": "2024-10-29T08:46:20.790Z",
                       "createdBy": null,
                       "updatedAt": "2024-10-29T08:46:20.790Z",
@@ -7532,21 +7567,20 @@
                   "entityType": "organization",
                   "name": "Spencer, Pouros and Bergnaum",
                   "slug": "spencer-pouros-and-bergnaum",
-                  "description": "Sustainable systematic software",
                   "shortName": "Spencer,",
-                  "country": "Tajikistan",
-                  "timezone": "Antarctica/Syowa",
+                  "country": "Sweden",
+                  "timezone": "Europe/Vaduz",
                   "defaultLanguage": "en",
                   "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                  "color": "#6af7b9",
+                  "color": "#cda6af",
                   "thumbnailUrl": null,
-                  "logoUrl": null,
                   "bannerUrl": null,
+                  "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "authStrategies": ["passkey"],
-                  "chatSupport": false,
+                  "chatSupport": true,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
                   "updatedAt": "2024-12-25T15:29:47.111Z",
@@ -7735,21 +7769,20 @@
                   "entityType": "organization",
                   "name": "Spencer, Pouros and Bergnaum",
                   "slug": "spencer-pouros-and-bergnaum",
-                  "description": "Sustainable systematic software",
                   "shortName": "Spencer,",
-                  "country": "Tajikistan",
-                  "timezone": "Antarctica/Syowa",
+                  "country": "Sweden",
+                  "timezone": "Europe/Vaduz",
                   "defaultLanguage": "en",
                   "languages": ["en"],
                   "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                  "color": "#6af7b9",
+                  "color": "#cda6af",
                   "thumbnailUrl": null,
-                  "logoUrl": null,
                   "bannerUrl": null,
+                  "logoUrl": null,
                   "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
                   "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
                   "authStrategies": ["passkey"],
-                  "chatSupport": false,
+                  "chatSupport": true,
                   "createdAt": "2024-12-25T15:29:47.111Z",
                   "createdBy": null,
                   "updatedAt": "2024-12-25T15:29:47.111Z",
@@ -7907,6 +7940,8 @@
                       "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "updatedAt": "2024-11-21T04:00:59.122Z",
                       "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 70,
                       "stx": {
                         "mutationId": "33d93722-16e3-4bb6-a635-cb683b8d1178",
@@ -7929,6 +7964,8 @@
                       "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
                       "updatedAt": "2024-10-29T08:46:20.790Z",
                       "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 434,
                       "stx": {
                         "mutationId": "6de3dc39-c7df-4e4d-89ce-e4a79db6b476",
@@ -8058,6 +8095,8 @@
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-19T14:04:35.773Z",
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 240,
                       "stx": {
                         "mutationId": "5224e9f7-ead1-401d-aa1d-b35dcdd3518e",
@@ -8080,6 +8119,8 @@
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-25T13:01:35.301Z",
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 282,
                       "stx": {
                         "mutationId": "c7322a76-df22-42ce-a572-2149f37040f3",
@@ -8143,6 +8184,8 @@
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-19T14:04:35.773Z",
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 240,
                       "stx": {
                         "mutationId": "5224e9f7-ead1-401d-aa1d-b35dcdd3518e",
@@ -8165,6 +8208,8 @@
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-25T13:01:35.301Z",
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 282,
                       "stx": {
                         "mutationId": "c7322a76-df22-42ce-a572-2149f37040f3",
@@ -8343,6 +8388,8 @@
                   "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
                   "updatedAt": "2024-08-06T10:28:33.226Z",
                   "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+                  "deletedAt": null,
+                  "deletedBy": null,
                   "seq": 434,
                   "stx": {
                     "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
@@ -8485,6 +8532,8 @@
                   "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
                   "updatedAt": "2024-08-06T10:28:33.226Z",
                   "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+                  "deletedAt": null,
+                  "deletedBy": null,
                   "seq": 434,
                   "stx": {
                     "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
@@ -8998,6 +9047,8 @@
                       "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "updatedAt": "2024-11-21T04:00:59.122Z",
                       "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 318,
                       "stx": {
                         "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
@@ -9027,6 +9078,8 @@
                       "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
                       "updatedAt": "2024-10-29T08:46:20.790Z",
                       "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 447,
                       "stx": {
                         "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
@@ -9219,6 +9272,8 @@
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-19T14:04:35.773Z",
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 348,
                       "stx": {
                         "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -9248,6 +9303,8 @@
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-25T13:01:35.301Z",
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 276,
                       "stx": {
                         "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -9318,6 +9375,8 @@
                       "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "updatedAt": "2024-04-19T14:04:35.773Z",
                       "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 348,
                       "stx": {
                         "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
@@ -9347,6 +9406,8 @@
                       "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "updatedAt": "2024-02-25T13:01:35.301Z",
                       "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "deletedAt": null,
+                      "deletedBy": null,
                       "seq": 276,
                       "stx": {
                         "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
@@ -9650,6 +9711,8 @@
                   "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "updatedAt": "2024-10-12T17:43:05.360Z",
                   "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                  "deletedAt": null,
+                  "deletedBy": null,
                   "seq": 123,
                   "stx": {
                     "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -9796,6 +9859,8 @@
                   "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
                   "updatedAt": "2024-10-12T17:43:05.360Z",
                   "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+                  "deletedAt": null,
+                  "deletedBy": null,
                   "seq": 123,
                   "stx": {
                     "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
@@ -10892,6 +10957,7 @@
             "cookieAuth": []
           }
         ],
+        "x-feature": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
@@ -10973,6 +11039,7 @@
             "cookieAuth": []
           }
         ],
+        "x-feature": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "verifyYjsEntity",
         "summary": "Verify Yjs entity access",
@@ -11034,6 +11101,79 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/mcp": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "x-feature": "ai",
+        "operationId": "handleMcp",
+        "tags": ["ai", "cella"],
+        "summary": "MCP endpoint",
+        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
           }
         }
       }

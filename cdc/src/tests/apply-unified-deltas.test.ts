@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { UnifiedDeltaPlan, BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { InsertActivityModel } from '#/db/schema/activities';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import type { EntityTableMeta } from '../types';
 
 // Track all DB operations for assertions

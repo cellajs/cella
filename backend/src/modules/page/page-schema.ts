@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createUpdateSchema } from '#/core/stx';
-import { pagesTable } from '#/db/schema/pages';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { pagesTable } from '#/modules/page/page-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockPageResponse } from '../../../mocks/mock-page';
+import { mockPageResponse } from './page-mocks';
 
 /** Page status enum - matches pages table status column */
 const pageStatusSchema = z.enum(['unpublished', 'published', 'archived']);

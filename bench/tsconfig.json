@@ -1,17 +1,21 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "resolveJsonModule": true,
+    "rootDir": "..",
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "lib": ["es2022"],
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/",
+    "skipLibCheck": true,
+    "paths": {
+      "#/*": ["../backend/src/*"],
+      "#json/*": ["../json/*"]
+    }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }

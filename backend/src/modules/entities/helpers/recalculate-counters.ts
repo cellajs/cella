@@ -1,8 +1,8 @@
 import { getTableName, sql } from 'drizzle-orm';
 import { appConfig, type EntityType, hierarchy, isProductEntity, roles } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { productCountersTable } from '#/db/schema/product-counters';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { getEntityTable } from '#/tables';
 
 // ── SQL builder helpers ─────────────────────────────────────────────────

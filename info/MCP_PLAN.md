@@ -61,7 +61,9 @@ Already implemented (the `ai`/`agent` split):
 
 Known gaps (the subject of this plan):
 
-1. MCP auth is **cookie/session only** — fine for the in-browser app, not for external MCP clients.
+1. MCP auth is **cookie/session only** — fine for the in-browser app, not for external MCP clients. The
+   server already advertises MCP protocol `2025-06-18` (an OAuth 2.1 Resource Server model) but ships no
+   token validation or OAuth discovery.
 2. Tools must be hand-written in `buildTools`; the `x-tool` route metadata is inert.
 3. No transport beyond single-shot JSON-RPC over POST (no streaming/SSE, no `resources`/`prompts`).
 4. No per-tool authorization, rate limiting, audit, or approval flow for write tools.
@@ -85,26 +87,64 @@ Known gaps (the subject of this plan):
 
 **Problem:** external MCP clients (Claude Desktop, IDEs, agents) can't present a browser session cookie.
 
-**Approach:** add a bearer-token auth path that resolves to the same `AuthContext` the guards produce,
-without weakening the in-app cookie path.
+**Framing — the MCP server is an OAuth 2.1 *Resource Server*, not a token issuer.** The MCP
+authorization spec the server already targets (`PROTOCOL_VERSION = '2025-06-18'` in
+[../backend/src/modules/ai/mcp/mcp-server.ts](../backend/src/modules/ai/mcp/mcp-server.ts)) deliberately
+split the roles: the MCP server *validates* tokens and points clients at a separate Authorization
+Server (AS) — it does **not** mint OAuth tokens, run consent screens, or implement an AS. The spec
+leans on existing RFCs: protected-resource metadata (RFC 9728), AS metadata (RFC 8414), dynamic client
+registration (RFC 7591), audience-bound tokens (RFC 8707), and OAuth 2.1 + PKCE. Cella today is an
+OAuth *client/relying party* ([../backend/src/modules/auth/oauth/oauth-handlers.ts](../backend/src/modules/auth/oauth/oauth-handlers.ts)),
+**not** an issuer; becoming a full AS is a large, security-sensitive build we explicitly avoid in core.
 
-- Introduce an `mcp_access` token type (reuse the existing `tokensTable` +
-  `appConfig.tokenTypes`; tokens are hashed at rest, see [../backend/src/db/schema/tokens.ts](../backend/src/db/schema/tokens.ts)).
-- Token is **scoped**: `{ userId, tenantId, organizationId, scopes[], expiresAt }`. Scopes gate which
-  tool categories are callable (ties into Phase 4).
-- Add an `mcpAuthGuard` that accepts `Authorization: Bearer <token>` **or** falls back to the existing
-  session cookie, then populates the same context variables `tenantGuard`/`orgGuard` expect. Keep the
-  guard in `modules/ai/mcp/` so it ships with the MCP feature.
+Do this in **two tiers**: ship Tier 1 (pragmatic, what most self-hosted MCP servers actually use),
+keep Tier 2 (spec-compliant OAuth) pluggable and optional.
+
+> ⚠️ **Do not reuse `tokensTable`.** The existing token table
+> ([../backend/src/modules/auth/tokens-db.ts](../backend/src/modules/auth/tokens-db.ts)) is
+> **partitioned by `expiresAt` via pg_partman with 30-day retention** — it is built for short-lived
+> verification/invitation tokens. Long-lived MCP access tokens stored there would be silently dropped
+> when their partition ages out. MCP tokens need their own dedicated, non-partitioned table.
+
+### Tier 1 — Personal Access Tokens (PATs) — do this first
+
+A long-lived, user-generated token, accepted as `Authorization: Bearer <pat>`. Works with every MCP
+client that supports a custom header, no AS required. ~A day of work.
+
+- Add a **dedicated** `mcpTokensTable` (not `tokensTable`): non-partitioned, tokens **hashed at rest**,
+  shape `{ id, userId, tenantId, organizationId, scopes[], name, expiresAt, lastUsedAt, createdAt, revokedAt }`.
+  Scopes gate which tool categories are callable (ties into Phase 4).
+- Add an `mcpAuthGuard` (in `modules/ai/mcp/` so it ships with the MCP feature) that accepts
+  `Authorization: Bearer <pat>` **or** falls back to the existing session cookie, validates the hash,
+  checks expiry/revocation, bumps `lastUsedAt`, then populates the same context variables
+  `tenantGuard`/`orgGuard` expect. Never weakens the in-app cookie path.
 - Document a second `securityScheme` (`http`/`bearer`) in [../backend/src/core/init-docs.ts](../backend/src/core/init-docs.ts)
   alongside the existing `cookieAuth`, attached only to the MCP route.
-- Add `me`-style routes to **mint/list/revoke** MCP tokens (personal access tokens), so a user can
-  generate a token for their workspace from the UI.
+- Add `me`-style routes to **mint/list/revoke** PATs, so a user can generate a token for their
+  workspace from the UI. Token issuance UI can live in Cella's settings module so both apps get it.
 
-**Cella vs Raak:** identical. Cella ships the token type + guard + management routes; Raak inherits
-them. Token issuance UI can live in Cella's settings module so both apps get it.
+### Tier 2 — Spec-compliant OAuth (later, optional, pluggable)
 
-**Exit:** an external client can authenticate to `/:tenantId/:organizationId/mcp` with a bearer token
-and `tools/list` returns the workspace's tools.
+Rather than building an AS, **delegate** issuance to an external one and keep Cella a pure Resource
+Server. Two implementation options, chosen by the fork:
+
+- **(a) Validate external-AS tokens.** Publish `/.well-known/oauth-protected-resource` (RFC 9728)
+  advertising the resource id + trusted AS; have `mcpAuthGuard` verify access tokens minted by an
+  external AS (Keycloak, WorkOS, Stytch, Auth0, …), checking the audience binding (RFC 8707) so a token
+  can't be replayed against another resource.
+- **(b) Front the server with an OAuth proxy** (e.g. Cloudflare's `workers-oauth-provider`) that brokers
+  to an upstream IdP and hands the MCP server already-validated identity.
+
+Either way core stays fork-agnostic with no heavy OAuth-issuer dependency: the AS is configuration, not
+code in `modules/ai`. This unlocks the headless client UX (user pastes the MCP URL → 401 +
+`WWW-Authenticate` → discovery → browser PKCE flow → audience-bound token) without copy-pasting keys.
+
+**Cella vs Raak:** identical. Cella ships the `mcpTokensTable` + guard + management routes (Tier 1) and
+the optional discovery endpoints (Tier 2); Raak inherits them.
+
+**Exit (Tier 1):** an external client can authenticate to `/:tenantId/:organizationId/mcp` with a PAT
+and `tools/list` returns the workspace's tools. **Exit (Tier 2):** a spec-compliant client completes a
+PKCE flow against an external AS and calls the endpoint with an audience-bound token.
 
 ---
 
@@ -235,7 +275,8 @@ MCP + optional one-shot AI, all sharing one registry.
 | --- | --- | --- |
 | MCP server (transport, JSON-RPC) | Owns | Inherits |
 | Tool registry `buildTools` | Empty default + examples | Registers domain tools (tasks, projects…) |
-| `mcpAuthGuard` + token type + token mgmt UI | Owns | Inherits |
+| `mcpAuthGuard` + `mcpTokensTable` (PATs) + token mgmt UI | Owns | Inherits |
+| OAuth Resource-Server discovery (RFC 9728/8414), external AS | Owns (pluggable, optional) | Inherits |
 | `x-tool` → registry bridge | Owns | Inherits |
 | LLM transport (adapter) + model runner | **None** | Owns (`modules/agent`) |
 | Chat `agent` product (chat/message, persistence) | **None** | Owns (`modules/agent`) |
@@ -245,7 +286,8 @@ MCP + optional one-shot AI, all sharing one registry.
 
 ## Suggested sequencing
 
-1. **Phase 1 (auth)** — unblocks any real external use; small, self-contained.
+1. **Phase 1 (auth)** — unblocks any real external use. Ship Tier 1 (PATs) first; Tier 2 (OAuth
+   Resource Server) is optional and can lag.
 2. **Phase 2 (`x-tool` bridge)** — highest leverage; turns the whole API into MCP tools declaratively.
 3. **Phase 4 (authz/safety)** — must land before write tools are exposed externally.
 4. **Phase 3 (transport)** — needed for first-class client UX; can lag behind read-only usage.
@@ -256,8 +298,11 @@ MCP + optional one-shot AI, all sharing one registry.
 
 - **SDK vs hand-rolled:** adopt `@modelcontextprotocol/sdk` (more spec coverage, more deps) or keep the
   zero-dep handler (full control, less surface)? Decide at Phase 3.
-- **Token model:** personal access tokens (per user) vs workspace service tokens (per org) — likely
-  both, with distinct scopes.
+- **Token model:** Tier-1 personal access tokens (per user) vs workspace service tokens (per org) —
+  likely both, with distinct scopes, in the dedicated `mcpTokensTable`.
+- **AS choice for Tier 2:** validate tokens from an external AS directly (RFC 9728 discovery) vs front
+  the server with an OAuth proxy (e.g. Cloudflare `workers-oauth-provider`)? Decide per fork; core stays
+  a Resource Server either way.
 - **Tool granularity:** expose every CRUD route as a tool, or a curated subset? Default to curated via
   explicit `x-tool.enabled` opt-in (never auto-expose).
 - **Multi-tenant routing:** MCP endpoint is per-workspace (`/:tenantId/:organizationId/mcp`). Do we

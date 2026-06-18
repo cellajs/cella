@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { getColumns } from 'drizzle-orm';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { pick } from '#/utils/pick';
 

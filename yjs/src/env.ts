@@ -13,6 +13,9 @@ dotenv({
  */
 const envSchema = z.object({
   DATABASE_URL: z.url(),
+  // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.
+  // Auto-provisioned by `pulumi up`; required in production.
+  DATABASE_SSL_CA: z.string().optional(),
 
   YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
   YJS_PORT: z.coerce.number().default(Number(new URL(appConfig.yjsUrl).port) || 4002),

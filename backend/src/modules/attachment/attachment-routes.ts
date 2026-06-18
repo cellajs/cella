@@ -25,7 +25,7 @@ import {
   mockAttachmentResponse,
   mockBatchAttachmentsResponse,
   mockPaginatedAttachmentsResponse,
-} from '../../../mocks/mock-attachment';
+} from './attachment-mocks';
 
 const attachmentRoutes = {
   /**

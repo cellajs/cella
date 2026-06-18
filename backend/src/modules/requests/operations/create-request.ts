@@ -1,9 +1,9 @@
 import { appConfig } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { RequestModel } from '#/db/schema/requests';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
+import type { RequestModel } from '#/modules/requests/requests-db';
 import { findExistingRequest, findUserByEmail, insertRequest } from '#/modules/requests/requests-queries';
 import { requestInfoEmail, requestResponseEmail } from '../../../../emails';
 

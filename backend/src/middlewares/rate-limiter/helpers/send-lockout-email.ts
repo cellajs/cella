@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
-import { usersTable } from '#/db/schema/users';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { usersTable } from '#/modules/user/user-db';
 
 /** Extract email from rate limit key like "email:user@example.com" or "email:user@example.comip:1.2.3.4" */
 const emailFromKey = (key: string) => {

@@ -2,7 +2,7 @@ import { getColumns, inArray, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import type { DbOrTx } from '#/db/db';
-import { usersTable } from '#/db/schema/users';
+import { usersTable } from '#/modules/user/user-db';
 import type { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { pick } from '#/utils/pick';
 

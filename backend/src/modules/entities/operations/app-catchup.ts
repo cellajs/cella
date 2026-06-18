@@ -5,8 +5,8 @@
  *   1. Org-level: O(1) entitySeqs check per org (quick screening)
  *   2. Sub-context: for changed orgs, drill into sub-context counters (precision)
  *
- * Entity seqs (from CDC worker) detect creates/updates.
- * Deletes and membership changes are always scanned from the activities table (cursor-bounded, watertight).
+ * Entity seqs (from CDC worker) detect creates/updates/soft deletes. Membership changes are
+ * detected via the `s:membership` seq counter (O(1) screening).
  *
  * When cursor is null (fresh connect), baselines are returned and membership
  * queries are always invalidated on the client side.
@@ -16,11 +16,7 @@ import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { baseDb as db } from '#/db/db';
-import {
-  findContextCountersByKeys,
-  findDeleteAndMembershipActivities,
-  findLatestUserActivityId,
-} from '#/modules/entities/entities-queries';
+import { findContextCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
 import { collectSubContextIds } from '#/modules/entities/helpers/collect-sub-context-ids';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
@@ -84,33 +80,15 @@ export async function appCatchupOp(
     }
   }
 
-  // Step 3: Scan activities for deletes AND membership changes (cursor-bounded, watertight)
-  if (cursor) {
-    const activityResults = await findDeleteAndMembershipActivities(dbCtx, cursor, organizationIdArray, [
-      ...appConfig.productEntityTypes,
-    ]);
-
-    for (const row of activityResults) {
-      if (!row.organizationId || !changes[row.organizationId]) continue;
-
-      // Membership activity — org entry already exists, client will invalidate membership queries
-      if (row.resourceType === 'membership') continue;
-
-      // Product entity delete
-      if (!row.subjectId || !row.entityType) continue;
-      const scope = changes[row.organizationId];
-      if (!scope.deletedByType[row.entityType]) scope.deletedByType[row.entityType] = [];
-      scope.deletedByType[row.entityType].push(row.subjectId);
-    }
-  }
-
-  // Step 4: Build propagation hints for embedding relationships
+  // Step 3: Build propagation hints for embedding relationships.
+  // Soft-deleted embedded sources are returned as removal hints by seq-delta lookup.
   await buildPropagationHints(changes, seqs);
 
-  // Step 5: Prune orgs with no changes (seqs match client and no deletes/propagation)
+  // Step 4: Prune orgs with no changes (seqs match client and no propagation)
   if (seqs) {
     for (const [orgId, scope] of Object.entries(changes)) {
       const hasDeletes = Object.keys(scope.deletedByType).length > 0;
+      const hasOverflow = (scope.deleteOverflow?.length ?? 0) > 0;
       const hasPropagation = scope.propagation && scope.propagation.length > 0;
       const seqsMatch =
         !scope.entitySeqs ||
@@ -118,13 +96,13 @@ export async function appCatchupOp(
           return seqs[`${orgId}:s:${entityType}`] === serverVal;
         });
 
-      if (seqsMatch && !hasDeletes && !hasPropagation) {
+      if (seqsMatch && !hasDeletes && !hasOverflow && !hasPropagation) {
         delete changes[orgId];
       }
     }
   }
 
-  // Step 6: Advance cursor (skip query if nothing changed)
+  // Step 5: Advance cursor.
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =

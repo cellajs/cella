@@ -1,6 +1,6 @@
-import { and, eq, getColumns, inArray, isNull, min, or, type SQL } from 'drizzle-orm';
+import { and, eq, getColumns, inArray, isNull, min, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { pagesTable } from '#/db/schema/pages';
+import { pagesTable } from '#/modules/page/page-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 
 interface FindPageByIdOpts {
@@ -10,7 +10,10 @@ interface FindPageByIdOpts {
 /** Find a page by ID. */
 export const findPageById = async (ctx: DbContext, { id }: FindPageByIdOpts) => {
   const { db } = ctx.var;
-  const [page] = await db.select().from(pagesTable).where(eq(pagesTable.id, id));
+  const [page] = await db
+    .select()
+    .from(pagesTable)
+    .where(and(eq(pagesTable.id, id), isNull(pagesTable.deletedAt)));
   return page;
 };
 
@@ -44,12 +47,22 @@ export const updatePage = async (ctx: DbContext, { id, values }: UpdatePageOpts)
 
 interface DeletePagesByIdsOpts {
   ids: string[];
+  deletedBy: string;
+  deletedAt: string;
 }
 
-/** Delete pages by IDs. */
-export const deletePagesByIds = async (ctx: DbContext, { ids }: DeletePagesByIdsOpts) => {
+/** Soft-delete pages by IDs and detach their direct children. */
+export const deletePagesByIds = async (ctx: DbContext, { ids, deletedAt, deletedBy }: DeletePagesByIdsOpts) => {
   const { db } = ctx.var;
-  return db.delete(pagesTable).where(inArray(pagesTable.id, ids));
+  await db
+    .update(pagesTable)
+    .set({ status: 'unpublished', publicAt: null, parentId: null, updatedAt: deletedAt, updatedBy: deletedBy })
+    .where(and(inArray(pagesTable.parentId, ids), isNull(pagesTable.deletedAt)));
+
+  return db
+    .update(pagesTable)
+    .set({ deletedAt, deletedBy, updatedAt: deletedAt, updatedBy: deletedBy })
+    .where(and(inArray(pagesTable.id, ids), isNull(pagesTable.deletedAt)));
 };
 
 /** Get the minimum displayOrder for pages, optionally scoped by parentId. */
@@ -79,5 +92,5 @@ export const buildPagesListQuery = (ctx: DbContext, { filters }: BuildPagesListQ
     .from(pagesTable)
     .leftJoin(createdByUser, eq(createdByUser.id, pagesTable.createdBy))
     .leftJoin(updatedByUser, eq(updatedByUser.id, pagesTable.updatedBy))
-    .where(and(or(...filters)));
+    .where(filters.length > 0 ? and(...filters) : undefined);
 };

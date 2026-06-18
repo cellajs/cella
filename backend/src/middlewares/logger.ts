@@ -4,6 +4,9 @@ import { appConfig } from 'shared';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
 
+// Instantiate the requestId middleware once at module scope rather than per request.
+const requestIdMiddleware = requestId();
+
 /**
  * Request logging middleware.
  * Logs incoming/outgoing requests with timing, status codes, and user IDs.
@@ -12,7 +15,7 @@ import { isBenchTraffic } from '#/utils/logger';
  */
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   // Use Hono's requestId middleware to generate/extract request ID
-  await requestId()(ctx, async () => {});
+  await requestIdMiddleware(ctx, async () => {});
 
   const start = Date.now();
   const { url, method } = ctx.req;
@@ -26,7 +29,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const userId = ctx.get('user')?.id || 'na';
 
   // Suppress bench traffic logs in development (only log errors)
-  if (isBenchTraffic(cleanUrl, userId) && status < 500) return;
+  if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
 
   // Log structured data - pino-pretty handles formatting in development
   const logData = { requestId: reqId, method, url: cleanUrl, status, responseTime, userId };

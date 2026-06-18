@@ -2,14 +2,14 @@
  * Propagation hints for embedding relationships.
  *
  * Derived from `appConfig.entityEmbeddings` at module init. When a source entity
- * type changes (seq delta or deletes), hints tell the client which host entity
+ * type changes (seq delta, including soft-delete tombstones), hints tell the client which host entity
  * types need to refetch their embedded data.
  */
 
 import { appConfig, type EntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
-import { findChangedEntityIds } from '#/modules/entities/entities-queries';
+import { findChangedEntityDeltaIds } from '#/modules/entities/entities-queries';
 import type { AppCatchupResponse, CatchupChangeSummary } from '#/schemas';
 
 const dbCtx: DbContext = { var: { db } };
@@ -46,16 +46,16 @@ export async function buildPropagationHints(
 
       const serverSeq = scope.entitySeqs?.[sourceType];
       const clientSeq = clientSeqs?.[`${organizationId}:s:${sourceType}`] ?? 0;
-      const deletedIds = scope.deletedByType[sourceType] ?? [];
       const seqDelta = (serverSeq ?? 0) - clientSeq;
 
-      // Skip if no changes and no deletes for this source type
-      if (seqDelta <= 0 && deletedIds.length === 0) continue;
+      if (seqDelta <= 0) continue;
 
-      // Fetch updated source IDs (creates/updates since client's last seq)
       let updatedIds: string[] = [];
+      let deletedIds: string[] = [];
       if (seqDelta > 0 && clientSeq > 0) {
-        updatedIds = await findChangedEntityIds(dbCtx, sourceType, organizationId, clientSeq);
+        const changes = await findChangedEntityDeltaIds(dbCtx, sourceType, organizationId, clientSeq);
+        updatedIds = changes.updatedIds;
+        deletedIds = changes.deletedIds;
       }
 
       for (const target of targets) {

@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process'
-import { input, password } from '@inquirer/prompts'
+import { input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
+import { maskedSecret } from '../prompts/masked-secret'
 import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
 
 /** Read-only `pulumi preview` against the stack. Authenticates the provider
@@ -24,7 +25,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
   const accessKey =
     process.env.SCW_ACCESS_KEY ||
     (await input({ message: 'Scaleway access key (read access is enough)', validate: (v) => !!v.trim() || '(required)' }))
-  const secretKey = process.env.SCW_SECRET_KEY || (await password({ message: 'Scaleway secret key' }))
+  const secretKey = process.env.SCW_SECRET_KEY || (await maskedSecret({ message: 'Scaleway secret key' }))
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 

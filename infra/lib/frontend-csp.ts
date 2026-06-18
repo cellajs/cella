@@ -1,7 +1,7 @@
 import { appConfig } from '../pulumi-context'
 import { enabledServices } from './services'
 
-const enabledServiceSlugs = new Set(enabledServices(appConfig.has).map((service) => service.slug))
+const enabledServiceSlugs = new Set(enabledServices(appConfig.features).map((service) => service.slug))
 
 const cspOrigins = {
   api: new URL(appConfig.backendUrl).origin,

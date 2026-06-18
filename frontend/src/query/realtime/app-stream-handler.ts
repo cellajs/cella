@@ -55,7 +55,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     if (!isProductEntity(entityType))
       return console.error('Unknown entityType in app stream notification:', entityType);
 
-    // DELETE BATCH: remove each entity from caches directly
+    // Legacy hard-delete batch: product soft deletes use update notifications + seq-range tombstones.
     if (notification.deletedIds?.length) {
       for (const id of notification.deletedIds) {
         cacheOps.removeEntity(entityType, id, organizationId ?? undefined);
@@ -65,7 +65,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       return;
     }
 
-    // CREATE/UPDATE BATCH: single range fetch
+    // Create/update batch: range fetch also handles soft-delete tombstones.
     if (notification.batchUntilSeq && seq != null && organizationId && hasEntityQueryKeys(entityType)) {
       const keys = getEntityQueryKeys(entityType);
       const seqCursor = `${seq},${notification.batchUntilSeq}`;
@@ -195,6 +195,21 @@ function handleEntityNotification(
   switch (action) {
     case 'create':
     case 'update':
+      if (seq !== null) {
+        const seqCursor = `${seq},${seq}`;
+        cacheOps
+          .fetchRangeAndPatch(entityType, organizationId, tenantId, seqCursor, keys)
+          .then((success) => {
+            if (!success) {
+              cacheOps.invalidateEntityDetail(entityId, keys, priority === 'low' ? 'none' : 'active');
+              cacheOps.invalidateEntityListForOrg(keys, organizationId, priority === 'low' ? 'none' : 'active');
+            }
+            if (propagation) propagateEmbeddings(propagation);
+          })
+          .catch((err) => console.warn('[AppStream] Entity range fetch failed:', err));
+        break;
+      }
+
       if (priority === 'low') {
         // Mark stale only, refetch on next access
         cacheOps.invalidateEntityDetail(entityId, keys, 'none');

@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createUpdateSchema } from '#/core/stx';
-import { attachmentsTable } from '#/db/schema/attachments';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
-import { mockAttachmentResponse } from '../../../mocks/mock-attachment';
+import { mockAttachmentResponse } from './attachment-mocks';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
 const attachmentSelectSchema = createSelectSchema(attachmentsTable);

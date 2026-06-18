@@ -1,14 +1,14 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
-import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { requestsTable } from '#/db/schema/requests';
-import { tokensTable } from '#/db/schema/tokens';
-import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
-import { usersTable } from '#/db/schema/users';
+import { tokensTable } from '#/modules/auth/tokens-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { requestsTable } from '#/modules/requests/requests-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
+import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { usersTable } from '#/modules/user/user-db';
 
 interface FindVerifiedEmailsOpts {
   emails: string[];

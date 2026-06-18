@@ -1,14 +1,54 @@
-# Infrastructure
+# infra cli
 
 Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
 
 ## Overview
 
-This infrastructure is built around three principles:
+The infrastructure is built around three principles:
 
 1. **Pulumi provisions with most values from config files.** Pulumi modules create resources, but resource names, domains and sizing are derived from [config files](#configuration).
 2. **CI performs all routine deploys.** Pushing to `main` builds images and rolls the running services with zero downtime.
-3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a temporary bootstrap key is required only for the initial install and for changes to data-bearing resources (database, VPC, private network).
+3. **Local `pulumi up` is only for bootstrap or elevated changes.** The day-to-day path never needs a privileged key on your laptop. A human with a bootstrap key is required for fresh install and changes to data-bearing resources.
+
+The key resources and how traffic flows between them:
+
+```
+                          ┌─────────────────────────────────────────┐
+        Users ──▶ DNS ──▶ │           Scaleway Load Balancer        │  TLS termination,
+                          │           (host-header routing)         │  host-header routing
+                          └─────────────────────────────────────────┘
+                              │                              │
+              api.<domain>    │                              │   <domain>
+                              ▼                              ▼
+   ┌───────────────────────────────────────────┐  ┌──────────────────────┐
+   │             Private network (VPC)         │  │   Edge Services CDN  │
+   │                                           │  │          +           │
+   │  ┌──────────┐  ┌──────────┐  ┌──────────┐ │  │   frontend bucket    │
+   │  │ backend  │  │ optional │  │ optional │ │  │   (SPA hosting)      │
+   │  │   VM     │  │ VM (cdc, │  │ VM (yjs, │ │  └──────────────────────┘
+   │  │          │  │  ai …)   │  │  …)      │ │ 
+   │  └────┬─────┘  └──────────┘  └──────────┘ │
+   │       │                                   │
+   │       ▼                                   │
+   │  ┌──────────────┐                         │
+   │  │ PostgreSQL   │   (managed, private)    │
+   │  └──────────────┘                         │
+   └───────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────────┐
+                    │  upload buckets      │
+                    │  (public + private)  │
+                    └──────────────────────┘
+```
+
+- **Load balancer** — single public entrypoint.
+- **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
+- **Frontend** — a static SPA bucket served through Edge Services CDN, not a VM.
+- **Backend VM** — the critical API path; rolled blue-green.
+- **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VMs when enabled; rolled in-place.
+- **Database** — managed PostgreSQL reachable only from inside private network.
+- **Buckets** — public and private object storage for uploads, plus frontend SPA bucket.
 
 
 ## How a deploy works
@@ -24,14 +64,14 @@ Runs pulumi up
         ↓
 Uploads image tag to the deploy-tags bucket
         ↓
-On-VM reconciler detects the new tag
+On-VM reconciler detects new tag
         ↓
 Performs in-place or blue-green rollout
         ↓
 Load balancer keeps serving traffic
 ```
 
-At runtime, the load balancer never talks to the app container directly. Each VM runs a tiny **ingress** Caddy container that owns the LB-facing host port and forwards to the app container by its compose-network name (the app publishes no host port):
+At runtime, load balancer never talks to app container directly. Each VM runs a tiny **ingress** Caddy container that owns LB-facing host port and forwards to app container by its compose-network name (app publishes no host port):
 
 ```
 Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
@@ -45,13 +85,13 @@ The security model is defined by exactly three Scaleway API keys, in strictly de
 Bootstrap key      (broad, short-lived; in your password manager only)
     │ creates
     ▼
-CI deploy key      (project-scoped write; in the GitHub Environment)
+CI deploy key      (project-scoped write; in GitHub Environment)
     │ provisions
     ▼
 VM reader key      (read-only; baked into each VM)
     │ reads
     ▼
-runtime secrets + images on the VM
+runtime secrets + images on VM
 ```
 
 | Key | Permissions | Lifetime | Where stored |
@@ -60,17 +100,15 @@ runtime secrets + images on the VM
 | **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
 | **VM reader key** (`<slug>-vm-reader`) | Read-only registry / object storage / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
 
-Exact IAM permission sets and the bootstrap-owned boundary are documented in [Security & IAM reference](#security--iam-reference).
-
 ## Routine deploys (CI)
 
 The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) runs:
 
-- **On push to `main`** — builds images, uploads the frontend, runs `pulumi up`, verifies the deployment.
-- **On manual dispatch** — same, against the chosen environment (`staging` or `production`).
+- **On push to `main`** — builds images, uploads frontend, runs `pulumi up`, verifies deployment.
+- **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-Routine deploys don't replace VMs. CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
+CI writes the new image SHA to the deploy-tags bucket; the on-VM reconciler pulls it and rolls the app behind a per-VM ingress proxy — in-place for cdc/yjs/ai/frontend, blue-green (two slots) for the backend — so the load balancer backend never drains. See [rollout strategies](#rollout-strategies) for the rollover model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -86,13 +124,13 @@ Each service declares its roll strategy in the fork-owned service registry ([con
 | **blue-green** | backend | Run two named slots (`backend-blue` / `backend-green`). Bring the idle slot up on the new tag, identity-gate it, then flip the ingress upstream to it and retire the old slot. |
 | **in-place** | frontend, ai, cdc, yjs | Recreate the single app container (`up -d --no-deps <svc>`). The ingress holds the listener open and retries the upstream across the ~seconds the container is restarting. |
 
-**Why backend is blue-green and the rest are in-place.** The backend is the critical path, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
+**Why backend is blue-green and the rest are in-place.** The backend is critical, so blue-green guards against a bad release (at ~2× RAM during cutover). The others can't or needn't pay for it: **cdc** owns a single Postgres replication slot (two instances impossible), **yjs** holds in-memory CRDT/WS state (two would split-brain), and **ai** / **frontend** are stateless and low-stakes where in-place is already near-zero-downtime.
 
 Only cloud-init changes (reconciler/package updates, an instance-type resize) replace the VM; the LB health checks handle that. Routine runtime secret changes don't — the reconciler refreshes `/opt/app/.env.runtime` each tick and rolls the service when that file changes, even if the image tag didn't.
 
 ## Configuration
 
-All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy, no `pulumi config set`. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
+All tunable infra config lives in committed, type-checked files under [config/](config) — edit a value there and deploy. Each field is either a single value or a per-mode map (`{ production: …, staging: … }`).
 
 **Common questions:**
 - *Where do I change a VM size?* → `instanceType` in [config/services.config.ts](config/services.config.ts) (applied by the next CI deploy).
@@ -116,8 +154,6 @@ To apply a bootstrap-owned change (e.g. resize the database), re-run the CLI (`p
 2. Supplies that key to the Scaleway provider via `SCW_*` env (it is never written to stack config).
 3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up — unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
 4. Reminds you to revoke the bootstrap key.
-
-No stack file is mutated and no credential is written to disk, so an interrupted run needs no cleanup — `pulumi up` is idempotent, so just re-run Apply infra change to converge.
 
 
 ## Fresh installation
@@ -189,6 +225,42 @@ If `gh` CLI was authenticated during bootstrap, it already set the GitHub Enviro
 
 After bootstrap, only the long-lived deploy and VM keys should remain. From here on, **all routine deploys happen in CI**.
 
+### 7. Create the first admin
+
+A fresh production database has **no users**, so there is no way to sign in to the deployed app yet. CI deploys only run schema migrations (the one-shot `migrate` companion) — they do **not** seed. You must create the first admin once, by hand.
+
+The backend image ships a bundled, production-safe seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts), the `seed:production` script). It applies migrations + DB roles and then inserts a single admin user (idempotent — it skips if the users table is already non-empty). The admin signs in via a magic link sent to `ADMIN_EMAIL`, so working outbound email and a mailbox you control are required.
+
+**Recommended — run it on a VM via the serial console** (no DB exposure, uses the image already on the box):
+
+1. After the first CI deploy has brought the compute VMs up, open a backend instance in the [Scaleway console](https://console.scaleway.com/instance/servers) → **Console** (serial console) and log in with the root password shown on the instance page.
+2. Run the seed once, supplying the admin email:
+
+   ```bash
+   cd /opt/app
+   docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com migrate node dist/seeds-bundle.js init
+   ```
+
+   This reuses the `migrate` companion's image and `.env`/`.env.runtime` (which carry `DATABASE_ADMIN_URL`), overriding only the command to run the seed bundle.
+3. Open the app, request a magic link for `you@example.com`, and sign in.
+
+**Alternative — break-glass from your laptop.** If you'd rather not use the serial console, temporarily expose the database, run the seed locally against `DATABASE_ADMIN_URL`, then close the endpoint again. This is heavier (two bootstrap-key `pulumi up` runs to open and re-close the RDB public endpoint) and briefly exposes the DB, so prefer the serial-console path:
+
+1. Open the DB public endpoint locked to your IP (bootstrap-owned RDB, see [Changing infrastructure](#changing-infrastructure)):
+
+   ```bash
+   cd infra
+   pulumi config set infra:dbPublicEndpoint true
+   pulumi config set infra:dbPublicAcl "<your.ip>/32"
+   # then Apply infra change (pnpm infra → Apply infra change) with a bootstrap key
+   ```
+2. Run the seed locally against the admin connection string:
+
+   ```bash
+   ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<admin connection string>' pnpm --filter backend seed:production init
+   ```
+3. **Close the endpoint again** — unset `infra:dbPublicEndpoint`/`infra:dbPublicAcl` and re-run Apply infra change, then revoke the bootstrap key.
+
 ## Architecture reference
 
 ### Layers
@@ -205,6 +277,12 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | 6 | `loadbalancer` | Scaleway LB with TLS termination, host-header routing, DNS |
 
 Application telemetry is exported to Maple.dev from the runtime services; no observability resources are provisioned in Pulumi.
+
+### Database TLS
+
+Connections to the managed PostgreSQL use **verified** TLS in production: the database client pins the Scaleway RDB instance's CA certificate and rejects anything it can't verify (closing the man-in-the-middle gap that `rejectUnauthorized: false` would leave open). This is fully automated — `pulumi up` reads the instance cert and writes it to the `database-ssl-ca` runtime secret (`DATABASE_SSL_CA`), which the backend/yjs/cdc VMs receive like any other runtime secret. There is nothing to set by hand.
+
+If `DATABASE_SSL_CA` is missing in production the service **fails fast at boot** rather than downgrading security. To recover, run the CLI's **Apply infra change** (re-asserts the secret) or check the `database-ssl-ca` secret via **Manage runtime secrets**. Local development (`NODE_ENV=development`) skips verification, so no cert is needed.
 
 ### How config flows
 
@@ -247,26 +325,6 @@ infra/
 ```
 
 The `.github/workflows/` files are tightly coupled to this package: `deploy.yml` runs the same `pulumi up` the CLI does (authenticating with the CI deploy key) and then drives the on-VM reconciler via the deploy-tags bucket, while `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
-
-## Security & IAM reference
-
-All IAM permission sets for the three credentials live in one annotated manifest:
-[`lib/permissions.ts`](lib/permissions.ts). It is the single source of truth — the
-provisioning tasks, the Pulumi VM-reader policy, and the `pulumi up` permission-error
-classifier all import from it, and [`tasks/permission-sets.test.ts`](tasks/permission-sets.test.ts)
-locks the exact membership so any change is visible in review. Read that file for the
-current grants and the per-set rationale (kept there rather than duplicated here, since
-the sets still change as the infra evolves).
-
-The key split is **write at steady state vs read-only**: the CI deploy key has
-`…FullAccess` on resources it mutates every deploy (registry, instances, LB, edge,
-object storage, secrets) but only `…ReadOnly` on the **bootstrap-owned**
-families (VPC, private network, RDB). So **any change to
-[`resources/database.ts`](resources/database.ts), [`resources/network.ts`](resources/network.ts),
-or anything else under VPC / PN / RDB will fail in CI** with `insufficient permissions: write …`.
-That's intentional — destructive operations on data-bearing resources go through a human
-running `pulumi up` locally with the bootstrap key (see [Changing infrastructure](#changing-infrastructure)).
-The same bootstrap-owned boundary is encoded once as `BOOTSTRAP_OWNED_FRAGMENTS` in the manifest.
 
 
 ## Advanced operations

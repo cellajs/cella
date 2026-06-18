@@ -12,14 +12,14 @@
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { tenantsTable } from '#/db/schema/tenants';
-import { usersTable } from '#/db/schema/users';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import { activityBus } from '#/lib/activity-bus';
-import { mockActivity } from '../../mocks/mock-activity';
+import { mockActivity } from '#/modules/activities/activities-mocks';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { usersTable } from '#/modules/user/user-db';
 
 /** Create a mock ActivityEvent from a mock activity. */
 const mockEventWithData = (key: string): ActivityEvent =>
@@ -35,12 +35,12 @@ const mockEventWithData = (key: string): ActivityEvent =>
   }) as ActivityEvent;
 
 import { eq, sql } from 'drizzle-orm';
-import { attachmentsTable } from '#/db/schema/attachments';
-import { contextCountersTable } from '#/db/schema/context-counters';
-import { mockAttachment } from '../../mocks/mock-attachment';
-import { mockContextMembership } from '../../mocks/mock-membership';
-import { mockOrganization } from '../../mocks/mock-organization';
-import { mockUser } from '../../mocks/mock-user';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { mockAttachment } from '#/modules/attachment/attachment-mocks';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
+import { mockContextMembership } from '#/modules/memberships/memberships-mocks';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { mockUser } from '#/modules/user/user-mocks';
 import { clearDatabase, ensureCdcSetup, waitForEvent } from './test-utils';
 
 describe('EventBus Integration', () => {

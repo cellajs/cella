@@ -35,12 +35,10 @@ export async function runGenerateScripts(scripts: GenerateScript[]): Promise<voi
 
     const typeLabel = script.type === 'drizzle' ? 'drizzle' : 'migration';
     const label = pc.cyan(`[${script.name}]`);
-    console.info(`${label} ${pc.dim(`(${typeLabel})`)} Starting...`);
+    console.info(`${label} ${pc.dim(`(${typeLabel})`)}`);
 
     try {
       await script.run();
-      console.info(`${label} ${pc.green('Done')}`);
-      console.info('');
     } catch (err) {
       console.error(`${label} ${pc.red('Failed')}`);
       throw err;

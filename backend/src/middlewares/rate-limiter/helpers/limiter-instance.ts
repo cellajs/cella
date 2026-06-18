@@ -1,8 +1,8 @@
 import { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
 import { baseDb as db } from '#/db/db';
-import { rateLimitsTable } from '#/db/schema/rate-limits';
 import { env } from '#/env';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
+import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 
 type RateLimiterOptions = {
   keyPrefix?: string;

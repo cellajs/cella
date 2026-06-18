@@ -73,9 +73,7 @@ const initDocs = async (app: OpenAPIHono<Env>) => {
   // Catches typos at boot instead of silently breaking docs grouping downstream.
   validateSchemaTags(openApiDoc as unknown as Record<string, unknown>);
 
-  // Strip trailing /flags from `pattern` strings (zod-openapi serializes RegExp
-  // via `String(re)` which includes the flag suffix). JSON Schema patterns are
-  // unflagged ECMA-262, so the suffix corrupts downstream consumers.
+  // Strip trailing /flags from pattern strings (zod-openapi includes flag suffix; JSON Schema doesn't).
   stripRegexFlagsFromPatterns(openApiDoc as unknown as Record<string, unknown>);
 
   const tmpPath = './openapi.cache.json.tmp';

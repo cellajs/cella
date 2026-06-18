@@ -65,7 +65,7 @@ describe('compute module source invariants', () => {
   it('derives the VM service list from the canonical registry (enabledServices)', () => {
     // compute filters the canonical registry by feature flag rather than
     // re-declaring the service set, so LB / deploy-tags / reconciler can't drift.
-    expect(source).toMatch(/enabledServices\(appConfig\.has\)/)
+    expect(source).toMatch(/enabledServices\(appConfig\.features\)/)
   })
 
   it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {

@@ -80,7 +80,7 @@
   "title_6": "Pricing (conceptual)",
   "title_7": "FAQs",
   "why": "Read why we built Cella",
-  "why.text_3": "Code is cheap. Making secure, compliant & maintainable web apps in a responsible way is still hard work.",
+  "why.text_3": "Code is cheap. Making secure, compliant, interoperable web apps that are maintainable is still hard work.",
   "why.text_2": "Generic OpenAPI for authentication, organizations, users and more. A configurable authorization manager is included.",
   "why.text_1": "Postgres, OpenAPI & React Query are foundational. The sync engine is an extension, not a replacement.",
   "why.title_3": "Going beyond code",

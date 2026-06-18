@@ -6,84 +6,25 @@ This document describes the high-level architecture of Cella.
 * Requires a great UX on different devices, but native apps are not a priority
 * Fullstack development is seen as beneficial to work effectively
 
-### DX aspects
- * Three primary elements used to fullest extend: Postgres, OpenAPI & React Query.
- * Prevent abstraction layers, use composable functions.
- * A narrow stack: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
+### Philosophy
+ * Postgres, OpenAPI & React Query are the core libraries. Cella is a template around these.
+ * Prevent abstraction layers, let the libraries do the work. Use composable functions.
+ * Deliberately narrow: Cella uses Drizzle ORM and will not make it replaceable with another ORM.
  * Modularity: As Cella grows, be able to scaffold only modules that you need.
- * Open standards: long-term vision is that each Cella can speak with other cell(a)s.
+ * Use open standards and be interoperable from the start.
  * Focused on client-side rendering (CSR) and in future static site generation (SSG).
+ * EU Data Sovereignty: Deploy on European-owned cloud infrastructure. 
 
-### Backend
-- [nodejs](https://nodejs.org)
-- [hono](https://hono.dev)
-- [postgres](https://www.postgresql.org)
-- [drizzle-orm](https://orm.drizzle.team/)
-- [zod](https://github.com/colinhacks/zod)
-- [openapi](https://www.openapis.org)
-- [yjs](https://yjs.dev) / [y-protocols](https://github.com/yjs/y-protocols)
+| Backend    | Frontend    | Build    | Deploy    |
+|------------|-------------|----------|-----------|
+| [nodejs](https://nodejs.org) | [react](https://reactjs.org) | [pnpm](https://pnpm.io) | [pulumi](https://www.pulumi.com) |
+| [hono](https://hono.dev) | [tanstack-router](https://github.com/tanstack/router) | [vite](https://vitejs.dev) | [scaleway](https://www.scaleway.com) |
+| [postgres](https://www.postgresql.org) | [tanstack-query](https://github.com/tanstack/query) | [vite-pwa](https://github.com/antfu/vite-plugin-pwa) | [github-actions](https://github.com/features/actions) |
+| [drizzle-orm](https://orm.drizzle.team/) | [zustand](https://github.com/pmndrs/zustand) | [storybook](https://storybook.js.org) |  |
+| [zod](https://github.com/colinhacks/zod) | [dexie](https://github.com/dexie/Dexie.js) | [biome](https://biomejs.dev) |  |
+| [openapi](https://www.openapis.org) | [base-ui](https://base-ui.com/) | [lefthook](https://github.com/evilmartians/lefthook) |  |
+| [yjs](https://yjs.dev) | [lucide-icons](https://lucide.dev) | [artillery](https://artillery.io) |  |
 
-### Frontend
-- [react](https://reactjs.org)
-- [tanstack-router](https://github.com/tanstack/router)
-- [tanstack-query](https://github.com/tanstack/query)
-- [zustand](https://github.com/pmndrs/zustand)
-- [dexie](https://github.com/dexie/Dexie.js)
-- [base-ui](https://base-ui.com/)
-- [lucide-icons](https://lucide.dev)
-
-### Build tools
-- [pnpm](https://pnpm.io)
-- [vite](https://vitejs.dev)
-- [vite-pwa](https://github.com/antfu/vite-plugin-pwa)
-- [storybook](https://storybook.js.org)
-- [biome](https://biomejs.dev)
-- [lefthook](https://github.com/evilmartians/lefthook)
-
-
-## File structure
-Cella is a flat-root monorepo.
-
-```
-.
-├── ai                        AI worker entrypoint (delegates to backend)
-├── backend
-│   ├── drizzle               DB migrations
-│   ├── emails                Email templates with jsx-email
-│   ├── scripts               Seed scripts and other dev scripts
-│   ├── src
-│   │   ├── db                Connect, table schemas
-│   │   ├── core              Foundational types & logic primitives 
-│   │   ├── lib               Stateful services & 3rd party wrappers
-│   │   ├── middlewares       Hono middlewares
-│   │   ├── modules           Modular distribution of routes, schemas etc
-│   │   ├── permissions       Permission/authorization layer
-│   │   ├── schemas           Shared Zod schemas
-│   │   └── utils             Reusable functions
-├── bench                     Artillery load testing
-├── cdc                       Change Data Capture worker (WAL → activities → SSE)
-├── cli/cella                 CLI for syncing forks with upstream Cella
-├── frontend
-│   ├── public
-│   ├── src
-│   │   ├── alerter           Global alert/banner manager
-│   │   ├── hooks             Generic react hooks
-│   │   ├── lib               Library code & core helper functions
-│   │   ├── modules           Modular distribution of components (Zustand stores live per-module)
-│   │   ├── query             Query client with offline/realtime logic
-│   │   ├── routes            File-based routes (thin shims; logic in modules)
-│   │   ├── styling           Tailwind styling
-│   │   └── utils             Reusable functions
-│   └── vite                  Vite-related plugins & scripts
-├── infra                     Pulumi IaC (Scaleway)
-├── info                      Documentation, changelog, migration plans
-├── json                      Static JSON data 
-├── locales                   Translations
-├── sdk                       Auto-generated SDK (types, zod schemas, fetch client)
-├── shared                    Shared config, types & utils
-├── studio                    Drizzle Studio launcher for local DB inspection
-└── yjs                       Yjs collaborative editing worker (ws binary relay)
-```
 
 ## Data modeling & modularity
 
@@ -135,8 +76,8 @@ Scalars resolve silently via HLC comparison; set fields are conflict-free; descr
 On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 1. **Phase A (catchup)** — fast, synchronous, before SSE opens:
-   - Patches deletes directly into detail + list caches (no invalidation)
-   - Compares entity-type seqs, invalidates active list queries for changed types (`refetchType: 'active'`)
+   - Applies any legacy hard-delete IDs directly
+   - Compares entity-type seqs and delta-fetches changed ranges; soft-delete tombstones remove cached product entities
    - Handles membership changes
    - **Cache integrity check**: compares server entity counts vs cached totals
 
@@ -146,7 +87,7 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
    - Without `offlineAccess`, other orgs refetch naturally via React Query hooks on navigation
 
 3. **Live SSE** — handles individual notifications with priority routing:
-   - High priority (current org): fetch single entity + patch into list caches
+   - High priority (current org): range fetch the notified seq and patch into list caches
    - Low priority (other orgs): mark stale, refetch on next access
 
 Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.
@@ -191,7 +132,7 @@ Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with si
 
 ## Multi-tenancy
 
-A `tenant` is the top-level isolation unit. Tenants are not entities — they are system resources managed by system admins only.
+A `tenant` is not an entity — but a `resource` that acts as top-level isolation unit.
 
 Tenant-scoped routes use `/:tenantId/` in the path. Guards (`authGuard` → `tenantGuard` → `orgGuard`) validate membership and set `ctx.var.db` to `baseDb`. Product entity handlers wrap their DB operations in `tenantRead()` or `tenantWrite()` to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS). See AGENTS.md for the full guard chain.
 
@@ -251,11 +192,13 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 > Every tenant-scoped table must have `tenant_id`. Tables with an organization parent must also have `organization_id` with a composite FK to `organizations(tenant_id, id)`. Parentless product entities require `tenant_id` only. The entity hierarchy config (`shared/config/hierarchy-config.ts`) determines which pattern applies.
 
-## Observability
+
+## Observability (WIP)
 
 OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs; the frontend uses a browser `WebTracerProvider` for `traceparent` propagation. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
 
 See [OTEL.md](./OTEL.md) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
+
 
 ## API design
 
@@ -267,20 +210,64 @@ The OpenAPI spec is enriched with custom `x-*` specification extensions that des
 
 At startup the backend builds the full spec (including an `info.x-extensions` block with all definitions and values), writes a cached `openapi.cache.json`. A custom Vite plugin pre-parses the spec into static JSON at build time; the frontend docs UI dynamically generates table columns from the extension definitions — no hardcoding of extension names.
 
+
 ### Mocks
 
-Mock generators in `backend/mocks/` serve two purposes:
+Mock generators in `backend/mocks/` serve three purposes:
 
-| Purpose | Mock type | ID context |
-|---------|-----------|------------|
-| OpenAPI examples | Response mocks (deterministic via seeded faker) | `'example'` — no prefix |
-| Database seeding & tests | Insert mocks | `'script'` — `gen-` prefix |
-
-Response mocks are passed as `example:` values to `.openapi()` on Zod schemas and route responses — the sole source of OpenAPI examples. Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer` for uniqueness. The `gen-` ID prefix lets the CDC worker skip seeded/test data.
+- **OpenAPI examples** — Response mocks (deterministic via seeded faker) used as `example:` values on Zod schemas and route responses — the sole source of OpenAPI examples.
+- **Database seeding** — Insert mocks return Drizzle `Insert*Model` types with `UniqueEnforcer`.
+ **(Load) tests** — Reusable mock data generators.
 
 
 ## Testing
 
 See [info/TESTING.md](./TESTING.md) for test modes, infrastructure, and writing guidelines.
+
+
+## File structure
+Cella is a flat-root monorepo.
+
+```
+.
+├── ai                        AI worker entrypoint (delegates to backend)
+├── backend
+│   ├── drizzle               DB migrations
+│   ├── emails                Email templates with jsx-email
+│   ├── scripts               Seed scripts and other dev scripts
+│   ├── src
+│   │   ├── db                Connect, table schemas
+│   │   ├── core              Foundational types & logic primitives 
+│   │   ├── lib               Stateful services & 3rd party wrappers
+│   │   ├── middlewares       Hono middlewares
+│   │   ├── modules           Modular distribution of routes, schemas etc
+│   │   ├── permissions       Permission/authorization layer
+│   │   ├── schemas           Shared Zod schemas
+│   │   └── utils             Reusable functions
+├── bench                     Artillery load testing
+├── cdc                       Change Data Capture worker (WAL → activities → SSE)
+├── cli/cella                 CLI for syncing forks with upstream Cella
+├── frontend
+│   ├── public
+│   ├── src
+│   │   ├── alerter           Global alert/banner manager
+│   │   ├── hooks             Generic react hooks
+│   │   ├── lib               Library code & core helper functions
+│   │   ├── modules           Modular distribution of components (Zustand stores live per-module)
+│   │   ├── query             Query client with offline/realtime logic
+│   │   ├── routes            File-based routes (thin shims; logic in modules)
+│   │   ├── styling           Tailwind styling
+│   │   └── utils             Reusable functions
+│   └── vite                  Vite-related plugins & scripts
+├── infra                     Pulumi IaC (Scaleway)
+├── info                      Documentation, changelog, migration plans
+├── json                      Static JSON data 
+├── locales                   Translations
+├── sdk                       Auto-generated SDK (types, zod schemas, fetch client)
+├── shared                    Shared config, types & utils
+├── studio                    Drizzle Studio launcher for local DB inspection
+└── yjs                       Yjs collaborative editing worker (ws binary relay)
+```
+
 
 

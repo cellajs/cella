@@ -22,7 +22,7 @@ import {
   mockBatchOrganizationsResponse,
   mockOrganizationResponse,
   mockPaginatedOrganizationsResponse,
-} from '../../../mocks/mock-organization';
+} from './organization-mocks';
 
 const organizationRoutes = {
   /**

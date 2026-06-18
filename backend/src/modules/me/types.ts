@@ -4,9 +4,9 @@
  */
 
 import type { EnabledOAuthProvider } from 'shared';
-import type { PasskeyModel } from '#/db/schema/passkeys';
-import type { SessionModel } from '#/db/schema/sessions';
-import type { UserModel } from '#/db/schema/users';
+import type { PasskeyModel } from '#/modules/auth/passkeys/passkeys-db';
+import type { SessionModel } from '#/modules/auth/sessions-db';
+import type { UserModel } from '#/modules/user/user-db';
 
 /** Me response type */
 export interface MeResponse {

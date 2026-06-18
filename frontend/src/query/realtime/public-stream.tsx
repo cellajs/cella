@@ -28,9 +28,9 @@ interface UsePublicStreamReturn {
  *
  * Flow:
  * 1. Catchup: Fetch catchup summary as JSON batch
- * 2. Process: Remove deleted pages from cache, detect creates/updates via seq delta
+ * 2. Process: Detect seq deltas; tombstone rows remove soft-deleted pages from cache
  * 3. SSE: Connect with offset=now for live-only updates
- * 4. Invalidate entity lists for create/update refetches
+ * 4. Patch or invalidate entity lists for live updates
  */
 function usePublicStream(options: UsePublicStreamOptions = {}): UsePublicStreamReturn {
   const { enabled = true } = options;

@@ -45,7 +45,7 @@ if (infra.computeEnabled) {
   // LB-exposed services, derived from the canonical registry (feature flag +
   // `lbRoute`) so the LB never re-decides independently of compute. A service
   // is LB-exposed iff it is enabled AND declares an `lbRoute`.
-  const lbServices = enabledServices(appConfig.has).filter((s) => s.lbRoute)
+  const lbServices = enabledServices(appConfig.features).filter((s) => s.lbRoute)
   const defaultService = lbServices.find((s) => s.lbRoute === 'default')
   if (!defaultService) {
     throw new Error("loadbalancer: no enabled service declares lbRoute 'default' — the HTTPS frontend needs a fallback backend.")

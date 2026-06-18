@@ -24,7 +24,7 @@ import type { appConfig as AppConfig } from '../../shared'
 
 export type { ServiceName, ServiceInstanceType }
 
-/** appConfig.has.* feature flags that gate an optional service. */
+/** appConfig.features.* flags that gate an optional service. */
 export type ServiceFeatureFlag = 'yjs' | 'ai'
 
 /**
@@ -65,10 +65,10 @@ export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s
  * `featureFlag` is always enabled; one with a flag is included only when that
  * flag is true. Single source of truth for "which services this app deploys" —
  * compute (VMs), the load balancer, and any future deploy-plan artifact all
- * derive from it instead of re-checking `appConfig.has.*` independently.
+ * derive from it instead of re-checking `appConfig.features.*` independently.
  */
-export function enabledServices(has: Record<ServiceFeatureFlag, boolean>): readonly ServiceDefinition[] {
-  return services.filter((s) => !s.featureFlag || has[s.featureFlag])
+export function enabledServices(features: Record<ServiceFeatureFlag, boolean>): readonly ServiceDefinition[] {
+  return services.filter((s) => !s.featureFlag || features[s.featureFlag])
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */

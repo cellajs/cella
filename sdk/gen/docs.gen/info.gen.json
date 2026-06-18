@@ -89,6 +89,13 @@
       "description": "Tool registration metadata for AI and MCP integrations",
       "required": false,
       "kind": "metadata"
+    },
+    {
+      "key": "x-feature",
+      "id": "x-feature",
+      "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
+      "required": false,
+      "kind": "metadata"
     }
   ]
 }

@@ -3,6 +3,10 @@ import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-bu
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
 
+// Set these early for reuse
+const entityTypes = ['user', 'organization', 'attachment', 'page'] as const;
+const productEntityTypes = ['attachment', 'page'] as const;
+
 export const config = {
 
   /******************************************************************************
@@ -10,13 +14,13 @@ export const config = {
    ******************************************************************************/
 
   /** All entity types in the app - must match hierarchy.allTypes. */
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+  entityTypes,
 
   /** Context entities with memberships - must match hierarchy.contextTypes. */
   contextEntityTypes: ['organization'] as const,
 
   /** Product/content entities - must match hierarchy.productTypes. */
-  productEntityTypes: ['attachment', 'page'] as const,
+  productEntityTypes,
 
   /**
    * Product entity types tracked for seen/unseen counts.
@@ -42,7 +46,11 @@ export const config = {
    * Entity embeddings: declares which entities are embedded as ID arrays inside
    * other entities. Forks extend when adding new embedding relationships.
    */
-  entityEmbeddings: [] as readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[],
+  entityEmbeddings: [] as readonly {
+    readonly embeddedEntity: (typeof productEntityTypes)[number];
+    readonly hostEntity: (typeof productEntityTypes)[number];
+    readonly hostColumn: string;
+  }[],
 
   /**
    * User menu structure of context entities with optional nested subentities.
@@ -114,19 +122,17 @@ export const config = {
   maintenance: false,
   cookieVersion: 'v1',
 
-  /******************************************************************************
-   * FEATURE FLAGS
-   ******************************************************************************/
-
   has: {
     pwa: true as boolean,
     selfRegistration: false as boolean,
     waitlist: false as boolean,
     uploadEnabled: true as boolean,
-    /** Customer support chat widget (Gleap). Unrelated to the AI module. */
     chatSupport: false as boolean,
+  },
+
+  /** Optional modules/services - gate a deployable service and/or route surface (x-feature). */
+  features: {
     yjs: false as boolean,
-    /** AI capability layer: tool registry + model runner + MCP endpoint. */
     ai: false as boolean,
   },
 

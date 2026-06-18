@@ -31,6 +31,10 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     DATABASE_ADMIN_URL: z.url(),
     DATABASE_POOL_MAX: z.coerce.number().default(80),
+    // PEM CA cert (Scaleway RDB instance) used to verify the managed PostgreSQL
+    // TLS connection. Auto-provisioned by `pulumi up`; required in production
+    // (the DB client fails fast if missing). Unused in local development.
+    DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([
       z.literal('development'),
       z.literal('production'),
@@ -85,7 +89,7 @@ export const env = createEnv({
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
 
     SCW_AI_API_KEY: z.string().optional(),
-    AI_SECRET: z.string().min(16).optional(),
+
     MODE: z.enum(['api', 'ai-worker', 'migrate']).default('api'),
 
     // When true, the API server applies pending migrations + ensures DB roles

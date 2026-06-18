@@ -5,15 +5,16 @@
   "description": "Artillery load-testing scenarios and tooling",
   "scripts": {
     "bench": "tsx src/bench-cli.ts",
+    "ts": "tsgo --pretty",
     "db:seed": "tsx src/data-setup.ts",
-    "db:teardown": "tsx src/data-setup.ts --teardown",
-    "db:up": "docker compose -f ../backend/compose.yaml up db -d && echo 'Waiting for Postgres...' && until pg_isready -h 0.0.0.0 -p 5433 -U postgres -q 2>/dev/null; do sleep 0.5; done && echo 'Postgres ready.' && pnpm db:seed"
+    "db:teardown": "tsx src/data-setup.ts --teardown"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
     "nanoid": "^5.1.11",
     "ora": "^9.4.0",
     "pg": "^8.21.0",
+    "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"
   },

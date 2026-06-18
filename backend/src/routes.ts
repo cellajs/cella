@@ -44,12 +44,12 @@ baseApp.route('/users', userHandlers);
 baseApp.route('/:tenantId/:organizationId/attachments', attachmentHandlers);
 baseApp.route('/:tenantId/:organizationId/memberships', membershipHandlers);
 baseApp.route('/:tenantId/:organizationId/seen', seenHandlers);
+
+// Optional feature routers are always mounted so OpenAPI/SDK generation stays stable;
+// the `x-feature` route prop 404s them at runtime when the flag is disabled.
 baseApp.route('/yjs', yjsHandlers);
+baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
-// AI: Model Context Protocol endpoint exposing the workspace tool registry
-if (appConfig.has.ai) baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
-
-// TODO review
 // Dev-only email preview (local authoring + Storybook email stories)
 if (appConfig.mode !== 'production') baseApp.route('/dev/emails', emailPreviewHandlers);
 

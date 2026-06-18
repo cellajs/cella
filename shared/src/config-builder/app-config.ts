@@ -20,7 +20,7 @@ const mode = (process.env.APP_MODE || process.env.NODE_ENV || 'development') as 
  * Merged app configuration which combines default config with environment-specific overrides.
  * Type is preserved from _default to maintain literal types for Drizzle v1 strict enum typing.
  */
-const merged = mergeDeep(_default, configModes[mode]);
+const merged = mergeDeep(structuredClone(_default), configModes[mode]);
 
 // Allow environment variables to override URLs — enables deploying the dev
 // config to Scaleway containers while keeping localhost defaults for local dev.

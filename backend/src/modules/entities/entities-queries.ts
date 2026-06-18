@@ -1,10 +1,10 @@
-import { and, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, getTableName, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
-import { activitiesTable } from '#/db/schema/activities';
-import { contextCountersTable } from '#/db/schema/context-counters';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
+import { activitiesTable } from '#/modules/activities/activities-db';
+import { contextCountersTable } from '#/modules/entities/context-counters-db';
 import type { membershipCountSchema } from '#/schemas';
 import type { ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { type entityTables, getEntityTable } from '#/tables';
@@ -18,6 +18,10 @@ export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$infer
 
 function hasSlug(table: ResolvableTable): table is TableWithIdAndSlug {
   return 'slug' in table;
+}
+
+function hasDeletedAt(table: ResolvableTable): table is ResolvableTable & { deletedAt: Parameters<typeof isNull>[0] } {
+  return 'deletedAt' in table;
 }
 
 // ── Context counter queries ──────────────────────────────────────────────
@@ -106,8 +110,23 @@ export const getOrgEntityCount = async ({ var: { db } }: DbContext, orgId: strin
 
 // ── Activity queries ─────────────────────────────────────────────────────
 
-/** Scan activities for deletes and membership changes after a cursor (app stream). */
-export const findDeleteAndMembershipActivities = async (
+/**
+ * Max delete rows to enumerate per catchup before falling back to list invalidation.
+ * The delete scan requests `CAP + 1` rows so the caller can detect overflow (more deletes
+ * than we are willing to enumerate) and tell the client to invalidate the whole list instead
+ * of removing entities one id at a time.
+ */
+export const DELETE_ENUMERATE_CAP = 200;
+
+/**
+ * Scan product-entity delete activities after a cursor (app stream).
+ *
+ * Capped at `DELETE_ENUMERATE_CAP + 1` so the caller can detect overflow (more deletes than we
+ * enumerate) and fall back to client-side list invalidation. Membership changes are intentionally
+ * NOT scanned here — they are detected via the `s:membership` seq counter, so membership churn can
+ * never consume the delete budget.
+ */
+export const findDeleteActivities = async (
   { var: { db } }: DbContext,
   cursor: string,
   organizationIds: string[],
@@ -115,35 +134,37 @@ export const findDeleteAndMembershipActivities = async (
 ) => {
   return db
     .select({
+      id: activitiesTable.id,
       organizationId: activitiesTable.organizationId,
       subjectId: activitiesTable.subjectId,
       entityType: activitiesTable.entityType,
-      resourceType: activitiesTable.resourceType,
     })
     .from(activitiesTable)
     .where(
       and(
         gt(activitiesTable.id, cursor),
         inArray(activitiesTable.organizationId, organizationIds),
-        or(
-          // Product entity deletes
-          and(inArray(activitiesTable.entityType, productEntityTypes), sql`${activitiesTable.action} = 'delete'`),
-          // Any membership activity (create/update/delete)
-          eq(activitiesTable.resourceType, 'membership'),
-        ),
+        inArray(activitiesTable.entityType, productEntityTypes),
+        sql`${activitiesTable.action} = 'delete'`,
       ),
     )
-    .limit(1000);
+    .orderBy(activitiesTable.id)
+    .limit(DELETE_ENUMERATE_CAP + 1);
 };
 
-/** Scan activities for public entity deletes after a cursor. */
+/**
+ * Scan public entity deletes after a cursor.
+ *
+ * Capped at `DELETE_ENUMERATE_CAP + 1` for overflow detection (same contract as
+ * {@link findDeleteActivities}).
+ */
 export const findPublicDeleteActivities = async (
   { var: { db } }: DbContext,
   cursor: string,
   publicTypes: SharedEntityType[],
 ) => {
   return db
-    .select({ entityType: activitiesTable.entityType, subjectId: activitiesTable.subjectId })
+    .select({ id: activitiesTable.id, entityType: activitiesTable.entityType, subjectId: activitiesTable.subjectId })
     .from(activitiesTable)
     .where(
       and(
@@ -152,7 +173,8 @@ export const findPublicDeleteActivities = async (
         gt(activitiesTable.id, cursor),
       ),
     )
-    .limit(1000);
+    .orderBy(activitiesTable.id)
+    .limit(DELETE_ENUMERATE_CAP + 1);
 };
 
 /** Get the latest activity ID relevant to a user's organizations. */
@@ -170,7 +192,7 @@ export const findLatestUserActivityId = async (
         and(inArray(activitiesTable.entityType, entityTypes), inArray(activitiesTable.organizationId, organizationIds)),
       ),
     )
-    .orderBy(desc(activitiesTable.createdAt))
+    .orderBy(desc(activitiesTable.id))
     .limit(1);
 
   return result[0]?.id ?? null;
@@ -208,7 +230,8 @@ export async function resolveEntity<T extends EntityType>(
 ): Promise<EntityModel<T> | undefined> {
   const table = getEntityTable(entityType);
 
-  const condition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
+  const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
+  const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
   const [entity] = await db
     .select()
@@ -227,12 +250,13 @@ export async function resolveEntities<T extends EntityType>(
   if (!ids.length) return [];
 
   const table = getEntityTable(entityType);
+  const condition = hasDeletedAt(table) ? and(inArray(table.id, ids), isNull(table.deletedAt)) : inArray(table.id, ids);
 
   const entities = await db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
-    .where(inArray(table.id, ids));
+    .where(condition);
   return entities as Array<EntityModel<T>>;
 }
 
@@ -251,4 +275,35 @@ export const findChangedEntityIds = async (
     .where(sql`seq > ${afterSeq} AND organization_id = ${organizationId}`);
 
   return rows.map((r) => r.id);
+};
+
+/** Fetch IDs of entities that changed since a seq, split into live updates and soft-delete tombstones. */
+export const findChangedEntityDeltaIds = async (
+  { var: { db } }: DbContext,
+  entityType: EntityType,
+  organizationId: string,
+  afterSeq: number,
+) => {
+  const table = getEntityTable(entityType);
+  const tableName = getTableName(table);
+  const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
+
+  const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
+    SELECT id, ${deletedAtSelect} AS "deletedAt"
+    FROM ${sql.raw(`"${tableName}"`)}
+    WHERE seq > ${afterSeq} AND organization_id = ${organizationId}
+  `);
+
+  const updatedIds: string[] = [];
+  const deletedIds: string[] = [];
+
+  for (const row of result.rows) {
+    if (row.deletedAt) {
+      deletedIds.push(row.id);
+    } else {
+      updatedIds.push(row.id);
+    }
+  }
+
+  return { updatedIds, deletedIds };
 };
