@@ -24,7 +24,7 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { naming, zone, tags, dnsZone, serviceHost, infra, appConfig, endpoints } from '../pulumi-context'
 import { enabledServices, type ServiceName } from '../lib/services'
 import { privateNetworkId } from './network'
-import { getInstanceIp } from './compute'
+import { serviceGenerationIps } from './compute'
 
 /**
  * Pre-refactor resource base names, kept so Pulumi URNs (and Scaleway display
@@ -145,22 +145,36 @@ if (infra.computeEnabled) {
   }
 
   // -------------------------------------------------------------------------
-  // LB Backends — each points to its service VM's private IP.
-  // Health-check the ingress proxy's own liveness endpoint, not the app's
-  // /health. The ingress always answers 200 while its process is up, so an
-  // app-container rollover (brief 502s on proxied paths) never drains the
-  // backend. See infra/ingress.Caddyfile.
+  // LB Backends — each targets the private IPs of its service's active VM
+  // generation(s). The cutover task owns the LIVE server list at deploy time via
+  // -------------------------------------------------------------------------
+  // LB Backends — each targets the private IPs of its service's active VM
+  // generation(s). Pulumi owns `serverIps`, so `pulumi up` re-points the LB to
+  // the new generation as part of the same apply that creates it (and before it
+  // deletes the old generation). Health checks hit the app's own `/health` (no
+  // ingress hop): a crashed generation is correctly marked down.
+  // `onMarkedDownAction` follows the service's drainPolicy — HTTP services let
+  // in-flight requests finish ('none'); WebSocket services shed sessions so
+  // clients reconnect to the new generation ('shutdown_sessions').
+  //
+  // NOTE: the zero-downtime cutover task (tasks/cutover.ts) can instead own the
+  // live list via direct SetBackendServers for a true overlap; that path is not
+  // yet wired into CI, so Pulumi owns the field to keep deploys self-contained
+  // (a brief gap while the new generation boots is the accepted tradeoff).
   // -------------------------------------------------------------------------
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
   for (const service of lbServices) {
+    // backend/yjs/ai answer /health with 204; the frontend Caddy proxy with 200.
+    const healthCode = service.slug === 'frontend' ? 200 : 204
     backends.set(service.slug, new scaleway.loadbalancers.Backend(`${service.slug}-lb-backend`, {
       lbId: lb.id,
       name: naming.resource(service.slug),
       forwardProtocol: 'http',
       forwardPort: service.healthPort,
-      serverIps: [getInstanceIp(service.slug)],
-      healthCheckHttp: { uri: '/__ingress/health', code: 200 },
+      serverIps: serviceGenerationIps(service.slug),
+      onMarkedDownAction: service.drainPolicy === 'reconnect' ? 'shutdown_sessions' : 'none',
+      healthCheckHttp: { uri: '/health', code: healthCode },
       healthCheckDelay: '3s',
       healthCheckTimeout: '2s',
       healthCheckMaxRetries: 2,

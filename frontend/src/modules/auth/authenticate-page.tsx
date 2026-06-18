@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { ServerOff, TriangleAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAuthHealth } from 'sdk';
 import { appConfig } from 'shared';
@@ -16,9 +17,16 @@ import {
 } from '~/modules/auth/steps';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
+import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUserStore } from '~/modules/user/user-store';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+
+// Auth health probe timing. Warn the user the server seems slow after the "slow"
+// delay, and give up (treating the backend as down) after the timeout — otherwise
+// a down backend can leave the spinner hanging on the browser's default timeout.
+const HEALTH_SLOW_MS = 5000;
+const HEALTH_TIMEOUT_MS = 20000;
 
 function shouldShowDivider(): boolean {
   return enabledStrategies.includes('oauth');
@@ -35,13 +43,31 @@ export function AuthenticatePage() {
   const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
 
   // Fetch auth health & check for rate limit (restrictedMode)
-  const { data: healthData, isLoading: isHealthLoading } = useQuery({
+  const {
+    data: healthData,
+    isLoading: isHealthLoading,
+    isError: isHealthError,
+  } = useQuery({
     queryKey: ['auth', 'health'],
-    queryFn: async () => getAuthHealth(),
+    // Bound the request: combine the query's own signal with a hard timeout so a
+    // down/unreachable backend fails deterministically instead of hanging.
+    queryFn: ({ signal }) =>
+      getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
     staleTime: 0,
     refetchOnMount: 'always',
     retry: false,
   });
+
+  // After a short delay without a response, warn the user the server seems slow.
+  const [showSlowWarning, setShowSlowWarning] = useState(false);
+  useEffect(() => {
+    if (!isHealthLoading) {
+      setShowSlowWarning(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSlowWarning(true), HEALTH_SLOW_MS);
+    return () => clearTimeout(timer);
+  }, [isHealthLoading]);
 
   // Update restrictedMode based on health response
   useEffect(() => {
@@ -69,7 +95,20 @@ export function AuthenticatePage() {
   }, [tokenData, lastUser, restrictedMode, step]);
 
   // Loading invitation token or health check, or already signed in (prevents UI flash during route transition)
-  if (isLoading || isHealthLoading || signedIn) return <Spinner className="h-10 w-10" />;
+  if (isLoading || isHealthLoading || signedIn) {
+    return (
+      <>
+        <Spinner className="h-10 w-10" />
+        {showSlowWarning && (
+          <Alert variant="warning">
+            <TriangleAlert />
+            <AlertTitle>{t('c:server_unresponsive')}</AlertTitle>
+            <AlertDescription>{t('c:server_unresponsive.text')}</AlertDescription>
+          </Alert>
+        )}
+      </>
+    );
+  }
 
   // Render form based on current step
   return (
@@ -93,6 +132,15 @@ export function AuthenticatePage() {
           )}
           {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
         </>
+      )}
+
+      {/* Health probe failed (timeout or network error) — surface that the backend is down */}
+      {isHealthError && (
+        <Alert variant="destructive">
+          <ServerOff />
+          <AlertTitle>{t('c:server_unreachable')}</AlertTitle>
+          <AlertDescription>{t('c:server_unreachable.text')}</AlertDescription>
+        </Alert>
       )}
     </>
   );

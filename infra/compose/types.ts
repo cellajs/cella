@@ -15,7 +15,26 @@
 
 import type { Environment } from '../lib/bootstrap-stack-state'
 
-export type RolloverStrategy = 'in-place' | 'blue-green'
+/**
+ * How a service's VM generation is cut over on a deploy (immutable-node model):
+ *  - 'lb-overlap' — create the new generation, health-gate it, atomically
+ *    expand the LB to both generations then contract to the new one, drain the
+ *    old (backend/frontend/yjs/ai).
+ *  - 'exclusive'  — no LB overlap possible; the old generation must fully
+ *    release a singleton resource before the new one takes over (cdc holds one
+ *    PostgreSQL replication slot).
+ */
+export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
+
+/**
+ * How the old generation is drained off the LB when it is de-registered:
+ *  - 'requests'  — HTTP: `onMarkedDownAction: 'none'` lets in-flight requests
+ *    finish over a short `drainSeconds` window (backend/frontend/ai).
+ *  - 'reconnect' — WebSocket: sessions are NOT held; the old generation is
+ *    de-registered and clients reconnect to the new one, resyncing from durable
+ *    state (yjs). A few seconds is enough for clients to notice and re-dial.
+ */
+export type DrainPolicy = 'requests' | 'reconnect'
 
 /**
  * How the load balancer exposes a service publicly:
@@ -51,9 +70,19 @@ export interface ServiceMeta {
   healthTimeoutSeconds: number
   /** Run the one-shot `migrate` service before rolling this service. */
   runMigrate: boolean
-  /** How the reconciler rolls this service. */
-  rolloverStrategy: RolloverStrategy
-  /** Blue-green drain window (seconds) after the ingress flips; 0 for in-place. */
+  /**
+   * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
+   * for LB-exposed services (overlap two generations behind the LB);
+   * `'exclusive'` for the singleton-slot cdc worker.
+   */
+  replacementStrategy: ReplacementStrategy
+  /**
+   * How the old generation drains off the LB. `'requests'` (HTTP, finish
+   * in-flight) or `'reconnect'` (WebSocket, clients re-dial). Omit for the
+   * LB-less `exclusive` worker.
+   */
+  drainPolicy?: DrainPolicy
+  /** Drain window (seconds) the cutover waits after the old generation is de-registered; 0 for none. */
   drainSeconds: number
   /** Public LB exposure; absent = internal-only. */
   lbRoute?: LbRoute
@@ -142,14 +171,20 @@ export interface AppServiceConfig {
    */
   startPeriod: string
   /**
-   * How the reconciler rolls this service. App-registry services use `'in-place'`
-   * (recreate the single container behind the ingress). `'blue-green'` is the
-   * backend-only zero-downtime mechanism owned by cella's `infrastructure.ts`.
+   * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
+   * (the default for LB-exposed services) overlaps two generations behind the
+   * load balancer; `'exclusive'` is for the singleton-slot cdc worker, which
+   * cannot overlap. See info/ZERO_DOWNTIME_REPLACEMENT.md.
    */
-  rolloverStrategy: RolloverStrategy
+  replacementStrategy: ReplacementStrategy
   /** Run the one-shot `migrate` service before rolling. Backend-only today. */
   runMigrate?: boolean
-  /** Blue-green drain window (seconds) after the ingress flips; defaults to 0. */
+  /**
+   * How the old generation drains off the LB when de-registered. `'requests'`
+   * (HTTP) or `'reconnect'` (WebSocket). Omit for the LB-less `exclusive` worker.
+   */
+  drainPolicy?: DrainPolicy
+  /** Drain window (seconds) the cutover waits after the old generation is de-registered; defaults to 0. */
   drainSeconds?: number
   /**
    * How the load balancer exposes this service publicly. `'default'` = the LB's

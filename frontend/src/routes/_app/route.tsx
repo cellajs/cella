@@ -21,32 +21,16 @@ export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
-    try {
-      console.debug('[AppLayout] Fetching me before entering app:', location.pathname);
+    const storedUser = useUserStore.getState().user;
 
-      // Try to use stored user, it will still revalidate below
-      const storedUser = useUserStore.getState().user;
-      if (storedUser) {
-        console.info('Continuing user with session');
-        // Start stream early so catchup runs in parallel with route loaders
-        appStreamManager.connect();
-        // Validate session in parallel — disconnect stream if stale
-        queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {
-          appStreamManager.disconnect();
-        });
-        return { user: storedUser };
-      }
-
-      // Fetch and set user
-      const user = await queryClient.ensureQueryData({ ...meQueryOptions() });
-      // Start stream early so catchup runs in parallel with route loaders
-      appStreamManager.connect();
-      return { user };
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error);
-        onError(error);
-      }
+    // No stored user → treat as unauthenticated and redirect immediately. We must NOT
+    // await /me here: doing so gates first paint on the round-trip and shows a blank
+    // screen when the backend is slow or unreachable. Instead we hydrate /me in the
+    // background — a valid session still populates the store (the rare case of a cookie
+    // without a stored user simply resolves on the next navigation). Failures are
+    // handled by the global query error handler.
+    if (!storedUser) {
+      void queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {});
 
       // If root domain, check for last user to decide where to redirect
       if (location.pathname === '/') {
@@ -61,16 +45,23 @@ export const Route = createFileRoute('/_app')({
       const redirectPath = url.pathname + url.search;
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
     }
+
+    // Stored user → continue into the app and revalidate the session in the background
+    console.info('Continuing user with session');
+    // Start stream early so catchup runs in parallel with route loaders
+    appStreamManager.connect();
+    // Validate session in parallel — disconnect stream if stale
+    queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {
+      appStreamManager.disconnect();
+    });
+    return { user: storedUser };
   },
 
-  loader: async ({ cause, context }) => {
+  loader: async ({ cause }) => {
     if (cause !== 'enter') return;
 
     try {
       console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
-
-      // Revalidate user if not already awaited above
-      if (!context?.user) await queryClient.ensureQueryData({ ...meQueryOptions() });
 
       // Prefetch unseen counts alongside menu data
       queryClient.prefetchQuery(unseenCountsQueryOptions());

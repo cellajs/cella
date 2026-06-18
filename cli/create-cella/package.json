@@ -47,9 +47,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "axios": "^1.17.0",
+    "axios": "catalog:",
     "commander": "^15.0.0",
-    "giget": "^3.1.2",
+    "giget": "catalog:",
     "nano-spawn": "^2.0.0",
     "ora": "^9.3.0",
     "picocolors": "^1.1.1",
@@ -57,8 +57,8 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
     "@types/validate-npm-package-name": "^4.0.2",
+    "@typescript/native-preview": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
     "vitest": "catalog:"

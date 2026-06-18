@@ -56,9 +56,8 @@ describe('compute module source invariants', () => {
   })
 
   it('sizes each VM via the per-service instanceTypeFor helper', () => {
-    // VM size must be resolved per service (so backend can run a bigger box
-    // for blue-green 2x-RAM cutover) rather than a single fleet-wide size.
-    expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(service\.name\)/)
+    // VM size must be resolved per service rather than a single fleet-wide size.
+    expect(source).toMatch(/type:\s*infra\.instanceTypeFor\(svc\.slug\)/)
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
@@ -85,25 +84,38 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/composeEnvFor/)
   })
 
-  it('contains no service-specific wiring — inter-service topology lives in registry bindings', () => {
+  it('contains no inter-service env wiring — service topology lives in registry bindings', () => {
     // cdc's API_WS_URL and ai's AI_API_URL are declared as @{…} binding
     // templates in config/services.config.ts; compute.ts only provides the
-    // generic resolver (url / privateIp / port vocabulary).
-    for (const banned of ['cdc', "'ai'", 'API_WS_URL', 'AI_API_URL', 'aiUrl']) {
-      expect(source, `service-specific token ${banned} must not appear in compute.ts`).not.toContain(banned)
+    // generic resolver. The backend IS named (it exposes the one stable
+    // internal address the resolver targets), but no service's ENV wiring may
+    // be hard-coded here.
+    for (const banned of ['API_WS_URL', 'AI_API_URL', 'aiUrl']) {
+      expect(source, `inter-service env token ${banned} must not appear in compute.ts`).not.toContain(banned)
     }
   })
 
-  it('reserves private IPs in a first pass so bindings have no VM creation-order constraints', () => {
-    expect(source).toMatch(/reservedIps\.set\(/)
-    expect(source).toMatch(/reservedPrivateIp\(/)
-    // The old backend-first special case must not come back.
+  it('materialises a VM per active generation with its own per-generation IPs', () => {
+    // The immutable-node model names VMs `vm-<svc>-<gen>` and gives each
+    // generation its own public + private IP; the LB targets the set of active
+    // generation IPs. There is no lifelong per-service reserved IP map.
+    expect(source).toMatch(/activeGenerations\(/)
+    expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.gen\}/)
+    expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.gen\}/)
+    // The old lifelong reserved-IP map must not come back.
+    expect(source).not.toMatch(/reservedIps\.set\(/)
     expect(source).not.toMatch(/Create backend first/)
   })
 
-  it('derives the ingress boot slot from the registry rollover strategy', () => {
-    expect(source).toMatch(/rolloverStrategy === 'blue-green'/)
-    expect(source).not.toMatch(/name === 'backend'\s*\?\s*'backend-blue'/)
+  it('resolves cdc\u2019s @{backend.privateIp} binding to the backend current-generation IP', () => {
+    // No separate stable internal IP: every deploy bumps all services together,
+    // so cdc (also redeployed) bakes the backend's current-generation private
+    // IP, reserved in the first pass. A single pinned IP cannot attach to two
+    // generations' NICs at once, so the stable-internal-IP mechanism is gone.
+    expect(source).toMatch(/backendBindingIp\(/)
+    expect(source).toMatch(/primaryGen\.set\(/)
+    expect(source).not.toMatch(/ipam-backend-internal/)
+    expect(source).not.toMatch(/backendInternalIp/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {
@@ -117,8 +129,13 @@ describe('compute module source invariants', () => {
     }
   })
 
-  it('passes a runtime secret manifest into cloud-init instead of inlining runtime values into .env', () => {
-    expect(source).toMatch(/runtimeSecretsManifest,/)
+  it('bakes the runtime secret manifest inline into cloud-init, not as an out-of-band S3 object', () => {
+    // Under immutable releases every change replaces the VM anyway, so the
+    // manifest (metadata only) is baked into the new generation's cloud-init
+    // rather than published as a deploy-bucket object the VM fetches.
+    expect(source).toMatch(/buildRuntimeSecretsManifest\(service\.name\)/)
+    expect(source).not.toMatch(/new scaleway\.object\.Item\(`runtime-manifest-/)
+    expect(source).not.toMatch(/runtimeSecretsManifestKey/)
     expect(source).not.toContain('COOKIE_SECRET=')
     expect(source).not.toContain('DATABASE_URL=')
     expect(source).not.toContain('BREVO_API_KEY=')

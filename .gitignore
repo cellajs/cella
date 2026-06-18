@@ -54,6 +54,7 @@ frontend/stats.html
 .junie
 .claude
 .custom
+.kilo
 
 # Cella
 *storybook.log
@@ -75,3 +76,4 @@ terraform.tfstate*
 coverage/
 *.lcov
 .nyc_output/
+

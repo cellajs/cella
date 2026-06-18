@@ -52,16 +52,3 @@ describe('service registry — lbRoute invariants', () => {
     expect(services.find((s) => s.slug === 'backend')?.featureFlag).toBeUndefined()
   })
 })
-
-describe('service registry — instanceType', () => {
-  it('sizes backend larger in production than staging (blue-green needs ~2x RAM)', () => {
-    const size = services.find((s) => s.slug === 'backend')?.instanceType
-    expect(size).toEqual({ production: 'DEV1-M', staging: 'DEV1-S' })
-  })
-
-  it('requires a per-service instanceType on every service (DEV1-S for the workers)', () => {
-    for (const slug of ['cdc', 'yjs', 'ai', 'frontend'] as const) {
-      expect(services.find((s) => s.slug === slug)?.instanceType).toBe('DEV1-S')
-    }
-  })
-})

@@ -4,10 +4,13 @@
  * Provides npm registry fetching, changelog detection, vulnerability parsing, and caching.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { promisify } from 'node:util';
 import pc from './colors';
+
+const execFileAsync = promisify(execFile);
 
 /*************************************************************************************************
  * Types
@@ -299,20 +302,19 @@ export function isMajorVersionChange(current: string, latest: string): boolean {
  * Note: pnpm outdated exits with code 1 when packages are outdated,
  * so we need to handle this as a normal case, not an error.
  */
-export function getOutdatedPackages(cwd: string): Record<string, OutdatedPackage> {
+export async function getOutdatedPackages(cwd: string): Promise<Record<string, OutdatedPackage>> {
   try {
-    const result = execFileSync('pnpm', ['-r', 'outdated', '--json'], {
+    const { stdout } = await execFileAsync('pnpm', ['-r', 'outdated', '--json'], {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
       cwd,
     });
 
-    if (!result || result.trim() === '') {
+    if (!stdout || stdout.trim() === '') {
       return {};
     }
 
-    return JSON.parse(result);
+    return JSON.parse(stdout);
   } catch (error) {
     // pnpm outdated exits with code 1 when there are outdated packages
     // This is expected behavior, not an error
@@ -339,20 +341,19 @@ export function getOutdatedPackages(cwd: string): Record<string, OutdatedPackage
  * Runs pnpm audit and returns parsed JSON output.
  * Returns null if audit fails or no vulnerabilities found.
  */
-export function runPnpmAudit(cwd: string): AuditResult | null {
+export async function runPnpmAudit(cwd: string): Promise<AuditResult | null> {
   try {
-    const result = execFileSync('pnpm', ['audit', '--json'], {
+    const { stdout } = await execFileAsync('pnpm', ['audit', '--json'], {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
       maxBuffer: 10 * 1024 * 1024,
       cwd,
     });
 
-    if (!result || result.trim() === '') {
+    if (!stdout || stdout.trim() === '') {
       return null;
     }
 
-    return JSON.parse(result) as AuditResult;
+    return JSON.parse(stdout) as AuditResult;
   } catch (error) {
     // pnpm audit exits with non-zero when vulnerabilities found
     if (error instanceof Error && 'stdout' in error) {

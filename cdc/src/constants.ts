@@ -36,12 +36,15 @@ export const RESOURCE_LIMITS = {
     retryDelayMs: 5000,
   },
 
-  // Slot takeover during rolling deployments
+  // Slot takeover during rolling deployments. The new generation's worker boots
+  // warm and contends for the slot the old worker still holds; for this initial
+  // handoff window it retries fast so the cutover is sub-second, then settles to
+  // the normal `reconnection` cadence (see subscribeWithReconnect).
   slotTakeover: {
-    /** Max attempts to take over an active slot before giving up */
+    /** Number of fast retries that make up the handoff window. */
     maxAttempts: 12,
-    /** Delay between takeover attempts (ms) */
-    retryDelayMs: 5000,
+    /** Delay between handoff retries (ms) — tightened for a sub-second takeover. */
+    retryDelayMs: 500,
   },
 
   // Catchup mode thresholds

@@ -20,6 +20,8 @@ export type DbOrTx = DB | Tx;
 // The CA (Scaleway RDB instance cert) is provisioned automatically into the
 // DATABASE_SSL_CA runtime secret by `pulumi up`, so a missing value is a
 // misconfiguration we fail fast on rather than silently downgrading security.
+// The secret is base64-encoded (the PEM is multi-line and would break the
+// line-based `.env.runtime` delivery), so decode it back to PEM here.
 const sslConfig =
   env.NODE_ENV === 'production' && !env.NODB
     ? (() => {
@@ -30,7 +32,7 @@ const sslConfig =
               "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
           );
         }
-        return { ca: env.DATABASE_SSL_CA, rejectUnauthorized: true };
+        return { ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'), rejectUnauthorized: true };
       })()
     : undefined;
 
