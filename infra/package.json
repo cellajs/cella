@@ -18,6 +18,7 @@
     "assert-vm-grants": "tsx tasks/assert-vm-grants.ts",
     "assert-secrets-deliverable": "tsx tasks/assert-secrets-deliverable.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
+    "diag": "tsx tasks/diag.ts",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
