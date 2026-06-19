@@ -305,6 +305,26 @@ describe('createLbGetServers — live REST shape', () => {
     expect(capturedUrl).toBe('https://api.scaleway.com/lb/v1/zones/fr-par-1/backends/be-123')
   })
 
+  it('parses wrapped backend payloads from Scaleway', async () => {
+    const getServers = createLbGetServers({
+      secretKey: 'scw-secret',
+      zone: 'fr-par-1',
+      backendId: 'be-123',
+      fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ backend: { server_ip: ['10.0.0.4'] } }) }),
+    })
+    await expect(getServers()).resolves.toEqual(['10.0.0.4'])
+  })
+
+  it('parses provider-style serverIps payloads', async () => {
+    const getServers = createLbGetServers({
+      secretKey: 'scw-secret',
+      zone: 'fr-par-1',
+      backendId: 'be-123',
+      fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ backend: { serverIps: ['10.0.0.4'] } }) }),
+    })
+    await expect(getServers()).resolves.toEqual(['10.0.0.4'])
+  })
+
   it('strips the zone prefix before reading the backend', async () => {
     let capturedUrl = ''
     const getServers = createLbGetServers({
