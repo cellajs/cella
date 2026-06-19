@@ -23,7 +23,7 @@ export type DbOrTx = DB | Tx;
 // misconfiguration we fail fast on rather than silently downgrading security.
 // The secret is base64-encoded (the PEM is multi-line and would break the
 // line-based `.env.runtime` delivery), so decode it back to PEM here.
-const sslConfig =
+const sslCa =
   env.NODE_ENV === 'production' && !env.NODB
     ? (() => {
         if (!env.DATABASE_SSL_CA) {
@@ -33,24 +33,7 @@ const sslConfig =
               "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
           );
         }
-        return {
-          ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'),
-          rejectUnauthorized: true,
-          // Scaleway's managed PostgreSQL presents a self-signed, per-instance
-          // certificate whose CN is the private endpoint host (e.g. an IP like
-          // 10.0.0.2) with no subjectAltName. We connect by that same private
-          // IP, but Node's default identity check only matches IP literals
-          // against `iPAddress` SAN entries — it ignores the CN — so it would
-          // reject the connection ("IP is not in the cert's altnames") even
-          // though we pin the exact CA. Authentication is already guaranteed by
-          // `rejectUnauthorized` verifying the chain against that pinned CA; we
-          // additionally assert the presented cert's CN equals the host we
-          // dialed, then fall back to Node's default check for anything else.
-          checkServerIdentity: (host: string, cert: PeerCertificate) => {
-            if (cert.subject?.CN === host) return undefined;
-            return tlsCheckServerIdentity(host, cert);
-          },
-        };
+        return Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8');
       })()
     : undefined;
 
@@ -68,13 +51,43 @@ const toConnectionString = (url: string): string => {
   }
 };
 
+/** Parse the host (private IP or DNS name) from a postgres connection string. */
+const hostOf = (connectionString: string): string | undefined => {
+  try {
+    return new URL(toConnectionString(connectionString)).hostname || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+// Build the verified-TLS `ssl` option for one connection. We pin the CA and keep
+// `rejectUnauthorized` so the chain is fully verified. The Scaleway RDB cert
+// carries proper SANs (e.g. `DNS:10.0.0.2, IP Address:10.0.0.2`), so the only
+// problem is WHICH host the identity check runs against: node-postgres does not
+// thread the connection host into the TLS layer, so the check defaults to
+// `localhost` and fails (ERR_TLS_CERT_ALTNAME_INVALID) even though the cert
+// legitimately covers the host we dialed. Pin the identity check to that actual
+// host so the cert's real SANs are honored (the chain is still fully verified
+// against the pinned CA).
+const sslFor = (connectionString: string) => {
+  if (!sslCa) return undefined;
+  const host = hostOf(connectionString);
+  return {
+    ca: sslCa,
+    rejectUnauthorized: true,
+    checkServerIdentity: host
+      ? (_passedHost: string, cert: PeerCertificate) => tlsCheckServerIdentity(host, cert)
+      : undefined,
+  };
+};
+
 const createPgConnection = (connectionString: string, max: number): PgDB =>
   pgDrizzle({
     connection: {
       connectionString: toConnectionString(connectionString),
       connectionTimeoutMillis: 10_000,
       max,
-      ssl: sslConfig,
+      ssl: sslFor(connectionString),
     },
     ...dbConfig,
   });
