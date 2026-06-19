@@ -65,14 +65,12 @@ source "scaleway" "compute_docker" {
   commercial_type = var.commercial_type
   ssh_username    = "root"
 
-  image_name    = local.image_name
-  snapshot_name = "${local.image_name}-root"
-  server_name   = "${local.image_name}-builder"
+  image_name  = local.image_name
+  server_name = "${local.image_name}-builder"
 
   remove_volume             = true
   server_creation_timeout   = "10m"
   server_shutdown_timeout   = "10m"
-  snapshot_creation_timeout = "1h"
   image_creation_timeout    = "1h"
 }
 
