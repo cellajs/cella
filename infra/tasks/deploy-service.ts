@@ -58,13 +58,17 @@ function healthUrlFromFlag(explicit?: string): string | undefined {
   return explicit.endsWith('/health') ? explicit : `${explicit.replace(/\/$/, '')}/health`
 }
 
+const deployHealthAttempts = 30
+const deployHealthIntervalMs = 3000
+const deployHealthTimeoutMs = 8000
+
 async function waitForPublicVersion(url: string, sha: string): Promise<boolean> {
   const out = await pollForVersion({
     url,
     expectedSha: sha,
-    probe: createFetchProbe(8000),
-    attempts: 120,
-    intervalMs: 3000,
+    probe: createFetchProbe(deployHealthTimeoutMs),
+    attempts: deployHealthAttempts,
+    intervalMs: deployHealthIntervalMs,
     sleep,
   })
   return out.ok
