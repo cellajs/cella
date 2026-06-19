@@ -69,4 +69,8 @@ export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   organizationId,
   rules: buildVmReaderPolicyRules(projectId),
   tags,
+}, {
+  // CI intentionally cannot write IAM policies. Keep permission rules managed,
+  // but do not let cosmetic provider/API description drift block deployments.
+  ignoreChanges: ['description'],
 })
