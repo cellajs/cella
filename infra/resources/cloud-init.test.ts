@@ -11,8 +11,10 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
     manifestContent: '[\n  { "envVar": "COOKIE_SECRET", "secretId": "uuid-1", "required": true }\n]',
     composeContent: 'services:\n  backend: {}',
     registry: 'rg.fr-par.scw.cloud/my-namespace',
+    accessKey: 'SCW-ACCESS-KEY',
     secretKey: 'SCW-SECRET-KEY',
     region: 'fr-par',
+    bootDiagBucket: 'cella-boot-diag',
     dockerPreinstalled: false,
     ...overrides,
   }
@@ -36,10 +38,22 @@ describe('renderCloudInit (immutable-node)', () => {
     const out = renderCloudInit(params())
     expect(out).toContain('cat > /etc/runtime-secrets/manifest.json')
     expect(out).toContain('"envVar": "COOKIE_SECRET"')
-    // No reconciler, no S3 tag/manifest/boot-diag channel in this model (boot
-    // diagnostics now stream to the serial console instead of an S3 prefix).
+    // No reconciler and no S3 tag/manifest channel in this model. Boot
+    // diagnostics use the dedicated boot diagnostics bucket only.
     expect(out).not.toContain('reconciler')
-    expect(out).not.toMatch(/s3:\/\//)
+    expect(out).not.toMatch(/deploy\//)
+  })
+
+  it('installs a boot diagnostics uploader for the dedicated bucket', () => {
+    const out = renderCloudInit(params())
+    expect(out).toContain('/usr/local/bin/cella-upload-boot-diag')
+    expect(out).toContain("BOOT_DIAG_BUCKET='cella-boot-diag'")
+    expect(out).toContain("SCW_ACCESS_KEY='SCW-ACCESS-KEY'")
+    expect(out).toContain("CELLA_SERVICE='backend'")
+    expect(out).toContain("CELLA_RELEASE_SHA='abc123def'")
+    expect(out).toContain('BOOT_RC="$rc" /usr/local/bin/cella-upload-boot-diag || true')
+    expect(out).toContain('boot-diag/{service}-{stamp}-boot.log')
+    expect(out).toContain('boot-diag/{service}-failed-{stamp}.log')
   })
 
   it('renders DIFFERENT userdata when the release SHA changes (a new generation)', () => {

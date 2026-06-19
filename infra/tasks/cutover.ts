@@ -312,7 +312,7 @@ function parseBackendServers(payload: string): string[] {
 export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
   const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
   const backendId = scalewayResourceId(opts.backendId)
-  const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}/servers`
+  const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}`
   return async () => {
     const res = await fetchImpl(url, {
       method: 'GET',

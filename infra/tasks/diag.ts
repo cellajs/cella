@@ -1,8 +1,7 @@
 /**
- * Zero-config local reader for the S3 boot-diagnostics the reconciler/cloud-init
- * upload on a deploy (see `infra/reconciler/reconciler.sh` and
- * `infra/resources/cloud-init.ts`). This is the friendly wrapper around the
- * CI primitive `fetch-boot-diag.ts`: it derives the state bucket + region from
+ * Zero-config local reader for the S3 boot diagnostics the boot path uploads on
+ * a deploy. This is the friendly wrapper around the CI primitive
+ * `fetch-boot-diag.ts`: it derives the boot diagnostics bucket + region from
  * `appConfig` (so you never pass `--bucket`/`--region`) and defaults to every
  * service, giving you and Copilot one command to read why a release failed.
  *
@@ -33,9 +32,7 @@ async function resolveTarget(mode: string): Promise<ResolvedTarget> {
   const { deriveInfra } = await import('../lib/naming')
   const { serviceNames } = await import('../compose/compose')
   const { naming, region } = deriveInfra(appConfig)
-  // Boot-diag objects live under the Pulumi state bucket (STATE_BUCKET in the
-  // deploy workflow), in the `boot-diag/` prefix the reconciler writes to.
-  return { bucket: naming.pulumiStateBucket, region, serviceNames }
+  return { bucket: naming.bootDiagBucket, region, serviceNames }
 }
 
 /** Render the `--list` overview as an aligned plain-text table. */

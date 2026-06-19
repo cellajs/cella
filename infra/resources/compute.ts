@@ -38,7 +38,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, infraConfig, mode, appConfig, endpoints, vmSecretKey } from '../pulumi-context'
+import { naming, zone, region, tags, infra, infraConfig, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
 import { enabledServices, servicesByName, type ServiceDefinition, type ServiceName } from '../lib/services'
@@ -47,7 +47,7 @@ import { renderCloudInit } from './cloud-init'
 import { privateNetworkId } from './network'
 import { registryEndpoint } from './registry'
 import { secretIds } from './secrets'
-import { frontendBucketName } from './storage'
+import { bootDiagBucketName, frontendBucketName } from './storage'
 import { vmReaderPolicy } from './vm-iam'
 
 // ---------------------------------------------------------------------------
@@ -55,6 +55,7 @@ import { vmReaderPolicy } from './vm-iam'
 // Manager access. Never the operator/CI key.
 // ---------------------------------------------------------------------------
 
+const scwAccessKey = vmAccessKey
 const scwSecretKey = vmSecretKey
 
 // ---------------------------------------------------------------------------
@@ -139,9 +140,11 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
   return pulumi.all([
     envLines,
     buildRuntimeSecretsManifest(service.name),
+    scwAccessKey,
     scwSecretKey,
     registryEndpoint,
-  ]).apply(([env, manifest, secretKey, registry]) =>
+    bootDiagBucketName,
+  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket]) =>
     renderCloudInit({
       service: service.name,
       profile: service.profile,
@@ -151,8 +154,10 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       manifestContent: manifest,
       composeContent,
       registry,
+      accessKey,
       secretKey,
       region,
+      bootDiagBucket,
       dockerPreinstalled: infra.dockerPreinstalled,
     }),
   )

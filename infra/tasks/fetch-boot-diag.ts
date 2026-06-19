@@ -1,6 +1,6 @@
 /**
- * Fetch a service's boot diagnostics from the Pulumi state bucket on a failed
- * rollout. The reconciler/cloud-init uploads two kinds of objects under
+ * Fetch a service's boot diagnostics from the dedicated boot diagnostics bucket
+ * on a failed rollout. The boot path uploads objects under
  * `boot-diag/`:
  *   - stage markers: `<service>-stage-<n>-<label>` written as each boot phase
  *     completes — the last few tell us how far the VM got before stalling.
@@ -13,7 +13,7 @@
  * never blocks a green deploy.
  *
  * Usage:
- *   tsx infra/tasks/fetch-boot-diag.ts --bucket <state-bucket> \
+ *   tsx infra/tasks/fetch-boot-diag.ts --bucket <boot-diag-bucket> \
  *     --service <name> --region <scw-region>
  */
 import { spawnSync } from 'node:child_process'
