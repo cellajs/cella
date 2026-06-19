@@ -72,7 +72,10 @@ function healthUrlFromFlag(explicit?: string): string | undefined {
   return explicit.endsWith('/health') ? explicit : `${explicit.replace(/\/$/, '')}/health`
 }
 
-const deployHealthAttempts = 30
+// Cold-boot budget: a fresh VM generation pulls its image, runs migrate, and
+// starts the app before it serves the new SHA (~110s observed). The gate must
+// outlast that, so keep a generous attempt count (120 * 3s = 360s).
+const deployHealthAttempts = 120
 const deployHealthIntervalMs = 3000
 const deployHealthTimeoutMs = 8000
 
