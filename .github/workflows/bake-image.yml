@@ -101,10 +101,12 @@ jobs:
             echo "- **Name:** \`$image_name\`"
             echo "- **UUID:** \`$image_uuid\`"
             echo ''
-            echo 'Next steps:'
-            echo "1. Set \`compute.image\` in [infra/config/general.config.ts](../../infra/config/general.config.ts) to \`$image_uuid\` (staging first)."
-            echo '2. Deploy to a disposable/staging stack and confirm the agent boot (serial console `::cella::` markers + `/health`).'
-            echo '3. Promote to production.'
+            echo 'The next deploy picks this up automatically — `compute.image` is the'
+            echo 'stable image **name**, and the program resolves the newest image with'
+            echo 'that name at deploy time. No config edit needed.'
+            echo ''
+            echo 'To **pin** this exact image (e.g. rollback), set `compute.image` in'
+            echo 'infra/config/general.config.ts to the UUID above.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload image manifest

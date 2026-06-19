@@ -367,6 +367,16 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   return ip.address.apply((addr) => addr.split('/')[0])
 }
 
+// Resolve the baked compute image at plan time. `compute.image` is normally a
+// stable NAME (e.g. 'cella-docker-node-agent-v1'): the newest image with that
+// name wins (`latest: true`), so a freshly baked image is picked up on the next
+// deploy with no UUID paste. A literal image UUID pins a specific image for
+// rollback. Resolution runs in the deploy zone so the server and image match.
+const IMAGE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const computeImageId: pulumi.Input<string> = IMAGE_UUID_RE.test(infra.computeImage)
+  ? infra.computeImage
+  : scaleway.instance.getImageOutput({ name: infra.computeImage, latest: true, zone }).id
+
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
   const resourceName = `vm-${svc.slug}-${generation.gen}`
 
@@ -386,7 +396,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const server = new scaleway.instance.Server(resourceName, {
     name: naming.resource(`${svc.slug}-${generation.gen}`),
     type: infra.instanceTypeFor(svc.slug),
-    image: infra.computeImage,
+    image: computeImageId,
     zone,
     tags,
     securityGroupId: securityGroup.id,

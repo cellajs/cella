@@ -29,8 +29,8 @@ variable "secret_key" {
 
 variable "zone" {
   type        = string
-  description = "Scaleway zone for the temporary builder server and image."
-  default     = "fr-par-1"
+  description = "Scaleway zone for the temporary builder server and image. Must match the deploy zone so the instance image lookup finds it."
+  default     = "nl-ams-1"
 }
 
 variable "source_image" {
@@ -45,9 +45,9 @@ variable "commercial_type" {
   default     = "DEV1-S"
 }
 
-variable "image_name_prefix" {
+variable "image_name" {
   type        = string
-  description = "Prefix for the baked Scaleway image name."
+  description = "Stable Scaleway image name. compute.ts resolves the NEWEST image with this name at deploy time (no UUID paste), so it must stay stable across bakes."
   default     = "cella-docker-node-agent-v1"
 }
 
@@ -59,7 +59,6 @@ variable "agent_artifact_dir" {
 
 locals {
   build_timestamp = formatdate("YYYYMMDD-hhmmss", timestamp())
-  image_name      = "${var.image_name_prefix}-${local.build_timestamp}"
 }
 
 source "scaleway" "compute_docker" {
@@ -71,8 +70,11 @@ source "scaleway" "compute_docker" {
   commercial_type = var.commercial_type
   ssh_username    = "root"
 
-  image_name  = local.image_name
-  server_name = "${local.image_name}-builder"
+  # Image name stays stable across bakes; compute.ts picks the newest one by name
+  # (`getImage latest=true`). The builder VM name carries the timestamp to avoid
+  # collisions between concurrent/repeat bakes.
+  image_name  = var.image_name
+  server_name = "${var.image_name}-builder-${local.build_timestamp}"
 
   remove_volume           = true
   server_creation_timeout = "10m"
@@ -127,7 +129,8 @@ build {
     output     = "image-manifest.json"
     strip_path = true
     custom_data = {
-      image_name = local.image_name
+      image_name      = var.image_name
+      build_timestamp = local.build_timestamp
     }
   }
 }
