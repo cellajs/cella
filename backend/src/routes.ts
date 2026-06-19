@@ -45,8 +45,8 @@ baseApp.route('/:tenantId/:organizationId/attachments', attachmentHandlers);
 baseApp.route('/:tenantId/:organizationId/memberships', membershipHandlers);
 baseApp.route('/:tenantId/:organizationId/seen', seenHandlers);
 
-// Optional feature routers are always mounted so OpenAPI/SDK generation stays stable;
-// the `x-feature` route prop 404s them at runtime when the flag is disabled.
+// Optional service routers are always mounted so OpenAPI/SDK generation stays stable;
+// the `x-service` route prop 404s them at runtime when the service is disabled.
 baseApp.route('/yjs', yjsHandlers);
 baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 

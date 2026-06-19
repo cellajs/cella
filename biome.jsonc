@@ -15,6 +15,7 @@
       "packages/data-grid/src/**",
       "bench/src/**",
       "!bench/src/**/dist",
+      "!.kilo/worktrees/*",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
@@ -51,7 +52,7 @@
       "react": "recommended"
     },
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "useExhaustiveDependencies": "off",
         "noUnusedVariables": "off",

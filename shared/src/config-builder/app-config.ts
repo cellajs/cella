@@ -30,6 +30,14 @@ if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AU
 if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
 if (process.env.AI_API_URL) merged.aiUrl = process.env.AI_API_URL;
 
+merged.services = {
+  ...merged.services,
+  frontend: { ...(merged.services.frontend ?? {}), publicUrl: merged.frontendUrl },
+  backend: { ...(merged.services.backend ?? {}), publicUrl: merged.backendUrl },
+  yjs: { ...(merged.services.yjs ?? {}), publicUrl: merged.yjsUrl },
+  ai: { ...(merged.services.ai ?? {}), publicUrl: merged.aiUrl },
+};
+
 // Validate slug is a true, URL-safe slug. It feeds resource names (S3 buckets,
 // Scaleway Container Registry namespace, etc). Scaleway registry namespaces
 // require >= 4 chars with no hyphens, so we enforce a 4-char minimum on the

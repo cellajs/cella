@@ -4,15 +4,15 @@
  * Every release provisions a NEW VM generation (`vm-<svc>-<gen>`) with the image
  * SHA baked into its cloud-init. This task can health-gate that new generation
  * and atomically re-point the load balancer from the old generation to the new
- * one, draining the old before CI destroys it. Current deploy.yml does not call
- * this entrypoint yet; it lets Pulumi own LB `serverIps` and verifies the new
- * generation after `pulumi up`.
+ * one, draining the old before CI destroys it. deploy.yml calls
+ * tasks/deploy-service.ts, which wraps this controller with Pulumi create/destroy
+ * bookends and stack-output discovery.
  *
  * Design:
  *   - PURE CORE — `expandBackend` / `contractBackend` / `pollSlotReleased` /
  *     `sequenceCutover` orchestrate the rollout over INJECTED effects, so the
- *     ordering (health-gate BEFORE any LB mutation, expand BEFORE contract,
- *     drain BEFORE destroy) is fully unit-testable with a fake LB + fetch.
+ *     ordering (expand BEFORE contract, health before contract, drain BEFORE
+ *     destroy) is fully unit-testable with a fake LB + fetch.
  *   - IMPURE EDGES — `createLbSetServers` (direct Scaleway `SetBackendServers`
  *     REST call) and the `pulumi up` create/destroy bookends in the entrypoint.
  *     These touch live infra and are exercised only in a real deploy / preview,
@@ -61,6 +61,9 @@ export type DrainPolicy = 'requests' | 'reconnect'
 
 /** Atomically replace a backend's entire server list (Scaleway SetBackendServers). */
 export type SetServersFn = (serverIps: string[]) => Promise<void>
+
+/** Read the backend's current server list. */
+export type GetServersFn = () => Promise<string[]>
 
 /** Resolve true once the new generation is serving the expected release (app /health gate). */
 export type HealthGateFn = () => Promise<boolean>
@@ -143,6 +146,10 @@ export interface CutoverPlan {
   healthGate: HealthGateFn
   /** lb-overlap: replace the LB backend server list atomically. Required for lb-overlap. */
   setServers?: SetServersFn
+  /** lb-overlap: read the current LB server list for idempotent resume. */
+  getServers?: GetServersFn
+  /** lb-overlap: run health/version polling after attaching the new generation to the LB. */
+  healthAfterExpand?: boolean
   /** backend only: move the stable internal IP onto the new generation (after health, before contract). */
   reattachInternalIp?: () => Promise<void>
   /** exclusive: trigger the old generation to stop and release the slot (in practice, the pulumi destroy bookend). */
@@ -157,7 +164,7 @@ export interface CutoverPlan {
 export interface CutoverResult {
   ok: boolean
   /** Why the cutover stopped, when not ok. */
-  aborted?: 'unhealthy' | 'slot-stuck'
+  aborted?: 'unhealthy' | 'slot-stuck' | 'unexpected-lb-state'
   /** Ordered record of the steps performed — asserted by the unit tests. */
   steps: string[]
 }
@@ -167,10 +174,13 @@ export interface CutoverResult {
  * by the `pulumi up` bookend); this gates it healthy and re-points traffic.
  *
  * lb-overlap:  health-gate → expand [old,new] → reattach internal IP → contract [new] → drain
+ *              or expand → health-gate → reattach → contract when CI must probe through the public LB
  * exclusive:   health-gate(process up) → drain+destroy old → slot released → (new acquires)
  *
- * On an unhealthy new generation the cutover aborts BEFORE any LB mutation, so
- * the old generation keeps serving and there is no outage.
+ * With a direct new-generation probe, an unhealthy generation aborts before any
+ * LB mutation. With `healthAfterExpand`, the new generation is first attached
+ * to the LB and the public endpoint is polled until the LB can serve the new
+ * SHA; failure leaves the LB in the safe expanded state for manual diagnosis.
  */
 export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult> {
   const sleep = plan.sleep ?? defaultSleep
@@ -199,16 +209,42 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     return { ok: true, steps }
   }
 
-  // lb-overlap: the new generation must serve the expected SHA BEFORE we touch
-  // the LB, so a bad release never removes a healthy server.
-  record('health-gate new generation (/health == SHA)')
-  if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
+  if (!plan.healthAfterExpand) {
+    record('health-gate new generation (/health == SHA)')
+    if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
+  }
 
   if (!plan.setServers) throw new Error(`cutover: lb-overlap service '${plan.service}' requires a setServers effect`)
   const setServers = plan.setServers
 
-  record(`expand LB to [old, new] (${plan.oldIps.length + plan.newIps.length} servers)`)
-  await expandBackend(setServers, plan.oldIps, plan.newIps)
+  const sameIps = (actual: string[], expected: string[]) => {
+    const normalize = (ips: string[]) => [...ips].sort().join(',')
+    return normalize(actual) === normalize(expected)
+  }
+  const oldAndNew = [...plan.oldIps, ...plan.newIps]
+  const currentServers = plan.getServers ? await plan.getServers() : plan.oldIps
+
+  if (sameIps(currentServers, plan.newIps)) {
+    record('LB already contracted to [new]')
+    return { ok: true, steps }
+  }
+
+  if (!sameIps(currentServers, plan.oldIps) && !sameIps(currentServers, oldAndNew)) {
+    record(`unexpected LB server list: ${currentServers.join(',') || '<empty>'}`)
+    return { ok: false, aborted: 'unexpected-lb-state', steps }
+  }
+
+  if (sameIps(currentServers, oldAndNew)) {
+    record('LB already expanded to [old, new]')
+  } else {
+    record(`expand LB to [old, new] (${oldAndNew.length} servers)`)
+    await expandBackend(setServers, plan.oldIps, plan.newIps)
+  }
+
+  if (plan.healthAfterExpand) {
+    record('health-gate new generation (/health == SHA)')
+    if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
+  }
 
   if (plan.reattachInternalIp) {
     record('reattach stable internal IP to new generation')
@@ -256,6 +292,29 @@ export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
       const body = await res.text()
       throw new Error(`SetBackendServers ${opts.backendId} → ${res.status}: ${body}`)
     }
+  }
+}
+
+function parseBackendServers(payload: string): string[] {
+  const data = JSON.parse(payload) as { server_ip?: string[]; servers?: Array<string | { ip?: string; serverIp?: string; server_ip?: string }> }
+  if (Array.isArray(data.server_ip)) return data.server_ip
+  if (Array.isArray(data.servers)) {
+    return data.servers.map((server) => typeof server === 'string' ? server : (server.ip ?? server.serverIp ?? server.server_ip ?? '')).filter(Boolean)
+  }
+  return []
+}
+
+export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
+  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const url = `${LB_BASE}/zones/${opts.zone}/backends/${opts.backendId}/servers`
+  return async () => {
+    const res = await fetchImpl(url, {
+      method: 'GET',
+      headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'application/json' },
+    })
+    const body = await res.text()
+    if (!res.ok) throw new Error(`ListBackendServers ${opts.backendId} → ${res.status}: ${body}`)
+    return parseBackendServers(body)
   }
 }
 
@@ -322,6 +381,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     drainSeconds,
     healthGate,
     setServers,
+    getServers: strategy === 'lb-overlap' ? createLbGetServers({ secretKey: secretKey!, zone: getFlag(argv, '--lb-zone')!, backendId: getFlag(argv, '--backend-id')! }) : undefined,
   })
 
   if (!result.ok) {

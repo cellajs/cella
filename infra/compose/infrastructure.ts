@@ -50,11 +50,13 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     drainSeconds: cfg.drainSeconds ?? 0,
     instanceType: cfg.instanceType,
   }
+  if (cfg.primaryRollout) meta.primaryRollout = true
   if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
-  if (cfg.featureFlag) meta.featureFlag = cfg.featureFlag
+  if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
+  if (cfg.stablePrivateIp) meta.stablePrivateIp = true
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }

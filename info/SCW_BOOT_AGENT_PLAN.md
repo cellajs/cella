@@ -54,13 +54,13 @@ compute: {
 
 The highest-risk parts are already platform logic, not VM initialization. They should be first-class TypeScript code.
 
-### 2.3 Current deployment sequencing is not fully zero-downtime
+### 2.3 Current deployment sequencing has an explicit cutover driver
 
-`infra/tasks/cutover.ts` contains a future deploy-controller entrypoint with create and destroy bookends, live LB expand/contract, and pending generations. Its pure sequencing core is implemented, but the entrypoint is not wired into CI.
+`infra/tasks/cutover.ts` contains the pure expand/contract controller for pending VM generations, and `infra/tasks/deploy-service.ts` wraps it with Pulumi create/destroy bookends. CI now deploys the backend first, then the remaining VM services, using live `SetBackendServers` for LB-backed services.
 
-However, the active GitHub workflow currently sets `infra:gen_<svc>` and `infra:sha_<svc>`, runs one `pulumi up`, and then checks public service versions. `infra/resources/loadbalancer.ts` currently says Pulumi owns `serverIps` because the direct `SetBackendServers` cutover path is not wired into CI.
+`infra/resources/loadbalancer.ts` sets initial `serverIps` but ignores live changes, so Pulumi creates and destroys generations while the deploy task owns the LB server list during cutover. A service with `stablePrivateIp: true` also advances `infra:stableInternalGen_<svc>`, moving its stable internal IP before the LB contracts.
 
-This matters for the agent plan: a boot agent improves first-boot reliability and testability, but it does not by itself deliver the true expand/contract cutover model. That remains a separate deploy-controller task.
+This matters for the agent plan: a boot agent improves first-boot reliability and testability, but the deploy-controller remains the owner of traffic handoff.
 
 ## 3. Proposed narrow architecture
 
@@ -77,6 +77,15 @@ Make the baked image required for production and, eventually, for all managed de
 
 The cloud-init fallback path that installs Docker from apt should be kept only during a migration window. Once the image contract is proven, remove the fallback. A required image is simpler than a matrix of image capabilities.
 
+The contract should be named and versioned in config, not inferred from booleans. A VM image that supports this plan must satisfy at least:
+
+- `docker --version` and `docker compose version` pass.
+- `node --version` reports Node 24.x.
+- `cella-boot-agent --version` reports an agent build identifier.
+- `cella-boot-agent supports --schema-version 1` or equivalent exits 0.
+
+If cloud-init renders a schema the baked agent does not support, the boot must fail before writing app files. That is better than partially booting with a mismatched agent/image pair.
+
 ### 3.2 Boot plan file
 
 Pulumi should render a single boot plan JSON document and write it through cloud-init, for example `/etc/cella/boot-plan.json`:
@@ -87,9 +96,16 @@ Pulumi should render a single boot plan JSON document and write it through cloud
   "service": "backend",
   "profile": "backend",
   "releaseSha": "abc123",
+  "imageContract": "docker-node-agent-v1",
   "registry": "rg.nl-ams.scw.cloud/example",
   "region": "nl-ams",
-  "runMigrate": true,
+  "credentials": {
+    "scwSecretKeyFile": "/etc/cella/scw-secret-key"
+  },
+  "releaseCommand": {
+    "enabled": true,
+    "command": ["docker", "compose", "--profile", "backend", "run", "--rm", "migrate"]
+  },
   "docker": { "composeFile": "/opt/app/compose.yml" },
   "files": {
     "compose": "...",
@@ -104,7 +120,17 @@ Pulumi should render a single boot plan JSON document and write it through cloud
 }
 ```
 
-The plan should contain metadata and file contents, not secret values. This preserves the current Secret Manager delivery model.
+The plan should contain metadata and file contents, not runtime secret values. This preserves the current Secret Manager delivery model.
+
+The one exception is the current Scaleway credential reality: VMs have no instance-attached identity, so a VM reader secret key is still needed for registry login and Secret Manager access. Do not put that key in the JSON plan. Cloud-init should write it separately to a root-only file such as `/etc/cella/scw-secret-key` with mode `0600`, and the plan should reference only that file path. The agent must never log this value, and cloud-init log scrubbing must still cover the launcher path.
+
+Plan validation should be strict:
+
+- Reject unsupported `schemaVersion`.
+- Reject an `imageContract` that the local agent does not claim to support.
+- Reject unknown top-level fields unless explicitly reserved.
+- Reject command arrays that are empty or contain empty strings.
+- Reject file paths outside the expected allowlist (`/opt/app`, `/etc/cella`, `/etc/runtime-secrets`).
 
 ### 3.3 Boot agent state machine
 
@@ -133,11 +159,13 @@ Cloud-init should be reduced to:
 
 1. Set up output teeing to `/var/log/cella-boot.log` and serial console.
 2. Write `/etc/cella/boot-plan.json`.
-3. Write `/opt/app/compose.yml` and static env either directly or let the agent write them from the plan.
+3. Write `/etc/cella/scw-secret-key` mode `0600`.
 4. Start `cella-boot-agent.service`.
 5. Exit with the agent's status.
 
 Keeping cloud-init as the tiny launcher is important. Scaleway still needs some userdata path to deliver release-specific data to a fresh VM.
+
+The agent, not cloud-init, should write `/opt/app/compose.yml`, `/opt/app/.env`, `/etc/runtime-secrets/manifest.json`, and `/opt/app/.env.runtime`. That keeps all file validation and mode handling in TypeScript and leaves cloud-init with one testable job: deliver the plan plus credential file and run the unit.
 
 ## 4. What moves into TypeScript first
 
@@ -158,8 +186,10 @@ Keep the same semantics:
 
 - Required secret missing or unreadable: fail boot.
 - Optional secret missing: skip.
-- Present multi-line value: fail boot.
+- Present empty or multi-line value: fail boot.
 - Write `/opt/app/.env.runtime` mode `0600`.
+
+This intentionally tightens the current embedded Python behavior, which rejects multiline values but does not reject empty strings. The CI preflight already treats both as undeliverable through `infra/lib/env-file.ts`; the agent should use the same TypeScript predicate so CI and VM boot cannot drift again.
 
 ### 4.2 Move migrate orchestration second
 
@@ -290,6 +320,15 @@ Packer/static tests:
 - Template installs Node.
 - Template installs or copies agent artifact.
 - Template validates `node --version`, `cella-boot-agent --version`, Docker, and compose.
+- Template validates the agent supports boot plan schema version 1.
+- Template does not install `tsx`, pnpm, or workspace source files on the VM.
+
+Credential and plan-contract tests:
+
+- Cloud-init writes the Scaleway VM reader secret to `/etc/cella/scw-secret-key` mode `0600`.
+- Boot plan references the credential file path and never embeds the secret value.
+- Agent rejects unsupported `schemaVersion` and unsupported `imageContract`.
+- Agent rejects empty command arrays, empty command arguments, and file paths outside the allowed boot paths.
 
 ### 6.2 Integration tests
 
@@ -305,10 +344,12 @@ Add a manual validation checklist to the plan:
 
 1. Build agent locally.
 2. Build image with Packer.
-3. Configure `compute.image` to the new image ID.
-4. Deploy one staging VM.
-5. Confirm serial console shows agent steps.
-6. Confirm backend health and `X-App-Version`.
+3. Run `cella-boot-agent --version` and the schema-support check inside the Packer validation phase.
+4. Configure `compute.image` and `compute.imageContract` to the new image ID/contract.
+5. Deploy one staging VM.
+6. Confirm serial console shows agent steps.
+7. Confirm backend health and `X-App-Version`.
+8. Intentionally break one required staging secret and confirm boot fails before `docker compose up`.
 
 ## 7. Gaps and paradoxes found
 
@@ -322,13 +363,13 @@ Add a manual validation checklist to the plan:
 - Backend rolled blue-green and optional VMs rolled in-place.
 - A file structure that still lists `infra/reconciler/`.
 
-That model no longer matches the code. The README has been corrected; keep future agent docs aligned with the same current-state caveat: immutable generations are active, while explicit `SetBackendServers` overlap remains a separate deploy-controller task.
+That model no longer matches the code. The README has been corrected; keep future agent docs aligned with the same current state: immutable generations are active, and explicit `SetBackendServers` overlap is driven by `deploy-service.ts` / `cutover.ts`.
 
-### 7.2 `cutover.ts` describes a stronger future than current CI
+### 7.2 Cutover remains deploy-controller logic, not boot-agent logic
 
-`cutover.ts` describes true LB overlap via direct `SetBackendServers`. Current `loadbalancer.ts` explicitly says that path is not wired into CI and Pulumi owns `serverIps` for now.
+`cutover.ts` describes true LB overlap via direct `SetBackendServers`, and CI invokes it through `deploy-service.ts`. The load balancer ignores `serverIps` drift so Pulumi does not undo the live server list during the overlap window.
 
-The boot agent must not pretend to solve this. It improves VM readiness and diagnostics; true zero-downtime cutover remains a deploy-controller project.
+The boot agent must not pretend to solve this. It improves VM readiness and diagnostics; traffic handoff remains deploy-controller logic.
 
 ### 7.3 The image is optional today, but a Node agent makes it required
 
@@ -350,11 +391,19 @@ Serial console logging works but is awkward for CI and future SaaS UX. The previ
 
 Do not give the VM project-wide ObjectStorageFullAccess just to upload logs.
 
+This is not optional for a robust deploy flow. It does not have to block the first local agent skeleton, but it should block production cutover to the agent path unless the team accepts serial-console-only diagnosis for that deployment. Preferred implementation: create a dedicated boot-diagnostics bucket and grant the VM reader application write access only to that bucket via bucket policy, then retarget `infra/tasks/diag.ts` and `fetch-boot-diag.ts` away from the Pulumi state bucket.
+
 ### 7.6 A long-lived agent reintroduces the old reconciler question
 
 A first-boot agent is a replacement for cloud-init bash. A long-lived deploy agent is a replacement for the old reconciler and parts of GitHub Actions. That may be the right PaaS future, but it is a different project with different security and upgrade requirements.
 
 Keep phase 1 first-boot only.
+
+### 7.7 Exclusive services are not solved by the boot agent
+
+`cdc` is `replacementStrategy: 'exclusive'`: it has no LB route and holds a single PostgreSQL replication slot. The boot agent can start the new process and expose health, but it cannot make exclusive handoff near-zero downtime by itself.
+
+The current `deploy-service.ts` path for exclusive services directly promotes the new generation and runs `pulumi up`. `cutover.ts` contains slot-release vocabulary, but the live deploy task does not yet wire a Postgres slot gate or an old-generation drain callback for `cdc`. Treat that as deploy-controller work, separate from the boot agent. Do not move this logic into the agent unless the project deliberately chooses a long-lived deploy agent later.
 
 ## 8. Phased implementation plan
 
@@ -362,11 +411,13 @@ Keep phase 1 first-boot only.
 
 - Keep `infra/README.md` aligned with the current immutable-generation deployment caveat.
 - Add an explicit image contract type to `GeneralConfig`, even if initially only documented.
+- Define the VM credential handoff contract: cloud-init writes `/etc/cella/scw-secret-key` mode `0600`, the plan references only that path, and the agent redacts it from all logs.
 - Decide final path: `infra/agent/` versus a new workspace package.
 
 ### Phase 1: agent skeleton in repo
 
 - Implement `cella-boot-agent --version`.
+- Implement an agent schema-support command or flag for boot plan validation.
 - Implement boot plan parsing and validation.
 - Implement structured logger.
 - Add unit tests.
@@ -375,7 +426,7 @@ Keep phase 1 first-boot only.
 ### Phase 2: runtime secret sync in agent
 
 - Port `runtimeSecretSyncScript` behavior to TypeScript.
-- Share or mirror `infra/lib/env-file.ts` validation.
+- Share `infra/lib/env-file.ts` validation so empty and multiline values fail consistently in CI and on the VM.
 - Add tests using injected fetch.
 - Keep cloud-init using Python until tests pass.
 
@@ -384,15 +435,24 @@ Keep phase 1 first-boot only.
 - Build the agent artifact before Packer.
 - Extend Packer with Node 24 installation.
 - Copy agent artifact into image.
-- Validate `node`, Docker, compose, and `cella-boot-agent --version` in Packer.
+- Validate `node`, Docker, compose, `cella-boot-agent --version`, and schema-version support in Packer.
 - Update `infra/README.md` image section.
 
 ### Phase 4: cloud-init launches agent for one service in staging
 
 - Add plan rendering to `cloud-init.ts`.
 - Behind a config flag or image contract, render agent launcher instead of Python/bash boot sequence.
+- Keep cloud-init responsible only for teeing logs, writing the boot plan, writing the VM reader credential file, starting the systemd unit, and returning the agent status.
 - Deploy to staging or a disposable stack.
 - Verify serial console logs, secret hydration, image pull, migrate, and app health.
+
+### Phase 4.5: durable boot diagnostics
+
+- Add a dedicated boot-diagnostics bucket.
+- Grant the VM reader application write access only to that bucket, not project-wide Object Storage write.
+- Make the agent upload bounded boot result/log artifacts on success and failure, or add a separate host-side uploader with the same credential boundary.
+- Retarget `diag` and `fetch-boot-diag` to the diagnostics bucket.
+- Add a deploy failure drill that proves CI/operator can retrieve agent failure logs without Scaleway web-console access.
 
 ### Phase 5: remove old boot implementation
 

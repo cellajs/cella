@@ -101,6 +101,12 @@ new scaleway.object.BucketPolicy('frontend-policy', {
 // Public uploads bucket (user-uploaded public assets)
 // ---------------------------------------------------------------------------
 
+const frontendPublicUrl = (): string => {
+  const service = (appConfig.services as Record<string, { publicUrl?: string }>).frontend
+  if (!service?.publicUrl) throw new Error('storage: service \'frontend\' has no publicUrl in appConfig.services')
+  return service.publicUrl
+}
+
 const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', {
   name: naming.publicBucket,
   region,
@@ -111,7 +117,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [appConfig.frontendUrl],
+      allowedOrigins: [frontendPublicUrl()],
       maxAgeSeconds: 3600,
     },
   ],
@@ -159,7 +165,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [appConfig.frontendUrl],
+      allowedOrigins: [frontendPublicUrl()],
       maxAgeSeconds: 3600,
     },
   ],

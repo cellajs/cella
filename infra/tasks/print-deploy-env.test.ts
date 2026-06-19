@@ -10,8 +10,14 @@ const fakeAppConfig = {
   backendUrl: 'https://api.cella.example',
   yjsUrl: 'https://yjs.cella.example',
   aiUrl: 'https://ai.cella.example',
+  services: {
+    frontend: { enabled: true, publicUrl: 'https://cella.example' },
+    backend: { enabled: true, publicUrl: 'https://api.cella.example' },
+    cdc: { enabled: true },
+    yjs: { enabled: false, publicUrl: 'https://yjs.cella.example' },
+    ai: { enabled: false, publicUrl: 'https://ai.cella.example' },
+  },
   securityEmail: 'security@cella.example',
-  features: { yjs: false, ai: false },
   // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
 } as any
 
@@ -29,18 +35,67 @@ describe('buildDeployEnv', () => {
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
       vm_reader_app: 'cella-vm-reader',
-      frontend_url: 'https://cella.example',
-      backend_url: 'https://api.cella.example',
-      yjs_url: 'https://yjs.cella.example',
-      ai_url: 'https://ai.cella.example',
-      has_yjs: 'false',
-      has_ai: 'false',
+      enabled_services_json: JSON.stringify([
+        {
+          service: 'backend',
+          public_url: 'https://api.cella.example',
+          health_url: 'https://api.cella.example',
+          lb_route: 'default',
+          dockerfile: 'backend/Dockerfile',
+          reuses_image_of: '',
+          primary_rollout: true,
+        },
+        {
+          service: 'cdc',
+          public_url: '',
+          health_url: '',
+          lb_route: '',
+          dockerfile: 'cdc/Dockerfile',
+          reuses_image_of: '',
+          primary_rollout: false,
+        },
+        {
+          service: 'frontend',
+          public_url: 'https://cella.example',
+          health_url: 'https://cella.example',
+          lb_route: 'host',
+          dockerfile: 'infra/caddy/Dockerfile',
+          reuses_image_of: '',
+          primary_rollout: false,
+        },
+      ]),
+      build_images_matrix: JSON.stringify([
+        { service: 'backend', dockerfile: 'backend/Dockerfile' },
+        { service: 'cdc', dockerfile: 'cdc/Dockerfile' },
+        { service: 'frontend', dockerfile: 'infra/caddy/Dockerfile' },
+      ]),
+      primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
+      roll_rest_matrix: JSON.stringify([
+        { service: 'cdc', health_url: '' },
+        { service: 'frontend', health_url: 'https://cella.example' },
+      ]),
     })
   })
 
   it('strips hyphens from registry_ns', () => {
     const cfg = { ...fakeAppConfig, slug: 'my-cool-app' }
     expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp')
+  })
+
+  it('derives public URLs in enabled_services_json from appConfig.services', () => {
+    const cfg = {
+      ...fakeAppConfig,
+      frontendUrl: 'https://legacy-front.example',
+      backendUrl: 'https://legacy-api.example',
+      services: {
+        ...fakeAppConfig.services,
+        frontend: { enabled: true, publicUrl: 'https://service-front.example' },
+        backend: { enabled: true, publicUrl: 'https://service-api.example' },
+      },
+    }
+    const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[]
+    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://service-front.example')
+    expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example')
   })
 
   it('no emitted value contains a secret-shaped substring', () => {

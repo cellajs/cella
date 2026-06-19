@@ -10,7 +10,7 @@ import { startWsServer, closeWsServer } from './server/ws-server';
 
 export async function startYjsWorker(): Promise<void> {
   // Stop if yjs is disabled via config
-  if (!appConfig.features.yjs) {
+  if (appConfig.services.yjs.enabled === false) {
     logEvent('info', 'Yjs server disabled by appConfig');
     return;
   }

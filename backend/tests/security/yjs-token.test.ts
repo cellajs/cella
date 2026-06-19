@@ -75,7 +75,7 @@ async function createAttachment(tenantId: string, organizationId: string, create
   return { attachment };
 }
 
-describe.skipIf(!appConfig.features.yjs)('Yjs token + verify-entity security', async () => {
+describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token + verify-entity security', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
   let tenantB: TestTenant;

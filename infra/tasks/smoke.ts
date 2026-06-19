@@ -8,18 +8,17 @@
  * side-effecting (and injected). All checks run even if an earlier one fails so
  * a single deploy surfaces every broken contract at once, then the task exits
  * non-zero if any failed.
- *
  * Checks:
  *   1. Frontend index.html references a hashed entry asset (build wired up).
  *   2. Backend /openapi.json is reachable (API router mounted).
- *   3. Backend /health reports the deployed release SHA (no mid-deploy restart).
+ *   3. Public service /health endpoints report the deployed release SHA.
  *   4. A random path returns an HTML document (SPA fallback / deep links work).
  *   5. Frontend responses carry the OWASP security-header baseline (Caddy live).
  *   6. Backend /health?depth=full shows every component healthy (no degraded
  *      database / cdc / yjs / ai after the rollout settled).
  *
  * Usage:
- *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha>
+ *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <enabled_services_json>]
  */
 import { pathToFileURL } from 'node:url'
 import { getFlag } from './args'
@@ -104,6 +103,12 @@ export interface HttpResponse {
 /** Performs a single HTTP GET. Injectable so the runner can be unit-tested. */
 export type HttpGet = (url: string) => Promise<HttpResponse>
 
+/** One enabled rollout service as emitted by print-deploy-env's enabled_services_json. */
+export interface SmokeService {
+  service: string
+  health_url: string
+}
+
 /** Default GET using global fetch with no-cache headers and a timeout. */
 export function createFetchGet(timeoutMs: number): HttpGet {
   return async (url) => {
@@ -126,6 +131,8 @@ export interface SmokeOptions {
   frontendUrl: string
   backendUrl: string
   expectedSha: string
+  /** Enabled rollout services; public services carry health_url, internal-only services have ''. */
+  services?: readonly SmokeService[]
   get: HttpGet
   log?: (msg: string) => void
   /** Sleep between component-health retries. Injectable so tests run instantly. */
@@ -184,17 +191,22 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     results.push({ name: 'backend /openapi.json reachable', ok: false, detail: (err as Error).message })
   }
 
-  // 3. Backend reports the deployed release SHA.
-  try {
-    const res = await get(`${backendUrl}/health`)
-    const version = res.headers.get('x-app-version') ?? undefined
-    results.push(
-      isHealthy({ status: res.status, version }, expectedSha)
-        ? { name: 'backend reports deployed SHA', ok: true }
-        : { name: 'backend reports deployed SHA', ok: false, detail: `served=${version ?? '<missing>'} expected=${expectedSha}` },
-    )
-  } catch (err) {
-    results.push({ name: 'backend reports deployed SHA', ok: false, detail: (err as Error).message })
+  // 3. Public services report the deployed release SHA. Internal-only services
+  // (cdc) have no health_url and are covered by the aggregate backend health.
+  const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter((service) => service.health_url)
+  for (const service of publicServices) {
+    const name = `${service.service} reports deployed SHA`
+    try {
+      const res = await get(`${service.health_url}/health`)
+      const version = res.headers.get('x-app-version') ?? undefined
+      results.push(
+        isHealthy({ status: res.status, version }, expectedSha)
+          ? { name, ok: true }
+          : { name, ok: false, detail: `served=${version ?? '<missing>'} expected=${expectedSha}` },
+      )
+    } catch (err) {
+      results.push({ name, ok: false, detail: (err as Error).message })
+    }
   }
 
   // 4. SPA route fallback returns an HTML document.
@@ -256,7 +268,21 @@ interface CliArgs {
   frontendUrl: string
   backendUrl: string
   sha: string
+  services?: SmokeService[]
   timeoutMs: number
+}
+
+function parseServicesJson(raw: string): SmokeService[] {
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
+  return parsed.map((item, index) => {
+    if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
+    const service = (item as Record<string, unknown>).service
+    const healthUrl = (item as Record<string, unknown>).health_url
+    if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
+    if (typeof healthUrl !== 'string') throw new Error(`--services-json[${index}].health_url must be a string`)
+    return { service, health_url: healthUrl }
+  })
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -265,10 +291,11 @@ export function parseArgs(argv: string[]): CliArgs {
   const backendUrl = getFlag(argv, '--backend')
   const sha = getFlag(argv, '--sha')
   if (!frontendUrl || !backendUrl || !sha) {
-    throw new Error('Usage: smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--timeout ms]')
+    throw new Error('Usage: smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <json>] [--timeout ms]')
   }
+  const servicesRaw = getFlag(argv, '--services-json')
   const timeoutRaw = getFlag(argv, '--timeout')
-  return { frontendUrl, backendUrl, sha, timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
+  return { frontendUrl, backendUrl, sha, services: servicesRaw ? parseServicesJson(servicesRaw) : undefined, timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
@@ -277,6 +304,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     frontendUrl: args.frontendUrl,
     backendUrl: args.backendUrl,
     expectedSha: args.sha,
+    services: args.services,
     get: createFetchGet(args.timeoutMs),
   })
 

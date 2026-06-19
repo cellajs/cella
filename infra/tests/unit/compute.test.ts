@@ -69,7 +69,7 @@ describe('compute module source invariants', () => {
   it('derives the VM service list from the canonical registry (enabledServices)', () => {
     // compute filters the canonical registry by feature flag rather than
     // re-declaring the service set, so LB / image-wait / compose wiring can't drift.
-    expect(source).toMatch(/enabledServices\(appConfig\.features\)/)
+    expect(source).toMatch(/enabledServices\(appConfig\.services\)/)
   })
 
   it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
@@ -112,15 +112,16 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/Create backend first/)
   })
 
-  it('resolves cdc\u2019s @{backend.privateIp} binding to the backend current-generation IP', () => {
-    // No separate stable internal IP: every deploy bumps all services together,
-    // so cdc (also redeployed) bakes the backend's current-generation private
-    // IP, reserved in the first pass. A single pinned IP cannot attach to two
-    // generations' NICs at once, so the stable-internal-IP mechanism is gone.
-    expect(source).toMatch(/backendBindingIp\(/)
-    expect(source).toMatch(/generationsByService\.get\('backend'/)
-    expect(source).not.toMatch(/ipam-backend-internal/)
-    expect(source).not.toMatch(/backendInternalIp/)
+  it('resolves cdc\u2019s @{backend.privateIp} binding to the stable backend internal IP', () => {
+    // cdc binds to one logical backend address. The deploy task moves the
+    // stable IP to the new backend generation after it is healthy, so backend
+    // cutover does not bake generation-specific backend IPs into cdc.
+    expect(source).toMatch(/stableBindingIp\(/)
+    expect(source).toMatch(/`ipam-\$\{stablePrivateIpService\.slug\}-internal`/)
+    expect(source).toMatch(/stableInternalGen_/)
+    expect(source).toMatch(/stablePrivateIpAddress/)
+    expect(source).toMatch(/stablePrivateIpId/)
+    expect(source).toMatch(/stablePrivateIpServiceSlug/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {

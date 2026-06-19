@@ -4,14 +4,15 @@
  * Immutable-node model: every release provisions a NEW VM generation
  * `vm-<svc>-<gen>` with the image SHA baked into its cloud-init. There is no
  * background deploy agent and no out-of-band tag channel — the generation IS
- * the release. Current CI lets Pulumi own LB `serverIps`; tasks/cutover.ts holds
- * the tested explicit expand/contract controller but is not wired into CI yet.
+ * the release. Pulumi creates/destroys generations; tasks/cutover.ts owns the
+ * live LB server list and backend internal-IP handoff during deploy.
  *
  * Generation state lives in stack config, written by CI around the cutover:
  *   infra:gen:<svc>        current live generation number (default 1)
  *   infra:sha:<svc>        image SHA baked into the current generation
  *   infra:pendingGen:<svc> next generation, set during a cutover (optional)
  *   infra:pendingSha:<svc> image SHA for the pending generation
+ *   infra:stableInternalGen_<svc> generation carrying a service's stable internal IP
  * compute materialises a VM for every generation in {gen} ∪ {pendingGen}, so the
  * "create bookend" stands up the new generation alongside the old, and the
  * "destroy bookend" (after CI bumps `gen` and clears `pendingGen`) tears the old
@@ -167,9 +168,16 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
  * binds the shared, app-wide ones. Service-specific wiring is declared as
  * `bindings` on the registry entry and resolved generically below.
  */
+function servicePublicUrl(slug: string): string {
+  const services = appConfig.services as Record<string, { publicUrl?: string }>
+  const service = services[slug]
+  if (!service?.publicUrl) throw new Error(`compute: service '${slug}' has no publicUrl in appConfig.services`)
+  return service.publicUrl
+}
+
 const envPool: Record<string, () => pulumi.Input<string>> = {
-  FRONTEND_URL: () => appConfig.frontendUrl,
-  BACKEND_URL: () => appConfig.backendUrl,
+  FRONTEND_URL: () => servicePublicUrl('frontend'),
+  BACKEND_URL: () => servicePublicUrl('backend'),
   // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
   FRONTEND_CSP: () => frontendCsp,
   ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
@@ -197,7 +205,7 @@ function composePlaceholders(slug: string): string[] {
 // Registry bindings — resolve `@{<slug>.<prop>}` templates from the registry's
 // `bindings` field. Supported properties:
 //   @{<slug>.url}        — the service's public URL (from the endpoint registry)
-//   @{<slug>.privateIp}  — the stable internal backend address (cdc → backend)
+//   @{<slug>.privateIp}  — the service's stable internal address (`stablePrivateIp`)
 //   @{<slug>.port}       — the service's health/app port
 //   @{self.<prop>}       — the consuming service's own values
 // ---------------------------------------------------------------------------
@@ -211,13 +219,7 @@ function bindingPart(selfSlug: ServiceName, target: string, prop: string): pulum
   if (!definition) throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`)
   switch (prop) {
     case 'privateIp':
-      // The only internal-IP binding is cdc → backend. It resolves to the
-      // backend's CURRENT-generation private IP (reserved at plan time). cdc is
-      // redeployed with backend each release, so baking the current IP is safe.
-      if (slug !== 'backend') {
-        throw new Error(`compute: @{${target}.privateIp} on '${selfSlug}' — only the backend exposes an internal IP binding.`)
-      }
-      return backendBindingIp()
+      return stableBindingIp(slug)
     case 'port':
       return String(definition.healthPort)
     case 'url': {
@@ -278,7 +280,7 @@ function buildComposeEnv(svc: ServiceDefinition, releaseSha: string): Record<str
 // Concrete enabled service list, derived from the canonical registry (feature
 // flags). Each runs on its own dedicated VM (the multi-fork shared-workers
 // placement is not yet implemented here — guard loudly).
-const enabled = enabledServices(appConfig.features).map((svc) => {
+const enabled = enabledServices(appConfig.services).map((svc) => {
   const placement = svc.placement ?? 'dedicated-vm'
   if (placement !== 'dedicated-vm') {
     throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)
@@ -328,6 +330,8 @@ export interface GenerationInstance {
   server: scaleway.instance.Server
   /** This generation VM's own private-network IP. */
   privateIp: pulumi.Output<string>
+  /** Private NIC carrying this generation's own private-network IP. */
+  privateNic: scaleway.instance.PrivateNic
 }
 
 const instances: GenerationInstance[] = []
@@ -337,26 +341,36 @@ const instances: GenerationInstance[] = []
 // resolve at plan time regardless of VM creation order. Keyed `<slug>-<gen>`.
 const genIps = new Map<string, scaleway.ipam.Ip>()
 const generationsByService = new Map<ServiceName, Generation[]>()
+const stablePrivateIpServices = enabled.filter((svc) => svc.stablePrivateIp)
+if (stablePrivateIpServices.length > 1) {
+  throw new Error(`compute: only one stablePrivateIp service is supported today (${stablePrivateIpServices.map((svc) => svc.slug).join(', ')}).`)
+}
+const stablePrivateIpService = stablePrivateIpServices[0]
+const stablePrivateIp = stablePrivateIpService
+  ? new scaleway.ipam.Ip(`ipam-${stablePrivateIpService.slug}-internal`, {
+      sources: [{ privateNetworkId }],
+      isIpv6: false,
+      region,
+      tags,
+    })
+  : undefined
 
 function genIpKey(slug: string, gen: number): string {
   return `${slug}-${gen}`
 }
 
 /**
- * The backend's current-generation private IP, for cdc's `@{backend.privateIp}`
- * binding. There is NO separate stable internal address: every deploy bumps all
- * services together (cdc gets a new generation too), so cdc's cloud-init is
- * regenerated each release and simply bakes the backend's current-generation IP.
- * Known at plan time because the IPAM IP is reserved in the first pass.
+ * Stable internal service IP for services that opt into `stablePrivateIp`.
+ * The cutover task moves this IP to the new generation after it is healthy and
+ * before the LB contracts. Consumers keep one logical address and reconnect
+ * through the handoff.
  */
-function backendBindingIp(): pulumi.Output<string> {
-  const currentBackend = generationsByService.get('backend' as ServiceName)?.[0]
-  const ip = currentBackend ? genIps.get(genIpKey('backend', currentBackend.gen)) : undefined
-  if (!ip) {
-    throw new Error('compute: backend private IP requested but the backend is not enabled / compute is deferred.')
+function stableBindingIp(slug: ServiceName): pulumi.Output<string> {
+  if (!stablePrivateIp || stablePrivateIpService?.slug !== slug) {
+    throw new Error(`compute: @{${slug}.privateIp} requested but '${slug}' does not declare stablePrivateIp: true.`)
   }
   // Strip any CIDR suffix the provider may include ("10.0.0.9/22" → "10.0.0.9").
-  return ip.address.apply((addr) => addr.split('/')[0])
+  return stablePrivateIp.address.apply((addr) => addr.split('/')[0])
 }
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
@@ -391,17 +405,25 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     dependsOn: [vmReaderPolicy],
   })
 
-  // The generation's own private-network NIC (its reserved per-generation IP).
-  new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.gen}`, {
+  const stableServiceGenerations = stablePrivateIpService ? generationsByService.get(stablePrivateIpService.slug) : undefined
+  const stableInternalGen = stablePrivateIpService
+    ? infraConfig.getNumber(`stableInternalGen_${stablePrivateIpService.slug}`) ?? stableServiceGenerations?.[0]?.gen
+    : undefined
+  const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id]
+  if (stablePrivateIp && svc.slug === stablePrivateIpService?.slug && generation.gen === stableInternalGen) ipamIpIds.push(stablePrivateIp.id)
+
+  // The generation's own private-network NIC. A service that declares
+  // stablePrivateIp also carries its stable service IP on the active generation.
+  const privateNic = new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.gen}`, {
     serverId: server.id,
     privateNetworkId,
-    ipamIpIds: [genPrivateIp.id],
+    ipamIpIds,
     zone,
     tags,
   })
 
   const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0])
-  const inst: GenerationInstance = { service: svc.slug, gen: generation.gen, name: resourceName, server, privateIp }
+  const inst: GenerationInstance = { service: svc.slug, gen: generation.gen, name: resourceName, server, privateIp, privateNic }
   instances.push(inst)
   return inst
 }
@@ -438,6 +460,19 @@ if (infra.computeEnabled) {
 
 /** All generation VM instances (one per active generation per enabled service). */
 export const computeInstances = instances
+
+export const stablePrivateIpAddress = stablePrivateIp ? stablePrivateIp.address.apply((addr) => addr.split('/')[0]) : pulumi.output(undefined)
+export const stablePrivateIpId = stablePrivateIp ? stablePrivateIp.id : pulumi.output(undefined)
+export const stablePrivateIpServiceSlug = pulumi.output(stablePrivateIpService?.slug)
+
+export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.all([i.server.id, i.privateIp, i.privateNic.id]).apply(([serverId, privateIp, privateNicId]) => ({
+  service: i.service,
+  gen: i.gen,
+  name: i.name,
+  serverId,
+  privateIp,
+  privateNicId,
+})))).apply((items) => items)
 
 /**
  * Private IPs of every active generation of a service — the initial LB backend

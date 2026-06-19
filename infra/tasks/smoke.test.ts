@@ -119,8 +119,25 @@ describe('runSmoke', () => {
     expect(results.every((r) => r.ok)).toBe(true)
   })
 
-  it('flags a stale backend SHA without short-circuiting other checks', async () => {
-    const get = (url: string) => (url.endsWith('/health') ? Promise.resolve(res({ status: 204, headers: new Headers({ 'x-app-version': 'old9999' }) })) : healthyGet(url))
+  it('checks deployed SHA for every public service in the rollout matrix', async () => {
+    const results = await runSmoke({
+      frontendUrl: 'https://app',
+      backendUrl: 'https://api',
+      expectedSha: SHA,
+      services: [
+        { service: 'backend', health_url: 'https://api' },
+        { service: 'cdc', health_url: '' },
+        { service: 'frontend', health_url: 'https://app' },
+      ],
+      get: healthyGet,
+    })
+    expect(results.find((r) => r.name === 'backend reports deployed SHA')?.ok).toBe(true)
+    expect(results.find((r) => r.name === 'frontend reports deployed SHA')?.ok).toBe(true)
+    expect(results.find((r) => r.name === 'cdc reports deployed SHA')).toBeUndefined()
+  })
+
+  it('flags a stale service SHA without short-circuiting other checks', async () => {
+    const get = (url: string) => (url === 'https://api/health' ? Promise.resolve(res({ status: 204, headers: new Headers({ 'x-app-version': 'old9999' }) })) : healthyGet(url))
     const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get })
 
     const sha = results.find((r) => r.name === 'backend reports deployed SHA')
@@ -213,8 +230,17 @@ describe('parseArgs', () => {
       frontendUrl: 'https://app',
       backendUrl: 'https://api',
       sha: SHA,
+      services: undefined,
       timeoutMs: 10000,
     })
+  })
+
+  it('parses the rollout services matrix', () => {
+    const matrix = JSON.stringify([{ service: 'backend', health_url: 'https://api' }, { service: 'cdc', health_url: '' }])
+    expect(parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--services-json', matrix]).services).toEqual([
+      { service: 'backend', health_url: 'https://api' },
+      { service: 'cdc', health_url: '' },
+    ])
   })
 
   it('honours an explicit --timeout', () => {

@@ -95,15 +95,15 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
   if (env.MODE === 'ai-worker') {
     components.ai = { ...(await buildAiSelfComponent()), label: 'AI' };
   } else {
-    components.cdc = { ...buildCdcComponent(), label: 'CDC' };
+    if (appConfig.services.cdc.enabled !== false) components.cdc = { ...buildCdcComponent(), label: 'CDC' };
 
     const workerChecks = await Promise.all([
-      appConfig.features.yjs
+      appConfig.services.yjs.enabled !== false
         ? probeWorker(workerUrls.yjs).then(
             (result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const,
           )
         : Promise.resolve(null),
-      appConfig.features.ai
+      appConfig.services.ai.enabled !== false
         ? probeWorker(workerUrls.ai).then(
             (result) => ['ai', { ...mapProbeComponent(result, extractAiDetails), label: 'AI' }] as const,
           )

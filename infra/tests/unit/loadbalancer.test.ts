@@ -14,7 +14,7 @@ const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 
 
 describe('loadbalancer module — registry-driven wiring', () => {
   it('derives the LB-exposed service set from the registry, never by name', () => {
-    expect(src).toMatch(/enabledServices\(appConfig\.features\)\.filter\(\(s\) => s\.lbRoute\)/)
+    expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.lbRoute\)/)
     // The default backend comes from the lbRoute 'default' declaration.
     expect(src).toMatch(/lbRoute === 'default'/)
     // No service-specific resource construction outside the loops.
@@ -38,12 +38,10 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/serverIps:\s*serviceGenerationIps\(service\.slug\)/)
   })
 
-  it('lets Pulumi own the server list so pulumi up re-points the LB to the new generation', () => {
-    // serverIps comes from the active VM generation(s); Pulumi must NOT ignore
-    // the field, or a generation replacement would leave the LB pointing at the
-    // deleted old VMs. (The cutover task is the future zero-downtime owner, but
-    // it is not wired into CI, so Pulumi owns serverIps for self-contained applies.)
-    expect(src).not.toMatch(/ignoreChanges:\s*\['serverIps'\]/)
+  it('lets the explicit cutover task own the live server list', () => {
+    // Pulumi sets the initial serverIps, then ignores live drift so
+    // tasks/cutover.ts can do expand→contract with SetBackendServers.
+    expect(src).toMatch(/ignoreChanges:\s*\['serverIps'\]/)
   })
 
   it('health-checks the app\'s own /health (no ingress hop)', () => {

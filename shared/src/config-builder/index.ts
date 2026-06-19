@@ -28,7 +28,6 @@ export type {
   CompanyConfig,
   ConfigMode,
   DeepPartial,
-  FeatureModulesConfig,
   HasFlagsConfig,
   LocalBlobStorageConfig,
   MenuStructureItem,

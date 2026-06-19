@@ -120,9 +120,9 @@
         "kind": "metadata"
       },
       {
-        "key": "x-feature",
-        "id": "x-feature",
-        "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
+        "key": "x-service",
+        "id": "x-service",
+        "description": "Service gating the endpoint; route returns 404 when the service is disabled",
         "required": false,
         "kind": "metadata"
       }
@@ -10918,7 +10918,7 @@
             "cookieAuth": []
           }
         ],
-        "x-feature": "yjs",
+        "x-service": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
@@ -11000,7 +11000,7 @@
             "cookieAuth": []
           }
         ],
-        "x-feature": "yjs",
+        "x-service": "yjs",
         "tags": ["yjs", "cella"],
         "operationId": "verifyYjsEntity",
         "summary": "Verify Yjs entity access",
@@ -11073,7 +11073,7 @@
             "cookieAuth": []
           }
         ],
-        "x-feature": "ai",
+        "x-service": "ai",
         "operationId": "handleMcp",
         "tags": ["ai", "cella"],
         "summary": "MCP endpoint",

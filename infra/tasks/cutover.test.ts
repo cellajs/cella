@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   type CutoverPlan,
+  type GetServersFn,
   type SetServersFn,
   contractBackend,
+  createLbGetServers,
   createLbSetServers,
   expandBackend,
   pollSlotReleased,
@@ -18,6 +20,8 @@ function recordingSetServers(): { fn: SetServersFn; calls: string[][] } {
   return { fn: async (ips) => void calls.push(ips), calls }
 }
 
+const getOldServers: GetServersFn = async () => ['10.0.0.4']
+
 /** A minimal lb-overlap plan with overridable effects. */
 function lbPlan(overrides: Partial<CutoverPlan> = {}): CutoverPlan {
   return {
@@ -29,6 +33,7 @@ function lbPlan(overrides: Partial<CutoverPlan> = {}): CutoverPlan {
     drainSeconds: 10,
     healthGate: async () => true,
     setServers: async () => {},
+    getServers: getOldServers,
     sleep: noSleep,
     log: silent,
     ...overrides,
@@ -68,6 +73,22 @@ describe('sequenceCutover — lb-overlap', () => {
     expect(res.steps.some((s) => s.includes('expand'))).toBe(false)
   })
 
+  it('can health-gate after LB expansion for CI-visible public probes', async () => {
+    const order: string[] = []
+    const res = await sequenceCutover(
+      lbPlan({
+        healthAfterExpand: true,
+        setServers: async (ips) => void order.push(ips.length === 2 ? 'expand' : 'contract'),
+        healthGate: async () => {
+          order.push('health')
+          return true
+        },
+      }),
+    )
+    expect(res.ok).toBe(true)
+    expect(order).toEqual(['expand', 'health', 'contract'])
+  })
+
   it('orders the steps health → expand → reattach → contract → drain', async () => {
     const order: string[] = []
     const res = await sequenceCutover(
@@ -83,6 +104,30 @@ describe('sequenceCutover — lb-overlap', () => {
     )
     expect(res.ok).toBe(true)
     expect(order).toEqual(['health', 'expand', 'reattach', 'contract', 'drain'])
+  })
+
+  it('resumes when the LB is already expanded to [old,new]', async () => {
+    const lb = recordingSetServers()
+    const res = await sequenceCutover(lbPlan({ getServers: async () => ['10.0.0.9', '10.0.0.4'], setServers: lb.fn }))
+    expect(res.ok).toBe(true)
+    expect(lb.calls).toEqual([['10.0.0.9']])
+    expect(res.steps).toContain('LB already expanded to [old, new]')
+  })
+
+  it('is a no-op success when the LB is already contracted to [new]', async () => {
+    const lb = recordingSetServers()
+    const res = await sequenceCutover(lbPlan({ getServers: async () => ['10.0.0.9'], setServers: lb.fn }))
+    expect(res.ok).toBe(true)
+    expect(lb.calls).toEqual([])
+    expect(res.steps).toContain('LB already contracted to [new]')
+  })
+
+  it('aborts before mutation on an unexpected current LB server list', async () => {
+    const lb = recordingSetServers()
+    const res = await sequenceCutover(lbPlan({ getServers: async () => ['10.0.0.99'], setServers: lb.fn }))
+    expect(res.ok).toBe(false)
+    expect(res.aborted).toBe('unexpected-lb-state')
+    expect(lb.calls).toEqual([])
   })
 
   it('drain wait happens after contract (old is removed before we wait for it to drain)', async () => {
@@ -226,5 +271,17 @@ describe('createLbSetServers — live REST shape', () => {
       fetchImpl: async () => ({ ok: false, status: 403, text: async () => 'denied' }),
     })
     await expect(setServers(['10.0.0.1'])).rejects.toThrow(/be-err → 403: denied/)
+  })
+})
+
+describe('createLbGetServers — live REST shape', () => {
+  it('GETs and parses the backend server list from flexible Scaleway response shapes', async () => {
+    const getServers = createLbGetServers({
+      secretKey: 'scw-secret',
+      zone: 'fr-par-1',
+      backendId: 'be-123',
+      fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ servers: [{ ip: '10.0.0.4' }, { server_ip: '10.0.0.9' }] }) }),
+    })
+    await expect(getServers()).resolves.toEqual(['10.0.0.4', '10.0.0.9'])
   })
 })

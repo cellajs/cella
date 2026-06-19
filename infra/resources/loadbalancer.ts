@@ -35,6 +35,8 @@ const legacyBaseNames: Record<string, string> = { backend: 'api', frontend: 'app
 const baseName = (slug: string) => legacyBaseNames[slug] ?? slug
 
 const _serviceUrls: Record<string, pulumi.Output<string>> = {}
+let _lbId: pulumi.Output<string | undefined> = pulumi.output(undefined)
+let _lbBackendIds: pulumi.Output<Record<string, string>> = pulumi.output({} as Record<string, string>)
 
 // ---------------------------------------------------------------------------
 // Guard — skip while compute is deferred (fresh bootstrap); without compute VMs
@@ -45,7 +47,7 @@ if (infra.computeEnabled) {
   // LB-exposed services, derived from the canonical registry (feature flag +
   // `lbRoute`) so the LB never re-decides independently of compute. A service
   // is LB-exposed iff it is enabled AND declares an `lbRoute`.
-  const lbServices = enabledServices(appConfig.features).filter((s) => s.lbRoute)
+  const lbServices = enabledServices(appConfig.services).filter((s) => s.lbRoute)
   const defaultService = lbServices.find((s) => s.lbRoute === 'default')
   if (!defaultService) {
     throw new Error("loadbalancer: no enabled service declares lbRoute 'default' — the HTTPS frontend needs a fallback backend.")
@@ -80,6 +82,7 @@ if (infra.computeEnabled) {
       privateNetworkId,
     }],
   })
+  _lbId = lb.id
 
   // -------------------------------------------------------------------------
   // DNS A Records — all point to the LB public IP.
@@ -146,18 +149,14 @@ if (infra.computeEnabled) {
 
   // -------------------------------------------------------------------------
   // LB Backends — each targets the private IPs of its service's active VM
-  // generation(s). Pulumi owns `serverIps`, so `pulumi up` re-points the LB to
-  // the new generation as part of the same apply that creates it (and before it
-  // deletes the old generation). Health checks hit the app's own `/health` (no
-  // ingress hop): a crashed generation is correctly marked down.
+  // generation(s). Pulumi sets the initial list, then ignores live changes so
+  // tasks/cutover.ts can perform explicit expand→health→contract handoff via
+  // Scaleway SetBackendServers without Pulumi fighting drift. Health checks hit
+  // the app's own `/health` (no ingress hop): a crashed generation is correctly
+  // marked down.
   // `onMarkedDownAction` follows the service's drainPolicy — HTTP services let
   // in-flight requests finish ('none'); WebSocket services shed sessions so
   // clients reconnect to the new generation ('shutdown_sessions').
-  //
-  // NOTE: the zero-downtime cutover task (tasks/cutover.ts) can instead own the
-  // live list via direct SetBackendServers for a true overlap; that path is not
-  // yet wired into CI, so Pulumi owns the field to keep deploys self-contained
-  // (a brief gap while the new generation boots is the accepted tradeoff).
   // -------------------------------------------------------------------------
 
   const backends = new Map<ServiceName, scaleway.loadbalancers.Backend>()
@@ -177,10 +176,13 @@ if (infra.computeEnabled) {
       healthCheckMaxRetries: 2,
       // Long timeouts keep WebSocket connections open (registry `lbWebsockets`).
       ...(service.lbWebsockets ? { timeoutServer: '1h', timeoutTunnel: '1h' } : {}),
+    }, {
+      ignoreChanges: ['serverIps'],
     }))
   }
 
   const defaultBackend = backends.get(defaultService.slug)!
+  _lbBackendIds = pulumi.output(Object.fromEntries([...backends.entries()].map(([service, backend]) => [service, backend.id])))
 
   // -------------------------------------------------------------------------
   // HTTPS Frontend (port 443) — TLS termination + host-header routes
@@ -275,3 +277,5 @@ if (infra.computeEnabled) {
 
 /** Public URL per LB-exposed service slug; empty when no domain/compute. */
 export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = _serviceUrls
+export const lbId = _lbId
+export const lbBackendIds = _lbBackendIds

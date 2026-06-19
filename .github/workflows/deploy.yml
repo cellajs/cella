@@ -68,17 +68,13 @@ jobs:
       state_bucket: ${{ steps.derive.outputs.state_bucket }}
       vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
       region: ${{ steps.derive.outputs.region }}
-      frontend_url: ${{ steps.derive.outputs.frontend_url }}
-      backend_url: ${{ steps.derive.outputs.backend_url }}
-      yjs_url: ${{ steps.derive.outputs.yjs_url }}
-      ai_url: ${{ steps.derive.outputs.ai_url }}
+      enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
       image_tag: ${{ steps.set-env.outputs.image_tag }}
-      # Service matrices, gated on the yjs/ai feature flags so a fork with the
-      # feature off (e.g. the cella template) doesn't build/roll a service whose
-      # infra (DNS/LB/cert) is intentionally never provisioned.
-      build_images_matrix: ${{ steps.matrices.outputs.build_images }}
-      roll_rest_matrix: ${{ steps.matrices.outputs.roll_rest }}
-      verify_rollout_matrix: ${{ steps.matrices.outputs.verify_rollout }}
+      # Service matrices, derived from appConfig.services enablement so a fork
+      # doesn't build/roll a service whose infra is intentionally absent.
+      build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
+      primary_rollout_matrix: ${{ steps.derive.outputs.primary_rollout_matrix }}
+      roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -123,64 +119,6 @@ jobs:
         env:
           ENV: ${{ steps.set-env.outputs.environment }}
         run: pnpm --silent --filter infra print-deploy-env "$ENV" >> $GITHUB_OUTPUT
-
-      - name: Build service matrices (feature-flag gated)
-        id: matrices
-        env:
-          HAS_YJS: ${{ steps.derive.outputs.has_yjs }}
-          HAS_AI: ${{ steps.derive.outputs.has_ai }}
-          YJS_URL: ${{ steps.derive.outputs.yjs_url }}
-          AI_URL: ${{ steps.derive.outputs.ai_url }}
-          BACKEND_URL: ${{ steps.derive.outputs.backend_url }}
-          FRONTEND_URL: ${{ steps.derive.outputs.frontend_url }}
-        run: |
-          # build-images: backend/cdc/frontend always; yjs only when enabled.
-          # ai is never built here — it reuses the backend image at deploy time.
-          build=$(jq -cn \
-            --argjson hasYjs "${HAS_YJS:-false}" \
-            '[
-               {service:"backend",  dockerfile:"backend/Dockerfile"},
-               {service:"cdc",       dockerfile:"cdc/Dockerfile"},
-               {service:"frontend",  dockerfile:"infra/caddy/Dockerfile"}
-             ]
-             + (if $hasYjs then [{service:"yjs", dockerfile:"yjs/Dockerfile"}] else [] end)')
-          echo "build_images=$build" >> "$GITHUB_OUTPUT"
-
-          # roll-rest: cdc (no public health) + frontend always; yjs/ai gated.
-          roll=$(jq -cn \
-            --argjson hasYjs "${HAS_YJS:-false}" \
-            --argjson hasAi "${HAS_AI:-false}" \
-            --arg yjsUrl "$YJS_URL" \
-            --arg aiUrl "$AI_URL" \
-            --arg frontendUrl "$FRONTEND_URL" \
-            '[
-               {service:"cdc",       health_url:""},
-               {service:"frontend",  health_url:$frontendUrl}
-             ]
-             + (if $hasYjs then [{service:"yjs", health_url:$yjsUrl}] else [] end)
-             + (if $hasAi  then [{service:"ai",  health_url:$aiUrl}]  else [] end)')
-          echo "roll_rest=$roll" >> "$GITHUB_OUTPUT"
-
-          # verify-rollout: cosmetic alias kept for branch protection. backend +
-          # cdc + frontend always; yjs/ai gated so it doesn't claim a disabled
-          # service is "serving".
-          verify=$(jq -cn \
-            --argjson hasYjs "${HAS_YJS:-false}" \
-            --argjson hasAi "${HAS_AI:-false}" \
-            --arg yjsUrl "$YJS_URL" \
-            --arg aiUrl "$AI_URL" \
-            --arg backendUrl "$BACKEND_URL" \
-            --arg frontendUrl "$FRONTEND_URL" \
-            '[
-               {service:"backend",  health_url:$backendUrl},
-               {service:"cdc",       health_url:""},
-               {service:"frontend",  health_url:$frontendUrl}
-             ]
-             + (if $hasYjs then [{service:"yjs", health_url:$yjsUrl}] else [] end)
-             + (if $hasAi  then [{service:"ai",  health_url:$aiUrl}]  else [] end)')
-          echo "verify_rollout=$verify" >> "$GITHUB_OUTPUT"
-
-
 
   # -------------------------------------------------------------------------
   # Build and push Docker images
@@ -291,10 +229,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm --filter frontend build
         env:
-          VITE_BACKEND_URL: ${{ needs.setup.outputs.backend_url }}
-          VITE_FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
+          ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
+        run: |
+          VITE_BACKEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "backend") | .public_url // empty')
+          VITE_FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
+          if [ -z "$VITE_BACKEND_URL" ] || [ -z "$VITE_FRONTEND_URL" ]; then
+            echo "::error::frontend/backend public URLs are required to build the frontend"
+            exit 1
+          fi
+          VITE_BACKEND_URL="$VITE_BACKEND_URL" VITE_FRONTEND_URL="$VITE_FRONTEND_URL" pnpm --filter frontend build
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -317,10 +261,6 @@ jobs:
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
-    outputs:
-      api_url: ${{ steps.outputs.outputs.api_url }}
-      frontend_url: ${{ steps.outputs.outputs.frontend_url }}
-      pipeline_id: ${{ steps.outputs.outputs.pipeline_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -403,41 +343,7 @@ jobs:
           SERVICES=$(echo "$BUILD_IMAGES_MATRIX" | jq -r '[.[].service] | join(",")')
           pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --services "$SERVICES"
 
-      - name: Set generation + release SHA (immutable-node)
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
-          RUN_NUMBER: ${{ github.run_number }}
-          HAS_YJS: ${{ needs.setup.outputs.yjs_url != '' && 'true' || 'false' }}
-        run: |
-          set -euo pipefail
-          # Immutable-node model: each deploy provisions a NEW VM generation
-          # `vm-<svc>-<gen>` with the image SHA baked into its cloud-init. The
-          # generation number is the monotonic CI run number (no state to
-          # persist between runs); the SHA is this commit. compute.ts reads
-          # these to name + bake each generation; Pulumi's state deletes the
-          # previous generation. The SHA must be a pinned commit, never :latest.
-          case "$IMAGE_TAG" in
-            ''|latest|*:latest)
-              echo "::error::refusing to deploy a non-pinned image tag '$IMAGE_TAG'"
-              exit 1
-              ;;
-          esac
-          # ai reuses the backend image at the same SHA; cdc/frontend always
-          # deploy; yjs only when enabled. Setting config for a disabled service
-          # is harmless (compute only reads enabled ones), so the list is fixed.
-          # Keys are underscore-flat under the `infra` namespace — a colon in the
-          # key would collide with Pulumi's `<namespace>:<key>` syntax.
-          for svc in backend cdc frontend yjs ai; do
-            pulumi config set "infra:gen_$svc" "$RUN_NUMBER" --stack "$STACK"
-            pulumi config set "infra:sha_$svc" "$IMAGE_TAG" --stack "$STACK"
-          done
-
-      - name: Pulumi up
+      - name: Pulumi up (base infra)
         working-directory: infra
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
@@ -495,18 +401,76 @@ jobs:
         # up` writing the value isn't enough; this read-only check fetches each
         # required secret the way a VM will and asserts it is single-line and
         # present BEFORE any VM rolls, failing the deploy with the offending env
-        # vars instead of after a fleet-wide outage. Scoped to the services this
-        # fork actually deploys (verify_rollout_matrix) so a disabled service's
-        # optional secret never trips it.
+        # vars instead of after a fleet-wide outage. Scoped to the enabled
+        # services this fork actually deploys so a disabled service's optional
+        # secret never trips it.
         working-directory: infra
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           REGION: ${{ needs.setup.outputs.region }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
-          SERVICES_MATRIX: ${{ needs.setup.outputs.verify_rollout_matrix }}
+          SERVICES_MATRIX: ${{ needs.setup.outputs.enabled_services_json }}
         run: |
           SERVICES=$(echo "$SERVICES_MATRIX" | jq -r '[.[].service] | join(",")')
           pnpm --filter infra assert-secrets-deliverable --region "$REGION" --project-id "$SCW_DEFAULT_PROJECT_ID" --services "$SERVICES"
+
+      - name: Deploy primary VM generation with explicit cutover
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          RUN_NUMBER: ${{ github.run_number }}
+          PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}
+        run: |
+          set -euo pipefail
+          count=$(echo "$PRIMARY_ROLLOUT_MATRIX" | jq 'length')
+          if [ "$count" -eq 0 ]; then
+            echo "No primary rollout service configured — skipping."
+            exit 0
+          fi
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Expected at most one primary rollout service, got $count"
+            exit 1
+          fi
+          item=$(echo "$PRIMARY_ROLLOUT_MATRIX" | jq -c '.[0]')
+          service=$(echo "$item" | jq -r '.service')
+          health_url=$(echo "$item" | jq -r '.health_url')
+          pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER" --health-url "$health_url"
+
+      - name: Deploy remaining VM generations with explicit cutover
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          RUN_NUMBER: ${{ github.run_number }}
+          ROLL_REST_MATRIX: ${{ needs.setup.outputs.roll_rest_matrix }}
+        run: |
+          set -euo pipefail
+          echo "$ROLL_REST_MATRIX" | jq -c '.[]' | while read -r item; do
+            service=$(echo "$item" | jq -r '.service')
+            health_url=$(echo "$item" | jq -r '.health_url')
+            if [ -n "$health_url" ]; then
+              pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER" --health-url "$health_url"
+            else
+              pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER"
+            fi
+          done
 
       - name: Capture stack outputs
         id: outputs
@@ -517,11 +481,7 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: |
-          API_URL=$(pulumi stack output serviceDomainUrls --stack "$STACK" 2>/dev/null | jq -r '.backend // empty' || echo '')
-          FRONTEND_URL=$(pulumi stack output frontendBucketEndpoint --stack "$STACK" 2>/dev/null || echo '')
           PIPELINE_ID=$(pulumi stack output pipelineId --stack "$STACK" 2>/dev/null || echo '')
-          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
-          echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
           echo "pipeline_id=$PIPELINE_ID" >> $GITHUB_OUTPUT
 
       - name: Sync EDGE_PIPELINE_ID repo variable
@@ -564,14 +524,14 @@ jobs:
             || echo "- **Domains:** no domain" >> $GITHUB_STEP_SUMMARY
 
   # -------------------------------------------------------------------------
-  # Verify the rollout — `pulumi up` above already provisioned the new VM
-  # generation per service (image SHA baked into cloud-init, the migrate
-  # companion run at the backend generation's boot). These jobs only confirm
-  # each public service serves the expected SHA (X-App-Version == SHA).
+  # Verify the rollout — the pulumi job above runs deploy-service per VM service
+  # (image SHA baked into cloud-init, explicit LB cutover for public services).
+  # These jobs only confirm each public service serves the expected SHA
+  # (X-App-Version == SHA), preserving the existing branch-protection shape.
   #
-  # Backend first (it owns the expand migration), then the rest in parallel.
-  # cdc has no public health endpoint; its replacement is confirmed indirectly
-  # by the backend coming up healthy (the cdc worker reconnects to it).
+  # The primary rollout service (the one that owns migrations) verifies first,
+  # then the rest in parallel. cdc has no public health endpoint; its replacement
+  # is confirmed indirectly by the primary public service coming up healthy.
   #
   # Rollback: re-run the workflow on the previous commit — it provisions a new
   # generation from that SHA the same way it rolled forward (no separate path).
@@ -595,9 +555,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - service: backend
-            health_url: ${{ needs.setup.outputs.backend_url }}
+        include: ${{ fromJSON(needs.setup.outputs.primary_rollout_matrix) }}
     env:
       REGION: ${{ needs.setup.outputs.region }}
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
@@ -623,8 +581,8 @@ jobs:
         env:
           # URLs come from setup outputs (derived from shared/ appConfig).
           # appConfig URLs are canonical https:// origins; CI probes /health
-          # directly. `pulumi up` already provisioned the new generation (SHA
-          # baked into cloud-init); this only confirms it is serving. Frontend
+          # directly. deploy-service already cut over this service; this only
+          # confirms it is serving the expected SHA. Frontend
           # (Caddy) returns 200, backend/yjs/ai 204; both emit X-App-Version.
           BASE: ${{ matrix.health_url }}
         run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
@@ -702,7 +660,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include: ${{ fromJSON(needs.setup.outputs.verify_rollout_matrix) }}
+        include: ${{ fromJSON(needs.setup.outputs.enabled_services_json) }}
     env:
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       SERVICE: ${{ matrix.service }}
@@ -860,12 +818,13 @@ jobs:
 
       - name: Verify served bundle matches uploaded bundle
         env:
-          FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
+          ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
         # Compare a stable marker from the just-uploaded index.html against what
         # the edge actually serves with Cache-Control: no-cache. The HTML parse,
         # TLS-error classification and poll loop live in
         # infra/tasks/verify-frontend-bundle.ts (unit tested). 30 × 3s = ~90s.
         run: |
+          FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
           if [ -z "$FRONTEND_URL" ]; then
             echo "No FRONTEND_URL configured — skipping verify"
             exit 0
@@ -894,8 +853,7 @@ jobs:
     environment: ${{ needs.setup.outputs.environment }}
     env:
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
-      FRONTEND_URL: ${{ needs.setup.outputs.frontend_url }}
-      BACKEND_URL: ${{ needs.setup.outputs.backend_url }}
+      ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -912,9 +870,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra...
 
-      # All five probes (hashed-asset, OpenAPI reachable, SHA drift, SPA
-      # fallback, security headers) live in the unit-tested infra/tasks/smoke.ts.
+      # Last-mile probes (hashed-asset, OpenAPI reachable, service SHA drift,
+      # SPA fallback, security headers, component health) live in the unit-tested infra/tasks/smoke.ts.
       # It runs every check before failing so one deploy surfaces all breakage.
       - name: Run smoke checks
-        run: pnpm --filter infra smoke --frontend "$FRONTEND_URL" --backend "$BACKEND_URL" --sha "$EXPECTED_SHA"
+        run: |
+          FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
+          BACKEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "backend") | .public_url // empty')
+          if [ -z "$FRONTEND_URL" ] || [ -z "$BACKEND_URL" ]; then
+            echo "::error::frontend/backend public URLs are required for smoke checks"
+            exit 1
+          fi
+          pnpm --filter infra smoke --frontend "$FRONTEND_URL" --backend "$BACKEND_URL" --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON"
 

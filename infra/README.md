@@ -152,7 +152,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-CI builds the image, records the release SHA in stack config, and `pulumi up` provisions a **new immutable VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. After `pulumi up`, CI waits until each public service's `/health` returns the expected `X-App-Version`. See [rollout strategies](#rollout-strategies) for the model and current caveat.
+CI builds the image, records the release SHA in stack config, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new immutable VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. For LB-backed services it creates a pending generation, expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, contracts to `[new]`, then clears the pending generation. See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -165,12 +165,12 @@ Every deploy is an **immutable-node replacement**: the image SHA is baked into a
 
 | `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation and point the LB backend at the active generation list. Today `serverIps` is owned by Pulumi during `pulumi up`; the tested `tasks/cutover.ts` controller can do explicit expand→health→contract with `SetBackendServers`, but that path is not wired into CI yet. |
+| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation as `pendingGen`, then [tasks/cutover.ts](tasks/cutover.ts) uses Scaleway `SetBackendServers` to expand the LB backend to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, and drain the old generation before Pulumi destroys it. |
 | **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The new generation boots warm and contends for the slot the old worker releases on drain (handoff is lossless — the slot retains the WAL position). |
 
 **`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP — `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket — sessions shed, clients re-dial and resync from durable state) for yjs.
 
-[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested expand→health→contract→drain core for the explicit LB-overlap path. Current CI does not invoke it; `deploy.yml` verifies the generation after `pulumi up` with [tasks/wait-for-version.ts](tasks/wait-for-version.ts). A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested expand→health→contract→drain core for the explicit LB-overlap path. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: create the pending generation, run cutover, promote `gen_<svc>` / `sha_<svc>`, clear pending config, and run the destroy bookend. A service that declares `stablePrivateIp: true` also moves `infra:stableInternalGen_<svc>`, reattaching its stable internal IP before the LB contracts. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
 
 ### Runtime secret delivery
 
