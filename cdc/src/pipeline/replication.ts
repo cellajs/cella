@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
-import { cdcDb } from '../lib/db';
+import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { env } from '../env';
 import { logError, logEvent } from '../lib/pino';
 
@@ -21,9 +21,13 @@ const { reconnection, slotTakeover } = RESOURCE_LIMITS;
 
 /**
  * Build the replication connection URL from the CDC database URL.
+ *
+ * Strips the `sslmode=require&uselibpqcompat=true` params so the explicit,
+ * CA-verified `ssl` config (see {@link createReplicationService}) is used
+ * instead of pg's unverified libpq-compat downgrade.
  */
 function buildReplicationUrl(): URL {
-  const replicationUrl = new URL(env.DATABASE_CDC_URL);
+  const replicationUrl = new URL(stripSslParams(env.DATABASE_CDC_URL));
   if (!replicationUrl.searchParams.has('replication')) {
     replicationUrl.searchParams.set('replication', 'database');
   }
@@ -39,6 +43,11 @@ export function createReplicationService(): LogicalReplicationService {
     {
       connectionString: connectionUrl.toString(),
       application_name: `${appConfig.slug}-cdc-worker`,
+      // Verified TLS, consistent with cdcDb: the replication stream carries full
+      // row data and must not silently downgrade. buildVerifiedSsl pins the cert
+      // identity check to the dialed host so the Scaleway RDB cert's SANs are
+      // honored (returns undefined outside production, where TLS is not required).
+      ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
     },
     {
       acknowledge: { auto: false, timeoutSeconds: 0 },
