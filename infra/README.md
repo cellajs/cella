@@ -4,13 +4,22 @@ Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitH
 
 ## Compute image baking
 
-Production VMs can boot from a pre-baked Scaleway image that already contains
-Docker Engine and the Docker Compose plugin. This keeps cloud-init focused on
-release-specific work: writing compose/env files, hydrating runtime secrets,
-pulling the pinned image tag, running migrate when needed, and starting the app.
+Service VMs boot from a pre-baked Scaleway image that contains Docker Engine, the
+Docker Compose plugin, Node 24, and the `cella-boot-agent`. Cloud-init shrinks to
+a launcher that writes the boot plan and starts the agent; the agent owns the
+boot state machine (compose/env files, runtime-secret hydration, image pull,
+migrate, app start).
 
-The image bake uses Packer's Scaleway builder. Install Packer locally or in CI,
-then provide normal Scaleway credentials through the environment:
+The image is required before the first compute deploy. The easiest path is the
+infra CLI, which offers to bake it during the first bootstrap (the bootstrap key
+already has the rights) and exposes a re-runnable mode for later changes:
+
+```bash
+pnpm infra   # → "Bake compute image"  (or accept the prompt during first bootstrap)
+```
+
+It can also be baked in CI via the **Bake compute image** GitHub workflow
+(`workflow_dispatch`), or directly with Packer:
 
 ```bash
 export SCW_ACCESS_KEY=...
@@ -18,28 +27,24 @@ export SCW_SECRET_KEY=...
 export SCW_DEFAULT_PROJECT_ID=...
 
 pnpm --filter infra image:init
-pnpm --filter infra image:validate
-pnpm --filter infra image:build
+pnpm --filter infra image:build   # builds the agent artifact, then bakes
 ```
 
-By default the template builds from `ubuntu_noble` in `fr-par-1` on a temporary
-`DEV1-S` instance. Override defaults with `PKR_VAR_*` variables when needed:
+The baked image carries a **stable name** (`compute.image` in
+`infra/config/general.config.ts`, default `cella-docker-node-agent-v1`). The
+Pulumi program resolves the **newest** image with that name at deploy time
+(`resources/compute.ts`), so a re-bake is picked up automatically — **no UUID
+paste**. Set `compute.image` to a literal image UUID only to pin a specific image
+for rollback.
+
+The build runs a temporary builder VM in `PKR_VAR_zone` (default `nl-ams-1`),
+which must match the deploy zone since image lookup is zonal. Override defaults
+with `PKR_VAR_*` when needed:
 
 ```bash
 PKR_VAR_zone=nl-ams-1 \
 PKR_VAR_commercial_type=DEV1-S \
-PKR_VAR_image_name_prefix=cella-docker-ubuntu-noble \
 pnpm --filter infra image:build
-```
-
-After Packer prints the resulting Scaleway image ID, configure Pulumi to consume
-it in `infra/config/general.config.ts`:
-
-```ts
-compute: {
-        image: '<scaleway-image-id>',
-        dockerPreinstalled: true,
-},
 ```
 
 Do not run image baking as part of normal `pulumi up`. Treat the image as a base
