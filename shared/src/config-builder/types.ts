@@ -52,14 +52,9 @@ export interface HasFlagsConfig {
   chatSupport: boolean;
 }
 
-/**
- * Optional backend modules/services, each gating a deployable service (infra
- * `featureFlag`) and/or a route surface (`x-feature`). Distinct from
- * `HasFlagsConfig`, which holds in-app UX/behavior toggles.
- */
-export interface FeatureModulesConfig {
-  yjs: boolean;
-  ai: boolean;
+export interface AppServiceEndpointConfig {
+  enabled?: boolean;
+  publicUrl?: string;
 }
 
 export interface TotpConfig {
@@ -205,6 +200,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   yjsUrl: string;
 
   aiUrl: string;
+  services: Record<string, AppServiceEndpointConfig>;
   aboutUrl: string;
   statusUrl: string;
   productionUrl: string;
@@ -223,9 +219,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   // Feature flags (in-app UX/behavior toggles)
   has: HasFlagsConfig;
-
-  // Optional modules/services (gate deployable services and/or route surfaces)
-  features: FeatureModulesConfig;
 
   // Authentication
   enabledAuthStrategies: readonly BaseAuthStrategies[];

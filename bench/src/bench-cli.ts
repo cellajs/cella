@@ -36,13 +36,13 @@ import { BACKEND_PORT, BASE_URL, createBenchProcessEnv, DB_URL } from './config'
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
 
-// Only services the app actually runs are health-checked. yjs and ai are
-// feature-flagged via appConfig.features, so they are skipped unless enabled.
+// Only services the app actually runs are health-checked. yjs and ai are skipped
+// when disabled in appConfig.services.
 const SERVICES = {
   backend: `${BASE_URL}/health`,
-  cdc: `http://localhost:${BACKEND_PORT + 1}/health`,
-  ...(appConfig.features.yjs ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
-  ...(appConfig.features.ai ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
+  ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${BACKEND_PORT + 1}/health` } : {}),
+  ...(appConfig.services.yjs.enabled !== false ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
+  ...(appConfig.services.ai.enabled !== false ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
 } as const;
 
 // ── CLI args ───────────────────────────────────────────────────────────────

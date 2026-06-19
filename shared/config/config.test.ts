@@ -14,14 +14,12 @@ export default {
 
   domain: '',
 
-  // Enable feature-gated modules so their routes are exercised in cella's own test suite.
-  features: {
-    yjs: true,
-  },
-
   frontendUrl: development.frontendUrl,
   backendUrl: development.backendUrl,
   backendAuthUrl: development.backendAuthUrl,
   yjsUrl: development.yjsUrl,
   aiUrl: development.aiUrl,
+  services: {
+    yjs: { enabled: true },
+  },
 } satisfies DeepPartial<typeof _default>;

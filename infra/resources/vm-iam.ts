@@ -58,7 +58,7 @@ export function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types
  */
 export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),
-  description: 'Read-only registry + object storage + secret manager grant for service VMs (managed by Pulumi)',
+  description: 'Read-only registry + secret manager grant for service VMs (managed by Pulumi)',
   applicationId: vmApplicationId,
   // Set the org explicitly (resolved in pulumi-context from env, else the project) so
   // the create does not depend on the provider's default org env — the bootstrap

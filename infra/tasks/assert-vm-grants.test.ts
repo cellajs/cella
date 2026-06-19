@@ -18,7 +18,7 @@ function makeFetch(routes: Array<{ match: string; body: unknown; status?: number
   })
 }
 
-const REQUIRED = ['ContainerRegistryReadOnly', 'ObjectStorageReadOnly', 'SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const
+const REQUIRED = ['ContainerRegistryReadOnly', 'SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const
 
 const baseOpts = {
   secretKey: 'caller-secret',
@@ -54,7 +54,7 @@ describe('assertVmGrants', () => {
       },
       {
         match: '/iam/v1alpha1/rules?policy_id=pol-1',
-        body: { rules: [{ permission_set_names: ['ContainerRegistryReadOnly', 'ObjectStorageReadOnly'] }] },
+        body: { rules: [{ permission_set_names: ['ContainerRegistryReadOnly'] }] },
       },
       {
         match: '/iam/v1alpha1/rules?policy_id=pol-2',
@@ -73,7 +73,7 @@ describe('assertVmGrants', () => {
       { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'vm-reader-policy' }] } },
       {
         match: '/iam/v1alpha1/rules?policy_id=pol-1',
-        body: { rules: [{ permission_set_names: ['ContainerRegistryReadOnly', 'ObjectStorageReadOnly', 'SecretManagerReadOnly'] }] },
+        body: { rules: [{ permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerReadOnly'] }] },
       },
     ])
 

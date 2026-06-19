@@ -4,7 +4,7 @@ import { renderInstructions } from './rotate-ci-key'
 describe('renderInstructions', () => {
   it('threads the stack mode into all environment-specific commands', () => {
     const out = renderInstructions({ mode: 'staging' })
-    expect(out).toContain('ci-staging-deploy-tags')
+    expect(out).toContain('ci-staging-deploy')
     expect(out).toContain('gh secret set SCW_ACCESS_KEY --env staging')
     expect(out).toContain('pulumi config set --stack staging infra:ciApplicationId')
   })

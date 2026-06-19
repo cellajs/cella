@@ -10,32 +10,26 @@
  * `['backend','cdc','yjs','ai','frontend']`:
  *   - resources/compute.ts      — one VM per enabled service + its compose env
  *   - resources/loadbalancer.ts — which services get a public LB backend/route
- *   - resources/deploy-tags.ts  — one S3 tag object per service
- *   - reconciler/index.ts       — per-VM reconciler env (compose profile == slug,
- *                                 health port, rollover strategy, …)
  *   - tasks/wait-for-images.ts  — which images CI waits for in the registry
  *   - lib/runtime-secrets.ts    — which services a runtime secret is exposed to
  */
 import { services as composeServices, type ServiceName } from '../compose/compose'
 import type { ServiceMeta, ServiceInstanceType } from '../compose/types'
+import type { AppServiceEndpointConfig } from '../../shared'
 // Type-only — erased at compile, so this module stays appConfig-free at runtime
 // (pulumi-context.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
 import type { appConfig as AppConfig } from '../../shared'
 
 export type { ServiceName, ServiceInstanceType }
 
-/** appConfig.features.* flags that gate an optional service. */
-export type ServiceFeatureFlag = 'yjs' | 'ai'
-
 /**
  * One deployable service — the Compose model's `x-service` (`ServiceMeta`) narrowed
- * to this app's slug and feature-flag unions, plus `placement`. Field meanings
+ * to this app's slug, plus `placement`. Field meanings
  * are documented on `ServiceMeta` in `../compose/types.ts`; every other infra
  * surface derives from this list (see this module's header).
  */
 export interface ServiceDefinition extends ServiceMeta {
   slug: ServiceName
-  featureFlag?: ServiceFeatureFlag
   /**
    * Where the service runs:
    *  - 'dedicated-vm'   — its own Scaleway VM (today's model; the default when
@@ -61,14 +55,13 @@ export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.m
 export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug)
 
 /**
- * Services enabled for an app given its feature flags. A service with no
- * `featureFlag` is always enabled; one with a flag is included only when that
- * flag is true. Single source of truth for "which services this app deploys" —
- * compute (VMs), the load balancer, and any future deploy-plan artifact all
- * derive from it instead of re-checking `appConfig.features.*` independently.
+ * Services enabled for an app given appConfig.services. Services are enabled by
+ * default; a service entry can opt out with `{ enabled: false }`. Single source
+ * of truth for "which services this app deploys" — compute (VMs), the load
+ * balancer, and any future deploy-plan artifact all derive from it.
  */
-export function enabledServices(features: Record<ServiceFeatureFlag, boolean>): readonly ServiceDefinition[] {
-  return services.filter((s) => !s.featureFlag || features[s.featureFlag])
+export function enabledServices(serviceConfig: Record<string, AppServiceEndpointConfig>): readonly ServiceDefinition[] {
+  return services.filter((s) => serviceConfig[s.slug]?.enabled !== false)
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
@@ -78,22 +71,6 @@ export interface ServiceEndpoint {
   url: string
   /** Hostname only (e.g. `api.example.com`) — for DNS records, certs, LB routes. */
   host: string
-}
-
-/** Public URL for a service slug; undefined for internal-only services (cdc). */
-function publicUrl(slug: ServiceName, cfg: typeof AppConfig): string | undefined {
-  switch (slug) {
-    case 'frontend':
-      return cfg.frontendUrl
-    case 'backend':
-      return cfg.backendUrl
-    case 'yjs':
-      return cfg.yjsUrl
-    case 'ai':
-      return cfg.aiUrl
-    default:
-      return undefined
-  }
 }
 
 /**
@@ -106,10 +83,11 @@ function publicUrl(slug: ServiceName, cfg: typeof AppConfig): string | undefined
  * function, not a module-level constant.
  */
 export function serviceEndpoints(cfg: typeof AppConfig): readonly ServiceEndpoint[] {
+  const serviceUrls = cfg.services as Record<string, AppServiceEndpointConfig>
   return services
     .filter((s) => s.lbRoute)
     .map((s) => {
-      const url = publicUrl(s.slug, cfg)
+      const url = serviceUrls[s.slug]?.publicUrl
       if (!url) throw new Error(`Public service '${s.slug}' (lbRoute set) has no URL in appConfig`)
       return { slug: s.slug, url, host: new URL(url).hostname }
     })

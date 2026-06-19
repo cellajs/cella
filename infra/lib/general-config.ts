@@ -24,6 +24,12 @@ import type { Environment } from './bootstrap-stack-state'
 export type PerMode<T> = T | Partial<Record<Environment, T>>
 
 export interface GeneralConfig {
+  compute: {
+    /** Scaleway instance image slug/id. Use a pre-baked image here to shorten first boot. */
+    image: PerMode<string>
+    /** True when the image already has Docker Engine + the compose plugin installed. */
+    dockerPreinstalled: PerMode<boolean>
+  }
   database: {
     /** Scaleway managed-PostgreSQL node type (e.g. `'DB-DEV-S'`, `'DB-GP-XS'`). */
     nodeType: PerMode<string>

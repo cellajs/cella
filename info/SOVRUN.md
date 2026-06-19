@@ -53,14 +53,14 @@ The system already separates into three planes that map directly onto a SaaS arc
 |---|---|---|---|
 | **Provisioning** (day-0/day-2) | `infra/cli/infra-cli.ts` + `pulumi up` | Operator laptop | Episodic, human-initiated |
 | **Delivery** (CI) | `.github/workflows/deploy.yml` | Customer's GitHub Actions | Every push to main |
-| **Runtime convergence** | `infra/reconciler/reconciler.sh` on a 20s systemd timer | Customer's VMs | Continuous, autonomous |
+| **Runtime boot** | cloud-init + `runtime-secret-sync` on immutable VM generations | Customer's VMs | Once per VM generation |
 
 The key observation: **planes 2 and 3 already run entirely inside the customer's accounts**
 (their GitHub org, their Scaleway project). Only plane 1 — the episodic CLI flows — is what
 Sovrun would put a UI on. The steady-state deploy loop needs no Sovrun involvement at all:
-CI builds images, writes a content-addressed tag to `s3://<slug>-deploy-tags/deploy/<svc>.tag`,
-and the on-VM reconciler pulls and rolls (blue-green for backend with expand migrations,
-in-place for the rest). This is pull-based GitOps with no central server — which is exactly
+CI builds images, records the release SHA in Pulumi stack config, provisions immutable VM
+generations with that SHA baked into cloud-init, and verifies the public services serve the
+expected version. This keeps the deploy loop in the customer's GitHub + Scaleway accounts —
 the property that makes "no vendor lock-in, no operational dependency on the SaaS" credible.
 
 ### 2.2 The credential model (the crown jewel)
@@ -340,9 +340,9 @@ The same "ask, don't hold" pattern extends, roughly in order of leverage:
   anomaly detection.
 - A UI (and eventually hosted control plane) over the four CLI flows: bootstrap, rotate,
   apply infra change, manage runtime secrets.
-- A status/observability surface: read `status/<svc>.json`, deploy tags, boot-diag bundles
-  from the customer's S3 with a read-only key; show rollout progress, version drift,
-  reconciler health.
+- A status/observability surface: read deploy metadata, boot diagnostics, and health/version
+  signals from the customer's infrastructure; show rollout progress, version drift, and VM
+  boot health.
 - A manifest editor: the service registry + runtime-secrets registry as customer-editable
   config (the `render.yaml` analog), validated and compiled into the Pulumi program inputs.
 - An orchestration surface (§5): drive and watch the deploy the customer's CI/agent executes —
@@ -390,9 +390,9 @@ The tool-fit argument is simple:
   JSON matrices assembled in bash.
 - **Pulumi is a desired-state reconciler.** It is excellent at "make infrastructure match this
   declaration" and has no vocabulary for imperative, time-ordered sequencing or health
-  convergence. The pipeline already concedes this: image tags are deliberately kept *out* of
-  Pulumi (`pulumi up` never carries the release SHA — the deploy-tag-in-S3 + on-VM reconciler
-  pattern exists precisely because "roll forward and watch health" isn't a resource).
+  convergence. The pipeline still concedes this: `pulumi up` can provision the immutable VM
+  generation with the release SHA baked in, but the health/version wait and any future explicit
+  LB expand/contract cutover live outside Pulumi as deploy tasks.
 
 Neither is a stateful, long-lived orchestrator/observer. The awkward parts of the pipeline are
 exactly the parts that need durable state, a clock, and a persistent watcher — which is what a
@@ -405,7 +405,7 @@ control plane is.
 | **Rollout health polling** — `wait-for-version`, `wait-for-images`, `verify-frontend-bundle` (each a 100×3s ≈ 5-min budget) | Holds a paid runner hostage just to poll an HTTP header; the matrix multiplies the idle minutes; a timeout is an opaque red ✗ | A persistent process watches asynchronously — zero runner cost, real backoff, and a live rollout view instead of a spinning job |
 | **Deploy sequencing** — roll-backend-first-then-rest, encoded as a job DAG + `if:` guards + bash-built `build_images_matrix` / `roll_rest_matrix` | A hand-rolled workflow engine in YAML; brittle, hard to test, no pause/resume/cancel | A durable-execution state machine expresses "expand → bake → health-gate → contract → verify" natively, with visibility and inline cancellation |
 | **Transient-failure retries** — the cosign step's 5-attempt loop for Sigstore HTTP/2 resets | Retry/backoff/idempotency reimplemented in bash, per step | A durable queue gives retry semantics as infrastructure, not shell loops |
-| **Failure diagnostics** — `fetch-boot-diag` runs only `on: failure()`, dumps to the job log, then is gone | No memory: the evidence dies with the runner; no cross-run correlation | Continuously ingest `status/<svc>.json` + boot-diag + reconciler 403s; the §2.5 split-brain becomes a standing alert, not a postmortem |
+| **Failure diagnostics** — failure-only diagnostics dump to the job log, then are gone | No memory: the evidence dies with the runner; no cross-run correlation | Continuously ingest boot, health, and deploy signals; the §2.5 split-brain becomes a standing alert, not a postmortem |
 
 None of this asks Sovrun to *run* the deploy — builds stay in the customer's CI, traffic never
 touches Sovrun (§4). It asks Sovrun to *drive and watch* it: trigger the customer's executor
@@ -415,14 +415,15 @@ express.
 
 ### 5.2 The stateful deploy lifecycle — the biggest unlock
 
-The deploy-tag model is elegant but **stateless**: the only record of "what is live" is a file
-in S3, and rollback is "re-run the workflow on the old SHA". Three capabilities follow once a
+The current CI/Pulumi model is still mostly **stateless** from a product point of view:
+rollback is "re-run the workflow on the old SHA", and the durable release timeline is spread
+across GitHub runs, Pulumi state, and live service health. Three capabilities follow once a
 control plane holds the deploy timeline, none of which CI (no memory) or Pulumi (tracks infra,
 not releases) can give:
 
 1. **One-click rollback and drift alerts.** The control plane knows which SHA is live on which
-   service, when it rolled, and who approved it. Rollback becomes a button; "VM serving SHA ≠
-   deploy tag" becomes an alert.
+  service, when it rolled, and who approved it. Rollback becomes a button; "VM serving SHA ≠
+  approved release" becomes an alert.
 2. **The missing contract-migration leg.** The pipeline only ever runs the *expand* (additive)
    migration; the destructive *contract* step is dangerous — it must wait for a bake window
    until no instance still runs code referencing the dropped column, so today it is left

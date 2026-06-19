@@ -29,7 +29,7 @@ export {
 } from './src/config-builder/entity-hierarchy';
 
 // Config builder types
-export type { RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
+export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
 
 // App-derived types
 export type {

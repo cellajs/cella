@@ -73,6 +73,10 @@ import './resources/secrets'
 import './resources/vm-iam'
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
+export const computeGenerationMetadata = compute.computeGenerationMetadata
+export const stablePrivateIpAddress = compute.stablePrivateIpAddress
+export const stablePrivateIpId = compute.stablePrivateIpId
+export const stablePrivateIpServiceSlug = compute.stablePrivateIpServiceSlug
 
 // ---------------------------------------------------------------------------
 // Load Balancer + API/Yjs/AI DNS
@@ -85,3 +89,5 @@ import * as lb from './resources/loadbalancer'
 // slugs from this map instead of per-service named outputs, so a new service
 // needs no export added here.
 export const serviceDomainUrls = lb.serviceDomainUrls
+export const lbId = lb.lbId
+export const lbBackendIds = lb.lbBackendIds

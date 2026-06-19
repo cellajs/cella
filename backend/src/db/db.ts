@@ -1,6 +1,6 @@
-import { type PeerCertificate, checkServerIdentity as tlsCheckServerIdentity } from 'node:tls';
 import type { DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/postgres-tls';
 import { env } from '../env';
 
 export const dbConfig = {
@@ -37,57 +37,13 @@ const sslCa =
       })()
     : undefined;
 
-// Scaleway-built connection strings pin `sslmode=require&uselibpqcompat=true`,
-// which pg would let override the verified `ssl` config above (downgrading to
-// rejectUnauthorized:false). Strip those params so our CA-pinned config wins.
-const toConnectionString = (url: string): string => {
-  try {
-    const parsed = new URL(url);
-    parsed.searchParams.delete('sslmode');
-    parsed.searchParams.delete('uselibpqcompat');
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-};
-
-/** Parse the host (private IP or DNS name) from a postgres connection string. */
-const hostOf = (connectionString: string): string | undefined => {
-  try {
-    return new URL(toConnectionString(connectionString)).hostname || undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-// Build the verified-TLS `ssl` option for one connection. We pin the CA and keep
-// `rejectUnauthorized` so the chain is fully verified. The Scaleway RDB cert
-// carries proper SANs (e.g. `DNS:10.0.0.2, IP Address:10.0.0.2`), so the only
-// problem is WHICH host the identity check runs against: node-postgres does not
-// thread the connection host into the TLS layer, so the check defaults to
-// `localhost` and fails (ERR_TLS_CERT_ALTNAME_INVALID) even though the cert
-// legitimately covers the host we dialed. Pin the identity check to that actual
-// host so the cert's real SANs are honored (the chain is still fully verified
-// against the pinned CA).
-const sslFor = (connectionString: string) => {
-  if (!sslCa) return undefined;
-  const host = hostOf(connectionString);
-  return {
-    ca: sslCa,
-    rejectUnauthorized: true,
-    checkServerIdentity: host
-      ? (_passedHost: string, cert: PeerCertificate) => tlsCheckServerIdentity(host, cert)
-      : undefined,
-  };
-};
-
 const createPgConnection = (connectionString: string, max: number): PgDB =>
   pgDrizzle({
     connection: {
-      connectionString: toConnectionString(connectionString),
+      connectionString: stripPostgresSslParams(connectionString),
       connectionTimeoutMillis: 10_000,
       max,
-      ssl: sslFor(connectionString),
+      ssl: verifiedPostgresSsl(connectionString, sslCa),
     },
     ...dbConfig,
   });

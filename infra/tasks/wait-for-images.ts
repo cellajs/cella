@@ -1,12 +1,11 @@
 /**
  * Wait for the release images to appear in the Scaleway container registry.
  *
- * The on-VM reconciler does `docker compose pull` the moment the new SHA lands
- * in the deploy-tags bucket, and a fresh/replaced VM pulls during cloud-init.
- * We must not let the deploy proceed before those images exist.
+ * A fresh/replaced VM pulls the pinned release SHA during cloud-init. We must
+ * not let the deploy proceed before those images exist.
  *
  * Which services have their own image is derived here from a single source so
- * it can't silently drift from the reconciler/deploy-tags service lists:
+ * it can't silently drift from the service registry:
  *   - `ai` reuses the backend image, so there is no `ai:<tag>` to wait for —
  *     it is intentionally excluded.
  *   - every other tagged service ships its own image and is waited on.

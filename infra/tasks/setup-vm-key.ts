@@ -7,7 +7,6 @@
  *
  * The VM reader identity is granted exactly these capabilities (by Pulumi):
  *   - ContainerRegistryReadOnly  — docker pull from the project registry
- *   - ObjectStorageReadOnly      — read deploy/<service>.tag from the deploy-tags bucket
  *   - SecretManagerReadOnly      — list/describe runtime secrets by ID
  *   - SecretManagerSecretAccess  — decrypt + read the runtime secret VALUES
  *

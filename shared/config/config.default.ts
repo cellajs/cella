@@ -98,6 +98,13 @@ export const config = {
   backendAuthUrl: 'https://api.cellajs.com/auth',
   yjsUrl: 'wss://yjs.cellajs.com',
   aiUrl: 'https://ai.cellajs.com',
+  services: {
+    frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
+    backend: { enabled: true as boolean, publicUrl: 'https://api.cellajs.com' },
+    cdc: { enabled: true as boolean },
+    yjs: { enabled: false as boolean, publicUrl: 'wss://yjs.cellajs.com' },
+    ai: { enabled: false as boolean, publicUrl: 'https://ai.cellajs.com' },
+  },
 
   aboutUrl: '/about',
   statusUrl: 'https://status.cellajs.com',
@@ -128,12 +135,6 @@ export const config = {
     waitlist: false as boolean,
     uploadEnabled: true as boolean,
     chatSupport: false as boolean,
-  },
-
-  /** Optional modules/services - gate a deployable service and/or route surface (x-feature). */
-  features: {
-    yjs: false as boolean,
-    ai: false as boolean,
   },
 
   /******************************************************************************

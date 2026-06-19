@@ -5,19 +5,20 @@ import { defineServices } from '../compose/infrastructure'
  * resizes a deployable service. Run `pnpm --filter infra compose:synth` after
  * editing to regenerate `infra/compose.gen.yml` (the file Docker reads).
  *
- * Data only: `infrastructure.ts` owns the deploy machinery (ingress proxy,
- * blue-green slot/migrator mechanism, healthcheck shape, shared env) and expands
+ * Data only: `infrastructure.ts` owns the compose machinery (ports,
+ * healthcheck shape, shared env) and expands
  * each entry below into a full Compose block at synth time. Field docs come from
- * `AppServiceConfig` (hover any field). The backend is a normal `blue-green`
- * entry, so a fork controls its image, sizing, and env like any other service;
- * cella derives the two slots + one-shot migrator.
+ * `AppServiceConfig` (hover any field). The backend is a normal service entry,
+ * so a fork controls its image, sizing, and env like any other service; cella
+ * adds the one-shot migrate companion via `runMigrate`.
  *
  * Removing an entry removes the service everywhere it is derived: VM, LB
- * backend, DNS record, cert, deploy tag, and reconciler env.
+ * backend, DNS record, cert, compose profile, and release SHA config.
  */
 export default defineServices({
   backend: {
     image: '${REGISTRY}/backend:${BACKEND_TAG:-latest}',
+    dockerfile: 'backend/Dockerfile',
     port: 4000,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
@@ -27,8 +28,12 @@ export default defineServices({
     replacementStrategy: 'lb-overlap',
     drainPolicy: 'requests',
     runMigrate: true,
+    primaryRollout: true,
     drainSeconds: 10,
     lbRoute: 'default',
+    // Stable private identity for internal consumers (cdc's API_WS_URL). The
+    // deploy task moves this IP to the new backend generation during cutover.
+    stablePrivateIp: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {
@@ -40,6 +45,7 @@ export default defineServices({
 
   cdc: {
     image: '${REGISTRY}/cdc:${CDC_TAG:-latest}',
+    dockerfile: 'cdc/Dockerfile',
     port: 4001,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
@@ -64,6 +70,7 @@ export default defineServices({
 
   yjs: {
     image: '${REGISTRY}/yjs:${YJS_TAG:-latest}',
+    dockerfile: 'yjs/Dockerfile',
     port: 4002,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
@@ -75,8 +82,7 @@ export default defineServices({
     lbRoute: 'host',
     // WebSocket service — LB keeps connections open for up to an hour.
     lbWebsockets: true,
-    // Only deployed when the app enables collaborative editing (appConfig.features.yjs).
-    featureFlag: 'yjs',
+    // Only deployed when appConfig.services.yjs.enabled is true.
     instanceType: 'DEV1-S',
     env: {
       BACKEND_URL: '${BACKEND_URL}',
@@ -95,8 +101,7 @@ export default defineServices({
     // Reuses the backend image at the same SHA; CI builds no separate ai image.
     reusesImageOf: 'backend',
     lbRoute: 'host',
-    // Only deployed when the app enables the AI worker (appConfig.features.ai).
-    featureFlag: 'ai',
+    // Only deployed when appConfig.services.ai.enabled is true.
     instanceType: 'DEV1-S',
     env: {
       MODE: 'ai-worker',
@@ -116,6 +121,7 @@ export default defineServices({
     // Production-only reverse-proxy in front of the SPA bucket. Image built per
     // release from infra/caddy/Dockerfile; runtime knobs are ORIGIN_HOST + CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
+    dockerfile: 'infra/caddy/Dockerfile',
     port: 80,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',

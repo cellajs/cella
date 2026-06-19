@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "607616af5b8f97bc",
+  "inputHash": "de2a5dad4fb4ec43",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -119,9 +119,9 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           "required": false,
         },
         {
-          "description": "Feature flag gating the endpoint; route returns 404 when the flag is disabled",
-          "id": "x-feature",
-          "key": "x-feature",
+          "description": "Service gating the endpoint; route returns 404 when the service is disabled",
+          "id": "x-service",
+          "key": "x-service",
           "kind": "metadata",
           "required": false,
         },

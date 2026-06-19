@@ -37,8 +37,11 @@ services:
       instanceType:
         production: DEV1-S
         staging: DEV1-S
+      primaryRollout: true
       drainPolicy: requests
       lbRoute: default
+      dockerfile: backend/Dockerfile
+      stablePrivateIp: true
   migrate:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]
@@ -85,6 +88,7 @@ services:
       replacementStrategy: exclusive
       drainSeconds: 0
       instanceType: DEV1-S
+      dockerfile: cdc/Dockerfile
       bindings:
         API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
   yjs:
@@ -120,7 +124,7 @@ services:
       drainPolicy: reconnect
       lbRoute: host
       lbWebsockets: true
-      featureFlag: yjs
+      dockerfile: yjs/Dockerfile
   ai:
     image: ${REGISTRY}/backend:${AI_TAG:-latest}
     profiles: [ai]
@@ -158,7 +162,6 @@ services:
       drainPolicy: requests
       lbRoute: host
       reusesImageOf: backend
-      featureFlag: ai
       bindings:
         AI_API_URL: '@{self.url}'
   frontend:
@@ -187,3 +190,4 @@ services:
       instanceType: DEV1-S
       drainPolicy: requests
       lbRoute: host
+      dockerfile: infra/caddy/Dockerfile

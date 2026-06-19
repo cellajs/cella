@@ -53,13 +53,12 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
  * derives its `ServiceDefinition` registry from these blocks.
  *
  * Removing a block removes the service from the registry entirely (no VM, LB
- * backend, DNS, cert, deploy tag, or reconciler env). `featureFlag` is the
- * orthogonal, per-deploy gate: the block stays in the registry but the service
- * only deploys when the app enables that feature (see `enabledServices`).
+ * backend, DNS, cert, or release SHA config). Optional per-app deployment is
+ * gated by `appConfig.services.<slug>.enabled` (see `enabledServices`).
  */
 export interface ServiceMeta {
   /**
-   * Canonical service identifier — the compose profile, deploy-tag key, and VM
+  * Canonical service identifier — the compose profile, release SHA key, and VM
    * key. May differ from the YAML block name for slot-based services (the
    * `backend-blue` block carries `slug: 'backend'`).
    */
@@ -70,6 +69,8 @@ export interface ServiceMeta {
   healthTimeoutSeconds: number
   /** Run the one-shot `migrate` service before rolling this service. */
   runMigrate: boolean
+  /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
+  primaryRollout?: boolean
   /**
    * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
    * for LB-exposed services (overlap two generations behind the LB);
@@ -90,13 +91,12 @@ export interface ServiceMeta {
   lbWebsockets?: boolean
   /** Service whose image this one reuses (ai reuses backend); no own image built. */
   reusesImageOf?: string
-  /**
-   * `appConfig.features.*` flag that gates this service per deploy. Absent = always
-   * deployed; set = only deployed when that feature is on (yjs, ai).
-   */
-  featureFlag?: string
+  /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
+  dockerfile?: string
   /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
   instanceType: ServiceInstanceType
+  /** Reserve one stable private-network service IP and attach it to the active generation. */
+  stablePrivateIp?: boolean
   /**
    * Deploy-time env bindings: env var → value template resolved by the compute
    * module. Templates reference other services by slug with the `@{…}` sigil
@@ -171,14 +171,16 @@ export interface AppServiceConfig {
    */
   startPeriod: string
   /**
-   * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
-   * (the default for LB-exposed services) overlaps two generations behind the
-   * load balancer; `'exclusive'` is for the singleton-slot cdc worker, which
-   * cannot overlap. See info/ZERO_DOWNTIME_REPLACEMENT.md.
+  * How this service's VM generation is replaced on a deploy. `'lb-overlap'`
+  * is for LB-exposed services; `'exclusive'` is for the singleton-slot cdc
+  * worker, which cannot overlap because only one process can consume its
+  * PostgreSQL replication slot.
    */
   replacementStrategy: ReplacementStrategy
   /** Run the one-shot `migrate` service before rolling. Backend-only today. */
   runMigrate?: boolean
+  /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
+  primaryRollout?: boolean
   /**
    * How the old generation drains off the LB when de-registered. `'requests'`
    * (HTTP) or `'reconnect'` (WebSocket). Omit for the LB-less `exclusive` worker.
@@ -202,18 +204,21 @@ export interface AppServiceConfig {
    * (ai reuses the backend image at the same SHA).
    */
   reusesImageOf?: string
-  /**
-   * `appConfig.features.*` flag that gates this service per deploy. Omit to always
-   * deploy; set to deploy only when the app enables that feature. The block
-   * stays in the registry either way — this is the runtime gate, not removal.
-   */
-  featureFlag?: string
+  /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
+  dockerfile?: string
   /**
    * Per-service VM size — a fork resizes its fleet by editing this. Required:
    * every service declares its own box (there is no fleet-wide fallback). A
    * single type for all modes, or a per-mode map.
    */
   instanceType: ServiceInstanceType
+  /**
+   * Reserve one stable private-network service IP and attach it to the active
+   * generation. Consumers may bind to it with `@{<slug>.privateIp}`; deploy
+   * moves the attachment marker during cutover. Use for singleton internal
+   * service identity, not for LB-exposed public routing.
+   */
+  stablePrivateIp?: boolean
   /**
    * Service-specific environment variables (e.g. cdc's `API_WS_URL`, ai's
    * `MODE: ai-worker`). Merged AFTER the standard env so it can override it.

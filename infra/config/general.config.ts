@@ -22,6 +22,12 @@ import { defineGeneral } from '../lib/general-config'
  * `pulumi up`), not a routine CI deploy.
  */
 export default defineGeneral({
+  // VM base image. Keep Docker installed at first boot for the stock Ubuntu
+  // image; switch `image` + `dockerPreinstalled` together when using a baked image.
+  compute: {
+    image: 'ubuntu_noble',
+    dockerPreinstalled: false,
+  },
   database: {
     nodeType: 'DB-DEV-S',
     volumeSizeGb: 10,

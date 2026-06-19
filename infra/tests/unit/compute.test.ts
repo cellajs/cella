@@ -39,8 +39,7 @@ describe('compute module source invariants', () => {
 
   it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
     // The VM identity is a minimal-privilege `<slug>-vm-reader` application
-    // (ContainerRegistryReadOnly + ObjectStorageReadOnly + SecretManagerReadOnly
-    // + SecretManagerSecretAccess).
+    // (ContainerRegistryReadOnly + SecretManagerReadOnly + SecretManagerSecretAccess).
     // compute.ts must source its credentials from the infra helpers, never by
     // reading `new pulumi.Config('scaleway').requireSecret(...)` directly.
     expect(source).toMatch(/vmAccessKey|vmSecretKey/)
@@ -61,10 +60,16 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
+  it('uses the configured compute image and passes the Docker-image contract to cloud-init', () => {
+    expect(source).toMatch(/image:\s*infra\.computeImage/)
+    expect(source).toMatch(/dockerPreinstalled:\s*infra\.dockerPreinstalled/)
+    expect(source).not.toMatch(/image:\s*'ubuntu_noble'/)
+  })
+
   it('derives the VM service list from the canonical registry (enabledServices)', () => {
     // compute filters the canonical registry by feature flag rather than
-    // re-declaring the service set, so LB / deploy-tags / reconciler can't drift.
-    expect(source).toMatch(/enabledServices\(appConfig\.features\)/)
+    // re-declaring the service set, so LB / image-wait / compose wiring can't drift.
+    expect(source).toMatch(/enabledServices\(appConfig\.services\)/)
   })
 
   it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
@@ -107,15 +112,16 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/Create backend first/)
   })
 
-  it('resolves cdc\u2019s @{backend.privateIp} binding to the backend current-generation IP', () => {
-    // No separate stable internal IP: every deploy bumps all services together,
-    // so cdc (also redeployed) bakes the backend's current-generation private
-    // IP, reserved in the first pass. A single pinned IP cannot attach to two
-    // generations' NICs at once, so the stable-internal-IP mechanism is gone.
-    expect(source).toMatch(/backendBindingIp\(/)
-    expect(source).toMatch(/primaryGen\.set\(/)
-    expect(source).not.toMatch(/ipam-backend-internal/)
-    expect(source).not.toMatch(/backendInternalIp/)
+  it('resolves cdc\u2019s @{backend.privateIp} binding to the stable backend internal IP', () => {
+    // cdc binds to one logical backend address. The deploy task moves the
+    // stable IP to the new backend generation after it is healthy, so backend
+    // cutover does not bake generation-specific backend IPs into cdc.
+    expect(source).toMatch(/stableBindingIp\(/)
+    expect(source).toMatch(/`ipam-\$\{stablePrivateIpService\.slug\}-internal`/)
+    expect(source).toMatch(/stableInternalGen_/)
+    expect(source).toMatch(/stablePrivateIpAddress/)
+    expect(source).toMatch(/stablePrivateIpId/)
+    expect(source).toMatch(/stablePrivateIpServiceSlug/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {

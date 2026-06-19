@@ -1,12 +1,18 @@
 import { appConfig } from '../pulumi-context'
 import { enabledServices } from './services'
 
-const enabledServiceSlugs = new Set(enabledServices(appConfig.features).map((service) => service.slug))
+const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug))
+const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>
+const servicePublicUrl = (slug: string): string => {
+  const url = serviceUrls[slug]?.publicUrl
+  if (!url) throw new Error(`frontend-csp: service '${slug}' has no publicUrl in appConfig.services`)
+  return url
+}
 
 const cspOrigins = {
-  api: new URL(appConfig.backendUrl).origin,
-  yjs: enabledServiceSlugs.has('yjs') ? new URL(appConfig.yjsUrl).origin.replace(/^http/, 'ws') : '',
-  ai: enabledServiceSlugs.has('ai') ? new URL(appConfig.aiUrl).origin : '',
+  api: new URL(servicePublicUrl('backend')).origin,
+  yjs: enabledServiceSlugs.has('yjs') ? new URL(servicePublicUrl('yjs')).origin.replace(/^http/, 'ws') : '',
+  ai: enabledServiceSlugs.has('ai') ? new URL(servicePublicUrl('ai')).origin : '',
   s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
   s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
   s3Public: appConfig.s3.publicCDNUrl,

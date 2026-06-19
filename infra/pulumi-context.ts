@@ -113,10 +113,8 @@ export const vmReaderApplicationId = scaleway.iam
   })
 
 // Principal string for whoever runs `pulumi up` (the operator key locally, the
-// CI key in CI), derived from the calling SCW_ACCESS_KEY so the deploy-tags
-// bucket can grant it. `undefined` when no access key is in the environment —
-// the bucket policy then omits the operator grant, matching the behaviour from
-// before this value was stored (in CI the caller is already `applicationId`).
+// CI key in CI), derived from the calling SCW_ACCESS_KEY. `undefined` when no
+// access key is in the environment.
 const callerAccessKey = process.env.SCW_ACCESS_KEY
 export const operatorPrincipal: pulumi.Output<string> | undefined = callerAccessKey
   ? scaleway.iam.getApiKeyOutput({ accessKey: callerAccessKey }).apply((key) => (key.userId ? `user_id:${key.userId}` : `application_id:${key.applicationId}`))
@@ -154,6 +152,8 @@ const registryInstanceType = (serviceName: string): string => {
 export const infra = {
   // Non-service capacity/feature knobs — values live in the fork-owned
   // config/general.config.ts, resolved here for the active deploy mode.
+  computeImage: resolvePerMode(generalConfig.compute.image, mode as Environment),
+  dockerPreinstalled: resolvePerMode(generalConfig.compute.dockerPreinstalled, mode as Environment),
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, mode as Environment),
   dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, mode as Environment),
   enableWaf: resolvePerMode(generalConfig.waf.enabled, mode as Environment),
@@ -165,13 +165,13 @@ export const infra = {
 }
 
 // ---------------------------------------------------------------------------
-// VM reader credentials — minimal-privilege key for registry pull, S3 tag
-// reads, and Secret Manager access. Never the operator/CI key.
+// VM reader credentials — minimal-privilege key for registry pull and Secret
+// Manager access. Never the operator/CI key.
 //
 // VMs must not hold the operator/CI key (which has write access to instances,
 // the load balancer, IAM, etc.). Instead they use a `<slug>-vm-reader` IAM
-// application with only ContainerRegistryReadOnly + ObjectStorageReadOnly +
-// SecretManagerReadOnly + SecretManagerSecretAccess.
+// application with only ContainerRegistryReadOnly + SecretManagerReadOnly +
+// SecretManagerSecretAccess.
 //
 // The key pair lives in Scaleway Secret Manager (seeded by the bootstrap CLI),
 // NOT in stack config (SOVRUN §3.3). We read the latest version here — the

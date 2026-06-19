@@ -25,11 +25,11 @@ import type { OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenAp
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
 const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
 
-/** Feature modules (appConfig.features) that resolve to false in this build's effective config. */
-const disabledFeatures = new Set(
-  Object.entries(appConfig.features)
-    .filter(([, enabled]) => !enabled)
-    .map(([flag]) => flag),
+/** Service modules (appConfig.services) that resolve to disabled in this build's effective config. */
+const disabledServices = new Set(
+  Object.entries(appConfig.services)
+    .filter(([, service]) => service.enabled === false)
+    .map(([slug]) => slug),
 );
 
 /**
@@ -105,10 +105,10 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         const op = pathItem[method];
         if (!op?.operationId) continue;
 
-        // Skip operations gated by a feature flag that is disabled in this build.
+        // Skip operations gated by a service that is disabled in this build.
         // Keeps the SDK a stable superset while the docs reflect the effective config.
-        const feature = op['x-feature' as `x-${string}`];
-        if (typeof feature === 'string' && disabledFeatures.has(feature)) continue;
+        const service = op['x-service' as `x-${string}`];
+        if (typeof service === 'string' && disabledServices.has(service)) continue;
 
         // Strip excluded tags (e.g., ownership tags) from operation tags
         const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));
