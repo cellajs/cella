@@ -48,6 +48,20 @@ function rmConfig(stack: string, key: string): void {
   pulumi(['config', 'rm', key, '--stack', stack], { allowFailure: true })
 }
 
+function scalewayResourceId(id: string): string {
+  return id.split('/').at(-1) ?? id
+}
+
+async function rebootServer(opts: { secretKey: string; zone: string; serverId: string }): Promise<void> {
+  const serverId = scalewayResourceId(opts.serverId)
+  const res = await fetch(`https://api.scaleway.com/instance/v1/zones/${opts.zone}/servers/${serverId}/action`, {
+    method: 'POST',
+    headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'reboot' }),
+  })
+  if (!res.ok) throw new Error(`RebootServer ${serverId} → ${res.status}: ${await res.text()}`)
+}
+
 function stackOutput<T>(stack: string, name: string): T {
   const raw = pulumi(['stack', 'output', name, '--stack', stack, '--json'])
   return JSON.parse(raw) as T
@@ -123,6 +137,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
         console.info(`[deploy ${service}] moving stable private IP marker`)
         setConfig(stack, `infra:stableInternalGen_${service}`, nextGen)
         pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
+        console.info(`[deploy ${service}] rebooting new generation after private NIC replacement`)
+        await rebootServer({ secretKey, zone, serverId: newGen.serverId })
       }
     : undefined
 

@@ -9,4 +9,10 @@ describe('deploy-service source invariants', () => {
     expect(source).toMatch(/const deployHealthAttempts = 30/)
     expect(source).toMatch(/attempts: deployHealthAttempts/)
   })
+
+  it('reboots the new VM after stable private NIC replacement', () => {
+    expect(source).toMatch(/action: 'reboot'/)
+    expect(source).toMatch(/rebooting new generation after private NIC replacement/)
+    expect(source).toMatch(/serverId: newGen\.serverId/)
+  })
 })
