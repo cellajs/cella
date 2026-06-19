@@ -425,6 +425,10 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     ipamIpIds,
     zone,
     tags,
+  }, {
+    // Scaleway allows only one private NIC per server/private-network pair.
+    // Moving the stable IP changes ipamIpIds, which the provider replaces.
+    deleteBeforeReplace: true,
   })
 
   const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0])

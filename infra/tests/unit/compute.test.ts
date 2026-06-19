@@ -122,6 +122,7 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/stablePrivateIpAddress/)
     expect(source).toMatch(/stablePrivateIpId/)
     expect(source).toMatch(/stablePrivateIpServiceSlug/)
+    expect(source).toMatch(/deleteBeforeReplace: true/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {
