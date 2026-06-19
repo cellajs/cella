@@ -316,6 +316,30 @@ jobs:
         # immutable-node replacement path.
         run: pulumi stack select "$STACK"
 
+      # Pre-install the Scaleway resource plugin as a discrete, retryable step
+      # BEFORE `pulumi up` downloads it implicitly. Pulumi fetches provider
+      # plugin binaries from GitHub releases; unauthenticated those share a
+      # 60-req/hr-per-IP limit that GitHub-hosted runners routinely exhaust,
+      # surfacing as `rate limit exceeded: 403` mid-deploy. Passing GITHUB_TOKEN
+      # makes the download authenticated (5000/hr) and caching it here means the
+      # later `pulumi up` steps (base infra + deploy-service bookends) find it on
+      # disk. Version is derived from the installed npm package so it can't drift.
+      - name: Pre-install Pulumi providers
+        working-directory: infra
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('@pulumiverse/scaleway/package.json').version")
+          for attempt in 1 2 3 4 5; do
+            if pulumi plugin install resource scaleway "v$version"; then
+              echo "scaleway plugin v$version installed"
+              break
+            fi
+            echo "plugin install attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+          pulumi plugin ls
+
       # Pulumi prep (checkout, install, login, stack select) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
       # before the deploy proceeds: a fresh/replaced VM pulls the pinned SHA
@@ -360,6 +384,9 @@ jobs:
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          # Authenticate any implicit provider-plugin re-fetch (5000/hr vs the
+          # unauthenticated 60/hr shared limit that surfaced as a mid-deploy 403).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: |
           pnpm --filter infra sync-rollout-config --stack "$STACK"
@@ -427,6 +454,7 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
           RUN_NUMBER: ${{ github.run_number }}
@@ -458,6 +486,7 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
           RUN_NUMBER: ${{ github.run_number }}
