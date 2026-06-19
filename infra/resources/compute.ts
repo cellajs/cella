@@ -1,12 +1,11 @@
 /**
  * Compute — one Docker Compose VM per enabled service GENERATION.
  *
- * Immutable-node model (info/ZERO_DOWNTIME_REPLACEMENT.md): every release
- * provisions a NEW VM generation `vm-<svc>-<gen>` with the image SHA baked into
- * its cloud-init. The cutover task (tasks/cutover.ts) health-gates the new
- * generation and atomically re-points the load balancer to it, then a second
- * `pulumi up` destroys the old generation. There is no on-VM reconciler and no
- * out-of-band tag channel — the generation IS the release.
+ * Immutable-node model: every release provisions a NEW VM generation
+ * `vm-<svc>-<gen>` with the image SHA baked into its cloud-init. There is no
+ * background deploy agent and no out-of-band tag channel — the generation IS
+ * the release. Current CI lets Pulumi own LB `serverIps`; tasks/cutover.ts holds
+ * the tested explicit expand/contract controller but is not wired into CI yet.
  *
  * Generation state lives in stack config, written by CI around the cutover:
  *   infra:gen:<svc>        current live generation number (default 1)
@@ -31,15 +30,14 @@
  *
  * Credentials embedded in cloud-init use the dedicated `<slug>-vm-reader` IAM
  * application (provisioned by tasks/setup-vm-key.ts in the bootstrap Rotate keys
- * flow). That identity has only ContainerRegistryReadOnly + ObjectStorageReadOnly
- * + SecretManagerReadOnly + SecretManagerSecretAccess — no write access to any
- * Scaleway resource.
+ * flow). That identity has only ContainerRegistryReadOnly + SecretManagerReadOnly
+ * + SecretManagerSecretAccess — no write access to any Scaleway resource.
  */
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, infraConfig, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
+import { naming, zone, region, tags, infra, infraConfig, mode, appConfig, endpoints, vmSecretKey } from '../pulumi-context'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
 import { enabledServices, servicesByName, type ServiceDefinition, type ServiceName } from '../lib/services'
@@ -57,7 +55,6 @@ import { vmReaderPolicy } from './vm-iam'
 // ---------------------------------------------------------------------------
 
 const scwSecretKey = vmSecretKey
-const scwAccessKey = vmAccessKey
 
 // ---------------------------------------------------------------------------
 // Security Group — fully closed inbound; LB reaches VMs via private network.
@@ -142,9 +139,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
     envLines,
     buildRuntimeSecretsManifest(service.name),
     scwSecretKey,
-    scwAccessKey,
     registryEndpoint,
-  ]).apply(([env, manifest, secretKey, accessKey, registry]) =>
+  ]).apply(([env, manifest, secretKey, registry]) =>
     renderCloudInit({
       service: service.name,
       profile: service.profile,
@@ -155,8 +151,8 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       composeContent,
       registry,
       secretKey,
-      accessKey,
       region,
+      dockerPreinstalled: infra.dockerPreinstalled,
     }),
   )
 }
@@ -340,8 +336,7 @@ const instances: GenerationInstance[] = []
 // first pass before any VM so inter-service `@{<slug>.privateIp}` bindings can
 // resolve at plan time regardless of VM creation order. Keyed `<slug>-<gen>`.
 const genIps = new Map<string, scaleway.ipam.Ip>()
-// The primary (live) generation per service — the one bindings target.
-const primaryGen = new Map<ServiceName, number>()
+const generationsByService = new Map<ServiceName, Generation[]>()
 
 function genIpKey(slug: string, gen: number): string {
   return `${slug}-${gen}`
@@ -355,8 +350,8 @@ function genIpKey(slug: string, gen: number): string {
  * Known at plan time because the IPAM IP is reserved in the first pass.
  */
 function backendBindingIp(): pulumi.Output<string> {
-  const gen = primaryGen.get('backend' as ServiceName)
-  const ip = gen !== undefined ? genIps.get(genIpKey('backend', gen)) : undefined
+  const currentBackend = generationsByService.get('backend' as ServiceName)?.[0]
+  const ip = currentBackend ? genIps.get(genIpKey('backend', currentBackend.gen)) : undefined
   if (!ip) {
     throw new Error('compute: backend private IP requested but the backend is not enabled / compute is deferred.')
   }
@@ -383,7 +378,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const server = new scaleway.instance.Server(resourceName, {
     name: naming.resource(`${svc.slug}-${generation.gen}`),
     type: infra.instanceTypeFor(svc.slug),
-    image: 'ubuntu_noble',
+    image: infra.computeImage,
     zone,
     tags,
     securityGroupId: securityGroup.id,
@@ -412,13 +407,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
 }
 
 if (infra.computeEnabled) {
+  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc.slug))
+
   // Pass 1 — reserve every (service, generation) private IP up front so
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
   // creation-order constraints.
   for (const svc of enabled) {
-    const generations = activeGenerations(svc.slug)
-    primaryGen.set(svc.slug, generations[0]!.gen)
-    for (const generation of generations) {
+    for (const generation of generationsByService.get(svc.slug)!) {
       genIps.set(
         genIpKey(svc.slug, generation.gen),
         new scaleway.ipam.Ip(`ipam-${svc.slug}-${generation.gen}`, {
@@ -433,7 +428,7 @@ if (infra.computeEnabled) {
 
   // Pass 2 — create the VMs (order-independent; bindings read reserved IPs).
   for (const svc of enabled) {
-    for (const generation of activeGenerations(svc.slug)) createGenerationVm(svc, generation)
+    for (const generation of generationsByService.get(svc.slug)!) createGenerationVm(svc, generation)
   }
 }
 

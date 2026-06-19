@@ -146,9 +146,6 @@ if (infra.computeEnabled) {
 
   // -------------------------------------------------------------------------
   // LB Backends — each targets the private IPs of its service's active VM
-  // generation(s). The cutover task owns the LIVE server list at deploy time via
-  // -------------------------------------------------------------------------
-  // LB Backends — each targets the private IPs of its service's active VM
   // generation(s). Pulumi owns `serverIps`, so `pulumi up` re-points the LB to
   // the new generation as part of the same apply that creates it (and before it
   // deletes the old generation). Health checks hit the app's own `/health` (no

@@ -68,7 +68,6 @@ describe('VM reader key permission sets', () => {
     // runtime-secret-sync requires — SecretManagerReadOnly is metadata-only.
     expect([...VM_PROJECT_PERMISSION_SETS].sort()).toEqual([
       'ContainerRegistryReadOnly',
-      'ObjectStorageReadOnly',
       'SecretManagerReadOnly',
       'SecretManagerSecretAccess',
     ])

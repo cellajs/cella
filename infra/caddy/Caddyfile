@@ -8,7 +8,7 @@
 #
 # The image is rebuilt per release (see infra/caddy/Dockerfile) so that
 # `RELEASE_SHA` is baked in and surfaces as `X-App-Version` — that is what
-# the on-VM reconciler asserts after each cutover.
+# CI's rollout verifier asserts after each deploy.
 #
 # Configurable env (set in infra/config/services.config.ts `frontend` entry):
 #   RELEASE_SHA  — bound to X-App-Version (defaulted to "dev" in Dockerfile)
@@ -40,7 +40,7 @@
 		-Server
 	}
 
-	# Health endpoint — LB + reconciler probe this. Returns 200 with X-App-Version
+	# Health endpoint — LB + CI probe this. Returns 200 with X-App-Version
 	# from the outer header block above, which is what the rollout verifier asserts.
 	handle /health {
 		respond "ok" 200

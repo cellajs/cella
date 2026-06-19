@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type CloudInitParams, renderCloudInit } from './cloud-init'
+import { type CloudInitParams, renderCloudInit, runtimeSecretSyncScript } from './cloud-init'
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
   return {
@@ -12,8 +12,8 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
     composeContent: 'services:\n  backend: {}',
     registry: 'rg.fr-par.scw.cloud/my-namespace',
     secretKey: 'SCW-SECRET-KEY',
-    accessKey: 'SCW-ACCESS-KEY',
     region: 'fr-par',
+    dockerPreinstalled: false,
     ...overrides,
   }
 }
@@ -90,6 +90,12 @@ describe('renderCloudInit (immutable-node)', () => {
     expect(out).not.toMatch(/docker login[^\n]*-p\s+\$/)
   })
 
+  it('can skip Docker installation when the VM image is pre-baked', () => {
+    const out = renderCloudInit(params({ dockerPreinstalled: true }))
+    expect(out).not.toContain('apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin')
+    expect(out).toContain('docker compose --profile backend pull backend')
+  })
+
   it('embeds the compose and env bodies in their heredocs', () => {
     const out = renderCloudInit(params())
     expect(out).toContain('services:\n  backend: {}')
@@ -100,6 +106,12 @@ describe('renderCloudInit (immutable-node)', () => {
     const out = renderCloudInit(params())
     expect(out).toContain('if chr(10) in value or chr(13) in value:')
     expect(out).toContain('payload = chr(10).join(lines)')
+  })
+
+  it('keeps the runtime secret sync helper testable outside the bash template', () => {
+    expect(runtimeSecretSyncScript).toContain("MANIFEST_PATH = pathlib.Path('/etc/runtime-secrets/manifest.json')")
+    expect(runtimeSecretSyncScript).toContain("RUNTIME_ENV_PATH = pathlib.Path('/opt/app/.env.runtime')")
+    expect(runtimeSecretSyncScript).toContain("os.chmod(RUNTIME_ENV_PATH, 0o600)")
   })
 
   it('starts the app binding the host port directly (no ingress proxy)', () => {

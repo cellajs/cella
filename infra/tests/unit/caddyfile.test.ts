@@ -52,7 +52,7 @@ describe('frontend Caddyfile', () => {
     expect(caddyfile).toMatch(/Content-Security-Policy\s+"\{\$FRONTEND_CSP\}"/)
   })
 
-  it('serves /health locally (LB + reconciler depend on it)', () => {
+  it('serves /health locally (LB + CI rollout verification depend on it)', () => {
     expect(caddyfile).toMatch(/handle\s+\/health\s*\{/)
     expect(caddyfile).toMatch(/respond\s+"ok"\s+200/)
   })

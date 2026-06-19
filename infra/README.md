@@ -2,6 +2,50 @@
 
 Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions.
 
+## Compute image baking
+
+Production VMs can boot from a pre-baked Scaleway image that already contains
+Docker Engine and the Docker Compose plugin. This keeps cloud-init focused on
+release-specific work: writing compose/env files, hydrating runtime secrets,
+pulling the pinned image tag, running migrate when needed, and starting the app.
+
+The image bake uses Packer's Scaleway builder. Install Packer locally or in CI,
+then provide normal Scaleway credentials through the environment:
+
+```bash
+export SCW_ACCESS_KEY=...
+export SCW_SECRET_KEY=...
+export SCW_DEFAULT_PROJECT_ID=...
+
+pnpm --filter infra image:init
+pnpm --filter infra image:validate
+pnpm --filter infra image:build
+```
+
+By default the template builds from `ubuntu_noble` in `fr-par-1` on a temporary
+`DEV1-S` instance. Override defaults with `PKR_VAR_*` variables when needed:
+
+```bash
+PKR_VAR_zone=nl-ams-1 \
+PKR_VAR_commercial_type=DEV1-S \
+PKR_VAR_image_name_prefix=cella-docker-ubuntu-noble \
+pnpm --filter infra image:build
+```
+
+After Packer prints the resulting Scaleway image ID, configure Pulumi to consume
+it in `infra/config/general.config.ts`:
+
+```ts
+compute: {
+        image: '<scaleway-image-id>',
+        dockerPreinstalled: true,
+},
+```
+
+Do not run image baking as part of normal `pulumi up`. Treat the image as a base
+artifact and rebuild it intentionally when Ubuntu, Docker, or security patch
+policy changes.
+
 ## Overview
 
 The infrastructure is built around three principles:
@@ -46,7 +90,7 @@ The key resources and how traffic flows between them:
 - **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
 - **Frontend** — a static SPA bucket served through Edge Services CDN, not a VM.
 - **Backend VM** — the critical API path; rolled blue-green.
-- **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VMs when enabled; rolled in-place.
+- **Optional VMs** — `cdc`, `yjs`, `ai` run on their own immutable VM generations when enabled.
 - **Database** — managed PostgreSQL reachable only from inside private network.
 - **Buckets** — public and private object storage for uploads, plus frontend SPA bucket.
 
@@ -62,19 +106,19 @@ GitHub Actions builds images
         ↓
 Runs pulumi up
         ↓
-Uploads image tag to the deploy-tags bucket
+Provisions new immutable VM generation(s) with the release SHA baked into cloud-init
         ↓
-On-VM reconciler detects new tag
+Verifies public services serve the expected SHA
         ↓
-Performs in-place or blue-green rollout
+Retires old generation(s) through Pulumi-managed replacement
         ↓
 Load balancer keeps serving traffic
 ```
 
-At runtime, load balancer never talks to app container directly. Each VM runs a tiny **ingress** Caddy container that owns LB-facing host port and forwards to app container by its compose-network name (app publishes no host port):
+At runtime, the load balancer targets the host port published by the service's compose profile directly. There is no background polling agent and no separate proxy sidecar. The `frontend` service is itself a Caddy proxy image that serves the SPA bucket through the same VM/LB path as other services.
 
 ```
-Scaleway LB ──▶ ingress (Caddy, owns host port) ──▶ app container (no host port)
+Scaleway LB ──▶ service VM host port ──▶ service container
 ```
 
 ## The three credentials
@@ -98,7 +142,7 @@ runtime secrets + images on VM
 |-----|-------------|----------|-------------|
 | **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes — revoked immediately after each use (initial bootstrap or manual rotation). Also required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
 | **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars, not from stack config. |
-| **VM reader key** (`<slug>-vm-reader`) | Read-only registry / object storage / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
+| **VM reader key** (`<slug>-vm-reader`) | Read-only registry / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
 
 ## Routine deploys (CI)
 
@@ -108,7 +152,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-CI builds the image, records the release SHA in stack config, and `pulumi up` provisions a **new immutable VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. The load balancer is health-gated onto the new generation and the old one is retired. See [rollout strategies](#rollout-strategies) for the model.
+CI builds the image, records the release SHA in stack config, and `pulumi up` provisions a **new immutable VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. After `pulumi up`, CI waits until each public service's `/health` returns the expected `X-App-Version`. See [rollout strategies](#rollout-strategies) for the model and current caveat.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -117,16 +161,16 @@ To gate production behind manual approval, configure a [GitHub Environment](http
 
 ## Rollout strategies
 
-Every deploy is an **immutable-node replacement**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path (there is no on-VM reconciler and no in-VM blue/green). Each service declares its cutover strategy in the fork-owned registry ([config/services.config.ts](config/services.config.ts)).
+Every deploy is an **immutable-node replacement**: the image SHA is baked into a new VM generation's cloud-init, so a release and an infra change flow through one path (there is no background polling agent and no in-VM blue/green). Each service declares its replacement strategy in the fork-owned registry ([config/services.config.ts](config/services.config.ts)).
 
 | `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation, health-gate it, then atomically point the LB backend at it (`SetBackendServers`) and drain + destroy the old generation. The overlap drives dropped connections to ≈0. |
+| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation and point the LB backend at the active generation list. Today `serverIps` is owned by Pulumi during `pulumi up`; the tested `tasks/cutover.ts` controller can do explicit expand→health→contract with `SetBackendServers`, but that path is not wired into CI yet. |
 | **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The new generation boots warm and contends for the slot the old worker releases on drain (handoff is lossless — the slot retains the WAL position). |
 
 **`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP — `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket — sessions shed, clients re-dial and resync from durable state) for yjs.
 
-The zero-downtime cutover is driven by [tasks/cutover.ts](tasks/cutover.ts) (a pure, unit-tested expand→health→contract→drain core). A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested expand→health→contract→drain core for the explicit LB-overlap path. Current CI does not invoke it; `deploy.yml` verifies the generation after `pulumi up` with [tasks/wait-for-version.ts](tasks/wait-for-version.ts). A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
 
 ### Runtime secret delivery
 
@@ -147,7 +191,7 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 | File | Owns | Applied by |
 |------|------|------------|
-| [config/services.config.ts](config/services.config.ts) | Per-service VM size (`instanceType`, required), rollover, LB routing, env, feature flags | routine CI deploy |
+| [config/services.config.ts](config/services.config.ts) | Per-service VM size (`instanceType`, required), replacement strategy, drain policy, LB routing, env, feature flags | routine CI deploy |
 | [config/general.config.ts](config/general.config.ts) | DB node type & volume, WAF, Edge Services, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
 | [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
 
@@ -318,22 +362,21 @@ Only `production` is supported out of the box, but additional stacks (e.g. `stag
 
 ```text
 infra/
-├── caddy/                  Caddy templates
+├── caddy/                  Frontend Caddy proxy image and config
 ├── cli/                    Infra CLI
 ├── compose/                Build and generate compose.gen.yml
 ├── config/                 Where customisable config lives
 ├── lib/                    Shared infra utilities used across Pulumi resources and tasks
-├── reconciler/             On-VM deploy reconciler that applies image/tag updates in place
 ├── resources/              Pulumi resources: network, db, compute, LB ...
 ├── tasks/                  Non-interactive operator/CI tasks (key setup, verification, waits)
 ├── tests/                  Higher-level infra test coverage
 
 .github/workflows/          CI half of the deploy control plane
-├── deploy.yml              Build + push images, upload frontend, run `pulumi up`, roll services
+├── deploy.yml              Build + push images, upload frontend, run `pulumi up`, replace VM generations
 └── infra-preview.yml       `pulumi preview` on PRs touching infra/ or shared/
 ```
 
-The `.github/workflows/` files are tightly coupled to this package: `deploy.yml` runs the same `pulumi up` the CLI does (authenticating with the CI deploy key) and then drives the on-VM reconciler via the deploy-tags bucket, while `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
+The `.github/workflows/` files are tightly coupled to this package: `deploy.yml` builds the release images, uploads the frontend bundle, runs the same `pulumi up` the CLI does (authenticating with the CI deploy key), and verifies the immutable VM rollout. `infra-preview.yml` mirrors the **Preview** CLI action on PRs.
 
 
 ## Advanced operations

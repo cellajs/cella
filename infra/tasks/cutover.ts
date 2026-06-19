@@ -1,13 +1,14 @@
 /**
- * Zero-downtime cutover — the single deploy driver for the immutable-node model.
+ * Explicit LB-overlap cutover controller for the immutable-node model.
  *
  * Every release provisions a NEW VM generation (`vm-<svc>-<gen>`) with the image
- * SHA baked into its cloud-init. This task health-gates that new generation and
- * atomically re-points the load balancer from the old generation to the new one,
- * draining the old before CI destroys it. It replaces the pull-based reconciler:
- * CI is now the synchronous deploy driver.
+ * SHA baked into its cloud-init. This task can health-gate that new generation
+ * and atomically re-point the load balancer from the old generation to the new
+ * one, draining the old before CI destroys it. Current deploy.yml does not call
+ * this entrypoint yet; it lets Pulumi own LB `serverIps` and verifies the new
+ * generation after `pulumi up`.
  *
- * Design (see info/ZERO_DOWNTIME_REPLACEMENT.md §2, §6.1, §10):
+ * Design:
  *   - PURE CORE — `expandBackend` / `contractBackend` / `pollSlotReleased` /
  *     `sequenceCutover` orchestrate the rollout over INJECTED effects, so the
  *     ordering (health-gate BEFORE any LB mutation, expand BEFORE contract,

@@ -28,7 +28,6 @@ describe('buildDeployEnv', () => {
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
-      deploy_tags_bucket: 'cella-deploy-tags',
       vm_reader_app: 'cella-vm-reader',
       frontend_url: 'https://cella.example',
       backend_url: 'https://api.cella.example',

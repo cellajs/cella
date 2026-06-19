@@ -4,7 +4,7 @@
  * The LB is rendered live in Pulumi previews, but the cross-resource wiring
  * (cert ↔ DNS ↔ backend ↔ route) is hard to test that way without a full
  * Pulumi runtime. These string-level checks pin the contracts the rollout
- * pipeline + reconciler depend on.
+ * pipeline and CI rollout verification depend on.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

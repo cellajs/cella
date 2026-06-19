@@ -23,10 +23,6 @@ export function deriveInfra(appConfig: Cfg) {
       publicBucket: appConfig.s3.publicBucket,
       privateBucket: appConfig.s3.privateBucket,
       pulumiStateBucket: `${prefix}-pulumi-state`,
-      // Holds `deploy/<service>.tag` objects (image SHA, plain text) that the
-      // on-VM reconciler watches. Separate bucket so VM IAM can be read-only on
-      // these keys without exposing Pulumi state.
-      deployTagsBucket: `${prefix}-deploy-tags`,
       // Registry namespace names require >= 4 chars and no hyphens; slug length
       // is validated at config load, so only hyphens need stripping here.
       registryNamespace: appConfig.slug.replace(/-/g, ''),

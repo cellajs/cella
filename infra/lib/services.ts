@@ -10,9 +10,6 @@
  * `['backend','cdc','yjs','ai','frontend']`:
  *   - resources/compute.ts      — one VM per enabled service + its compose env
  *   - resources/loadbalancer.ts — which services get a public LB backend/route
- *   - resources/deploy-tags.ts  — one S3 tag object per service
- *   - reconciler/index.ts       — per-VM reconciler env (compose profile == slug,
- *                                 health port, rollover strategy, …)
  *   - tasks/wait-for-images.ts  — which images CI waits for in the registry
  *   - lib/runtime-secrets.ts    — which services a runtime secret is exposed to
  */

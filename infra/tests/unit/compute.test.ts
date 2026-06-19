@@ -39,8 +39,7 @@ describe('compute module source invariants', () => {
 
   it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
     // The VM identity is a minimal-privilege `<slug>-vm-reader` application
-    // (ContainerRegistryReadOnly + ObjectStorageReadOnly + SecretManagerReadOnly
-    // + SecretManagerSecretAccess).
+    // (ContainerRegistryReadOnly + SecretManagerReadOnly + SecretManagerSecretAccess).
     // compute.ts must source its credentials from the infra helpers, never by
     // reading `new pulumi.Config('scaleway').requireSecret(...)` directly.
     expect(source).toMatch(/vmAccessKey|vmSecretKey/)
@@ -61,9 +60,15 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
+  it('uses the configured compute image and passes the Docker-image contract to cloud-init', () => {
+    expect(source).toMatch(/image:\s*infra\.computeImage/)
+    expect(source).toMatch(/dockerPreinstalled:\s*infra\.dockerPreinstalled/)
+    expect(source).not.toMatch(/image:\s*'ubuntu_noble'/)
+  })
+
   it('derives the VM service list from the canonical registry (enabledServices)', () => {
     // compute filters the canonical registry by feature flag rather than
-    // re-declaring the service set, so LB / deploy-tags / reconciler can't drift.
+    // re-declaring the service set, so LB / image-wait / compose wiring can't drift.
     expect(source).toMatch(/enabledServices\(appConfig\.features\)/)
   })
 
@@ -113,7 +118,7 @@ describe('compute module source invariants', () => {
     // IP, reserved in the first pass. A single pinned IP cannot attach to two
     // generations' NICs at once, so the stable-internal-IP mechanism is gone.
     expect(source).toMatch(/backendBindingIp\(/)
-    expect(source).toMatch(/primaryGen\.set\(/)
+    expect(source).toMatch(/generationsByService\.get\('backend'/)
     expect(source).not.toMatch(/ipam-backend-internal/)
     expect(source).not.toMatch(/backendInternalIp/)
   })

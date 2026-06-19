@@ -35,7 +35,7 @@ export async function seedVmReaderKey(options: SeedVmReaderKeyOptions): Promise<
   const container = await client.ensureSecret({
     name: VM_READER_SECRET_NAME,
     path: options.path,
-    description: 'VM reader IAM key pair (registry pull, S3 tag reads, Secret Manager access)',
+    description: 'VM reader IAM key pair (registry pull, Secret Manager access)',
   })
   await client.putSecretValue({
     secretId: container.id,

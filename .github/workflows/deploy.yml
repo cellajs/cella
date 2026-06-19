@@ -66,7 +66,6 @@ jobs:
       registry_ns: ${{ steps.derive.outputs.registry_ns }}
       frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
       state_bucket: ${{ steps.derive.outputs.state_bucket }}
-      deploy_tags_bucket: ${{ steps.derive.outputs.deploy_tags_bucket }}
       vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
       region: ${{ steps.derive.outputs.region }}
       frontend_url: ${{ steps.derive.outputs.frontend_url }}
@@ -372,22 +371,19 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        # Image tags are no longer Pulumi config — the running version lives
-        # entirely in s3://<bucket>/deploy/<svc>.tag, written by the
-        # roll-services job and read by the on-VM reconciler. `pulumi up` here
-        # only reconciles infrastructure; it never carries the release SHA, so a
-        # routine deploy leaves cloud-init (and therefore the VMs) untouched.
+        # The release SHA is Pulumi config: `pulumi up` bakes it into the new VM
+        # generation's cloud-init so a release and an infra change use the same
+        # immutable-node replacement path.
         run: pulumi stack select "$STACK"
 
       # Pulumi prep (checkout, install, login, stack select) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
-      # before the deploy proceeds: the on-VM reconciler does `docker compose
-      # pull` the moment roll-services writes the new SHA, and a fresh/replaced
-      # VM pulls during cloud-init — both fail if the image isn't pushed yet.
+      # before the deploy proceeds: a fresh/replaced VM pulls the pinned SHA
+      # during cloud-init and fails boot if the image isn't pushed yet.
       #
       # The wait loop (and the "exclude ai / include frontend" rule) lives in
-      # infra/tasks/wait-for-images.ts, unit-tested against the reconciler and
-      # deploy-tags service lists so the set can't silently drift. Uses
+      # infra/tasks/wait-for-images.ts, unit-tested against the service matrix
+      # so the set can't silently drift. Uses
       # `docker buildx imagetools inspect` under the hood because Scaleway's
       # registry requires the Docker bearer-token flow.
       - name: Wait for image tags in registry
@@ -586,8 +582,8 @@ jobs:
     needs: [setup, pulumi, build-images]
     # contents: read is required for actions/checkout below. The repo is
     # private, so an empty token ({}) makes checkout fail with
-    # "Repository not found". Only the checkout scope is needed; the deploy-tag
-    # write and health poll use Scaleway creds, not the GITHUB_TOKEN.
+    # "Repository not found". Only the checkout scope is needed; the health poll
+    # uses Scaleway creds, not the GITHUB_TOKEN.
     permissions:
       contents: read
     if: >-
@@ -656,8 +652,7 @@ jobs:
       matrix:
         # cdc + frontend always; yjs/ai included only when their feature flag is
         # on (see the "Build service matrices" step in setup). ai reuses the
-        # backend image — writing deploy/ai.tag tells its VM reconciler to pull
-        # the backend image at this SHA; the probe confirms the AI LB serves it.
+        # backend image; the probe confirms the AI LB serves the expected SHA.
         include: ${{ fromJSON(needs.setup.outputs.roll_rest_matrix) }}
     env:
       REGION: ${{ needs.setup.outputs.region }}

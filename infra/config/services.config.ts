@@ -5,15 +5,15 @@ import { defineServices } from '../compose/infrastructure'
  * resizes a deployable service. Run `pnpm --filter infra compose:synth` after
  * editing to regenerate `infra/compose.gen.yml` (the file Docker reads).
  *
- * Data only: `infrastructure.ts` owns the deploy machinery (ingress proxy,
- * blue-green slot/migrator mechanism, healthcheck shape, shared env) and expands
+ * Data only: `infrastructure.ts` owns the compose machinery (ports,
+ * healthcheck shape, shared env) and expands
  * each entry below into a full Compose block at synth time. Field docs come from
- * `AppServiceConfig` (hover any field). The backend is a normal `blue-green`
- * entry, so a fork controls its image, sizing, and env like any other service;
- * cella derives the two slots + one-shot migrator.
+ * `AppServiceConfig` (hover any field). The backend is a normal service entry,
+ * so a fork controls its image, sizing, and env like any other service; cella
+ * adds the one-shot migrate companion via `runMigrate`.
  *
  * Removing an entry removes the service everywhere it is derived: VM, LB
- * backend, DNS record, cert, deploy tag, and reconciler env.
+ * backend, DNS record, cert, compose profile, and release SHA config.
  */
 export default defineServices({
   backend: {

@@ -1,6 +1,6 @@
 import { type DrizzleConfig } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { type PeerCertificate, checkServerIdentity as tlsCheckServerIdentity } from 'node:tls';
+import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/postgres-tls';
 import { env } from '../env';
 
 /**
@@ -30,51 +30,10 @@ const sslCa =
       })()
     : undefined;
 
-// Scaleway-built connection strings pin `sslmode=require&uselibpqcompat=true`,
-// which pg would let override the verified `ssl` config below (downgrading to
-// no certificate verification). Strip those params so our CA-pinned config wins.
-export const stripSslParams = (url: string): string => {
-  try {
-    const parsed = new URL(url);
-    parsed.searchParams.delete('sslmode');
-    parsed.searchParams.delete('uselibpqcompat');
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-};
+export const stripSslParams = stripPostgresSslParams;
+export const buildVerifiedSsl = (connectionString: string) => verifiedPostgresSsl(connectionString, sslCa);
 
-/** Parse the host (private IP or DNS name) from a postgres connection string. */
-const hostOf = (connectionString: string): string | undefined => {
-  try {
-    return new URL(stripSslParams(connectionString)).hostname || undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-/**
- * Build the verified-TLS `ssl` option for one connection. We pin the CA and keep
- * `rejectUnauthorized` so the chain is fully verified. The Scaleway RDB cert
- * carries proper SANs (e.g. `DNS:10.0.0.2, IP Address:10.0.0.2`), so the only
- * problem is WHICH host the identity check runs against: node-postgres does not
- * thread the connection host into the TLS layer, so the check defaults to
- * `localhost` and fails (ERR_TLS_CERT_ALTNAME_INVALID) even though the cert
- * legitimately covers the host we dialed. Pin the identity check to that actual
- * host so the cert's real SANs are honored (chain still verified against the CA).
- * Returns `undefined` outside production, where TLS is not required.
- */
-export const buildVerifiedSsl = (connectionString: string) => {
-  if (!sslCa) return undefined;
-  const host = hostOf(connectionString);
-  return {
-    ca: sslCa,
-    rejectUnauthorized: true,
-    checkServerIdentity: host ? (_passedHost: string, cert: PeerCertificate) => tlsCheckServerIdentity(host, cert) : undefined,
-  };
-};
-
-const connectionString = stripSslParams(env.DATABASE_CDC_URL);
+const connectionString = stripPostgresSslParams(env.DATABASE_CDC_URL);
 
 /**
  * CDC database client.

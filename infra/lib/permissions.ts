@@ -51,13 +51,12 @@ export const ORG_PERMISSION_SETS = [...ORG_WIDE_PROJECT_PERMISSION_SETS, ...ORG_
 
 /**
  * Permission sets granted to the VM reader key at project scope. Deliberately
- * minimal — VMs only pull images, read their deploy tag, and fetch runtime
+ * minimal — VMs only pull images and fetch runtime
  * secrets. SecretManagerSecretAccess decrypts secret VALUES (read-only, no
  * write); SecretManagerReadOnly alone is metadata-only and 403s the sync.
  */
 export const VM_PROJECT_PERMISSION_SETS = [
   'ContainerRegistryReadOnly',
-  'ObjectStorageReadOnly',
   'SecretManagerReadOnly',
   'SecretManagerSecretAccess',
 ] as const

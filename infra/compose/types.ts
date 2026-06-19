@@ -53,13 +53,13 @@ export type ServiceInstanceType = string | Partial<Record<Environment, string>>
  * derives its `ServiceDefinition` registry from these blocks.
  *
  * Removing a block removes the service from the registry entirely (no VM, LB
- * backend, DNS, cert, deploy tag, or reconciler env). `featureFlag` is the
+ * backend, DNS, cert, or release SHA config). `featureFlag` is the
  * orthogonal, per-deploy gate: the block stays in the registry but the service
  * only deploys when the app enables that feature (see `enabledServices`).
  */
 export interface ServiceMeta {
   /**
-   * Canonical service identifier — the compose profile, deploy-tag key, and VM
+  * Canonical service identifier — the compose profile, release SHA key, and VM
    * key. May differ from the YAML block name for slot-based services (the
    * `backend-blue` block carries `slug: 'backend'`).
    */
@@ -171,10 +171,10 @@ export interface AppServiceConfig {
    */
   startPeriod: string
   /**
-   * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
-   * (the default for LB-exposed services) overlaps two generations behind the
-   * load balancer; `'exclusive'` is for the singleton-slot cdc worker, which
-   * cannot overlap. See info/ZERO_DOWNTIME_REPLACEMENT.md.
+  * How this service's VM generation is replaced on a deploy. `'lb-overlap'`
+  * is for LB-exposed services; `'exclusive'` is for the singleton-slot cdc
+  * worker, which cannot overlap because only one process can consume its
+  * PostgreSQL replication slot.
    */
   replacementStrategy: ReplacementStrategy
   /** Run the one-shot `migrate` service before rolling. Backend-only today. */
