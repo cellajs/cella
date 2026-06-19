@@ -263,6 +263,21 @@ describe('createLbSetServers — live REST shape', () => {
     expect(JSON.parse(captured?.body ?? '{}')).toEqual({ server_ip: ['10.0.0.4', '10.0.0.9'] })
   })
 
+  it('strips the zone prefix from Pulumi zoned backend IDs', async () => {
+    let capturedUrl = ''
+    const setServers = createLbSetServers({
+      secretKey: 'scw-secret',
+      zone: 'nl-ams-1',
+      backendId: 'nl-ams-1/be-123',
+      fetchImpl: async (url) => {
+        capturedUrl = url
+        return { ok: true, status: 200, text: async () => '' }
+      },
+    })
+    await setServers(['10.0.0.4'])
+    expect(capturedUrl).toBe('https://api.scaleway.com/lb/v1/zones/nl-ams-1/backends/be-123/servers')
+  })
+
   it('throws with the status and body on a non-ok response', async () => {
     const setServers = createLbSetServers({
       secretKey: 'k',
@@ -283,5 +298,20 @@ describe('createLbGetServers — live REST shape', () => {
       fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ servers: [{ ip: '10.0.0.4' }, { server_ip: '10.0.0.9' }] }) }),
     })
     await expect(getServers()).resolves.toEqual(['10.0.0.4', '10.0.0.9'])
+  })
+
+  it('strips the zone prefix before listing backend servers', async () => {
+    let capturedUrl = ''
+    const getServers = createLbGetServers({
+      secretKey: 'scw-secret',
+      zone: 'nl-ams-1',
+      backendId: 'nl-ams-1/be-123',
+      fetchImpl: async (url) => {
+        capturedUrl = url
+        return { ok: true, status: 200, text: async () => JSON.stringify({ server_ip: ['10.0.0.4'] }) }
+      },
+    })
+    await expect(getServers()).resolves.toEqual(['10.0.0.4'])
+    expect(capturedUrl).toBe('https://api.scaleway.com/lb/v1/zones/nl-ams-1/backends/be-123/servers')
   })
 })
