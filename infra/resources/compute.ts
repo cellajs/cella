@@ -13,10 +13,9 @@
  *   infra:pendingGen:<svc> next generation, set during a cutover (optional)
  *   infra:pendingSha:<svc> image SHA for the pending generation
  *   infra:stableInternalGen_<svc> generation carrying a service's stable internal IP
- * compute materialises a VM for every generation in {gen} ∪ {pendingGen}, so the
- * "create bookend" stands up the new generation alongside the old, and the
- * "destroy bookend" (after CI bumps `gen` and clears `pendingGen`) tears the old
- * one down.
+ * compute materialises a VM for every generation in {gen} ∪ {pendingGen}. CI
+ * first syncs these keys from the current stack outputs so a new runner never
+ * rolls infrastructure back from stale committed config.
  *
  * Each VM has a fully-closed inbound security group and is reachable only over the
  * main private network from the load balancer and database. Cloud-init installs
@@ -330,6 +329,8 @@ export interface GenerationInstance {
   service: ServiceName
   /** Generation number. */
   gen: number
+  /** Image SHA baked into this generation. */
+  sha: string
   /** Pulumi resource name `vm-<svc>-<gen>`. */
   name: string
   server: scaleway.instance.Server
@@ -408,6 +409,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     // (new resource name), never an in-place replacement. The vm-reader IAM
     // grant must exist before first boot so cloud-init can hydrate secrets.
     dependsOn: [vmReaderPolicy],
+    ignoreChanges: ['cloudInit'],
   })
 
   const stableServiceGenerations = stablePrivateIpService ? generationsByService.get(stablePrivateIpService.slug) : undefined
@@ -432,7 +434,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   })
 
   const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0])
-  const inst: GenerationInstance = { service: svc.slug, gen: generation.gen, name: resourceName, server, privateIp, privateNic }
+  const inst: GenerationInstance = { service: svc.slug, gen: generation.gen, sha: generation.sha, name: resourceName, server, privateIp, privateNic }
   instances.push(inst)
   return inst
 }
@@ -477,6 +479,7 @@ export const stablePrivateIpServiceSlug = pulumi.output(stablePrivateIpService?.
 export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.all([i.server.id, i.privateIp, i.privateNic.id]).apply(([serverId, privateIp, privateNicId]) => ({
   service: i.service,
   gen: i.gen,
+  sha: i.sha,
   name: i.name,
   serverId,
   privateIp,
