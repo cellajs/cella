@@ -5,9 +5,44 @@ import { input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
+import generalConfig from '../../config/general.config'
+import type { Environment } from '../../lib/bootstrap-stack-state'
+import { resolvePerMode } from '../../lib/general-config'
+import { lookupImageByName } from '../../lib/image-lookup'
 import { infraDir } from '../../lib/paths'
 import { maskedSecret } from '../prompts/masked-secret'
 import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
+
+/** Resolved compute image name for an environment (e.g. `cella-docker-node-agent-v1`). */
+export function computeImageName(environment: Environment): string {
+  return resolvePerMode(generalConfig.compute.image, environment)
+}
+
+const IMAGE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Does a baked compute image already exist for this environment? Mirrors the
+ * deploy-time lookup (newest image with `compute.image` as its name). Returns
+ * `true` when `compute.image` is a pinned UUID (the operator chose a specific
+ * image, so there's nothing to bake-gate on), and `false`/best-effort on a
+ * Scaleway error so a hiccup never blocks the prompt.
+ */
+export async function computeImageExists(opts: {
+  secretKey: string
+  zone: string
+  environment: Environment
+  projectId?: string
+}): Promise<boolean> {
+  const name = computeImageName(opts.environment)
+  if (IMAGE_UUID_RE.test(name)) return true
+  try {
+    const { exists } = await lookupImageByName({ secretKey: opts.secretKey, zone: opts.zone, name, projectId: opts.projectId })
+    return exists
+  } catch {
+    return false
+  }
+}
+
 
 /** Result of a bake: the stable image name + the freshly baked image UUID. */
 export interface BakeResult {
@@ -104,6 +139,22 @@ export async function runBake(context: InfraContext): Promise<void> {
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase: process.env.PULUMI_CONFIG_PASSPHRASE ?? '' })
   const zone = `${appConfig.s3.region}-1`
+
+  // Re-baking is normal (agent/image changes), but flag when an image already
+  // exists so an accidental re-run is a conscious choice. The deploy picks the
+  // NEWEST by name, so a fresh bake supersedes the existing one.
+  const exists = await computeImageExists({ secretKey, zone, environment: context.environment, projectId })
+  if (exists) {
+    const name = computeImageName(context.environment)
+    const proceed = await input({
+      message: `An image named "${name}" already exists. Bake a new one (the deploy will use the newest)? [y/N]`,
+      default: 'N',
+    })
+    if (!/^y(es)?$/i.test(proceed.trim())) {
+      console.info(`  ${pc.dim('Skipped — existing image kept.')}`)
+      return
+    }
+  }
 
   const result = await bakeComputeImage({ env, zone })
   if (!result.ok) process.exit(1)
