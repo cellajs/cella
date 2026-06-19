@@ -1,5 +1,6 @@
 import { type DrizzleConfig } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { type PeerCertificate, checkServerIdentity as tlsCheckServerIdentity } from 'node:tls';
 import { env } from '../env';
 
 /**
@@ -15,7 +16,7 @@ const dbConfig: DrizzleConfig = {
 // misconfiguration we fail fast on rather than silently downgrading security.
 // The secret is base64-encoded (the PEM is multi-line and would break the
 // line-based `.env.runtime` delivery), so decode it back to PEM here.
-const sslConfig =
+const sslCa =
   env.NODE_ENV === 'production'
     ? (() => {
         if (!env.DATABASE_SSL_CA) {
@@ -25,23 +26,55 @@ const sslConfig =
               "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
           );
         }
-        return { ca: Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8'), rejectUnauthorized: true };
+        return Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8');
       })()
     : undefined;
 
 // Scaleway-built connection strings pin `sslmode=require&uselibpqcompat=true`,
-// which pg would let override the verified `ssl` config above. Strip those
-// params so our CA-pinned config wins.
-const connectionString = (() => {
+// which pg would let override the verified `ssl` config below (downgrading to
+// no certificate verification). Strip those params so our CA-pinned config wins.
+export const stripSslParams = (url: string): string => {
   try {
-    const parsed = new URL(env.DATABASE_CDC_URL);
+    const parsed = new URL(url);
     parsed.searchParams.delete('sslmode');
     parsed.searchParams.delete('uselibpqcompat');
     return parsed.toString();
   } catch {
-    return env.DATABASE_CDC_URL;
+    return url;
   }
-})();
+};
+
+/** Parse the host (private IP or DNS name) from a postgres connection string. */
+const hostOf = (connectionString: string): string | undefined => {
+  try {
+    return new URL(stripSslParams(connectionString)).hostname || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Build the verified-TLS `ssl` option for one connection. We pin the CA and keep
+ * `rejectUnauthorized` so the chain is fully verified. The Scaleway RDB cert
+ * carries proper SANs (e.g. `DNS:10.0.0.2, IP Address:10.0.0.2`), so the only
+ * problem is WHICH host the identity check runs against: node-postgres does not
+ * thread the connection host into the TLS layer, so the check defaults to
+ * `localhost` and fails (ERR_TLS_CERT_ALTNAME_INVALID) even though the cert
+ * legitimately covers the host we dialed. Pin the identity check to that actual
+ * host so the cert's real SANs are honored (chain still verified against the CA).
+ * Returns `undefined` outside production, where TLS is not required.
+ */
+export const buildVerifiedSsl = (connectionString: string) => {
+  if (!sslCa) return undefined;
+  const host = hostOf(connectionString);
+  return {
+    ca: sslCa,
+    rejectUnauthorized: true,
+    checkServerIdentity: host ? (_passedHost: string, cert: PeerCertificate) => tlsCheckServerIdentity(host, cert) : undefined,
+  };
+};
+
+const connectionString = stripSslParams(env.DATABASE_CDC_URL);
 
 /**
  * CDC database client.
@@ -53,6 +86,6 @@ const connectionString = (() => {
  * privileges.
  */
 export const cdcDb = drizzle({
-  connection: { connectionString, connectionTimeoutMillis: 10_000, max: 20, ssl: sslConfig },
+  connection: { connectionString, connectionTimeoutMillis: 10_000, max: 20, ssl: buildVerifiedSsl(env.DATABASE_CDC_URL) },
   ...dbConfig,
 });
