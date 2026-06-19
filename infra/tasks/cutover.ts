@@ -253,6 +253,9 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
   if (plan.reattachInternalIp) {
     record('reattach stable internal IP to new generation')
     await plan.reattachInternalIp()
+
+    record('health-gate new generation after stable internal IP reattach')
+    if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
   }
 
   record('contract LB to [new]')
