@@ -89,7 +89,7 @@ describe('sequenceCutover — lb-overlap', () => {
     expect(order).toEqual(['expand', 'health', 'contract'])
   })
 
-  it('orders the steps health → expand → reattach → contract → drain', async () => {
+  it('orders the steps health → expand → reattach → health → contract → drain', async () => {
     const order: string[] = []
     const res = await sequenceCutover(
       lbPlan({
@@ -103,7 +103,26 @@ describe('sequenceCutover — lb-overlap', () => {
       }),
     )
     expect(res.ok).toBe(true)
-    expect(order).toEqual(['health', 'expand', 'reattach', 'contract', 'drain'])
+    expect(order).toEqual(['health', 'expand', 'reattach', 'health', 'contract', 'drain'])
+  })
+
+  it('aborts after stable IP reattach without contracting when the new generation stops serving', async () => {
+    const order: string[] = []
+    let healthChecks = 0
+    const res = await sequenceCutover(
+      lbPlan({
+        healthGate: async () => {
+          order.push('health')
+          healthChecks += 1
+          return healthChecks === 1
+        },
+        setServers: async (ips) => void order.push(ips.length === 2 ? 'expand' : 'contract'),
+        reattachInternalIp: async () => void order.push('reattach'),
+      }),
+    )
+    expect(res.ok).toBe(false)
+    expect(res.aborted).toBe('unhealthy')
+    expect(order).toEqual(['health', 'expand', 'reattach', 'health'])
   })
 
   it('resumes when the LB is already expanded to [old,new]', async () => {
