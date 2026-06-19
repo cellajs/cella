@@ -107,6 +107,7 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/activeGenerations\(/)
     expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.gen\}/)
     expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.gen\}/)
+    expect(source).toMatch(/ignoreChanges: \['cloudInit'\]/)
     // The old lifelong reserved-IP map must not come back.
     expect(source).not.toMatch(/reservedIps\.set\(/)
     expect(source).not.toMatch(/Create backend first/)
@@ -123,6 +124,7 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/stablePrivateIpId/)
     expect(source).toMatch(/stablePrivateIpServiceSlug/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
+    expect(source).toMatch(/syncs these keys from the current stack outputs/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {

@@ -361,7 +361,9 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        run: pulumi up --stack "$STACK" --yes
+        run: |
+          pnpm --filter infra sync-rollout-config --stack "$STACK"
+          pulumi up --stack "$STACK" --yes
 
       - name: Verify VM reader IAM grant
         # Belt-and-suspenders for the failure that took prod down: a VM whose key

@@ -12,6 +12,7 @@
     "destroy": "pulumi destroy",
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
     "print-deploy-env": "tsx tasks/print-deploy-env.ts",
+    "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
     "wait-for-version": "tsx tasks/wait-for-version.ts",
     "wait-for-images": "tsx tasks/wait-for-images.ts",
     "cutover": "tsx tasks/cutover.ts",
