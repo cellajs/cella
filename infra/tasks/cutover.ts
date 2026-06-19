@@ -222,7 +222,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     return normalize(actual) === normalize(expected)
   }
   const oldAndNew = [...plan.oldIps, ...plan.newIps]
-  const currentServers = plan.getServers ? await plan.getServers() : plan.oldIps
+  const probedServers = plan.getServers ? await plan.getServers() : plan.oldIps
+  const currentServers = probedServers.length > 0 ? probedServers : plan.oldIps
+  if (probedServers.length === 0 && plan.getServers) {
+    record('LB server list probe returned empty; assuming [old] from Pulumi metadata')
+  }
 
   if (sameIps(currentServers, plan.newIps)) {
     record('LB already contracted to [new]')

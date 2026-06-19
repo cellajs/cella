@@ -130,6 +130,17 @@ describe('sequenceCutover — lb-overlap', () => {
     expect(lb.calls).toEqual([])
   })
 
+  it('falls back to Pulumi oldIps when the LB read returns an empty server list', async () => {
+    const lb = recordingSetServers()
+    const res = await sequenceCutover(lbPlan({ getServers: async () => [], setServers: lb.fn }))
+    expect(res.ok).toBe(true)
+    expect(lb.calls).toEqual([
+      ['10.0.0.4', '10.0.0.9'],
+      ['10.0.0.9'],
+    ])
+    expect(res.steps).toContain('LB server list probe returned empty; assuming [old] from Pulumi metadata')
+  })
+
   it('drain wait happens after contract (old is removed before we wait for it to drain)', async () => {
     const order: string[] = []
     await sequenceCutover(
