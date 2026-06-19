@@ -60,9 +60,10 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/type:\s*infra\.instanceType\b/)
   })
 
-  it('uses the configured compute image and passes the Docker-image contract to cloud-init', () => {
+  it('uses the configured compute image and delegates boot inputs to cloud-init', () => {
     expect(source).toMatch(/image:\s*infra\.computeImage/)
-    expect(source).toMatch(/dockerPreinstalled:\s*infra\.dockerPreinstalled/)
+    expect(source).toMatch(/bootDiagBucket,/)
+    expect(source).not.toMatch(/dockerPreinstalled:/)
     expect(source).not.toMatch(/image:\s*'ubuntu_noble'/)
   })
 

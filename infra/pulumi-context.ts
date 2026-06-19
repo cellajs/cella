@@ -153,7 +153,6 @@ export const infra = {
   // Non-service capacity/feature knobs — values live in the fork-owned
   // config/general.config.ts, resolved here for the active deploy mode.
   computeImage: resolvePerMode(generalConfig.compute.image, mode as Environment),
-  dockerPreinstalled: resolvePerMode(generalConfig.compute.dockerPreinstalled, mode as Environment),
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, mode as Environment),
   dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, mode as Environment),
   enableWaf: resolvePerMode(generalConfig.waf.enabled, mode as Environment),

@@ -48,7 +48,13 @@ variable "commercial_type" {
 variable "image_name_prefix" {
   type        = string
   description = "Prefix for the baked Scaleway image name."
-  default     = "cella-docker-ubuntu-noble"
+  default     = "cella-docker-node-agent-v1"
+}
+
+variable "agent_artifact_dir" {
+  type        = string
+  description = "Local built boot agent artifact directory. Run pnpm --filter infra agent:build first."
+  default     = "agent/dist"
 }
 
 locals {
@@ -78,21 +84,36 @@ build {
   name    = "compute-docker"
   sources = ["source.scaleway.compute_docker"]
 
+  provisioner "file" {
+    source      = var.agent_artifact_dir
+    destination = "/tmp/cella-agent"
+  }
+
   provisioner "shell" {
     inline = [
       "set -euxo pipefail",
       "export DEBIAN_FRONTEND=noninteractive",
       "apt-get update -qq",
-      "apt-get install -y -qq ca-certificates curl",
+      "apt-get install -y -qq ca-certificates curl gnupg",
       "install -m 0755 -d /etc/apt/keyrings",
       "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
       "chmod a+r /etc/apt/keyrings/docker.asc",
       "echo \"deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable\" > /etc/apt/sources.list.d/docker.list",
+      "curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o /etc/apt/keyrings/nodesource.gpg",
+      "chmod a+r /etc/apt/keyrings/nodesource.gpg",
+      "echo \"deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main\" > /etc/apt/sources.list.d/nodesource.list",
       "apt-get update -qq",
-      "apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin",
+      "apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin nodejs",
       "systemctl enable --now docker",
+      "mkdir -p /opt/cella-agent",
+      "cp -R /tmp/cella-agent/* /opt/cella-agent/",
+      "printf '%s\n' '#!/bin/sh' 'exec node /opt/cella-agent/main.js \"$@\"' > /usr/local/bin/cella-boot-agent",
+      "chmod 0755 /usr/local/bin/cella-boot-agent",
       "docker --version",
       "docker compose version",
+      "node --version | grep '^v24\\.'",
+      "cella-boot-agent --version",
+      "cella-boot-agent supports --schema-version 1",
       "systemctl is-enabled docker",
       "apt-get clean",
       "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
