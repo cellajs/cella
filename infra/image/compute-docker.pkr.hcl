@@ -74,10 +74,10 @@ source "scaleway" "compute_docker" {
   image_name  = local.image_name
   server_name = "${local.image_name}-builder"
 
-  remove_volume             = true
-  server_creation_timeout   = "10m"
-  server_shutdown_timeout   = "10m"
-  image_creation_timeout    = "1h"
+  remove_volume           = true
+  server_creation_timeout = "10m"
+  server_shutdown_timeout = "10m"
+  image_creation_timeout  = "1h"
 }
 
 build {
@@ -118,5 +118,16 @@ build {
       "apt-get clean",
       "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
     ]
+  }
+
+  # Emit the baked image id so CI (and operators) can read the UUID to set in
+  # general.config.ts `compute.image`. The scaleway builder's artifact_id is
+  # `<zone>:<image-uuid>`; the bake-image workflow extracts the UUID from here.
+  post-processor "manifest" {
+    output     = "image-manifest.json"
+    strip_path = true
+    custom_data = {
+      image_name = local.image_name
+    }
   }
 }
