@@ -121,16 +121,4 @@ build {
       "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
     ]
   }
-
-  # Emit the baked image id so CI (and operators) can read the UUID to set in
-  # general.config.ts `compute.image`. The scaleway builder's artifact_id is
-  # `<zone>:<image-uuid>`; the bake-image workflow extracts the UUID from here.
-  post-processor "manifest" {
-    output     = "image-manifest.json"
-    strip_path = true
-    custom_data = {
-      image_name      = var.image_name
-      build_timestamp = local.build_timestamp
-    }
-  }
 }

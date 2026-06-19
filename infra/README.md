@@ -10,17 +10,14 @@ a launcher that writes the boot plan and starts the agent; the agent owns the
 boot state machine (compose/env files, runtime-secret hydration, image pull,
 migrate, app start).
 
-The image is required before the first compute deploy. The infra CLI bakes it
-automatically during the first bootstrap (the bootstrap key already has the
-rights), and skips the step when an image with the configured name already
-exists:
+The image is required before the first compute deploy. The infra CLI offers to
+bake it during the first bootstrap (the bootstrap key already has the rights):
 
 ```bash
 pnpm infra   # first bootstrap offers to bake the compute image
 ```
 
-To re-bake later (agent or image changes), re-run `pnpm infra`, or run Packer
-directly:
+To re-bake later (agent or image changes), run Packer directly:
 
 ```bash
 export SCW_ACCESS_KEY=...
