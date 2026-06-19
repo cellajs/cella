@@ -1,0 +1,55 @@
+import { chmod, writeFile } from 'node:fs/promises'
+import { isEnvFileDeliverable } from '../../lib/env-file'
+import type { RuntimeSecretManifestEntry } from './plan'
+
+export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{
+  ok: boolean
+  status: number
+  text: () => Promise<string>
+}>
+
+export interface HydrateRuntimeSecretsOptions {
+  manifest: readonly RuntimeSecretManifestEntry[]
+  secretKey: string
+  region: string
+  outputPath: string
+  fetchImpl?: FetchLike
+}
+
+async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecretManifestEntry): Promise<string | null> {
+  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const secretId = entry.secretId.split('/').at(-1)
+  const url = `https://api.scaleway.com/secret-manager/v1beta1/regions/${opts.region}/secrets/${secretId}/versions/latest/access`
+  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': opts.secretKey } })
+  const body = await res.text()
+  if (res.status === 404) return null
+  if (!res.ok) {
+    if (!entry.required) return null
+    throw new Error(`${entry.envVar}: ${res.status}`)
+  }
+  const { data } = (body === '' ? {} : JSON.parse(body)) as { data?: string }
+  return Buffer.from(data ?? '', 'base64').toString('utf-8')
+}
+
+export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions): Promise<void> {
+  const lines: string[] = []
+  const errors: string[] = []
+
+  for (const entry of opts.manifest) {
+    const value = await readSecret(opts, entry)
+    if (value === null) {
+      if (entry.required) errors.push(`${entry.envVar}: missing`)
+      continue
+    }
+    const deliverable = isEnvFileDeliverable(value)
+    if (!deliverable.ok) {
+      errors.push(`${entry.envVar}: ${deliverable.reason}`)
+      continue
+    }
+    lines.push(`${entry.envVar}=${value}`)
+  }
+
+  if (errors.length > 0) throw new Error(`runtime-secret-sync failed: ${errors.join(', ')}`)
+  await writeFile(opts.outputPath, lines.length > 0 ? `${lines.join('\n')}\n` : '', 'utf-8')
+  await chmod(opts.outputPath, 0o600)
+}

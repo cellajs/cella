@@ -17,8 +17,8 @@
  * rolls infrastructure back from stale committed config.
  *
  * Each VM has a fully-closed inbound security group and is reachable only over the
- * main private network from the load balancer and database. Cloud-init installs
- * Docker, logs into the container registry, writes the shared compose.yml + .env
+ * main private network from the load balancer and database. The baked TypeScript
+ * boot agent logs into the container registry, writes the shared compose.yml + .env
  * (with the baked image tag), runs the one-shot migrate companion for services
  * that opt in, and starts the service compose profile binding the host port.
  *
@@ -75,8 +75,8 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 // Runtime secret manifest — metadata only (secret IDs + env var names, never
 // values). Baked directly into the new generation's cloud-init: under immutable
 // releases every change replaces the VM anyway, so there is no reason to deliver
-// it out-of-band. The on-VM runtime-secret-sync reads it to hydrate
-// /opt/app/.env.runtime from Secret Manager before the app boots.
+// it out-of-band. The on-VM boot agent reads it to hydrate /opt/app/.env.runtime
+// from Secret Manager before the app boots.
 // ---------------------------------------------------------------------------
 
 function buildRuntimeSecretsManifest(serviceName: string): pulumi.Output<string> {
@@ -156,7 +156,6 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
       secretKey,
       region,
       bootDiagBucket,
-      dockerPreinstalled: infra.dockerPreinstalled,
     }),
   )
 }

@@ -1,0 +1,4 @@
+
+# Packer image bake outputs
+image-manifest.json
+agent/dist/

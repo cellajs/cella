@@ -2,9 +2,9 @@
  * Fetch a service's boot diagnostics from the dedicated boot diagnostics bucket
  * on a failed rollout. The boot path uploads objects under
  * `boot-diag/`:
- *   - stage markers: `<service>-stage-<n>-<label>` written as each boot phase
- *     completes — the last few tell us how far the VM got before stalling.
- *   - full logs: `<service>-<YYYYMMDD>T<...>` — the complete boot transcript.
+ *   - full logs: `<service>-<YYYYMMDD>T<...>-boot.log` — the complete boot transcript.
+ *   - failure logs: `<service>-failed-<YYYYMMDD>T<...>.log` when first boot exits non-zero.
+ * Older marker objects (`<service>-stage-*`) are still rendered when present.
  *
  * The key selection/filtering (which markers to show, which full log is the
  * latest) is pure and unit-tested; only the two S3 calls are side-effecting and

@@ -22,11 +22,10 @@ import { defineGeneral } from '../lib/general-config'
  * `pulumi up`), not a routine CI deploy.
  */
 export default defineGeneral({
-  // VM base image. Keep Docker installed at first boot for the stock Ubuntu
-  // image; switch `image` + `dockerPreinstalled` together when using a baked image.
+  // VM base image. Must be built from infra/image/compute-docker.pkr.hcl so it
+  // includes Docker, Node 24, and /usr/local/bin/cella-boot-agent.
   compute: {
-    image: 'ubuntu_noble',
-    dockerPreinstalled: false,
+    image: 'cella-docker-node-agent-v1',
   },
   database: {
     nodeType: 'DB-DEV-S',

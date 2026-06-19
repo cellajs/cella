@@ -1,0 +1,115 @@
+# =============================================================================
+# Bake the compute VM image (Docker + Node 24 + cella-boot-agent)
+# =============================================================================
+# Manual-dispatch workflow that builds the boot-agent artifact and runs Packer
+# to bake a Scaleway image from infra/image/compute-docker.pkr.hcl. The boot
+# agent path requires this image; general.config.ts `compute.image` must point
+# at the resulting UUID before deploying the agent path.
+#
+# The job prints the new image UUID in its summary. Copy it into
+# infra/config/general.config.ts `compute.image` (staging first), then deploy
+# to a disposable/staging stack to prove the agent boot before production.
+#
+# Read-only on prod traffic: this only creates a new image artifact; it does
+# NOT touch the live stack, the load balancer, or running VMs.
+# =============================================================================
+
+name: Bake compute image
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      zone:
+        description: 'Scaleway zone for the temporary builder + image'
+        required: false
+        default: 'nl-ams-1'
+
+concurrency:
+  group: bake-image
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+  PACKER_VERSION: '1.11.2'
+
+jobs:
+  bake:
+    # Source SCW_* from the production Environment (same place the deploy uses).
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Packer
+        run: |
+          curl -fsSL "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip" -o /tmp/packer.zip
+          unzip -o /tmp/packer.zip -d /usr/local/bin
+          packer version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Packer init
+        working-directory: infra
+        run: pnpm run image:init
+
+      # Builds the agent artifact (agent:build) then runs packer. The Scaleway
+      # builder authenticates from SCW_* env; the plan's file provisioner copies
+      # agent/dist into the image and the shell provisioner validates
+      # `cella-boot-agent --version` + schema-version support before the snapshot.
+      - name: Build agent + bake image
+        working-directory: infra
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          PKR_VAR_zone: ${{ github.event.inputs.zone }}
+        run: pnpm run image:build
+
+      - name: Extract image UUID
+        id: image
+        working-directory: infra
+        run: |
+          set -euo pipefail
+          if [ ! -f image-manifest.json ]; then
+            echo "::error::image-manifest.json not found — packer build did not emit a manifest"
+            exit 1
+          fi
+          # artifact_id is `<zone>:<image-uuid>`; take the last colon-separated field.
+          artifact_id=$(jq -r '.builds[-1].artifact_id' image-manifest.json)
+          image_name=$(jq -r '.builds[-1].custom_data.image_name' image-manifest.json)
+          image_uuid="${artifact_id##*:}"
+          echo "uuid=$image_uuid" >> "$GITHUB_OUTPUT"
+          echo "name=$image_name" >> "$GITHUB_OUTPUT"
+          {
+            echo '## Baked compute image'
+            echo ''
+            echo "- **Name:** \`$image_name\`"
+            echo "- **UUID:** \`$image_uuid\`"
+            echo ''
+            echo 'Next steps:'
+            echo "1. Set \`compute.image\` in [infra/config/general.config.ts](../../infra/config/general.config.ts) to \`$image_uuid\` (staging first)."
+            echo '2. Deploy to a disposable/staging stack and confirm the agent boot (serial console `::cella::` markers + `/health`).'
+            echo '3. Promote to production.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload image manifest
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+        with:
+          name: image-manifest
+          path: infra/image-manifest.json
+          if-no-files-found: error

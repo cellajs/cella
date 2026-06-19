@@ -22,9 +22,10 @@
     "assert-secrets-deliverable": "tsx tasks/assert-secrets-deliverable.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
     "diag": "tsx tasks/diag.ts",
+    "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && tsup agent/src/main.ts --format esm --platform node --target node24 --out-dir agent/dist --clean",
     "image:init": "packer init image/compute-docker.pkr.hcl",
-    "image:validate": "packer validate image/compute-docker.pkr.hcl",
-    "image:build": "packer build image/compute-docker.pkr.hcl",
+    "image:validate": "pnpm run agent:build && packer validate image/compute-docker.pkr.hcl; rc=$?; rm -rf agent/dist; exit $rc",
+    "image:build": "pnpm run agent:build && packer build image/compute-docker.pkr.hcl",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
@@ -41,7 +42,9 @@
     "shared": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
+    "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
