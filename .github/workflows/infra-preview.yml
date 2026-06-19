@@ -73,6 +73,24 @@ jobs:
           REGION: ${{ steps.derive.outputs.region }}
         run: pulumi login "s3://$STATE_BUCKET?endpoint=s3.$REGION.scw.cloud&region=$REGION"
 
+      # Pre-install the Scaleway resource plugin (authenticated, retryable) so
+      # `pulumi preview` does not hit the unauthenticated 60-req/hr GitHub plugin
+      # download limit that GitHub-hosted runners routinely exhaust (403).
+      - name: Pre-install Pulumi providers
+        working-directory: infra
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('@pulumiverse/scaleway/package.json').version")
+          for attempt in 1 2 3 4 5; do
+            if pulumi plugin install resource scaleway "v$version"; then
+              echo "scaleway plugin v$version installed"
+              break
+            fi
+            echo "plugin install attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+
       - name: Pulumi preview
         working-directory: infra
         env:
@@ -85,6 +103,7 @@ jobs:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ steps.derive.outputs.pulumi_stack }}
         run: |
           pulumi stack select "$STACK"
