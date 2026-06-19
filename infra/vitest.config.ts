@@ -7,7 +7,7 @@ const integration = process.env.INTEGRATION === '1'
 export default defineProject({
   logLevel: 'error',
   test: {
-    include: ['compose/**/*.test.ts', 'tasks/**/*.test.ts', 'lib/**/*.test.ts', 'tests/**/*.test.ts', 'reconciler/**/*.test.ts', 'resources/**/*.test.ts', '*.test.ts'],
+    include: ['agent/**/*.test.ts', 'compose/**/*.test.ts', 'tasks/**/*.test.ts', 'lib/**/*.test.ts', 'tests/**/*.test.ts', 'reconciler/**/*.test.ts', 'resources/**/*.test.ts', '*.test.ts'],
     exclude: ['node_modules/**', 'dist/**', ...(integration ? [] : ['tests/integration/**'])],
     testTimeout: 5000,
   },
