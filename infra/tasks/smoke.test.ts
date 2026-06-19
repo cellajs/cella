@@ -238,9 +238,17 @@ describe('parseArgs', () => {
   it('parses the rollout services matrix', () => {
     const matrix = JSON.stringify([{ service: 'backend', health_url: 'https://api' }, { service: 'cdc', health_url: '' }])
     expect(parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--services-json', matrix]).services).toEqual([
-      { service: 'backend', health_url: 'https://api' },
-      { service: 'cdc', health_url: '' },
+      { service: 'backend', health_url: 'https://api', public_url: undefined },
+      { service: 'cdc', health_url: '', public_url: undefined },
     ])
+  })
+
+  it('derives frontend and backend URLs from services-json', () => {
+    const matrix = JSON.stringify([
+      { service: 'backend', public_url: 'https://api', health_url: 'https://api' },
+      { service: 'frontend', public_url: 'https://app', health_url: 'https://app' },
+    ])
+    expect(parseArgs(['--sha', SHA, '--services-json', matrix])).toMatchObject({ frontendUrl: 'https://app', backendUrl: 'https://api' })
   })
 
   it('honours an explicit --timeout', () => {

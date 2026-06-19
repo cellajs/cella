@@ -11,7 +11,6 @@
  * salt and an encrypted check value ("pulumi") used to verify the passphrase.
  */
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 
 const PBKDF2_ITERATIONS = 1_000_000
 const KEY_LEN = 32
@@ -47,14 +46,6 @@ function verify(key: Buffer, encryptionsalt: string): boolean {
   } catch {
     return false
   }
-}
-
-/**
- * Read `Pulumi.<stack>.yaml`, verify the passphrase, and return decrypted
- * values for the requested config keys. Throws on bad passphrase.
- */
-export function decryptStackSecrets(stackFilePath: string, passphrase: string, keys: string[]): Record<string, string> {
-  return decryptStackSecretsFromText(readFileSync(stackFilePath, 'utf8'), passphrase, keys)
 }
 
 /**

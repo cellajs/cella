@@ -49,7 +49,6 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
-  SCW_CLI_VERSION: '2.54.0'
 
 jobs:
   # -------------------------------------------------------------------------
@@ -61,7 +60,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      environment: ${{ steps.set-env.outputs.environment }}
+      environment: ${{ steps.derive.outputs.environment }}
       pulumi_stack: ${{ steps.derive.outputs.pulumi_stack }}
       registry_ns: ${{ steps.derive.outputs.registry_ns }}
       frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
@@ -69,7 +68,7 @@ jobs:
       vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
       region: ${{ steps.derive.outputs.region }}
       enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
-      image_tag: ${{ steps.set-env.outputs.image_tag }}
+      image_tag: ${{ steps.derive.outputs.image_tag }}
       # Service matrices, derived from appConfig.services enablement so a fork
       # doesn't build/roll a service whose infra is intentionally absent.
       build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
@@ -91,34 +90,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
-      - name: Determine environment
-        id: set-env
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_ENV: ${{ github.event.inputs.environment }}
-          GIT_REF: ${{ github.ref }}
-          GIT_SHA: ${{ github.sha }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            ENV="$INPUT_ENV"
-          else
-            ENV="production"
-          fi
-
-          # Production deploys must come from main branch
-          if [ "$ENV" = "production" ] && [ "$GIT_REF" != "refs/heads/main" ]; then
-            echo "::error::Production deploys are only allowed from the main branch (got $GIT_REF)"
-            exit 1
-          fi
-
-          echo "environment=$ENV" >> $GITHUB_OUTPUT
-          echo "image_tag=$GIT_SHA" >> $GITHUB_OUTPUT
-
       - name: Derive resource names from shared config
         id: derive
         env:
-          ENV: ${{ steps.set-env.outputs.environment }}
-        run: pnpm --silent --filter infra print-deploy-env "$ENV" >> $GITHUB_OUTPUT
+          ENV: ${{ github.event.inputs.environment || 'production' }}
+          GIT_REF: ${{ github.ref }}
+          GIT_SHA: ${{ github.sha }}
+        run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
 
   # -------------------------------------------------------------------------
   # Build and push Docker images
@@ -232,13 +210,8 @@ jobs:
         env:
           ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
         run: |
-          VITE_BACKEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "backend") | .public_url // empty')
-          VITE_FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
-          if [ -z "$VITE_BACKEND_URL" ] || [ -z "$VITE_FRONTEND_URL" ]; then
-            echo "::error::frontend/backend public URLs are required to build the frontend"
-            exit 1
-          fi
-          VITE_BACKEND_URL="$VITE_BACKEND_URL" VITE_FRONTEND_URL="$VITE_FRONTEND_URL" pnpm --filter frontend build
+          pnpm --filter infra print-frontend-build-env --services-json "$ENABLED_SERVICES_JSON" >> "$GITHUB_ENV"
+          pnpm --filter frontend build
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -255,9 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [setup]
-    # contents: read for checkout. The `Sync EDGE_PIPELINE_ID` step writes a repo
-    # variable but uses GH_REPO_PAT (the default GITHUB_TOKEN lacks actions:write
-    # even if granted here), so no extra scope is needed on this token.
+    # contents: read for checkout.
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
@@ -328,17 +299,7 @@ jobs:
         working-directory: infra
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          version=$(node -p "require('@pulumiverse/scaleway/package.json').version")
-          for attempt in 1 2 3 4 5; do
-            if pulumi plugin install resource scaleway "v$version"; then
-              echo "scaleway plugin v$version installed"
-              break
-            fi
-            echo "plugin install attempt $attempt failed; retrying in 15s"
-            sleep 15
-          done
-          pulumi plugin ls
+        run: pnpm --filter infra install-pulumi-providers
 
       # Pulumi prep (checkout, install, login, stack select) runs in
       # parallel with build-images / build-frontend. Gate the registry wait
@@ -361,11 +322,7 @@ jobs:
           set -uo pipefail
           REGISTRY="rg.$REGION.scw.cloud"
           echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
-          # Only wait for images that were actually built — the build matrix is
-          # already feature-flag gated, so a disabled service (e.g. yjs) is
-          # absent here and must not block the deploy.
-          SERVICES=$(echo "$BUILD_IMAGES_MATRIX" | jq -r '[.[].service] | join(",")')
-          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --services "$SERVICES"
+          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --build-images-json "$BUILD_IMAGES_MATRIX"
 
       - name: Pulumi up (base infra)
         working-directory: infra
@@ -439,11 +396,9 @@ jobs:
           REGION: ${{ needs.setup.outputs.region }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           SERVICES_MATRIX: ${{ needs.setup.outputs.enabled_services_json }}
-        run: |
-          SERVICES=$(echo "$SERVICES_MATRIX" | jq -r '[.[].service] | join(",")')
-          pnpm --filter infra assert-secrets-deliverable --region "$REGION" --project-id "$SCW_DEFAULT_PROJECT_ID" --services "$SERVICES"
+        run: pnpm --filter infra assert-secrets-deliverable --region "$REGION" --project-id "$SCW_DEFAULT_PROJECT_ID" --services-json "$SERVICES_MATRIX"
 
-      - name: Deploy primary VM generation with explicit cutover
+      - name: Deploy VM generations with explicit cutover
         working-directory: infra
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
@@ -459,100 +414,8 @@ jobs:
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
           RUN_NUMBER: ${{ github.run_number }}
           PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}
-        run: |
-          set -euo pipefail
-          count=$(echo "$PRIMARY_ROLLOUT_MATRIX" | jq 'length')
-          if [ "$count" -eq 0 ]; then
-            echo "No primary rollout service configured — skipping."
-            exit 0
-          fi
-          if [ "$count" -gt 1 ]; then
-            echo "::error::Expected at most one primary rollout service, got $count"
-            exit 1
-          fi
-          item=$(echo "$PRIMARY_ROLLOUT_MATRIX" | jq -c '.[0]')
-          service=$(echo "$item" | jq -r '.service')
-          health_url=$(echo "$item" | jq -r '.health_url')
-          pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER" --health-url "$health_url"
-
-      - name: Deploy remaining VM generations with explicit cutover
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
-          RUN_NUMBER: ${{ github.run_number }}
           ROLL_REST_MATRIX: ${{ needs.setup.outputs.roll_rest_matrix }}
-        run: |
-          set -euo pipefail
-          echo "$ROLL_REST_MATRIX" | jq -c '.[]' | while read -r item; do
-            service=$(echo "$item" | jq -r '.service')
-            health_url=$(echo "$item" | jq -r '.health_url')
-            if [ -n "$health_url" ]; then
-              pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER" --health-url "$health_url"
-            else
-              pnpm --filter infra deploy-service --service "$service" --sha "$IMAGE_TAG" --stack "$STACK" --gen "$RUN_NUMBER"
-            fi
-          done
-
-      - name: Capture stack outputs
-        id: outputs
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        run: |
-          PIPELINE_ID=$(pulumi stack output pipelineId --stack "$STACK" 2>/dev/null || echo '')
-          echo "pipeline_id=$PIPELINE_ID" >> $GITHUB_OUTPUT
-
-      - name: Sync EDGE_PIPELINE_ID repo variable
-        if: steps.outputs.outputs.pipeline_id != '' && vars.EDGE_PIPELINE_ID == ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_REPO_PAT || secrets.GITHUB_TOKEN }}
-          PIPELINE_ID: ${{ steps.outputs.outputs.pipeline_id }}
-          ENV_NAME: ${{ needs.setup.outputs.environment }}
-        run: |
-          # Best-effort: requires a PAT with `actions:write` to set environment variables.
-          # Falls back silently with the default GITHUB_TOKEN (which lacks the scope).
-          gh variable set EDGE_PIPELINE_ID --env "$ENV_NAME" --body "$PIPELINE_ID" || \
-            echo "::warning::Could not set EDGE_PIPELINE_ID repo variable (needs PAT with actions:write). Pipeline id: $PIPELINE_ID"
-
-      - name: Output deployment info
-        working-directory: infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
-          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
-        run: |
-          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
-          echo "**Pulumi Stack:** $STACK" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tag:** $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Resources" >> $GITHUB_STEP_SUMMARY
-          echo "- **Registry:** $(pulumi stack output registryEndpoint --stack "$STACK")" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend:** $(pulumi stack output frontendBucketEndpoint --stack "$STACK")" >> $GITHUB_STEP_SUMMARY
-          echo "- **Cluster:** $(pulumi stack output clusterHost --stack "$STACK" 2>/dev/null || echo 'not deployed')" >> $GITHUB_STEP_SUMMARY
-          # One line per LB-exposed service, straight from the registry-driven map.
-          pulumi stack output serviceDomainUrls --stack "$STACK" 2>/dev/null \
-            | jq -r 'to_entries[] | "- **\(.key) domain:** \(.value)"' >> $GITHUB_STEP_SUMMARY \
-            || echo "- **Domains:** no domain" >> $GITHUB_STEP_SUMMARY
+        run: pnpm --filter infra deploy-rollout --stack "$STACK" --sha "$IMAGE_TAG" --gen "$RUN_NUMBER" --primary-json "$PRIMARY_ROLLOUT_MATRIX" --rest-json "$ROLL_REST_MATRIX"
 
   # -------------------------------------------------------------------------
   # Verify the rollout — the pulumi job above runs deploy-service per VM service
@@ -760,8 +623,8 @@ jobs:
             --exclude "manifest.webmanifest"
 
   # -------------------------------------------------------------------------
-  # Atomic frontend flip: publish the mutable entry files and purge the edge
-  # cache so users start loading the new build. Deliberately thin and on the
+  # Atomic frontend flip: publish the mutable entry files so users start
+  # loading the new build. Deliberately thin and on the
   # critical path AFTER verify-rollout — the versioned chunks it references are
   # already in the bucket (uploaded in parallel by `upload-frontend-assets`).
   # -------------------------------------------------------------------------
@@ -796,12 +659,6 @@ jobs:
           name: frontend-dist
           path: dist
 
-      - name: Install Scaleway CLI
-        run: |
-          curl -sLo /usr/local/bin/scw "https://github.com/scaleway/scaleway-cli/releases/download/v${{ env.SCW_CLI_VERSION }}/scaleway-cli_${{ env.SCW_CLI_VERSION }}_linux_amd64"
-          chmod +x /usr/local/bin/scw
-          scw version
-
       - name: Upload entry files (no-cache) — strictly after assets
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
@@ -819,59 +676,22 @@ jobs:
             fi
           done
 
-      - name: Purge Edge Services cache for entry files
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
-          EDGE_PIPELINE_ID: ${{ vars.EDGE_PIPELINE_ID }}
-          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        run: |
-          set -euo pipefail
-          if [ -z "${EDGE_PIPELINE_ID:-}" ]; then
-            if [ -z "${SCW_DEFAULT_ORGANIZATION_ID:-}" ]; then
-              echo "::warning::EDGE_PIPELINE_ID is not set and SCW_DEFAULT_ORGANIZATION_ID is missing; skipping edge cache purge."
-              exit 0
-            fi
-            EDGE_PIPELINE_ID=$(scw edge-services pipeline list -o json | jq -r ".[] | select(.name | contains(\"$BUCKET_NAME\")) | .id" | head -n1)
-          fi
-          if [ -n "${EDGE_PIPELINE_ID:-}" ]; then
-            scw edge-services purge-request create \
-              pipeline-id="$EDGE_PIPELINE_ID" \
-              assets.0="index.html" \
-              assets.1="sw.js" \
-              assets.2="manifest.webmanifest"
-          else
-            echo "::warning::Could not resolve EDGE_PIPELINE_ID; skipping edge cache purge."
-          fi
-
       - name: Verify served bundle matches uploaded bundle
         env:
           ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
         # Compare a stable marker from the just-uploaded index.html against what
-        # the edge actually serves with Cache-Control: no-cache. The HTML parse,
+        # the public frontend serves with Cache-Control: no-cache. The HTML parse,
         # TLS-error classification and poll loop live in
         # infra/tasks/verify-frontend-bundle.ts (unit tested). 30 × 3s = ~90s.
         run: |
-          FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
-          if [ -z "$FRONTEND_URL" ]; then
-            echo "No FRONTEND_URL configured — skipping verify"
-            exit 0
-          fi
           # The artifact downloads to $GITHUB_WORKSPACE/dist, but `pnpm --filter
           # infra` runs in infra/, so the --dist path must be absolute — a
           # relative dist/index.html would resolve to a missing infra/dist and
           # the task now hard-fails instead of silently accepting any response.
-          pnpm --filter infra verify-frontend-bundle --url "$FRONTEND_URL" --dist "$GITHUB_WORKSPACE/dist/index.html"
+          pnpm --filter infra verify-frontend-bundle --services-json "$ENABLED_SERVICES_JSON" --dist "$GITHUB_WORKSPACE/dist/index.html"
 
   # -------------------------------------------------------------------------
-  # Smoke tests — last-mile sanity checks executed against the now-live
-  # bundle + API. Intentionally narrow: each probe targets a single HTTP
-  # contract that, if broken, would render the app unusable for all users.
-  # Anything heavier (auth flows, DB writes) belongs in the e2e suite, not
-  # in the critical-path deploy pipeline.
+  # Smoke tests — last-mile sanity checks executed against live resources
   # -------------------------------------------------------------------------
   smoke-tests:
     runs-on: ubuntu-latest
@@ -905,12 +725,5 @@ jobs:
       # SPA fallback, security headers, component health) live in the unit-tested infra/tasks/smoke.ts.
       # It runs every check before failing so one deploy surfaces all breakage.
       - name: Run smoke checks
-        run: |
-          FRONTEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "frontend") | .public_url // empty')
-          BACKEND_URL=$(echo "$ENABLED_SERVICES_JSON" | jq -r '.[] | select(.service == "backend") | .public_url // empty')
-          if [ -z "$FRONTEND_URL" ] || [ -z "$BACKEND_URL" ]; then
-            echo "::error::frontend/backend public URLs are required for smoke checks"
-            exit 1
-          fi
-          pnpm --filter infra smoke --frontend "$FRONTEND_URL" --backend "$BACKEND_URL" --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON"
+        run: pnpm --filter infra smoke --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON"
 

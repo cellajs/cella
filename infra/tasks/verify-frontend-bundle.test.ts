@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   classifyError,
   extractEntryAsset,
+  frontendUrlFromServicesJson,
   main,
   parseArgs,
   type ProbeResult,
@@ -111,6 +112,12 @@ describe('parseArgs', () => {
 
   it('throws when --url is missing', () => {
     expect(() => parseArgs([])).toThrow(/Usage/)
+  })
+
+  it('derives the frontend URL from services-json', () => {
+    const services = JSON.stringify([{ service: 'backend', public_url: 'https://api' }, { service: 'frontend', public_url: 'https://app' }])
+    expect(frontendUrlFromServicesJson(services)).toBe('https://app')
+    expect(parseArgs(['--services-json', services]).url).toBe('https://app')
   })
 })
 

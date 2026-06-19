@@ -20,7 +20,8 @@
  */
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { imageServiceNames, serviceNames, services, type ServiceName } from '../lib/services'
+import { imageServiceNames, serviceNames, services } from '../lib/services'
+import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
 
 /**
@@ -112,6 +113,19 @@ interface CliArgs {
   intervalMs: number
 }
 
+export function imageServicesFromBuildMatrix(raw: string): TaggedService[] {
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) throw new Error('--build-images-json must be a JSON array')
+  return parsed
+    .map((item, index) => {
+      if (!item || typeof item !== 'object') throw new Error(`--build-images-json[${index}] must be an object`)
+      const service = (item as Record<string, unknown>).service
+      if (typeof service !== 'string') throw new Error(`--build-images-json[${index}].service must be a string`)
+      return service
+    })
+    .filter((service): service is TaggedService => (imageServices() as string[]).includes(service))
+}
+
 /** Parse `--key value` flags. Exported for testing. */
 export function parseArgs(argv: string[]): CliArgs {
   const registry = getFlag(argv, '--registry')
@@ -123,8 +137,11 @@ export function parseArgs(argv: string[]): CliArgs {
 
   // Optional comma-separated override; restrict to known image services so an
   // unknown or reuse-only service (e.g. `ai`) can't sneak into the wait loop.
+  const buildImagesRaw = getFlag(argv, '--build-images-json')
   const servicesFlag = getFlag(argv, '--services')
-  const services = servicesFlag
+  const services = buildImagesRaw
+    ? imageServicesFromBuildMatrix(buildImagesRaw)
+    : servicesFlag
     ? servicesFlag
         .split(',')
         .map((s) => s.trim())

@@ -272,30 +272,33 @@ interface CliArgs {
   timeoutMs: number
 }
 
-function parseServicesJson(raw: string): SmokeService[] {
+export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string }> {
   const parsed: unknown = JSON.parse(raw)
   if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
   return parsed.map((item, index) => {
     if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
     const service = (item as Record<string, unknown>).service
     const healthUrl = (item as Record<string, unknown>).health_url
+    const publicUrl = (item as Record<string, unknown>).public_url
     if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
     if (typeof healthUrl !== 'string') throw new Error(`--services-json[${index}].health_url must be a string`)
-    return { service, health_url: healthUrl }
+    if (publicUrl !== undefined && typeof publicUrl !== 'string') throw new Error(`--services-json[${index}].public_url must be a string`)
+    return { service, health_url: healthUrl, public_url: publicUrl }
   })
 }
 
 /** Parse `--key value` flags. Exported for testing. */
 export function parseArgs(argv: string[]): CliArgs {
-  const frontendUrl = getFlag(argv, '--frontend')
-  const backendUrl = getFlag(argv, '--backend')
+  const servicesRaw = getFlag(argv, '--services-json')
+  const services = servicesRaw ? parseServicesJson(servicesRaw) : undefined
+  const frontendUrl = getFlag(argv, '--frontend') ?? services?.find((service) => service.service === 'frontend')?.public_url
+  const backendUrl = getFlag(argv, '--backend') ?? services?.find((service) => service.service === 'backend')?.public_url
   const sha = getFlag(argv, '--sha')
   if (!frontendUrl || !backendUrl || !sha) {
     throw new Error('Usage: smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <json>] [--timeout ms]')
   }
-  const servicesRaw = getFlag(argv, '--services-json')
   const timeoutRaw = getFlag(argv, '--timeout')
-  return { frontendUrl, backendUrl, sha, services: servicesRaw ? parseServicesJson(servicesRaw) : undefined, timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
+  return { frontendUrl, backendUrl, sha, services, timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IMAGE_REUSE, imageRef, imageServices, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images'
+import { IMAGE_REUSE, imageRef, imageServices, imageServicesFromBuildMatrix, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images'
 
 const TAG = 'abc1234'
 
@@ -96,5 +96,11 @@ describe('parseArgs', () => {
 
   it('leaves services undefined when --services is omitted', () => {
     expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG]).services).toBeUndefined()
+  })
+
+  it('parses a build matrix JSON override', () => {
+    const matrix = JSON.stringify([{ service: 'backend' }, { service: 'ai' }, { service: 'frontend' }, { service: 'bogus' }])
+    expect(imageServicesFromBuildMatrix(matrix)).toEqual(['backend', 'frontend'])
+    expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--build-images-json', matrix]).services).toEqual(['backend', 'frontend'])
   })
 })

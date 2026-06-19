@@ -2,6 +2,16 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "ignoreWorkspaces": ["backend"],
   "workspaces": {
-    "backend": {}
+    "backend": {},
+    "infra": {
+      "entry": [
+        "index.ts",
+        "cli/infra-cli.ts",
+        "tasks/*.ts",
+        "compose/synth.ts",
+        "agent/src/main.ts"
+      ],
+      "ignoreBinaries": ["pulumi", "packer", "gh"]
+    }
   }
 }

@@ -11,7 +11,8 @@ import generalConfig from './config/general.config'
 import type { Environment } from './lib/bootstrap-stack-state'
 import { resolvePerMode } from './lib/general-config'
 import { deriveInfra } from './lib/naming'
-import { serviceEndpoints, servicesByName, type ServiceName } from './lib/services'
+import { serviceEndpoints, servicesByName } from './lib/services'
+import type { ServiceName } from './compose/compose'
 import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/vm-reader-secret'
 
 // Derive APP_MODE from the Pulumi stack name (e.g. 'organization/infra/production'
@@ -111,14 +112,6 @@ export const vmReaderApplicationId = scaleway.iam
     if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
     return app.applicationId
   })
-
-// Principal string for whoever runs `pulumi up` (the operator key locally, the
-// CI key in CI), derived from the calling SCW_ACCESS_KEY. `undefined` when no
-// access key is in the environment.
-const callerAccessKey = process.env.SCW_ACCESS_KEY
-export const operatorPrincipal: pulumi.Output<string> | undefined = callerAccessKey
-  ? scaleway.iam.getApiKeyOutput({ accessKey: callerAccessKey }).apply((key) => (key.userId ? `user_id:${key.userId}` : `application_id:${key.applicationId}`))
-  : undefined
 
 // ---------------------------------------------------------------------------
 // Mode-aware defaults — forks only need to set secrets + scaleway:projectId

@@ -1,12 +1,10 @@
 /**
- * Verify the edge actually serves the bundle we just uploaded.
+ * Verify the public frontend serves the bundle we just uploaded.
  *
- * After publishing index.html to the frontend bucket and purging the edge
- * cache, we poll the public URL until the served index.html references the
- * same hashed entry script as the freshly built dist/index.html. If the served
- * HTML still points at the previous hash, the purge hasn't propagated; if the
- * request fails with a TLS error, the Edge Services managed certificate is
- * likely stuck and we surface a recovery runbook.
+ * After publishing index.html to the frontend bucket, poll the public URL until
+ * the served index.html references the same hashed entry script as the freshly
+ * built dist/index.html. If the served HTML still points at the previous hash,
+ * the mutable entry file has not propagated through the public serving path.
  *
  * The HTML parsing and error classification are pure and unit-tested; only the
  * actual HTTP fetch is side-effecting (and injectable).
@@ -87,14 +85,6 @@ export function createFetchProbe(timeoutMs: number): FetchProbe {
   }
 }
 
-const TLS_RUNBOOK = [
-  'Likely cause: Scaleway Edge Services pipeline has a stuck managed certificate.',
-  'Recover with:',
-  "  scw edge-services pipeline list -o json | jq -r '.[] | select(.status==\"error\") | .id'",
-  '  scw edge-services tls-stage list pipeline-id=<id> -o json | jq -r \'.[0].id\'',
-  '  scw edge-services tls-stage update <tls-stage-id> managed-certificate=true',
-].join('\n')
-
 export interface VerifyOptions {
   url: string
   expectedAsset: string | undefined
@@ -144,9 +134,19 @@ interface CliArgs {
   timeoutMs: number
 }
 
+export function frontendUrlFromServicesJson(raw: string): string | undefined {
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
+  const row = parsed.find((item) => item && typeof item === 'object' && (item as Record<string, unknown>).service === 'frontend')
+  const url = row && typeof row === 'object' ? (row as Record<string, unknown>).public_url : undefined
+  if (url !== undefined && typeof url !== 'string') throw new Error('frontend public_url must be a string')
+  return url || undefined
+}
+
 /** Parse `--key value` flags. Exported for testing. */
 export function parseArgs(argv: string[]): CliArgs {
-  const url = getFlag(argv, '--url')
+  const servicesJson = getFlag(argv, '--services-json')
+  const url = getFlag(argv, '--url') ?? (servicesJson ? frontendUrlFromServicesJson(servicesJson) : undefined)
   if (!url) {
     throw new Error('Usage: verify-frontend-bundle.ts --url <frontend-url> [--dist dist/index.html] [--attempts N] [--interval ms] [--timeout ms]')
   }
@@ -162,7 +162,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv)
-  
+
   let html: string
   try {
     html = readFileSync(args.dist, 'utf-8')
@@ -188,7 +188,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   if (outcome.reason === 'tls') {
     console.error(`::error::Frontend TLS failure (${outcome.detail ?? 'unknown'}) on ${args.url}`)
-    console.error(TLS_RUNBOOK)
   } else {
     const budget = Math.round((args.attempts * args.intervalMs) / 1000)
     console.error(`::error::Frontend did not serve the new bundle within ~${budget}s`)
