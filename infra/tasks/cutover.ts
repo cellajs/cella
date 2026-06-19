@@ -278,10 +278,15 @@ export interface LbSetServersOptions {
   fetchImpl?: FetchLike
 }
 
+function scalewayResourceId(id: string): string {
+  return id.split('/').at(-1) ?? id
+}
+
 /** Build the live `SetServersFn` that re-points one Scaleway LB backend. */
 export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
   const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
-  const url = `${LB_BASE}/zones/${opts.zone}/backends/${opts.backendId}/servers`
+  const backendId = scalewayResourceId(opts.backendId)
+  const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}/servers`
   return async (serverIps) => {
     const res = await fetchImpl(url, {
       method: 'PUT',
@@ -290,7 +295,7 @@ export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
     })
     if (!res.ok) {
       const body = await res.text()
-      throw new Error(`SetBackendServers ${opts.backendId} → ${res.status}: ${body}`)
+      throw new Error(`SetBackendServers ${backendId} → ${res.status}: ${body}`)
     }
   }
 }
@@ -306,14 +311,15 @@ function parseBackendServers(payload: string): string[] {
 
 export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
   const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
-  const url = `${LB_BASE}/zones/${opts.zone}/backends/${opts.backendId}/servers`
+  const backendId = scalewayResourceId(opts.backendId)
+  const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}/servers`
   return async () => {
     const res = await fetchImpl(url, {
       method: 'GET',
       headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'application/json' },
     })
     const body = await res.text()
-    if (!res.ok) throw new Error(`ListBackendServers ${opts.backendId} → ${res.status}: ${body}`)
+    if (!res.ok) throw new Error(`ListBackendServers ${backendId} → ${res.status}: ${body}`)
     return parseBackendServers(body)
   }
 }
