@@ -11,6 +11,7 @@ describe('deriveInfra', () => {
     expect(d.naming.publicBucket).toBe('cella-public')
     expect(d.naming.privateBucket).toBe('cella-private')
     expect(d.naming.pulumiStateBucket).toBe('cella-pulumi-state')
+    expect(d.naming.bootDiagBucket).toBe('cella-boot-diag')
     expect(d.naming.resource('lb')).toBe('cella-lb')
   })
 
@@ -25,6 +26,7 @@ describe('deriveInfra', () => {
       d.naming.publicBucket,
       d.naming.privateBucket,
       d.naming.pulumiStateBucket,
+      d.naming.bootDiagBucket,
     ]
     expect(new Set(names).size).toBe(names.length)
   })

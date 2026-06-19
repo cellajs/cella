@@ -391,7 +391,12 @@ Serial console logging works but is awkward for CI and future SaaS UX. The previ
 
 Do not give the VM project-wide ObjectStorageFullAccess just to upload logs.
 
-This is not optional for a robust deploy flow. It does not have to block the first local agent skeleton, but it should block production cutover to the agent path unless the team accepts serial-console-only diagnosis for that deployment. Preferred implementation: create a dedicated boot-diagnostics bucket and grant the VM reader application write access only to that bucket via bucket policy, then retarget `infra/tasks/diag.ts` and `fetch-boot-diag.ts` away from the Pulumi state bucket.
+This is not optional for a robust deploy flow. It does not have to block the first local agent skeleton, but it should block production cutover to the agent path unless the team accepts serial-console-only diagnosis for that deployment.
+
+Split diagnostics into two parts:
+
+1. **Infrastructure plumbing can be implemented before the agent**: create a dedicated boot-diagnostics bucket, grant the VM reader application write access only to that bucket via bucket policy, and retarget `infra/tasks/diag.ts` / `fetch-boot-diag.ts` away from the Pulumi state bucket.
+2. **The uploader should be TypeScript agent code**: the boot agent should write bounded boot result/log artifacts on success and failure. Do not grow `cloud-init.ts` with a new long-lived Python/bash uploader as the normal path. A temporary cloud-init uploader is acceptable only as an explicit emergency bridge, and should be deleted as soon as the agent owns diagnostics.
 
 ### 7.6 A long-lived agent reintroduces the old reconciler question
 
@@ -450,8 +455,9 @@ The current `deploy-service.ts` path for exclusive services directly promotes th
 
 - Add a dedicated boot-diagnostics bucket.
 - Grant the VM reader application write access only to that bucket, not project-wide Object Storage write.
-- Make the agent upload bounded boot result/log artifacts on success and failure, or add a separate host-side uploader with the same credential boundary.
 - Retarget `diag` and `fetch-boot-diag` to the diagnostics bucket.
+- Make the TypeScript boot agent upload bounded boot result/log artifacts on success and failure.
+- Keep cloud-init diagnostics limited to serial-console teeing during the transition; avoid adding a new Python/bash uploader unless explicitly choosing a short-lived emergency bridge.
 - Add a deploy failure drill that proves CI/operator can retrieve agent failure logs without Scaleway web-console access.
 
 ### Phase 5: remove old boot implementation

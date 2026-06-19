@@ -1,5 +1,5 @@
 /**
- * Storage — S3 buckets for the frontend SPA and user file uploads.
+ * Storage — S3 buckets for the frontend SPA, user file uploads, and boot diagnostics.
  *
  * Frontend bucket runs in website-hosting mode so direct bucket access (dev) and
  * the Edge Services `isWebsite` origin both fall back to index.html for SPA routes.
@@ -10,10 +10,11 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, appConfig, infra, ciDeployApplicationId } from '../pulumi-context'
+import { naming, region, tags, isProduction, appConfig, infra, ciDeployApplicationId, vmReaderApplicationId } from '../pulumi-context'
 
 // Derived from IAM by name (SOVRUN §3.3) — was the stored `infra:applicationId`.
 const applicationId = ciDeployApplicationId
+const vmApplicationId = vmReaderApplicationId
 
 // Days before stale, content-hashed frontend chunks under `assets/` are
 // expired by Object Storage. Must outlive any reasonable open browser tab on
@@ -174,6 +175,53 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
 // No public policy — access via signed URLs only
 
 // ---------------------------------------------------------------------------
+// Boot diagnostics bucket (VM write-only diagnostics channel)
+// ---------------------------------------------------------------------------
+
+const bootDiagBucket = new scaleway.object.Bucket('boot-diag-bucket', {
+  name: naming.bootDiagBucket,
+  region,
+  tags: Object.fromEntries(tags.map((t) => t.split(':') as [string, string])),
+  forceDestroy: !isProduction,
+  versioning: { enabled: false },
+  lifecycleRules: [
+    {
+      id: 'expire-boot-diag',
+      enabled: true,
+      expiration: { days: 30 },
+      prefix: 'boot-diag/',
+    },
+  ],
+}, { protect: isProduction })
+
+new scaleway.object.BucketPolicy('boot-diag-policy', {
+  bucket: bootDiagBucket.name,
+  region,
+  policy: pulumi.jsonStringify({
+    Version: '2023-04-17',
+    Statement: [
+      {
+        Sid: 'VmWriteBootDiagnostics',
+        Effect: 'Allow',
+        Principal: { SCW: pulumi.interpolate`application_id:${vmApplicationId}` },
+        Action: ['s3:PutObject'],
+        Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
+      },
+      {
+        Sid: 'DeployAccess',
+        Effect: 'Allow',
+        Principal: { SCW: pulumi.interpolate`application_id:${applicationId}` },
+        Action: ['s3:*'],
+        Resource: [
+          bootDiagBucket.name,
+          pulumi.interpolate`${bootDiagBucket.name}/*`,
+        ],
+      },
+    ],
+  }),
+})
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
@@ -200,3 +248,9 @@ export const privateUploadsBucketName = privateUploadsBucket.name
 
 /** Private uploads bucket S3 endpoint */
 export const privateUploadsBucketEndpoint = privateUploadsBucket.endpoint
+
+/** Boot diagnostics bucket name */
+export const bootDiagBucketName = bootDiagBucket.name
+
+/** Boot diagnostics bucket S3 endpoint */
+export const bootDiagBucketEndpoint = bootDiagBucket.endpoint

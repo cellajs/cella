@@ -13,9 +13,9 @@
  * the app starts, so the schema is expanded before the new generation is served.
  *
  * The app container binds the host port directly; the LB health-checks the app's
- * own `/health`. A failed boot leaves the VM alive for serial-console inspection
- * (CI sees the failure inline via the version health check, so no S3 diagnostics
- * channel is needed).
+ * own `/health`. Boot logs stream to the serial console and are uploaded to the
+ * dedicated boot diagnostics bucket, so CI/operator can inspect failed first
+ * boots without SSH or Scaleway web-console access.
  */
 
 export interface CloudInitParams {
@@ -37,8 +37,12 @@ export interface CloudInitParams {
   registry: string
   /** Scaleway secret key — registry password + Secret Manager access token. */
   secretKey: string
+  /** Scaleway access key for writing boot diagnostics to Object Storage. */
+  accessKey: string
   /** Scaleway region for the Secret Manager endpoint. */
   region: string
+  /** Dedicated Object Storage bucket for boot diagnostics. */
+  bootDiagBucket: string
   /** Whether the selected VM image already includes Docker Engine + compose plugin. */
   dockerPreinstalled: boolean
 }
@@ -119,18 +123,126 @@ def main() -> int:
 if __name__ == '__main__':
   raise SystemExit(main())`
 
+export const bootDiagUploadScript = `#!/usr/bin/env python3
+import datetime
+import hashlib
+import hmac
+import os
+import pathlib
+import sys
+import urllib.error
+import urllib.request
+
+LOG_PATH = pathlib.Path('/var/log/cella-boot.log')
+
+
+def sign(key: bytes, msg: str) -> bytes:
+  return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
+
+
+def signing_key(secret_key: str, date: str, region: str) -> bytes:
+  key = sign(('AWS4' + secret_key).encode('utf-8'), date)
+  key = sign(key, region)
+  key = sign(key, 's3')
+  return sign(key, 'aws4_request')
+
+
+def put_object(bucket: str, region: str, access_key: str, secret_key: str, key: str, body: bytes) -> None:
+  host = f'{bucket}.s3.{region}.scw.cloud'
+  url = f'https://{host}/{key}'
+  now = datetime.datetime.now(datetime.UTC)
+  amz_date = now.strftime('%Y%m%dT%H%M%SZ')
+  date = now.strftime('%Y%m%d')
+  payload_hash = hashlib.sha256(body).hexdigest()
+  canonical_uri = '/' + urllib.parse.quote(key, safe='/')
+  canonical_headers = (
+    'content-type:text/plain; charset=utf-8\n'
+    f'host:{host}\n'
+    f'x-amz-content-sha256:{payload_hash}\n'
+    f'x-amz-date:{amz_date}\n'
+  )
+  signed_headers = 'content-type;host;x-amz-content-sha256;x-amz-date'
+  canonical_request = '\n'.join(['PUT', canonical_uri, '', canonical_headers, signed_headers, payload_hash])
+  scope = f'{date}/{region}/s3/aws4_request'
+  string_to_sign = '\n'.join(['AWS4-HMAC-SHA256', amz_date, scope, hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()])
+  signature = hmac.new(signing_key(secret_key, date, region), string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+  authorization = f'AWS4-HMAC-SHA256 Credential={access_key}/{scope}, SignedHeaders={signed_headers}, Signature={signature}'
+  request = urllib.request.Request(
+    url,
+    data=body,
+    method='PUT',
+    headers={
+      'Authorization': authorization,
+      'Content-Type': 'text/plain; charset=utf-8',
+      'X-Amz-Content-Sha256': payload_hash,
+      'X-Amz-Date': amz_date,
+    },
+  )
+  with urllib.request.urlopen(request, timeout=20) as response:
+    response.read()
+
+
+def main() -> int:
+  bucket = os.environ.get('BOOT_DIAG_BUCKET')
+  region = os.environ.get('SCW_REGION')
+  access_key = os.environ.get('SCW_ACCESS_KEY')
+  secret_key = os.environ.get('SCW_SECRET_KEY')
+  service = os.environ.get('CELLA_SERVICE', 'service')
+  release_sha = os.environ.get('CELLA_RELEASE_SHA', 'unknown')
+  boot_rc = os.environ.get('BOOT_RC', '0')
+  if not bucket or not region or not access_key or not secret_key:
+    print('boot-diag-upload: missing bucket, region, or credentials', file=sys.stderr)
+    return 1
+
+  try:
+    log = LOG_PATH.read_text(encoding='utf-8', errors='replace')
+  except FileNotFoundError:
+    log = 'boot log not found\n'
+  stamp = datetime.datetime.now(datetime.UTC).strftime('%Y%m%dT%H%M%SZ')
+  header = f'service={service}\nrelease={release_sha}\nboot_rc={boot_rc}\n'
+  body = (header + '\n' + log).encode('utf-8')
+  full_key = f'boot-diag/{service}-{stamp}-boot.log'
+  put_object(bucket, region, access_key, secret_key, full_key, body)
+  if boot_rc != '0':
+    failure_key = f'boot-diag/{service}-failed-{stamp}.log'
+    put_object(bucket, region, access_key, secret_key, failure_key, body)
+  print(f'boot-diag-upload: uploaded {full_key}')
+  return 0
+
+
+if __name__ == '__main__':
+  raise SystemExit(main())`
+
 const bootHeader = (service: string, releaseSha: string): string => `#!/bin/bash
 # Mirror ALL boot output to the serial console (and a local log) so a no-SSH VM
-# can be debugged live — this is the boot-diagnostic channel for a box with no
-# inbound access. Open the Scaleway serial console to watch '::cella::' markers.
+# can be debugged live. The exit trap also uploads a bounded boot transcript to
+# the dedicated boot diagnostics bucket when the uploader has been installed.
 exec > >(tee -a /var/log/cella-boot.log 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
 say() { echo "::cella:: $*" ; }
 # Make the final status unmistakable on the serial console even if a step exits
 # non-zero somewhere unexpected (set -e is intentionally NOT used so we control
 # the gates explicitly, but this trap catches any stray failure).
-trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc) — see the last ::cella:: step above"; fi' EXIT
+trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc) — see the last ::cella:: step above"; fi; if [ -x /usr/local/bin/cella-upload-boot-diag ]; then BOOT_RC="$rc" /usr/local/bin/cella-upload-boot-diag || true; fi' EXIT
 say "boot start — service=${service} release=${releaseSha}"`
+
+const installBootDiagUploader = (p: Pick<CloudInitParams, 'accessKey' | 'secretKey' | 'region' | 'bootDiagBucket' | 'service' | 'releaseSha'>): string => `# Boot diagnostics uploader — writes a bounded copy of /var/log/cella-boot.log
+# to the dedicated diagnostics bucket on exit. The VM reader is allowed to PUT
+# only boot-diag/* in that bucket by bucket policy; it has no project-wide Object
+# Storage write permission.
+${writeHeredoc('/usr/local/bin/cella-upload-boot-diag', 'BOOT_DIAG_UPLOAD_EOF', bootDiagUploadScript)}
+chmod 0755 /usr/local/bin/cella-upload-boot-diag
+cat > /etc/cella-boot-diag.env <<'BOOT_DIAG_ENV_EOF'
+SCW_ACCESS_KEY='${p.accessKey}'
+SCW_SECRET_KEY='${p.secretKey}'
+SCW_REGION='${p.region}'
+BOOT_DIAG_BUCKET='${p.bootDiagBucket}'
+CELLA_SERVICE='${p.service}'
+CELLA_RELEASE_SHA='${p.releaseSha}'
+BOOT_DIAG_ENV_EOF
+chmod 600 /etc/cella-boot-diag.env
+sed -i 's#^#export #' /etc/cella-boot-diag.env
+. /etc/cella-boot-diag.env`
 
 const installBootReplayService = (): string => `# Install a boot-log replay service so a REBOOT re-prints the captured boot log
 # to the serial console (cloud-init's user-script only runs on first boot, so
@@ -242,6 +354,7 @@ export function renderCloudInit(p: CloudInitParams): string {
   const registryHost = p.registry.split('/')[0]
   return [
     bootHeader(p.service, p.releaseSha),
+    installBootDiagUploader(p),
     installBootReplayService(),
     waitForPrivateNetwork(),
     p.dockerPreinstalled ? '' : installDocker(),

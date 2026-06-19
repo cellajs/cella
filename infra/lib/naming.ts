@@ -23,6 +23,7 @@ export function deriveInfra(appConfig: Cfg) {
       publicBucket: appConfig.s3.publicBucket,
       privateBucket: appConfig.s3.privateBucket,
       pulumiStateBucket: `${prefix}-pulumi-state`,
+      bootDiagBucket: `${prefix}-boot-diag`,
       // Registry namespace names require >= 4 chars and no hyphens; slug length
       // is validated at config load, so only hyphens need stripping here.
       registryNamespace: appConfig.slug.replace(/-/g, ''),

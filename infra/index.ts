@@ -49,6 +49,8 @@ export const publicUploadsBucketName = storage.publicUploadsBucketName
 export const publicUploadsBucketEndpoint = storage.publicUploadsBucketEndpoint
 export const privateUploadsBucketName = storage.privateUploadsBucketName
 export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
+export const bootDiagBucketName = storage.bootDiagBucketName
+export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint
 
 // ---------------------------------------------------------------------------
 // Database (Managed PostgreSQL)
