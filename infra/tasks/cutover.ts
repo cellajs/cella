@@ -301,10 +301,19 @@ export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
 }
 
 function parseBackendServers(payload: string): string[] {
-  const data = JSON.parse(payload) as { server_ip?: string[]; servers?: Array<string | { ip?: string; serverIp?: string; server_ip?: string }> }
-  if (Array.isArray(data.server_ip)) return data.server_ip
-  if (Array.isArray(data.servers)) {
-    return data.servers.map((server) => typeof server === 'string' ? server : (server.ip ?? server.serverIp ?? server.server_ip ?? '')).filter(Boolean)
+  const data = JSON.parse(payload) as {
+    backend?: unknown
+    server_ip?: string[]
+    server_ips?: string[]
+    serverIps?: string[]
+    servers?: Array<string | { ip?: string; serverIp?: string; server_ip?: string }>
+  }
+  const backend = (data.backend ?? data) as typeof data
+  if (Array.isArray(backend.server_ip)) return backend.server_ip
+  if (Array.isArray(backend.server_ips)) return backend.server_ips
+  if (Array.isArray(backend.serverIps)) return backend.serverIps
+  if (Array.isArray(backend.servers)) {
+    return backend.servers.map((server) => typeof server === 'string' ? server : (server.ip ?? server.serverIp ?? server.server_ip ?? '')).filter(Boolean)
   }
   return []
 }
