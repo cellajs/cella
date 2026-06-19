@@ -10,9 +10,9 @@ describe('deploy-service source invariants', () => {
     expect(source).toMatch(/attempts: deployHealthAttempts/)
   })
 
-  it('reboots the new VM after stable private NIC replacement', () => {
-    expect(source).toMatch(/action: 'reboot'/)
-    expect(source).toMatch(/rebooting new generation after private NIC replacement/)
-    expect(source).toMatch(/serverId: newGen\.serverId/)
+  it('no longer mutates a stable private IP or reboots during cutover', () => {
+    expect(source).not.toMatch(/reattachInternalIp/)
+    expect(source).not.toMatch(/rebootServer/)
+    expect(source).not.toMatch(/stableInternalGen/)
   })
 })

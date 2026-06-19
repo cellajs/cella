@@ -113,16 +113,16 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/Create backend first/)
   })
 
-  it('resolves cdc\u2019s @{backend.privateIp} binding to the stable backend internal IP', () => {
-    // cdc binds to one logical backend address. The deploy task moves the
-    // stable IP to the new backend generation after it is healthy, so backend
-    // cutover does not bake generation-specific backend IPs into cdc.
-    expect(source).toMatch(/stableBindingIp\(/)
-    expect(source).toMatch(/`ipam-\$\{stablePrivateIpService\.slug\}-internal`/)
-    expect(source).toMatch(/stableInternalGen_/)
-    expect(source).toMatch(/stablePrivateIpAddress/)
-    expect(source).toMatch(/stablePrivateIpId/)
-    expect(source).toMatch(/stablePrivateIpServiceSlug/)
+  it('resolves cdc\u2019s @{backend.privateIp} binding to the current backend generation IP', () => {
+    // cdc binds to the live backend generation's private IP, baked at deploy
+    // time. Backend rolls before cdc, so cdc always bakes the freshly promoted
+    // generation \u2014 no moving stable IP, no NIC mutation.
+    expect(source).toMatch(/currentGenBindingIp\(/)
+    expect(source).toMatch(/generationsByService\.get\(slug\)\?\.\[0\]/)
+    // The stable-IP machinery must not come back.
+    expect(source).not.toMatch(/stableBindingIp\(/)
+    expect(source).not.toMatch(/stableInternalGen_/)
+    expect(source).not.toMatch(/stablePrivateIp/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
     expect(source).toMatch(/syncs these keys from the current stack outputs/)
   })

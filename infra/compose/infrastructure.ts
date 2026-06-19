@@ -56,7 +56,6 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
-  if (cfg.stablePrivateIp) meta.stablePrivateIp = true
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }

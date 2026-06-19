@@ -95,8 +95,6 @@ export interface ServiceMeta {
   dockerfile?: string
   /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
   instanceType: ServiceInstanceType
-  /** Reserve one stable private-network service IP and attach it to the active generation. */
-  stablePrivateIp?: boolean
   /**
    * Deploy-time env bindings: env var → value template resolved by the compute
    * module. Templates reference other services by slug with the `@{…}` sigil
@@ -212,13 +210,6 @@ export interface AppServiceConfig {
    * single type for all modes, or a per-mode map.
    */
   instanceType: ServiceInstanceType
-  /**
-   * Reserve one stable private-network service IP and attach it to the active
-   * generation. Consumers may bind to it with `@{<slug>.privateIp}`; deploy
-   * moves the attachment marker during cutover. Use for singleton internal
-   * service identity, not for LB-exposed public routing.
-   */
-  stablePrivateIp?: boolean
   /**
    * Service-specific environment variables (e.g. cdc's `API_WS_URL`, ai's
    * `MODE: ai-worker`). Merged AFTER the standard env so it can override it.
