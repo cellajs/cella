@@ -17,7 +17,17 @@ bake it during the first bootstrap (the bootstrap key already has the rights):
 pnpm infra   # first bootstrap offers to bake the compute image
 ```
 
-To re-bake later (agent or image changes), run Packer directly:
+To re-bake later (agent or image changes) on an already-bootstrapped stack, use
+the CLI's **Bake compute image** mode — it prompts for the bootstrap key and
+loads `backend/.env`, so the build authenticates without exporting `SCW_*`:
+
+```bash
+pnpm infra   # → "Bake compute image"
+```
+
+Or run Packer directly (you must export Scaleway credentials yourself — Packer
+reads `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` / `SCW_DEFAULT_PROJECT_ID` from the
+shell env):
 
 ```bash
 export SCW_ACCESS_KEY=...

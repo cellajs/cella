@@ -1,11 +1,16 @@
 import { spawnSync } from 'node:child_process'
-import { warningMark } from 'shared/console'
+import { input } from '@inquirer/prompts'
+import pc from 'shared/cli-utils/colors'
+import { checkMark, warningMark } from 'shared/console'
+import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
+import { maskedSecret } from '../prompts/masked-secret'
+import type { InfraContext } from '../shared'
 
 /**
  * Bake the compute VM image (Docker + Node 24 + cella-boot-agent) with Packer,
  * using an already-built provider env. Driven by the fresh-bootstrap flow
- * (actions/setup.ts).
+ * (actions/setup.ts) and the "Bake compute image" CLI mode (runBake below).
  *
  * The image carries a STABLE name; the Pulumi program resolves the newest image
  * with that name at deploy time (resources/compute.ts), so a re-bake is picked
@@ -34,4 +39,29 @@ export async function bakeComputeImage(opts: { env: NodeJS.ProcessEnv; zone: str
     return false
   }
   return true
+}
+
+/**
+ * "Bake compute image" CLI mode — bake the service-VM base image with Packer on
+ * an already-bootstrapped stack (the fresh-bootstrap flow bakes inline). The
+ * point of doing this in the CLI rather than a bare `pnpm image:build` is the
+ * credential flow: Packer reads SCW_* from the shell env, which an operator
+ * rarely has exported; this reuses the same bootstrap-key prompt + backend/.env
+ * loading the other modes use, so the build authenticates without manual export.
+ */
+export async function runBake(context: InfraContext): Promise<void> {
+  console.info(pc.dim('\nBake compute image: builds the boot agent + bakes the Docker/Node/agent VM image with Packer. No stack changes.\n'))
+
+  const { projectId, appConfig } = context
+  const accessKey =
+    process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
+    process.env.SCW_ACCESS_KEY ||
+    (await input({ message: 'Scaleway bootstrap access key (needs instance write to bake an image)', validate: (v) => !!v.trim() || '(required)' }))
+  const secretKey =
+    process.env.SCW_BOOTSTRAP_SECRET_KEY || process.env.SCW_SECRET_KEY || (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+
+  const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase: process.env.PULUMI_CONFIG_PASSPHRASE ?? '' })
+  const ok = await bakeComputeImage({ env, zone: `${appConfig.s3.region}-1` })
+  if (!ok) process.exit(1)
+  console.info(`\n${checkMark} ${pc.bold(pc.greenBright('Image baked.'))} ${pc.dim('The next compute deploy resolves it by name automatically.')}`)
 }

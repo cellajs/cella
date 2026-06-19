@@ -25,7 +25,7 @@ export default defineGeneral({
   // VM base image, baked from infra/image/compute-docker.pkr.hcl (Docker, Node 24,
   // /usr/local/bin/cella-boot-agent). This is the stable image NAME: compute.ts
   // resolves the NEWEST Scaleway image with this name at deploy time, so re-baking
-  // (`pnpm --filter infra image:build`) is picked up automatically with no UUID
+  // (`pnpm infra` → "Bake compute image") is picked up automatically with no UUID
   // paste. Set a literal image UUID instead to pin a specific image for rollback.
   compute: {
     image: 'cella-docker-node-agent-v1',
