@@ -92,18 +92,6 @@ app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
 app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
   const { code, state, error } = ctx.req.valid('query');
 
-  /*
-   * Handle custom redirect flow (e.g., for external apps or tools):
-   * If `state` includes a `redirectUrl`, redirect there with OAuth params.
-   * Falls back silently if `state` is not a JSON-encoded object.
-   */
-  try {
-    const parsedState = JSON.parse(atob(state));
-    if (parsedState.redirectUrl)
-      return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
-  } catch (_) {
-    // Ignore parsing errors; continue with standard OAuth handling
-  }
   const strategy = 'github' as EnabledOAuthProvider;
 
   // When something went wrong during Github OAuth, fail early.

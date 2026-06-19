@@ -8,6 +8,7 @@ import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
 import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
+import { toRateLimitIp } from '#/utils/ip-subnet';
 
 type RateLimiterOptions = {
   keyPrefix?: string;
@@ -129,7 +130,7 @@ export const extractIdentifiers = async (
  */
 export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
   const ip = getIp(ctx);
-  return checkRateLimitStatus(rateLimiterHandler, `ip:${ip}`);
+  return checkRateLimitStatus(rateLimiterHandler, `ip:${toRateLimitIp(ip ?? '')}`);
 };
 
 /**

@@ -132,6 +132,39 @@ describe('Invitation response', async () => {
     expect(res.status).toBe(404);
   });
 
+  it("should not allow a different user to accept someone else's invitation", async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const attacker = await createTestUser('attacker@example.com');
+
+    const { inactiveMembership } = await createMembershipInvitationToken(
+      invitedUser,
+      organization.id,
+      'member',
+      organization.tenantId,
+    );
+    const attackerSession = await createTestSession(attacker);
+
+    // GHSA-fmh4-wcc4-5jm3: invitation acceptance is bound to the invited user id,
+    // not just an email claim. A different authenticated user cannot accept it.
+    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', attackerSession);
+
+    expect(res.status).toBe(404);
+
+    // Attacker gains no membership and the invitation stays pending.
+    const attackerMemberships = await db
+      .select()
+      .from(membershipsTable)
+      .where(eq(membershipsTable.userId, attacker.id));
+    expect(attackerMemberships).toHaveLength(0);
+
+    const stillInactive = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    expect(stillInactive).toHaveLength(1);
+  });
+
   it('should reject for already processed invitation', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');

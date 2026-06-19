@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
+import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -8,7 +8,7 @@ import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createUser, type ErrorResponse, passkeySignInBody } from '../helpers';
+import { createMfaToken, createTestSession, createUser, type ErrorResponse, passkeySignInBody } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -162,6 +162,34 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe('Passkey Deletion (IDOR)', () => {
+    // GHSA-4vcf-q4xf-f48m: deleting a passkey must be scoped to the owner; a user
+    // must not be able to delete another user's passkey by id.
+    it("should not allow a user to delete another user's passkey", async () => {
+      const victim = await createUser('victim@example.com');
+      const attacker = await createUser('attacker@example.com');
+
+      const [victimPasskey] = await db
+        .insert(passkeysTable)
+        .values(mockPasskeyRecord(victim.id, 'Victim Device', 'passkey-victim'))
+        .returning();
+
+      const attackerSession = await createTestSession(attacker);
+
+      const { response: res } = await call(deletePasskey, {
+        path: { id: victimPasskey.id },
+        headers: { ...defaultHeaders, Cookie: attackerSession },
+      });
+
+      // The delete is scoped to the caller, so it is a no-op for the attacker.
+      expect(res.status).toBe(204);
+
+      // The victim's passkey must still exist.
+      const remaining = await db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
+      expect(remaining).toHaveLength(1);
     });
   });
 

@@ -1,10 +1,3 @@
-# =============================================================================
-# Scaleway Deployment Workflow
-# =============================================================================
-# Deploys Raak to Scaleway infrastructure using Pulumi
-# Triggered on pushes to main (production) or manually for other environments
-# =============================================================================
-
 name: Deploy
 
 # Deny-by-default: each job opts in to the scopes it actually needs.
@@ -107,7 +100,6 @@ jobs:
     needs: [setup]
     permissions:
       contents: read
-      id-token: write   # keyless cosign signing via GitHub OIDC
     strategy:
       fail-fast: false
       matrix:
@@ -135,49 +127,12 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:${{ needs.setup.outputs.image_tag }}
-          # RELEASE_SHA is baked into the image as ENV so `/health` can return
-          # it. The deploy verifier asserts X-App-Version matches GITHUB_SHA
-          # before declaring the rollout green.
+          # RELEASE_SHA is baked into the image as ENV for verification later
           build-args: |
             RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-          # Push a plain Docker manifest, NOT an OCI image index. With buildx
-          # provenance on, the push is an index (image + attestation manifest);
-          # Scaleway's registry serves that index inconsistently, so a pull can
-          # fail with "repository does not exist / manifest unknown" — most often
-          # on a fully-cached build where the attestation is the only fresh push
-          # (this is what stranded rakapp/frontend while backend rebuilt real
-          # layers). Supply-chain attestation is provided by the cosign keyless
-          # signing step below, so dropping buildx provenance loses nothing.
           provenance: false
-
-      # Keyless Sigstore signing via GitHub OIDC. Signature is stored alongside
-      # the image in the Scaleway registry as an OCI artifact. Verify later with:
-      #   cosign verify --certificate-identity-regexp \
-      #     "https://github.com/<owner>/<repo>/.github/workflows/deploy.yml@refs/heads/main" \
-      #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-      #     rg.<region>.scw.cloud/<ns>/<service>@<digest>
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-
-      - name: Sign image with cosign (keyless)
-        env:
-          IMAGE: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}
-          DIGEST: ${{ steps.build.outputs.digest }}
-        # Retry to ride out transient Sigstore (Fulcio/Rekor) HTTP/2 stream resets
-        # that surface as `INTERNAL_ERROR; received from peer`. The sign call is
-        # idempotent — re-signing the same digest just appends another signature.
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if cosign sign --yes "${IMAGE}@${DIGEST}"; then
-              exit 0
-            fi
-            echo "::warning::cosign sign attempt $attempt failed; retrying in $((attempt * 5))s"
-            sleep $((attempt * 5))
-          done
-          echo "::error::cosign sign failed after 5 attempts"
-          exit 1
 
   # -------------------------------------------------------------------------
   # Build frontend bundle (no upload). Runs in parallel with build-images so
@@ -245,10 +200,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      # Use the official Pulumi action (SHA-pinned) in install-only mode instead
-      # of `curl | sh` to remove unverified runtime downloads from the deploy path.
-      # CLI version is pinned to match the @pulumi/pulumi SDK in infra/package.json;
-      # bump both together. See https://github.com/pulumi/actions/releases.
       - name: Install Pulumi CLI
         uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
         with:
@@ -274,43 +225,26 @@ jobs:
       - name: Select stack
         working-directory: infra
         env:
-          # AWS_* = state-bucket S3 access only. `pulumi stack select` does not
-          # need Scaleway provider credentials — those are supplied as SCW_* env
-          # to the `pulumi up` step below (the provider no longer reads
-          # scaleway:accessKey/secretKey/projectId from stack config).
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-        # The release SHA is Pulumi config: `pulumi up` bakes it into the new VM
-        # generation's cloud-init so a release and an infra change use the same
-        # immutable-node replacement path.
         run: pulumi stack select "$STACK"
 
-      # Pre-install the Scaleway resource plugin as a discrete, retryable step
-      # BEFORE `pulumi up` downloads it implicitly. Pulumi fetches provider
-      # plugin binaries from GitHub releases; unauthenticated those share a
-      # 60-req/hr-per-IP limit that GitHub-hosted runners routinely exhaust,
-      # surfacing as `rate limit exceeded: 403` mid-deploy. Passing GITHUB_TOKEN
-      # makes the download authenticated (5000/hr) and caching it here means the
-      # later `pulumi up` steps (base infra + deploy-service bookends) find it on
-      # disk. Version is derived from the installed npm package so it can't drift.
+      # Pre-install the Scaleway plugin as a retryable step before `pulumi up`
+      # pulls it implicitly. GITHUB_TOKEN authenticates the download (5000/hr vs
+      # the unauthenticated 60/hr shared limit that surfaces as `403 rate limit
+      # exceeded` mid-deploy); the cached binary is reused by later steps.
       - name: Pre-install Pulumi providers
         working-directory: infra
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm --filter infra install-pulumi-providers
 
-      # Pulumi prep (checkout, install, login, stack select) runs in
-      # parallel with build-images / build-frontend. Gate the registry wait
-      # before the deploy proceeds: a fresh/replaced VM pulls the pinned SHA
-      # during cloud-init and fails boot if the image isn't pushed yet.
-      #
-      # The wait loop (and the "exclude ai / include frontend" rule) lives in
-      # infra/tasks/wait-for-images.ts, unit-tested against the service matrix
-      # so the set can't silently drift. Uses
-      # `docker buildx imagetools inspect` under the hood because Scaleway's
-      # registry requires the Docker bearer-token flow.
+      # Gate the registry wait before the deploy proceeds: a fresh/replaced VM
+      # pulls the pinned SHA during cloud-init and fails boot if the image isn't
+      # pushed yet. The wait loop (and the "exclude ai / include frontend" rule)
+      # lives in infra/tasks/wait-for-images.ts, unit-tested against the service
+      # matrix so it can't drift.
       - name: Wait for image tags in registry
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -329,13 +263,6 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          # Scaleway provider authenticates from these env vars (the CI deploy
-          # key) — scaleway:accessKey/secretKey/projectId are no longer stored in
-          # Pulumi.<env>.yaml. SCW_PROJECT_ID / SCW_ORGANIZATION_ID are GitHub
-          # secrets synced by github-sync.ts alongside the key pair on every
-          # CI-key rotation. The org id lets helpers.ts derive the IAM
-          # application ids without the Account API (the CI key can read IAM but
-          # not `read project`).
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
@@ -350,23 +277,11 @@ jobs:
           pulumi up --stack "$STACK" --yes
 
       - name: Verify VM reader IAM grant
-        # Belt-and-suspenders for the failure that took prod down: a VM whose key
-        # cannot decrypt runtime secrets crash-loops behind a 502 with no auto
-        # recovery. `pulumi up` above reconciles the Pulumi-managed vm-reader
-        # policy (infra/resources/vm-iam.ts), and this read-only check confirms
-        # the live application actually holds every required permission set
-        # BEFORE any VM that depends on it is rolled/replaced. Fails the deploy
-        # loudly (naming the missing sets) instead of letting a fleet-wide 502
-        # surface only after rollout.
         working-directory: infra
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-          STACK: ${{ needs.setup.outputs.pulumi_stack }}
           VM_READER_APP: ${{ needs.setup.outputs.vm_reader_app }}
         run: |
           # Resolve the VM reader application id by its deterministic name and
@@ -379,17 +294,6 @@ jobs:
           pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID" --organization-id "$SCW_DEFAULT_ORGANIZATION_ID"
 
       - name: Verify runtime secrets are deliverable
-        # Second belt-and-suspenders preflight for a prod-down class: a `required`
-        # runtime secret that cannot be written into the line-based
-        # /opt/app/.env.runtime (e.g. a raw multi-line PEM) fails the on-VM
-        # runtime-secret-sync, which by design blocks the service from booting —
-        # exactly how a multi-line DATABASE_SSL_CA took the backend down. `pulumi
-        # up` writing the value isn't enough; this read-only check fetches each
-        # required secret the way a VM will and asserts it is single-line and
-        # present BEFORE any VM rolls, failing the deploy with the offending env
-        # vars instead of after a fleet-wide outage. Scoped to the enabled
-        # services this fork actually deploys so a disabled service's optional
-        # secret never trips it.
         working-directory: infra
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -422,22 +326,11 @@ jobs:
   # (image SHA baked into cloud-init, explicit LB cutover for public services).
   # These jobs only confirm each public service serves the expected SHA
   # (X-App-Version == SHA), preserving the existing branch-protection shape.
-  #
-  # The primary rollout service (the one that owns migrations) verifies first,
-  # then the rest in parallel. cdc has no public health endpoint; its replacement
-  # is confirmed indirectly by the primary public service coming up healthy.
-  #
-  # Rollback: re-run the workflow on the previous commit — it provisions a new
-  # generation from that SHA the same way it rolled forward (no separate path).
   # -------------------------------------------------------------------------
   roll-backend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [setup, pulumi, build-images]
-    # contents: read is required for actions/checkout below. The repo is
-    # private, so an empty token ({}) makes checkout fail with
-    # "Repository not found". Only the checkout scope is needed; the health poll
-    # uses Scaleway creds, not the GITHUB_TOKEN.
     permissions:
       contents: read
     if: >-
@@ -473,19 +366,9 @@ jobs:
       - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
         if: matrix.health_url != ''
         env:
-          # URLs come from setup outputs (derived from shared/ appConfig).
-          # appConfig URLs are canonical https:// origins; CI probes /health
-          # directly. deploy-service already cut over this service; this only
-          # confirms it is serving the expected SHA. Frontend
-          # (Caddy) returns 200, backend/yjs/ai 204; both emit X-App-Version.
           BASE: ${{ matrix.health_url }}
         run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
 
-  # -------------------------------------------------------------------------
-  # Roll the remaining services — runs ONLY after roll-backend is green, so the
-  # expand migration (run at the backend generation's boot) is applied. These
-  # roll in parallel.
-  # -------------------------------------------------------------------------
   roll-rest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -502,9 +385,6 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # cdc + frontend always; yjs/ai included only when their feature flag is
-        # on (see the "Build service matrices" step in setup). ai reuses the
-        # backend image; the probe confirms the AI LB serves the expected SHA.
         include: ${{ fromJSON(needs.setup.outputs.roll_rest_matrix) }}
     env:
       REGION: ${{ needs.setup.outputs.region }}
@@ -533,53 +413,7 @@ jobs:
         run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
 
   # -------------------------------------------------------------------------
-  # Verify rollout — backward-compatible alias that depends on the roll jobs.
-  # Kept as its own job so the existing branch protection rule
-  # ("verify-rollout must pass") stays satisfied without re-configuring repo
-  # settings. publish-frontend gates on this too.
-  # -------------------------------------------------------------------------
-  verify-rollout:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [setup, pulumi, build-images, roll-backend, roll-rest]
-    permissions: {}
-    if: >-
-      always() &&
-      needs.setup.result == 'success' &&
-      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
-      (needs.build-images.result == 'success' || needs.build-images.result == 'skipped') &&
-      needs.roll-backend.result == 'success' &&
-      needs.roll-rest.result == 'success'
-    environment: ${{ needs.setup.outputs.environment }}
-    strategy:
-      fail-fast: true
-      matrix:
-        include: ${{ fromJSON(needs.setup.outputs.enabled_services_json) }}
-    env:
-      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
-      SERVICE: ${{ matrix.service }}
-    steps:
-      - name: Summarise rollout
-        env:
-          EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
-        run: |
-          {
-            echo "## Rollout"
-            echo
-            echo "All services serving \`$EXPECTED_SHA\`."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  # -------------------------------------------------------------------------
   # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
-  #
-  # These chunks are purely additive: nothing references them until the new
-  # index.html is flipped in `publish-frontend`, and already-loaded tabs keep
-  # using their old chunks. That makes this safe to run EARLY — in parallel
-  # with pulumi / roll-backend / roll-rest — instead of gating it behind the
-  # backend rollout. Only the entry-file flip (publish-frontend) must wait for
-  # verify-rollout. A deploy that fails after this job merely leaves some
-  # unreferenced immutable chunks behind, which the bucket's time-based
-  # `expire-stale-assets` lifecycle rule prunes after the safety window.
   # -------------------------------------------------------------------------
   upload-frontend-assets:
     runs-on: ubuntu-latest
@@ -602,16 +436,6 @@ jobs:
           AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
           S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
           BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
-        # Chunks must exist BEFORE the new index.html is published; old
-        # chunks are intentionally retained so already-loaded tabs keep
-        # working until the bucket's `expire-stale-assets` lifecycle rule
-        # prunes them after the safety window.
-        #
-        # Intentionally NOT using --size-only: the default size+mtime sync
-        # re-uploads every chunk in the current build, refreshing its
-        # LastModified. This keeps still-referenced (e.g. long-lived vendor)
-        # chunks "fresh" so the time-based lifecycle rule only expires chunks
-        # that are absent from recent builds — never ones still in use.
         run: |
           BUCKET="s3://$BUCKET_NAME"
           aws s3 sync dist/ "$BUCKET/" \
@@ -624,35 +448,16 @@ jobs:
 
   # -------------------------------------------------------------------------
   # Atomic frontend flip: publish the mutable entry files so users start
-  # loading the new build. Deliberately thin and on the
-  # critical path AFTER verify-rollout — the versioned chunks it references are
-  # already in the bucket (uploaded in parallel by `upload-frontend-assets`).
+  # loading the new build. Deliberately AFTER the rollout is verified
   # -------------------------------------------------------------------------
   publish-frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [setup, upload-frontend-assets, verify-rollout]
+    needs: [setup, upload-frontend-assets, roll-backend, roll-rest]
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
-      # Checkout + Node are needed for the verify-frontend-bundle task at the
-      # end of this job. Done first so the artifact download lands alongside.
-      - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter infra...
-
       - name: Download dist artifact
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
@@ -675,20 +480,6 @@ jobs:
                 --cache-control "no-cache, no-store, must-revalidate"
             fi
           done
-
-      - name: Verify served bundle matches uploaded bundle
-        env:
-          ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
-        # Compare a stable marker from the just-uploaded index.html against what
-        # the public frontend serves with Cache-Control: no-cache. The HTML parse,
-        # TLS-error classification and poll loop live in
-        # infra/tasks/verify-frontend-bundle.ts (unit tested). 30 × 3s = ~90s.
-        run: |
-          # The artifact downloads to $GITHUB_WORKSPACE/dist, but `pnpm --filter
-          # infra` runs in infra/, so the --dist path must be absolute — a
-          # relative dist/index.html would resolve to a missing infra/dist and
-          # the task now hard-fails instead of silently accepting any response.
-          pnpm --filter infra verify-frontend-bundle --services-json "$ENABLED_SERVICES_JSON" --dist "$GITHUB_WORKSPACE/dist/index.html"
 
   # -------------------------------------------------------------------------
   # Smoke tests — last-mile sanity checks executed against live resources
@@ -721,9 +512,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra...
 
-      # Last-mile probes (hashed-asset, OpenAPI reachable, service SHA drift,
-      # SPA fallback, security headers, component health) live in the unit-tested infra/tasks/smoke.ts.
-      # It runs every check before failing so one deploy surfaces all breakage.
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
       - name: Run smoke checks
-        run: pnpm --filter infra smoke --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON"
+        run: pnpm --filter infra smoke --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON" --dist "$GITHUB_WORKSPACE/dist/index.html"
 

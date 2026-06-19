@@ -20,7 +20,6 @@
     "wait-for-images": "tsx tasks/wait-for-images.ts",
     "cutover": "tsx tasks/cutover.ts",
     "deploy-service": "tsx tasks/deploy-service.ts",
-    "verify-frontend-bundle": "tsx tasks/verify-frontend-bundle.ts",
     "assert-vm-grants": "tsx tasks/assert-vm-grants.ts",
     "assert-secrets-deliverable": "tsx tasks/assert-secrets-deliverable.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",

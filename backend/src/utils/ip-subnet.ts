@@ -25,6 +25,30 @@ export const toSubnet = (ip: string): string | null => {
   return null;
 };
 
+/**
+ * Normalize a client IP into a stable rate-limit bucket key component.
+ *
+ * - Strips the IPv4-mapped IPv6 prefix so `192.168.0.1` and `::ffff:192.168.0.1`
+ *   collapse to the same key.
+ * - IPv4 → kept as the full address (per-host limiting).
+ * - IPv6 → collapsed to the /64 prefix. A single client is typically allocated
+ *   an entire /64 (or larger) and can freely rotate addresses within it, so
+ *   keying on the raw address is bypassable. Bucketing by /64 closes that gap.
+ * - Returns the input unchanged when it is not a recognizable IP.
+ */
+export const toRateLimitIp = (ip: string): string => {
+  if (!ip) return ip;
+  const normalized = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  if (isIPv4(normalized)) return normalized;
+  if (isIPv6(normalized)) {
+    const groups = expandIPv6(normalized);
+    if (!groups) return normalized;
+    // /64 = the first 4 hextets.
+    return `${groups[0]}:${groups[1]}:${groups[2]}:${groups[3]}::/64`;
+  }
+  return ip;
+};
+
 const expandIPv6 = (ip: string): string[] | null => {
   const [head, tail] = ip.split('::');
   const headGroups = head ? head.split(':') : [];

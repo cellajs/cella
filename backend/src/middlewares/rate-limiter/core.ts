@@ -9,6 +9,7 @@ import type {
   RateLimitIdentifier,
   RateLimitMode,
 } from '#/middlewares/rate-limiter/types';
+import { toRateLimitIp } from '#/utils/ip-subnet';
 import { logEvent } from '#/utils/logger';
 
 // Default options
@@ -85,7 +86,9 @@ export const rateLimiter = (
 
         switch (identifier) {
           case 'ip': {
-            rateLimitKey += `ip:${value}`;
+            // Normalize so IPv6 clients cannot rotate addresses within their
+            // allocated /64 to evade auth rate limits.
+            rateLimitKey += `ip:${toRateLimitIp(value)}`;
             break;
           }
           case 'email': {
@@ -183,7 +186,7 @@ export const rateLimiter = (
           await limiter.delete(rateLimitKey);
         }
       } else if (isFail && !isIgnored && ['fail', 'failseries'].includes(mode)) {
-        const slowRateLimitKey = extractedIdentifiers.ip || rateLimitKey;
+        const slowRateLimitKey = extractedIdentifiers.ip ? toRateLimitIp(extractedIdentifiers.ip) : rateLimitKey;
 
         // To prevent slow brute force attacks, consume points on every failed request during 24 hours window duration
         try {

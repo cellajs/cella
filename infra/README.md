@@ -134,6 +134,10 @@ At runtime, the load balancer targets the host port published by the service's c
 Scaleway LB ──▶ service VM host port ──▶ service container
 ```
 
+The primary rollout service (the one that owns migrations) is verified first, then the rest in parallel. `cdc` has no public health endpoint; its replacement is confirmed indirectly by the primary public service coming up healthy.
+
+**Rollback:** re-run the workflow on the previous commit — it provisions a new generation from that SHA the same way it rolled forward (no separate path).
+
 ## The three credentials
 
 The security model is defined by exactly three Scaleway API keys, in strictly descending privilege, each in a different store. Each key creates or provisions the next:

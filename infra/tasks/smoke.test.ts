@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   type ComponentIssue,
+  extractEntryAsset,
   formatComponentIssues,
   hasHashedAsset,
   type HttpResponse,
   isHtmlDocument,
+  main,
   missingSecurityHeaders,
   parseArgs,
   runSmoke,
@@ -42,6 +44,19 @@ describe('hasHashedAsset', () => {
   })
   it('returns false when no hashed asset is referenced', () => {
     expect(hasHashedAsset('<html><body>no scripts</body></html>')).toBe(false)
+  })
+})
+
+describe('extractEntryAsset', () => {
+  it('extracts the hashed entry script src', () => {
+    expect(extractEntryAsset(HASHED_HTML)).toBe('/assets/index-abc123.js')
+  })
+  it('returns undefined when there is no asset reference', () => {
+    expect(extractEntryAsset('<html><body>no scripts</body></html>')).toBeUndefined()
+  })
+  it('takes the first asset script when several are present', () => {
+    const html = '<script src="/assets/index-aaa.js"></script><script src="/assets/vendor-bbb.js"></script>'
+    expect(extractEntryAsset(html)).toBe('/assets/index-aaa.js')
   })
 })
 
@@ -117,6 +132,16 @@ describe('runSmoke', () => {
     const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get: healthyGet })
     expect(results).toHaveLength(6)
     expect(results.every((r) => r.ok)).toBe(true)
+  })
+
+  it('asserts the served bundle references the freshly built hash when expectedAsset is set', async () => {
+    const pass = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, expectedAsset: '/assets/index-abc123.js', get: healthyGet })
+    expect(pass.find((r) => r.name === 'index.html references freshly built bundle')?.ok).toBe(true)
+
+    const stale = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, expectedAsset: '/assets/index-OLD.js', get: healthyGet })
+    const check = stale.find((r) => r.name === 'index.html references freshly built bundle')
+    expect(check?.ok).toBe(false)
+    expect(check?.detail).toContain('/assets/index-OLD.js')
   })
 
   it('checks deployed SHA for every public service in the rollout matrix', async () => {
@@ -256,11 +281,42 @@ describe('parseArgs', () => {
     expect(args.timeoutMs).toBe(5000)
   })
 
+  it('parses --dist', () => {
+    const args = parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--dist', '/x/index.html'])
+    expect(args.dist).toBe('/x/index.html')
+  })
+
   it.each([
     ['--backend', 'https://api', '--sha', SHA],
     ['--frontend', 'https://app', '--sha', SHA],
     ['--frontend', 'https://app', '--backend', 'https://api'],
   ])('throws when a required flag is missing', (...argv) => {
     expect(() => parseArgs(argv)).toThrow(/Usage:/)
+  })
+})
+
+describe('main', () => {
+  it('hard-fails (exit 1) when --dist is set but unreadable, before any network probe', async () => {
+    // A provided-but-unreadable --dist means the served bundle cannot be
+    // verified against the freshly built hash. Silently degrading once turned
+    // this into a no-op (a wrong cwd resolved --dist to nothing), so it must
+    // hard-fail before any smoke probe runs.
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit called')
+    }) as never)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+
+    await expect(
+      main(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--dist', '/nonexistent/does-not-exist.html']),
+    ).rejects.toThrow('process.exit called')
+
+    expect(exit).toHaveBeenCalledWith(1)
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Could not read'))
+
+    exit.mockRestore()
+    error.mockRestore()
+    fetchSpy.mockRestore()
   })
 })
