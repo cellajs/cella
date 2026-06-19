@@ -76,9 +76,6 @@ import './resources/vm-iam'
 
 export const computeInstances = compute.computeInstances.map((i) => i.name)
 export const computeGenerationMetadata = compute.computeGenerationMetadata
-export const stablePrivateIpAddress = compute.stablePrivateIpAddress
-export const stablePrivateIpId = compute.stablePrivateIpId
-export const stablePrivateIpServiceSlug = compute.stablePrivateIpServiceSlug
 
 // ---------------------------------------------------------------------------
 // Load Balancer + API/Yjs/AI DNS

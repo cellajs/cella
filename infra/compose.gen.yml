@@ -41,7 +41,6 @@ services:
       drainPolicy: requests
       lbRoute: default
       dockerfile: backend/Dockerfile
-      stablePrivateIp: true
   migrate:
     image: ${REGISTRY}/backend:${BACKEND_TAG:-latest}
     profiles: [backend]

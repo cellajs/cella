@@ -150,8 +150,6 @@ export interface CutoverPlan {
   getServers?: GetServersFn
   /** lb-overlap: run health/version polling after attaching the new generation to the LB. */
   healthAfterExpand?: boolean
-  /** backend only: move the stable internal IP onto the new generation (after health, before contract). */
-  reattachInternalIp?: () => Promise<void>
   /** exclusive: trigger the old generation to stop and release the slot (in practice, the pulumi destroy bookend). */
   drainOldGeneration?: () => Promise<void>
   /** exclusive: belt-and-suspenders Postgres-level slot-release gate. */
@@ -247,14 +245,6 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
 
   if (plan.healthAfterExpand) {
     record('health-gate new generation (/health == SHA)')
-    if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
-  }
-
-  if (plan.reattachInternalIp) {
-    record('reattach stable internal IP to new generation')
-    await plan.reattachInternalIp()
-
-    record('health-gate new generation after stable internal IP reattach')
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
   }
 

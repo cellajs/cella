@@ -31,9 +31,6 @@ export default defineServices({
     primaryRollout: true,
     drainSeconds: 10,
     lbRoute: 'default',
-    // Stable private identity for internal consumers (cdc's API_WS_URL). The
-    // deploy task moves this IP to the new backend generation during cutover.
-    stablePrivateIp: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
     env: {

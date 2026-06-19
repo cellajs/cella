@@ -21,8 +21,7 @@ function runPulumi(args: string[], opts: { allowFailure?: boolean } = {}): strin
   return res.stdout.trim()
 }
 
-function configKey(service: string, key: 'gen' | 'sha' | 'pendingGen' | 'pendingSha' | 'stableInternalGen'): string {
-  if (key === 'stableInternalGen') return `infra:stableInternalGen_${service}`
+function configKey(service: string, key: 'gen' | 'sha' | 'pendingGen' | 'pendingSha'): string {
   return `infra:${key}_${service}`
 }
 
@@ -79,15 +78,6 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     setConfig(stack, configKey(service, 'sha'), sha)
     rmConfig(stack, configKey(service, 'pendingGen'))
     rmConfig(stack, configKey(service, 'pendingSha'))
-  }
-
-  const stableServiceRaw = stackOutput(stack, 'stablePrivateIpServiceSlug')
-  const stableService = stableServiceRaw ? (JSON.parse(stableServiceRaw) as string | undefined) : undefined
-  const stableGeneration = stableService ? byService.get(stableService) : undefined
-  if (stableService && stableGeneration) {
-    const generation = selectGeneration(stableGeneration)
-    console.info(`[sync-rollout-config] ${stableService}: stableInternalGen=${generation.gen}`)
-    setConfig(stack, configKey(stableService, 'stableInternalGen'), generation.gen)
   }
 }
 
