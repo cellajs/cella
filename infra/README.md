@@ -10,16 +10,17 @@ a launcher that writes the boot plan and starts the agent; the agent owns the
 boot state machine (compose/env files, runtime-secret hydration, image pull,
 migrate, app start).
 
-The image is required before the first compute deploy. The easiest path is the
-infra CLI, which offers to bake it during the first bootstrap (the bootstrap key
-already has the rights) and exposes a re-runnable mode for later changes:
+The image is required before the first compute deploy. The infra CLI bakes it
+automatically during the first bootstrap (the bootstrap key already has the
+rights), and skips the step when an image with the configured name already
+exists:
 
 ```bash
-pnpm infra   # → "Bake compute image"  (or accept the prompt during first bootstrap)
+pnpm infra   # first bootstrap offers to bake the compute image
 ```
 
-It can also be baked in CI via the **Bake compute image** GitHub workflow
-(`workflow_dispatch`), or directly with Packer:
+To re-bake later (agent or image changes), re-run `pnpm infra`, or run Packer
+directly:
 
 ```bash
 export SCW_ACCESS_KEY=...

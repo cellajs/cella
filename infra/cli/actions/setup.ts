@@ -344,11 +344,12 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
       // The service VMs boot from a baked image (Docker + Node + cella-boot-agent)
       // that must exist before the first compute deploy. The bootstrap key in
-      // childEnv already has the instance-write rights to bake it, so offer it
-      // here on the very first provision rather than leaving it as a separate
-      // manual step — but only when no image with the configured name exists yet
-      // (a re-provision of an already-imaged project shouldn't re-ask). Re-bakes
-      // (agent/image changes) use the "Bake compute image" CLI mode. Skippable.
+      // childEnv already has the instance-write rights to bake it, so do it here
+      // on the first provision rather than as a separate manual step — but only
+      // when no image with the configured name exists yet (a re-provision of an
+      // already-imaged project shouldn't re-ask). To re-bake later (agent/image
+      // changes) re-run this bootstrap, or run `pnpm --filter infra image:build`
+      // directly. Skippable.
       if (isFirstProvision) {
         const { bakeComputeImage, computeImageExists, computeImageName } = await import('./bake')
         const imageZone = `${appConfig.s3.region}-1`
@@ -370,10 +371,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
             if (result.ok) {
               console.info(`  ${checkMark} Compute image baked${result.imageUuid ? ` ${pc.dim(`(${result.imageUuid})`)}` : ''}. The next compute deploy resolves it by name automatically.`)
             } else {
-              console.warn(`  ${warningMark} Image bake did not complete. Re-run \`pnpm infra\` → ${pc.italic('"Bake compute image"')} or run the ${pc.italic('"Bake compute image"')} GitHub workflow before deploying compute.`)
+              console.warn(`  ${warningMark} Image bake did not complete. Re-run \`pnpm infra\` or run \`pnpm --filter infra image:build\` before deploying compute.`)
             }
           } else {
-            console.info(`  ${pc.dim(`Skipped. Bake later via \`pnpm infra\` → "Bake compute image" or the "Bake compute image" GitHub workflow — required before the first compute deploy.`)}`)
+            console.info(`  ${pc.dim(`Skipped. Bake later by re-running \`pnpm infra\` or \`pnpm --filter infra image:build\` — required before the first compute deploy.`)}`)
           }
         }
       }

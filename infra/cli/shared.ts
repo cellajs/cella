@@ -7,7 +7,7 @@ import { verifyStackPassphrase } from '../lib/pulumi-passphrase'
 import { maskedSecret } from './prompts/masked-secret'
 
 /** Infra CLI operation modes */
-export type CliMode = 'resume' | 'rotate' | 'apply' | 'preview' | 'secrets' | 'bake'
+export type CliMode = 'resume' | 'rotate' | 'apply' | 'secrets' | 'preview'
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
