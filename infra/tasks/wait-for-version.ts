@@ -15,7 +15,7 @@
  *     --sha <git-sha> [--attempts 100] [--interval 3000] [--timeout 8000]
  */
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag, getNumFlag, sleep } from './args'
 
 export interface ProbeResult {
@@ -240,4 +240,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

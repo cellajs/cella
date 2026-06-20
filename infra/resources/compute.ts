@@ -404,11 +404,18 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     cloudInit: buildCloudInit(serviceConfig, generation.sha),
     ipIds: [ip.id],
   }, {
-    // A generation VM is immutable: any cloud-init change is a NEW generation
-    // (new resource name), never an in-place replacement. The vm-reader IAM
-    // grant must exist before first boot so cloud-init can hydrate secrets.
+    // A generation VM is immutable: cloud-init AND the baked image are part of
+    // the generation's identity, fixed at creation. A new cloud-init or a
+    // re-baked compute image is a NEW generation (new resource name), never an
+    // in-place replacement of a live VM. Without ignoring `image`, re-baking the
+    // golden image (which rotates the UUID behind the stable name resolved by
+    // getImage latest:true) makes the base `pulumi up` diff every running
+    // generation on `image` and destructively replace them (delete-before-create
+    // — the LB-overlap cutover is bypassed), taking the live frontend/backend/cdc
+    // VMs down at once. The vm-reader IAM grant must exist before first boot so
+    // cloud-init can hydrate secrets.
     dependsOn: [vmReaderPolicy],
-    ignoreChanges: ['cloudInit'],
+    ignoreChanges: ['cloudInit', 'image'],
   })
 
   // The generation's own private-network NIC carries exactly one fixed IP, so

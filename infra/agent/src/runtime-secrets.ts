@@ -1,5 +1,6 @@
 import { chmod, writeFile } from 'node:fs/promises'
 import { isEnvFileDeliverable } from '../../lib/env-file'
+import { parseJsonBody } from '../../lib/json'
 import type { RuntimeSecretManifestEntry } from './plan'
 
 export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{
@@ -27,7 +28,7 @@ async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecr
     if (!entry.required) return null
     throw new Error(`${entry.envVar}: ${res.status}`)
   }
-  const { data } = (body === '' ? {} : JSON.parse(body)) as { data?: string }
+  const { data } = parseJsonBody<{ data?: string }>(body)
   return Buffer.from(data ?? '', 'base64').toString('utf-8')
 }
 

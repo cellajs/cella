@@ -2,7 +2,7 @@ import { emitKeypressEvents } from 'node:readline'
 import { confirm, select } from '@inquirer/prompts'
 import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets'
 import { maskedSecret } from '../prompts/masked-secret'
-import type { InfraContext } from '../shared'
+import { envOr, type InfraContext } from '../shared'
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string }
 
@@ -46,10 +46,9 @@ function selectWithEscape<T extends string>(options: { message: string; choices:
 export async function runSecrets(context: InfraContext): Promise<void> {
   // The project id is resolved once at CLI startup (required), so reuse it.
   const projectId = context.projectId
-  const secretKey =
-    process.env.SCW_SECRET_KEY ||
-    process.env.SCW_BOOTSTRAP_SECRET_KEY ||
-    (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+  const secretKey = await envOr(['SCW_SECRET_KEY', 'SCW_BOOTSTRAP_SECRET_KEY'], () =>
+    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
+  )
 
   const { appConfig } = context
   const path = `/${appConfig.slug}-${context.environment}/`

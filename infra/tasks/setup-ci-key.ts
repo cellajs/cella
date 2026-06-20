@@ -10,10 +10,11 @@
  * This file owns only the policy-rule shape that binds them.
  */
 
-import { fileURLToPath } from 'node:url'
 import pc from 'shared/cli-utils/colors'
+import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/console'
 import { resolveProjectId } from '../lib/bootstrap-scw-env'
+import { isMain } from '../lib/is-main'
 import { ORG_SCOPED_PERMISSION_SETS, ORG_WIDE_PROJECT_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../lib/permissions'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
 
@@ -37,7 +38,7 @@ export function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
 }
 
 // Standalone entry point.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const secretKey = process.env.SCW_SECRET_KEY
   const projectId = resolveProjectId()
   const organizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID
@@ -53,13 +54,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.info('\n→ Setting up CI deploy key')
   const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug })
 
-  const DIVIDER = pc.dim('─'.repeat(60))
-  console.info(`\n${DIVIDER}`)
+  const divider = pc.dim(DIVIDER)
+  console.info(`\n${divider}`)
   console.info(`${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim('Push these to the GitHub deploy environment now:')}\n`)
   console.info(`  gh secret set SCW_ACCESS_KEY --env production --body ${pc.cyanBright(result.accessKey)}`)
   console.info(`  gh secret set SCW_SECRET_KEY --env production --body ${pc.cyanBright(result.secretKey)}`)
   console.info(
     `\n  ${pc.dim('The secret key is shown only once. CI authenticates the Scaleway provider from these')} ${pc.dim('SCW_* env vars — it is no longer stored in stack config. Then revoke the bootstrap key.')}`,
   )
-  console.info(DIVIDER)
+  console.info(divider)
 }

@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process'
 import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
+import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/console'
+import generalConfig from '../../config/general.config'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
 import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
@@ -10,6 +12,7 @@ import { infraDir } from '../../lib/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissions'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
+import { resolvePerMode } from '../../lib/general-config'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
 import { maskedSecret } from '../prompts/masked-secret'
 import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
@@ -252,7 +255,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     ciKey: ciAccessKey ? { accessKey: ciAccessKey, secretKey: ciSecretKey, projectId: scwProjectId, organizationId: ciOrganizationId } : undefined,
   })
 
-  const divider = pc.dim('─'.repeat(60))
+  const divider = pc.dim(DIVIDER)
   console.info(`\n${divider}`)
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing deploy credentials left unchanged.`)
@@ -356,7 +359,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         })
         if (bakeNow) {
           const { bakeComputeImage } = await import('./bake')
-          const ok = await bakeComputeImage({ env: childEnv, zone: `${appConfig.s3.region}-1` })
+          const imageName = resolvePerMode(generalConfig.compute.image, context.environment as Parameters<typeof resolvePerMode>[1])
+          const ok = await bakeComputeImage({ env: childEnv, zone: `${appConfig.s3.region}-1`, imageName })
           if (ok) {
             console.info(`  ${checkMark} Compute image baked. The next compute deploy resolves it by name automatically.`)
           } else {

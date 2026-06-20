@@ -23,10 +23,11 @@
  * which Pulumi consumes via `VM_PROJECT_PERMISSION_SETS`.
  */
 
-import { fileURLToPath } from 'node:url'
 import pc from 'shared/cli-utils/colors'
+import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/console'
 import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
+import { isMain } from '../lib/is-main'
 import { secretManagerPath } from '../lib/vm-reader-secret'
 import { seedVmReaderKey } from './seed-vm-reader-key'
 
@@ -47,7 +48,7 @@ export function setupVmKey(opts: SetupVmKeyOptions): Promise<VmKeyResult> {
 }
 
 // Standalone entry point.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const secretKey = process.env.SCW_SECRET_KEY
   const projectId = process.env.SCW_DEFAULT_PROJECT_ID
   const organizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID
@@ -74,9 +75,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     key: { accessKey: result.accessKey, secretKey: result.secretKey },
   })
 
-  const DIVIDER = pc.dim('─'.repeat(60))
-  console.info(`\n${DIVIDER}`)
+  const divider = pc.dim(DIVIDER)
+  console.info(`\n${divider}`)
   console.info(`${checkMark} ${pc.bold(pc.greenBright('VM key created and stored in Secret Manager.'))}`)
   console.info(pc.dim(`  secret: ${path}vm-reader-key · application id ${result.applicationId} (derived from IAM by name)\n`))
-  console.info(DIVIDER)
+  console.info(divider)
 }

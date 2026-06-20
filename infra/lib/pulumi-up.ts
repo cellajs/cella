@@ -7,11 +7,12 @@
 import { spawn } from 'node:child_process'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
+import { sleep } from 'shared/sleep'
 import { isBootstrapOwned } from './permissions'
 
 async function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   while (child.exitCode === null && child.signalCode === null) {
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await sleep(50)
   }
 
   return child.exitCode ?? 1

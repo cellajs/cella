@@ -15,7 +15,7 @@
  * Output is plain headers in a terminal and collapsible groups under CI; the
  * key selection and rendering live in (and are unit-tested by) fetch-boot-diag.ts.
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag } from './args'
 import { createAwsReader, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag'
 
@@ -71,4 +71,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

@@ -2,10 +2,15 @@ import { spawnSync } from 'node:child_process'
 import { input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, warningMark } from 'shared/console'
+import generalConfig from '../../config/general.config'
+import { archiveComputeImagesByName } from '../../lib/archive-compute-image'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
+import { resolvePerMode } from '../../lib/general-config'
 import { infraDir } from '../../lib/paths'
 import { maskedSecret } from '../prompts/masked-secret'
-import type { InfraContext } from '../shared'
+import { envOr, type InfraContext } from '../shared'
+
+const IMAGE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Bake the compute VM image (Docker + the self-contained cella-boot-agent) with
@@ -16,14 +21,41 @@ import type { InfraContext } from '../shared'
  * with that name at deploy time (resources/compute.ts), so a re-bake is picked
  * up on the next deploy with no config edit. The build runs a temporary builder
  * VM in `zone` (which must match the deploy zone — image lookup is zonal).
+ *
+ * The Scaleway Packer builder refuses to create an image whose name already
+ * exists, so before building we rename any current image holding the stable name
+ * out of the way (kept for UUID rollback). `imageName` is also pinned into Packer
+ * (PKR_VAR_image_name) so the archived name and the freshly baked name are always
+ * the single value resolved from config — no drift against the HCL default.
  */
-export async function bakeComputeImage(opts: { env: NodeJS.ProcessEnv; zone: string }): Promise<boolean> {
+export async function bakeComputeImage(opts: { env: NodeJS.ProcessEnv; zone: string; imageName: string }): Promise<boolean> {
   if (spawnSync('packer', ['version'], { stdio: 'ignore' }).status !== 0) {
     console.error(`${warningMark} packer CLI not found. Install: brew install hashicorp/tap/packer`)
     return false
   }
 
-  const env: NodeJS.ProcessEnv = { ...opts.env, PKR_VAR_zone: opts.zone }
+  if (IMAGE_UUID_RE.test(opts.imageName)) {
+    console.error(`${warningMark} compute.image is pinned to a UUID (rollback mode); set it back to the stable name in config/general.config.ts before baking.`)
+    return false
+  }
+
+  const env: NodeJS.ProcessEnv = { ...opts.env, PKR_VAR_zone: opts.zone, PKR_VAR_image_name: opts.imageName }
+
+  // Free the stable image name: the Packer builder pre-fails on a duplicate name.
+  try {
+    const archived = await archiveComputeImagesByName({
+      secretKey: env.SCW_SECRET_KEY ?? '',
+      projectId: env.SCW_DEFAULT_PROJECT_ID ?? '',
+      zone: opts.zone,
+      imageName: opts.imageName,
+    })
+    if (archived.length > 0) {
+      console.info(`\n→ Archived ${archived.length} existing image(s) named '${opts.imageName}' (retained for UUID rollback)`)
+    }
+  } catch (err) {
+    console.error(`\n${warningMark} could not free the image name '${opts.imageName}': ${err instanceof Error ? err.message : String(err)}`)
+    return false
+  }
 
   console.info(`\n→ Packer init (idempotent)`)
   const init = spawnSync('pnpm', ['run', 'image:init'], { cwd: infraDir, env, stdio: 'inherit' })
@@ -53,15 +85,14 @@ export async function runBake(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nBake compute image: builds the boot agent + bakes the Docker/Node/agent VM image with Packer. No stack changes.\n'))
 
   const { projectId, appConfig } = context
-  const accessKey =
-    process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
-    process.env.SCW_ACCESS_KEY ||
-    (await input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }))
-  const secretKey =
-    process.env.SCW_BOOTSTRAP_SECRET_KEY || process.env.SCW_SECRET_KEY || (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+  const accessKey = await envOr(['SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_ACCESS_KEY'], () =>
+    input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }),
+  )
+  const secretKey = await envOr(['SCW_BOOTSTRAP_SECRET_KEY', 'SCW_SECRET_KEY'], () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase: process.env.PULUMI_CONFIG_PASSPHRASE ?? '' })
-  const ok = await bakeComputeImage({ env, zone: `${appConfig.s3.region}-1` })
+  const imageName = resolvePerMode(generalConfig.compute.image, context.environment as Parameters<typeof resolvePerMode>[1])
+  const ok = await bakeComputeImage({ env, zone: `${appConfig.s3.region}-1`, imageName })
   if (!ok) process.exit(1)
   console.info(`\n${checkMark} ${pc.bold(pc.greenBright('Image baked.'))} ${pc.dim('The next compute deploy resolves it by name automatically.')}`)
 }

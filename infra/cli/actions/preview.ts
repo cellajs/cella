@@ -5,7 +5,7 @@ import { warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { infraDir } from '../../lib/paths'
 import { maskedSecret } from '../prompts/masked-secret'
-import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
+import { envOr, type InfraContext, resolveVerifiedPassphrase } from '../shared'
 
 /** Read-only `pulumi preview` against the stack. Authenticates the provider
  *  from SCW_* env (not stack config) using a Scaleway key supplied here, so it
@@ -22,10 +22,10 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId } = context
 
-  const accessKey =
-    process.env.SCW_ACCESS_KEY ||
-    (await input({ message: 'Scaleway access key (read access is enough)', validate: (v) => !!v.trim() || '(required)' }))
-  const secretKey = process.env.SCW_SECRET_KEY || (await maskedSecret({ message: 'Scaleway secret key' }))
+  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
+    input({ message: 'Scaleway access key (read access is enough)', validate: (v) => !!v.trim() || '(required)' }),
+  )
+  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }))
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 

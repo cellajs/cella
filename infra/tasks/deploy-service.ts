@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { servicesByName } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
@@ -144,7 +144,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   deployService().catch((err) => {
     console.error(err instanceof Error ? err.message : err)
     process.exit(1)

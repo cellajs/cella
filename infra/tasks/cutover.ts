@@ -38,7 +38,7 @@
  *     --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10
  *   (SCW_SECRET_KEY in env for the live LB call)
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag, getNumFlag, sleep as defaultSleep } from './args'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
@@ -343,7 +343,7 @@ function parseIps(raw: string | undefined): string[] {
     .filter((ip) => ip.length > 0)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   const argv = process.argv.slice(2)
   const service = getFlag(argv, '--service')
   const sha = getFlag(argv, '--sha')

@@ -65,7 +65,19 @@ if (!existsSync(baseBin)) {
 copyFileSync(baseBin, outBin)
 chmodSync(outBin, 0o755)
 const { inject } = await import('postject')
-await inject(outBin, 'NODE_SEA_BLOB', readFileSync(blob), { sentinelFuse: SENTINEL })
+// postject's wasm objcopy prints benign "Can't find string offset for section
+// name '.note…'" lines to stderr while rewriting the ELF — filter just those.
+const noteWarning = /Can't find string offset for section name/
+const originalWrite = process.stderr.write.bind(process.stderr)
+process.stderr.write = ((chunk: string | Uint8Array, ...rest: unknown[]): boolean => {
+  if (noteWarning.test(typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString())) return true
+  return (originalWrite as (c: string | Uint8Array, ...a: unknown[]) => boolean)(chunk, ...rest)
+}) as typeof process.stderr.write
+try {
+  await inject(outBin, 'NODE_SEA_BLOB', readFileSync(blob), { sentinelFuse: SENTINEL })
+} finally {
+  process.stderr.write = originalWrite
+}
 
 // Leave only the final binary in dist/ for the Packer file provisioner.
 for (const intermediate of [bundle, `${bundle}.map`, blob, seaConfig]) rmSync(intermediate, { force: true })
