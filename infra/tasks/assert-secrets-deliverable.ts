@@ -29,7 +29,8 @@
 import { pathToFileURL } from 'node:url'
 import { isEnvFileDeliverable } from '../lib/env-file'
 import { runtimeSecrets } from '../lib/runtime-secrets'
-import { serviceNames, type ServiceName } from '../lib/services'
+import { serviceNames } from '../lib/services'
+import type { ServiceName } from '../compose/compose'
 import { getFlag } from './args'
 
 const SECRET_BASE = 'https://api.scaleway.com/secret-manager/v1beta1'
@@ -158,13 +159,27 @@ export function secretsForServices(enabled: readonly ServiceName[]): SecretToChe
     .map((secret) => ({ envVar: secret.envVar, secretName: secret.secretName, required: secret.required }))
 }
 
+export function serviceNamesFromServicesJson(raw: string): ServiceName[] {
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
+  return parsed
+    .map((item, index) => {
+      if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
+      const service = (item as Record<string, unknown>).service
+      if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
+      return service
+    })
+    .filter((service): service is ServiceName => (serviceNames as readonly string[]).includes(service))
+}
+
 // Standalone entry point.
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const secretKey = process.env.SCW_SECRET_KEY
   const region = getFlag(process.argv, '--region') ?? process.env.REGION
   const projectId = getFlag(process.argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID
+  const servicesJson = getFlag(process.argv, '--services-json')
   const servicesArg = getFlag(process.argv, '--services')
-  const enabled = (servicesArg ? servicesArg.split(',') : serviceNames)
+  const enabled = (servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames)
     .map((s) => s.trim())
     .filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s))
 

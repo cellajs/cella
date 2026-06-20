@@ -14,13 +14,11 @@
  *   - lib/runtime-secrets.ts    — which services a runtime secret is exposed to
  */
 import { services as composeServices, type ServiceName } from '../compose/compose'
-import type { ServiceMeta, ServiceInstanceType } from '../compose/types'
+import type { ServiceMeta } from '../compose/types'
 import type { AppServiceEndpointConfig } from '../../shared'
 // Type-only — erased at compile, so this module stays appConfig-free at runtime
 // (pulumi-context.ts imports it before setting APP_MODE; see `serviceEndpoints` below).
 import type { appConfig as AppConfig } from '../../shared'
-
-export type { ServiceName, ServiceInstanceType }
 
 /**
  * One deployable service — the Compose model's `x-service` (`ServiceMeta`) narrowed

@@ -12,11 +12,14 @@ import { pathToFileURL } from 'node:url'
 import type { appConfig as AppConfig } from '../../shared'
 import { deriveInfra } from '../lib/naming'
 import { enabledServices, serviceEndpoints } from '../lib/services'
+import { getFlag } from './args'
 
 type Cfg = typeof AppConfig
 
 /** Exact set of keys this script is allowed to emit. Tests lock this. */
 export const ALLOWED_KEYS = [
+  'environment',
+  'image_tag',
   'pulumi_stack',
   'region',
   'registry_ns',
@@ -31,7 +34,7 @@ export const ALLOWED_KEYS = [
 export type AllowedKey = (typeof ALLOWED_KEYS)[number]
 
 /** Pure builder — given an appConfig, produce the deploy env table. */
-export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
+export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
   const { naming } = deriveInfra(appConfig)
   const enabled = enabledServices(appConfig.services)
   const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>
@@ -61,6 +64,8 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
     })
 
   return {
+    environment: appConfig.mode,
+    image_tag: opts.imageTag ?? '',
     pulumi_stack: appConfig.mode,
     region: appConfig.s3.region,
     registry_ns: naming.registryNamespace,
@@ -80,7 +85,13 @@ export function buildDeployEnv(appConfig: Cfg): Record<AllowedKey, string> {
 export async function main(): Promise<void> {
   const mode = process.argv[2]
   if (!mode) {
-    console.error('Usage: print-deploy-env.ts <staging|production>')
+    console.error('Usage: print-deploy-env.ts <staging|production> [--git-ref refs/heads/main] [--git-sha <sha>]')
+    process.exit(1)
+  }
+  const gitRef = getFlag(process.argv, '--git-ref')
+  const gitSha = getFlag(process.argv, '--git-sha')
+  if (mode === 'production' && gitRef && gitRef !== 'refs/heads/main') {
+    console.error(`::error::Production deploys are only allowed from the main branch (got ${gitRef})`)
     process.exit(1)
   }
   process.env.APP_MODE = mode
@@ -89,7 +100,7 @@ export async function main(): Promise<void> {
     console.error(`Mode mismatch: requested "${mode}" but loaded config is "${appConfig.mode}"`)
     process.exit(1)
   }
-  for (const [k, v] of Object.entries(buildDeployEnv(appConfig))) {
+  for (const [k, v] of Object.entries(buildDeployEnv(appConfig, { imageTag: gitSha }))) {
     console.info(`${k}=${v}`)
   }
 }

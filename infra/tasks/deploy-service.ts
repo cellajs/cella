@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { servicesByName, type ServiceName } from '../lib/services'
+import { servicesByName } from '../lib/services'
+import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
 import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'

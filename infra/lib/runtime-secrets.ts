@@ -9,7 +9,8 @@
  *   - tasks/manage-runtime-secrets.ts, tasks/seed-operator-secrets.ts.
  */
 import runtimeSecretsConfig from '../config/runtime-secrets.config'
-import { serviceNames, type ServiceName } from './services'
+import { serviceNames } from './services'
+import type { ServiceName } from '../compose/compose'
 
 export const runtimeSecretConsumers = serviceNames
 
@@ -85,7 +86,6 @@ export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeS
 }
 
 export const runtimeSecretsById = new Map<string, RuntimeSecretDefinition>(runtimeSecrets.map((secret) => [secret.id, secret]))
-export const runtimeSecretsByEnvVar = new Map<string, RuntimeSecretDefinition>(runtimeSecrets.map((secret) => [secret.envVar, secret]))
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator')
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {

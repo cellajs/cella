@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type FetchLike, type SecretToCheck, assertSecretsDeliverable } from './assert-secrets-deliverable'
+import { type FetchLike, type SecretToCheck, assertSecretsDeliverable, serviceNamesFromServicesJson } from './assert-secrets-deliverable'
 
 const REGION = 'fr-par'
 const PROJECT = 'proj-1'
@@ -90,5 +90,12 @@ describe('assertSecretsDeliverable', () => {
     })
     expect(res.ok).toBe(false)
     expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }])
+  })
+})
+
+describe('serviceNamesFromServicesJson', () => {
+  it('extracts known service names and drops unknown rows', () => {
+    const raw = JSON.stringify([{ service: 'backend' }, { service: 'bogus' }, { service: 'frontend' }])
+    expect(serviceNamesFromServicesJson(raw)).toEqual(['backend', 'frontend'])
   })
 })

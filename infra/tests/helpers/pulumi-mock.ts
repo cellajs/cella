@@ -134,20 +134,6 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
 }
 
 /**
- * Wait for a Pulumi Output to settle and return its concrete value.
- * Useful when a test wants to assert the rendered shape of an `apply()` chain.
- */
-export function awaitOutput<T>(output: PulumiNS.Output<T> | PulumiNS.Input<T>): Promise<T> {
-  return new Promise((resolve) => {
-    // biome-ignore lint/suspicious/noExplicitAny: Output#apply receives the resolved value
-    ;(output as any).apply((v: T) => {
-      resolve(v)
-      return v
-    })
-  })
-}
-
-/**
  * Wait for every captured resource's input Outputs to settle (so tests can
  * synchronously inspect string values). One microtask tick is enough because
  * the mock newResource returns its state synchronously.

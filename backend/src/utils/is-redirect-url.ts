@@ -1,19 +1,49 @@
-/**
- * Validate base path for redirects. If its valid, it returns the path.
- */
-export function isValidRedirectPath(path: unknown) {
-  if (typeof path !== 'string') return false;
+import { appConfig } from 'shared';
 
-  // Decode URI component safely
-  let decodedPath: string;
+/**
+ * Validate a post-auth redirect target and return a normalized, same-origin
+ * relative path. Returns `false` for anything that is not a safe internal path.
+ *
+ * Safe means a single-slash absolute path on the frontend origin. Scheme-relative
+ * targets (`//host`), absolute URLs, backslash authority tricks (`/\host`),
+ * encoded bypasses (`/%2Fhost`), control characters, and backend-only routes
+ * (`/api/...`) are all rejected. Only the normalized relative path is returned,
+ * so callers never replay the original untrusted string.
+ */
+export function isValidRedirectPath(path: unknown): string | false {
+  if (typeof path !== 'string' || path.length === 0) return false;
+
+  // Decode once so encoded bypasses (e.g. `%2F%2Fhost`) are evaluated as the
+  // characters they actually represent.
+  let decoded: string;
   try {
-    decodedPath = decodeURIComponent(path);
+    decoded = decodeURIComponent(path);
   } catch {
-    return false; // Invalid encoding
+    return false; // malformed percent-encoding
   }
 
-  // Must start with a forward slash (relative path)
-  if (!decodedPath.startsWith('/')) return false;
-  if (path.startsWith('/api/')) return false; // Avoid API paths
-  return path;
+  // Must be a single-slash absolute path. Reject scheme-relative (`//host`) and
+  // backslash authority tricks (`/\host`, `\\host`).
+  if (!decoded.startsWith('/')) return false;
+  if (decoded.startsWith('//')) return false;
+  if (decoded.startsWith('\\') || decoded[1] === '\\') return false;
+
+  // Reject embedded control characters that can split paths/headers.
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional guard against control chars
+  if (/[\u0000-\u001f\u007f]/.test(decoded)) return false;
+
+  // Resolve against the frontend origin and require it to stay same-origin.
+  let resolved: URL;
+  try {
+    resolved = new URL(decoded, appConfig.frontendUrl);
+  } catch {
+    return false;
+  }
+  if (resolved.origin !== new URL(appConfig.frontendUrl).origin) return false;
+
+  // Never redirect into backend-only routes.
+  if (resolved.pathname.startsWith('/api/')) return false;
+
+  // Return the normalized relative path only.
+  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
 }

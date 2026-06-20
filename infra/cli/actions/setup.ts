@@ -341,6 +341,31 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         })
       }
       console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
+
+      // The service VMs boot from a baked image (Docker + Node + cella-boot-agent)
+      // that must exist before the first compute deploy. The bootstrap key in
+      // childEnv already has the instance-write rights to bake it, so offer it
+      // here on the first provision rather than as a separate manual step. The
+      // image has a stable name and the deploy resolves the newest by name, so
+      // to re-bake later (agent/image changes) just run `pnpm --filter infra
+      // image:build`. Skippable.
+      if (isFirstProvision) {
+        const bakeNow = await confirm({
+          message: 'Bake the compute VM image now? (required before the first compute deploy; ~10–15 min)',
+          default: true,
+        })
+        if (bakeNow) {
+          const { bakeComputeImage } = await import('./bake')
+          const ok = await bakeComputeImage({ env: childEnv, zone: `${appConfig.s3.region}-1` })
+          if (ok) {
+            console.info(`  ${checkMark} Compute image baked. The next compute deploy resolves it by name automatically.`)
+          } else {
+            console.warn(`  ${warningMark} Image bake did not complete. Run \`pnpm --filter infra image:build\` before deploying compute.`)
+          }
+        } else {
+          console.info(`  ${pc.dim('Skipped. Bake later with `pnpm --filter infra image:build` — required before the first compute deploy.')}`)
+        }
+      }
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
       console.info('  Manual fallback if needed:')

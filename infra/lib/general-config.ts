@@ -25,7 +25,7 @@ export type PerMode<T> = T | Partial<Record<Environment, T>>
 
 export interface GeneralConfig {
   compute: {
-    /** Scaleway instance image slug/id. Must point at a baked docker-node-agent-v1 image. */
+    /** Baked compute image. A stable NAME resolves to the newest matching Scaleway image at deploy time; a literal UUID pins a specific image. */
     image: PerMode<string>
   }
   database: {

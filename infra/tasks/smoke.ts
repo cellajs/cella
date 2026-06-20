@@ -9,7 +9,10 @@
  * a single deploy surfaces every broken contract at once, then the task exits
  * non-zero if any failed.
  * Checks:
- *   1. Frontend index.html references a hashed entry asset (build wired up).
+ *   1. Frontend index.html references a hashed entry asset. When the freshly
+ *      built bundle hash is supplied via --dist, the check is stricter: the
+ *      served index.html must reference that exact entry asset (the post-publish
+ *      bundle verification, folded in from the former verify-frontend-bundle).
  *   2. Backend /openapi.json is reachable (API router mounted).
  *   3. Public service /health endpoints report the deployed release SHA.
  *   4. A random path returns an HTML document (SPA fallback / deep links work).
@@ -18,12 +21,18 @@
  *      database / cdc / yjs / ai after the rollout settled).
  *
  * Usage:
- *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <enabled_services_json>]
+ *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <enabled_services_json>] [--dist dist/index.html]
  */
+import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { getFlag } from './args'
-import { extractEntryAsset } from './verify-frontend-bundle'
 import { isHealthy } from './wait-for-version'
+
+/** Extract the hashed entry script src (e.g. /assets/index-abc123.js) from HTML. */
+export function extractEntryAsset(html: string): string | undefined {
+  const match = html.match(/src="([^"]*assets\/[^"]+\.js)"/)
+  return match?.[1]
+}
 
 /**
  * Response headers the frontend Caddy layer must inject. A missing header means
@@ -133,6 +142,12 @@ export interface SmokeOptions {
   expectedSha: string
   /** Enabled rollout services; public services carry health_url, internal-only services have ''. */
   services?: readonly SmokeService[]
+  /**
+   * Hashed entry asset (e.g. /assets/index-abc123.js) from the freshly built
+   * local bundle. When set, check #1 asserts the served index.html references
+   * this exact asset; when absent it falls back to "references some hashed asset".
+   */
+  expectedAsset?: string
   get: HttpGet
   log?: (msg: string) => void
   /** Sleep between component-health retries. Injectable so tests run instantly. */
@@ -171,16 +186,21 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS
   const results: SmokeResult[] = []
 
-  // 1. Frontend index.html references a hashed asset.
-  try {
-    const res = await get(`${frontendUrl}/`)
-    results.push(
-      res.ok && hasHashedAsset(res.body)
-        ? { name: 'index.html references hashed asset', ok: true }
-        : { name: 'index.html references hashed asset', ok: false, detail: `status=${res.status}` },
-    )
-  } catch (err) {
-    results.push({ name: 'index.html references hashed asset', ok: false, detail: (err as Error).message })
+  // 1. Frontend index.html references the freshly built hashed entry asset.
+  // When the local dist hash is known (expectedAsset), assert the served HTML
+  // references that exact bundle — the post-publish bundle check folded in from
+  // the former verify-frontend-bundle task. Otherwise fall back to "references
+  // some hashed asset" so the check still runs without the artifact.
+  {
+    const name = opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset'
+    try {
+      const res = await get(`${frontendUrl}/`)
+      const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
+      const detail = opts.expectedAsset && res.ok ? `served does not reference ${opts.expectedAsset}` : `status=${res.status}`
+      results.push(res.ok && matched ? { name, ok: true } : { name, ok: false, detail })
+    } catch (err) {
+      results.push({ name, ok: false, detail: (err as Error).message })
+    }
   }
 
   // 2. Backend OpenAPI spec is reachable.
@@ -269,42 +289,70 @@ interface CliArgs {
   backendUrl: string
   sha: string
   services?: SmokeService[]
+  /** Path to the freshly built local index.html, used to derive the expected bundle hash. */
+  dist?: string
   timeoutMs: number
 }
 
-function parseServicesJson(raw: string): SmokeService[] {
+export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string }> {
   const parsed: unknown = JSON.parse(raw)
   if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
   return parsed.map((item, index) => {
     if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
     const service = (item as Record<string, unknown>).service
     const healthUrl = (item as Record<string, unknown>).health_url
+    const publicUrl = (item as Record<string, unknown>).public_url
     if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
     if (typeof healthUrl !== 'string') throw new Error(`--services-json[${index}].health_url must be a string`)
-    return { service, health_url: healthUrl }
+    if (publicUrl !== undefined && typeof publicUrl !== 'string') throw new Error(`--services-json[${index}].public_url must be a string`)
+    return { service, health_url: healthUrl, public_url: publicUrl }
   })
 }
 
 /** Parse `--key value` flags. Exported for testing. */
 export function parseArgs(argv: string[]): CliArgs {
-  const frontendUrl = getFlag(argv, '--frontend')
-  const backendUrl = getFlag(argv, '--backend')
+  const servicesRaw = getFlag(argv, '--services-json')
+  const services = servicesRaw ? parseServicesJson(servicesRaw) : undefined
+  const frontendUrl = getFlag(argv, '--frontend') ?? services?.find((service) => service.service === 'frontend')?.public_url
+  const backendUrl = getFlag(argv, '--backend') ?? services?.find((service) => service.service === 'backend')?.public_url
   const sha = getFlag(argv, '--sha')
   if (!frontendUrl || !backendUrl || !sha) {
     throw new Error('Usage: smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <json>] [--timeout ms]')
   }
-  const servicesRaw = getFlag(argv, '--services-json')
   const timeoutRaw = getFlag(argv, '--timeout')
-  return { frontendUrl, backendUrl, sha, services: servicesRaw ? parseServicesJson(servicesRaw) : undefined, timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
+  return { frontendUrl, backendUrl, sha, services, dist: getFlag(argv, '--dist'), timeoutMs: timeoutRaw === undefined ? 10000 : Number(timeoutRaw) }
+}
+
+/**
+ * Resolve the expected hashed entry asset from the freshly built local bundle.
+ * A provided-but-unreadable --dist is a hard failure: it once silently degraded
+ * the bundle check into a no-op (a wrong cwd resolved the path to nothing).
+ */
+export function resolveExpectedAsset(dist: string | undefined): string | undefined {
+  if (!dist) return undefined
+  let html: string
+  try {
+    html = readFileSync(dist, 'utf-8')
+  } catch (err) {
+    console.error(`::error::Could not read ${dist}: ${(err as Error)?.message ?? 'unknown error'}`)
+    console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
+    process.exit(1)
+  }
+  const expectedAsset = extractEntryAsset(html)
+  if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`)
+  else console.warn(`::warning::No hashed entry asset found in ${dist}; falling back to "references some hashed asset"`)
+  return expectedAsset
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv)
+  const expectedAsset = resolveExpectedAsset(args.dist)
   const results = await runSmoke({
     frontendUrl: args.frontendUrl,
     backendUrl: args.backendUrl,
     expectedSha: args.sha,
     services: args.services,
+    expectedAsset,
     get: createFetchGet(args.timeoutMs),
   })
 

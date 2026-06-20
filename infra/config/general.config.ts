@@ -22,8 +22,11 @@ import { defineGeneral } from '../lib/general-config'
  * `pulumi up`), not a routine CI deploy.
  */
 export default defineGeneral({
-  // VM base image. Must be built from infra/image/compute-docker.pkr.hcl so it
-  // includes Docker, Node 24, and /usr/local/bin/cella-boot-agent.
+  // VM base image, baked from infra/image/compute-docker.pkr.hcl (Docker, Node 24,
+  // /usr/local/bin/cella-boot-agent). This is the stable image NAME: compute.ts
+  // resolves the NEWEST Scaleway image with this name at deploy time, so re-baking
+  // (`pnpm infra` → "Bake compute image") is picked up automatically with no UUID
+  // paste. Set a literal image UUID instead to pin a specific image for rollback.
   compute: {
     image: 'cella-docker-node-agent-v1',
   },

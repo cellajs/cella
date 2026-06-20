@@ -29,6 +29,8 @@ describe('buildDeployEnv', () => {
 
   it('derives values from appConfig', () => {
     expect(buildDeployEnv(fakeAppConfig)).toEqual({
+      environment: 'production',
+      image_tag: '',
       pulumi_stack: 'production',
       region: 'nl-ams',
       registry_ns: 'cella',
@@ -80,6 +82,10 @@ describe('buildDeployEnv', () => {
   it('strips hyphens from registry_ns', () => {
     const cfg = { ...fakeAppConfig, slug: 'my-cool-app' }
     expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp')
+  })
+
+  it('emits the supplied image tag', () => {
+    expect(buildDeployEnv(fakeAppConfig, { imageTag: 'abc123' }).image_tag).toBe('abc123')
   })
 
   it('derives public URLs in enabled_services_json from appConfig.services', () => {

@@ -1,6 +1,6 @@
 import { generateCodeVerifier, generateState } from 'arctic';
 import { eq } from 'drizzle-orm';
-import { github, githubCallback, google, microsoft } from 'sdk';
+import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -251,6 +251,100 @@ describe('OAuth Authentication', async () => {
     });
   });
 
+  describe('Account-linking safety (no implicit linking)', () => {
+    // GHSA-g38m-r43w-p2q7 (nOAuth-class): an OAuth sign-in whose email matches an
+    // existing local user MUST NOT silently link/authenticate that account.
+    it('should refuse OAuth sign-in when the email matches an existing local user without a linked account', async () => {
+      // Local user owns the email, but there is NO linked OAuth account.
+      await createUser('github-user@example.com');
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+
+      const { response: res, error } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_email_exists');
+    });
+  });
+
+  describe('Open-redirect regression (pre-validation redirect removed)', () => {
+    // GHSA-36rg-gfq2-3h56 / GHSA-vp58-j275-797x: the callback must never honor a
+    // redirect destination smuggled inside the OAuth `state` before validation.
+    it('should not honor a redirectUrl embedded in the OAuth state', async () => {
+      const malicious = { redirectUrl: 'https://evil.example' };
+      const state = Buffer.from(JSON.stringify(malicious)).toString('base64');
+
+      const { response: res, error } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      // No matching state cookie → fail closed; never redirect to the attacker host.
+      expect(res.status).toBe(401);
+      expect((error as { type: string }).type).toBe('invalid_state');
+      expect(res.headers.get('location') ?? '').not.toContain('evil.example');
+    });
+  });
+
+  describe('PKCE binding', () => {
+    // GHSA-wxw3-q3m9-c3jr / GHSA-9h47-pqcx-hjr4: PKCE providers must reject a
+    // callback whose stored state has no code verifier.
+    it.each([
+      { name: 'google', fn: googleCallback },
+      { name: 'microsoft', fn: microsoftCallback },
+    ])('should reject $name callback when codeVerifier is missing from the state cookie', async ({ fn }) => {
+      const state = 'mock-state-test';
+      // Cookie present, but WITHOUT a PKCE code verifier.
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth' }));
+
+      const { response: res, error } = await call(fn, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(401);
+      expect((error as { type: string }).type).toBe('invalid_state');
+    });
+  });
+
+  describe('Verified redirect ignores client-supplied destination', () => {
+    // The verified sign-in redirect is server-determined; an attacker-controlled
+    // redirectAfter must not become the Location.
+    it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
+      const userEmail = 'github-user@example.com';
+      const user = await createUser(userEmail);
+      await db.insert(oauthAccountsTable).values({
+        userId: user.id,
+        provider: 'github' as const,
+        providerUserId: 'github-user-id',
+        email: userEmail,
+        verified: true,
+        createdAt: mockPastIsoDate(),
+      });
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ type: 'auth', redirectAfter: '//evil.example', codeVerifier: undefined }),
+      );
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(302);
+      const location = res.headers.get('location');
+      expect(location).toBeTruthy();
+      expect(location).not.toContain('evil.example');
+      expect(location!.startsWith(appConfig.frontendUrl)).toBe(true);
+    });
+  });
+
   describe('Integration & Edge Cases', () => {
     it('should handle OAuth flow with MFA enabled user', async () => {
       const userEmail = 'github-user@example.com';
@@ -279,6 +373,10 @@ describe('OAuth Authentication', async () => {
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
       expect(location).toContain('/auth/mfa');
+
+      // GHSA-xg6x-h9c9-2m83: no session may be issued before the second factor completes.
+      const setCookie = res.headers.get('set-cookie') ?? '';
+      expect(setCookie).not.toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
     });
 
     it('should maintain session integrity across OAuth signin', async () => {
