@@ -24,7 +24,7 @@
     "assert-secrets-deliverable": "tsx tasks/assert-secrets-deliverable.ts",
     "fetch-boot-diag": "tsx tasks/fetch-boot-diag.ts",
     "diag": "tsx tasks/diag.ts",
-    "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && tsup agent/src/main.ts --format esm --platform node --target node24 --out-dir agent/dist --clean",
+    "agent:build": "rm -rf agent/dist && tsc --noEmit -p agent/tsconfig.json && tsx agent/build.ts",
     "image:init": "packer init image/compute-docker.pkr.hcl",
     "image:validate": "pnpm run agent:build && packer validate image/compute-docker.pkr.hcl; rc=$?; rm -rf agent/dist; exit $rc",
     "image:build": "pnpm run agent:build && packer build image/compute-docker.pkr.hcl",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
+    "postject": "^1.0.0-alpha.6",
     "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

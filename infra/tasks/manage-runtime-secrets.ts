@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, tildeMark, warningMark } from 'shared/console'
+import { isMain } from '../lib/is-main'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
 import { createSecretManagerClient } from '../lib/scaleway-secret-manager'
 
@@ -188,7 +188,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   process.stderr.write('Run this task through bootstrap so prompts and stack context stay aligned.\n')
   process.exit(1)
 }

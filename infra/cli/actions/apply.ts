@@ -9,7 +9,7 @@ import { maskedSecret } from '../prompts/masked-secret'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { resolveOrganizationId } from '../../lib/scaleway-iam'
 import { deriveInfra } from '../../lib/naming'
-import { type InfraContext, resolveVerifiedPassphrase } from '../shared'
+import { envOr, type InfraContext, resolveVerifiedPassphrase } from '../shared'
 
 /** One-shot `pulumi up` using a freshly-supplied bootstrap key passed via
  *  SCW_* env. For applying changes to bootstrap-owned resources (DB / VPC /
@@ -28,10 +28,10 @@ export async function runApply(context: InfraContext): Promise<void> {
 
   const { projectId } = context
 
-  const bootAccess =
-    process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
-    (await input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }))
-  const bootSecret = process.env.SCW_BOOTSTRAP_SECRET_KEY || (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+  const bootAccess = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
+    input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }),
+  )
+  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
   const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
 

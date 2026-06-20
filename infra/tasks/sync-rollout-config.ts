@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag } from './args'
 
 interface GenerationMetadata {
@@ -81,4 +81,4 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await syncRolloutConfig()
+if (isMain(import.meta.url)) await syncRolloutConfig()

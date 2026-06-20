@@ -5,7 +5,7 @@
  * Usage:  tsx infra/tasks/ensure-state-bucket.ts
  * Env:    SCW_ACCESS_KEY, SCW_SECRET_KEY
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { CreateBucketCommand, HeadBucketCommand, type S3Client } from '@aws-sdk/client-s3'
 
 export type EnsureResult = 'exists' | 'created'
@@ -74,4 +74,4 @@ async function main() {
   else console.info(`Created Pulumi state bucket: s3://${bucketName} (${region})`)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

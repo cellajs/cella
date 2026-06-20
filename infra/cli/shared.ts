@@ -1,6 +1,6 @@
 import { confirm } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
-import { warningMark } from 'shared/console'
+import { crossMark, warningMark } from 'shared/console'
 import type { appConfig as AppConfig } from 'shared'
 import type { Environment, StackState } from '../lib/bootstrap-stack-state'
 import { verifyStackPassphrase } from '../lib/pulumi-passphrase'
@@ -32,9 +32,16 @@ export interface StepOptions {
 }
 
 /**
- * Gets an environment variable, or prompts for it if not set.
+ * Gets the first set environment variable from `envName` (a single name or an
+ * ordered list of fallbacks), or prompts for it if none are set.
  */
-export const envOr = async (envName: string, prompt: () => Promise<string>) => process.env[envName] || (await prompt())
+export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
+  const names = Array.isArray(envName) ? envName : [envName]
+  for (const name of names) {
+    if (process.env[name]) return process.env[name] as string
+  }
+  return prompt()
+}
 
 /**
  * Resolve the Pulumi passphrase, verified against the stack's `encryptionsalt`.
@@ -83,7 +90,7 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
         stdio: 'inherit',
       })
       if (status === 0) return 0
-      console.error(`\n✗ ${label} failed (exit ${status}).`)
+      console.error(`\n${crossMark} ${label} failed (exit ${status}).`)
       if (!opts.retry || !(await confirm({ message: 'Retry?', default: true }))) {
         return status ?? 1
       }

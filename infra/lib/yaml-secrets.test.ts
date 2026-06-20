@@ -1,10 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { infraDir } from './paths'
 import { findUnencryptedSecrets, KNOWN_SECRET_KEYS } from './yaml-secrets'
-
-const infraDir = resolve(fileURLToPath(import.meta.url), '../..')
 
 describe('findUnencryptedSecrets', () => {
   it('passes the committed Pulumi stack config when present', () => {

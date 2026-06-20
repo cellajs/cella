@@ -27,7 +27,7 @@ async function readCredential(path: string): Promise<string> {
   return (await readFile(path, 'utf-8')).trim()
 }
 
-async function delay(ms: number): Promise<void> {
+async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -39,7 +39,7 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
     const route = await opts.exec('ip', ['route', 'get', '10.0.0.1'])
     const addresses = route.code === 0 ? await opts.exec('ip', ['-4', 'addr', 'show']) : { code: 1, stdout: '', stderr: '' }
     if (route.code === 0 && addresses.code === 0 && addresses.stdout.includes('10.0.')) return
-    await delay(retryDelayMs)
+    await sleep(retryDelayMs)
   }
 
   throw new Error(`private network did not become ready within ${opts.timeoutSeconds}s`)
@@ -64,7 +64,7 @@ async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
       return
     } catch (err) {
       lastError = err
-      if (attempt < plan.timeouts.pullAttempts) await new Promise((resolve) => setTimeout(resolve, plan.timeouts.pullRetrySeconds * 1000))
+      if (attempt < plan.timeouts.pullAttempts) await sleep(plan.timeouts.pullRetrySeconds * 1000)
     }
   }
   throw lastError instanceof Error ? lastError : new Error('image pull failed')

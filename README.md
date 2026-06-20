@@ -66,16 +66,6 @@ For those that (also) want to participate in development:
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-### A. Quick setup
-
-Run your db using a local pglite. Its fast to build and to clean up. Simply remove `backend/.db`. However, you need to
-use the full setup to run with the sync engine.
-
-```bash
-pnpm install && pnpm quick
-```
-
-### B. Full setup
 
 For a full setup with sync engine, you need to run postgres + CDC worker.
 Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).

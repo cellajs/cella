@@ -6,7 +6,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import type { Environment } from './bootstrap-stack-state'
-import { warningMark } from 'shared/console'
+import { crossMark, warningMark } from 'shared/console'
 
 /** Parses `git remote get-url origin` output into `owner/repo`. Accepts both
  *  https://github.com/owner/repo(.git) and git@github.com:owner/repo(.git)
@@ -51,7 +51,7 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
   const step = (label: string, args: string[]) => {
     console.info(`\n→ ${label}\n  $ ${args.join(' ')}`)
     const code = run(args[0]!, args.slice(1), { cwd: opts.repoRoot })
-    if (code !== 0) console.error(`✗ ${label} failed (exit ${code})`)
+    if (code !== 0) console.error(`${crossMark} ${label} failed (exit ${code})`)
   }
 
   step(

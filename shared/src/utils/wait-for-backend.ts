@@ -1,4 +1,5 @@
 import { appConfig } from '../config-builder/app-config';
+import { sleep } from './sleep';
 
 /**
  * Wait for the backend health endpoint to be available.
@@ -13,7 +14,7 @@ export async function waitForBackend(interval = 1000, timeout = 60000): Promise<
       const res = await fetch(healthUrl, { method: 'HEAD', signal: AbortSignal.timeout(2000) });
       if (res.ok) return;
     } catch {}
-    await new Promise((r) => setTimeout(r, interval));
+    await sleep(interval);
   }
 
   throw new Error(`Backend not ready after ${timeout}ms`);

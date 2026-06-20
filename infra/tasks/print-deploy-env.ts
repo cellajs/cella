@@ -8,7 +8,7 @@
  *
  * Usage: tsx infra/tasks/print-deploy-env.ts <staging|production>
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import type { appConfig as AppConfig } from '../../shared'
 import { deriveInfra } from '../lib/naming'
 import { enabledServices, serviceEndpoints } from '../lib/services'
@@ -105,4 +105,4 @@ export async function main(): Promise<void> {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

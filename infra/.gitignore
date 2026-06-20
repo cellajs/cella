@@ -1,3 +1,5 @@
 
 # Packer image bake outputs
 agent/dist/
+# Cached Linux node base binary for the SEA build
+agent/.sea-cache/

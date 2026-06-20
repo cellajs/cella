@@ -5,7 +5,8 @@ Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitH
 ## Compute image baking
 
 Service VMs boot from a pre-baked Scaleway image that contains Docker Engine, the
-Docker Compose plugin, Node 24, and the `cella-boot-agent`. Cloud-init shrinks to
+Docker Compose plugin, and the self-contained `cella-boot-agent` (a Node Single
+Executable Application — no Node/npm installed on the image). Cloud-init shrinks to
 a launcher that writes the boot plan and starts the agent; the agent owns the
 boot state machine (compose/env files, runtime-secret hydration, image pull,
 migrate, app start).

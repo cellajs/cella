@@ -109,10 +109,20 @@ describe('compute module source invariants', () => {
     expect(source).toMatch(/activeGenerations\(/)
     expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.gen\}/)
     expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.gen\}/)
-    expect(source).toMatch(/ignoreChanges: \['cloudInit'\]/)
     // The old lifelong reserved-IP map must not come back.
     expect(source).not.toMatch(/reservedIps\.set\(/)
     expect(source).not.toMatch(/Create backend first/)
+  })
+
+  it('treats both cloud-init and the baked image as immutable generation identity', () => {
+    // A generation VM bakes its cloud-init AND its image at creation. Re-baking
+    // the golden image rotates the UUID behind the stable name resolved by
+    // getImage(latest:true); without ignoring `image`, the base `pulumi up`
+    // would diff every running generation and destructively replace the live
+    // frontend/backend/cdc VMs (delete-before-create, bypassing the LB-overlap
+    // cutover) — the cause of the recurring fleet-wide downtime. A new image is
+    // only ever picked up by a NEW generation (new resource name).
+    expect(source).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/)
   })
 
   it('resolves cdc\u2019s @{backend.privateIp} binding to the current backend generation IP', () => {

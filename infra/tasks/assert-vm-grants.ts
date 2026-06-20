@@ -20,7 +20,7 @@
  *     --application-id <vm-app-id> --project-id <project-id> [--organization-id <org>]
  *   (SCW_SECRET_KEY in env)
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
 import { getFlag } from './args'
 
@@ -151,7 +151,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
 }
 
 // Standalone entry point.
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   const secretKey = process.env.SCW_SECRET_KEY
   const applicationId = getFlag(process.argv, '--application-id') ?? process.env.VM_APPLICATION_ID
   const applicationName = getFlag(process.argv, '--application-name') ?? process.env.VM_APPLICATION_NAME

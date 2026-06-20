@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag, getNumFlag } from './args'
 
 interface RolloutItem {
@@ -45,7 +45,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   for (const item of args.rest) runDeployService(item, args)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   main().catch((err) => {
     console.error(err instanceof Error ? err.message : err)
     process.exit(1)

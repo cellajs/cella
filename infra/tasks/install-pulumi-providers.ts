@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import { spawnSync } from 'node:child_process'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
+import { retry } from '../lib/retry'
 
 const require = createRequire(import.meta.url)
 
@@ -15,18 +16,20 @@ function install(version: string): boolean {
 
 export async function main(): Promise<void> {
   const version = scalewayProviderVersion()
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    if (install(version)) {
-      console.info(`scaleway plugin v${version} installed`)
-      const res = spawnSync('pulumi', ['plugin', 'ls'], { stdio: 'inherit', env: process.env })
-      if (res.status !== 0) process.exit(res.status ?? 1)
-      return
-    }
-    console.warn(`plugin install attempt ${attempt} failed; retrying in 15s`)
-    await new Promise((resolve) => setTimeout(resolve, 15_000))
+  try {
+    await retry(
+      async () => {
+        if (!install(version)) throw new Error('plugin install failed')
+      },
+      { attempts: 5, delayMs: 15_000, onRetry: (attempt) => console.warn(`plugin install attempt ${attempt} failed; retrying in 15s`) },
+    )
+  } catch {
+    console.error('::error::Pulumi scaleway provider install failed after 5 attempts')
+    process.exit(1)
   }
-  console.error('::error::Pulumi scaleway provider install failed after 5 attempts')
-  process.exit(1)
+  console.info(`scaleway plugin v${version} installed`)
+  const res = spawnSync('pulumi', ['plugin', 'ls'], { stdio: 'inherit', env: process.env })
+  if (res.status !== 0) process.exit(res.status ?? 1)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

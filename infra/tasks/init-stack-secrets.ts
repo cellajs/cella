@@ -4,7 +4,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { changeMark, checkMark, tildeMark } from 'shared/console'
 
 const cwd = new URL('..', import.meta.url).pathname
@@ -84,4 +84,4 @@ export function main(stackArg = process.argv[2] ?? process.env.STACK): void {
   console.info('Stack secrets initialized.')
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main()
+if (isMain(import.meta.url)) main()

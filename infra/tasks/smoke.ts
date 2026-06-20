@@ -24,7 +24,8 @@
  *   tsx infra/tasks/smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <enabled_services_json>] [--dist dist/index.html]
  */
 import { readFileSync } from 'node:fs'
-import { pathToFileURL } from 'node:url'
+import { sleep as defaultSleep } from 'shared/sleep'
+import { isMain } from '../lib/is-main'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
 
@@ -168,9 +169,6 @@ export interface SmokeOptions {
 export const COMPONENTS_RETRY_ATTEMPTS = 6
 export const COMPONENTS_RETRY_DELAY_MS = 8_000
 
-/** Default real sleep used when no injectable sleep is supplied. */
-const realSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
-
 
 export interface SmokeResult {
   name: string
@@ -181,7 +179,7 @@ export interface SmokeResult {
 /** Run all smoke checks, collecting every result (no short-circuit). */
 export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const { frontendUrl, backendUrl, expectedSha, get } = opts
-  const sleep = opts.sleep ?? realSleep
+  const sleep = opts.sleep ?? defaultSleep
   const componentsRetryAttempts = opts.componentsRetryAttempts ?? COMPONENTS_RETRY_ATTEMPTS
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS
   const results: SmokeResult[] = []
@@ -364,4 +362,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (results.some((r) => !r.ok)) process.exit(1)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) await main()
+if (isMain(import.meta.url)) await main()

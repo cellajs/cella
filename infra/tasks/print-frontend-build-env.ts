@@ -1,4 +1,4 @@
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { getFlag } from './args'
 
 interface ServiceUrlRow {
@@ -35,7 +35,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   main().catch((err) => {
     console.error(err instanceof Error ? `::error::${err.message}` : err)
     process.exit(1)

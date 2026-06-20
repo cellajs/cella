@@ -1,3 +1,5 @@
+import { isRecord } from '../../lib/guards'
+
 export const supportedSchemaVersion = 1
 export const supportedImageContract = 'docker-node-agent-v1'
 
@@ -57,10 +59,6 @@ const topLevelKeys = new Set([
   'files',
   'timeouts',
 ])
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function stringField(obj: Record<string, unknown>, key: string): string {
   const value = obj[key]

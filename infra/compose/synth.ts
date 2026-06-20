@@ -6,8 +6,9 @@
  *   tsx infra/compose/synth.ts --check    # exit 1 if the file is out of date
  */
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { join } from 'node:path'
+import { isMain } from '../lib/is-main'
+import { infraDir } from '../lib/paths'
 import { composeConfig } from './compose'
 import type { ComposeFile } from './types'
 
@@ -78,9 +79,8 @@ export function renderCompose(file: ComposeFile): string {
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`
 }
 
-const here = dirname(fileURLToPath(import.meta.url))
 /** The generated deploy artifact — read by resources/compute.ts and shipped to each VM. */
-export const OUTPUT_PATH = join(here, '..', 'compose.gen.yml')
+export const OUTPUT_PATH = join(infraDir, 'compose.gen.yml')
 
 function main(): void {
   const yaml = renderCompose(composeConfig)
@@ -103,4 +103,4 @@ function main(): void {
   console.info(`Wrote ${OUTPUT_PATH}`)
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main()
+if (isMain(import.meta.url)) main()

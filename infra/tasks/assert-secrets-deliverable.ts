@@ -26,8 +26,9 @@
  *     --region <region> --project-id <project-id> [--services backend,cdc,frontend]
  *   (SCW_SECRET_KEY in env)
  */
-import { pathToFileURL } from 'node:url'
+import { isMain } from '../lib/is-main'
 import { isEnvFileDeliverable } from '../lib/env-file'
+import { parseJsonBody } from '../lib/json'
 import { runtimeSecrets } from '../lib/runtime-secrets'
 import { serviceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
@@ -86,7 +87,7 @@ async function resolveSecretIdByName(
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } })
   const body = await res.text()
   if (!res.ok) throw new Error(`Secret Manager list '${name}' → ${res.status}: ${body}`)
-  const { secrets = [] } = (body === '' ? {} : JSON.parse(body)) as { secrets?: Array<{ id: string; name: string }> }
+  const { secrets = [] } = parseJsonBody<{ secrets?: Array<{ id: string; name: string }> }>(body)
   return secrets.find((s) => s.name === name)?.id ?? null
 }
 
@@ -105,7 +106,7 @@ async function readLatestSecretValue(
   const body = await res.text()
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Secret Manager access '${secretId}' → ${res.status}: ${body}`)
-  const { data } = (body === '' ? {} : JSON.parse(body)) as { data?: string }
+  const { data } = parseJsonBody<{ data?: string }>(body)
   // Secret Manager returns the value base64-encoded in `data`; the VM decodes it
   // once before writing the env line, so we mirror that to probe the real value.
   return Buffer.from(data ?? '', 'base64').toString('utf-8')
@@ -173,7 +174,7 @@ export function serviceNamesFromServicesJson(raw: string): ServiceName[] {
 }
 
 // Standalone entry point.
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (isMain(import.meta.url)) {
   const secretKey = process.env.SCW_SECRET_KEY
   const region = getFlag(process.argv, '--region') ?? process.env.REGION
   const projectId = getFlag(process.argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID
