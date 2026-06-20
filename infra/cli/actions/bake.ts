@@ -8,8 +8,8 @@ import { maskedSecret } from '../prompts/masked-secret'
 import type { InfraContext } from '../shared'
 
 /**
- * Bake the compute VM image (Docker + Node 24 + cella-boot-agent) with Packer,
- * using an already-built provider env. Driven by the fresh-bootstrap flow
+ * Bake the compute VM image (Docker + the self-contained cella-boot-agent) with
+ * Packer, using an already-built provider env. Driven by the fresh-bootstrap flow
  * (actions/setup.ts) and the "Bake compute image" CLI mode (runBake below).
  *
  * The image carries a STABLE name; the Pulumi program resolves the newest image
@@ -56,7 +56,7 @@ export async function runBake(context: InfraContext): Promise<void> {
   const accessKey =
     process.env.SCW_BOOTSTRAP_ACCESS_KEY ||
     process.env.SCW_ACCESS_KEY ||
-    (await input({ message: 'Scaleway bootstrap access key (needs instance write to bake an image)', validate: (v) => !!v.trim() || '(required)' }))
+    (await input({ message: 'Scaleway bootstrap access key', validate: (v) => !!v.trim() || '(required)' }))
   const secretKey =
     process.env.SCW_BOOTSTRAP_SECRET_KEY || process.env.SCW_SECRET_KEY || (await maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
