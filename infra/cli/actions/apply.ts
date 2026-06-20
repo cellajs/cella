@@ -85,6 +85,19 @@ export async function runApply(context: InfraContext): Promise<void> {
     }
   }
 
+  // Reconcile gen/sha into the local Pulumi config from live state before
+  // `pulumi up`, so a stale committed Pulumi.<stack>.yaml can't converge compute
+  // back to an old generation (destroying newer live VMs). CI does this in the
+  // deploy workflow; the operator apply path must too. Best-effort by design —
+  // it skips cleanly when there is no compute output yet — but a hard failure
+  // (bad creds/passphrase) aborts rather than risk applying against stale config.
+  console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'))
+  const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', targetStack], { cwd: infraDir, env: applyEnv, stdio: 'inherit' })
+  if (sync.status !== 0) {
+    console.error(`${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`)
+    process.exit(sync.status ?? 1)
+  }
+
   // No compute-deferred marker and no stack-file backup here: the stack is
   // already bootstrapped with live compute, the bootstrap key reaches
   // `pulumi up` via SCW_* env (applyEnv) rather than stack config, and

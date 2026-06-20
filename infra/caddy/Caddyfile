@@ -6,6 +6,10 @@
 # Edge Services + S3 cannot, and rewrites any 404 to /index.html so SPA deep
 # links resolve.
 #
+# IMPORTANT: CSP-only change won't go live until the next release rolls a new
+# frontend generation, since it lives only in the ignored cloud-init. If you
+# ever need a CSP change without an app release, you'd have to force a bump.
+#
 # The image is rebuilt per release (see infra/caddy/Dockerfile) so that
 # `RELEASE_SHA` is baked in and surfaces as `X-App-Version` — that is what
 # CI's rollout verifier asserts after each deploy.

@@ -21,7 +21,8 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, tags, dnsZone, serviceHost, infra, appConfig, endpoints } from '../pulumi-context'
+import { appConfig } from '../../shared'
+import { naming, zone, tags, dnsZone, serviceHost, infra, endpoints } from '../pulumi-context'
 import { enabledServices } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { privateNetworkId } from './network'

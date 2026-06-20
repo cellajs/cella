@@ -37,6 +37,7 @@
 
 - [Agent guidelines](/info/AGENTS.md)
 - [Architecture](/info/ARCHITECTURE.md)
+- [Quickstart](/info/QUICKSTART.md)
 
 ## Requirements
 
@@ -53,40 +54,4 @@ Do **not fork** this repo directly. Use the create CLI to get started:
 pnpm create @cellajs/cella
 ```
 
-You now have an implementation-ready web app 🤯. But ... without any unique functionality 🤓. Read
-the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
-
-<p>&nbsp;</p>
-
-## Contribute
-
-For those that (also) want to participate in development:
-
-```bash
-git clone git@github.com:cellajs/cella.git && cd cella
-```
-
-
-For a full setup with sync engine, you need to run postgres + CDC worker.
-Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
-
-```bash
-pnpm install
-pnpm docker
-pnpm seed
-```
-
-Start all servers:
-
-```bash
-pnpm dev
-```
-
-Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found
-at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db
-with [local.drizzle.studio](http://local.drizzle.studio).
-
-<p>&nbsp;</p>
-
-💙💛 Big thank you
-to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router), [react-query](https://github.com/tanstack/query)
+Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.

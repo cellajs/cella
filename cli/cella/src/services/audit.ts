@@ -463,8 +463,10 @@ async function promptForUpdates(
   }
 
   // Summarize impacted workspaces before running a single workspace-wide update.
-  // With catalogMode=strict, per-workspace updates can raise the catalog version
-  // before other direct consumers are updated, causing catalog mismatch failures.
+  // The two-phase normalization below guards against catalog version mismatches
+  // (ERR_PNPM_CATALOG_VERSION_MISMATCH) that could occur under catalogMode=strict.
+  // The workspace now uses catalogMode=manual, so this is defensive only, but it
+  // remains harmless and keeps audit robust if strict mode is ever reintroduced.
   for (const [workspace, { packages: pkgs }] of workspacePackages) {
     const pkgList = pkgs.join(', ');
     console.info(`${pc.cyan('↑')} ${pc.bold(workspace)}: ${pc.dim(pkgList)}`);

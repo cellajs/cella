@@ -272,6 +272,9 @@ jobs:
           # unauthenticated 60/hr shared limit that surfaced as a mid-deploy 403).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          # The Pulumi program reads the shared singleton, which selects config by
+          # APP_MODE. Set it from the stack mode so no module mutates env at runtime.
+          APP_MODE: ${{ needs.setup.outputs.environment }}
         run: |
           pnpm --filter infra sync-rollout-config --stack "$STACK"
           pulumi up --stack "$STACK" --yes
@@ -315,6 +318,8 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          # Pulumi program selects shared config by APP_MODE; set it from the stack mode.
+          APP_MODE: ${{ needs.setup.outputs.environment }}
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
           RUN_NUMBER: ${{ github.run_number }}
           PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}

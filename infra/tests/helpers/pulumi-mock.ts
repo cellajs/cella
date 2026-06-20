@@ -49,14 +49,11 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.PULUMI_NODEJS_STACK = opts.stack ?? opts.mode ?? 'production'
   process.env.APP_MODE = opts.mode ?? opts.stack ?? 'production'
 
-  // pulumi-context.ts resolves the org id (to scope IAM lookups) env-first:
-  // SCW_DEFAULT_ORGANIZATION_ID when present (the CI deploy path), else it falls
-  // back to getProjectOutput from SCW_DEFAULT_PROJECT_ID (the local path). Clear
-  // any ambient org id so tests deterministically exercise the project fallback
-  // against the getProject mock below, and mirror CI by always carrying a project id.
+  // pulumi-context.ts requires the org id (to scope IAM lookups) and the project
+  // id strictly from the environment, mirroring CI and the infra CLI. Provide
+  // both so module rendering is deterministic.
   process.env.SCW_DEFAULT_PROJECT_ID = process.env.SCW_DEFAULT_PROJECT_ID ?? 'mock-project-id'
-  delete process.env.SCW_DEFAULT_ORGANIZATION_ID
-  delete process.env.SCW_ORGANIZATION_ID
+  process.env.SCW_DEFAULT_ORGANIZATION_ID = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? 'mock-organization-id'
 
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
   if (opts.config) {
@@ -86,10 +83,6 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
         // IAM data sources (pulumi-context.ts derives identity ids from these instead
         // of stored config). Return deterministic stub ids so resource modules
         // that consume them render without talking to Scaleway.
-        if (args.token.includes('getProject')) {
-          const projectId = String((args.inputs as { projectId?: string }).projectId ?? 'mock-project-id')
-          return { id: projectId, projectId, organizationId: 'mock-organization-id' }
-        }
         if (args.token.includes('getApplication')) {
           const name = String((args.inputs as { name?: string }).name ?? 'app')
           return { id: `${name}-id`, applicationId: `${name}-id`, name }

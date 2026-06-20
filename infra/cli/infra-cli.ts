@@ -41,9 +41,10 @@ async function loadContext(): Promise<InfraContext> {
 
   // Resolve appConfig once, keyed to this stack's environment. `shared` reads
   // APP_MODE at module-eval time, so it must be set before the first import.
-  // Setting it on process.env also propagates to spawned child tasks (which
-  // inherit the env), keeping the whole run on a single, correct config.
-  process.env.APP_MODE ??= environment
+  // The CLI is authoritative here (force-assign, don't defer to a stray shell
+  // APP_MODE): this keeps context.appConfig, the spawned child tasks, and the
+  // Pulumi program's stack/APP_MODE consistency guard all on this one mode.
+  process.env.APP_MODE = environment
   const { appConfig } = await import('shared')
 
   // Project id is required for every mode (it scopes all Scaleway API calls), so
