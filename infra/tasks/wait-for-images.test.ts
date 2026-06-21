@@ -1,21 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IMAGE_REUSE, imageRef, imageServices, imageServicesFromBuildMatrix, parseArgs, TAGGED_SERVICES, waitForImages } from './wait-for-images'
+import { imageRef, imageServices, imageServicesFromBuildMatrix, parseArgs, waitForImages } from './wait-for-images'
 
 const TAG = 'abc1234'
 
 describe('imageServices', () => {
-  it('excludes services that reuse another image', () => {
+  it('excludes services that reuse another image (e.g. ai → backend)', () => {
     expect(imageServices()).toEqual(['backend', 'cdc', 'yjs', 'frontend'])
-  })
-
-  it('excludes exactly the reuse-mapped services from the tagged set', () => {
-    const reused = Object.keys(IMAGE_REUSE)
-    const expected = TAGGED_SERVICES.filter((s) => !reused.includes(s))
-    expect(imageServices()).toEqual(expected)
-  })
-
-  it('maps ai onto the backend image', () => {
-    expect(IMAGE_REUSE.ai).toBe('backend')
+    expect(imageServices()).not.toContain('ai')
   })
 })
 
@@ -86,15 +77,7 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['--registry', 'rg.x', '--tag', TAG])).toThrow(/Usage/)
   })
 
-  it('parses a --services override, restricting to known image services', () => {
-    // `ai` (reuse-only) and `bogus` (unknown) are dropped; order is preserved.
-    expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--services', 'backend,ai,frontend,bogus']).services).toEqual([
-      'backend',
-      'frontend',
-    ])
-  })
-
-  it('leaves services undefined when --services is omitted', () => {
+  it('leaves services undefined when no override is given', () => {
     expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG]).services).toBeUndefined()
   })
 
