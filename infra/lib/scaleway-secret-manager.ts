@@ -11,6 +11,17 @@ export interface SecretManagerSecret {
   region?: string
 }
 
+export interface SecretManagerSecretVersion {
+  revision: number
+  secret_id: string
+  status?: string
+  created_at?: string | null
+  updated_at?: string | null
+  description?: string | null
+  latest?: boolean
+  region?: string
+}
+
 interface SecretListResponse {
   secrets: SecretManagerSecret[]
   total_count: number
@@ -128,8 +139,8 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       )
     },
 
-    async putSecretValue(input: PutSecretValueInput): Promise<void> {
-      await scw(
+    async putSecretValue(input: PutSecretValueInput): Promise<SecretManagerSecretVersion> {
+      return await scw<SecretManagerSecretVersion>(
         fetchImpl,
         options.secretKey,
         'POST',

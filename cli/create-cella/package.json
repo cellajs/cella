@@ -61,6 +61,7 @@
     "@typescript/native-preview": "catalog:",
     "tsup": "catalog:",
     "tsx": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

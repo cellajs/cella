@@ -39,6 +39,5 @@ export const navItems = [
  */
 export const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
-  // { id: 'docs', href: `${appConfig.backendUrl}/docs` },
   { id: 'legal', href: '/legal' },
 ];

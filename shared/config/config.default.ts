@@ -286,7 +286,7 @@ export const config = {
     bankAccount: 'NL07 RABO 0309 4430 24',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
-    blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
+    socialUrl: 'https://bsky.app/profile/flipvh.bsky.social',
     blueskyHandle: '@flipvh.bsky.social',
     element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',

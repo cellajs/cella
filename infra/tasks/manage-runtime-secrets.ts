@@ -59,14 +59,15 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
   })
   const secrets = operatorManagedSecrets()
 
-  // Explain up front when a change actually reaches the running services, so an
-  // operator doesn't expect an instant deploy. Each VM's reconciler re-syncs the
-  // runtime secrets on its ~20s tick and rolls the affected services when a value
-  // changes (see infra/README.md). The trailing newline leaves a blank line
-  // before the menu.
+  // Explain the two distinct "update" surfaces up front: Secret Manager writes
+  // happen immediately as a new immutable VERSION, but running services do not
+  // hot-reload runtime secrets. They only observe the latest value the next time
+  // the affected VM boots (for example, on a deploy or manual restart). The
+  // trailing newline leaves a blank line before the menu.
   log(
-    `${pc.dim('Changes are applied gradually, not instantly. Each VM re-syncs runtime secrets roughly every 20s and rolls')}\n` +
-      `${pc.dim('the affected services when a value changes, so updates go live within a minute — no redeploy needed.')}\n`,
+    `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
+      `${pc.dim('container metadata looking unchanged; check the secret\'s Versions list for the new revision. Running services pick')}\n` +
+      `${pc.dim('up the latest value only on the next VM boot or deploy.')}\n`,
   )
 
   // Loop the menu so an operator setting up a fresh environment can manage
@@ -126,13 +127,13 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
         path: options.path,
         description: secret.description,
       })
-      await client.putSecretValue({
+      const version = await client.putSecretValue({
         secretId: ensured.id,
         value: generateRandomRuntimeSecret(),
         description: 'Rotated by bootstrap manage secrets',
         disablePrevious: true,
       })
-      log(`${checkMark} Rotated ${secret.secretName}`)
+      log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`)
       continue
     }
 
@@ -178,13 +179,13 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
         path: options.path,
         description: secret.description,
       }))
-    await client.putSecretValue({
+    const version = await client.putSecretValue({
       secretId: ensured.id,
       value,
       description: 'Updated by bootstrap manage secrets',
       disablePrevious: true,
     })
-    log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(${value.length} chars)`)}`)
+    log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`)
   }
 }
 

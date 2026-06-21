@@ -46,15 +46,12 @@ export default defineConfig({
     ],
     // Exact files pinned to fork; prefer fork version during merge conflicts
     pinnedFiles: [
-      "package.json",
       "pnpm-lock.yaml",
       "cella.config.ts",
       "backend/compose.yaml",
-      "backend/package.json",
       "backend/src/tables.ts",
       "backend/src/routes.ts",
       "backend/src/modules/memberships/memberships-db.ts",
-      "frontend/package.json",
       "frontend/public/favicon.ico",
       "frontend/public/favicon.svg",
       "frontend/src/nav-config.tsx",

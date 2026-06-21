@@ -127,4 +127,5 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `pnpm infra`: Manage deployment using Infra CLI: [infra/README.md](../infra/README.md)
 - `pnpm bench`: Run benchmark scenarios: [bench/README.md](../bench/README.md)
 - `pnpm cella`: CLI to sync with cella and more: [cli/cella/README.md](../cli/cella/README.md)
+- `pnpm story`: Start storybook
 

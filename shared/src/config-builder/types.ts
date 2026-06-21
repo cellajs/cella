@@ -112,7 +112,7 @@ export interface CompanyConfig {
   bankAccount: string;
   googleMapsUrl: string;
   scheduleCallUrl: string;
-  blueskyUrl: string;
+  socialUrl: string;
   blueskyHandle: string;
   element: string;
   githubUrl: string;

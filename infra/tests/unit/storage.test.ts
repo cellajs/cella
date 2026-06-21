@@ -73,7 +73,9 @@ describe('storage module', () => {
     const parsed = JSON.parse(policyJson) as { Statement: Array<{ Sid: string; Action: string[]; Resource: string[] }> }
     const vmWrite = parsed.Statement.find((s) => s.Sid === 'VmWriteBootDiagnostics')
     expect(vmWrite?.Action).toEqual(['s3:PutObject'])
-    expect(vmWrite?.Resource).toEqual(['cella-boot-diag/boot-diag/*'])
+    // Derive the bucket name from the captured resource so this holds for any fork slug.
+    const bootDiagBucketName = String(h.resources.find((r) => r.name === 'boot-diag-bucket')?.inputs.name ?? '')
+    expect(vmWrite?.Resource).toEqual([`${bootDiagBucketName}/boot-diag/*`])
   })
 
   it('upload buckets restrict CORS allowedOrigins (no wildcard)', () => {

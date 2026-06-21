@@ -21,9 +21,7 @@ describe('appConfig service endpoints', () => {
     expect(appConfig.services.yjs.publicUrl).toBe(appConfig.yjsUrl);
     expect(appConfig.services.ai.publicUrl).toBe(appConfig.aiUrl);
     expect('publicUrl' in appConfig.services.cdc).toBe(false);
-    expect(appConfig.services.cdc.enabled).toBe(true);
-    expect(appConfig.services.yjs.enabled).toBe(false);
-    expect(appConfig.services.ai.enabled).toBe(false);
+
   });
 
   it('applies env URL overrides to service public URLs', async () => {

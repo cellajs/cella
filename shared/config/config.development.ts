@@ -19,6 +19,10 @@ export default {
   yjsUrl: 'http://localhost:4002',
   aiUrl: 'http://localhost:4003',
 
+  // Shared Cella Maps key is referer-restricted to official domains and rejects localhost.
+  // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.
+  googleMapsKey: '',
+
   s3: {
     publicBucket: 'cella-shared-public',
     privateBucket: 'cella-shared-private',

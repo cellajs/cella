@@ -241,9 +241,9 @@
               "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
-              "createdAt": "2024-04-19T14:04:35.773Z",
+              "createdAt": "2024-04-18T21:12:59.543Z",
               "createdBy": null,
-              "updatedAt": "2024-04-19T14:04:35.773Z",
+              "updatedAt": "2024-04-18T21:12:59.543Z",
               "updatedBy": null,
               "included": {
                 "membership": {
@@ -289,9 +289,9 @@
               "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
-              "createdAt": "2024-02-25T13:01:35.301Z",
+              "createdAt": "2024-02-24T16:36:46.247Z",
               "createdBy": null,
-              "updatedAt": "2024-02-25T13:01:35.301Z",
+              "updatedAt": "2024-02-24T16:36:46.247Z",
               "updatedBy": null,
               "included": {
                 "membership": {
@@ -723,9 +723,9 @@
               "welcomeText": "Welcome to Anderson - Ferry!",
               "authStrategies": ["passkey"],
               "chatSupport": true,
-              "createdAt": "2024-11-21T04:00:59.122Z",
+              "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": null,
-              "updatedAt": "2024-11-21T04:00:59.122Z",
+              "updatedAt": "2024-11-21T01:19:53.533Z",
               "updatedBy": null,
               "included": {
                 "membership": {
@@ -771,9 +771,9 @@
               "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
               "authStrategies": ["passkey"],
               "chatSupport": false,
-              "createdAt": "2024-10-29T08:46:20.790Z",
+              "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": null,
-              "updatedAt": "2024-10-29T08:46:20.790Z",
+              "updatedAt": "2024-10-29T04:35:17.725Z",
               "updatedBy": null,
               "included": {
                 "membership": {
@@ -1099,9 +1099,9 @@
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "authStrategies": ["passkey"],
           "chatSupport": true,
-          "createdAt": "2024-12-25T15:29:47.111Z",
+          "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
-          "updatedAt": "2024-12-25T15:29:47.111Z",
+          "updatedAt": "2024-12-25T15:04:42.969Z",
           "updatedBy": null,
           "included": {
             "membership": {
@@ -1409,9 +1409,9 @@
           "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
           "authStrategies": ["passkey"],
           "chatSupport": true,
-          "createdAt": "2024-12-25T15:29:47.111Z",
+          "createdAt": "2024-12-25T15:04:42.969Z",
           "createdBy": null,
-          "updatedAt": "2024-12-25T15:29:47.111Z",
+          "updatedAt": "2024-12-25T15:04:42.969Z",
           "updatedBy": null,
           "included": {
             "membership": {
