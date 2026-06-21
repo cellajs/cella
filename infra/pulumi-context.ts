@@ -96,13 +96,11 @@ const registryInstanceType = (serviceName: string): string => {
   return resolved
 }
 
-// Expose mode-aware defaults (compute image, db sizing, WAF toggle) as a single object for convenient import in resource modules.
+// Expose mode-aware defaults (compute image, db sizing) as a single object for convenient import in resource modules.
 export const infra = {
   computeImage: resolvePerMode(generalConfig.compute.image, deployMode),
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
   dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),
-  enableWaf: resolvePerMode(generalConfig.waf.enabled, deployMode),
-  enableEdgeServices: resolvePerMode(generalConfig.edgeServices.enabled, deployMode),
   assetRetentionDays: resolvePerMode(generalConfig.assets.retentionDays, deployMode),
   instanceTypeFor: (serviceName: string): string => registryInstanceType(serviceName),
   computeEnabled: !computeDeferred,

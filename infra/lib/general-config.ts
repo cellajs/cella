@@ -20,7 +20,7 @@
  */
 import type { Environment } from './bootstrap-stack-state'
 
-/** A value fixed for all deploy modes, or varying per mode (e.g. WAF on in prod only). */
+/** A value fixed for all deploy modes, or varying per mode (e.g. a larger DB in prod only). */
 export type PerMode<T> = T | Partial<Record<Environment, T>>
 
 export interface GeneralConfig {
@@ -34,10 +34,6 @@ export interface GeneralConfig {
     /** Provisioned DB volume size in GB. */
     volumeSizeGb: PerMode<number>
   }
-  /** Web Application Firewall on the Edge Services pipeline. */
-  waf: { enabled: PerMode<boolean> }
-  /** Legacy Edge Services SPA pipeline (superseded by the `frontend` VM proxy). */
-  edgeServices: { enabled: PerMode<boolean> }
   assets: {
     /** Days before stale, content-hashed frontend chunks under `assets/` expire. */
     retentionDays: PerMode<number>

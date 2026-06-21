@@ -49,11 +49,17 @@ overrides:
   '@opentelemetry/core@<1.30.1': 1.30.1
   esbuild@<0.25.0: ^0.25.0
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
+  form-data@>=4.0.0 <4.0.6: ^4.0.6
+  hono@<4.12.25: ^4.12.25
+  joi@<17.13.4: ^17.13.4
   js-yaml@<=4.1.1: ^4.1.2
   protobufjs@>=8.0.0 <8.2.0: ^8.2.0
   protobufjs@>=8.0.0 <=8.0.1: ^8.0.2
   protobufjs@>=8.0.0 <=8.4.0: ^8.4.1
   protobufjs@>=8.0.0 <=8.5.0: ^8.5.1
+  protobufjs@<=7.6.2: ^7.6.3
+  uuid@<11.1.1: ^11.1.1
+  ws@>=8.0.0 <8.21.0: ^8.21.0
 packages:
   - ai
   - backend

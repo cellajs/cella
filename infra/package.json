@@ -45,7 +45,6 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
-    "postject": "^1.0.0-alpha.6",
     "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

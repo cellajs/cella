@@ -1,19 +1,11 @@
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
 import { servicesByName } from '../lib/services'
+import type { GenerationMetadata } from '../lib/generation-metadata'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
 import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
-
-interface GenerationMetadata {
-  service: ServiceName
-  gen: number
-  name: string
-  serverId: string
-  privateIp: string
-  privateNicId: string
-}
 
 function run(command: string, args: string[], opts: { cwd?: string; allowFailure?: boolean } = {}): string {
   const res = spawnSync(command, args, {

@@ -22,20 +22,20 @@ The key resources and how traffic flows between them:
                               │                              │
               api.<domain>    │                              │   <domain>
                               ▼                              ▼
-   ┌───────────────────────────────────────────┐  ┌──────────────────────┐
-   │             Private network (VPC)         │  │   Edge Services CDN  │
-   │                                           │  │          +           │
-   │  ┌──────────┐  ┌──────────┐  ┌──────────┐ │  │   frontend bucket    │
-   │  │ backend  │  │ optional │  │ optional │ │  │   (SPA hosting)      │
-   │  │   VM     │  │ VM (cdc, │  │ VM (yjs, │ │  └──────────────────────┘
-   │  │          │  │  ai …)   │  │  …)      │ │ 
-   │  └────┬─────┘  └──────────┘  └──────────┘ │
-   │       │                                   │
-   │       ▼                                   │
-   │  ┌──────────────┐                         │
-   │  │ PostgreSQL   │   (managed, private)    │
-   │  └──────────────┘                         │
-   └───────────────────────────────────────────┘
+   ┌───────────────────────────────────────────────────────────┐
+   │                   Private network (VPC)                    │
+   │                                                            │
+   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+   │  │ backend  │  │ frontend │  │ optional │  │ optional │    │
+   │  │   VM     │  │ VM Caddy │  │ VM (cdc, │  │ VM (yjs, │    │
+   │  │          │  │          │  │  ai …)   │  │  …)      │    │
+   │  └────┬─────┘  └────┬─────┘  └──────────┘  └──────────┘    │
+   │       │             │ reverse-proxy → frontend bucket      │
+   │       ▼             ▼          (SPA static files)          │
+   │  ┌──────────────┐                                          │
+   │  │ PostgreSQL   │           (managed, private)             │
+   │  └──────────────┘                                          │
+   └───────────────────────────────────────────────────────────┘
                               │
                               ▼
                     ┌──────────────────────┐
@@ -46,7 +46,7 @@ The key resources and how traffic flows between them:
 
 - **Load balancer** — single public entrypoint.
 - **Private network (VPC)** — VMs and db connect over private IPs; only LB is publicly reachable (no SSH).
-- **Frontend** — a static SPA bucket served through Edge Services CDN, not a VM.
+- **Frontend** — a Caddy VM behind the LB that reverse-proxies the SPA static-file bucket (adds security headers + rewrites 404→index.html for SPA routes).
 - **Backend VM** — the critical API path; replaced one generation at a time with LB overlap.
 - **Optional VMs** — `cdc`, `yjs`, `ai` run on their own VM generations when enabled.
 - **Database** — managed PostgreSQL reachable only from inside private network.
@@ -114,7 +114,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-CI builds the image, records the release SHA in stack config, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. For LB-backed services it creates a pending generation, expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, contracts to `[new]`, then clears the pending generation. See [rollout strategies](#rollout-strategies) for the model.
+CI builds the image, records the release SHA in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. For LB-backed services it creates a pending generation, expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, contracts to `[new]`, then clears the pending generation. See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -136,12 +136,12 @@ Every deploy is a **create-then-replace**: the image SHA is baked into a new VM 
 
 ### Runtime secret delivery
 
-Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` that the on-VM `runtime-secret-sync` writes from Secret Manager at boot. Because an `env_file` is line-based, **every secret value must be a single line**. Multi-line values (e.g. a PEM certificate) must be stored **base64-encoded** and decoded by the consuming service — this is what `DATABASE_SSL_CA` does (encoded in [resources/secrets.ts](resources/secrets.ts), decoded in the db clients). A `required` secret that can't be delivered fails the sync, which by design blocks the service from booting rather than letting it crash-loop behind a 502.
+Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` that the on-VM boot agent writes from Secret Manager at boot. Because an `env_file` is line-based, **every secret value must be a single line**. Multi-line values (e.g. a PEM certificate) must be stored **base64-encoded** and decoded by the consuming service — this is what `DATABASE_SSL_CA` does (encoded in [resources/secrets.ts](resources/secrets.ts), decoded in the db clients). A `required` secret that can't be delivered fails the sync, which by design blocks the service from booting rather than letting it crash-loop behind a 502.
 
 Two safeguards keep a runtime-secret change from causing the kind of full outage a mis-delivered secret would otherwise trigger. They were added after a multi-line secret (`DATABASE_SSL_CA`) bricked a backend rollout, and they sit alongside the single-line/base64 contract above:
 
-1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates — metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; the first-boot `runtime-secret-sync` reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
-2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up` — and before any VM is rolled or replaced — the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and asserted against the on-VM Python sync.
+1. **The secret *manifest* is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates — metadata only, never values) is built by Pulumi ([resources/compute.ts](resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; the first-boot agent reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
+2. **Deliverability is preflighted in CI before rolling.** Right after `pulumi up` — and before any VM is rolled or replaced — the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](tasks/assert-secrets-deliverable.ts), wired into the `pulumi` job as **Verify runtime secrets are deliverable**, mirroring the existing **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/env-file.ts](lib/env-file.ts), shared by the preflight and the on-VM boot agent that performs the hydration.
 
 ## Configuration
 
@@ -154,7 +154,7 @@ All tunable infra config lives in committed, type-checked files under [config/](
 | File | Owns | Applied by |
 |------|------|------------|
 | [config/services.config.ts](config/services.config.ts) | Per-service VM size (`instanceType`, required), replacement strategy, drain policy, LB routing, env, feature flags | routine CI deploy |
-| [config/general.config.ts](config/general.config.ts) | DB node type & volume, WAF, Edge Services, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
+| [config/general.config.ts](config/general.config.ts) | DB node type & volume, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
 | [config/runtime-secrets.config.ts](config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
 
 What stays in Pulumi config (not committed fork data): the encryption salt, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker. Per-service rollout state (generation + image SHA) lives in the **S3 control object** (`control/<stack>.json` in the state bucket), not in committed config — written by the deploy around each cutover and read by the Pulumi program at plan time. A conditional-write lock (`control/<stack>.lock.json`) prevents a CI deploy and an operator `apply` from mutating the same stack concurrently; clear a stale lock with the CLI **Unlock** action.
@@ -291,7 +291,7 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | Layer | Module | Resources |
 |-------|--------|-----------|
 | 1 | `storage` | Frontend bucket (SPA hosting), public & private upload buckets, boot-diagnostics bucket |
-| 2 | `edge`, `dns` | Edge Services CDN pipeline, WAF, TLS certs, DNS records |
+| 2 | `dns` | CAA records (restrict cert issuance to Let's Encrypt; TLS itself is terminated at the LB) |
 | 3 | `network`, `registry` | VPC, private networks, container registry |
 | 4 | `database` | Managed PostgreSQL 17 |
 | 5 | `secrets`, `compute`, `vm-iam` | Secret Manager, Docker Compose VMs, VM-reader IAM grant |
@@ -304,7 +304,7 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 shared/config/config.default.ts   → appConfig (slug, domain, URLs, S3 settings)
 shared/config/config.production.ts → overrides for production mode
         ↓
-infra/config/*.config.ts          → fork-owned sizing/feature knobs (VMs, DB, WAF, secrets map)
+infra/config/*.config.ts          → fork-owned sizing/feature knobs (VMs, DB, secrets map)
         ↓
 infra/pulumi-context.ts           → derives all naming, domains, regions; binds config + appConfig
         ↓

@@ -2,8 +2,8 @@
 #
 # This Caddy instance runs on its own VM behind the load balancer and acts as
 # the public origin for the SPA. The actual static bundle still lives in the
-# frontend S3 bucket; Caddy reverse-proxies to it, adds the security headers
-# Edge Services + S3 cannot, and rewrites any 404 to /index.html so SPA deep
+# frontend S3 bucket; Caddy reverse-proxies to it, adds security headers a bare
+# S3 bucket cannot, and rewrites any 404 to /index.html so SPA deep
 # links resolve.
 #
 # IMPORTANT: CSP-only change won't go live until the next release rolls a new
