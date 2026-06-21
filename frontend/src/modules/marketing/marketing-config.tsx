@@ -22,7 +22,7 @@ export const marketingNavConfig = [
  ************************************************************************************************/
 
 export const socials = [
-  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: CloudIcon },
+  { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
   { title: 'Element', href: appConfig.company.element, icon: ElementIcon },
   { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
@@ -41,7 +41,6 @@ export const footerSections = [
     links: [
       { title: 'c:api_docs', href: '/docs' },
       { title: 'c:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'c:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],
   },
   {

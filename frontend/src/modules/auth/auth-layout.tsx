@@ -1,18 +1,20 @@
-import { Link, Outlet } from '@tanstack/react-router';
+import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/marketing/logo';
 
-const authFooterLinks: FooterLinkProps[] = [
-  { id: 'sign_in', href: '/auth/authenticate' },
-  { id: 'about', href: '/about' },
-];
-
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation/bg-animation'));
 
 export function AuthLayout() {
   const { hasStarted, hasWaited } = useMountedState();
+  const { location, resolvedLocation } = useRouterState();
+  const pathname = (resolvedLocation ?? location).pathname;
+  const isSignInPage = pathname === '/auth/authenticate';
+
+  const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
+
+  if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
   return (
     <div

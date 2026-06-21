@@ -69,11 +69,13 @@ describe('manageRuntimeSecrets', () => {
     prompts.password.mockResolvedValueOnce('new-api-key')
     getSecretByName.mockResolvedValueOnce(undefined)
     ensureSecret.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' })
+    putSecretValue.mockResolvedValueOnce({ revision: 7, secret_id: 'secret-2' })
 
     await manageRuntimeSecrets(baseOptions)
 
     expect(ensureSecret).toHaveBeenCalledWith(expect.objectContaining({ name: 'brevo-api-key' }))
     expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }))
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'))
   })
 
   it('deletes an entire secret object only after confirmation', async () => {

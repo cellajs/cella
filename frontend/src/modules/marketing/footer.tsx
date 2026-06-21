@@ -65,6 +65,8 @@ const Credits = ({ className }: { className?: string }) => {
 export const MarketingFooter = () => {
   const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
+  const statusUrl = appConfig.statusUrl?.trim();
+  const legalFooterLinks = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (
     <div className="relative">
@@ -96,7 +98,7 @@ export const MarketingFooter = () => {
           </Link>
 
           <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
-            {legalLinks.map((link) => (
+            {legalFooterLinks.map((link) => (
               <li key={link.title}>
                 <Link
                   to={link.href}

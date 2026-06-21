@@ -111,6 +111,17 @@ export const config = {
   yjsUrl: 'wss://yjs.__project_slug__.example.com',
   /** AI service base URL */
   aiUrl: 'https://ai.__project_slug__.example.com',
+  /**
+   * Per-service toggles and public URLs. `enabled` controls whether the service
+   * is wired up; `publicUrl` is the externally reachable endpoint.
+   */
+  services: {
+    frontend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com' },
+    backend: { enabled: true as boolean, publicUrl: 'https://api.__project_slug__.example.com' },
+    cdc: { enabled: true as boolean },
+    yjs: { enabled: false as boolean, publicUrl: 'wss://yjs.__project_slug__.example.com' },
+    ai: { enabled: false as boolean, publicUrl: 'https://ai.__project_slug__.example.com' },
+  },
 
   /** About page URL */
   aboutUrl: '/about',
@@ -165,10 +176,6 @@ export const config = {
     uploadEnabled: false as boolean,
     /** Customer support chat widget (Gleap). Unrelated to the AI module. */
     chatSupport: false as boolean,
-    /** Yjs realtime collaboration */
-    yjs: false as boolean,
-    /** AI capability layer: tool registry + model runner + MCP endpoint. */
-    ai: false as boolean,
   },
 
   /******************************************************************************
@@ -354,7 +361,7 @@ export const config = {
     bankAccount: '',
     googleMapsUrl: '',
     scheduleCallUrl: '',
-    blueskyUrl: '',
+    socialUrl: '',
     blueskyHandle: '',
     element: '',
     githubUrl: '',

@@ -123,8 +123,16 @@ exec docker run --rm --network host \\
   boot --plan ${agentPlanPath}`
 }
 
+// Runs on first boot AND every subsequent reboot (the unit is `enable`d in
+// startAgent, and `[Install] WantedBy=multi-user.target` wires it into each
+// boot). Re-running is intentional: the agent is idempotent and re-hydrates
+// /opt/app/.env.runtime from Secret Manager every boot, so a reboot picks up
+// any new runtime-secret versions without needing a fresh VM generation. The
+// boot sequence is fail-safe on reboot — Docker's restart policy has already
+// brought the app up on the previous .env.runtime, so a transient hydration
+// failure leaves the service running on the last-known-good values.
 const agentUnit = `[Unit]
-Description=Cella first-boot agent
+Description=Cella boot agent (first boot + every reboot)
 After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
@@ -143,8 +151,11 @@ chmod 600 ${agentSecretKeyPath}
 ${writeHeredoc(agentLauncherPath, 'RUN_AGENT_EOF', agentLauncher(p))}
 chmod 700 ${agentLauncherPath}`
 
+// `enable` wires the unit into multi-user.target so it re-runs on every reboot
+// (re-hydrating runtime secrets); `start` runs it now on this first boot.
 const startAgent = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-agent.service', 'CELLA_BOOT_AGENT_UNIT_EOF', agentUnit)}
 systemctl daemon-reload
+systemctl enable cella-boot-agent.service 2>&1 | tail -1
 systemctl start cella-boot-agent.service`
 
 /** Render the first-boot cloud-init script for a single service generation VM. */

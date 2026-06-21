@@ -2,6 +2,14 @@
 
 This document describes how to develop your own app based on Cella. Also make sure to read the [architecture](./ARCHITECTURE.md) info.
 
+Do not fork this repo directly. Use the create CLI to get started:
+
+```bash
+pnpm create @cellajs/cella
+```
+
+When installed, use:
+
 ```bash
 pnpm install
 pnpm docker
@@ -20,7 +28,8 @@ pnpm check
 See [TESTING.md](./TESTING.md) for full documentation on writing and running tests.
 
 ```bash
-pnpm test
+pnpm test # Run tests (excluding ui stories)
+pnpm story # Start storybook
 ```
 
 
@@ -33,7 +42,7 @@ pnpm test
 4. Explore readmes and config files that start with `-config.ts`.
 5. Cella uses Transloadit with S3-compatible Scaleway Object Storage with local-only fallback.
 6. Changes in db schema? Use `pnpm generate` for a new db migration using drizzle.
-7. Many things can be improved or are missing. Have a look at our roadmap and contact us to get involved.
+7. Many things can be improved or are missing. Contact us to get involved!
 
 ## Cella CLI
 

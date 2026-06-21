@@ -128,14 +128,15 @@ describe('createSecretManagerClient', () => {
 
   it('creates a new version with base64 encoded data', async () => {
     const { fn, calls } = makeFetch([
-      { method: 'POST', match: '/secrets/secret-3/versions', body: { revision: 2 } },
+      { method: 'POST', match: '/secrets/secret-3/versions', body: { revision: 2, secret_id: 'secret-3', latest: true } },
     ])
     vi.stubGlobal('fetch', fn)
 
     const client = createSecretManagerClient({ ...baseOptions, fetchImpl: fn })
-    await client.putSecretValue({ secretId: 'secret-3', value: 'super-secret', disablePrevious: true })
+    const version = await client.putSecretValue({ secretId: 'secret-3', value: 'super-secret', disablePrevious: true })
 
     const createVersion = calls[0]
+    expect(version).toMatchObject({ revision: 2, secret_id: 'secret-3', latest: true })
     expect(createVersion?.url).toContain('/secrets/secret-3/versions')
     expect(JSON.parse(createVersion!.init.body as string)).toMatchObject({
       data: Buffer.from('super-secret', 'utf8').toString('base64'),

@@ -35,6 +35,8 @@ describe('renderCloudInit', () => {
     expect(out).toContain('rg.fr-par.scw.cloud/my-namespace/cella-boot-agent:abc123def')
     expect(out).toContain('boot --plan /etc/cella/boot-plan.json')
     expect(out).toContain('systemctl start cella-boot-agent.service')
+    // Enabled so it re-runs on every reboot and re-hydrates runtime secrets.
+    expect(out).toContain('systemctl enable cella-boot-agent.service')
   })
 
   it('passes service boot data through the schema-v1 boot plan', () => {

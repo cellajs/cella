@@ -1,3 +1,0 @@
-
-# Boot-agent bundle output (built by `pnpm --filter infra agent:build`)
-agent/dist/
