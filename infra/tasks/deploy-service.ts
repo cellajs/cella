@@ -109,8 +109,16 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const service = getFlag(argv, '--service') as ServiceName | undefined
   const sha = getFlag(argv, '--sha')
   const stack = getFlag(argv, '--stack')
-  if (!service || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--gen N] [--health-url URL] [--lb-zone ZONE]')
+  if (!service || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--gen N] [--health-url URL] [--lb-zone ZONE] [--skip-destroy]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
+
+  // When set, stop after promoting the new generation: the old generation is left
+  // in place (off the LB, drained) for a later `pulumi up` to reap. The rollout
+  // uses this so each service's teardown does not block the next service — the
+  // next service's create `pulumi up` reaps the previous old gen in parallel
+  // (hidden under the create), and the final service's straggler is reaped by the
+  // next deploy's base `pulumi up` (which runs anyway).
+  const skipDestroy = argv.includes('--skip-destroy')
 
   const definition = servicesByName.get(service)
   if (!definition) throw new Error(`Unknown service '${service}'`)
@@ -168,6 +176,10 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
 
   console.info(`[deploy ${service}] promoting generation ${nextGen}`)
   await updateStore(stack, service, () => ({ gen: nextGen, sha }))
+  if (skipDestroy) {
+    console.info(`[deploy ${service}] old generation ${currentGen} left for batched teardown (--skip-destroy)`)
+    return
+  }
   pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 }
 
