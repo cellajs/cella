@@ -21,6 +21,7 @@ import { runBake } from './actions/bake'
 import { runPreview } from './actions/preview'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
+import { runUnlock } from './actions/unlock'
 import type { CliMode, InfraContext } from './shared'
 
 // Load infra-only repo envs (e.g. SCW_PROJECT_ID) so they reach the CLI and the
@@ -98,6 +99,7 @@ const mode: CliMode =
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
           { name: 'Bake compute image', value: 'bake', description: 'Build the boot agent + bake the Docker/Node/agent VM image with Packer (prompts for the bootstrap key). Run before deploying agent/image changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
+          { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
         ],
       })
 
@@ -119,6 +121,11 @@ if (mode === 'bake') {
 
 if (mode === 'secrets') {
   await runSecrets(context)
+  process.exit(0)
+}
+
+if (mode === 'unlock') {
+  await runUnlock(context)
   process.exit(0)
 }
 

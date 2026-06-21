@@ -69,6 +69,7 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
   const metadata = JSON.parse(rawMetadata) as GenerationMetadata[]
   const byService = generationsByService(metadata)
 
+  const updates = new Map<string, { gen: number; sha: string }>()
   for (const [service, generations] of byService) {
     const generation = selectGeneration(generations)
     const sha = generation.sha ?? currentConfig(stack, configKey(service, 'sha')) ?? 'latest'
@@ -78,7 +79,36 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     setConfig(stack, configKey(service, 'sha'), sha)
     rmConfig(stack, configKey(service, 'pendingGen'))
     rmConfig(stack, configKey(service, 'pendingSha'))
+    updates.set(service, { gen: generation.gen, sha })
   }
+
+  await writeRolloutStore(stack, updates)
+}
+
+/** Mirror the reconciled gen/sha into the S3 control object (the source of truth
+ *  compute.ts reads). Full per-service values from live state, so this also seeds
+ *  the store on first run. Skipped (with a warning) when no S3 creds are present;
+ *  any other failure propagates so a broken reconcile is not silently ignored. */
+async function writeRolloutStore(stack: string, updates: Map<string, { gen: number; sha: string }>): Promise<void> {
+  if (updates.size === 0) return
+  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
+  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
+  if (!accessKey || !secretKey) {
+    console.warn('[sync-rollout-config] no S3 credentials; control object not updated (Pulumi config only)')
+    return
+  }
+  process.env.APP_MODE ??= stack.split('/').pop()
+  const { appConfig } = await import('shared')
+  const { controlActor, controlClientFromEnv, controlKey, readControlState, stateBucket, writeControlState } = await import('../lib/control-store')
+  const s3 = await controlClientFromEnv(appConfig.s3.region)
+  const bucket = stateBucket(appConfig.slug)
+  const key = controlKey(stack)
+  const { state, etag } = await readControlState(s3, bucket, key)
+  for (const [svc, { gen, sha }] of updates) state.rollout[svc] = { gen, sha }
+  state.updatedAt = new Date().toISOString()
+  state.updatedBy = controlActor()
+  await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
+  console.info(`[sync-rollout-config] control object updated (${updates.size} services)`)
 }
 
 if (isMain(import.meta.url)) await syncRolloutConfig()
