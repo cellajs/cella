@@ -65,23 +65,51 @@ function bootPlan(p: CloudInitParams): string {
   }, null, 2)
 }
 
+/** Agent image reference: same registry namespace + release SHA as the app images. */
+const agentImageRef = (p: CloudInitParams): string => `${p.registry}/cella-boot-agent:${p.releaseSha}`
+
+const agentLauncherPath = '/etc/cella/run-agent.sh'
+
+/**
+ * Launcher: log the host daemon into the registry (to pull the agent image),
+ * then run the agent container. The agent drives the host Docker daemon through
+ * the mounted socket and probes/reaches the private network via `--network host`.
+ * /opt/app + /etc/runtime-secrets are mounted so the agent writes compose.yml,
+ * .env, .env.runtime and the manifest to the same host paths the daemon mounts.
+ */
+const agentLauncher = (p: CloudInitParams): string => {
+  const registryHost = p.registry.split('/')[0]
+  return `#!/bin/bash
+set -uo pipefail
+docker login ${registryHost} -u nologin --password-stdin < ${agentSecretKeyPath}
+exec docker run --rm --network host \\
+  -v /var/run/docker.sock:/var/run/docker.sock \\
+  -v /opt/app:/opt/app \\
+  -v /etc/cella:/etc/cella \\
+  -v /etc/runtime-secrets:/etc/runtime-secrets \\
+  ${agentImageRef(p)} \\
+  boot --plan ${agentPlanPath}`
+}
+
 const agentUnit = `[Unit]
 Description=Cella first-boot agent
 After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -lc 'set -o pipefail; /usr/local/bin/cella-boot-agent boot --plan ${agentPlanPath} 2>&1 | tee -a /var/log/cella-boot.log > /dev/console'
+ExecStart=/bin/bash -lc 'set -o pipefail; ${agentLauncherPath} 2>&1 | tee -a /var/log/cella-boot.log > /dev/console'
 [Install]
 WantedBy=multi-user.target`
 
-const writeAgentInputs = (p: CloudInitParams): string => `mkdir -p /etc/cella
+const writeAgentInputs = (p: CloudInitParams): string => `mkdir -p /etc/cella /opt/app /etc/runtime-secrets
 ${writeHeredoc(agentPlanPath, 'BOOT_PLAN_EOF', bootPlan(p))}
 chmod 600 ${agentPlanPath}
 ${writeHeredoc(agentAccessKeyPath, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
 chmod 600 ${agentAccessKeyPath}
 ${writeHeredoc(agentSecretKeyPath, 'SCW_SECRET_KEY_EOF', p.secretKey)}
-chmod 600 ${agentSecretKeyPath}`
+chmod 600 ${agentSecretKeyPath}
+${writeHeredoc(agentLauncherPath, 'RUN_AGENT_EOF', agentLauncher(p))}
+chmod 700 ${agentLauncherPath}`
 
 const startAgent = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-agent.service', 'CELLA_BOOT_AGENT_UNIT_EOF', agentUnit)}
 systemctl daemon-reload

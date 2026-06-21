@@ -17,7 +17,6 @@ import { resolveProjectId } from '../lib/bootstrap-scw-env'
 import { detectComputeDeferred, detectStackState, pickStackShort } from '../lib/bootstrap-stack-state'
 import { infraDir } from '../lib/paths'
 import { runApply } from './actions/apply'
-import { runBake } from './actions/bake'
 import { runPreview } from './actions/preview'
 import { runSecrets } from './actions/secrets'
 import { runSetup } from './actions/setup'
@@ -97,7 +96,6 @@ const mode: CliMode =
           { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
           { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; provider auth is supplied via env.' },
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
-          { name: 'Bake compute image', value: 'bake', description: 'Build the boot agent + bake the Docker/Node/agent VM image with Packer (prompts for the bootstrap key). Run before deploying agent/image changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
           { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
         ],
@@ -111,11 +109,6 @@ if (mode === 'apply') {
 
 if (mode === 'preview') {
   await runPreview(context)
-  process.exit(0)
-}
-
-if (mode === 'bake') {
-  await runBake(context)
   process.exit(0)
 }
 

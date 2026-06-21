@@ -3,7 +3,6 @@ import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/console'
-import generalConfig from '../../config/general.config'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
 import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
@@ -12,7 +11,6 @@ import { infraDir } from '../../lib/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissions'
 import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
-import { resolvePerMode } from '../../lib/general-config'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
 import { maskedSecret } from '../prompts/masked-secret'
 import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
@@ -365,31 +363,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       }
       console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
 
-      // The service VMs boot from a baked image (Docker + the self-contained
-      // cella-boot-agent) that must exist before the first compute deploy. The
-      // bootstrap key in childEnv already has the instance-write rights to bake it, so offer it
-      // here on the first provision rather than as a separate manual step. The
-      // image has a stable name and the deploy resolves the newest by name, so
-      // to re-bake later (agent/image changes) just run `pnpm --filter infra
-      // image:build`. Skippable.
-      if (isFirstProvision) {
-        const bakeNow = await confirm({
-          message: 'Bake the compute VM image now? (required before the first compute deploy; ~10–15 min)',
-          default: true,
-        })
-        if (bakeNow) {
-          const { bakeComputeImage } = await import('./bake')
-          const imageName = resolvePerMode(generalConfig.compute.image, context.environment as Parameters<typeof resolvePerMode>[1])
-          const ok = await bakeComputeImage({ env: childEnv, zone: `${appConfig.s3.region}-1`, imageName })
-          if (ok) {
-            console.info(`  ${checkMark} Compute image baked. The next compute deploy resolves it by name automatically.`)
-          } else {
-            console.warn(`  ${warningMark} Image bake did not complete. Run \`pnpm --filter infra image:build\` before deploying compute.`)
-          }
-        } else {
-          console.info(`  ${pc.dim('Skipped. Bake later with `pnpm --filter infra image:build` — required before the first compute deploy.')}`)
-        }
-      }
       await releaseSetupLock()
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)

@@ -1,5 +1,3 @@
 
-# Packer image bake outputs
+# Boot-agent bundle output (built by `pnpm --filter infra agent:build`)
 agent/dist/
-# Cached Linux node base binary for the SEA build
-agent/.sea-cache/

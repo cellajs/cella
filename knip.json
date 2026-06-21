@@ -9,9 +9,10 @@
         "cli/infra-cli.ts",
         "tasks/*.ts",
         "compose/synth.ts",
+        "agent/src/entry.ts",
         "agent/src/main.ts"
       ],
-      "ignoreBinaries": ["pulumi", "packer", "gh"]
+      "ignoreBinaries": ["pulumi", "gh"]
     }
   }
 }

@@ -215,13 +215,11 @@ The CLI:
 - Optionally runs the first pulumi up
 
 
-### 5. Bake the compute image
+### 5. Compute base image
 
-Service VMs boot from a pre-baked Scaleway image that contains Docker Engine, the Docker Compose plugin, and the self-contained `cella-boot-agent` (a Node Single Executable Application — no Node/npm installed on the image). Cloud-init shrinks to a launcher that writes the boot plan and starts the agent; the agent owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
+Service VMs boot from Scaleway's stock **`docker`** marketplace image (Docker Engine + the Compose plugin, preinstalled and current) — set as `compute.image` in [config/general.config.ts](config/general.config.ts) and passed straight to the instance. There is **no image bake**: the `cella-boot-agent` ships as a normal registry container ([agent/Dockerfile](agent/Dockerfile)) that CI builds and pushes per commit, and every VM `docker run`s it at first boot (mounting the host Docker socket) to bring its compose stack up. Cloud-init shrinks to a launcher that writes the boot plan, logs the host into the registry, and runs the agent container; the agent owns the boot state machine (compose/env files, runtime-secret hydration, image pull, migrate, app start).
 
-This image is **required before the first compute deploy**, so the CLI offers to bake it at the end of the first `pulumi up` (the bootstrap key already has the instance-write rights — no separate credentials). It builds in a temporary builder VM in the deploy zone (image lookup is zonal, so the builder zone must match) and takes ~10–15 min. Accept the prompt unless you have a reason to defer.
-
-The baked image carries a **stable name** (`compute.image` in [config/general.config.ts](config/general.config.ts), default `cella-docker-node-agent-v1`). The Pulumi program resolves the **newest** image with that name at deploy time ([resources/compute.ts](resources/compute.ts)), so the upcoming compute deploy — and any later re-bake — is picked up automatically with **no UUID paste**. If you skip the bake here, run it later via the CLI's **Bake compute image** mode before pushing (see [Re-baking the compute image](#re-baking-the-compute-image)).
+Set `compute.image` to a literal image UUID only to **pin** a specific base image for rollback.
 
 ### 6. Commit and push
 
@@ -325,7 +323,7 @@ Only `production` is supported out of the box, but additional stacks (e.g. `stag
 
 ```text
 infra/
-├── agent/                  cella-boot-agent source (Node SEA baked into the compute image) + its Packer plan (compute-docker.pkr.hcl)
+├── agent/                  cella-boot-agent source + its container image (Dockerfile), `docker run` at VM first boot
 ├── caddy/                  Frontend Caddy proxy image and config
 ├── cli/                    Infra CLI
 ├── compose/                Build and generate compose.gen.yml
@@ -345,15 +343,15 @@ The `.github/workflows/` files are tightly coupled to this package: `deploy.yml`
 
 ## Advanced operations
 
-### Re-baking the compute image
+### Updating the boot agent
 
-The compute image is a deliberate base artifact, not something `pulumi up` rebuilds. Re-bake it only when the boot agent, Ubuntu, Docker, or security-patch policy changes — on an already-bootstrapped stack, run the CLI and pick **Bake compute image**:
+The boot agent is a normal registry container, not a baked base image. CI rebuilds and pushes it per commit ([agent/Dockerfile](agent/Dockerfile)), so any change under [agent/](agent/) ships on the next deploy with no extra step. To build it locally:
 
 ```bash
-pnpm infra   # → "Bake compute image"
+pnpm --filter infra agent:image   # tsup bundle + docker build (tag via AGENT_IMAGE)
 ```
 
-The mode prompts for a bootstrap key and loads `backend/.env`, so the build authenticates without exporting `SCW_*`. Because the image keeps its stable name (`compute.image`) and the deploy resolves the newest image by that name, the next compute deploy picks up the re-bake automatically — no config edit. Set `compute.image` to a literal image UUID only to **pin** a specific image for rollback.
+The VM base image itself is the stock `docker` marketplace label (`compute.image`); set it to a literal image UUID only to **pin** a specific base for rollback.
 
 ### Key rotation
 

@@ -70,3 +70,33 @@ Keep **B for boot** (pull, no inbound), and *separately* move **deploy-time orch
 Prototype B: add `agent/Dockerfile` + the cloud-init `docker run` invocation; tally exact deletions
 (`agent/build.ts`, SEA bits of the bake, wait-for-images simplifications) for a concrete LOC delta.
 Reversible spike before any commitment.
+
+## Spike results (2026-06-21) — live Scaleway checks
+Goal: keep it lean, ideally **no explicit image bake**, and reuse what can be reused across services
+and generations.
+
+**No-bake base is viable.** Scaleway marketplace has a `docker` InstantApp (`c1b530d8-…`). Booted one
+throwaway DEV1-S (nl-ams-1) from it and read versions (then terminated + deleted key, verified clean):
+- `OS = Ubuntu 22.04.5 LTS`, `ARCH = x86_64`
+- `Docker version 29.4.3` (current, not stale), `Docker Compose v5.1.3` (current v2 plugin)
+So the `docker` InstantApp gives Docker + compose **preinstalled and current** → **no Packer bake and
+no install-at-boot cost**. Alternative `ubuntu_noble` + cloud-init apt-install (the steps already in the
+bake) gives noble (24.04) + newest Docker but pays a per-VM install at boot. Lean choice: **`docker`
+InstantApp** unless we specifically need noble.
+
+**State reuse across services & generations — what's actually reusable:**
+- Free, no mechanism: the **base image** (one ID for every VM/service/generation), the **Scaleway
+  registry** (in-region, fast pulls — the shared state), and the **single agent image**.
+- Not cleanly reusable: per-VM Docker layer cache across generations. Blue-green needs old+new VMs
+  simultaneously and Scaleway block volumes are **single-attach**; sharing breaks overlap and
+  snapshotting = baking. Rely on fast in-region registry pulls instead.
+- Reusing the **VM itself** across generations (in-place container swap) would reuse everything but
+  abandons the immutable-generation model (the `gen`/`sha` machinery) — separate, larger decision.
+
+**Net lean model:** `docker` InstantApp base (no bake) + container agent pulled at boot + registry as
+shared state + accept fast per-generation re-pulls. Keeps it lean AND immutable.
+
+## Remaining experiment before implementation
+**(a) Local docker-out-of-docker spike (free):** a minimal agent `Dockerfile` + `docker run` with the
+host socket + `/opt/app` mounted, bringing up a dummy compose service — proves the container-agent
+model works end to end. Do this before deleting the SEA / rewriting cloud-init.
