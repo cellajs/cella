@@ -21,23 +21,6 @@ function runPulumi(args: string[], opts: { allowFailure?: boolean } = {}): strin
   return res.stdout.trim()
 }
 
-function configKey(service: string, key: 'gen' | 'sha' | 'pendingGen' | 'pendingSha'): string {
-  return `infra:${key}_${service}`
-}
-
-function currentConfig(stack: string, key: string): string | undefined {
-  const out = runPulumi(['config', 'get', key, '--stack', stack], { allowFailure: true }).trim()
-  return out || undefined
-}
-
-function setConfig(stack: string, key: string, value: string | number): void {
-  runPulumi(['config', 'set', key, String(value), '--stack', stack])
-}
-
-function rmConfig(stack: string, key: string): void {
-  runPulumi(['config', 'rm', key, '--stack', stack], { allowFailure: true })
-}
-
 function stackOutput(stack: string, name: string): string | undefined {
   return runPulumi(['stack', 'output', name, '--stack', stack, '--json'], { allowFailure: true }).trim() || undefined
 }
@@ -72,13 +55,8 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
   const updates = new Map<string, { gen: number; sha: string }>()
   for (const [service, generations] of byService) {
     const generation = selectGeneration(generations)
-    const sha = generation.sha ?? currentConfig(stack, configKey(service, 'sha')) ?? 'latest'
-
+    const sha = generation.sha ?? 'latest'
     console.info(`[sync-rollout-config] ${service}: gen=${generation.gen} sha=${sha}`)
-    setConfig(stack, configKey(service, 'gen'), generation.gen)
-    setConfig(stack, configKey(service, 'sha'), sha)
-    rmConfig(stack, configKey(service, 'pendingGen'))
-    rmConfig(stack, configKey(service, 'pendingSha'))
     updates.set(service, { gen: generation.gen, sha })
   }
 

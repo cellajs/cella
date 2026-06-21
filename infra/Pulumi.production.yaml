@@ -1,13 +1,3 @@
 encryptionsalt: v1:OB3eX2/Cavo=:v1:zUWCmiHoqAtbw5w9:nUhV6Y7FbTkk7Ok5ad1LipqvR6L/4Q==
 config:
   infra:bootstrapComplete: "2026-06-20T05:30:28.418Z"
-  infra:gen_backend: "5"
-  infra:sha_backend: f3c4818326e6c69952fd508debf6b5f261ee742b
-  infra:gen_cdc: "2"
-  infra:sha_cdc: f3c4818326e6c69952fd508debf6b5f261ee742b
-  infra:gen_frontend: "2"
-  infra:sha_frontend: f3c4818326e6c69952fd508debf6b5f261ee742b
-  infra:gen_yjs: "2"
-  infra:sha_yjs: f3c4818326e6c69952fd508debf6b5f261ee742b
-  infra:gen_ai: "2"
-  infra:sha_ai: f3c4818326e6c69952fd508debf6b5f261ee742b

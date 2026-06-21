@@ -32,32 +32,9 @@ function pulumi(args: string[], opts: { allowFailure?: boolean } = {}): string {
   return run('pulumi', args, { cwd: new URL('..', import.meta.url).pathname, ...opts })
 }
 
-function configKey(service: string, key: 'gen' | 'sha' | 'pendingGen' | 'pendingSha'): string {
-  return `infra:${key}_${service}`
-}
-
-function getConfigNumber(stack: string, key: string, fallback: number): number {
-  const raw = pulumi(['config', 'get', key, '--stack', stack], { allowFailure: true }).trim()
-  return raw ? Number(raw) : fallback
-}
-
-function getConfigString(stack: string, key: string): string | undefined {
-  const raw = pulumi(['config', 'get', key, '--stack', stack], { allowFailure: true }).trim()
-  return raw || undefined
-}
-
-function setConfig(stack: string, key: string, value: string | number): void {
-  pulumi(['config', 'set', key, String(value), '--stack', stack])
-}
-
-function rmConfig(stack: string, key: string): void {
-  pulumi(['config', 'rm', key, '--stack', stack], { allowFailure: true })
-}
-
 // ---------------------------------------------------------------------------
-// Control object (S3) — the source of truth compute.ts reads. Written alongside
-// the legacy Pulumi config during migration. Lazily resolved; null when no S3
-// credentials are present (credless runs fall back to Pulumi config only).
+// Control object (S3) — the source of truth for rollout state. Lazily resolved;
+// null when no S3 credentials are present (the deploy then cannot record state).
 // ---------------------------------------------------------------------------
 interface ControlCtx {
   s3: import('../lib/control-store').S3Like
@@ -72,7 +49,7 @@ function controlCtx(stack: string): Promise<ControlCtx | null> {
       const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
       const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
       if (!accessKey || !secretKey) {
-        console.warn('[deploy] no S3 credentials; control object not updated (Pulumi config only)')
+        console.warn('[deploy] no S3 credentials; cannot read/write rollout state')
         return null
       }
       process.env.APP_MODE ??= stack.split('/').pop()
@@ -86,8 +63,7 @@ function controlCtx(stack: string): Promise<ControlCtx | null> {
 }
 
 /** Read-modify-write one service's rollout entry in the control object. Throws on
- *  failure (when a context exists) so we never leave a stale store overriding the
- *  fresh config compute.ts reads. */
+ *  failure so a partial cutover never leaves the store inconsistent. */
 async function updateStore(
   stack: string,
   service: string,
@@ -97,6 +73,15 @@ async function updateStore(
   if (!ctx) return
   const { updateServiceRollout } = await import('../lib/control-store')
   await updateServiceRollout(ctx.s3, ctx.bucket, ctx.key, service, patch)
+}
+
+/** Current live rollout entry for a service, read from the control object. */
+async function currentRollout(stack: string, service: string): Promise<import('../lib/control-store').ServiceRollout | undefined> {
+  const ctx = await controlCtx(stack)
+  if (!ctx) return undefined
+  const { readControlState } = await import('../lib/control-store')
+  const { state } = await readControlState(ctx.s3, ctx.bucket, ctx.key)
+  return state.rollout[service]
 }
 
 function stackOutput<T>(stack: string, name: string): T {
@@ -138,17 +123,14 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const definition = servicesByName.get(service)
   if (!definition) throw new Error(`Unknown service '${service}'`)
 
-  const currentGen = getConfigNumber(stack, configKey(service, 'gen'), 1)
-  const currentSha = getConfigString(stack, configKey(service, 'sha'))
+  const current = await currentRollout(stack, service)
+  const currentGen = current?.gen ?? 1
+  const currentSha = current?.sha
   const nextGen = getNumFlag(argv, '--gen', currentGen + 1)
   const healthUrl = healthUrlFromFlag(getFlag(argv, '--health-url'))
 
   if (definition.replacementStrategy === 'exclusive') {
     console.info(`[deploy ${service}] exclusive replacement: gen ${currentGen} -> ${nextGen}`)
-    setConfig(stack, configKey(service, 'gen'), nextGen)
-    setConfig(stack, configKey(service, 'sha'), sha)
-    rmConfig(stack, configKey(service, 'pendingGen'))
-    rmConfig(stack, configKey(service, 'pendingSha'))
     await updateStore(stack, service, () => ({ gen: nextGen, sha }))
     pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
     return
@@ -158,8 +140,6 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   if (!healthUrl) throw new Error(`Service '${service}' has no health URL.`)
 
   console.info(`[deploy ${service}] creating pending generation ${nextGen} alongside ${currentGen}`)
-  setConfig(stack, configKey(service, 'pendingGen'), nextGen)
-  setConfig(stack, configKey(service, 'pendingSha'), sha)
   await updateStore(stack, service, (cur) => ({
     gen: cur?.gen ?? currentGen,
     sha: cur?.sha ?? currentSha ?? 'latest',
@@ -195,10 +175,6 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`)
 
   console.info(`[deploy ${service}] promoting generation ${nextGen}`)
-  setConfig(stack, configKey(service, 'gen'), nextGen)
-  setConfig(stack, configKey(service, 'sha'), sha)
-  rmConfig(stack, configKey(service, 'pendingGen'))
-  rmConfig(stack, configKey(service, 'pendingSha'))
   await updateStore(stack, service, () => ({ gen: nextGen, sha }))
   pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 }

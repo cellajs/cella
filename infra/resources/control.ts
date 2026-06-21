@@ -7,10 +7,11 @@
  * converges to what is actually live.
  *
  * Safe-by-omission: if there are no S3 credentials in the environment, or the
- * object does not exist yet (mid-migration), or the read fails, we return the
- * empty state and callers fall back to Pulumi config — preserving today's
- * behaviour. The S3 read is also skipped under Vitest so unit tests never reach
- * the network regardless of ambient credentials.
+ * object does not exist yet (fresh stack), we return the empty state and callers
+ * default to first-provision values. But a genuine read FAILURE (network, bad
+ * creds) fails closed — the control object is the sole source of rollout state,
+ * so aborting beats silently regressing live compute to gen 1 / latest. The S3
+ * read is also skipped under Vitest so unit tests never reach the network.
  */
 import * as pulumi from '@pulumi/pulumi'
 import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/control-store'
@@ -22,7 +23,7 @@ async function loadControlState(): Promise<ControlState> {
   const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
   const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
   if (!accessKey || !secretKey) {
-    pulumi.log.warn('control-store: no S3 credentials in env; falling back to Pulumi config for rollout state')
+    pulumi.log.warn('control-store: no S3 credentials in env; rollout state defaults to first-provision values')
     return emptyControlState()
   }
 
@@ -37,10 +38,10 @@ async function loadControlState(): Promise<ControlState> {
     const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(pulumi.getStack()))
     return state
   } catch (err) {
-    // A genuine read error (bad creds, network) must not crash the program nor
-    // silently misdeploy: warn loudly and fall back to config for this run.
-    pulumi.log.warn(`control-store: read failed (${(err as Error).message}); falling back to Pulumi config for rollout state`)
-    return emptyControlState()
+    // readControlState returns the empty state for a missing object (fresh stack);
+    // only genuine failures reach here. The control object is the sole source of
+    // rollout state, so fail closed rather than regress live compute.
+    throw new Error(`control-store: failed to read rollout state — aborting deploy (${(err as Error).message})`)
   }
 }
 
