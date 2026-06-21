@@ -21,7 +21,11 @@ function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
 }
 
 function runDeployService(item: RolloutItem, opts: { stack: string; sha: string; gen: number }): void {
-  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack, '--gen', String(opts.gen)]
+  // --skip-destroy: don't tear down the old generation inline. Each service's
+  // old VM is reaped (in parallel, hidden under the create) by the next service's
+  // `pulumi up`; the final service's straggler is reaped by the next deploy's
+  // base `pulumi up`. Keeps VM teardown off the deploy's critical path.
+  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack, '--gen', String(opts.gen), '--skip-destroy']
   if (item.health_url) args.push('--health-url', item.health_url)
   const res = spawnSync('pnpm', args, { stdio: 'inherit', env: process.env })
   if (res.status !== 0) throw new Error(`deploy-service failed for ${item.service} with exit ${res.status}`)
