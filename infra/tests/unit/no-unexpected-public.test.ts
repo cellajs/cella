@@ -33,7 +33,7 @@ const PATTERNS: Array<{ name: string; rx: RegExp }> = [
 // Allowlist: every entry MUST be justified by a real, intentional public
 // surface. Keep this list short. Format: `<resource>:<pattern-name>`.
 const EXPECTED = new Set<string>([
-  // Frontend SPA bucket — served publicly by Edge Services, must be readable.
+  // Frontend SPA bucket — served by the Caddy frontend VM, must be readable.
   'storage.ts:principal-wildcard',
   // Public-uploads bucket — user-uploaded assets meant to be public.
   // (Same resource, same pattern — counted once because we dedupe per resource.)

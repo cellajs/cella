@@ -5,7 +5,6 @@ import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
-import { ensureEdgePlan } from '../../lib/ensure-edge-plan'
 import { syncGithubEnvironment } from '../../lib/github-sync'
 import { infraDir } from '../../lib/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissions'
@@ -294,12 +293,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
     const runNow = await confirm({ message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?', default: isFirstProvision })
     if (runNow) {
-      try {
-        await ensureEdgePlan({ secretKey: scwSecretKey, projectId: scwProjectId })
-      } catch (error) {
-        console.error(`\n${warningMark} Edge Services plan check failed: ${(error as Error).message}`)
-        if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
-      }
       const { deriveInfra } = await import('../../lib/naming')
       const { dnsZone, hasDomain } = deriveInfra(appConfig)
       if (hasDomain) {

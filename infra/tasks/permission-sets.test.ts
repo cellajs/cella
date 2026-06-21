@@ -25,7 +25,6 @@ describe('CI key permission sets', () => {
     expect([...PROJECT_PERMISSION_SETS].sort()).toEqual([
       'BlockStorageFullAccess',
       'ContainerRegistryFullAccess',
-      'EdgeServicesFullAccess',
       'IPAMFullAccess',
       'InstancesFullAccess',
       'LoadBalancersFullAccess',

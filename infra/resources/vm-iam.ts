@@ -54,7 +54,7 @@ export function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types
  *
  * Compute VMs depend on this (see `resources/compute.ts`) so that on a fresh
  * bootstrap the grant is attached before the VMs boot and run their first
- * `runtime-secret-sync`.
+ * runtime-secret hydration.
  */
 export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),

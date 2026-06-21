@@ -23,15 +23,10 @@ export const frontendBucketEndpoint = storage.frontendBucketEndpoint
 export const frontendWebsiteEndpoint = storage.frontendWebsiteEndpoint
 
 // ---------------------------------------------------------------------------
-// Edge Services (CDN + WAF) + DNS
+// DNS (CAA records)
 // ---------------------------------------------------------------------------
 
-import * as edge from './resources/edge'
-import * as dns from './resources/dns'
-
-export const pipelineId = edge.pipelineId
-export const isApexDomain = dns.isApexDomain
-export const appSubdomainName = dns.appSubdomainName
+import './resources/dns'
 
 // ---------------------------------------------------------------------------
 // Network + Registry + Upload Buckets

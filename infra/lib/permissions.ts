@@ -15,7 +15,6 @@ export const PROJECT_PERMISSION_SETS = [
   'IPAMFullAccess', // reserve + attach stable private IPAM IPs for VMs
   'InstancesFullAccess', // VM lifecycle
   'LoadBalancersFullAccess', // backend/frontend re-pointing
-  'EdgeServicesFullAccess', // edge pipeline tweaks
   'ObjectStorageFullAccess', // frontend bucket uploads, policy refresh
   'PrivateNetworksFullAccess', // VM PN attachments (write required by InstancesFullAccess replacements)
   'SecretManagerFullAccess', // secret version rotation

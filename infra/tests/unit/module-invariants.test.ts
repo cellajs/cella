@@ -1,12 +1,12 @@
 /**
- * Source-level security invariants for the LB / DNS / Edge / DB / registry
+ * Source-level security invariants for the LB / DNS / DB / registry
  * / secrets resources.
  *
- * These resources either gate on deploy phase (LB, DNS, Edge) or read deeply from
+ * These resources either gate on deploy phase (LB, DNS) or read deeply from
  * stack config (DB), making a live render via the Pulumi mock harness brittle
  * and slow. Static checks here are intentionally narrow and target the few
  * security invariants that have caused production outages or audits in the
- * past (TLS, CAA, WAF, DB privacy, public registry leaks).
+ * past (TLS, CAA, DB privacy, public registry leaks).
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -17,7 +17,6 @@ const read = (resource: string) => readFileSync(resolve(resourcesDir, resource),
 
 const lb = read('loadbalancer.ts')
 const dns = read('dns.ts')
-const edge = read('edge.ts')
 const db = read('database.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
@@ -59,18 +58,6 @@ describe('dns resource', () => {
   // Tracking it as a TODO surfaces the gap in test output without
   // hard-failing the suite.
   it.todo('publishes a DMARC TXT record (p=quarantine or p=reject)')
-})
-
-describe('edge / WAF resource', () => {
-  it('WAF stage is provisioned in enabled mode when infra.enableWaf is true', () => {
-    expect(edge).toMatch(/if\s*\(\s*infra\.enableWaf\s*\)/)
-    expect(edge).toMatch(/mode:\s*['"]enable['"]/)
-    expect(edge).toMatch(/paranoiaLevel:\s*\d/)
-  })
-
-  it('TLS stage uses managed Let\'s Encrypt certificates', () => {
-    expect(edge).toMatch(/managedCertificate:\s*true/)
-  })
 })
 
 describe('database resource', () => {

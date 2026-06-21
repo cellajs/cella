@@ -1,12 +1,10 @@
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
+import type { GenerationMetadata } from '../lib/generation-metadata'
 import { getFlag } from './args'
 
-interface GenerationMetadata {
-  service: string
-  gen: number
-  sha?: string
-}
+/** The subset of the generation metadata this task reads (sha is always present). */
+type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'gen' | 'sha'>
 
 function runPulumi(args: string[], opts: { allowFailure?: boolean } = {}): string {
   const res = spawnSync('pulumi', args, {
@@ -25,12 +23,12 @@ function stackOutput(stack: string, name: string): string | undefined {
   return runPulumi(['stack', 'output', name, '--stack', stack, '--json'], { allowFailure: true }).trim() || undefined
 }
 
-export function selectGeneration(items: GenerationMetadata[]): GenerationMetadata {
+export function selectGeneration(items: RolloutGeneration[]): RolloutGeneration {
   return [...items].sort((a, b) => b.gen - a.gen)[0]!
 }
 
-export function generationsByService(metadata: GenerationMetadata[]): Map<string, GenerationMetadata[]> {
-  const services = new Map<string, GenerationMetadata[]>()
+export function generationsByService(metadata: RolloutGeneration[]): Map<string, RolloutGeneration[]> {
+  const services = new Map<string, RolloutGeneration[]>()
   for (const item of metadata) {
     const generations = services.get(item.service) ?? []
     generations.push(item)
@@ -49,7 +47,7 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     return
   }
 
-  const metadata = JSON.parse(rawMetadata) as GenerationMetadata[]
+  const metadata = JSON.parse(rawMetadata) as RolloutGeneration[]
   const byService = generationsByService(metadata)
 
   const updates = new Map<string, { gen: number; sha: string }>()

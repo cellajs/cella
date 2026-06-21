@@ -2,7 +2,7 @@
  * Storage — S3 buckets for the frontend SPA, user file uploads, and boot diagnostics.
  *
  * Frontend bucket runs in website-hosting mode so direct bucket access (dev) and
- * the Edge Services `isWebsite` origin both fall back to index.html for SPA routes.
+ * the Caddy frontend proxy both fall back to index.html for SPA routes.
  * Two upload buckets: a public one served directly, and a private one accessed only
  * via signed URLs. Production buckets are `protect`-ed and `forceDestroy` is off.
  *
@@ -56,7 +56,7 @@ const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction })
 
 // SPA website configuration — enables S3 website hosting with index.html fallback.
-// Required for direct bucket access (dev) and Edge Services isWebsite origin.
+// Required for direct bucket access (dev) and the Caddy frontend proxy.
 // Note: requires ObjectStorageFullAccess IAM permission on the SCW API key.
 const frontendWebsite = new scaleway.object.BucketWebsiteConfiguration(
   'frontend-website',
@@ -226,7 +226,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
 // Exports
 // ---------------------------------------------------------------------------
 
-/** Frontend bucket ID — consumed by the Edge Services pipeline as its S3 origin. */
+/** Frontend bucket ID — consumed by the Caddy frontend VM as its static-file origin. */
 export const frontendBucketId = frontendBucket.id
 
 /** Frontend bucket name */
