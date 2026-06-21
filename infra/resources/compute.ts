@@ -37,7 +37,7 @@ import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
-import { naming, zone, region, tags, infra, infraConfig, mode, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
+import { naming, zone, region, tags, infra, mode, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
 import { enabledServices, servicesByName, type ServiceDefinition } from '../lib/services'
@@ -304,20 +304,17 @@ interface Generation {
 
 /** Active generations for a service: the live one plus any pending one mid-cutover. */
 function activeGenerations(slug: string): Generation[] {
-  // Source of truth is the S3 control object (resources/control.ts), with a
-  // per-field fallback to the legacy Pulumi config keys so the store and config
-  // can coexist during migration (e.g. store has gen/sha but a cutover's pending
-  // still arrives via config). Config keys are underscore-flat (`gen_<slug>`),
-  // NOT colon-namespaced — a colon collides with the `<namespace>:<key>` syntax.
+  // Source of truth is the S3 control object (resources/control.ts). A service
+  // with no entry yet defaults to gen 1 / 'latest' — first provision, before its
+  // first deploy seeds the store.
   const entry = controlState.rollout[slug]
-  const gen = entry?.gen ?? infraConfig.getNumber(`gen_${slug}`) ?? 1
-  const sha = entry?.sha ?? infraConfig.get(`sha_${slug}`) ?? 'latest'
+  const gen = entry?.gen ?? 1
+  const sha = entry?.sha ?? 'latest'
   const generations: Generation[] = [{ gen, sha }]
 
-  const pendingGen = entry?.pendingGen ?? infraConfig.getNumber(`pendingGen_${slug}`)
+  const pendingGen = entry?.pendingGen
   if (pendingGen !== undefined && pendingGen !== gen) {
-    const pendingSha = entry?.pendingSha ?? infraConfig.get(`pendingSha_${slug}`) ?? 'latest'
-    generations.push({ gen: pendingGen, sha: pendingSha })
+    generations.push({ gen: pendingGen, sha: entry?.pendingSha ?? 'latest' })
   }
   return generations
 }
@@ -371,15 +368,13 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   return ip.address.apply((addr) => addr.split('/')[0])
 }
 
-// Resolve the baked compute image at plan time. `compute.image` is normally a
-// stable NAME (e.g. 'cella-docker-node-agent-v1'): the newest image with that
-// name wins (`latest: true`), so a freshly baked image is picked up on the next
-// deploy with no UUID paste. A literal image UUID pins a specific image for
-// rollback. Resolution runs in the deploy zone so the server and image match.
-const IMAGE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const computeImageId: pulumi.Input<string> = IMAGE_UUID_RE.test(infra.computeImage)
-  ? infra.computeImage
-  : scaleway.instance.getImageOutput({ name: infra.computeImage, latest: true, zone }).id
+// Compute base image. `compute.image` is a Scaleway marketplace LABEL ('docker'
+// — Docker + compose preinstalled and current) or a literal image UUID to pin a
+// specific image. The provider's instance `image` accepts either directly, so
+// there is no plan-time getImage lookup: the boot agent ships as a registry
+// container pulled at first boot (no baked golden image). `ignoreChanges:['image']`
+// keeps a label that resolves to a rotated UUID from churning live generations.
+const computeImageId: pulumi.Input<string> = infra.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
   const resourceName = `vm-${svc.slug}-${generation.gen}`

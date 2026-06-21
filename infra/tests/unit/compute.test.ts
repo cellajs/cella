@@ -62,7 +62,9 @@ describe('compute module source invariants', () => {
 
   it('uses the configured compute image and delegates boot inputs to cloud-init', () => {
     expect(source).toMatch(/image:\s*computeImageId/)
-    expect(source).toMatch(/getImageOutput\(\{ name: infra\.computeImage, latest: true/)
+    // The marketplace label / UUID is passed straight through — no plan-time getImage lookup.
+    expect(source).toMatch(/const computeImageId:\s*pulumi\.Input<string>\s*=\s*infra\.computeImage/)
+    expect(source).not.toMatch(/getImageOutput/)
     expect(source).toMatch(/bootDiagBucket,/)
     expect(source).not.toMatch(/dockerPreinstalled:/)
     expect(source).not.toMatch(/image:\s*'ubuntu_noble'/)
@@ -114,14 +116,13 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/Create backend first/)
   })
 
-  it('treats both cloud-init and the baked image as immutable generation identity', () => {
-    // A generation VM bakes its cloud-init AND its image at creation. Re-baking
-    // the golden image rotates the UUID behind the stable name resolved by
-    // getImage(latest:true); without ignoring `image`, the base `pulumi up`
-    // would diff every running generation and destructively replace the live
-    // frontend/backend/cdc VMs (delete-before-create, bypassing the LB-overlap
-    // cutover) — the cause of the recurring fleet-wide downtime. A new image is
-    // only ever picked up by a NEW generation (new resource name).
+  it('treats both cloud-init and the base image as immutable generation identity', () => {
+    // A generation VM fixes its cloud-init AND its image at creation. A marketplace
+    // label can resolve to a rotated UUID over time; without ignoring `image`, the
+    // base `pulumi up` would diff every running generation and destructively replace
+    // the live frontend/backend/cdc VMs (delete-before-create, bypassing the
+    // LB-overlap cutover) — the cause of the recurring fleet-wide downtime. A new
+    // image is only ever picked up by a NEW generation (new resource name).
     expect(source).toMatch(/ignoreChanges: \['cloudInit', 'image'\]/)
   })
 

@@ -135,6 +135,60 @@ jobs:
           provenance: false
 
   # -------------------------------------------------------------------------
+  # Build and push the boot-agent image (one per commit, service-independent).
+  # Every VM `docker run`s this at first boot to bring its compose stack up via
+  # the host Docker socket, so it must be in the registry before the pulumi job
+  # creates any VM generation — hence the pulumi job `needs` it.
+  # -------------------------------------------------------------------------
+  build-agent-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Build agent bundle
+        run: pnpm --filter infra agent:build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: rg.${{ needs.setup.outputs.region }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push boot-agent image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: infra/agent
+          file: infra/agent/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot-agent:${{ needs.setup.outputs.image_tag }}
+          cache-from: type=gha,scope=boot-agent
+          cache-to: type=gha,mode=max,scope=boot-agent
+          provenance: false
+
+  # -------------------------------------------------------------------------
   # Build frontend bundle (no upload). Runs in parallel with build-images so
   # the artifact is ready when publish-frontend gates on backend health.
   # -------------------------------------------------------------------------
@@ -182,7 +236,7 @@ jobs:
   pulumi:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [setup]
+    needs: [setup, build-agent-image]
     # contents: read for checkout.
     permissions:
       contents: read

@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "nanoid": "^5.1.11",
+    "nanoid": "^5.1.14",
     "ora": "^9.4.0",
-    "pg": "^8.21.0",
+    "pg": "^8.22.0",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"
@@ -21,8 +21,8 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
-    "artillery": "catalog:",
-    "artillery-plugin-ensure": "catalog:",
+    "artillery": "^2.0.33",
+    "artillery-plugin-ensure": "^1.27.0",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

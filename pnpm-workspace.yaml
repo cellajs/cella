@@ -13,64 +13,22 @@ allowBuilds:
 allowUnusedPatches: true
 blockExoticSubdeps: true
 catalog:
-  '@ag-ui/core': ^0.0.57
-  '@atlaskit/pragmatic-drag-and-drop': ^2.0.0
-  '@atlaskit/pragmatic-drag-and-drop-auto-scroll': ^3.0.0
-  '@atlaskit/pragmatic-drag-and-drop-hitbox': ^2.0.0
-  '@aws-sdk/client-s3': ^3.1070.0
-  '@aws-sdk/s3-request-presigner': ^3.1070.0
-  '@biomejs/biome': ^2.5.0
-  '@hey-api/openapi-ts': ^0.98.2
+  '@aws-sdk/client-s3': ^3.1073.0
   '@hono/node-server': ^2.0.5
   '@opentelemetry/auto-instrumentations-node': ^0.77.0
   '@opentelemetry/exporter-logs-otlp-http': ^0.219.0
   '@opentelemetry/exporter-metrics-otlp-http': ^0.219.0
   '@opentelemetry/exporter-trace-otlp-http': ^0.219.0
-  '@opentelemetry/instrumentation': ^0.219.0
-  '@opentelemetry/instrumentation-fetch': ^0.219.0
   '@opentelemetry/resources': ^2.8.0
   '@opentelemetry/sdk-logs': ^0.219.0
   '@opentelemetry/sdk-metrics': ^2.8.0
   '@opentelemetry/sdk-node': ^0.219.0
-  '@opentelemetry/sdk-trace-base': ^2.8.0
-  '@opentelemetry/sdk-trace-web': ^2.8.0
-  '@pulumi/pulumi': ^3.246.0
-  '@storybook/addon-a11y': ^10.4.6
-  '@storybook/addon-docs': ^10.4.6
-  '@storybook/addon-vitest': ^10.4.6
-  '@storybook/react-vite': ^10.4.6
-  '@tailwindcss/vite': ^4.3.1
-  '@tanstack/ai': ^0.31.0
-  '@tanstack/ai-client': ^0.17.3
-  '@tanstack/ai-react': ^0.15.8
-  '@tanstack/react-router': ^1.170.16
   '@types/node': 24.10.13
   '@types/react': 19.2.17
-  '@typescript/native-preview': 7.0.0-dev.20260617.2
-  '@vitest/browser': ^4.1.9
-  '@vitest/browser-playwright': ^4.1.9
-  '@vitest/coverage-v8': ^4.1.9
-  artillery: ^2.0.33
-  artillery-plugin-ensure: ^1.27.0
-  axios: ^1.18.0
+  '@typescript/native-preview': 7.0.0-dev.20260619.1
   cross-env: ^10.1.0
-  dexie: ^4.4.4
-  dompurify: ^3.4.10
-  giget: ^3.3.0
-  gleap: ^16.1.1
-  hono: ^4.12.25
-  isbot: ^5.1.43
-  knip: ^6.17.1
-  lucide-react: ^1.20.0
-  openai: ^6.43.0
-  pg-boss: ^12.19.1
-  playwright: ^1.61.0
+  hono: ^4.12.26
   rate-limiter-flexible: ^11.2.0
-  react-hook-form: ^7.79.0
-  sanitize-html: ^2.17.5
-  storybook: ^10.4.6
-  tailwindcss: ^4.3.1
-  transloadit: 4.10.7
   tsup: ^8.5.1
   tsx: ^4.22.4
   typescript: ^6.0.3
@@ -78,44 +36,23 @@ catalog:
 catalogMode: manual
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@aws-sdk/*'
-  - protobufjs@8.0.2
-  - ws@8.20.1
-  - prosemirror-model@1.25.7
-  - tmp@0.2.6
   - esbuild@0.25.0
+  - protobufjs@8.0.2
   - protobufjs@8.2.0
-  - uuid@11.1.1
-  - '@pulumiverse/scaleway@1.50.1'
-  - joi@17.13.4
   - esbuild@0.28.1
-  - ws@8.21.0
-  - protobufjs@7.6.3
-  - form-data@4.0.6
+  - protobufjs@8.5.1
   - js-yaml@4.1.2
+  - protobufjs@8.4.1
   - '@opentelemetry/core@2.8.0'
-  - hono@4.12.25
 overrides:
-  # Floor old @opentelemetry/core within each major line WITHOUT crossing the
-  # 1.x -> 2.x boundary. @pulumi/pulumi's tracing stack (sdk-trace-base@1.30.1,
-  # resources@1.30.1, ...) pins core@1.30.1 and relies on the 1.x API
-  # (TracesSamplerValues), which 2.x removed. A blunt `<2.8.0 -> ^2.8.0` force-
-  # upgraded that to core@2.8.0 and crashed `pulumi preview` with
-  # "Cannot read properties of undefined (reading 'AlwaysOn')". Keep Pulumi on
-  # the latest 1.x core and the app's own 2.x OTel on 2.8.0.
-  '@opentelemetry/core@>=2.0.0 <2.8.0': ^2.8.0
-  '@opentelemetry/core@<1.30.1': 1.30.1
+  '@opentelemetry/core@<2.8.0': ^2.8.0
   esbuild@<0.25.0: ^0.25.0
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
-  form-data@>=4.0.0 <4.0.6: ^4.0.6
-  hono@<4.12.25: ^4.12.25
-  joi@<17.13.4: ^17.13.4
   js-yaml@<=4.1.1: ^4.1.2
-  protobufjs@<=7.6.2: ^7.6.3
   protobufjs@>=8.0.0 <8.2.0: ^8.2.0
   protobufjs@>=8.0.0 <=8.0.1: ^8.0.2
-  uuid@<11.1.1: ^11.1.1
-  ws@>=8.0.0 <8.21.0: ^8.21.0
+  protobufjs@>=8.0.0 <=8.4.0: ^8.4.1
+  protobufjs@>=8.0.0 <=8.5.0: ^8.5.1
 packages:
   - ai
   - backend

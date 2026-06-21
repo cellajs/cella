@@ -47,9 +47,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "axios": "catalog:",
+    "axios": "^1.18.0",
     "commander": "^15.0.0",
-    "giget": "catalog:",
+    "giget": "^3.3.0",
     "nano-spawn": "^2.0.0",
     "ora": "^9.3.0",
     "picocolors": "^1.1.1",

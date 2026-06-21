@@ -20,14 +20,20 @@ function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
 }
 
 describe('renderCloudInit', () => {
-  it('renders the baked TypeScript boot-agent launcher', () => {
+  it('renders the containerised boot-agent launcher', () => {
     const out = renderCloudInit(params())
 
     expect(out).toContain('cat > /etc/cella/boot-plan.json')
     expect(out).toContain('"imageContract": "docker-node-agent-v1"')
     expect(out).toContain('cat > /etc/cella/scw-access-key')
     expect(out).toContain('cat > /etc/cella/scw-secret-key')
-    expect(out).toContain('/usr/local/bin/cella-boot-agent boot --plan /etc/cella/boot-plan.json')
+    expect(out).toContain('cat > /etc/cella/run-agent.sh')
+    // Host logs into the registry to pull the agent image, then runs it.
+    expect(out).toContain('docker login rg.fr-par.scw.cloud -u nologin --password-stdin < /etc/cella/scw-secret-key')
+    expect(out).toContain('docker run --rm --network host')
+    expect(out).toContain('-v /var/run/docker.sock:/var/run/docker.sock')
+    expect(out).toContain('rg.fr-par.scw.cloud/my-namespace/cella-boot-agent:abc123def')
+    expect(out).toContain('boot --plan /etc/cella/boot-plan.json')
     expect(out).toContain('systemctl start cella-boot-agent.service')
   })
 

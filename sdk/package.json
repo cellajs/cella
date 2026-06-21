@@ -20,7 +20,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "catalog:",
+    "@hey-api/openapi-ts": "^0.98.2",
     "@hey-api/spec-types": "^0.2.0",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
