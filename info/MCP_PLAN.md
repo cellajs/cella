@@ -1,5 +1,7 @@
 # MCP — continuation plan
 
+NOTE: Look more into proven MCP patterns from other open source projects. Consider also adopting https://github.com/panva/node-oidc-provider/issues first.
+
 > **Status:** Concept / roadmap. Not a committed milestone set. This document plans how to evolve
 > the Model Context Protocol (MCP) support that already exists in Cella core, so that it serves both
 > **Cella** (MCP for external use + general AI functionality, no chat agent) and **Raak** (MCP for

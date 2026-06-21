@@ -36,7 +36,8 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, zone, region, tags, infra, infraConfig, mode, appConfig, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
+import { appConfig } from '../../shared'
+import { naming, zone, region, tags, infra, infraConfig, mode, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
 import { enabledServices, servicesByName, type ServiceDefinition } from '../lib/services'
@@ -44,6 +45,7 @@ import type { ServiceName } from '../compose/compose'
 import { frontendCsp } from '../lib/frontend-csp'
 import { renderCloudInit } from './cloud-init'
 import { privateNetworkId } from './network'
+import { controlState } from './control'
 import { registryEndpoint } from './registry'
 import { secretIds } from './secrets'
 import { bootDiagBucketName, frontendBucketName } from './storage'
@@ -302,18 +304,19 @@ interface Generation {
 
 /** Active generations for a service: the live one plus any pending one mid-cutover. */
 function activeGenerations(slug: string): Generation[] {
-  // Config keys are underscore-flat (`gen_<slug>`), NOT colon-namespaced — a
-  // colon in a Pulumi config key collides with the `<namespace>:<key>` syntax
-  // (`pulumi config set gen:backend` would set namespace `gen`, not the `infra`
-  // key `gen:backend`). Underscores keep `pulumi config set infra:gen_backend`
-  // unambiguous.
-  const gen = infraConfig.getNumber(`gen_${slug}`) ?? 1
-  const sha = infraConfig.get(`sha_${slug}`) ?? 'latest'
+  // Source of truth is the S3 control object (resources/control.ts), with a
+  // per-field fallback to the legacy Pulumi config keys so the store and config
+  // can coexist during migration (e.g. store has gen/sha but a cutover's pending
+  // still arrives via config). Config keys are underscore-flat (`gen_<slug>`),
+  // NOT colon-namespaced — a colon collides with the `<namespace>:<key>` syntax.
+  const entry = controlState.rollout[slug]
+  const gen = entry?.gen ?? infraConfig.getNumber(`gen_${slug}`) ?? 1
+  const sha = entry?.sha ?? infraConfig.get(`sha_${slug}`) ?? 'latest'
   const generations: Generation[] = [{ gen, sha }]
 
-  const pendingGen = infraConfig.getNumber(`pendingGen_${slug}`)
+  const pendingGen = entry?.pendingGen ?? infraConfig.getNumber(`pendingGen_${slug}`)
   if (pendingGen !== undefined && pendingGen !== gen) {
-    const pendingSha = infraConfig.get(`pendingSha_${slug}`) ?? 'latest'
+    const pendingSha = entry?.pendingSha ?? infraConfig.get(`pendingSha_${slug}`) ?? 'latest'
     generations.push({ gen: pendingGen, sha: pendingSha })
   }
   return generations

@@ -10,7 +10,8 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, isProduction, appConfig, infra, ciDeployApplicationId, vmReaderApplicationId } from '../pulumi-context'
+import { appConfig } from '../../shared'
+import { naming, region, tags, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId } from '../pulumi-context'
 
 // Derived from IAM by name (SOVRUN §3.3) — was the stored `infra:applicationId`.
 const applicationId = ciDeployApplicationId

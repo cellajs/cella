@@ -9,11 +9,21 @@ pnpm seed
 pnpm dev
 ```
 
-## To update sdk + check types + format/fix code style
+## Update openapi & sdk + checks types + format/fix code style
 
 ```bash
 pnpm check
 ```
+
+## Run tests
+
+See [TESTING.md](./TESTING.md) for full documentation on writing and running tests.
+
+```bash
+pnpm test
+```
+
+
 
 ## Customize & contribute
 
@@ -27,8 +37,31 @@ pnpm check
 
 ## Cella CLI
 
+Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations. It also covers auditing outdated/vulnerable packages, file stats, and (for template maintainers) syncing downstream forks.
+
 See [cli/cella/README.md](../cli/cella/README.md) for full documentation, services, and configuration.
 
 ```bash
 pnpm cella
 ```
+
+## Infra CLI
+
+Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. CI handles routine zero-downtime deploys on push to `main`. The CLI generates the Docker Compose synth and drives the Pulumi infrastructure tasks.
+
+See [infra/README.md](../infra/README.md) for full documentation and configuration.
+
+```bash
+pnpm infra
+```
+
+## Bench CLI
+
+Artillery load testing to keep services such as backend, cdc and yjs performant. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one.
+
+See [bench/README.md](../bench/README.md) for full documentation and scenarios.
+
+```bash
+pnpm bench
+```
+

@@ -259,7 +259,7 @@ Cella is a flat-root monorepo.
 │   │   ├── styling           Tailwind styling
 │   │   └── utils             Reusable functions
 │   └── vite                  Vite-related plugins & scripts
-├── infra                     Pulumi IaC (Scaleway)
+├── infra                     Pulumi IaC (Scaleway) deployment with CLI
 ├── info                      Documentation, changelog, migration plans
 ├── json                      Static JSON data 
 ├── locales                   Translations

@@ -1,5 +1,7 @@
 # Frontend serving options (Caddy vs Nitro vs Hono, and TanStack Start / SSG)
 
+Status: concept
+
 This note captures the architecture options for what currently serves the Cella frontend,
 why the question came up, and the trade-offs of each path. It is a decision aid, not a
 committed plan. The same serving layer could also help us create and maintain dedicated

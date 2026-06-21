@@ -124,4 +124,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
 - `pnpm test`: Run the default full test suite and emit summary coverage output. Use `pnpm test:core` for the narrower core-mode suite without CDC/CLI coverage.
-- `pnpm cella`: run Cella CLI to sync with upstream or downstream: [cli/cella/README.md](../cli/cella/README.md)
+- `pnpm infra`: Manage deployment using Infra CLI: [infra/README.md](../infra/README.md)
+- `pnpm bench`: Run benchmark scenarios: [bench/README.md](../bench/README.md)
+- `pnpm cella`: CLI to sync with cella and more: [cli/cella/README.md](../cli/cella/README.md)
+

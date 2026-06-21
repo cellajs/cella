@@ -312,6 +312,23 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
         }
       }
+      // Lock the stack for the provisioning phase (pulumi up + image bake) so a
+      // second operator or a CI deploy cannot mutate concurrently. Released at
+      // the provisioning exit points below; a dead lock self-expires (TTL) or is
+      // cleared via the CLI "Unlock" action.
+      const { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } = await import('../../lib/control-store')
+      const lockS3 = await makeControlClient(appConfig.s3.region, scwAccessKey, scwSecretKey)
+      const lockBucket = stateBucket(appConfig.slug)
+      const lockObjectKey = lockKey(stackName)
+      const lockOwner = controlActor()
+      const releaseSetupLock = () =>
+        releaseLock(lockS3, lockBucket, lockObjectKey, lockOwner).catch((e) => console.warn(`${warningMark} failed to release stack lock: ${(e as Error).message}`))
+      const stackLock = await acquireLock(lockS3, lockBucket, lockObjectKey, { owner: lockOwner, operation: 'setup', ttlMs: 30 * 60_000 })
+      if (!stackLock.acquired) {
+        console.error(`${warningMark} Stack ${stackName} is locked by ${pc.cyan(stackLock.held.owner)} (operation: ${stackLock.held.operation}, since ${stackLock.held.acquiredAt}). Use the CLI "Unlock" action if that run is dead.`)
+        process.exit(1)
+      }
+
       const usingBootstrapKey = context.state === 'fresh'
       if (usingBootstrapKey) {
         console.info(`${pc.dim('  using bootstrap key for first provisioning (CI key has read-only on VPC/PN/RDB — cannot create them)')}`)
@@ -334,7 +351,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           upOk = true
           break
         }
-        if (!(await confirm({ message: 'Retry?', default: true }))) process.exit(code)
+        if (!(await confirm({ message: 'Retry?', default: true }))) {
+          await releaseSetupLock()
+          process.exit(code)
+        }
       }
       if (usingBootstrapKey && upOk) {
         spawnSync('pulumi', ['config', 'rm', 'bootstrap:computeDeferred', '--stack', stackName], {
@@ -370,6 +390,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           console.info(`  ${pc.dim('Skipped. Bake later with `pnpm --filter infra image:build` — required before the first compute deploy.')}`)
         }
       }
+      await releaseSetupLock()
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
       console.info('  Manual fallback if needed:')
