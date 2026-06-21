@@ -20,27 +20,17 @@
  */
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
-import { imageServiceNames, serviceNames, services } from '../lib/services'
+import { imageServiceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
 
 /**
- * Every service that has an entry in the canonical service registry
- * (`infra/lib/services.ts`). Derived from there so it can't drift.
+ * Services that ship their own image and must exist in the registry before a VM
+ * boots. Derived from the canonical registry (`infra/lib/services.ts`), which
+ * already excludes image-reuse services (e.g. `ai`, which pulls the backend
+ * image at the same SHA), so this can't drift.
  */
-export const TAGGED_SERVICES = serviceNames
-export type TaggedService = ServiceName
-
-/**
- * Services that do NOT ship their own image, mapped to the image they reuse.
- * `ai` runs on its own VM but pulls the backend image at the same SHA.
- */
-export const IMAGE_REUSE: Partial<Record<ServiceName, ServiceName>> = Object.fromEntries(
-  services.filter((s) => s.reusesImageOf).map((s) => [s.slug, s.reusesImageOf]),
-) as Partial<Record<ServiceName, ServiceName>>
-
-/** Tagged services that ship an independent image and must exist in the registry. */
-export function imageServices(): TaggedService[] {
+export function imageServices(): ServiceName[] {
   return imageServiceNames
 }
 
@@ -63,7 +53,7 @@ export interface WaitOptions {
    * The deploy workflow passes the feature-gated build set here so a fork with
    * yjs/ai disabled doesn't wait for an image that is never built.
    */
-  services?: TaggedService[]
+  services?: ServiceName[]
   attempts?: number
   intervalMs?: number
   sleep?: (ms: number) => Promise<void>
@@ -108,12 +98,12 @@ interface CliArgs {
   registry: string
   namespace: string
   tag: string
-  services?: TaggedService[]
+  services?: ServiceName[]
   attempts: number
   intervalMs: number
 }
 
-export function imageServicesFromBuildMatrix(raw: string): TaggedService[] {
+export function imageServicesFromBuildMatrix(raw: string): ServiceName[] {
   const parsed: unknown = JSON.parse(raw)
   if (!Array.isArray(parsed)) throw new Error('--build-images-json must be a JSON array')
   return parsed
@@ -123,7 +113,7 @@ export function imageServicesFromBuildMatrix(raw: string): TaggedService[] {
       if (typeof service !== 'string') throw new Error(`--build-images-json[${index}].service must be a string`)
       return service
     })
-    .filter((service): service is TaggedService => (imageServices() as string[]).includes(service))
+    .filter((service): service is ServiceName => (imageServices() as string[]).includes(service))
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -132,21 +122,14 @@ export function parseArgs(argv: string[]): CliArgs {
   const namespace = getFlag(argv, '--ns')
   const tag = getFlag(argv, '--tag')
   if (!registry || !namespace || !tag) {
-    throw new Error('Usage: wait-for-images.ts --registry <host> --ns <namespace> --tag <git-sha> [--attempts N] [--interval ms] [--services a,b,c]')
+    throw new Error('Usage: wait-for-images.ts --registry <host> --ns <namespace> --tag <git-sha> [--attempts N] [--interval ms] [--build-images-json <matrix>]')
   }
 
-  // Optional comma-separated override; restrict to known image services so an
-  // unknown or reuse-only service (e.g. `ai`) can't sneak into the wait loop.
+  // The deploy workflow passes the feature-gated build matrix; restrict to known
+  // image services so a reuse-only service (e.g. `ai`) can't sneak into the wait
+  // loop. Omitted → wait for every image service (manual/local runs).
   const buildImagesRaw = getFlag(argv, '--build-images-json')
-  const servicesFlag = getFlag(argv, '--services')
-  const services = buildImagesRaw
-    ? imageServicesFromBuildMatrix(buildImagesRaw)
-    : servicesFlag
-    ? servicesFlag
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s): s is TaggedService => (imageServices() as string[]).includes(s))
-    : undefined
+  const services = buildImagesRaw ? imageServicesFromBuildMatrix(buildImagesRaw) : undefined
 
   return {
     registry,
