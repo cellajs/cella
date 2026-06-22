@@ -105,7 +105,7 @@ describe('sync e2e', () => {
       fetchUpstream(env.forkPath);
       const config = buildRuntimeConfig(env, {
         service: 'analyze',
-        pinnedFiles: ['backend/src/index.ts'],
+        pinned: ['backend/src/index.ts'],
       });
 
       const result = await runAnalyze(config);
@@ -128,7 +128,7 @@ describe('sync e2e', () => {
       fetchUpstream(env.forkPath);
       const config = buildRuntimeConfig(env, {
         service: 'analyze',
-        ignoredFolders: ['docs'],
+        ignored: ['docs'],
       });
 
       const result = await runAnalyze(config);
@@ -177,7 +177,7 @@ describe('sync e2e', () => {
       fetchUpstream(env.forkPath);
       const config = buildRuntimeConfig(env, {
         service: 'sync',
-        pinnedFiles: ['custom.ts'],
+        pinned: ['custom.ts'],
       });
 
       const result = await runSync(config);
@@ -197,7 +197,7 @@ describe('sync e2e', () => {
       fetchUpstream(env.forkPath);
       const config = buildRuntimeConfig(env, {
         service: 'sync',
-        ignoredFolders: ['docs'],
+        ignored: ['docs'],
       });
 
       const result = await runSync(config);

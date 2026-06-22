@@ -4,13 +4,17 @@ import {
   type ControlState,
   controlKey,
   emptyControlState,
+  emptyRollout,
   forceUnlock,
   type LockInfo,
   lockKey,
   parseControlState,
+  promote,
   readControlState,
   releaseLock,
+  rollback,
   serializeControlState,
+  setPending,
   stateBucket,
   writeControlState,
 } from './control-store'
@@ -56,9 +60,12 @@ describe('control-store keys', () => {
 describe('parse/serialize', () => {
   it('round-trips a populated state', () => {
     const state: ControlState = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       bootstrap: { completedAt: '2026-06-20T00:00:00Z' },
-      rollout: { backend: { gen: 5, sha: 'abc', pendingGen: 6, pendingSha: 'def' }, cdc: { gen: 2, sha: 'abc' } },
+      rollout: {
+        backend: { seq: 6, active: { id: 'aa11', sha: 'abc', seq: 5 }, previous: { id: 'bb22', sha: 'old', seq: 4 }, pendingSha: 'def' },
+        cdc: { seq: 2, active: { id: 'cc33', sha: 'abc', seq: 2 } },
+      },
       updatedAt: '2026-06-20T01:00:00Z',
       updatedBy: 'ci:run-512',
     }
@@ -66,7 +73,7 @@ describe('parse/serialize', () => {
   })
 
   it('accepts a minimal document', () => {
-    expect(parseControlState('{"schemaVersion":1}')).toEqual(emptyControlState())
+    expect(parseControlState('{"schemaVersion":2}')).toEqual(emptyControlState())
   })
 
   it('rejects invalid JSON', () => {
@@ -74,19 +81,19 @@ describe('parse/serialize', () => {
   })
 
   it('rejects an unsupported schema version', () => {
-    expect(() => parseControlState('{"schemaVersion":2}')).toThrow(/unsupported schemaVersion/)
+    expect(() => parseControlState('{"schemaVersion":1}')).toThrow(/unsupported schemaVersion/)
   })
 
   it('rejects a malformed rollout entry', () => {
-    expect(() => parseControlState('{"schemaVersion":1,"rollout":{"backend":{"sha":"abc"}}}')).toThrow(/rollout\['backend'\].gen/)
+    expect(() => parseControlState('{"schemaVersion":2,"rollout":{"backend":{"active":{"id":"x","sha":"y","seq":1}}}}')).toThrow(/rollout\['backend'\].seq/)
   })
 })
 
 describe('readControlState', () => {
   it('parses an existing object and returns its etag', async () => {
-    const { s3 } = makeS3({ get: [{ body: '{"schemaVersion":1,"rollout":{"backend":{"gen":5,"sha":"abc"}}}', etag: '"e1"' }] })
+    const { s3 } = makeS3({ get: [{ body: '{"schemaVersion":2,"rollout":{"backend":{"seq":5,"active":{"id":"aa11","sha":"abc","seq":5}}}}', etag: '"e1"' }] })
     const { state, etag } = await readControlState(s3, 'b', 'k')
-    expect(state.rollout.backend).toEqual({ gen: 5, sha: 'abc' })
+    expect(state.rollout.backend).toEqual({ seq: 5, active: { id: 'aa11', sha: 'abc', seq: 5 } })
     expect(etag).toBe('"e1"')
   })
 
@@ -117,7 +124,7 @@ describe('writeControlState', () => {
     expect(puts[0]!.Bucket).toBe('b')
     expect(puts[0]!.Key).toBe('k')
     expect(puts[0]!.ContentType).toBe('application/json')
-    expect(JSON.parse(puts[0]!.Body as string).schemaVersion).toBe(1)
+    expect(JSON.parse(puts[0]!.Body as string).schemaVersion).toBe(2)
     expect(puts[0]!.IfMatch).toBeUndefined()
     expect(puts[0]!.IfNoneMatch).toBeUndefined()
   })
@@ -213,5 +220,42 @@ describe('acquireLock / releaseLock', () => {
     const info = await forceUnlock(s3, 'b', 'k')
     expect(info?.owner).toBe('operator:b')
     expect(current()).toBeUndefined()
+  })
+})
+
+describe('ledger transitions', () => {
+  it('setPending records the deploy intent without touching pointers', () => {
+    const active = { id: 'aa11', sha: 'abc', seq: 3 }
+    const next = setPending({ seq: 3, active }, 'def')
+    expect(next).toEqual({ seq: 3, active, pendingSha: 'def' })
+  })
+
+  it('setPending on a brand-new service starts from the empty rollout', () => {
+    expect(setPending(undefined, 'def')).toEqual({ seq: 0, pendingSha: 'def' })
+  })
+
+  it('promote advances seq, moves active to previous, and clears pending', () => {
+    const active = { id: 'aa11', sha: 'abc', seq: 3 }
+    const next = promote({ seq: 3, active, pendingSha: 'def' }, { id: 'bb22', sha: 'def' })
+    expect(next).toEqual({ seq: 4, active: { id: 'bb22', sha: 'def', seq: 4 }, previous: active })
+  })
+
+  it('promote on a first deploy has no previous', () => {
+    expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({ seq: 1, active: { id: 'bb22', sha: 'def', seq: 1 } })
+  })
+
+  it('rollback swaps active and previous (a pointer flip, no rebuild)', () => {
+    const active = { id: 'bb22', sha: 'def', seq: 4 }
+    const previous = { id: 'aa11', sha: 'abc', seq: 3 }
+    expect(rollback({ seq: 4, active, previous, pendingSha: 'zzz' })).toEqual({ seq: 4, active: previous, previous: active })
+  })
+
+  it('rollback is a no-op (only clears pending) when there is no previous', () => {
+    const active = { id: 'bb22', sha: 'def', seq: 4 }
+    expect(rollback({ seq: 4, active, pendingSha: 'zzz' })).toEqual({ seq: 4, active })
+  })
+
+  it('emptyRollout starts at seq 0 with no pointers', () => {
+    expect(emptyRollout()).toEqual({ seq: 0 })
   })
 })

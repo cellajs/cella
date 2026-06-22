@@ -1,12 +1,7 @@
-import clsx, { type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
 /**
  * Merges Tailwind CSS classes, combining them and resolving conflicts.
  *
- * @param inputs - A list of classes to be merged.
- * @returns A string with the merged Tailwind classes.
+ * Re-exported from cnfast, a faster drop-in replacement for the `twMerge(clsx(...))`
+ * pattern with byte-identical output. See https://github.com/aidenybai/cnfast.
  */
-export const cn = (...inputs: ClassValue[]) => {
-  return twMerge(clsx(inputs));
-};
+export { cn } from 'cnfast';

@@ -1,7 +1,7 @@
 /**
  * Override matching and validation utilities for sync CLI v2.
  *
- * Handles matching files against ignored/pinned patterns and
+ * Handles matching files against ignored/pinned paths and
  * validates config for potential issues.
  */
 
@@ -27,10 +27,10 @@ export function isUnderAnyFolder(filePath: string, folders: string[]): boolean {
 }
 
 /**
- * Check if a file is inside an ignored folder.
+ * Check if a file is inside an ignored path.
  */
 export function isIgnored(filePath: string, config: CellaCliConfig): boolean {
-  return isUnderAnyFolder(filePath, config.overrides?.ignoredFolders || []);
+  return isUnderAnyFolder(filePath, config.overrides?.ignored || []);
 }
 
 /**
@@ -47,8 +47,7 @@ export function isPackageJson(filePath: string): boolean {
  */
 export function isPinned(filePath: string, config: CellaCliConfig): boolean {
   if (isPackageJson(filePath)) return true;
-  const files = config.overrides?.pinnedFiles || [];
-  return files.includes(filePath);
+  return isUnderAnyFolder(filePath, config.overrides?.pinned || []);
 }
 
 /**
@@ -82,9 +81,9 @@ function hasGlobChars(entry: string): boolean {
  * Validate config overrides and return warnings.
  *
  * Checks for:
- * - Pinned files using glob patterns (no longer supported)
- * - Pinned files that don't exist in fork
- * - Ignored folders that don't exist in fork
+ * - Pinned entries using glob patterns (no longer supported)
+ * - Pinned entries that don't exist in fork
+ * - Ignored entries that don't exist in fork
  *
  * @param config - The sync config to validate
  * @param forkPath - Path to the fork repository
@@ -92,14 +91,14 @@ function hasGlobChars(entry: string): boolean {
 export function validateOverrides(config: CellaCliConfig, forkPath: string): ConfigWarning[] {
   const warnings: ConfigWarning[] = [];
 
-  // Check pinned files
-  const pinnedFiles = config.overrides?.pinnedFiles || [];
-  for (const entry of pinnedFiles) {
+  // Check pinned entries
+  const pinned = config.overrides?.pinned || [];
+  for (const entry of pinned) {
     if (hasGlobChars(entry)) {
       warnings.push({
         type: 'pinned-glob',
         pattern: entry,
-        message: `pin uses glob (not supported, use exact path): ${entry}`,
+        message: `pin uses glob (not supported, use a path or folder): ${entry}`,
       });
     } else if (!existsSync(join(forkPath, entry))) {
       warnings.push({
@@ -110,20 +109,20 @@ export function validateOverrides(config: CellaCliConfig, forkPath: string): Con
     }
   }
 
-  // Check ignored folders
-  const ignoredFolders = config.overrides?.ignoredFolders || [];
-  for (const entry of ignoredFolders) {
+  // Check ignored entries
+  const ignored = config.overrides?.ignored || [];
+  for (const entry of ignored) {
     if (hasGlobChars(entry)) {
       warnings.push({
         type: 'ignored-not-found',
         pattern: entry,
-        message: `ignored folder uses glob (not supported, use a folder path): ${entry}`,
+        message: `ignored entry uses glob (not supported, use a path or folder): ${entry}`,
       });
     } else if (!existsSync(join(forkPath, entry.replace(/\/+$/, '')))) {
       warnings.push({
         type: 'ignored-not-found',
         pattern: entry,
-        message: `ignored folder not found: ${entry}`,
+        message: `ignored entry not found: ${entry}`,
       });
     }
   }

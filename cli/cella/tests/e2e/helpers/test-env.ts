@@ -177,12 +177,12 @@ export function buildRuntimeConfig(
   env: TestEnv,
   options: {
     service?: SyncService;
-    pinnedFiles?: string[];
-    ignoredFolders?: string[];
+    pinned?: string[];
+    ignored?: string[];
     mergeStrategy?: 'merge' | 'squash';
   } = {},
 ): RuntimeConfig {
-  const { service = 'analyze', pinnedFiles = [], ignoredFolders = [], mergeStrategy = 'squash' } = options;
+  const { service = 'analyze', pinned = [], ignored = [], mergeStrategy = 'squash' } = options;
 
   const config: CellaCliConfig = {
     settings: {
@@ -192,8 +192,8 @@ export function buildRuntimeConfig(
       mergeStrategy,
     },
     overrides: {
-      pinnedFiles,
-      ignoredFolders,
+      pinned,
+      ignored,
     },
   };
 

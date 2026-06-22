@@ -72,8 +72,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     frontend_bucket: naming.frontendBucket,
     state_bucket: naming.pulumiStateBucket,
     // Deterministic IAM application name for the VM reader identity. CI's
-    // "Verify VM reader IAM grant" step resolves the application id by this
-    // name (the id is no longer stored in stack config — SOVRUN §3.3).
+    // "Verify VM reader IAM grant" step resolves the application id by this name.
     vm_reader_app: `${appConfig.slug}-vm-reader`,
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),

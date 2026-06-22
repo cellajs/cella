@@ -138,9 +138,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   let ciOrganizationId = ''
   if (!needsCiKey) {
     console.info('\n→ CI deploy key — skipped (already in stack config)')
-    // The CI policy permission sets are no longer fingerprinted into stack config
-    // (SOVRUN §3.3). Compare the live `<slug>-ci-deploy` grant against code instead,
-    // best-effort — advisory only, so a fresh project / IAM hiccup never blocks.
+    // Compare the live `<slug>-ci-deploy` grant against the code-defined
+    // permission sets. This is advisory only, so IAM issues never block setup.
     try {
       const liveSets = await fetchAppPermissionSetsByName({
         secretKey: scwSecretKey,
@@ -185,10 +184,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // key with IAMManager: on fresh/rotate scwSecretKey already is a bootstrap key;
   // on a plain Resume prompt for a bootstrap key just for this step.
   //
-  // "Missing" is now a Secret Manager question, not a stack-config one (the key
-  // moved to Secret Manager, SOVRUN §3.3): a Resume re-mints only when no
-  // versioned `vm-reader-key` secret exists. On a SM error we assume present to
-  // avoid a needless rotation — a genuinely missing key surfaces at `pulumi up`.
+  // A Resume re-mints only when no versioned `vm-reader-key` secret exists.
+  // On a Secret Manager error we assume the key is present to avoid an
+  // unnecessary rotation; a real miss fails later at `pulumi up`.
   let hasVmKey = false
   if (!needsCiKey) {
     try {
@@ -212,10 +210,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       try {
         const key = await setupVmKey({ callerSecretKey: vmCallerSecretKey, projectId: scwProjectId, slug: appConfig.slug })
         vmAccessKey = key.accessKey
-        // Store the key pair in Secret Manager (SOVRUN §3.3) rather than stack
-        // config; the Pulumi program reads it back at `pulumi up` (helpers.ts
-        // readVmReaderKey) to bake into VM cloud-init. vmCallerSecretKey is the
-        // bootstrap key, which also holds Secret Manager write access.
+        // Store the key pair in Secret Manager so the Pulumi program can read
+        // it back during `pulumi up` and bake it into VM cloud-init.
         await seedVmReaderKey({
           secretKey: vmCallerSecretKey,
           projectId: scwProjectId,
@@ -232,10 +228,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   }
 
   // Identity ids (applicationId, vmApplicationId, operatorPrincipal) are derived
-  // from the IAM API and the VM reader key now lives in Secret Manager — nothing
-  // secret remains in stack config (SOVRUN §3.3). Record a single non-secret
-  // breadcrumb so the CLI can still distinguish a fully-bootstrapped stack from
-  // an interrupted one (lib/bootstrap-stack-state.ts detectStackState).
+  // from the IAM API and the VM reader key lives in Secret Manager, so stack
+  // config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciAccessKey
   if (bootstrapComplete) {
     await must(

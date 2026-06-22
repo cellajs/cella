@@ -113,23 +113,38 @@ describe('sequenceCutover — lb-overlap', () => {
     expect(res.steps).toContain('LB already expanded to [old, new]')
   })
 
-  it('is a no-op success when the LB is already contracted to [new]', async () => {
+  it('is a no-op-but-correct success when the LB already serves exactly [new]', async () => {
     const lb = recordingSetServers()
     const res = await sequenceCutover(lbPlan({ getServers: async () => ['10.0.0.9'], setServers: lb.fn }))
     expect(res.ok).toBe(true)
     expect(lb.calls).toEqual([])
-    expect(res.steps).toContain('LB already contracted to [new]')
+    expect(res.steps).toContain('LB already serving [new]')
   })
 
-  it('aborts before mutation on an unexpected current LB server list', async () => {
+  it('self-heals an unexpected live server list by driving to [old,new] then [new]', async () => {
     const lb = recordingSetServers()
     const res = await sequenceCutover(lbPlan({ getServers: async () => ['10.0.0.99'], setServers: lb.fn }))
-    expect(res.ok).toBe(false)
-    expect(res.aborted).toBe('unexpected-lb-state')
-    expect(lb.calls).toEqual([])
+    // No abort: the desired state is known, so the reconciler asserts it rather
+    // than assuming the stale list is correct.
+    expect(res.ok).toBe(true)
+    expect(lb.calls).toEqual([
+      ['10.0.0.4', '10.0.0.9'],
+      ['10.0.0.9'],
+    ])
   })
 
-  it('falls back to Pulumi oldIps when the LB read returns an empty server list', async () => {
+  it('repopulates an empty pool even when old == new (idempotent redeploy)', async () => {
+    // The exact stranded-LB scenario: a same-generation cutover with an empty
+    // live pool must still issue a SetBackendServers call, never silently skip it.
+    const lb = recordingSetServers()
+    const res = await sequenceCutover(
+      lbPlan({ oldIps: ['10.0.0.9'], newIps: ['10.0.0.9'], getServers: async () => [], setServers: lb.fn }),
+    )
+    expect(res.ok).toBe(true)
+    expect(lb.calls).toEqual([['10.0.0.9']])
+  })
+
+  it('self-heals when the LB read returns an empty server list', async () => {
     const lb = recordingSetServers()
     const res = await sequenceCutover(lbPlan({ getServers: async () => [], setServers: lb.fn }))
     expect(res.ok).toBe(true)
@@ -137,7 +152,7 @@ describe('sequenceCutover — lb-overlap', () => {
       ['10.0.0.4', '10.0.0.9'],
       ['10.0.0.9'],
     ])
-    expect(res.steps).toContain('LB server list probe returned empty; assuming [old] from Pulumi metadata')
+    expect(res.steps.some((s) => s.includes('observed LB server list: <empty>'))).toBe(true)
   })
 
   it('drain wait happens after contract (old is removed before we wait for it to drain)', async () => {

@@ -37,7 +37,7 @@
   "feature.artillery_text": "Load testing for critical flows has been made easy.",
   "feature.artillery_title": "artillery",
   "hero.subtitle": "Offline, instant & realtime.",
-  "hero.text": "Cella is a TypeScript template to build collaborative web apps with <strong>sync engine</strong>. MIT licensed. Built for European infra.",
+  "hero.text": "Cella is a TypeScript template to build web apps with <strong>sync engine</strong>. MIT licensed. Built for European infra.",
   "hero.title": "",
   "prerelease": "Prerelease",
   "pricing.plan_1.1": "Member of CellaJS community",
@@ -85,5 +85,5 @@
   "why.text_1": "Postgres, OpenAPI & React Query are foundational. The sync engine is an extension, not a replacement.",
   "why.title_3": "Going beyond code",
   "why.title_2": "Prebuilt endpoints",
-  "why.title_1": "Pragmatic sync"
+  "why.title_1": "Sync that extends"
 }

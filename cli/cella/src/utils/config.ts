@@ -56,16 +56,16 @@ export async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
   const config: CellaCliConfig = configModule.default;
 
   // Auto-derive fork-owned module folders (modules declaring `owner: 'app'`) and merge
-  // them into ignoredFolders. This keeps app modules as fork territory: upstream never
+  // them into ignored. This keeps app modules as fork territory: upstream never
   // adds/modifies/deletes them during sync, and the contributions service never offers
   // them back upstream. Derived entries always exist (they come from real files), so
   // config validation never warns about them.
   const appModuleFolders = resolveAppModuleFolders(realForkPath);
   if (appModuleFolders.length > 0) {
-    const existing = config.overrides?.ignoredFolders ?? [];
+    const existing = config.overrides?.ignored ?? [];
     config.overrides = {
       ...config.overrides,
-      ignoredFolders: [...new Set([...existing, ...appModuleFolders])],
+      ignored: [...new Set([...existing, ...appModuleFolders])],
     };
   }
 

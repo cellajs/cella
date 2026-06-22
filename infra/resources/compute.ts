@@ -2,19 +2,24 @@
  * Compute — one Docker Compose VM per enabled service GENERATION.
  *
  * Immutable-node model: every release provisions a NEW VM generation
- * `vm-<svc>-<gen>` with the image SHA baked into its cloud-init. There is no
+ * `vm-<svc>-<genId>` with the image SHA baked into its cloud-init. There is no
  * background deploy agent and no out-of-band tag channel — the generation IS
  * the release. Pulumi creates/destroys generations; tasks/cutover.ts owns the
  * live LB server list and backend internal-IP handoff during deploy.
  *
- * Generation state lives in stack config, written by CI around the cutover:
- *   infra:gen:<svc>        current live generation number (default 1)
- *   infra:sha:<svc>        image SHA baked into the current generation
- *   infra:pendingGen:<svc> next generation, set during a cutover (optional)
- *   infra:pendingSha:<svc> image SHA for the pending generation
- * compute materialises a VM for every generation in {gen} ∪ {pendingGen}. CI
- * first syncs these keys from the current stack outputs so a new runner never
- * rolls infrastructure back from stale committed config.
+ * The `genId` is CONTENT-ADDRESSED (lib/gen-id.ts): a short hash of the release
+ * SHA plus a fingerprint of the generation's static, plan-time config. This
+ * program is the genId authority — it derives the id for a pending SHA and
+ * surfaces it in `computeGenerationMetadata` for the orchestrator to promote.
+ *
+ * Generation state lives in the S3 control object (resources/control.ts), an
+ * append-only-ish ledger written by the orchestrator around a cutover:
+ *   active     — the generation currently serving live on the LB
+ *   previous   — the last good generation, retained for pointer-flip rollback
+ *   pendingSha — the SHA being rolled in (the genId is derived here, not stored)
+ * compute materialises a VM for {active} ∪ {pending} ∪ {previous}, deduplicated
+ * by id, so a same-config redeploy collapses to a single VM and a partial deploy
+ * is recovered by recomputing this set rather than replaying a transition.
  *
  * Each VM has a fully-closed inbound security group and is reachable only over the
  * main private network from the load balancer and database. The baked TypeScript
@@ -42,6 +47,7 @@ import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/ru
 import { composeConfig } from '../compose/compose'
 import { enabledServices, servicesByName, type ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
+import { deriveGenId } from '../lib/gen-id'
 import { frontendCsp } from '../lib/frontend-csp'
 import { renderCloudInit } from './cloud-init'
 import { privateNetworkId } from './network'
@@ -294,27 +300,91 @@ const enabled = enabledServices(appConfig.services).map((svc) => {
 })
 
 // ---------------------------------------------------------------------------
-// Generation state (from stack config, written by CI around a cutover)
+// Generation state (from the S3 control object, written by the orchestrator
+// around a cutover). This program is the genId AUTHORITY: it derives the
+// content-addressed id for a pending SHA from the service's static, plan-time
+// config, materialises the VM as `vm-<svc>-<genId>`, and surfaces the id back
+// in `computeGenerationMetadata` for the orchestrator to promote into the ledger.
 // ---------------------------------------------------------------------------
 
 interface Generation {
-  gen: number
+  /** Content-addressed generation id (resource suffix). */
+  id: string
+  /** Image SHA baked into this generation. */
   sha: string
 }
 
-/** Active generations for a service: the live one plus any pending one mid-cutover. */
-function activeGenerations(slug: string): Generation[] {
-  // Source of truth is the S3 control object (resources/control.ts). A service
-  // with no entry yet defaults to gen 1 / 'latest' — first provision, before its
-  // first deploy seeds the store.
-  const entry = controlState.rollout[slug]
-  const gen = entry?.gen ?? 1
-  const sha = entry?.sha ?? 'latest'
-  const generations: Generation[] = [{ gen, sha }]
+/**
+ * Static, synchronously-known configuration that DEFINES a generation. Hashed
+ * into the genId so any change here (image reference, consumed env var names,
+ * inter-service bindings, runtime-secret manifest metadata, base image, port)
+ * rolls a genuinely new generation. Deliberately excludes the rendered
+ * cloud-init (a Pulumi Output, unavailable at plan time) and secret VALUES.
+ */
+function serviceFingerprint(svc: ServiceDefinition): unknown {
+  const blocks = Object.values(composeConfig.services)
+    .filter((block) => block.profiles.includes(svc.slug))
+    .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }))
+  const secrets = runtimeSecretsForConsumer(svc.slug as RuntimeSecretConsumer).map((definition) => ({
+    secretName: definition.secretName,
+    envVar: definition.envVar,
+    required: definition.required,
+  }))
+  return {
+    slug: svc.slug,
+    port: svc.healthPort,
+    runMigrate: svc.runMigrate ?? false,
+    bindings: svc.bindings ?? {},
+    blocks,
+    secrets,
+    computeImage: typeof infra.computeImage === 'string' ? infra.computeImage : 'dynamic',
+  }
+}
 
-  const pendingGen = entry?.pendingGen
-  if (pendingGen !== undefined && pendingGen !== gen) {
-    generations.push({ gen: pendingGen, sha: entry?.pendingSha ?? 'latest' })
+/**
+ * Generations a service materialises: the live one (`active`, else the pending
+ * intent on first deploy), the pending generation being rolled in, and the
+ * retained `previous` generation (kept alive so a rollback is a pointer flip).
+ * Deduplicated by id — when a pending SHA hashes to the active id (a same-config
+ * redeploy) it collapses to a single VM. Index 0 is the live binding target.
+ */
+function activeGenerations(svc: ServiceDefinition): Generation[] {
+  const entry = controlState.rollout[svc.slug]
+  const fingerprint = serviceFingerprint(svc)
+  const pending: Generation | undefined = entry?.pendingSha ? { id: deriveGenId(entry.pendingSha, fingerprint), sha: entry.pendingSha } : undefined
+  const active: Generation | undefined = entry?.active ? { id: entry.active.id, sha: entry.active.sha } : undefined
+  const previous: Generation | undefined = entry?.previous ? { id: entry.previous.id, sha: entry.previous.sha } : undefined
+
+  const generations: Generation[] = []
+  const seen = new Set<string>()
+  const add = (g?: Generation) => {
+    if (g && !seen.has(g.id)) {
+      seen.add(g.id)
+      generations.push(g)
+    }
+  }
+
+  // Exclusive services (cdc) hold a single resource the platform permits one
+  // consumer of (the replication slot), so there is no overlap and no retained
+  // `previous` worker idling against a slot it can never acquire: materialise
+  // ONLY the live generation (the pending intent, else active), which replaces
+  // the old VM in place.
+  if (svc.replacementStrategy === 'exclusive') {
+    add(pending ?? active)
+    if (generations.length === 0) add({ id: deriveGenId('latest', fingerprint), sha: 'latest' })
+    return generations
+  }
+
+  // Live binding target first: the active generation, or the pending one on a
+  // first deploy that has no active yet.
+  add(active ?? pending)
+  add(pending)
+  add(previous)
+
+  if (generations.length === 0) {
+    // First provision, before any deploy seeds the ledger: a single default gen.
+    const sha = 'latest'
+    add({ id: deriveGenId(sha, fingerprint), sha })
   }
   return generations
 }
@@ -326,11 +396,11 @@ function activeGenerations(slug: string): Generation[] {
 export interface GenerationInstance {
   /** Logical service slug. */
   service: ServiceName
-  /** Generation number. */
-  gen: number
+  /** Content-addressed generation id. */
+  genId: string
   /** Image SHA baked into this generation. */
   sha: string
-  /** Pulumi resource name `vm-<svc>-<gen>`. */
+  /** Pulumi resource name `vm-<svc>-<genId>`. */
   name: string
   server: scaleway.instance.Server
   /** This generation VM's own private-network IP. */
@@ -343,12 +413,12 @@ const instances: GenerationInstance[] = []
 
 // Reserved private-network IPAM IPs, one per (service, generation), created in a
 // first pass before any VM so inter-service `@{<slug>.privateIp}` bindings can
-// resolve at plan time regardless of VM creation order. Keyed `<slug>-<gen>`.
+// resolve at plan time regardless of VM creation order. Keyed `<slug>-<genId>`.
 const genIps = new Map<string, scaleway.ipam.Ip>()
 const generationsByService = new Map<ServiceName, Generation[]>()
 
-function genIpKey(slug: string, gen: number): string {
-  return `${slug}-${gen}`
+function genIpKey(slug: string, genId: string): string {
+  return `${slug}-${genId}`
 }
 
 /**
@@ -362,8 +432,8 @@ function genIpKey(slug: string, gen: number): string {
 function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   const liveGen = generationsByService.get(slug)?.[0]
   if (!liveGen) throw new Error(`compute: @{${slug}.privateIp} requested but '${slug}' has no active generation.`)
-  const ip = genIps.get(genIpKey(slug, liveGen.gen))
-  if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.gen}.`)
+  const ip = genIps.get(genIpKey(slug, liveGen.id))
+  if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.id}.`)
   // Strip any CIDR suffix the provider may include ("10.0.0.9/22" → "10.0.0.9").
   return ip.address.apply((addr) => addr.split('/')[0])
 }
@@ -377,12 +447,12 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
 const computeImageId: pulumi.Input<string> = infra.computeImage
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
-  const resourceName = `vm-${svc.slug}-${generation.gen}`
+  const resourceName = `vm-${svc.slug}-${generation.id}`
 
   // Public IP for internet egress (image pull) + the per-generation private IP
   // reserved in the first pass (the LB targets the set of active generations).
-  const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.gen}`, { zone, tags })
-  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.gen))!
+  const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags })
+  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id))!
 
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
@@ -393,7 +463,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   }
 
   const server = new scaleway.instance.Server(resourceName, {
-    name: naming.resource(`${svc.slug}-${generation.gen}`),
+    name: naming.resource(`${svc.slug}-${generation.id}`),
     type: infra.instanceTypeFor(svc.slug),
     image: computeImageId,
     zone,
@@ -419,7 +489,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   // The generation's own private-network NIC carries exactly one fixed IP, so
   // it is created once and never mutated — no stable-IP move, no replacement.
   const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id]
-  const privateNic = new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.gen}`, {
+  const privateNic = new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.id}`, {
     serverId: server.id,
     privateNetworkId,
     ipamIpIds,
@@ -432,13 +502,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   })
 
   const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0])
-  const inst: GenerationInstance = { service: svc.slug, gen: generation.gen, sha: generation.sha, name: resourceName, server, privateIp, privateNic }
+  const inst: GenerationInstance = { service: svc.slug, genId: generation.id, sha: generation.sha, name: resourceName, server, privateIp, privateNic }
   instances.push(inst)
   return inst
 }
 
 if (infra.computeEnabled) {
-  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc.slug))
+  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc))
 
   // Pass 1 — reserve every (service, generation) private IP up front so
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
@@ -446,8 +516,8 @@ if (infra.computeEnabled) {
   for (const svc of enabled) {
     for (const generation of generationsByService.get(svc.slug)!) {
       genIps.set(
-        genIpKey(svc.slug, generation.gen),
-        new scaleway.ipam.Ip(`ipam-${svc.slug}-${generation.gen}`, {
+        genIpKey(svc.slug, generation.id),
+        new scaleway.ipam.Ip(`ipam-${svc.slug}-${generation.id}`, {
           sources: [{ privateNetworkId }],
           isIpv6: false,
           region,
@@ -472,7 +542,7 @@ export const computeInstances = instances
 
 export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.all([i.server.id, i.privateIp, i.privateNic.id]).apply(([serverId, privateIp, privateNicId]) => ({
   service: i.service,
-  gen: i.gen,
+  genId: i.genId,
   sha: i.sha,
   name: i.name,
   serverId,

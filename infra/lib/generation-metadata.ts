@@ -10,11 +10,11 @@ import type { ServiceName } from '../compose/compose'
 export interface GenerationMetadata {
   /** Service slug this generation belongs to. */
   service: ServiceName
-  /** Generation counter (github.run_number). */
-  gen: number
+  /** Content-addressed generation id (lib/gen-id.ts). */
+  genId: string
   /** Image SHA baked into this generation. */
   sha: string
-  /** Pulumi resource name `vm-<svc>-<gen>`. */
+  /** Pulumi resource name `vm-<svc>-<genId>`. */
   name: string
   /** Scaleway instance server id. */
   serverId: string

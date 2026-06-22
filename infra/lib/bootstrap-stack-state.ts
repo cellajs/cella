@@ -19,7 +19,7 @@ export interface StackProbe {
  *
  * Nothing secret remains in stack config: the CI deploy key lives in the GitHub
  * Environment (provider auth from SCW_* env), the identity ids are derived from
- * the IAM API, and the VM reader key now lives in Secret Manager (SOVRUN §3.3).
+ * the IAM API, and the VM reader key lives in Secret Manager.
  * The marker is therefore a dedicated non-secret breadcrumb, `infra:bootstrapComplete`,
  * stamped once the CI key is minted. Legacy markers (`infra:vmAccessKey`,
  * `infra:applicationId`) are still honoured so stacks bootstrapped before this

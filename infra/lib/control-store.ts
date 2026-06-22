@@ -17,15 +17,36 @@
  * can be exercised with a mock, mirroring `ensure-state-bucket.ts`.
  */
 
-export interface ServiceRollout {
-  /** Live generation number (VM resource suffix `vm-<svc>-<gen>`). */
-  gen: number
-  /** Image SHA baked into the live generation. */
+/** A materialized, content-addressed generation: the VM resource is
+ *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
+export interface GenRef {
+  /** Content-addressed generation id (see lib/gen-id.ts). Authoritative resource
+   *  suffix — the live VM exists under THIS id, so it is stored, not re-derived. */
+  id: string
+  /** Image SHA baked into this generation. */
   sha: string
-  /** Generation being rolled in during a cutover (optional). */
-  pendingGen?: number
-  /** Image SHA for the pending generation. */
+  /** Monotonic sequence stamped when this generation was promoted to active. */
+  seq: number
+}
+
+/**
+ * Per-service rollout ledger. The pointers (not a single mutable gen number) are
+ * the source of truth so a partial deploy is always recoverable by recomputing
+ * desired-vs-live rather than replaying a transition:
+ *   - `active`   — the generation currently serving live on the LB.
+ *   - `previous` — the last good generation, retained (its VM kept alive) so a
+ *                  rollback is a pointer flip rather than a rebuild.
+ *   - `pendingSha` — a deploy INTENT: the SHA being rolled in. The genId is
+ *                  derived and materialized by the Pulumi program (the genId
+ *                  authority), then read back by the orchestrator — so the
+ *                  ledger never has to predict an id the program owns.
+ *   - `seq`      — monotonic counter, bumped on each promotion (ordering + GC).
+ */
+export interface ServiceRollout {
+  active?: GenRef
+  previous?: GenRef
   pendingSha?: string
+  seq: number
 }
 
 export interface BootstrapState {
@@ -36,7 +57,7 @@ export interface BootstrapState {
 }
 
 export interface ControlState {
-  schemaVersion: 1
+  schemaVersion: 2
   bootstrap: BootstrapState
   /** Keyed by service slug. */
   rollout: Record<string, ServiceRollout>
@@ -52,7 +73,7 @@ export interface S3Like {
 }
 
 export function emptyControlState(): ControlState {
-  return { schemaVersion: 1, bootstrap: {}, rollout: {} }
+  return { schemaVersion: 2, bootstrap: {}, rollout: {} }
 }
 
 /** Bucket holding both the Pulumi state and the control object. */
@@ -77,15 +98,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function parseGenRef(slug: string, field: string, value: unknown): GenRef {
+  if (!isRecord(value)) throw new Error(`control: rollout['${slug}'].${field} must be an object`)
+  const { id, sha, seq } = value
+  if (typeof id !== 'string') throw new Error(`control: rollout['${slug}'].${field}.id must be a string`)
+  if (typeof sha !== 'string') throw new Error(`control: rollout['${slug}'].${field}.sha must be a string`)
+  if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].${field}.seq must be a number`)
+  return { id, sha, seq }
+}
+
 function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
   if (!isRecord(value)) throw new Error(`control: rollout['${slug}'] must be an object`)
-  const { gen, sha, pendingGen, pendingSha } = value
-  if (typeof gen !== 'number') throw new Error(`control: rollout['${slug}'].gen must be a number`)
-  if (typeof sha !== 'string') throw new Error(`control: rollout['${slug}'].sha must be a string`)
-  if (pendingGen !== undefined && typeof pendingGen !== 'number') throw new Error(`control: rollout['${slug}'].pendingGen must be a number`)
+  const { active, previous, pendingSha, seq } = value
+  if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].seq must be a number`)
   if (pendingSha !== undefined && typeof pendingSha !== 'string') throw new Error(`control: rollout['${slug}'].pendingSha must be a string`)
-  const out: ServiceRollout = { gen, sha }
-  if (pendingGen !== undefined) out.pendingGen = pendingGen
+  const out: ServiceRollout = { seq }
+  if (active !== undefined) out.active = parseGenRef(slug, 'active', active)
+  if (previous !== undefined) out.previous = parseGenRef(slug, 'previous', previous)
   if (pendingSha !== undefined) out.pendingSha = pendingSha
   return out
 }
@@ -100,7 +129,7 @@ export function parseControlState(text: string): ControlState {
     throw new Error(`control: not valid JSON (${(err as Error).message})`)
   }
   if (!isRecord(raw)) throw new Error('control: root must be an object')
-  if (raw.schemaVersion !== 1) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 1)`)
+  if (raw.schemaVersion !== 2) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`)
 
   const bootstrap: BootstrapState = {}
   if (raw.bootstrap !== undefined) {
@@ -121,7 +150,7 @@ export function parseControlState(text: string): ControlState {
     for (const [slug, value] of Object.entries(raw.rollout)) rollout[slug] = parseServiceRollout(slug, value)
   }
 
-  const state: ControlState = { schemaVersion: 1, bootstrap, rollout }
+  const state: ControlState = { schemaVersion: 2, bootstrap, rollout }
   if (typeof raw.updatedAt === 'string') state.updatedAt = raw.updatedAt
   if (typeof raw.updatedBy === 'string') state.updatedBy = raw.updatedBy
   return state
@@ -129,6 +158,43 @@ export function parseControlState(text: string): ControlState {
 
 export function serializeControlState(state: ControlState): string {
   return `${JSON.stringify(state, null, 2)}\n`
+}
+
+// ---------------------------------------------------------------------------
+// Pure ledger transitions — every rollout state change is a total function over
+// the previous rollout, so the orchestrator never hand-mutates pointer fields
+// and the transitions are unit-tested in isolation.
+// ---------------------------------------------------------------------------
+
+/** A service with no rollout history yet. */
+export function emptyRollout(): ServiceRollout {
+  return { seq: 0 }
+}
+
+/** Record the deploy INTENT to roll `sha` in. Idempotent: re-recording the same
+ *  pending sha is a no-op. Pointers are untouched until promotion. */
+export function setPending(current: ServiceRollout | undefined, sha: string): ServiceRollout {
+  const base = current ?? emptyRollout()
+  return { ...base, pendingSha: sha }
+}
+
+/** Promote a resolved generation to active: the old active becomes `previous`
+ *  (its VM retained for rollback), `seq` advances, and the pending intent is
+ *  cleared. Stamps the new active with the advanced seq. */
+export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
+  const base = current ?? emptyRollout()
+  const seq = base.seq + 1
+  const next: ServiceRollout = { seq, active: { id: resolved.id, sha: resolved.sha, seq } }
+  if (base.active) next.previous = base.active
+  return next
+}
+
+/** Flip back to the previous generation (still running). A pointer swap, not a
+ *  rebuild. No-op when there is no previous generation to fall back to. */
+export function rollback(current: ServiceRollout | undefined): ServiceRollout {
+  const base = current ?? emptyRollout()
+  if (!base.previous) return { ...base, pendingSha: undefined }
+  return { seq: base.seq, active: base.previous, previous: base.active, pendingSha: undefined }
 }
 
 /** Read the control object. Returns the empty state (and no etag) when the

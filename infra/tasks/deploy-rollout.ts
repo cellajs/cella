@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
-import { getFlag, getNumFlag } from './args'
+import { getFlag } from './args'
 
 interface RolloutItem {
   service: string
@@ -20,25 +20,24 @@ function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
   })
 }
 
-function runDeployService(item: RolloutItem, opts: { stack: string; sha: string; gen: number }): void {
-  // --skip-destroy: don't tear down the old generation inline. Each service's
-  // old VM is reaped (in parallel, hidden under the create) by the next service's
-  // `pulumi up`; the final service's straggler is reaped by the next deploy's
-  // base `pulumi up`. Keeps VM teardown off the deploy's critical path.
-  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack, '--gen', String(opts.gen), '--skip-destroy']
+function runDeployService(item: RolloutItem, opts: { stack: string; sha: string }): void {
+  // --skip-destroy: don't tear down the old generation inline. The promoted
+  // old generation is retained as `previous` (rollback target); the
+  // previous-previous straggler is reaped by a later `pulumi up`. Keeps VM
+  // teardown off the deploy's critical path.
+  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack, '--skip-destroy']
   if (item.health_url) args.push('--health-url', item.health_url)
   const res = spawnSync('pnpm', args, { stdio: 'inherit', env: process.env })
   if (res.status !== 0) throw new Error(`deploy-service failed for ${item.service} with exit ${res.status}`)
 }
 
-export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: RolloutItem[]; stack: string; sha: string; gen: number } {
+export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: RolloutItem[]; stack: string; sha: string } {
   const primaryRaw = getFlag(argv, '--primary-json') ?? '[]'
   const restRaw = getFlag(argv, '--rest-json') ?? '[]'
   const stack = getFlag(argv, '--stack')
   const sha = getFlag(argv, '--sha')
-  const gen = getNumFlag(argv, '--gen', Number.NaN)
-  if (!stack || !sha || Number.isNaN(gen)) throw new Error('Usage: deploy-rollout.ts --stack <stack> --sha <git-sha> --gen <run-number> --primary-json <json> --rest-json <json>')
-  return { primary: parseRolloutJson(primaryRaw, '--primary-json'), rest: parseRolloutJson(restRaw, '--rest-json'), stack, sha, gen }
+  if (!stack || !sha) throw new Error('Usage: deploy-rollout.ts --stack <stack> --sha <git-sha> --primary-json <json> --rest-json <json>')
+  return { primary: parseRolloutJson(primaryRaw, '--primary-json'), rest: parseRolloutJson(restRaw, '--rest-json'), stack, sha }
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {

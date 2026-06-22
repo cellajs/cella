@@ -119,20 +119,21 @@ export interface CellaCliConfig {
    */
   overrides?: {
     /**
-     * Folders (or exact paths) the fork fully owns — never synced (existing or new).
-     * Directory prefixes, not globs: 'bench' matches 'bench/' and everything under it,
-     * 'README.md' matches that exact file.
+     * Paths the fork fully owns — never synced (existing or new).
+     * Exact paths or directory prefixes, not globs: 'bench' matches 'bench/' and
+     * everything under it, 'README.md' matches that exact file.
      * Local territory: upstream cannot add, modify, or delete anything under these.
      */
-    ignoredFolders?: string[];
+    ignored?: string[];
 
     /**
-     * Exact files pinned to fork — fork wins on conflicts.
-     * Exact paths only (no wildcards - use ignoredFolders for whole folders).
+     * Paths pinned to fork — fork wins on conflicts.
+     * Exact paths or directory prefixes, not globs: 'bench' matches 'bench/' and
+     * everything under it, 'README.md' matches that exact file.
      * Non-conflicting upstream changes merge normally.
      * If fork deleted a pinned file, deletion is respected.
      */
-    pinnedFiles?: string[];
+    pinned?: string[];
   };
 
   /**
@@ -198,7 +199,7 @@ export interface RuntimeConfig extends CellaCliConfig {
   hard?: boolean;
 
   /**
-   * Disable pinned files (cella.config.ts pinnedFiles) for this sync so upstream
+   * Disable pinned entries (cella.config.ts overrides.pinned) for this sync so upstream
    * versions surface as behind/diverged. package.json files stay pinned (handled
    * by the packages service). Like --hard, uses the natural merge-base to resurface
    * full upstream history.

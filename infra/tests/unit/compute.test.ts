@@ -105,12 +105,12 @@ describe('compute module source invariants', () => {
   })
 
   it('materialises a VM per active generation with its own per-generation IPs', () => {
-    // The immutable-node model names VMs `vm-<svc>-<gen>` and gives each
-    // generation its own public + private IP; the LB targets the set of active
-    // generation IPs. There is no lifelong per-service reserved IP map.
+    // The immutable-node model names VMs `vm-<svc>-<genId>` (content-addressed)
+    // and gives each generation its own public + private IP; the LB targets the
+    // set of active generation IPs. There is no lifelong per-service reserved IP map.
     expect(source).toMatch(/activeGenerations\(/)
-    expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.gen\}/)
-    expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.gen\}/)
+    expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.id\}/)
+    expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.id\}/)
     // The old lifelong reserved-IP map must not come back.
     expect(source).not.toMatch(/reservedIps\.set\(/)
     expect(source).not.toMatch(/Create backend first/)
@@ -137,7 +137,7 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/stableInternalGen_/)
     expect(source).not.toMatch(/stablePrivateIp/)
     expect(source).toMatch(/deleteBeforeReplace: true/)
-    expect(source).toMatch(/syncs these keys from the current stack outputs/)
+    expect(source).toMatch(/content-addressed id for a pending SHA/)
   })
 
   it('envPool does not bind backend secrets as compose env values', () => {

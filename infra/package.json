@@ -16,6 +16,7 @@
     "install-pulumi-providers": "tsx tasks/install-pulumi-providers.ts",
     "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
     "deploy-rollout": "tsx tasks/deploy-rollout.ts",
+    "migrate-control-store": "tsx tasks/migrate-control-store.ts",
     "stack-lock": "tsx tasks/stack-lock.ts",
     "wait-for-version": "tsx tasks/wait-for-version.ts",
     "wait-for-images": "tsx tasks/wait-for-images.ts",

@@ -379,7 +379,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
     let forkTerritory: string[] = [];
     try {
       const forkConfig = await loadConfig(resolvedPath);
-      forkTerritory = forkConfig.overrides?.ignoredFolders ?? [];
+      forkTerritory = forkConfig.overrides?.ignored ?? [];
     } catch {
       // Fork may not have a cella.config.ts — no extra territory to exclude
     }

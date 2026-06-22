@@ -162,7 +162,7 @@ export interface CutoverPlan {
 export interface CutoverResult {
   ok: boolean
   /** Why the cutover stopped, when not ok. */
-  aborted?: 'unhealthy' | 'slot-stuck' | 'unexpected-lb-state'
+  aborted?: 'unhealthy' | 'slot-stuck'
   /** Ordered record of the steps performed — asserted by the unit tests. */
   steps: string[]
 }
@@ -219,28 +219,28 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     const normalize = (ips: string[]) => [...ips].sort().join(',')
     return normalize(actual) === normalize(expected)
   }
-  const oldAndNew = [...plan.oldIps, ...plan.newIps]
-  const probedServers = plan.getServers ? await plan.getServers() : plan.oldIps
-  const currentServers = probedServers.length > 0 ? probedServers : plan.oldIps
-  if (probedServers.length === 0 && plan.getServers) {
-    record('LB server list probe returned empty; assuming [old] from Pulumi metadata')
-  }
+  // Level-triggered reconcile: the desired final state is `[new]`, reached only
+  // AFTER the new generation is health-verified; the safe intermediate state is
+  // the overlap `[old, new]`. We always DRIVE the live list toward desired with
+  // idempotent SetBackendServers calls and never return success while the live
+  // list still differs from desired. This is the core fix for the stranded-LB
+  // class of bugs: an empty, stale, or unexpected live pool is reconciled rather
+  // than assumed-correct, and an `old == new` (idempotent redeploy) still asserts
+  // the pool instead of silently skipping the only corrective call.
+  const overlap = [...new Set([...plan.oldIps, ...plan.newIps])]
+  let live = plan.getServers ? await plan.getServers() : plan.oldIps
+  record(`observed LB server list: ${live.join(',') || '<empty>'}`)
 
-  if (sameIps(currentServers, plan.newIps)) {
-    record('LB already contracted to [new]')
-    return { ok: true, steps }
-  }
-
-  if (!sameIps(currentServers, plan.oldIps) && !sameIps(currentServers, oldAndNew)) {
-    record(`unexpected LB server list: ${currentServers.join(',') || '<empty>'}`)
-    return { ok: false, aborted: 'unexpected-lb-state', steps }
-  }
-
-  if (sameIps(currentServers, oldAndNew)) {
-    record('LB already expanded to [old, new]')
-  } else {
-    record(`expand LB to [old, new] (${oldAndNew.length} servers)`)
-    await expandBackend(setServers, plan.oldIps, plan.newIps)
+  // Phase 1 — ensure the overlap is attached before verifying, unless the live
+  // list is ALREADY exactly the desired `[new]` (a prior run contracted it).
+  if (!sameIps(live, plan.newIps)) {
+    if (sameIps(live, overlap)) {
+      record('LB already expanded to [old, new]')
+    } else {
+      record(`expand LB to [old, new] (${overlap.length} server(s)); was ${live.join(',') || '<empty>'}`)
+      await setServers(overlap)
+    }
+    live = overlap
   }
 
   if (plan.healthAfterExpand) {
@@ -248,8 +248,15 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
   }
 
-  record('contract LB to [new]')
-  await contractBackend(setServers, plan.newIps)
+  // Phase 2 — contract to the new generation only (verified above). Idempotent:
+  // skipped only when the live list is already exactly `[new]`.
+  if (!sameIps(live, plan.newIps)) {
+    record('contract LB to [new]')
+    await contractBackend(setServers, plan.newIps)
+    live = plan.newIps
+  } else {
+    record('LB already serving [new]')
+  }
 
   record(`drain old generation for ${plan.drainSeconds}s (drainPolicy=${plan.drainPolicy ?? 'requests'})`)
   if (plan.drainSeconds > 0) await sleep(plan.drainSeconds * 1000)

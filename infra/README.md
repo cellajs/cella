@@ -1,8 +1,9 @@
 # infra cli
 
-Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. 
+Push to `main` and a new VM generation is rolled out automatically. Fully using Infrastructure as Code. On fully European infra using mostly [Scaleway](https://www.scaleway.com/).
 
-Push to `main` and a new VM generation is rolled out automatically. On fully European infra.
+Similar to SST, this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
+
 
 ## Overview
 
@@ -10,7 +11,7 @@ The infrastructure is built around three principles:
 
 1. **Create-then-replace.** A release and an infra change are the same operation: every deploy bakes the image SHA into a *new* VM generation's cloud-init, brings it up (cutover), then retires the old one.
 2. **Descending-privilege credentials.** Three keys, each creating the next (bootstrap → CI deploy → VM reader), so no privileged key ever lives on your laptop. CI only holds what it needs.
-3. **DRY config.** Everything tunable — resource names, domains, sizing, the secrets map — is derived from committed, type-checked [config files](#configuration) rather than hardcoded in the Pulumi modules.
+3. **DRY config.** IaC is great for inheriting config to keep configuration DRY. See also [config files](#configuration).
 
 The key resources and how traffic flows between them:
 
@@ -81,7 +82,7 @@ Scaleway LB ──▶ service VM host port ──▶ service container
 
 The primary rollout service (the one that owns migrations) is verified first, then the rest in parallel. `cdc` has no public health endpoint; its replacement is confirmed indirectly by the primary public service coming up healthy.
 
-**Rollback:** re-run the workflow on the previous commit — it provisions a new generation from that SHA the same way it rolled forward (no separate path).
+**Rollback:** the last good generation is retained as `previous` in the control ledger (its VM kept alive), so a rollback is a pointer flip rather than a rebuild. Re-running the workflow on the previous commit also works and follows the exact same forward path — it reuses the retained generation because the `genId` is content-addressed.
 
 ## The three credentials
 
@@ -114,7 +115,7 @@ The workflow at [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) 
 - **On manual dispatch** — same, against chosen environment (`staging` or `production`).
 
 
-CI builds the image, records the release SHA in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<gen>`) with that SHA baked into its cloud-init. For LB-backed services it creates a pending generation, expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, contracts to `[new]`, then clears the pending generation. See [rollout strategies](#rollout-strategies) for the model.
+CI builds the image, records the release SHA as the rollout INTENT in the S3 control object, and [tasks/deploy-service.ts](tasks/deploy-service.ts) drives a **new VM generation** (`vm-<svc>-<genId>`) with that SHA baked into its cloud-init. The `genId` is **content-addressed** — a hash of the release SHA plus the generation's static config — so re-running a deploy reuses the same generation (a true no-op) and a manual `pulumi up` can never fork identity. For LB-backed services the reconciler expands the LB backend to `[old,new]`, waits until the public `/health` can serve the expected `X-App-Version`, then contracts to `[new]`; the promoted old generation is retained as `previous` for an instant pointer-flip rollback. See [rollout strategies](#rollout-strategies) for the model.
 
 To trigger a staging deploy: GitHub → Actions → Deploy → Run workflow → select `staging`.
 
@@ -127,12 +128,26 @@ Every deploy is a **create-then-replace**: the image SHA is baked into a new VM 
 
 | `replacementStrategy` | Services | How |
 |----------|----------|-----|
-| **lb-overlap** | backend, frontend, ai, yjs | Provision the new generation as `pendingGen`, then [tasks/cutover.ts](tasks/cutover.ts) uses Scaleway `SetBackendServers` to expand the LB backend to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, and drain the old generation before Pulumi destroys it. |
-| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The new generation boots warm and contends for the slot the old worker releases on drain (handoff is lossless — the slot retains the WAL position). |
+| **lb-overlap** | backend, frontend, ai, yjs | Record the SHA as `pendingSha`; the Pulumi program materialises the content-addressed pending generation alongside the active one. [tasks/cutover.ts](tasks/cutover.ts) then runs a **level-triggered reconciler**: it reads the live LB server list and drives it toward the desired state with idempotent Scaleway `SetBackendServers` calls — expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It never silently skips the corrective call, so an empty/stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The old generation is promoted to `previous` and retained for rollback; the previous-previous straggler is reaped by a later `pulumi up`. |
+| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program materialises only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless — the slot retains the WAL position). |
 
 **`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP — `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/ai, or `reconnect` (WebSocket — sessions shed, clients re-dial and resync from durable state) for yjs.
 
-[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested expand→health→contract→drain core for the explicit LB-overlap path. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: create the pending generation, run cutover, promote the service's generation + SHA in the **S3 control object** (`control/<stack>.json` in the state bucket — the source of truth the Pulumi program reads), clear pending, and run the destroy bookend. Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time — the rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+[tasks/cutover.ts](tasks/cutover.ts) contains the pure, unit-tested **level-triggered** reconciler core for the explicit LB-overlap path: it reads the live server list and drives it toward the desired state (expand→health→contract→drain) with idempotent `SetBackendServers` calls, never silently skipping the corrective call. [tasks/deploy-service.ts](tasks/deploy-service.ts) wraps it with Pulumi bookends: record the SHA as `pendingSha` in the **S3 control object** (`control/<stack>.json` in the state bucket — the source of truth the Pulumi program reads), `pulumi up` to materialise the content-addressed generation, run the reconciler, then `promote` it to `active` (the old active becomes `previous`, retained for rollback). Internal consumers reach a service over the private network with `@{<svc>.privateIp}`, which resolves to that service's current generation IP baked in at deploy time — the rollout order (the stable service first, e.g. backend before cdc) means a consumer redeployed afterwards always binds the freshly promoted generation. A frontend **content** release is just an S3 upload (no VM cutover); only a Caddy/CSP/cloud-init change replaces the frontend VM.
+
+### One-time migration: control object schema v1 → v2
+
+The rollout state moved from a numeric `gen` counter (schemaVersion 1) to a content-addressed deploy ledger (schemaVersion 2), and VM resources are renamed `vm-<svc>-<gen>` → `vm-<svc>-<genId>`. The Pulumi program rejects a v1 control object, and the first deploy replaces every generation VM (a one-time, bounded downtime per service — backend first). Run the migration **once per stack, before the first deploy on the new code**, with an operator key in env:
+
+```bash
+# Preview the rewrite without touching the object:
+SCW_ACCESS_KEY=… SCW_SECRET_KEY=… pnpm --filter infra migrate-control-store --stack production --dry-run
+
+# Apply it (carries each service's current SHA forward as `pendingSha`):
+SCW_ACCESS_KEY=… SCW_SECRET_KEY=… pnpm --filter infra migrate-control-store --stack production
+```
+
+The task is idempotent: it no-ops when the object is already v2 or absent. Carrying the live SHA as `pendingSha` makes the replacement land on the current image (not the `latest` placeholder), then the normal rollout reconciler points the LB at the new generation and promotes it. Do the same for `staging` first to rehearse.
 
 ### Runtime secret delivery
 

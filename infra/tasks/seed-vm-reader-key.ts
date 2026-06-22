@@ -16,9 +16,8 @@ const defaultLog = (message: string) => console.info(message)
 
 /**
  * Store the `<slug>-vm-reader` key pair in Scaleway Secret Manager during
- * bootstrap (SOVRUN §3.3 — the key no longer lives in stack config). The Pulumi
- * program reads it back at `pulumi up` time (see helpers.ts `readVmReaderKey`)
- * and bakes it into VM cloud-init.
+ * bootstrap. The Pulumi program reads it back during `pulumi up` and bakes it
+ * into VM cloud-init.
  *
  * Idempotent: ensures the container exists and always writes a fresh version
  * (`disablePrevious: true`) so a re-mint/rotate immediately invalidates the
