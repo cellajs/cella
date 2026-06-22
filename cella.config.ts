@@ -48,7 +48,6 @@ export default defineConfig({
     pinned: [
       'pnpm-lock.yaml',
       'cella.config.ts',
-      'backend/compose.yaml',
       'backend/src/tables.ts',
       'backend/src/routes.ts',
       'backend/src/modules/memberships/memberships-db.ts',

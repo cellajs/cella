@@ -585,9 +585,19 @@ async function cleanupEmptyParentDirs(cwd: string, relativePath: string): Promis
 /**
  * Store the upstream commit hash after a successful sync.
  * Used to recover correct merge-base when squash strategy creates single-parent commits.
+ *
+ * Also records the fork HEAD at store time as `refs/cella/last-sync-head`. The last-sync
+ * ref is written while the merge is still staged (before the user commits), so it cannot be
+ * trusted on its own: if the user runs `git merge --abort`, HEAD never advances and the ref
+ * is left pointing at an upstream commit that was never actually integrated. Recording HEAD
+ * lets `getEffectiveMergeBase` detect that an aborted/uncommitted merge produced a stale ref.
  */
 export async function storeLastSyncRef(cwd: string, upstreamHash: string): Promise<void> {
   await git(['update-ref', 'refs/cella/last-sync', upstreamHash], cwd);
+  const head = await git(['rev-parse', 'HEAD'], cwd, { ignoreErrors: true });
+  if (head) {
+    await git(['update-ref', 'refs/cella/last-sync-head', head], cwd);
+  }
 }
 
 /**
@@ -596,6 +606,15 @@ export async function storeLastSyncRef(cwd: string, upstreamHash: string): Promi
  */
 export async function getStoredSyncRef(cwd: string): Promise<string | null> {
   const ref = await git(['rev-parse', 'refs/cella/last-sync'], cwd, { ignoreErrors: true });
+  return ref || null;
+}
+
+/**
+ * Get the fork HEAD that was recorded when the last-sync ref was stored.
+ * Returns null if no HEAD was recorded.
+ */
+export async function getStoredSyncHead(cwd: string): Promise<string | null> {
+  const ref = await git(['rev-parse', 'refs/cella/last-sync-head'], cwd, { ignoreErrors: true });
   return ref || null;
 }
 
@@ -628,6 +647,18 @@ export async function getEffectiveMergeBase(
 
   if (!storedRef) {
     return { base: gitBase, isStale: false, storedRef: null };
+  }
+
+  // Guard against a stale last-sync ref left behind by an aborted merge. The ref is written
+  // while the merge is still staged; if the user runs `git merge --abort` instead of committing,
+  // HEAD never advances past the recorded HEAD. In that case the upstream commits were never
+  // integrated, so the stored ref must be discarded to avoid reporting "0 new commits".
+  const storedHead = await getStoredSyncHead(cwd);
+  if (storedHead) {
+    const currentHead = await git(['rev-parse', headRef], cwd, { ignoreErrors: true });
+    if (currentHead && currentHead === storedHead) {
+      return { base: gitBase, isStale: false, storedRef: null };
+    }
   }
 
   // Check if stored ref is a descendant of git's merge-base (i.e., more recent)
