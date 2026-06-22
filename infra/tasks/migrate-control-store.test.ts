@@ -12,6 +12,28 @@ describe('migrateControlDocument', () => {
     expect(migrateControlDocument('{"schemaVersion":2,"bootstrap":{},"rollout":{}}')).toEqual({ action: 'already-v2' })
   })
 
+  it('leaves a well-formed v2 document untouched', () => {
+    const v2 = JSON.stringify({
+      schemaVersion: 2,
+      bootstrap: {},
+      rollout: { backend: { seq: 5, active: { id: 'aa11', sha: 'abc', seq: 5 }, pendingSha: 'def' } },
+    })
+    expect(migrateControlDocument(v2)).toEqual({ action: 'already-v2' })
+  })
+
+  it('repairs a malformed v2 by dropping a pointer that lacks an id', () => {
+    // The exact corruption a pre-fix sync-rollout-config wrote: active without id.
+    const corrupt = JSON.stringify({
+      schemaVersion: 2,
+      bootstrap: {},
+      rollout: { backend: { seq: 274, pendingSha: '9fe4', active: { sha: '9fe4', seq: 274 } } },
+    })
+    const result = migrateControlDocument(corrupt)
+    expect(result.action).toBe('migrated')
+    if (result.action !== 'migrated') return
+    expect(result.state.rollout.backend).toEqual({ seq: 274, pendingSha: '9fe4' })
+  })
+
   it('throws on an unrecognised schema version', () => {
     expect(() => migrateControlDocument('{"schemaVersion":3}')).toThrow(/cannot migrate schemaVersion 3/)
   })

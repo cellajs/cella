@@ -40,6 +40,20 @@ export function generationsByService(metadata: RolloutGeneration[]): Map<string,
   return services
 }
 
+/**
+ * Build the per-service seed candidates from live metadata. Only CONTENT-ADDRESSED
+ * generations qualify: an item whose `genId` is missing/blank is from a pre-migration
+ * (numeric-gen) stack output and must NOT be seeded — doing so wrote `active.id =
+ * undefined` and corrupted the control object. Pure + unit-tested.
+ */
+export function seedCandidates(metadata: RolloutGeneration[]): Map<string, RolloutGeneration> {
+  const valid = metadata.filter((item) => typeof item.genId === 'string' && item.genId.length > 0)
+  const byService = generationsByService(valid)
+  const seeds = new Map<string, RolloutGeneration>()
+  for (const [service, generations] of byService) seeds.set(service, selectGeneration(generations))
+  return seeds
+}
+
 export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<void> {
   const stack = getFlag(argv, '--stack')
   if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack>')
@@ -50,12 +64,10 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     return
   }
 
-  const metadata = JSON.parse(rawMetadata) as RolloutGeneration[]
-  const byService = generationsByService(metadata)
-
-  const seeds = new Map<string, RolloutGeneration>()
-  for (const [service, generations] of byService) {
-    seeds.set(service, selectGeneration(generations))
+  const seeds = seedCandidates(JSON.parse(rawMetadata) as RolloutGeneration[])
+  if (seeds.size === 0) {
+    console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed')
+    return
   }
 
   await seedActivePointers(stack, seeds)
@@ -67,7 +79,8 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
  * generation or demotes an existing active: the orchestrator (deploy-service)
  * owns promotion after a health-gated cutover, so a freshly-materialised but
  * un-cutover generation must not be mistaken for "live" here (that was the old
- * max-gen reconcile bug). Skipped (with a warning) when no S3 creds are present.
+ * max-gen reconcile bug). A service that already has an `active` OR a `pendingSha`
+ * is skipped entirely. Skipped (with a warning) when no S3 creds are present.
  */
 async function seedActivePointers(stack: string, seeds: Map<string, RolloutGeneration>): Promise<void> {
   if (seeds.size === 0) return
@@ -88,14 +101,16 @@ async function seedActivePointers(stack: string, seeds: Map<string, RolloutGener
   let changed = false
   for (const [svc, gen] of seeds) {
     const current = state.rollout[svc] ?? emptyRollout()
-    if (current.active) continue
+    // Never seed over an existing active, nor while a deploy intent is pending —
+    // the orchestrator promotes the pending generation after its health gate.
+    if (current.active || current.pendingSha) continue
     const seq = current.seq + 1
     state.rollout[svc] = { ...current, seq, active: { id: gen.genId, sha: gen.sha, seq } }
     console.info(`[sync-rollout-config] seeded ${svc}: active gen=${gen.genId} sha=${gen.sha}`)
     changed = true
   }
   if (!changed) {
-    console.info('[sync-rollout-config] all services already have an active pointer; nothing to seed')
+    console.info('[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed')
     return
   }
   state.updatedAt = new Date().toISOString()
