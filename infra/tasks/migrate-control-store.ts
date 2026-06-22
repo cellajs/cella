@@ -38,16 +38,53 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/** A GenRef is only valid with a string id + sha and a numeric seq. A pointer
+ *  missing its `id` is the corruption an old sync-rollout-config could write. */
+function validGenRef(value: unknown): { id: string; sha: string; seq: number } | undefined {
+  if (!isRecord(value)) return undefined
+  const { id, sha, seq } = value
+  if (typeof id !== 'string' || id.length === 0) return undefined
+  if (typeof sha !== 'string') return undefined
+  if (typeof seq !== 'number') return undefined
+  return { id, sha, seq }
+}
+
 export type MigrationResult =
   | { action: 'absent' }
   | { action: 'already-v2' }
   | { action: 'migrated'; state: ControlState }
 
+/** Sanitise a schemaVersion-2 document: drop any `active`/`previous` pointer that
+ *  lacks a valid `id` (the corruption a pre-fix sync could write). Returns
+ *  `already-v2` when nothing needed repair, else `migrated` with the clean state. */
+function sanitizeV2(doc: Record<string, unknown>): MigrationResult {
+  const bootstrap: BootstrapState = isRecord(doc.bootstrap) ? (doc.bootstrap as BootstrapState) : {}
+  const rolloutIn = isRecord(doc.rollout) ? doc.rollout : {}
+  const rollout: Record<string, ServiceRollout> = {}
+  let repaired = false
+  for (const [slug, value] of Object.entries(rolloutIn)) {
+    if (!isRecord(value)) continue
+    const seq = typeof value.seq === 'number' ? value.seq : 0
+    const entry: ServiceRollout = { seq }
+    const active = validGenRef(value.active)
+    const previous = validGenRef(value.previous)
+    if (value.active !== undefined && !active) repaired = true
+    if (value.previous !== undefined && !previous) repaired = true
+    if (active) entry.active = active
+    if (previous) entry.previous = previous
+    if (typeof value.pendingSha === 'string') entry.pendingSha = value.pendingSha
+    rollout[slug] = entry
+  }
+  if (!repaired) return { action: 'already-v2' }
+  return { action: 'migrated', state: { schemaVersion: 2, bootstrap, rollout } }
+}
+
 /**
  * Pure transform: given the raw control document text (or undefined when the
  * object does not exist), produce the migration outcome. Throws on an
  * unrecognised schema so a corrupt or future document fails loudly rather than
- * being silently overwritten.
+ * being silently overwritten. A schemaVersion-2 document is sanitised (malformed
+ * pointers dropped), so this task doubles as a repair.
  */
 export function migrateControlDocument(raw: string | undefined): MigrationResult {
   if (raw === undefined || raw.trim() === '') return { action: 'absent' }
@@ -59,7 +96,7 @@ export function migrateControlDocument(raw: string | undefined): MigrationResult
     throw new Error(`control: not valid JSON (${(err as Error).message})`)
   }
   if (!isRecord(doc)) throw new Error('control: root must be an object')
-  if (doc.schemaVersion === 2) return { action: 'already-v2' }
+  if (doc.schemaVersion === 2) return sanitizeV2(doc)
   if (doc.schemaVersion !== 1) throw new Error(`control: cannot migrate schemaVersion ${String(doc.schemaVersion)} (expected 1)`)
 
   const bootstrap: BootstrapState = isRecord(doc.bootstrap) ? (doc.bootstrap as BootstrapState) : {}
