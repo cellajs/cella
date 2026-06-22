@@ -230,7 +230,7 @@ jobs:
   # -------------------------------------------------------------------------
   pulumi:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     needs: [setup, build-agent-image, build-images]
     # contents: read for checkout.
     permissions:
