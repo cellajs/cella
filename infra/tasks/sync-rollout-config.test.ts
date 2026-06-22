@@ -2,14 +2,25 @@ import { describe, expect, it } from 'vitest'
 import { generationsByService, selectGeneration } from './sync-rollout-config'
 
 describe('sync rollout config helpers', () => {
-  it('selects the newest observed generation per service', () => {
+  it('groups generations by service', () => {
     const services = generationsByService([
-      { service: 'backend', gen: 5, sha: 'old' },
-      { service: 'frontend', gen: 2, sha: 'old' },
-      { service: 'backend', gen: 257, sha: 'new' },
+      { service: 'backend', genId: 'aa11', sha: 'old' },
+      { service: 'frontend', genId: 'bb22', sha: 'old' },
+      { service: 'backend', genId: 'cc33', sha: 'new' },
     ])
+    expect(services.get('backend')).toHaveLength(2)
+    expect(services.get('frontend')).toHaveLength(1)
+  })
 
-    expect(selectGeneration(services.get('backend')!)).toEqual({ service: 'backend', gen: 257, sha: 'new' })
-    expect(selectGeneration(services.get('frontend')!)).toEqual({ service: 'frontend', gen: 2, sha: 'old' })
+  it('selects a single, deterministic generation per service when seeding', () => {
+    // On a first provision there is exactly one generation per service; the
+    // genId-sorted pick only matters if that invariant is ever broken.
+    expect(selectGeneration([{ service: 'frontend', genId: 'bb22', sha: 'old' }])).toEqual({ service: 'frontend', genId: 'bb22', sha: 'old' })
+    expect(
+      selectGeneration([
+        { service: 'backend', genId: 'cc33', sha: 'new' },
+        { service: 'backend', genId: 'aa11', sha: 'old' },
+      ]),
+    ).toEqual({ service: 'backend', genId: 'aa11', sha: 'old' })
   })
 })

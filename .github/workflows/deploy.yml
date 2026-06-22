@@ -383,10 +383,9 @@ jobs:
           # Pulumi program selects shared config by APP_MODE; set it from the stack mode.
           APP_MODE: ${{ needs.setup.outputs.environment }}
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
-          RUN_NUMBER: ${{ github.run_number }}
           PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}
           ROLL_REST_MATRIX: ${{ needs.setup.outputs.roll_rest_matrix }}
-        run: pnpm --filter infra deploy-rollout --stack "$STACK" --sha "$IMAGE_TAG" --gen "$RUN_NUMBER" --primary-json "$PRIMARY_ROLLOUT_MATRIX" --rest-json "$ROLL_REST_MATRIX"
+        run: pnpm --filter infra deploy-rollout --stack "$STACK" --sha "$IMAGE_TAG" --primary-json "$PRIMARY_ROLLOUT_MATRIX" --rest-json "$ROLL_REST_MATRIX"
 
       - name: Release stack lock
         if: always()
