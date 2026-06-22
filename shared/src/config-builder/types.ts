@@ -244,6 +244,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   gleapToken: string;
   googleMapsKey: string;
   matrixURL: string;
+  maplePublicIngestKey: string;
 
   // Theming & UI
   themeColor: string;

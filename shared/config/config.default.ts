@@ -219,6 +219,7 @@ export const config = {
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
   googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',
   matrixURL: 'https://matrix-client.matrix.org',
+  maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
 
   /******************************************************************************
    * THEMING & UI

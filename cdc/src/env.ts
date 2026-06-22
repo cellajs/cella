@@ -20,7 +20,7 @@ const envSchema = z.object({
   API_WS_URL: z.url().default(`ws://localhost:${new URL(appConfig.backendUrl).port}/internal/cdc`),
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
   CDC_HEALTH_PORT: z.coerce.number().default(4001),
-  MAPLE_API_KEY: z.string().optional(),
+  MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),

@@ -58,7 +58,7 @@ Bench measures the live dev stack, so a few backend constraints shape what the n
 - **Cache warm-up vs run duration.** The auth guard caches sessions in-process (1 min TTL) and memberships separately (5 min TTL); runs shorter than the session TTL include cold-cache `validateSession` hits.
 - **Per-mutation RLS transactions.** Each write wraps permission check + update in a single short-lived transaction that also sets the tenant/user GUCs for row-level security. That's a few serial round trips per write against the connection pool — the write ceiling is bound by pool size (`DATABASE_POOL_MAX`) and DB round-trip latency, not just handler CPU.
 - **Rate limiting is effectively disabled for bench.** The seeded bench tenant sets a very high `apiPointsPerHour`, and the points limiter has an in-process fast path.
-- **Telemetry is off without a key.** OpenTelemetry traces/metrics only export when `MAPLE_API_KEY` is set.
+- **Telemetry is off without a key.** OpenTelemetry traces/metrics only export when `MAPLE_SECRET_INGEST_KEY` is set.
 
 ## File structure
 

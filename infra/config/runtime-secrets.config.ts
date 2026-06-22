@@ -136,6 +136,15 @@ export default defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'ai'],
   },
+  mapleSecretIngestKey: {
+    secretName: 'maple-secret-ingest-key',
+    description: 'Maple.dev observability secret ingest key (server-side traces, metrics, logs)',
+    envVar: 'MAPLE_SECRET_INGEST_KEY',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend', 'cdc', 'yjs'],
+  },
   githubClientId: {
     secretName: 'github-client-id',
     description: 'GitHub OAuth client ID',
