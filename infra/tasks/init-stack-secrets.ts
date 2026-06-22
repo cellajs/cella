@@ -52,9 +52,8 @@ export type Spec =
  * auto-generate as `random.RandomPassword` resources in Pulumi state
  * (resources/database.ts), and the Scaleway project id is injected from the
  * environment (`SCW_DEFAULT_PROJECT_ID`, read natively by the provider and by
- * pulumi-context.ts) — never stored in stack config (SOVRUN §3.3 —
- * "materialized, not stored"). The table is retained as the extension point for
- * any future fork-seeded value, guarded by the snapshot test.
+ * pulumi-context.ts) rather than stored in stack config. The table remains the
+ * extension point for any future fork-seeded value, guarded by the snapshot test.
  */
 export const specs: Spec[] = []
 

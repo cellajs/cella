@@ -61,8 +61,8 @@ async function listFilesAtRef(repoPath: string, ref: string): Promise<Set<string
  * @param baseRef - Cella's base branch ref (e.g. 'development')
  * @param forkRef - Fetched fork commit (e.g. a resolved FETCH_HEAD sha)
  * @param config - Cella's config, used to exclude ignored/pinned files
- * @param forkTerritory - Folders the fork owns (from the fork's own
- *   `ignoredFolders`); excluded so fork-specific modules aren't offered back
+ * @param forkTerritory - Paths the fork owns (from the fork's own
+ *   `ignored` list); excluded so fork-specific modules aren't offered back
  */
 export async function detectContributableFiles(
   repoPath: string,

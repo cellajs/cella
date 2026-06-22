@@ -235,7 +235,7 @@ jobs:
   # -------------------------------------------------------------------------
   pulumi:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     needs: [setup, build-agent-image]
     # contents: read for checkout.
     permissions:
@@ -353,13 +353,9 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           VM_READER_APP: ${{ needs.setup.outputs.vm_reader_app }}
         run: |
-          # Resolve the VM reader application id by its deterministic name and
-          # source the project from the synced SCW_PROJECT_ID secret — neither
-          # the app id nor the project id is stored in stack config anymore
-          # (SOVRUN §3.3); the Pulumi program derives them from the IAM API.
-          # Pass the org id so assert-vm-grants skips the Account `read project`
-          # call (the CI key lacks that permission) and lists IAM policies
-          # directly.
+          # Resolve the VM reader app by name and verify its IAM policies using
+          # the synced project and organization ids. Passing the org id avoids
+          # the Account `read project` call that CI cannot make.
           pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID" --organization-id "$SCW_DEFAULT_ORGANIZATION_ID"
 
       - name: Verify runtime secrets are deliverable

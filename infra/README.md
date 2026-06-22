@@ -1,8 +1,9 @@
 # infra cli
 
-Deploy your web app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. 
+Push to `main` and a new VM generation is rolled out automatically. Fully using Infrastructure as Code. On fully European infra using mostly [Scaleway](https://www.scaleway.com/).
 
-Push to `main` and a new VM generation is rolled out automatically. On fully European infra.
+Similar to SST, this infra deployment flow uses [Pulumi](https://www.pulumi.com/) as its engine.
+
 
 ## Overview
 
@@ -10,7 +11,7 @@ The infrastructure is built around three principles:
 
 1. **Create-then-replace.** A release and an infra change are the same operation: every deploy bakes the image SHA into a *new* VM generation's cloud-init, brings it up (cutover), then retires the old one.
 2. **Descending-privilege credentials.** Three keys, each creating the next (bootstrap → CI deploy → VM reader), so no privileged key ever lives on your laptop. CI only holds what it needs.
-3. **DRY config.** Everything tunable — resource names, domains, sizing, the secrets map — is derived from committed, type-checked [config files](#configuration) rather than hardcoded in the Pulumi modules.
+3. **DRY config.** IaC is great for inheriting config to keep configuration DRY. See also [config files](#configuration).
 
 The key resources and how traffic flows between them:
 

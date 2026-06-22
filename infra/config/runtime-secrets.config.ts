@@ -21,7 +21,7 @@ import { defineRuntimeSecrets } from '../lib/runtime-secrets'
  *  - `generation`  — `'random'` (Pulumi RandomPassword) or `'manual'`.
  *  - `services`    — which deployable services receive it.
  *
- * Forks pin this file (see `pinnedFiles` in `cella.config.ts`) to customize the
+ * Forks pin this file (see `overrides.pinned` in `cella.config.ts`) to customize the
  * mapping without conflicting on `pnpm cella` upstream syncs. A typo (unknown
  * service, duplicate envVar/secretName, empty `services`) fails fast at load
  * time in `runtime-secrets.ts` rather than as a missing variable at runtime.

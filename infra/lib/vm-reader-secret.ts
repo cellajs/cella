@@ -2,11 +2,9 @@
  * Shared coordinates for the VM reader key in Scaleway Secret Manager.
  *
  * The `<slug>-vm-reader` IAM key pair (registry pull + Secret Manager access)
- * used to live encrypted in `Pulumi.<env>.yaml`. It now lives in
- * Secret Manager instead (SOVRUN §3.3, "materialized, not stored"): the infra
- * CLI seeds it at bootstrap and the Pulumi program reads it back at `pulumi up`
- * time to bake into VM cloud-init. This module is the single source of truth for
- * the container name + path so the writer (CLI) and reader (helpers.ts) agree.
+ * is stored in Secret Manager. The infra CLI seeds it at bootstrap and the
+ * Pulumi program reads it back during `pulumi up` to bake into VM cloud-init.
+ * This module is the shared source of truth for the secret name and path.
  *
  * Pure (no Pulumi/SDK imports) so both the runtime program and standalone CLI
  * tasks can import it.

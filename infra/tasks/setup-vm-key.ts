@@ -64,8 +64,8 @@ if (isMain(import.meta.url)) {
   console.info('\n→ Setting up VM reader key')
   const result = await setupVmKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug })
 
-  // Store the key pair in Secret Manager (SOVRUN §3.3) — the Pulumi program
-  // reads it back at `pulumi up` to bake into VM cloud-init. No stack config.
+  // Store the key pair in Secret Manager so the Pulumi program can read it
+  // during `pulumi up` and bake it into VM cloud-init.
   const path = secretManagerPath(appConfig.slug, appConfig.mode)
   await seedVmReaderKey({
     secretKey,
