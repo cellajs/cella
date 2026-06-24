@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { features } from '~/modules/marketing/marketing-config';
+import { stackItems } from '~/modules/marketing/marketing-config';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export type InfoGridItem = {
@@ -34,15 +34,19 @@ function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
   );
 }
 
-export function InfoGrid() {
+interface InfoGridProps {
+  className?: string;
+}
+
+export function InfoGrid({ className = 'sm:grid-cols-2 md:grid-cols-3' }: InfoGridProps) {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpointAbove('md');
 
   return (
-    <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <div className={`mx-auto grid max-w-5xl justify-center gap-4 ${className}`}>
       <ExpandableList<InfoGridItem>
-        items={features}
+        items={stackItems}
         renderItem={(feature) => <InfoGridItem key={feature.id} {...feature} invertClassName={invertClass} />}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}

@@ -5,13 +5,12 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 interface HeroProps {
   title: string;
-  subtitle: string;
   children: React.ReactNode;
   text?: string;
   badgeText?: string;
 }
 
-export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) => {
+export const Hero = ({ title, text, children, badgeText }: HeroProps) => {
   const { t } = useTranslation();
   const { theme } = useUIStore();
   const { ref, inView } = useInView({
@@ -43,14 +42,10 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
               {t(badgeText)}
             </Badge>
           )}
-          <h1 className="mt-6 mb-6 font-heading text-4xl text-primary leading-12 sm:text-5xl sm:leading-16 md:text-6xl md:leading-24 lg:text-7xl">
-            {title && <span className="font-semibold">{t(title)}</span>}
-            {title && subtitle && <br />}
-            {subtitle && (
-              <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
-                {t(subtitle)}
-              </span>
-            )}
+          <h1 className="mt-6 mb-6 font-heading text-3xl leading-10 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
+            <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
+              {t(title)}
+            </span>
           </h1>
           {text && (
             <h2 className="mx-auto mb-8 max-w-3xl text-foreground/80 text-xl md:text-2xl md:leading-10">

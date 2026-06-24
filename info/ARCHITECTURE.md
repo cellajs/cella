@@ -130,7 +130,7 @@ Cella supports four auth strategies (configurable per fork via `appConfig.enable
 | Strategy | Description | Key details |
 |----------|-------------|-------------|
 | Magic Link | Email magic link | Single-use tokenized link sent via email |
-| Passkey | FIDO2/WebAuthn | Credentials stored in `passkeys` table |
+| Passkey | WebAuthn | Credentials stored in `passkeys` table |
 | OAuth | GitHub, Google, Microsoft | Uses `arctic` library. Google + Microsoft use PKCE. |
 | TOTP | Time-based one-time password | MFA fallback, only usable after passkey primary auth |
 

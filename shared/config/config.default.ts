@@ -107,7 +107,7 @@ export const config = {
   },
 
   aboutUrl: '/about',
-  statusUrl: 'https://status.cellajs.com',
+  statusUrl: '',
   productionUrl: 'https://www.cellajs.com',
 
   defaultRedirectPath: '/home',

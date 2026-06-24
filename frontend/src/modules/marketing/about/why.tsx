@@ -8,7 +8,7 @@ export function Why() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative mx-auto mt-20 mb-12 flex max-w-7xl flex-wrap items-center lg:mb-16">
+    <div className="relative mx-auto mt-12 mb-12 flex max-w-7xl flex-wrap items-center lg:mt-16 lg:mb-16">
       <div className="w-full lg:w-5/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {

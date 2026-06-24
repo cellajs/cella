@@ -429,6 +429,9 @@ importers:
       pg:
         specifier: ^8.22.0
         version: 8.22.0
+      pg-format:
+        specifier: ^1.0.4
+        version: 1.0.4
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -445,6 +448,9 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
+      '@types/pg-format':
+        specifier: ^1.0.5
+        version: 1.0.5
       artillery:
         specifier: ^2.0.33
         version: 2.0.33(@types/node@24.10.13)(supports-color@8.1.1)
@@ -502,6 +508,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.12.26
+      pg-format:
+        specifier: ^1.0.4
+        version: 1.0.4
       pg-logical-replication:
         specifier: ^2.5.0
         version: 2.5.0
@@ -530,6 +539,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.13
+      '@types/pg-format':
+        specifier: ^1.0.5
+        version: 1.0.5
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -6544,6 +6556,9 @@ packages:
   '@types/pako@2.0.4':
     resolution: {integrity: sha512-VWDCbrLeVXJM9fihYodcLiIv0ku+AlOa/TQ1SvYOaBuyrSKgEcro95LJyIsJ4vSo6BXIxOKxiJAat04CmST9Fw==}
 
+  '@types/pg-format@1.0.5':
+    resolution: {integrity: sha512-i+oEEJEC+1I3XAhgqtVp45Faj8MBbV0Aoq4rHsHD7avgLjyDkaWKObd514g0Q/DOUkdxU0P4CQ0iq2KR4SoJcw==}
+
   '@types/pg-pool@2.0.7':
     resolution: {integrity: sha512-U4CwmGVQcbEuqpyju8/ptOKg6gEC+Tqsvj2xS9o1g71bUh8twxnC6ZL5rZKCsGN0iyH0CwgUyc9VR5owNQF9Ng==}
 
@@ -10246,6 +10261,10 @@ packages:
 
   pg-connection-string@2.14.0:
     resolution: {integrity: sha512-XwWDGcLRGCXAR8F/AM5bG7Q+A3Wm2s6QeEjlOKZLlH3UYcguiqCWKyWXVag5TLTIjR7oOJUY8kcADaZgWPyLeg==}
+
+  pg-format@1.0.4:
+    resolution: {integrity: sha512-YyKEF78pEA6wwTAqOUaHIN/rWpfzzIuMh9KdAhc3rSLQ/7zkRFcCgYBAEGatDstLyZw4g0s9SNICmaTGnBVeyw==}
+    engines: {node: '>=4.0'}
 
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
@@ -18070,6 +18089,8 @@ snapshots:
 
   '@types/pako@2.0.4': {}
 
+  '@types/pg-format@1.0.5': {}
+
   '@types/pg-pool@2.0.7':
     dependencies:
       '@types/pg': 8.20.0
@@ -22364,6 +22385,8 @@ snapshots:
     optional: true
 
   pg-connection-string@2.14.0: {}
+
+  pg-format@1.0.4: {}
 
   pg-int8@1.0.1: {}
 

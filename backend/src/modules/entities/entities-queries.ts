@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableName, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ContextEntityType, hierarchy, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
@@ -285,12 +285,11 @@ export const findChangedEntityDeltaIds = async (
   afterSeq: number,
 ) => {
   const table = getEntityTable(entityType);
-  const tableName = getTableName(table);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');
 
   const result = await db.execute<{ id: string; deletedAt: string | null }>(sql`
     SELECT id, ${deletedAtSelect} AS "deletedAt"
-    FROM ${sql.raw(`"${tableName}"`)}
+    FROM ${table}
     WHERE seq > ${afterSeq} AND organization_id = ${organizationId}
   `);
 

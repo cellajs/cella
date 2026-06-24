@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
+    "pg-format": "^1.0.4",
     "nanoid": "^5.1.14",
     "ora": "^9.4.0",
     "pg": "^8.22.0",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
+    "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",
     "artillery-plugin-ensure": "^1.27.0",
     "tsx": "catalog:",
