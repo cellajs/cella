@@ -41,7 +41,7 @@ function AboutPage() {
         <Hero
           key={'hero'}
           title="about:hero.title"
-          chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
+          // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
           text="about:hero.text"
         >
           <div className="glow-button relative mb-8 max-xs:hidden">
