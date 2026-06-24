@@ -20,7 +20,7 @@ const envSchema = z.object({
   YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
   YJS_PORT: z.coerce.number().default(Number(new URL(appConfig.yjsUrl).port) || 4002),
   YJS_DB_POOL_MAX: z.coerce.number().default(20),
-  MAPLE_API_KEY: z.string().optional(),
+  MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
   NODB: z
     .string()

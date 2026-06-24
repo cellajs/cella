@@ -1,4 +1,5 @@
 import type pg from 'pg';
+import format from 'pg-format';
 import { type BenchSeed, getBenchSeedCleanupWhere, type TableBenchSeed } from './registry';
 
 const BATCH_SIZE = 200;
@@ -45,7 +46,7 @@ async function batchInsert(pool: pg.Pool, table: string, columns: string[], rows
       params.push(...row);
     }
 
-    const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES ${valueClauses.join(', ')} ON CONFLICT DO NOTHING`;
+    const sql = `INSERT INTO ${format('%I', table)} (${columns.join(', ')}) VALUES ${valueClauses.join(', ')} ON CONFLICT DO NOTHING`;
     await pool.query(sql, params);
   }
 }
@@ -65,5 +66,5 @@ export async function cleanupBenchSeed(client: pg.PoolClient, seed: BenchSeed): 
     return;
   }
 
-  await client.query(`DELETE FROM ${seed.table} WHERE ${getBenchSeedCleanupWhere(seed)}`);
+  await client.query(`DELETE FROM ${format('%I', seed.table)} WHERE ${getBenchSeedCleanupWhere(seed)}`);
 }

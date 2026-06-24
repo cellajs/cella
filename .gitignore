@@ -44,7 +44,7 @@ frontend/vite/.generate-client.lock
 sdk/src/temp-api-gen-*
 sdk/src/.generate-client.lock
 sdk/src/.spec-hash
-cli/cella/.audit.cache.json
+*.cache.json
 
 # Bench baseline snapshots (local only)
 bench/.baselines/

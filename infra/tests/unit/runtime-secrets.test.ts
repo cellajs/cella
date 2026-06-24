@@ -58,11 +58,13 @@ describe('runtime secret registry', () => {
       'DATABASE_CDC_URL',
       'DATABASE_SSL_CA',
       'CDC_SECRET',
+      'MAPLE_SECRET_INGEST_KEY',
     ])
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
       'DATABASE_SSL_CA',
       'YJS_SECRET',
+      'MAPLE_SECRET_INGEST_KEY',
     ])
     expect(runtimeSecretsForConsumer('frontend')).toEqual([])
   })

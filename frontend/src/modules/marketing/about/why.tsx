@@ -1,5 +1,6 @@
+import { Link } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Spinner } from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
 
@@ -8,7 +9,7 @@ export function Why() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative mx-auto mt-20 mb-12 flex max-w-7xl flex-wrap items-center lg:mb-16">
+    <div className="relative mx-auto mt-12 mb-12 flex max-w-7xl flex-wrap items-center lg:mt-16 lg:mb-16">
       <div className="w-full lg:w-5/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {
@@ -23,7 +24,21 @@ export function Why() {
                   </div>
                   <div className="w-full">
                     <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">{t(title)}</h3>
-                    <p className="leading-relaxed">{t(text)}</p>
+                    <p className="leading-relaxed">
+                      {index === 1 ? (
+                        <Trans
+                          t={t}
+                          i18nKey={text}
+                          components={{
+                            featuresLink: (
+                              <Link to="/features" className="underline underline-offset-4 hover:text-primary" />
+                            ),
+                          }}
+                        />
+                      ) : (
+                        t(text)
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

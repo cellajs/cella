@@ -35,7 +35,11 @@ Cella uses [OpenTelemetry](https://opentelemetry.io/) (OTel) for all three obser
 | YJS | `{appName}-yjs` | No | None currently | 3 observable gauges | No |
 | Frontend | `{appName}-frontend` | Fetch only | Via `FetchInstrumentation` | None | Yes (→ devtools) |
 
-The frontend cannot export to Maple (no API keys in browser bundles), so it uses `SpanStoreProcessor` for devtools and `FetchInstrumentation` to inject `traceparent` headers for cross-service correlation.
+The frontend cannot use the server-side secret ingest key (no secrets in browser bundles). It uses `SpanStoreProcessor` for devtools and `FetchInstrumentation` to inject `traceparent` headers for cross-service correlation. A `maplePublicIngestKey` in `appConfig` (safe to bundle) can be used to export browser telemetry directly to Maple.
+
+### HTTP semantic conventions
+
+The backend auto-instrumentation emits the **stable** OTel HTTP attributes (`http.request.method`, `http.response.status_code`, `url.full`, `server.address`, `user_agent.original`, …) rather than the legacy `http.*` keys. The shared factory sets `OTEL_SEMCONV_STABILITY_OPT_IN=http` (via `??=`) before constructing `getNodeAutoInstrumentations()`, so no per-deployment env var is required. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` in the environment to emit both old and new keys during a migration; an explicit value always overrides the default.
 
 Each service has a `tracing.ts` (or `otel.ts` for frontend) that calls the shared factory. Look at the CDC or YJS worker for the most complete examples.
 
@@ -52,7 +56,7 @@ import { env } from './env';
 
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.name}-myworker`,
-  mapleApiKey: env.MAPLE_API_KEY,
+  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
   autoInstrumentations: false, // true only for HTTP servers
 });
 ```
@@ -62,12 +66,20 @@ To add local span debugging, pass a `SpanStoreProcessor` (see how CDC does it).
 ### 2. Logging (`pino.ts`)
 
 ```typescript
+import { appConfig } from 'shared';
 import { createLogger } from 'shared/pino';
+import { env } from './env';
 
-export const log = createLogger({ name: 'myworker' });
+export const log = createLogger({
+  isProduction: env.NODE_ENV === 'production',
+  isTest: env.NODE_ENV === 'test',
+  enableOtelTransport: true,
+  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+  serviceName: `${appConfig.slug}-myworker`,
+});
 ```
 
-In production, Pino automatically ships logs to Maple via `pino-opentelemetry-transport`. In dev it uses `pino-pretty`.
+Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via `pino-opentelemetry-transport` — in **dev and production alike** (the transport runs in a worker thread and is handed the Maple endpoint + key explicitly). The console keeps its own format in parallel: `pino-pretty` in dev, raw JSON on stdout in production. Without a key, logs stay on the console only.
 
 ### 3. Graceful shutdown
 

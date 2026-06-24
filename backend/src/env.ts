@@ -79,7 +79,7 @@ export const env = createEnv({
     ELEMENT_ROOM_ID: z.string().optional(),
     ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
 
-    MAPLE_API_KEY: z.string().optional(),
+    MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
     YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
     CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),

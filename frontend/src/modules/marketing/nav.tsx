@@ -8,7 +8,7 @@ import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { GithubIcon } from '~/modules/marketing/icons/github';
 import { Logo } from '~/modules/marketing/logo';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
-import { UserLanguage } from '~/modules/me/user-language';
+// import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
@@ -111,7 +111,7 @@ export const MarketingNav = () => {
           <div
             className={`flex items-center gap-2 px-2 transition-opacity duration-300 ease-in-out ${drawerOpen ? 'opacity-0' : ''}`}
           >
-            <UserLanguage />
+            {/* <UserLanguage /> */}
 
             <UserTheme buttonClassName="max-xs:hidden mr-2" />
 

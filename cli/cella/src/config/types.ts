@@ -4,6 +4,8 @@
  * Simplified configuration for worktree-based merge approach.
  */
 
+import { z } from 'zod';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC API - for cella.config.ts
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,6 +151,69 @@ export interface CellaCliConfig {
 export function defineConfig(config: CellaCliConfig): CellaCliConfig {
   return config;
 }
+
+/**
+ * Strict runtime schema mirroring {@link CellaCliConfig}.
+ *
+ * The TS interfaces above stay the source of truth (and keep their hover docs for
+ * config authors). This schema is what's enforced at load time: `.strict()` rejects
+ * unknown keys, so a typo like `ignoredFolders` instead of `ignored` fails closed
+ * instead of silently dropping sync protection (tsx does not typecheck the config).
+ *
+ * The `satisfies z.ZodType<CellaCliConfig>` assertion keeps schema and interface in
+ * lockstep: if either drifts (a renamed/removed/mis-typed field), TypeScript errors here.
+ */
+export const cellaConfigSchema = z
+  .object({
+    settings: z
+      .object({
+        upstreamUrl: z.string().min(1),
+        upstreamBranch: z.string().min(1),
+        upstreamPinnedSha: z.string().optional(),
+        upstreamRemoteName: z.string().optional(),
+        workingBranch: z.string().min(1),
+        packageJsonSync: z
+          .array(
+            z.enum([
+              'dependencies',
+              'devDependencies',
+              'peerDependencies',
+              'optionalDependencies',
+              'scripts',
+              'engines',
+              'packageManager',
+              'overrides',
+              'pnpm',
+            ]),
+          )
+          .optional(),
+        mergeStrategy: z.enum(['merge', 'squash']).optional(),
+        syncWithPackages: z.boolean().optional(),
+        fileLinkMode: z.enum(['commit', 'file', 'local']).optional(),
+      })
+      .strict(),
+    overrides: z
+      .object({
+        ignored: z.array(z.string()).optional(),
+        pinned: z.array(z.string()).optional(),
+      })
+      .strict()
+      .optional(),
+    forks: z
+      .array(
+        z
+          .object({
+            name: z.string().min(1),
+            localPath: z.string().min(1),
+            remoteUrl: z.string().optional(),
+            pullBranch: z.string().min(1),
+            pushBranch: z.string().min(1),
+          })
+          .strict(),
+      )
+      .optional(),
+  })
+  .strict() satisfies z.ZodType<CellaCliConfig>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL TYPES - for sync modules

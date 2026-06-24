@@ -6,7 +6,8 @@
 
 import { existsSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { CellaCliConfig, SyncSettings } from '../config/types';
+import { z } from 'zod';
+import { type CellaCliConfig, cellaConfigSchema, type SyncSettings } from '../config/types';
 import { resolveAppModuleFolders } from './module-territory';
 
 /** Default git remote name used to point at the upstream repository. */
@@ -52,8 +53,22 @@ export async function loadConfig(forkPath: string): Promise<CellaCliConfig> {
     throw new Error('config path resolves outside fork directory');
   }
 
-  const configModule = await import(realConfigPath);
-  const config: CellaCliConfig = configModule.default;
+  let configModule: { default?: unknown };
+  try {
+    configModule = await import(realConfigPath);
+  } catch (error) {
+    // Syntax/runtime errors while evaluating the config must fail closed: a config that
+    // cannot be loaded means sync protections (ignored/pinned) are unknown.
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`failed to load ${configPath}: ${message}`);
+  }
+
+  // Strict schema validation.
+  const result = cellaConfigSchema.safeParse(configModule.default);
+  if (!result.success) {
+    throw new Error(`invalid ${configPath}:\n${z.prettifyError(result.error)}`);
+  }
+  const config: CellaCliConfig = result.data;
 
   // Auto-derive fork-owned module folders (modules declaring `owner: 'app'`) and merge
   // them into ignored. This keeps app modules as fork territory: upstream never

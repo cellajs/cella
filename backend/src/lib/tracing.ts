@@ -11,5 +11,5 @@ import { env } from '#/env';
 
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-api`,
-  mapleApiKey: env.MAPLE_API_KEY,
+  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
 });

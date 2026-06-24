@@ -288,6 +288,8 @@ export const config = {
   googleMapsKey: '',
   /** Matrix homeserver URL for chat integration */
   matrixURL: 'https://matrix-client.matrix.org',
+  /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
+  maplePublicIngestKey: '',
 
   /******************************************************************************
    * THEMING & UI

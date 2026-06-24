@@ -47,7 +47,7 @@ describe('createOtelSDK', () => {
 
     await otel.verifyConnection();
 
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining('MAPLE_API_KEY not set'));
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('MAPLE_SECRET_INGEST_KEY not set'));
     spy.mockRestore();
   });
 });

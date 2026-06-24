@@ -33,7 +33,7 @@ Tables can be split in `entity`,  `resource` and _other_ tables (see `backend/sr
 * `ProductEntityType`: Content related, no membership (`attachment`, `page`)
 * All entities, including `user`: (`user`, `organization`, `attachment`, `page`)
 
-The cella setup itself has a single context entity : `organization`. It has two product entities: `attachment` - with parent `organization` - and a public product entity, `page`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
+The cella template has a single context entity : `organization`. It has two product entities: `attachment` - with parent `organization` - and a public product entity, `page`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
 
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `user` and `organization`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
 
@@ -51,13 +51,13 @@ Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`
 
 ## Sync engine
 
-Cella has a pragmatic approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they do have read-only offline access via prefetched data. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
+Cella has a pragmatic - yet harmonious - approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
 
-The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent SSE streams:
+The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent streams:
 - **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
 - **Public stream** (`/entities/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. This keeps write transactions fast (no trigger overhead) while CDC atomically increments `context_counters` and stamps the entity row before sending SSE notifications. List endpoints support `seqCursor` for efficient delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [SYNC_ENGINE.md](./SYNC_ENGINE.md) for details.
+Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). Public entities without an org parent (e.g. pages) use a global `public` scope. List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [SYNC_ENGINE.md](./SYNC_ENGINE.md) for details.
 
 ### Per-field merge strategies
 
@@ -96,15 +96,21 @@ For more details, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
 
 ## Query layer
 
-React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`). Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `contextEntityQueryRegistry` (see `frontend/src/list-queries-config.tsx`), enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
+React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`) for entities but also other data. Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `contextEntityQueryRegistry` (see `frontend/src/list-queries-config.tsx`), enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
 
 Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
+
+### Canonical vs derived queries
+
+Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments, global for pages). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
 
 ### Cache persistence
 
 The React Query cache is persisted to IndexedDB via Dexie with two modes controlled by the `offlineAccess` toggle:
 - **Offline mode** (`offlineAccess=true`): shared key, survives browser restart for full offline capability. Sync service eagerly fills cache for all orgs.
 - **Session mode** (`offlineAccess=false`): per-tab session key, survives refresh but cleaned up on tab close. Sync service only resolves staleness for the current org.
+
+Within each mode the persister uses a **hybrid storage layout** (two Dexie tables): product entity queries are stored as individual records in a `queries` table for incremental diffing — only changed queries are written — while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
 
@@ -124,7 +130,7 @@ Cella supports four auth strategies (configurable per fork via `appConfig.enable
 | Strategy | Description | Key details |
 |----------|-------------|-------------|
 | Magic Link | Email magic link | Single-use tokenized link sent via email |
-| Passkey | FIDO2/WebAuthn | Credentials stored in `passkeys` table |
+| Passkey | WebAuthn | Credentials stored in `passkeys` table |
 | OAuth | GitHub, Google, Microsoft | Uses `arctic` library. Google + Microsoft use PKCE. |
 | TOTP | Time-based one-time password | MFA fallback, only usable after passkey primary auth |
 
@@ -195,7 +201,7 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 ## Observability (WIP)
 
-OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs; the frontend uses a browser `WebTracerProvider` for `traceparent` propagation. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
+OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs (gated by the `MAPLE_SECRET_INGEST_KEY` env var); the frontend uses a browser `WebTracerProvider` for `traceparent` propagation and can export spans directly to Maple when `appConfig.maplePublicIngestKey` is set. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
 
 See [OTEL.md](./OTEL.md) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
 
@@ -235,30 +241,10 @@ Cella is a flat-root monorepo.
 │   ├── drizzle               DB migrations
 │   ├── emails                Email templates with jsx-email
 │   ├── scripts               Seed scripts and other dev scripts
-│   ├── src
-│   │   ├── db                Connect, table schemas
-│   │   ├── core              Foundational types & logic primitives 
-│   │   ├── lib               Stateful services & 3rd party wrappers
-│   │   ├── middlewares       Hono middlewares
-│   │   ├── modules           Modular distribution of routes, schemas etc
-│   │   ├── permissions       Permission/authorization layer
-│   │   ├── schemas           Shared Zod schemas
-│   │   └── utils             Reusable functions
 ├── bench                     Artillery load testing
 ├── cdc                       Change Data Capture worker (WAL → activities → SSE)
 ├── cli/cella                 CLI for syncing forks with upstream Cella
-├── frontend
-│   ├── public
-│   ├── src
-│   │   ├── alerter           Global alert/banner manager
-│   │   ├── hooks             Generic react hooks
-│   │   ├── lib               Library code & core helper functions
-│   │   ├── modules           Modular distribution of components (Zustand stores live per-module)
-│   │   ├── query             Query client with offline/realtime logic
-│   │   ├── routes            File-based routes (thin shims; logic in modules)
-│   │   ├── styling           Tailwind styling
-│   │   └── utils             Reusable functions
-│   └── vite                  Vite-related plugins & scripts
+├── frontend                  SPA using vite, React etc
 ├── infra                     Pulumi IaC (Scaleway) deployment with CLI
 ├── info                      Documentation, changelog, migration plans
 ├── json                      Static JSON data 

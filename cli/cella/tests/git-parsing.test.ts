@@ -279,11 +279,37 @@ describe('git parsing', () => {
       // Store a ref that's the feature branch tip (newer than merge-base)
       await storeLastSyncRef(repoPath, featureHash);
 
+      // Simulate a completed (squash) sync: the user commits, advancing HEAD past
+      // the HEAD recorded by storeLastSyncRef. This is what marks the sync as done.
+      fs.writeFileSync(path.join(repoPath, 'synced.txt'), 'synced\n');
+      exec('git add -A && git commit -m "squash sync"', repoPath);
+
       const result = await getEffectiveMergeBase(repoPath, 'main', 'feature');
       // Stored ref (feature tip) is a descendant of merge-base (branch point)
       expect(result.storedRef).toBe(featureHash);
       expect(result.isStale).toBe(true);
       expect(result.base).toBe(featureHash);
+    });
+
+    it('should ignore stored ref left behind by an aborted merge (HEAD unchanged)', async () => {
+      // Create feature branch with a commit, then return to main
+      exec('git checkout -b feature', repoPath);
+      fs.writeFileSync(path.join(repoPath, 'feature.txt'), 'feature\n');
+      exec('git add -A && git commit -m "feature"', repoPath);
+      const featureHash = exec('git rev-parse HEAD', repoPath);
+      exec('git checkout main', repoPath);
+
+      const gitBase = exec('git merge-base main feature', repoPath);
+
+      // Store the ref but do NOT advance HEAD — this mirrors a `git merge --abort`
+      // where the staged sync ref persists but no merge commit was created.
+      await storeLastSyncRef(repoPath, featureHash);
+
+      const result = await getEffectiveMergeBase(repoPath, 'main', 'feature');
+      // Guard must discard the stale ref and fall back to git's natural merge-base.
+      expect(result.storedRef).toBeNull();
+      expect(result.isStale).toBe(false);
+      expect(result.base).toBe(gitBase);
     });
   });
 });

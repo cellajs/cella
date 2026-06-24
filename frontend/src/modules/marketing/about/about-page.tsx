@@ -1,5 +1,6 @@
-import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
+import { ArrowDownIcon, CheckIcon, CopyIcon, RedoIcon } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -13,6 +14,7 @@ import { InfoGrid } from '~/modules/marketing/about/info-grid';
 import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
+import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
@@ -36,7 +38,7 @@ function AboutPage() {
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
-        <Hero key={'hero'} title="" badgeText="about:prerelease" subtitle="about:hero.subtitle" text="about:hero.text">
+        <Hero key={'hero'} title="about:hero.title" badgeText="about:prerelease" text="about:hero.text">
           <div className="glow-button relative mb-8 max-xs:hidden">
             <Input
               readOnly
@@ -71,20 +73,86 @@ function AboutPage() {
         </Hero>
 
         <div className="my-12">
-          {/* Why this product */}
-          <AboutSection key={'why'} sectionId="why" title="about:title_2" text="about:text_2">
+          {/* Why cella */}
+          <AboutSection
+            key={'why'}
+            sectionId="why"
+            title="about:title_2"
+            text="about:text_2"
+            textComponents={{ em: <em className="italic" /> }}
+          >
+            <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+              <Trans
+                t={t}
+                i18nKey="about:cella_approach"
+                components={{
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
+            </p>
+            <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+              <Trans
+                t={t}
+                i18nKey="about:cella_approach2"
+                components={{
+                  em: <em className="italic" />,
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
+            </p>
+
+            <SyncDiagram />
+
+            <p className="mx-auto max-w-2xl font-light">
+              <Trans
+                t={t}
+                i18nKey="about:sync_flow"
+                components={{
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
+            </p>
+          </AboutSection>
+
+          {/* Why template */}
+          <AboutSection
+            key={'template'}
+            sectionId="template"
+            title="about:how_it_works"
+            text="about:how_it_works.text"
+            alternate
+          >
+            <p className="mx-auto mt-8 max-w-lg font-light italic opacity-70">{t('about:compare_intro')}</p>
+
+            <div className="relative mx-auto mt-8 w-full max-w-lg">
+              <RedoIcon
+                className="absolute -left-20 size-20 -translate-y-1/2 text-primary max-md:hidden"
+                strokeWidth={0.2}
+                style={{ transform: 'rotate(-150deg) skewX(-50deg) scaleX(-2.5) scaleY(2.5)' }}
+              />
+            </div>
+
+            <Button variant="plain" size="xl" className="mx-auto mt-8 flex gap-1 rounded-full! px-10">
+              {t('about:compare_alternatives')}
+            </Button>
+          </AboutSection>
+
+          {/* Core features */}
+          <AboutSection
+            key={'benefits'}
+            sectionId="benefits"
+            title="about:benefits"
+            text="about:features_subtext"
+            textComponents={{
+              featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
+            }}
+          >
             <Why />
           </AboutSection>
 
-          {/* Features */}
-          <AboutSection
-            key={'features'}
-            sectionId="features"
-            title="about:title_3"
-            text="about:text_3"
-            alternate={true}
-          >
-            <InfoGrid />
+          {/* Stack */}
+          <AboutSection key={'stack'} sectionId="stack" title="about:title_3" text="about:text_3" alternate={true}>
+            <InfoGrid namespace="stack" />
           </AboutSection>
 
           {/* Integrations */}

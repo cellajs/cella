@@ -62,8 +62,6 @@ jobs:
       region: ${{ steps.derive.outputs.region }}
       enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
       image_tag: ${{ steps.derive.outputs.image_tag }}
-      # Service matrices, derived from appConfig.services enablement so a fork
-      # doesn't build/roll a service whose infra is intentionally absent.
       build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
       primary_rollout_matrix: ${{ steps.derive.outputs.primary_rollout_matrix }}
       roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
@@ -135,10 +133,7 @@ jobs:
           provenance: false
 
   # -------------------------------------------------------------------------
-  # Build and push the boot-agent image (one per commit, service-independent).
-  # Every VM `docker run`s this at first boot to bring its compose stack up via
-  # the host Docker socket, so it must be in the registry before the pulumi job
-  # creates any VM generation — hence the pulumi job `needs` it.
+  # Every VM `docker run`s a boot agent first.
   # -------------------------------------------------------------------------
   build-agent-image:
     runs-on: ubuntu-latest
@@ -236,7 +231,7 @@ jobs:
   pulumi:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [setup, build-agent-image]
+    needs: [setup, build-agent-image, build-images]
     # contents: read for checkout.
     permissions:
       contents: read
@@ -409,11 +404,6 @@ jobs:
     needs: [setup, pulumi, build-images]
     permissions:
       contents: read
-    if: >-
-      always() &&
-      needs.setup.result == 'success' &&
-      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
-      needs.build-images.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
     strategy:
       fail-fast: true
@@ -451,12 +441,6 @@ jobs:
     needs: [setup, pulumi, build-images, roll-backend]
     permissions:
       contents: read
-    if: >-
-      always() &&
-      needs.setup.result == 'success' &&
-      (needs.pulumi.result == 'success' || needs.pulumi.result == 'skipped') &&
-      needs.build-images.result == 'success' &&
-      needs.roll-backend.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
     strategy:
       fail-fast: true
@@ -567,7 +551,6 @@ jobs:
     # contents: read is required for actions/checkout below (private repo).
     permissions:
       contents: read
-    if: needs.publish-frontend.result == 'success'
     environment: ${{ needs.setup.outputs.environment }}
     env:
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}

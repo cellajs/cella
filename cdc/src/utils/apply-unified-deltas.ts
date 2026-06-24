@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import format from 'pg-format';
 import { cdcDb } from '../lib/db';
 import { logEvent } from '../lib/pino';
 import type { BatchUnifiedDeltaPlan, UnifiedDeltaPlan } from './compute-unified-deltas';
@@ -56,7 +57,7 @@ async function mergedUpsert(
  */
 async function updateEntitySeq(tableName: string, entityId: string, newSeq: number): Promise<void> {
   await cdcDb.execute(
-    sql`UPDATE ${sql.raw(`"${tableName}"`)} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = ${entityId}`,
+    sql`UPDATE ${sql.raw(format('%I', tableName))} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = ${entityId}`,
   );
 }
 
@@ -189,7 +190,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
       const valuesList = stamps.map((s) => sql`(${s.id}::uuid, ${s.seq}::bigint)`);
       phase2.push(
         cdcDb.execute(sql`
-          UPDATE ${sql.raw(`"${tableName}"`)} AS t
+          UPDATE ${sql.raw(format('%I', tableName))} AS t
           SET seq = v.seq, stx = t.stx - 'changedFields'
           FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
           WHERE t.id = v.id
@@ -265,7 +266,7 @@ export async function applyBatchSeqOnlyDeltas(plan: BatchUnifiedDeltaPlan): Prom
       const valuesList = stamps.map((s) => sql`(${s.id}::uuid, ${s.seq}::bigint)`);
       stampPromises.push(
         cdcDb.execute(sql`
-          UPDATE ${sql.raw(`"${tableName}"`)} AS t
+          UPDATE ${sql.raw(format('%I', tableName))} AS t
           SET seq = v.seq, stx = t.stx - 'changedFields'
           FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
           WHERE t.id = v.id

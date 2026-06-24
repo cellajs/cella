@@ -39,7 +39,7 @@ const debugProcessor = createSpanStoreProcessor({
 
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
-  mapleApiKey: env.MAPLE_API_KEY,
+  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
   autoInstrumentations: false,
   spanProcessors: [debugProcessor],
 });

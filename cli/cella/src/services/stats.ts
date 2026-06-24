@@ -216,6 +216,13 @@ function formatLoc(n: number): string {
 }
 
 /**
+ * Format a LOC value for fixed-width table columns.
+ */
+function formatLocColumn(n: number, width = 8): string {
+  return formatLoc(n).padStart(width);
+}
+
+/**
  * Format a percentage with fixed width (e.g., '05.0%', '89.7%').
  */
 function fmtPct(value: number, total: number): string {
@@ -229,7 +236,7 @@ function fmtPct(value: number, total: number): string {
 function printStats(stats: StatsResult, verbose: boolean): void {
   console.info();
   console.info(
-    `  ${pc.bold('source files')}  ${pc.cyan(String(stats.total))}  ${pc.dim(`(${stats.skipped} non-source skipped)`)}`,
+    `  ${pc.bold('source files')}  ${String(stats.total)}  ${pc.dim(`(${stats.skipped} non-source skipped)`)}`,
   );
   console.info(`  ${pc.bold('lines of code')} ${pc.cyan(formatLoc(stats.totalLoc))}`);
   console.info();
@@ -241,9 +248,8 @@ function printStats(stats: StatsResult, verbose: boolean): void {
     ['json', stats.categories.json],
   ];
   for (const [label, data] of catEntries) {
-    const displayLabel = label === 'source & config' ? pc.cyan(label.padEnd(18)) : label.padEnd(18);
     console.info(
-      `  ${pad(data.files)} ${pc.dim(fmtPct(data.files, stats.total))}  ${displayLabel} ${pad(data.loc, 8)}  ${pc.dim(fmtPct(data.loc, stats.totalLoc))}`,
+      `  ${pad(data.files)} ${pc.dim(fmtPct(data.files, stats.total))}  ${label.padEnd(18)} ${pc.cyan(formatLocColumn(data.loc))}  ${pc.dim(fmtPct(data.loc, stats.totalLoc))}`,
     );
   }
 
@@ -261,7 +267,7 @@ function printStats(stats: StatsResult, verbose: boolean): void {
       const srcLoc = c.other.loc;
       if (srcFiles === 0) continue;
       console.info(
-        `  ${pc.dim(pad(srcFiles))}  ${name.padEnd(18)} ${pad(srcLoc, 8)} ${pc.dim(pad(c.test.files))} ${pc.dim(pad(c.generated.files))} ${pc.dim(pad(c.json.files))} ${pc.dim(pad(srcFiles))}`,
+        `  ${pc.dim(pad(srcFiles))}  ${name.padEnd(18)} ${pc.cyan(formatLocColumn(srcLoc))} ${pc.dim(pad(c.test.files))} ${pc.dim(pad(c.generated.files))} ${pc.dim(pad(c.json.files))} ${pc.dim(pad(srcFiles))}`,
       );
     }
   } else {
@@ -270,7 +276,7 @@ function printStats(stats: StatsResult, verbose: boolean): void {
       const srcLoc = data.categories.other.loc;
       if (srcFiles === 0) continue;
       console.info(
-        `  ${pad(srcFiles)} ${pc.dim(fmtPct(srcFiles, stats.categories.other.files))}  ${name.padEnd(18)} ${pad(srcLoc, 8)}  ${pc.dim(fmtPct(srcLoc, stats.categories.other.loc))}`,
+        `  ${pad(srcFiles)} ${pc.dim(fmtPct(srcFiles, stats.categories.other.files))}  ${name.padEnd(18)} ${pc.cyan(formatLocColumn(srcLoc))}  ${pc.dim(fmtPct(srcLoc, stats.categories.other.loc))}`,
       );
     }
   }

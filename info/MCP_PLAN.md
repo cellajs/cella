@@ -117,9 +117,10 @@ client that supports a custom header, no AS required. ~A day of work.
   shape `{ id, userId, tenantId, organizationId, scopes[], name, expiresAt, lastUsedAt, createdAt, revokedAt }`.
   Scopes gate which tool categories are callable (ties into Phase 4).
 - Add an `mcpAuthGuard` (in `modules/ai/mcp/` so it ships with the MCP feature) that accepts
-  `Authorization: Bearer <pat>` **or** falls back to the existing session cookie, validates the hash,
-  checks expiry/revocation, bumps `lastUsedAt`, then populates the same context variables
-  `tenantGuard`/`orgGuard` expect. Never weakens the in-app cookie path.
+  `Authorization: Bearer <pat>` **only** — no session-cookie fallback (see
+  [Appendix A — MCP is bearer-token-only](#appendix-a--mcp-is-bearer-token-only)). It validates the
+  hash, checks expiry/revocation, bumps `lastUsedAt`, then populates the same context variables
+  `tenantGuard`/`orgGuard` expect.
 - Document a second `securityScheme` (`http`/`bearer`) in [../backend/src/core/init-docs.ts](../backend/src/core/init-docs.ts)
   alongside the existing `cookieAuth`, attached only to the MCP route.
 - Add `me`-style routes to **mint/list/revoke** PATs, so a user can generate a token for their
@@ -322,3 +323,60 @@ MCP + optional one-shot AI, all sharing one registry.
 - Route extension metadata (`x-tool`) — [../backend/src/core/extensions.ts](../backend/src/core/extensions.ts)
 - OpenAPI doc generation — [../backend/src/core/init-docs.ts](../backend/src/core/init-docs.ts)
 - Observability — [./OTEL.md](./OTEL.md)
+
+---
+
+## Appendix A — MCP is bearer-token-only
+
+**Decision:** the MCP endpoint does **not** accept the in-browser session cookie. Authentication is
+exclusively `Authorization: Bearer <token>` (a Tier-1 PAT, or a Tier-2 audience-bound OAuth access
+token). The `authGuard` currently on the route
+([../backend/src/modules/ai/mcp/mcp-routes.ts](../backend/src/modules/ai/mcp/mcp-routes.ts)) is
+replaced by `mcpAuthGuard`, which never reads `Cookie`.
+
+### Why drop the cookie
+
+- **MCP is a machine-to-machine, cross-origin surface.** External clients (Claude Desktop, IDEs,
+  agents) have no Cella session and can't carry a first-party cookie. The cookie path only ever served
+  the in-app browser, which does not talk MCP — so a cookie fallback is dead weight that widens the
+  attack surface for no real consumer.
+- **CSRF goes away by construction.** A cookie-authenticated POST endpoint is a CSRF target and needs
+  origin/CSRF defenses. A bearer-only endpoint that ignores ambient credentials is immune — there is no
+  implicit credential a browser can be tricked into attaching.
+- **One auth model, cleanly scoped.** Bearer tokens carry their own `scopes[]` (Phase 4) and audience
+  binding (RFC 8707). Mixing a scopeless session cookie into the same guard muddies the authorization
+  story and the audit trail (who/what called, under which grant).
+- **Spec alignment.** The MCP authorization model the server already targets (`2025-06-18`) is an
+  OAuth 2.1 Resource Server: it expects bearer tokens and a `WWW-Authenticate` challenge on 401, not a
+  session cookie.
+
+### What changes in the plan
+
+- **Phase 1, Tier 1:** `mcpAuthGuard` accepts `Bearer <pat>` only; the "falls back to session cookie"
+  clause is removed. A missing/invalid token returns `401` with `WWW-Authenticate: Bearer` (and, once
+  Tier 2 discovery ships, a `resource_metadata` pointer per RFC 9728).
+- **Phase 1, Tier 2:** unchanged — external-AS tokens are validated the same way; the guard simply has
+  no cookie branch to begin with.
+- **OpenAPI security scheme:** the MCP route advertises **only** the `http`/`bearer` scheme
+  ([../backend/src/core/init-docs.ts](../backend/src/core/init-docs.ts)); it does **not** list
+  `cookieAuth`. The rest of the API keeps `cookieAuth` as before — this change is scoped to the MCP
+  route(s).
+
+### Interaction with auth-mode / a future OIDC Authorization Server
+
+Dropping the cookie is what makes the MCP endpoint cleanly **relocatable**. Because the endpoint
+authenticates purely from a self-contained bearer token validated against DB-backed token state
+(`mcpTokensTable`), the Resource Server (the MCP handler) and the token *issuer* can run in different
+processes:
+
+- The MCP Resource Server can live with the **ai-worker** tier (it already does, via
+  [../backend/src/main.ai-worker.ts](../backend/src/main.ai-worker.ts)), validating tokens with no
+  shared in-process session state.
+- The token **issuer** — Tier-1 PAT mint/revoke routes, or a future OAuth/OIDC Authorization Server
+  (e.g. `node-oidc-provider`) — naturally belongs to a dedicated **auth-mode** backend tier (a
+  `MODE=auth` entry mirroring `main.ai-worker.ts`). Both tiers share only the token tables in Postgres,
+  so they scale independently.
+
+In short: a session-cookie fallback would have coupled MCP to the in-app session store and made this
+split awkward. Bearer-only keeps the Resource Server stateless and lets issuance be isolated into the
+auth tier later without touching the MCP code path.

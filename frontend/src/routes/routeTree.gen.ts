@@ -13,6 +13,7 @@ import { Route as PublicRouteRouteImport } from './_public/route'
 import { Route as AppRouteRouteImport } from './_app/route'
 import { Route as AppIndexRouteImport } from './_app/index'
 import { Route as PublicSignOutRouteImport } from './_public/sign-out'
+import { Route as PublicFeaturesRouteImport } from './_public/features'
 import { Route as PublicErrorRouteImport } from './_public/error'
 import { Route as PublicContactRouteImport } from './_public/contact'
 import { Route as PublicAccessibilityRouteImport } from './_public/accessibility'
@@ -64,6 +65,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const PublicSignOutRoute = PublicSignOutRouteImport.update({
   id: '/sign-out',
   path: '/sign-out',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicFeaturesRoute = PublicFeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicErrorRoute = PublicErrorRouteImport.update({
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/accessibility': typeof PublicAccessibilityRoute
   '/contact': typeof PublicContactRoute
   '/error': typeof PublicErrorRoute
+  '/features': typeof PublicFeaturesRoute
   '/sign-out': typeof PublicSignOutRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/docs': typeof PublicContentDocsRouteRouteWithChildren
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/accessibility': typeof PublicAccessibilityRoute
   '/contact': typeof PublicContactRoute
   '/error': typeof PublicErrorRoute
+  '/features': typeof PublicFeaturesRoute
   '/sign-out': typeof PublicSignOutRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/docs': typeof PublicContentDocsRouteRouteWithChildren
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/_public/accessibility': typeof PublicAccessibilityRoute
   '/_public/contact': typeof PublicContactRoute
   '/_public/error': typeof PublicErrorRoute
+  '/_public/features': typeof PublicFeaturesRoute
   '/_public/sign-out': typeof PublicSignOutRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/accessibility'
     | '/contact'
     | '/error'
+    | '/features'
     | '/sign-out'
     | '/$tenantId/$organizationSlug'
     | '/docs'
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/accessibility'
     | '/contact'
     | '/error'
+    | '/features'
     | '/sign-out'
     | '/$tenantId/$organizationSlug'
     | '/docs'
@@ -451,6 +462,7 @@ export interface FileRouteTypes {
     | '/_public/accessibility'
     | '/_public/contact'
     | '/_public/error'
+    | '/_public/features'
     | '/_public/sign-out'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
@@ -512,6 +524,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-out'
       fullPath: '/sign-out'
       preLoaderRoute: typeof PublicSignOutRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/features': {
+      id: '/_public/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof PublicFeaturesRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_public/error': {
@@ -898,6 +917,7 @@ interface PublicRouteRouteChildren {
   PublicAccessibilityRoute: typeof PublicAccessibilityRoute
   PublicContactRoute: typeof PublicContactRoute
   PublicErrorRoute: typeof PublicErrorRoute
+  PublicFeaturesRoute: typeof PublicFeaturesRoute
   PublicSignOutRoute: typeof PublicSignOutRoute
   PublicLegalSubjectRoute: typeof PublicLegalSubjectRoute
   PublicLegalIndexRoute: typeof PublicLegalIndexRoute
@@ -910,6 +930,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicAccessibilityRoute: PublicAccessibilityRoute,
   PublicContactRoute: PublicContactRoute,
   PublicErrorRoute: PublicErrorRoute,
+  PublicFeaturesRoute: PublicFeaturesRoute,
   PublicSignOutRoute: PublicSignOutRoute,
   PublicLegalSubjectRoute: PublicLegalSubjectRoute,
   PublicLegalIndexRoute: PublicLegalIndexRoute,

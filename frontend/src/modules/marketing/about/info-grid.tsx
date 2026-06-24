@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { features } from '~/modules/marketing/marketing-config';
+import { stackItems } from '~/modules/marketing/marketing-config';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export type InfoGridItem = {
@@ -10,13 +10,14 @@ export type InfoGridItem = {
 
 interface InfoGridItemProps {
   id: string;
+  namespace: string;
   invertClassName: string;
 }
 
-function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
+function InfoGridItem({ id, namespace, invertClassName }: InfoGridItemProps) {
   const { t } = useTranslation();
-  const title = `about:feature.${id}_title`;
-  const text = `about:feature.${id}_text`;
+  const title = `about:${namespace}.${id}_title`;
+  const text = `about:${namespace}.${id}_text`;
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-card p-2">
@@ -34,16 +35,23 @@ function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
   );
 }
 
-export function InfoGrid() {
+interface InfoGridProps {
+  className?: string;
+  namespace?: string;
+}
+
+export function InfoGrid({ className = 'sm:grid-cols-2 md:grid-cols-3', namespace = 'feature' }: InfoGridProps) {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpointAbove('md');
 
   return (
-    <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <div className={`mx-auto grid max-w-5xl justify-center gap-4 ${className}`}>
       <ExpandableList<InfoGridItem>
-        items={features}
-        renderItem={(feature) => <InfoGridItem key={feature.id} {...feature} invertClassName={invertClass} />}
+        items={stackItems}
+        renderItem={(feature) => (
+          <InfoGridItem key={feature.id} {...feature} namespace={namespace} invertClassName={invertClass} />
+        )}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}
         expandText="c:more"
