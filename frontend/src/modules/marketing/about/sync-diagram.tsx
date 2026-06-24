@@ -5,10 +5,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 // Node positions in a 0–100 coordinate space (percentages of the container).
 // Keeping them here makes it easy to nudge layout and later anchor connector lines.
 const nodes = {
-  database: { x: 80, y: 22, Icon: DatabaseIcon, label: 'Postgres' },
-  api: { x: 80, y: 78, Icon: ServerIcon, label: 'API' },
-  cdc: { x: 20, y: 22, Icon: ServerIcon, label: 'CDC worker' },
-  client: { x: 20, y: 78, Icon: MonitorIcon, label: 'React Query' },
+  database: { x: 41, y: 78, Icon: DatabaseIcon, label: 'Postgres DB' },
+  api: { x: 59, y: 22, Icon: ServerIcon, label: 'API server' },
+  cdc: { x: 77, y: 78, Icon: ServerIcon, label: 'CDC worker' },
+  client: { x: 23, y: 22, Icon: MonitorIcon, label: 'Client' },
 } as const;
 
 type NodeKey = keyof typeof nodes;
@@ -23,23 +23,10 @@ const requestEdges: {
   labelOffset?: number;
   oneWay?: boolean;
 }[] = [
-  { from: 'client', to: 'api', label: 'HTTP fetch', offset: 10 },
-  { from: 'api', to: 'database', label: 'SQL', labelOffset: 20 },
-  { from: 'cdc', to: 'database', label: 'SQL', offset: 0, oneWay: true },
+  { from: 'client', to: 'api', label: 'HTTP (fetch)', offset: 10 },
+  { from: 'api', to: 'database', label: 'SQL', labelOffset: 22 },
+  { from: 'cdc', to: 'database', label: 'SQL', offset: -6, oneWay: true, labelOffset: -14 },
 ];
-
-// Red "packets" travel back and forth over the grey request lines. Randomised
-// timing per line so they feel organic; one direction at a time (reverse loop).
-const packetTimings: Record<string, { duration: number; delay: number; repeatDelay: number }> = Object.fromEntries(
-  requestEdges.map((e) => [
-    `${e.from}-${e.to}`,
-    { duration: 1.3 + Math.random() * 1.4, delay: Math.random() * 1.5, repeatDelay: Math.random() * 0.9 },
-  ]),
-);
-
-// Packet travel speed in px/sec — keeps cubes moving at a consistent pace
-// regardless of line length (shorter vertical lines finish quicker).
-const PACKET_SPEED = 120;
 
 // Stream connections (dashed, unidirectional). Solid = HTTP, dashed = streams.
 const streamEdges: {
@@ -52,9 +39,9 @@ const streamEdges: {
   label2Offset?: number;
   offset?: number;
 }[] = [
-  { from: 'database', to: 'cdc', stroke: '#eab308', label: 'replication', offset: 14 },
-  { from: 'cdc', to: 'api', stroke: '#3b82f6', label: 'WS' },
-  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE notify', labelOffset: 14, offset: 4 },
+  { from: 'database', to: 'cdc', stroke: '#eab308', label: 'WAL stream', offset: -8, labelOffset: -14 },
+  { from: 'cdc', to: 'api', stroke: '#3b82f6', label: 'Changes', labelOffset: 30 },
+  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE (notify only)', labelOffset: 14, offset: 4 },
 ];
 
 // ── Animation timeline (seconds) ────────────────────────────────────────────────────
@@ -66,8 +53,6 @@ const T_REPLICATION = T_CDC + ANIM.cdcIn + ANIM.gap;
 const T_SQL_CDC = T_REPLICATION + ANIM.draw + ANIM.gap;
 const T_WS = T_SQL_CDC + ANIM.sqlDraw + ANIM.gap;
 const T_SSE = T_WS + ANIM.draw + ANIM.gap;
-// Everything (incl. the SSE draw) is finished here — packets start after this.
-const T_DONE = T_SSE + ANIM.draw;
 
 // Per-node fade-in delay (CDC appears last to emphasize the base REST structure).
 const nodeDelay: Record<NodeKey, number> = { database: 0, api: 0, client: 0, cdc: T_CDC };
@@ -174,7 +159,7 @@ export const SyncDiagram = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative mx-auto aspect-3/4 w-full max-w-3xl sm:aspect-3/2 md:aspect-2/1">
+    <div ref={containerRef} className="relative mx-auto aspect-square w-full max-w-3xl sm:aspect-3/2 md:aspect-2/1">
       {/* SVG overlay — drawn in real pixel space, re-measured on resize */}
       {geom && (
         <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
@@ -369,55 +354,6 @@ export const SyncDiagram = () => {
                   </motion.text>
                 )}
               </g>
-            );
-          })}
-
-          {/* Red packets traveling along the grey request lines */}
-          {requestEdges.map(({ from, to, offset, oneWay }) => {
-            const line = trimmedLine(from, to, offset);
-            if (!line) return null;
-            const key = `${from}-${to}`;
-            const anim = edgeAnim[key] ?? fallbackAnim;
-            const show = inView && (!anim.draw || drawn[key]);
-            const p = packetTimings[key];
-            // Constant px/sec: derive duration from the measured line length.
-            const length = Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
-            const duration = Math.max(0.4, length / PACKET_SPEED);
-            // One-way lines loop in a single direction; bidirectional lines reverse.
-            const repeat = {
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: (oneWay ? 'loop' : 'reverse') as 'loop' | 'reverse',
-              ease: 'linear' as const,
-            };
-            return (
-              <motion.rect
-                key={`packet-${key}`}
-                width={6}
-                height={6}
-                rx={1}
-                fill="#ef4444"
-                initial={{ x: line.x1 - 3, y: line.y1 - 3, opacity: 0 }}
-                animate={
-                  show
-                    ? { x: [line.x1 - 3, line.x2 - 3], y: [line.y1 - 3, line.y2 - 3], opacity: [0, 0, 1, 1, 0, 0] }
-                    : { x: line.x1 - 3, y: line.y1 - 3, opacity: 0 }
-                }
-                transition={
-                  show
-                    ? {
-                        x: { ...repeat, duration, delay: T_DONE + p.delay, repeatDelay: p.repeatDelay },
-                        y: { ...repeat, duration, delay: T_DONE + p.delay, repeatDelay: p.repeatDelay },
-                        opacity: {
-                          ...repeat,
-                          duration,
-                          delay: T_DONE + p.delay,
-                          repeatDelay: p.repeatDelay,
-                          times: [0, 0.07, 0.14, 0.86, 0.93, 1],
-                        },
-                      }
-                    : { duration: 0.2 }
-                }
-              />
             );
           })}
         </svg>

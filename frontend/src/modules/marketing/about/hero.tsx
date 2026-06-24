@@ -48,8 +48,8 @@ export const Hero = ({ title, text, children, badgeText }: HeroProps) => {
             </span>
           </h1>
           {text && (
-            <h2 className="mx-auto mb-8 max-w-3xl text-foreground/80 text-xl md:text-2xl md:leading-10">
-              <Trans t={t} i18nKey={text} components={{ strong: <strong /> }} />
+            <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl md:text-2xl md:leading-10">
+              <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
             </h2>
           )}
           <div className="">{children}</div>

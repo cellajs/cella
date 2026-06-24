@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowDownIcon, CheckIcon, CopyIcon, RedoIcon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -74,17 +74,44 @@ function AboutPage() {
 
         <div className="my-12">
           {/* Why cella */}
-          <AboutSection key={'why'} sectionId="why" title="about:title_2" text="about:text_2">
+          <AboutSection
+            key={'why'}
+            sectionId="why"
+            title="about:title_2"
+            text="about:text_2"
+            textComponents={{ em: <em className="italic" /> }}
+          >
             <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-              {t('about:cella_approach')}
+              <Trans
+                t={t}
+                i18nKey="about:cella_approach"
+                components={{
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
             </p>
             <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-              {t('about:cella_approach2')}
+              <Trans
+                t={t}
+                i18nKey="about:cella_approach2"
+                components={{
+                  em: <em className="italic" />,
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
             </p>
 
             <SyncDiagram />
 
-            <p className="mx-auto max-w-xl font-light">{t('about:sync_flow')}</p>
+            <p className="mx-auto max-w-xl font-light">
+              <Trans
+                t={t}
+                i18nKey="about:sync_flow"
+                components={{
+                  strong: <strong className="font-semibold text-foreground" />,
+                }}
+              />
+            </p>
           </AboutSection>
 
           {/* Why template */}
@@ -110,7 +137,7 @@ function AboutPage() {
             </Button>
           </AboutSection>
 
-          {/* Core benefits */}
+          {/* Core features */}
           <AboutSection
             key={'benefits'}
             sectionId="benefits"
@@ -125,7 +152,7 @@ function AboutPage() {
 
           {/* Stack */}
           <AboutSection key={'stack'} sectionId="stack" title="about:title_3" text="about:text_3" alternate={true}>
-            <InfoGrid />
+            <InfoGrid namespace="stack" />
           </AboutSection>
 
           {/* Integrations */}

@@ -10,13 +10,14 @@ export type InfoGridItem = {
 
 interface InfoGridItemProps {
   id: string;
+  namespace: string;
   invertClassName: string;
 }
 
-function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
+function InfoGridItem({ id, namespace, invertClassName }: InfoGridItemProps) {
   const { t } = useTranslation();
-  const title = `about:feature.${id}_title`;
-  const text = `about:feature.${id}_text`;
+  const title = `about:${namespace}.${id}_title`;
+  const text = `about:${namespace}.${id}_text`;
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-card p-2">
@@ -36,9 +37,10 @@ function InfoGridItem({ id, invertClassName }: InfoGridItemProps) {
 
 interface InfoGridProps {
   className?: string;
+  namespace?: string;
 }
 
-export function InfoGrid({ className = 'sm:grid-cols-2 md:grid-cols-3' }: InfoGridProps) {
+export function InfoGrid({ className = 'sm:grid-cols-2 md:grid-cols-3', namespace = 'feature' }: InfoGridProps) {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpointAbove('md');
@@ -47,7 +49,9 @@ export function InfoGrid({ className = 'sm:grid-cols-2 md:grid-cols-3' }: InfoGr
     <div className={`mx-auto grid max-w-5xl justify-center gap-4 ${className}`}>
       <ExpandableList<InfoGridItem>
         items={stackItems}
-        renderItem={(feature) => <InfoGridItem key={feature.id} {...feature} invertClassName={invertClass} />}
+        renderItem={(feature) => (
+          <InfoGridItem key={feature.id} {...feature} namespace={namespace} invertClassName={invertClass} />
+        )}
         initialDisplayCount={4}
         alwaysShowAll={isMediumScreen}
         expandText="c:more"
