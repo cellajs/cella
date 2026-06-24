@@ -100,17 +100,12 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   }
 
   const runtimeSecretPath = `/${appConfig.slug}-${context.environment}/`
-  await seedOperatorSecrets({
-    secretKey: scwSecretKey,
-    projectId: scwProjectId,
-    region: appConfig.s3.region,
-    path: runtimeSecretPath,
-    values: {
-      adminEmail: adminEmail || undefined,
-      brevoApiKey: brevoApiKey || undefined,
-      scwAiApiKey: scwAiApiKey || undefined,
-    },
-  })
+
+  // Operator secret VALUES are seeded AFTER the first `pulumi up` (in the
+  // provisioning block below), not here. Pulumi now owns the secret containers
+  // (resources/secrets.ts), so creating them out-of-band before `up` would make
+  // `pulumi up` fail with "secret already exists" on a fresh fork. The gap check
+  // below is read-only, so it is safe to run before `up`.
   if (!adminEmail) {
     // Accurate gap check: query Secret Manager for required operator-managed
     // runtime secrets that still have no value, rather than inferring from this
@@ -349,6 +344,23 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         })
       }
       console.info(`\n${checkMark} Base infrastructure provisioned. Compute VMs will be deployed by CI after images are pushed.`)
+
+      // Pulumi has now created the (empty) operator secret containers, so write
+      // the first VERSION for any values gathered at the prompt. Doing this here
+      // — rather than before `up` — is what keeps a fresh fork from failing with
+      // "secret already exists". Empty/undefined values are skipped and can be
+      // set later via "Manage runtime secrets".
+      await seedOperatorSecrets({
+        secretKey: scwSecretKey,
+        projectId: scwProjectId,
+        region: appConfig.s3.region,
+        path: runtimeSecretPath,
+        values: {
+          adminEmail: adminEmail || undefined,
+          brevoApiKey: brevoApiKey || undefined,
+          scwAiApiKey: scwAiApiKey || undefined,
+        },
+      })
 
       await releaseSetupLock()
     } else {

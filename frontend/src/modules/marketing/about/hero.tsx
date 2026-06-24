@@ -1,16 +1,15 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { Badge } from '~/modules/ui/badge';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 interface HeroProps {
   title: string;
   children: React.ReactNode;
   text?: string;
-  badgeText?: string;
+  chips?: string[];
 }
 
-export const Hero = ({ title, text, children, badgeText }: HeroProps) => {
+export const Hero = ({ title, text, children, chips }: HeroProps) => {
   const { t } = useTranslation();
   const { theme } = useUIStore();
   const { ref, inView } = useInView({
@@ -37,11 +36,6 @@ export const Hero = ({ title, text, children, badgeText }: HeroProps) => {
     <section id="spy-hero" className={sectionClass}>
       <header ref={ref} className={headerClass}>
         <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
-          {badgeText && (
-            <Badge variant="plain" size="sm" className="max-sm:hidden">
-              {t(badgeText)}
-            </Badge>
-          )}
           <h1 className="mt-6 mb-6 font-heading text-3xl leading-10 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
             <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
               {t(title)}
@@ -51,6 +45,13 @@ export const Hero = ({ title, text, children, badgeText }: HeroProps) => {
             <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl md:text-2xl md:leading-10">
               <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
             </h2>
+          )}
+          {chips && chips.length > 0 && (
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-foreground/70">
+              {chips.map((chip) => (
+                <span key={chip}>{t(chip)}</span>
+              ))}
+            </div>
           )}
           <div className="">{children}</div>
         </div>

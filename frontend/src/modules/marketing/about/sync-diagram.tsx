@@ -22,9 +22,10 @@ const requestEdges: {
   offset?: number;
   labelOffset?: number;
   oneWay?: boolean;
+  stroke?: string;
 }[] = [
-  { from: 'client', to: 'api', label: 'HTTP (fetch)', offset: 10 },
-  { from: 'api', to: 'database', label: 'SQL', labelOffset: 22 },
+  { from: 'client', to: 'api', label: 'HTTP (fetch)', offset: 10, stroke: 'var(--primary)' },
+  { from: 'api', to: 'database', label: 'SQL', labelOffset: 22, stroke: 'var(--primary)' },
   { from: 'cdc', to: 'database', label: 'SQL', offset: -6, oneWay: true, labelOffset: -14 },
 ];
 
@@ -179,8 +180,19 @@ export const SyncDiagram = () => {
               >
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" />
               </marker>
+              <marker
+                id="request-arrow-primary"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--primary)" />
+              </marker>
             </defs>
-            {requestEdges.map(({ from, to, label, label2, offset, labelOffset, oneWay }) => {
+            {requestEdges.map(({ from, to, label, label2, offset, labelOffset, oneWay, stroke = '#9ca3af' }) => {
               const line = trimmedLine(from, to, offset);
               if (!line) return null;
               const key = `${from}-${to}`;
@@ -189,6 +201,7 @@ export const SyncDiagram = () => {
               const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
               const showEnd = !anim.draw || drawn[key];
               const labelDelay = anim.delay + (anim.draw ? anim.duration : 0);
+              const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
               return (
                 <g key={key}>
                   <motion.line
@@ -196,11 +209,11 @@ export const SyncDiagram = () => {
                     y1={line.y1}
                     x2={line.x2}
                     y2={line.y2}
-                    stroke="#9ca3af"
+                    stroke={stroke}
                     strokeWidth={2}
                     strokeLinecap="round"
-                    markerStart={oneWay || anim.draw ? undefined : 'url(#request-arrow)'}
-                    markerEnd={showEnd ? 'url(#request-arrow)' : undefined}
+                    markerStart={oneWay || anim.draw ? undefined : `url(#${markerId})`}
+                    markerEnd={showEnd ? `url(#${markerId})` : undefined}
                     initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
                     animate={
                       inView
@@ -229,7 +242,7 @@ export const SyncDiagram = () => {
                     <motion.text
                       x={lp.x}
                       y={lp.y}
-                      fill="#9ca3af"
+                      fill={stroke}
                       fontSize={11}
                       textAnchor="middle"
                       dominantBaseline="middle"
@@ -244,7 +257,7 @@ export const SyncDiagram = () => {
                     <motion.text
                       x={lp2.x}
                       y={lp2.y}
-                      fill="#9ca3af"
+                      fill={stroke}
                       fontSize={11}
                       textAnchor="middle"
                       dominantBaseline="middle"
