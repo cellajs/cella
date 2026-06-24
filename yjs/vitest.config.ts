@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineProject } from 'vitest/config';
 import { testDatabaseUrl } from '../test-db-config';
 
@@ -8,6 +9,11 @@ const excludePatterns = ['**/node_modules/**'];
 if (testMode === 'core') excludePatterns.push('src/tests/integration/**');
 
 export default defineProject({
+  resolve: {
+    alias: {
+      '#': path.resolve(__dirname, '../backend/src'),
+    },
+  },
   test: {
     name: 'yjs',
     testTimeout: 15000,

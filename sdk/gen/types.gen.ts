@@ -5056,29 +5056,6 @@ export type GetYjsTokenResponses = {
 
 export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
 
-export type VerifyYjsEntityData = {
-  body?: never;
-  path?: never;
-  query: {
-    entityType: string;
-    entityId: string;
-    tenantId: string;
-    userId: string;
-  };
-  url: '/yjs/verify-entity';
-};
-
-export type VerifyYjsEntityResponses = {
-  /**
-   * Access check result
-   */
-  200: {
-    allowed: boolean;
-  };
-};
-
-export type VerifyYjsEntityResponse = VerifyYjsEntityResponses[keyof VerifyYjsEntityResponses];
-
 export type HandleMcpData = {
   body: unknown;
   path: {

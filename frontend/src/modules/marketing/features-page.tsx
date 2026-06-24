@@ -8,7 +8,7 @@ function FeatureTile({ id }: { id: string }) {
   return (
     <div className="rounded-lg bg-card p-6">
       <h3 className="font-medium">{t(`about:features.${id}`)}</h3>
-      <p className="mt-2 text-muted-foreground text-sm">{t(`about:features.${id}_text`)}</p>
+      <p className="mt-2 text-muted-foreground text-sm">{t(`about:features.${id}.text`)}</p>
     </div>
   );
 }

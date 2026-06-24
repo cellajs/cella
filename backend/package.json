@@ -32,7 +32,8 @@
     "test:full": "cross-env TEST_MODE=full vitest run",
     "seed:production": "node dist/seeds-bundle.js",
     "geoip:download": "tsx scripts/download-geoip.ts",
-    "s3:cors": "tsx scripts/set-bucket-cors.ts"
+    "s3:cors": "tsx scripts/set-bucket-cors.ts",
+    "db:maintenance": "tsx scripts/db-maintenance.ts"
   },
   "dependencies": {
     "@ag-ui/core": "^0.0.57",

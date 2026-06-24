@@ -10,6 +10,7 @@ import { migrateConfig, migrationDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
+import { scheduleDbMaintenance } from '#/lib/db-maintenance';
 import { otel } from '#/lib/tracing';
 import { registerCacheInvalidation } from '#/middlewares/entity-cache/cache-invalidation';
 import app from '#/routes';
@@ -20,6 +21,7 @@ otel.start();
 otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
+let stopDbMaintenance: (() => void) | undefined;
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).default : () => null;
 
@@ -50,6 +52,10 @@ const main = async () => {
     await pgMigrate(migrationDb, migrateConfig);
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
+
+    // The migration-owning instance also owns periodic DB maintenance (expired session/token purge,
+    // pg_partman partition drops). Gating to a single instance avoids redundant runs.
+    stopDbMaintenance = scheduleDbMaintenance();
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false — skipping migrations (run as MODE=migrate)`);
   }
@@ -91,6 +97,7 @@ Storybook: ${pc.cyanBright(`http://localhost:${Number(new URL(appConfig.frontend
 setupGracefulShutdown({
   name: 'api',
   cleanup: async () => {
+    stopDbMaintenance?.();
     if (server) {
       server.close();
     }

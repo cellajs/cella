@@ -92,5 +92,32 @@ export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditiona
 export { accessPolicies, computeCan } from './src/permissions';
 export type { ActionPermissionState, EntityCanMap } from './src/permissions';
 
+// Permission engine (tier-neutral decision logic, shared by backend + yjs)
+export {
+  buildSubject,
+  buildSubjectFromEntity,
+  type BatchPermissionResult,
+  checkPermission,
+  formatBatchPermissionSummary,
+  formatPermissionDecision,
+  getAllDecisions,
+  MissingScopeError,
+  type PermissionResult,
+  validateAncestorScope,
+  validateMembership,
+  validateSubject,
+} from './src/permissions';
+export type {
+  ActionAttribution,
+  ContextEntityIdColumns,
+  ContextScope,
+  GrantSource,
+  PermissionCheckOptions,
+  PermissionDecision,
+  PermissionMembership,
+  ResolvedContextIds,
+  SubjectForPermission,
+} from './src/permissions';
+
 // Side-effect import: compile-time validation that config matches hierarchy
 import './src/config-builder/config-validation';

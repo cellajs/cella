@@ -100,8 +100,8 @@ export const stackItems = [
  *   data        Data modelling
  *
  * Each item maps to translation keys:
- *   features:<category>.<id>_title
- *   features:<category>.<id>_text
+ *   about:features.<id>
+ *   about:features.<id>.text
  ************************************************************************************************/
 
 export type FeatureCategory = 'sync' | 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';

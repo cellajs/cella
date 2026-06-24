@@ -255,8 +255,6 @@ import type {
   VerifyDomainData,
   VerifyDomainErrors,
   VerifyDomainResponses,
-  VerifyYjsEntityData,
-  VerifyYjsEntityResponses,
 } from './types.gen';
 import {
   zCheckEmailBody,
@@ -428,8 +426,6 @@ import {
   zUpdateUserResponse,
   zVerifyDomainPath,
   zVerifyDomainResponse,
-  zVerifyYjsEntityQuery,
-  zVerifyYjsEntityResponse,
 } from './zod.gen';
 
 export type Options<
@@ -3589,45 +3585,6 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/yjs/token',
-    ...options,
-  });
-
-/**
- * Verify Yjs entity access
- *
- * Called by the Yjs relay worker to verify that a specific entity exists and the user has update access. Authenticated via shared YJS_SECRET header.
- *
- * **GET /yjs/verify-entity** ·· [verifyYjsEntity](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/verify-entity) ·· [verifyYjsEntity](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/verify-entity) ·· _yjs_cella_
- *
- * @param {verifyYjsEntityData} options
- * @param {string} options.query.entitytype - `string`
- * @param {string} options.query.entityid - `string`
- * @param {string} options.query.tenantid - `string`
- * @param {string} options.query.userid - `string`
- * @returns Possible status codes: 200
- */
-export const verifyYjsEntity = <ThrowOnError extends boolean = true>(
-  options: Options<VerifyYjsEntityData, ThrowOnError>,
-): RequestResult<VerifyYjsEntityResponses, unknown, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<VerifyYjsEntityResponses, unknown, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zVerifyYjsEntityQuery,
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zVerifyYjsEntityResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/yjs/verify-entity',
     ...options,
   });
 

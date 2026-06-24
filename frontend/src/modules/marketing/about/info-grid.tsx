@@ -16,8 +16,8 @@ interface InfoGridItemProps {
 
 function InfoGridItem({ id, namespace, invertClassName }: InfoGridItemProps) {
   const { t } = useTranslation();
-  const title = `about:${namespace}.${id}_title`;
-  const text = `about:${namespace}.${id}_text`;
+  const title = `about:${namespace}.${id}.title`;
+  const text = `about:${namespace}.${id}.text`;
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-card p-2">

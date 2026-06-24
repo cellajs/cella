@@ -82,8 +82,8 @@ function AboutPage() {
           <AboutSection
             key={'why'}
             sectionId="why"
-            title="about:title_2"
-            text="about:text_2"
+            title="about:selective_sync.title"
+            text="about:selective_sync.text"
             textComponents={{ em: <em className="italic" /> }}
           >
             <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
@@ -160,8 +160,8 @@ function AboutPage() {
           <AboutSection
             key={'benefits'}
             sectionId="benefits"
-            title="about:benefits"
-            text="about:features_subtext"
+            title="about:features.title"
+            text="about:features.text"
             textComponents={{
               featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
             }}
@@ -170,17 +170,28 @@ function AboutPage() {
           </AboutSection>
 
           {/* Stack */}
-          <AboutSection key={'stack'} sectionId="stack" title="about:title_3" text="about:text_3" alternate={true}>
+          <AboutSection
+            key={'stack'}
+            sectionId="stack"
+            title="about:stack.title"
+            text="about:stack.text"
+            alternate={true}
+          >
             <InfoGrid namespace="stack" />
           </AboutSection>
 
           {/* Integrations */}
-          <AboutSection key={'integrations'} sectionId="integrations" title="about:title_4" text="about:text_4">
+          <AboutSection
+            key={'integrations'}
+            sectionId="integrations"
+            title="about:integrations.title"
+            text="about:integrations.text"
+          >
             <InfoCards />
           </AboutSection>
 
           {/* Showcase */}
-          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase" text="about:showcase.text">
+          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text">
             <Showcase />
           </AboutSection>
 
@@ -190,17 +201,23 @@ function AboutPage() {
           </AboutSection>
 
           {/* Public counters */}
-          {/* <AboutSection key={'counters'} sectionId="counters" title="about:title_5" text="about:text_5" alternate={true}>
+          {/* <AboutSection
+            key={'counters'}
+            sectionId="counters"
+            title="about:community.title"
+            text="about:community.text"
+            alternate={true}
+          >
             <Counters />
           </AboutSection> */}
 
           {/* Pricing */}
-          {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:title_6" text="about:text_6">
+          {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:pricing.title" text="about:pricing.text">
             <Pricing />
           </AboutSection> */}
 
           {/* FAQs */}
-          {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:title_7" text="about:text_7" alternate={true}>
+          {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate={true}>
             <FAQ />
           </AboutSection> */}
         </div>

@@ -1,14 +1,19 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "rootDir": "..",
     "noEmit": true,
     "incremental": true,
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "allowImportingTsExtensions": true,
     "lib": ["es2022"],
     "sourceMap": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "#/*": ["../backend/src/*"],
+      "#json/*": ["../json/*"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+  "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }
