@@ -1,5 +1,9 @@
 {
   "benefits": "De voordelen",
+  "cella_approach": "Cella's sync-engine past waarschijnlijk beter als:",
+  "cella_approach_intro": "Er zijn sync-frameworks en sync-databases die veel werk voor je uit handen nemen. Maar dan moet je accepteren dat zij eigenaar worden van je schema's, queries en opslag.",
+  "cella_approach_point_1": "Je wilt gewoon <strong>sync toevoegen waar het ertoe doet</strong>.",
+  "cella_approach_point_2": "Je REST API moet authoritative blijven.",
   "how_it_works": "Hoe het werkt",
   "how_it_works.text": "Cella pakt het anders aan.",
   "why": "waarom"

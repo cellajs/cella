@@ -86,7 +86,11 @@ function AboutPage() {
             text="about:text_2"
             textComponents={{ em: <em className="italic" /> }}
           >
-            <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+            <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
+              {t('about:cella_approach_intro')}
+            </p>
+
+            <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
               <Trans
                 t={t}
                 i18nKey="about:cella_approach"
@@ -95,16 +99,24 @@ function AboutPage() {
                 }}
               />
             </p>
-            <p className="mx-auto mb-12 max-w-3xl text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-              <Trans
-                t={t}
-                i18nKey="about:cella_approach2"
-                components={{
-                  em: <em className="italic" />,
-                  strong: <strong className="font-semibold text-foreground" />,
-                }}
-              />
-            </p>
+
+            <ul className="mx-auto mb-12 max-w-3xl list-disc space-y-2 pl-12 font-semibold text-muted-foreground marker:text-foreground sm:text-lg sm:leading-6">
+              <li>
+                <Trans
+                  t={t}
+                  i18nKey="about:cella_approach_point_1"
+                  components={{
+                    strong: <strong className="font-semibold text-foreground" />,
+                  }}
+                />
+              </li>
+              <li>
+                <Trans t={t} i18nKey="about:cella_approach_point_2" />
+              </li>
+              <li>
+                <Trans t={t} i18nKey="about:cella_approach_point_3" />
+              </li>
+            </ul>
 
             <SyncDiagram />
 
@@ -120,27 +132,29 @@ function AboutPage() {
           </AboutSection>
 
           {/* Why template */}
-          <AboutSection
-            key={'template'}
-            sectionId="template"
-            title="about:how_it_works"
-            text="about:how_it_works.text"
-            alternate
-          >
-            <p className="mx-auto mt-8 max-w-lg font-light italic opacity-70">{t('about:compare_intro')}</p>
+          <div className="hidden">
+            <AboutSection
+              key={'template'}
+              sectionId="template"
+              title="about:how_it_works"
+              text="about:how_it_works.text"
+              alternate
+            >
+              <p className="mx-auto mt-8 max-w-lg font-light italic opacity-70">{t('about:compare_intro')}</p>
 
-            <div className="relative mx-auto mt-8 w-full max-w-lg">
-              <RedoIcon
-                className="absolute -left-20 size-20 -translate-y-1/2 text-primary max-md:hidden"
-                strokeWidth={0.2}
-                style={{ transform: 'rotate(-150deg) skewX(-50deg) scaleX(-2.5) scaleY(2.5)' }}
-              />
-            </div>
+              <div className="relative mx-auto mt-8 w-full max-w-lg">
+                <RedoIcon
+                  className="absolute -left-20 size-20 -translate-y-1/2 text-primary max-md:hidden"
+                  strokeWidth={0.2}
+                  style={{ transform: 'rotate(-150deg) skewX(-50deg) scaleX(-2.5) scaleY(2.5)' }}
+                />
+              </div>
 
-            <Button variant="plain" size="xl" className="mx-auto mt-8 flex gap-1 rounded-full! px-10">
-              {t('about:compare_alternatives')}
-            </Button>
-          </AboutSection>
+              <Button variant="plain" size="xl" className="mx-auto mt-8 flex gap-1 rounded-full! px-10">
+                {t('about:compare_alternatives')}
+              </Button>
+            </AboutSection>
+          </div>
 
           {/* Core features */}
           <AboutSection
