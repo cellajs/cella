@@ -122,13 +122,19 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
       })
       if (selectedId === BACK) continue
       const secret = rotatable.find((entry) => entry.id === selectedId)!
-      const ensured = await client.ensureSecret({
-        name: secret.secretName,
-        path: options.path,
-        description: secret.description,
-      })
+      // Pulumi owns container creation (resources/secrets.ts); refuse to create one
+      // out-of-band here, since that would make the next `pulumi up` fail with
+      // "secret already exists". Deploy first so the container exists, then rotate.
+      const existing = await client.getSecretByName(secret.secretName, options.path)
+      if (!existing) {
+        log(
+          `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
+            `Deploy first so Pulumi creates it, then rotate.`,
+        )
+        continue
+      }
       const version = await client.putSecretValue({
-        secretId: ensured.id,
+        secretId: existing.id,
         value: generateRandomRuntimeSecret(),
         description: 'Rotated by bootstrap manage secrets',
         disablePrevious: true,
@@ -163,6 +169,18 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
       continue
     }
 
+    // Set path: Pulumi owns container creation (resources/secrets.ts). Refuse to
+    // create one out-of-band here — that would make the next `pulumi up` fail with
+    // "secret already exists". The operator must deploy first so the (empty)
+    // container exists, then set its value here.
+    if (!existingSecret) {
+      log(
+        `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
+          `Deploy first so Pulumi creates it, then run "Set or update" again to give it a value.`,
+      )
+      continue
+    }
+
     // Trim so accidental leading/trailing whitespace (e.g. from a paste) never
     // becomes part of the stored secret; validate on the trimmed length so an
     // all-whitespace entry is rejected the same as an empty one.
@@ -172,15 +190,8 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
         validate: (input) => input.trim().length > 0 || 'Value is required',
       })
     ).trim()
-    const ensured =
-      existingSecret ??
-      (await client.ensureSecret({
-        name: secret.secretName,
-        path: options.path,
-        description: secret.description,
-      }))
     const version = await client.putSecretValue({
-      secretId: ensured.id,
+      secretId: existingSecret.id,
       value,
       description: 'Updated by bootstrap manage secrets',
       disablePrevious: true,

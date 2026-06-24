@@ -63,19 +63,32 @@ describe('manageRuntimeSecrets', () => {
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'))
   })
 
-  it('creates or updates a manual operator-managed secret', async () => {
+  it('updates an existing operator-managed secret', async () => {
     resetMocks()
     prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit')
     prompts.password.mockResolvedValueOnce('new-api-key')
-    getSecretByName.mockResolvedValueOnce(undefined)
-    ensureSecret.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' })
+    getSecretByName.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' })
     putSecretValue.mockResolvedValueOnce({ revision: 7, secret_id: 'secret-2' })
 
     await manageRuntimeSecrets(baseOptions)
 
-    expect(ensureSecret).toHaveBeenCalledWith(expect.objectContaining({ name: 'brevo-api-key' }))
+    expect(ensureSecret).not.toHaveBeenCalled()
     expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }))
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'))
+  })
+
+  it('refuses to create a missing container and tells the operator to deploy first', async () => {
+    resetMocks()
+    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit')
+    getSecretByName.mockResolvedValueOnce(undefined)
+
+    await manageRuntimeSecrets(baseOptions)
+
+    // Creating the container out-of-band would make the next `pulumi up` 409.
+    expect(ensureSecret).not.toHaveBeenCalled()
+    expect(putSecretValue).not.toHaveBeenCalled()
+    expect(prompts.password).not.toHaveBeenCalled()
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deploy first'))
   })
 
   it('deletes an entire secret object only after confirmation', async () => {

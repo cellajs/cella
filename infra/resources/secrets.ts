@@ -16,6 +16,36 @@ import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, ca
 /** Folder path for secret organization, e.g. '/cella-production/' */
 const secretPath = `/${naming.slug}-${mode}/`
 
+/**
+ * One-time adoption hook for operator secret containers that were created
+ * out-of-band before Pulumi owned them (so they are not yet in state). Importing
+ * them on the first run of this code adopts the existing container instead of
+ * trying to create it (which would fail with "secret already exists"). Supply the
+ * ids for a single, targeted `pulumi up`, then unset the variable again:
+ *
+ *   OPERATOR_SECRET_IMPORTS="admin-email=nl-ams/<uuid>,brevo-api-key=nl-ams/<uuid>"
+ *
+ * Entries are `secretName=region/uuid` (the Scaleway Secret `.id` form) and are
+ * only consulted for operator secrets. Once a container is in state the variable
+ * is no longer needed and should be removed.
+ */
+function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
+  if (!raw) return {}
+  const map: Record<string, string> = {}
+  for (const pair of raw.split(',')) {
+    const entry = pair.trim()
+    if (!entry) continue
+    const eq = entry.indexOf('=')
+    const name = eq === -1 ? '' : entry.slice(0, eq).trim()
+    const id = eq === -1 ? '' : entry.slice(eq + 1).trim()
+    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name=region/uuid).`)
+    map[name] = id
+  }
+  return map
+}
+
+const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS)
+
 // ---------------------------------------------------------------------------
 // Helper — create a Secret container, optionally with a Version
 // ---------------------------------------------------------------------------
@@ -23,6 +53,7 @@ const secretPath = `/${naming.slug}-${mode}/`
 function createSecretContainer(
   name: string,
   description: string,
+  opts?: { retainOnDelete?: boolean; importId?: string },
 ) {
   return new scaleway.secrets.Secret(`secret-${name}`, {
     name,
@@ -30,15 +61,7 @@ function createSecretContainer(
     description,
     region,
     tags,
-  }, { aliases: [{ type: 'scaleway:index/secret:Secret' }] })
-}
-
-function getExistingSecretContainer(name: string) {
-  return scaleway.secrets.getSecretOutput({
-    name,
-    path: secretPath,
-    region,
-  })
+  }, { aliases: [{ type: 'scaleway:index/secret:Secret' }], retainOnDelete: opts?.retainOnDelete, import: opts?.importId })
 }
 
 function createSecretVersion(
@@ -102,10 +125,18 @@ function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.In
 // ---------------------------------------------------------------------------
 
 const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
-  const secret = definition.valueSource === 'pulumi'
-    ? createSecretContainer(definition.secretName, definition.description)
-    : getExistingSecretContainer(definition.secretName)
-  if (definition.valueSource === 'pulumi') {
+  const isOperator = definition.valueSource === 'operator'
+  // Pulumi owns the container for EVERY runtime secret. Operator-managed ones are
+  // created empty (no version) and filled out-of-band via the "Manage runtime
+  // secrets" CLI; a missing/renamed operator container therefore no longer hard-
+  // fails the stack (the previous getSecretOutput lookup did). `retainOnDelete`
+  // keeps the operator-supplied value from being deleted when a registry entry is
+  // renamed or removed — the orphaned old container is cleaned up by hand.
+  const secret = createSecretContainer(definition.secretName, definition.description, {
+    retainOnDelete: isOperator,
+    importId: isOperator ? operatorSecretImports[definition.secretName] : undefined,
+  })
+  if (!isOperator) {
     createSecretVersion(definition.secretName, secret.id, pulumiRuntimeSecretData(definition))
   }
   return [definition.id, secret]
