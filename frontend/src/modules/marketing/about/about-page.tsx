@@ -38,7 +38,12 @@ function AboutPage() {
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
-        <Hero key={'hero'} title="about:hero.title" badgeText="about:prerelease" text="about:hero.text">
+        <Hero
+          key={'hero'}
+          title="about:hero.title"
+          chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
+          text="about:hero.text"
+        >
           <div className="glow-button relative mb-8 max-xs:hidden">
             <Input
               readOnly
