@@ -103,7 +103,7 @@ function AboutPage() {
 
             <SyncDiagram />
 
-            <p className="mx-auto max-w-xl font-light">
+            <p className="mx-auto max-w-2xl font-light">
               <Trans
                 t={t}
                 i18nKey="about:sync_flow"
