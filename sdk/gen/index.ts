@@ -86,7 +86,6 @@ export {
   updateTenant,
   updateUser,
   verifyDomain,
-  verifyYjsEntity,
 } from './sdk.gen';
 export type {
   ApiError,
@@ -515,7 +514,4 @@ export type {
   VerifyDomainErrors,
   VerifyDomainResponse,
   VerifyDomainResponses,
-  VerifyYjsEntityData,
-  VerifyYjsEntityResponse,
-  VerifyYjsEntityResponses,
 } from './types.gen';

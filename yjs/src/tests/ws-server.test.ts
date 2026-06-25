@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
+import { MissingScopeError } from 'shared';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createSignedToken, createExpiredToken } from './helpers';
-import { z } from 'zod';
 
 vi.mock('../lib/pino', () => ({
   logEvent: vi.fn(),
@@ -12,17 +12,15 @@ vi.mock('../lib/pino', () => ({
 
 const { verifyToken } = await import('../server/auth');
 
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+// Stands in for the relay's local authorization (`canEditEntity`). Tests drive its outcome:
+// resolve(true) → allowed, resolve(false) → denied, reject(MissingScopeError) → missing scope,
+// reject(Error) → DB/resolver failure.
+const mockVerify = vi.fn();
 
 let port: number;
 let baseUrl: string;
 let httpServer: ReturnType<typeof createServer>;
 let wss: InstanceType<typeof WebSocketServer>;
-
-const verifyEntityResultSchema = z.object({
-  allowed: z.boolean(),
-});
 
 /**
  * Reject the upgrade at the HTTP level — no WebSocket handshake is completed.
@@ -50,11 +48,11 @@ beforeAll(async () => {
 
   wss = new WebSocketServer({ noServer: true });
 
-  // Mirrors the new optimistic connect architecture:
+  // Mirrors the optimistic-connect architecture:
   // 1. Token verified locally (HMAC)
   // 2. Token entityType/tenantId must match request params
   // 3. Connection accepted immediately
-  // 4. Entity access verified async via backend verify-entity call
+  // 4. Entity access decided locally (no backend round-trip)
   httpServer.on('upgrade', async (req, socket, head) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
@@ -94,20 +92,19 @@ beforeAll(async () => {
     wss.handleUpgrade(req, socket, head, async (ws) => {
       wss.emit('connection', ws);
 
-      // Async entity verification — close connection on failure
+      // Async local entity authorization — close connection on failure
       try {
-        const res = await mockFetch('verify-entity', { entityType, entityId, tenantId, userId: payload.userId });
-        if (!res.ok) {
-          ws.close(4003, 'Access denied');
-          return;
-        }
-        const result = verifyEntityResultSchema.parse(await res.json());
-        if (!result.allowed) {
+        const allowed = await mockVerify({ entityType, entityId, tenantId, userId: payload.userId });
+        if (!allowed) {
           ws.close(4003, 'Access denied');
         }
         // On success: connection stays open, writes would be unblocked
-      } catch {
-        ws.close(4503, 'Backend unavailable');
+      } catch (err) {
+        if (err instanceof MissingScopeError) {
+          ws.close(4400, 'Missing entity scope');
+        } else {
+          ws.close(4503, 'Authorization unavailable');
+        }
       }
     });
   });
@@ -210,28 +207,22 @@ describe('WebSocket upgrade rejection (pre-upgrade)', () => {
 });
 
 describe('Async entity verification (post-upgrade)', () => {
-  it('1.3.1 verify-entity returns denied → close 4003', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ allowed: false }),
-    });
+  it('1.3.1 local check returns denied → close 4003', async () => {
+    mockVerify.mockResolvedValueOnce(false);
     const token = createSignedToken('user-1');
     const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
     expect(closeCode).toBe(4003);
   });
 
-  it('1.3.2 verify-entity backend down → close 4503', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+  it('1.3.2 local check throws (DB/resolver error) → close 4503', async () => {
+    mockVerify.mockRejectedValueOnce(new Error('ECONNREFUSED'));
     const token = createSignedToken('user-1');
     const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
     expect(closeCode).toBe(4503);
   });
 
-  it('1.3.3 verify-entity allowed → connection stays open', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ allowed: true }),
-    });
+  it('1.3.3 local check allowed → connection stays open', async () => {
+    mockVerify.mockResolvedValueOnce(true);
     const token = createSignedToken('user-1');
     const { ws, closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
     expect(closeCode).toBeUndefined();
@@ -239,30 +230,10 @@ describe('Async entity verification (post-upgrade)', () => {
     ws.close();
   });
 
-  it('1.3.4 HTTP 500 from backend → close 4003', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
+  it('1.3.4 local check throws MissingScopeError → close 4400', async () => {
+    mockVerify.mockRejectedValueOnce(new MissingScopeError('attachment', 'organization', 'organizationId'));
     const token = createSignedToken('user-1');
     const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
-    expect(closeCode).toBe(4003);
-  });
-
-  it('1.3.5 non-JSON response → close 4503', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.reject(new SyntaxError('Unexpected token')),
-    });
-    const token = createSignedToken('user-1');
-    const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
-    expect(closeCode).toBe(4503);
-  });
-
-  it('1.3.6 malformed response body → close 4503', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ allowed: 'yes' }),
-    });
-    const token = createSignedToken('user-1');
-    const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
-    expect(closeCode).toBe(4503);
+    expect(closeCode).toBe(4400);
   });
 });

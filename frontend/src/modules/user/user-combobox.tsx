@@ -32,6 +32,7 @@ interface Props {
 export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
+  const nameLabel = t('c:name').toLowerCase();
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -126,7 +127,11 @@ export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => 
       </ComboboxPrimitive.Trigger>
 
       <ComboboxContent className="p-0">
-        <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_name')} />
+        <ComboboxSearchInput
+          value={searchQuery}
+          isSearching={isFetching}
+          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
+        />
         <ComboboxList className="h-full px-1">
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (

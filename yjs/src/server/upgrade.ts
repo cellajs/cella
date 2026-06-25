@@ -1,10 +1,12 @@
 import { URL } from 'node:url';
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
+import { MissingScopeError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
 import type { DocContext } from '../constants';
+import { canEditEntity } from '../data/permissions';
 import { logError, logEvent } from '../lib/pino';
-import { verifyToken, verifyEntityAccess } from './auth';
+import { verifyToken } from './auth';
 import { checkConnectionRate } from './rate-limiter';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { handleMessage, flushPendingBuffer, discardPendingBuffer } from '../sync/relay';
@@ -38,19 +40,27 @@ function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): vo
 
 /** 
  * Verify entity access asynchronously after the WebSocket connection is established.
- * If verification fails, the client is disconnected and queued writes are discarded.
+ * The authorization decision is computed locally by the shared permission engine — no backend
+ * round-trip. If verification fails, the client is disconnected and queued writes are discarded.
  */
 async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> {
   try {
-    const allowed = await verifyEntityAccess(ctx.entityType, ctx.entityId, ctx.tenantId, ctx.userId);
+    const allowed = await canEditEntity(ctx);
     if (ws.readyState !== ws.OPEN) return;
     applyVerifyResult(ws, ctx, allowed);
   } catch (err) {
-    logError(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, err);
-    if (ws.readyState === ws.OPEN) {
-      discardPendingBuffer(ws);
-      ws.close(4503, 'Backend unavailable');
+    if (ws.readyState !== ws.OPEN) return;
+    discardPendingBuffer(ws);
+    if (err instanceof MissingScopeError) {
+      logEvent('warn', `Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
+        missingContext: err.missingContext,
+        missingKey: err.missingKey,
+      });
+      ws.close(4400, 'Missing entity scope');
+      return;
     }
+    logError(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, err);
+    ws.close(4503, 'Authorization unavailable');
   }
 }
 

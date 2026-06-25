@@ -1,3 +1,20 @@
 {
-  "defaultWelcomeText": "[{\"id\":\"6036a7ab-cc4a-4cfa-8952-16eb34a04735\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Some introduction text for new members.\",\"styles\":{}}],\"children\":[]}]"
+  "defaultWelcomeText": "[{\"id\":\"6036a7ab-cc4a-4cfa-8952-16eb34a04735\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Some introduction text for new members.\",\"styles\":{}}],\"children\":[]}]",
+  "welcomeEmail": {
+    "subject": "Welcome to {{appName}}",
+    "founderName": "David",
+    "founderRole": "Founder",
+    "intro": [
+      "My name is David — I'm the founder of {{appName}}.",
+      "We started {{appName}} because we wanted a tool that doesn't get in your way — no lengthy setup, no sales call before you can try it, just everything you need in one place the moment you sign in."
+    ],
+    "stepsHeading": "Here are 3 things to do to get started:",
+    "steps": [
+      { "label": "Open your setup checklist", "href": "https://example.com/checklist" },
+      { "label": "Create your first item", "href": "https://example.com/app" },
+      { "label": "Read the quickstart guide", "href": "https://example.com/docs/quickstart" }
+    ],
+    "ps": "Why did you sign up? What are you trying to build? Hit \"Reply\" and let me know — I read and reply to every email.",
+    "signOff": "Cheers,"
+  }
 }

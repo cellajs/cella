@@ -10,6 +10,7 @@ import {
   requestInfoEmail,
   requestResponseEmail,
   systemInviteEmail,
+  welcomeEmailTemplate,
 } from './index';
 import type { EmailTemplateDef } from './types';
 
@@ -35,6 +36,7 @@ export interface EmailPreviewFixture {
 // Maps each preview slug to its template. Slugs are stable public identifiers
 // (URLs + Storybook stories) and intentionally differ from some export names.
 const previewTemplates = {
+  welcome: welcomeEmailTemplate,
   'account-security': accountSecurityEmail,
   'email-verification': emailVerificationEmail,
   'oauth-verification': oauthVerificationEmail,

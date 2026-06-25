@@ -1,5 +1,7 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
+import { currentSchemaVersion } from 'shared/version-changes';
 import type { ApiError } from '~/lib/api';
+import { entityTypeOf } from '~/query/cache-migration';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -9,9 +11,44 @@ const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
   import('~/query/on-error').then((m) => m.onError(error, meta));
 const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
 
+/**
+ * Quarantine a mutation that fails replay with a 4xx so no offline edit is lost
+ * (info/SCHEMA_EVOLUTION.md, 1.9). Best-effort, lazy-imported to avoid cycles.
+ */
+function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
+  const status = error?.status;
+  if (typeof status !== 'number' || status < 400 || status >= 500) return;
+
+  // stx mutations carry stx.mutationId on the variables (single or batch shape).
+  const variables = vars as { stx?: { mutationId?: string } } | Array<{ stx?: { mutationId?: string } }> | undefined;
+  const mutationId = Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
+  if (!mutationId) return;
+
+  const entityType = entityTypeOf(mutationKey) ?? undefined;
+  import('~/query/offline')
+    .then(({ quarantineFailedSync }) =>
+      quarantineFailedSync({
+        mutationId,
+        entityType,
+        clientSchemaVersion: currentSchemaVersion,
+        status,
+        variables: vars,
+        error,
+      }),
+    )
+    .catch(() => {});
+}
+
 const mutationCacheConfig = {
-  onError: (error: ApiError, _vars: unknown, _ctx: unknown, mutation: { meta?: QueryMeta }) =>
-    handleError(error, mutation.meta),
+  onError: (
+    error: ApiError,
+    vars: unknown,
+    _ctx: unknown,
+    mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } },
+  ) => {
+    quarantineOnClientError(error, vars, mutation.options?.mutationKey);
+    return handleError(error, mutation.meta);
+  },
   onSuccess: handleSuccess,
 };
 

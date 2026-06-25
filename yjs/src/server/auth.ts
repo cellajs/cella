@@ -1,6 +1,4 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { URL } from 'node:url';
-import { appConfig } from 'shared';
 import { z } from 'zod';
 import { env } from '../env';
 
@@ -44,25 +42,4 @@ export function verifyToken(token: string): YjsTokenPayload | null {
   } catch {
     return null;
   }
-}
-
-const verifyEntityResultSchema = z.object({
-  allowed: z.boolean(),
-});
-
-/** Verify that a specific entity exists and the user has access, via the backend verify-entity endpoint. */
-export async function verifyEntityAccess(entityType: string, entityId: string, tenantId: string, userId: string): Promise<boolean> {
-  const url = new URL('/yjs/verify-entity', appConfig.backendUrl);
-  url.searchParams.set('entityType', entityType);
-  url.searchParams.set('entityId', entityId);
-  url.searchParams.set('tenantId', tenantId);
-  url.searchParams.set('userId', userId);
-
-  const res = await fetch(url.toString(), {
-    headers: { 'x-yjs-secret': env.YJS_SECRET },
-  });
-
-  if (!res.ok) return false;
-  const result = verifyEntityResultSchema.parse(await res.json());
-  return result.allowed;
 }

@@ -1,8 +1,8 @@
 import { Trans, useTranslation } from 'react-i18next';
-import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 
 interface AboutSectionProps {
-  sectionId: AboutSectionId;
+  /** When set, renders a `spy-<sectionId>` anchor for scroll-spy nav (used on the about page). */
+  sectionId?: string;
   title?: string;
   text?: string;
   /** Optional components to interpolate into `text` (e.g. links) via <Trans>. */
@@ -32,7 +32,7 @@ export const AboutSectionHeader = ({ title, text, textComponents, className = ''
       )}
       {text && (
         <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-          {textComponents ? <Trans i18nKey={text} components={textComponents} /> : t(text)}
+          <Trans i18nKey={text} components={textComponents} />
         </p>
       )}
     </div>
@@ -51,7 +51,7 @@ export const AboutSection = ({
 
   return (
     <section
-      id={`spy-${sectionId}`}
+      id={sectionId ? `spy-${sectionId}` : undefined}
       className={`container max-w-none overflow-hidden px-4 py-8 md:py-12 lg:py-24 ${backgroundClass}`}
     >
       <AboutSectionHeader title={title} text={text} textComponents={textComponents} className="mb-12" />

@@ -25,19 +25,15 @@ export function Why() {
                   <div className="w-full">
                     <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">{t(title)}</h3>
                     <p className="leading-relaxed">
-                      {index === 1 ? (
-                        <Trans
-                          t={t}
-                          i18nKey={text}
-                          components={{
-                            featuresLink: (
-                              <Link to="/features" className="underline underline-offset-4 hover:text-primary" />
-                            ),
-                          }}
-                        />
-                      ) : (
-                        t(text)
-                      )}
+                      <Trans
+                        t={t}
+                        i18nKey={text}
+                        components={{
+                          featuresLink: (
+                            <Link to="/features" className="underline underline-offset-4 hover:text-primary" />
+                          ),
+                        }}
+                      />
                     </p>
                   </div>
                 </div>

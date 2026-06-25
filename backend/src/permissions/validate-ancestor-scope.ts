@@ -1,33 +1,26 @@
-import { appConfig, hierarchy } from 'shared';
+import { MissingScopeError, validateAncestorScope as sharedValidateAncestorScope } from 'shared';
 import { AppError } from '#/core/error';
 import type { SubjectForPermission } from '#/permissions/permission-manager/types';
 
 /**
- * Validates that all ancestor context IDs are explicitly provided on the subject.
+ * Backend wrapper over the shared `validateAncestorScope`.
  *
- * Secure-by-design: product entities with parent contexts (e.g., attachment → project → organization)
- * must have all ancestor context IDs set. `null` means "intentionally not scoped to this context"
- * (e.g., org-level attachment), while `undefined` means the caller forgot — which is an error.
- *
- * This prevents handlers from accidentally skipping a context check, which would cause
- * the permission engine to fall back to a broader scope (e.g., granting org-member access
- * to a project-scoped attachment).
+ * Validates that all ancestor context IDs are explicitly provided on the subject and translates the
+ * shared engine's tier-neutral `MissingScopeError` into `AppError(400, 'missing_scope')` so HTTP
+ * behavior is unchanged. See the shared implementation for full semantics.
  *
  * @throws AppError 400 if any ancestor context ID is undefined (missing)
  */
 export const validateAncestorScope = (entity: SubjectForPermission) => {
-  const ancestors = hierarchy.getOrderedAncestors(entity.entityType);
-
-  for (const ancestor of ancestors) {
-    const value = entity.contextIds[ancestor];
-
-    // undefined = caller forgot to provide scope → error
-    // null = explicitly "not in this context" → allowed (engine skips this context)
-    if (value === undefined) {
+  try {
+    sharedValidateAncestorScope(entity);
+  } catch (e) {
+    if (e instanceof MissingScopeError) {
       throw new AppError(400, 'missing_scope', 'error', {
-        entityType: entity.entityType,
-        meta: { missingContext: ancestor, missingKey: appConfig.entityIdColumnKeys[ancestor] },
+        entityType: e.entityType,
+        meta: { missingContext: e.missingContext, missingKey: e.missingKey },
       });
     }
+    throw e;
   }
 };

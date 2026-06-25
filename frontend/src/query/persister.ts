@@ -20,6 +20,9 @@ import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
+import { currentSchemaVersion } from 'shared/version-changes';
+import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
+import { isBundleStale } from '~/query/schema-version-guard';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -44,6 +47,8 @@ interface PersistedMetaRecord {
   key: string;
   timestamp: number;
   buster: string;
+  /** Persisted global schema ordinal (lens count). Drives the boot migration pass. */
+  schemaVersion?: number;
   mutations: DehydratedState['mutations'];
   /** Context queries bundled directly in meta */
   contextQueries: DehydratedQuery[];
@@ -218,11 +223,59 @@ function createIDBPersister(scope = 'rq') {
   let pendingClient: PersistedClient | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
+  /** Remove all records for this scope (used for cold session scopes + rollback deploys). */
+  async function clearScope() {
+    await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
+      const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
+      await queryDb.queries.bulkDelete(ids);
+      await queryDb.meta.delete(scope);
+    });
+    lastPersistedAt.clear();
+    lastContextSnapshot = '';
+  }
+
+  /**
+   * Boot migration pass: rewrite cached product rows + queued mutations from the
+   * persisted ordinal up to current. Chunked, idempotent, pointer advanced last
+   * so an interrupted pass re-runs safely. Leader gating is applied by the caller.
+   */
+  async function migrateScope(fromVersion: number) {
+    const CHUNK = 200;
+    const productRecords = await queryDb.queries.where('scope').equals(scope).toArray();
+    for (let i = 0; i < productRecords.length; i += CHUNK) {
+      const chunk = productRecords.slice(i, i + CHUNK);
+      const migrated = await Promise.all(
+        chunk.map(async (rec) => {
+          const entityType = entityTypeOf(rec.queryKey);
+          if (!entityType) return rec;
+          return { ...rec, state: await migrateQueryState(entityType, rec.state, fromVersion) };
+        }),
+      );
+      await queryDb.queries.bulkPut(migrated);
+    }
+
+    const meta = await queryDb.meta.get(scope);
+    if (!meta) return;
+    const contextQueries = await Promise.all(
+      (meta.contextQueries ?? []).map(async (q) => {
+        const entityType = entityTypeOf(q.queryKey);
+        return entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q;
+      }),
+    );
+    const mutations = migrateMutations(meta.mutations ?? [], fromVersion);
+    // Final write advances the pointer only once everything else is rewritten.
+    await queryDb.meta.put({ ...meta, contextQueries, mutations, schemaVersion: currentSchemaVersion });
+  }
+
   async function flush() {
     const client = pendingClient;
     pendingClient = null;
     timeoutId = null;
     if (!client) return;
+
+    // Stale-bundle guard (1.7): a tab behind a newer bundle must never write —
+    // it would downgrade the store another tab just migrated.
+    if (isBundleStale()) return;
 
     try {
       const { queries, mutations } = client.clientState;
@@ -278,6 +331,7 @@ function createIDBPersister(scope = 'rq') {
             key: scope,
             timestamp: client.timestamp,
             buster: client.buster,
+            schemaVersion: currentSchemaVersion,
             mutations,
             contextQueries,
           });
@@ -313,8 +367,22 @@ function createIDBPersister(scope = 'rq') {
 
     restoreClient: async (): Promise<PersistedClient | undefined> => {
       try {
-        const meta = await queryDb.meta.get(scope);
+        let meta = await queryDb.meta.get(scope);
         if (!meta) return undefined;
+
+        // Schema-evolution boot migration (runtime touch point 2). No-op while
+        // currentSchemaVersion === persisted pointer. See info/SCHEMA_EVOLUTION.md.
+        const pointer = meta.schemaVersion ?? 0;
+        if (pointer !== currentSchemaVersion) {
+          // Cold session scopes and rollback deploys (pointer ahead) are wiped
+          // rather than migrated — they are allowed to refetch.
+          if (scope.startsWith(SESSION_KEY_PREFIX) || pointer > currentSchemaVersion) {
+            await clearScope();
+            return undefined;
+          }
+          await migrateScope(pointer);
+          meta = (await queryDb.meta.get(scope)) ?? meta;
+        }
 
         // Product queries from individual records
         const productRecords = await queryDb.queries.where('scope').equals(scope).toArray();

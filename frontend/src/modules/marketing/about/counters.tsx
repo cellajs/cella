@@ -6,7 +6,7 @@ import { counts } from '~/modules/marketing/marketing-config';
 import { publicCountsQueryOptions } from '~/modules/marketing/query';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
-function useCountUp(start: number, end: number, duration = 1500) {
+export function useCountUp(start: number, end: number, duration = 1500) {
   const [value, setValue] = useState(start);
   useEffect(() => {
     const t0 = performance.now();

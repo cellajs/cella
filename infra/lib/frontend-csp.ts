@@ -21,7 +21,7 @@ const cspOrigins = {
 
 export const frontendCsp = [
   `default-src 'self'`,
-  `script-src 'self' *.gleap.io`,
+  `script-src 'self' *.gleap.io maps.googleapis.com`,
   `worker-src 'self' blob:`,
   `style-src 'self' 'unsafe-inline'`,
   `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3Host} ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private} https://*.transloadit.com wss://*.transloadit.com https://transloaditstatus.com *.gleap.io wss://ws.gleap.io`,

@@ -21,8 +21,8 @@ export function InfoCards() {
     <ScrollArea className="w-full" horizontalScroll>
       <div className="flex w-max space-x-4 px-2 py-8">
         {cards.map(({ url, id, name, invert, country }) => {
-          const text = `about:cards.${id}_text`;
-          const purpose = `about:cards.${id}_purpose`;
+          const text = `about:cards.${id}.text`;
+          const purpose = `about:cards.${id}.purpose`;
 
           return (
             <a

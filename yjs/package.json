@@ -28,6 +28,7 @@
     "@opentelemetry/sdk-metrics": "catalog:",
     "@opentelemetry/sdk-node": "catalog:",
     "@opentelemetry/semantic-conventions": "^1.40.0",
+    "drizzle-orm": "1.0.0-rc.3",
     "lib0": "^0.2.117",
     "pg": "^8.22.0",
     "pino": "^10.3.1",

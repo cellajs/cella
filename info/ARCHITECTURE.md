@@ -51,7 +51,7 @@ Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`
 
 ## Sync engine
 
-Cella has a pragmatic - yet harmonious - approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
+Cella has a different approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
 
 The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent streams:
 - **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.

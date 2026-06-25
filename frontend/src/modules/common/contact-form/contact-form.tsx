@@ -23,6 +23,9 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isMediumScreen = useBreakpointAbove('lg');
+  const nameLabel = t('c:name').toLowerCase();
+  const emailLabel = t('c:email').toLowerCase();
+  const messageLabel = t('c:message').toLowerCase();
 
   const formSchema = zCreateRequestBody.extend({ name: z.string().min(2, t('error:name_required')) });
 
@@ -63,6 +66,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             control={form.control}
             name="name"
             label={t('c:name')}
+            placeholder={t('c:placeholder.your_input', { inputLabel: nameLabel })}
             icon={<UserIcon size={16} />}
             required
           />
@@ -71,6 +75,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             name="email"
             label={t('c:email')}
             type="email"
+            placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
             icon={<MailIcon size={16} />}
             required
           />
@@ -79,6 +84,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             name="message"
             label={t('c:message')}
             type="textarea"
+            placeholder={t('c:placeholder.your_input', { inputLabel: messageLabel })}
             icon={<MessageSquareIcon size={16} />}
           />
           <div className="flex flex-col gap-2 sm:flex-row">

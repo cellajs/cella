@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './__root'
 import { Route as PublicRouteRouteImport } from './_public/route'
 import { Route as AppRouteRouteImport } from './_app/route'
 import { Route as AppIndexRouteImport } from './_app/index'
+import { Route as PublicSyncEngineRouteImport } from './_public/sync-engine'
 import { Route as PublicSignOutRouteImport } from './_public/sign-out'
 import { Route as PublicFeaturesRouteImport } from './_public/features'
 import { Route as PublicErrorRouteImport } from './_public/error'
@@ -61,6 +62,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const PublicSyncEngineRoute = PublicSyncEngineRouteImport.update({
+  id: '/sync-engine',
+  path: '/sync-engine',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
 const PublicSignOutRoute = PublicSignOutRouteImport.update({
   id: '/sign-out',
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/error': typeof PublicErrorRoute
   '/features': typeof PublicFeaturesRoute
   '/sign-out': typeof PublicSignOutRoute
+  '/sync-engine': typeof PublicSyncEngineRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/system/organizations': typeof AppSystemOrganizationsRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/error': typeof PublicErrorRoute
   '/features': typeof PublicFeaturesRoute
   '/sign-out': typeof PublicSignOutRoute
+  '/sync-engine': typeof PublicSyncEngineRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/system/organizations': typeof AppSystemOrganizationsRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/_public/error': typeof PublicErrorRoute
   '/_public/features': typeof PublicFeaturesRoute
   '/_public/sign-out': typeof PublicSignOutRoute
+  '/_public/sync-engine': typeof PublicSyncEngineRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/_public/_content/docs': typeof PublicContentDocsRouteRouteWithChildren
@@ -386,6 +395,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/features'
     | '/sign-out'
+    | '/sync-engine'
     | '/$tenantId/$organizationSlug'
     | '/docs'
     | '/system/organizations'
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/features'
     | '/sign-out'
+    | '/sync-engine'
     | '/$tenantId/$organizationSlug'
     | '/docs'
     | '/system/organizations'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/_public/error'
     | '/_public/features'
     | '/_public/sign-out'
+    | '/_public/sync-engine'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
     | '/_public/_content/docs'
@@ -518,6 +530,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/_public/sync-engine': {
+      id: '/_public/sync-engine'
+      path: '/sync-engine'
+      fullPath: '/sync-engine'
+      preLoaderRoute: typeof PublicSyncEngineRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/_public/sign-out': {
       id: '/_public/sign-out'
@@ -919,6 +938,7 @@ interface PublicRouteRouteChildren {
   PublicErrorRoute: typeof PublicErrorRoute
   PublicFeaturesRoute: typeof PublicFeaturesRoute
   PublicSignOutRoute: typeof PublicSignOutRoute
+  PublicSyncEngineRoute: typeof PublicSyncEngineRoute
   PublicLegalSubjectRoute: typeof PublicLegalSubjectRoute
   PublicLegalIndexRoute: typeof PublicLegalIndexRoute
 }
@@ -932,6 +952,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicErrorRoute: PublicErrorRoute,
   PublicFeaturesRoute: PublicFeaturesRoute,
   PublicSignOutRoute: PublicSignOutRoute,
+  PublicSyncEngineRoute: PublicSyncEngineRoute,
   PublicLegalSubjectRoute: PublicLegalSubjectRoute,
   PublicLegalIndexRoute: PublicLegalIndexRoute,
 }

@@ -47,6 +47,9 @@ interface Props {
 export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
+  const nameLabel = t('c:name').toLowerCase();
+  const shortNameLabel = t('c:short_name').toLowerCase();
+  const notificationEmailLabel = t('c:notification_email').toLowerCase();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -90,14 +93,14 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           control={form.control}
           name="name"
           label={t('c:name')}
-          placeholder={t('c:placeholder.type_name')}
+          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
           required
         />
         <InputFormField
           control={form.control}
           name="shortName"
           label={t('c:short_name')}
-          placeholder={t('c:placeholder.type_name')}
+          placeholder={t('c:placeholder.type_input', { inputLabel: shortNameLabel })}
           required
         />
         <SlugFormField
@@ -112,7 +115,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <InputFormField
           control={form.control}
           type="email"
-          placeholder={t('c:placeholder.your_email')}
+          placeholder={t('c:placeholder.your_input', { inputLabel: notificationEmailLabel })}
           name="notificationEmail"
           label={t('c:notification_email')}
           description={t('c:notification_email.text')}

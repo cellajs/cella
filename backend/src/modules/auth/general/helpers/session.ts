@@ -135,7 +135,16 @@ export const validateSession = async (
   const { session, user } = result;
 
   // Check if the session has expired and invalidate it if so
-  if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
+  if (isExpiredDate(session.expiresAt)) {
+    // Opportunistically purge the dead row so expired sessions don't linger between maintenance
+    // runs. Fire-and-forget: a failure here must never change the auth outcome. Scoping by
+    // expiresAt lets PostgreSQL target the right partition directly.
+    void db
+      .delete(sessionsTable)
+      .where(and(eq(sessionsTable.id, session.id), eq(sessionsTable.expiresAt, session.expiresAt)))
+      .catch(() => {});
+    throw new AppError(401, 'session_expired', 'warn');
+  }
 
   // Strip secret from session before returning
   const { secret: _, ...safeSession } = session;

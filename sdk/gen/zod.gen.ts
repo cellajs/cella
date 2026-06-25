@@ -1792,20 +1792,6 @@ export const zGetYjsTokenResponse = z.object({
   token: z.string(),
 });
 
-export const zVerifyYjsEntityQuery = z.object({
-  entityType: z.string().max(50),
-  entityId: z.string().max(50),
-  tenantId: z.string().max(50),
-  userId: z.string().max(50),
-});
-
-/**
- * Access check result
- */
-export const zVerifyYjsEntityResponse = z.object({
-  allowed: z.boolean(),
-});
-
 export const zHandleMcpBody = z.unknown();
 
 export const zHandleMcpPath = z.object({

@@ -42,7 +42,7 @@ For WebStorm users, you can achieve similar inline translation previews using:
 * Above three words is considered a sentence
 * Action related sentences have a prefix such as `question.`, `confirm.` or `success.`
 * Other (explanation related) sentences have a suffix `.text`
-* By default only first letter of first word is uppercase, whether a single word, two words or a sentence. For explicitly lowercase, add a suffix `.lc`.
+* By default only first letter of first word is uppercase, whether a single word, two words or a sentence. For explicitly lowercase, pass a lowercased value at the usage site, for example via `.toLowerCase()` or a dedicated interpolation value such as `resourceLowerCase`.
 * Sort JSON translation keys by alphabetical order
 * Modules or pages with a big amount of unique texts should get their own translation namespace and json: `about:` keys are provided by `about.json`.
 

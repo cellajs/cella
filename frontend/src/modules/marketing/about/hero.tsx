@@ -1,6 +1,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 interface HeroProps {
   title: string;
@@ -34,27 +35,25 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
 
   return (
     <section id="spy-hero" className={sectionClass}>
-      <header ref={ref} className={headerClass}>
-        <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
-          <h1 className="mt-6 mb-6 font-heading text-3xl leading-10 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
-            <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
-              {t(title)}
-            </span>
-          </h1>
-          {text && (
-            <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl md:text-2xl md:leading-10">
-              <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
-            </h2>
-          )}
-          {chips && chips.length > 0 && (
-            <div className="mb-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-foreground/70">
-              {chips.map((chip) => (
-                <span key={chip}>{t(chip)}</span>
-              ))}
-            </div>
-          )}
-          <div className="">{children}</div>
-        </div>
+      <header ref={ref} className={cn('container flex max-w-4xl flex-col items-center gap-4 text-center', headerClass)}>
+        <h1 className="mt-6 mb-6 font-heading text-3xl leading-10 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
+          <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
+            {t(title)}
+          </span>
+        </h1>
+        {text && (
+          <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl leading-8 md:text-2xl md:leading-10">
+            <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
+          </h2>
+        )}
+        {chips && chips.length > 0 && (
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-foreground/70">
+            {chips.map((chip) => (
+              <span key={chip}>{t(chip)}</span>
+            ))}
+          </div>
+        )}
+        <div className="">{children}</div>
       </header>
       <BackgroundCurve />
     </section>
