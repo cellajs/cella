@@ -43,6 +43,7 @@ type FormValues = WithTenantValues | NoTenantValues;
 export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
+  const nameLabel = t('c:name').toLowerCase();
 
   // Check if user has any memberships (determines if they have tenants)
   const membershipsQuery = useQuery(myMembershipsQueryOptions());
@@ -112,7 +113,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
           control={form.control}
           name="name"
           label={t('c:name')}
-          placeholder={t('c:placeholder.type_name')}
+          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
           required
         />
         <SlugFormField

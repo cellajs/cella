@@ -17,15 +17,26 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
     // Schema-evolution telemetry header (Phase 1: telemetry-only fleet floor).
-    // One place covers the whole generated SDK. See info/SCHEMA_EVOLUTION.md.
-    const headers = new Headers(init?.headers);
-    headers.set('x-client-version', String(currentSchemaVersion));
-    const requestInit: RequestInit = { ...init, headers };
+    // hey-api passes a Request as the sole argument, so merge onto its existing
+    // headers — never pass a fresh `init`, which would replace Content-Type and
+    // drop the body. See info/SCHEMA_EVOLUTION.md.
+    const version = String(currentSchemaVersion);
+    let nextInput = input;
+    let nextInit = init;
+    if (input instanceof Request) {
+      const headers = new Headers(input.headers);
+      headers.set('x-client-version', version);
+      nextInput = new Request(input, { headers });
+    } else {
+      const headers = new Headers(init?.headers);
+      headers.set('x-client-version', version);
+      nextInit = { ...init, headers };
+    }
 
     let response: Response;
 
     try {
-      response = await clientConfig.fetch(input, requestInit);
+      response = await clientConfig.fetch(nextInput, nextInit);
     } catch (error) {
       // Network-level failure (no HTTP response) — probe actual connectivity
       if (error instanceof TypeError) checkConnectivity();

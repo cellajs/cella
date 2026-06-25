@@ -14,13 +14,7 @@ export function CallToAction() {
       <p className="mb-12 font-semibold text-3xl leading-tight sm:text-4xl lg:text-5xl">
         {t('about:call_to_action.intro')}
       </p>
-      <p className="mb-12 text-xl leading-relaxed sm:text-3xl sm:leading-[2.8rem]">
-        <span className="mr-2 opacity-50">“</span>
-        <span>{t('about:call_to_action.start')}</span>
-        <span className="ml-2 opacity-50">”</span>
-        <span className="mr-2 ml-4 opacity-50">—</span>
-        {t('about:call_to_action.finish')}
-      </p>
+
       <div className="z-10 mx-auto mt-6 mb-12 flex flex-col gap-4 sm:flex-row">
         <Button
           variant="ghost"

@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { ArrowDownIcon, CheckIcon, CopyIcon, RedoIcon } from 'lucide-react';
-import { Trans, useTranslation } from 'react-i18next';
+import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
@@ -10,22 +9,22 @@ import { CallToAction } from '~/modules/marketing/about/call-to-action';
 // import { FAQ } from '~/modules/marketing/about/faq';
 import { Hero } from '~/modules/marketing/about/hero';
 import { InfoCards } from '~/modules/marketing/about/info-cards';
-import { InfoGrid } from '~/modules/marketing/about/info-grid';
 // import { Pricing } from '~/modules/marketing/about/pricing';
 import { Showcase } from '~/modules/marketing/about/showcase';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
-import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { GithubIcon } from '~/modules/marketing/icons/github';
+import { InfoGrid } from '~/modules/marketing/info-grid';
+import { stackItems } from '~/modules/marketing/marketing-config';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
-const aboutSectionIds = ['hero', 'showcase', 'why', 'how-it-works', 'features', 'integrations', 'call-to-action'];
+const aboutSectionIds = ['hero', 'benefits', 'showcase', 'template', 'stack', 'integrations', 'call-to-action'];
 
 function AboutPage() {
   const { t } = useTranslation();
@@ -57,7 +56,7 @@ function AboutPage() {
               <GithubIcon className="mr-2 size-4 transition-transform group-hover:scale-110" />
               {t('about:github_star')}
             </Button>
-            <div className="glow-button relative max-xs:hidden">
+            <div className="glow-button relative max-sm:hidden">
               <Input
                 readOnly
                 value="pnpm create @cellajs/cella"
@@ -83,137 +82,60 @@ function AboutPage() {
             variant="ghost"
             size="lg"
             className="group max-sm:hidden"
-            onClick={() => scrollToSectionById('why')}
+            onClick={() => scrollToSectionById('benefits')}
             aria-label="Read more"
           >
-            <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:why')}</span>
+            <span className="font-normal text-base opacity-70 group-hover:opacity-100">
+              {t('about:continue_below_fold')}
+            </span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Button>
         </Hero>
 
-        {/* Core features */}
-        <AboutSection
-          key={'benefits'}
-          sectionId="benefits"
-          title="about:features.title"
-          text="about:features.text"
-          textComponents={{
-            featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
-          }}
-        >
+        {/* Core features / benefits */}
+        <AboutSection key={'benefits'} sectionId="benefits" title="about:features.title">
           <Why />
         </AboutSection>
 
-        <div className="my-12">
-          {/* Why cella */}
-          <AboutSection
-            key={'why'}
-            sectionId="why"
-            title="about:selective_sync.title"
-            text="about:selective_sync.text"
-            textComponents={{ em: <em className="italic" /> }}
-          >
-            <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
-              {t('about:cella_approach_intro')}
-            </p>
+        {/* Stack */}
+        <AboutSection
+          key={'stack'}
+          sectionId="stack"
+          title="about:stack.title"
+          text="about:stack.text"
+          alternate={true}
+        >
+          <InfoGrid namespace="stack" items={stackItems} image expandable />
+        </AboutSection>
 
-            <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
-              <Trans
-                t={t}
-                i18nKey="about:cella_approach"
-                components={{
-                  strong: <strong className="font-semibold text-foreground" />,
-                }}
-              />
-            </p>
+        {/* Integrations */}
+        <AboutSection
+          key={'integrations'}
+          sectionId="integrations"
+          title="about:integrations.title"
+          text="about:integrations.text"
+        >
+          <InfoCards />
+        </AboutSection>
 
-            <ul className="mx-auto mb-12 max-w-3xl space-y-2 pl-4 font-semibold text-muted-foreground marker:text-foreground sm:list-disc sm:pl-12 sm:text-lg sm:leading-6">
-              <li>
-                <Trans
-                  t={t}
-                  i18nKey="about:cella_approach_point_1"
-                  components={{
-                    strong: <strong className="font-semibold text-foreground" />,
-                  }}
-                />
-              </li>
-              <li>
-                <Trans t={t} i18nKey="about:cella_approach_point_2" />
-              </li>
-              <li>
-                <Trans t={t} i18nKey="about:cella_approach_point_3" />
-              </li>
-            </ul>
-          </AboutSection>
+        {/* Showcase */}
+        <AboutSection
+          key={'showcase'}
+          sectionId="showcase"
+          title="about:showcase.title"
+          text="about:showcase.text"
+          alternate
+        >
+          <Showcase />
+        </AboutSection>
 
-          {/* Showcase */}
-          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text">
-            <Showcase />
-          </AboutSection>
+        {/* Call to Action */}
+        <AboutSection key={'call-to-action'} sectionId="call-to-action">
+          <CallToAction />
+        </AboutSection>
 
-          <AboutSection
-            key={'how-it-works'}
-            sectionId="how-it-works"
-            title="about:how.title"
-            text="about:how.text"
-            alternate
-          >
-            <SyncDiagram />
-          </AboutSection>
-
-          {/* Why template */}
-          <div className="hidden">
-            <AboutSection
-              key={'template'}
-              sectionId="template"
-              title="about:how_it_works"
-              text="about:how_it_works.text"
-              alternate
-            >
-              <p className="mx-auto mt-8 max-w-lg font-light italic opacity-70">{t('about:compare_intro')}</p>
-
-              <div className="relative mx-auto mt-8 w-full max-w-lg">
-                <RedoIcon
-                  className="absolute -left-20 size-20 -translate-y-1/2 text-primary max-md:hidden"
-                  strokeWidth={0.2}
-                  style={{ transform: 'rotate(-150deg) skewX(-50deg) scaleX(-2.5) scaleY(2.5)' }}
-                />
-              </div>
-
-              <Button variant="plain" size="xl" className="mx-auto mt-8 flex gap-1 rounded-full! px-10">
-                {t('about:compare_alternatives')}
-              </Button>
-            </AboutSection>
-          </div>
-
-          {/* Stack */}
-          <AboutSection
-            key={'stack'}
-            sectionId="stack"
-            title="about:stack.title"
-            text="about:stack.text"
-            alternate={true}
-          >
-            <InfoGrid namespace="stack" />
-          </AboutSection>
-
-          {/* Integrations */}
-          <AboutSection
-            key={'integrations'}
-            sectionId="integrations"
-            title="about:integrations.title"
-            text="about:integrations.text"
-          >
-            <InfoCards />
-          </AboutSection>
-
-          {/* Call to Action */}
-          <AboutSection key={'call-to-action'} sectionId="call-to-action" alternate={true}>
-            <CallToAction />
-          </AboutSection>
-
-          {/* Public counters */}
-          {/* <AboutSection
+        {/* Public counters */}
+        {/* <AboutSection
             key={'counters'}
             sectionId="counters"
             title="about:community.title"
@@ -223,16 +145,15 @@ function AboutPage() {
             <Counters />
           </AboutSection> */}
 
-          {/* Pricing */}
-          {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:pricing.title" text="about:pricing.text">
+        {/* Pricing */}
+        {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:pricing.title" text="about:pricing.text">
             <Pricing />
           </AboutSection> */}
 
-          {/* FAQs */}
-          {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate={true}>
+        {/* FAQs */}
+        {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate={true}>
             <FAQ />
           </AboutSection> */}
-        </div>
       </div>
       <MarketingFooter />
     </>

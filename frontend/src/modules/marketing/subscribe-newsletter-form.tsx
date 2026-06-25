@@ -10,6 +10,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 export function SubscribeNewsletterForm() {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
+  const emailLabel = t('c:email').toLowerCase();
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
@@ -37,7 +38,7 @@ export function SubscribeNewsletterForm() {
           type="email"
           name="email"
           id="email"
-          placeholder={t('c:placeholder.your_email')}
+          placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
           autoComplete="email"
           aria-label="Email for newsletter"
           required

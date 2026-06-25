@@ -1,6 +1,7 @@
 import { DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 // The diagram can be viewed in three sync modes, toggled by the user.
@@ -45,11 +46,11 @@ const streamEdges: {
   offset?: number;
   bidirectional?: boolean;
 }[] = [
-  { from: 'client', to: 'api', stroke: 'var(--primary)', label: 'HTTP (fetch)', offset: 10, bidirectional: true },
+  { from: 'client', to: 'api', stroke: 'var(--primary)', label: 'HTTP', offset: 10, bidirectional: true },
   { from: 'api', to: 'database', stroke: 'var(--primary)', label: 'SQL', labelOffset: 22, bidirectional: true },
   { from: 'database', to: 'cdc', stroke: '#eab308', label: 'WAL stream', offset: -8, labelOffset: -14 },
   { from: 'cdc', to: 'api', stroke: '#3b82f6', label: 'Changes', labelOffset: 30 },
-  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE (notify only)', labelOffset: 14, offset: 4 },
+  { from: 'api', to: 'client', stroke: '#22c55e', label: 'SSE', labelOffset: 14, offset: 4 },
   { from: 'client', to: 'yjs', stroke: '#a855f7', label: 'Changes', labelOffset: 30, bidirectional: true },
 ];
 
@@ -79,40 +80,11 @@ const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
 };
 
 // Short explanation shown between the toggle and the diagram, per part.
-const modeText: Record<SyncMode, { label: string; description: ReactNode }> = {
-  rest: {
-    label: 'Part 1',
-    description: (
-      <>
-        A <strong className="font-semibold text-foreground">REST API</strong> (OpenAPI 3.1) is authorative:{' '}
-        <strong className="font-semibold text-foreground">all data eventually passes through it</strong>. Permissions
-        are checked on every request. 3rd party services can use it. When the sync engine is down, clients still get
-        fresh data.
-      </>
-    ),
-  },
-  cdc: {
-    label: 'Part 2',
-    description: (
-      <>
-        The <strong className="font-semibold text-foreground">sync engine</strong> has a{' '}
-        <strong className="font-semibold text-foreground">notify-then-fetch</strong> pattern: a Change Data Capture
-        worker receives all Postgres logs, processes them and sends changes back to the API → API sends an SSE to notify
-        the client about a change → client then does a normal API request.
-      </>
-    ),
-  },
-  yjs: {
-    label: 'Part 3',
-    description: (
-      <>
-        For <strong className="font-semibold text-foreground">collaborative editing & online presence</strong>, the{' '}
-        <strong className="font-semibold text-foreground">Yjs</strong> worker sends live changes to clients. Permission
-        is verified directly against the DB, where it persists the merged document state. Those not editing, still
-        receive a SSE notification every few seconds.
-      </>
-    ),
-  },
+// `label` and `text` are i18n keys (about namespace); `text` carries inline <strong> markup.
+const modeText: Record<SyncMode, { label: string; text: string }> = {
+  rest: { label: 'about:sync_diagram.part_1.label', text: 'about:sync_diagram.part_1.text' },
+  cdc: { label: 'about:sync_diagram.part_2.label', text: 'about:sync_diagram.part_2.text' },
+  yjs: { label: 'about:sync_diagram.part_3.label', text: 'about:sync_diagram.part_3.text' },
 };
 
 // ── Animation timeline (seconds) ────────────────────────────────────────────────────
@@ -207,6 +179,7 @@ export const SyncDiagram = () => {
   // shared structure from earlier parts stays put while the new flow draws in from t≈0.
   const [rebase, setRebase] = useState(0);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
+  const { t } = useTranslation();
 
   // Switch parts: keep everything the previous part already showed, animate only the delta.
   const switchMode = (target: SyncMode) => {
@@ -306,13 +279,19 @@ export const SyncDiagram = () => {
         variant="merged"
         className="mb-6"
       >
-        <ToggleGroupItem value="rest">{modeText.rest.label}</ToggleGroupItem>
-        <ToggleGroupItem value="cdc">{modeText.cdc.label}</ToggleGroupItem>
-        <ToggleGroupItem value="yjs">{modeText.yjs.label}</ToggleGroupItem>
+        <ToggleGroupItem value="rest">{t(modeText.rest.label)}</ToggleGroupItem>
+        <ToggleGroupItem value="cdc">{t(modeText.cdc.label)}</ToggleGroupItem>
+        <ToggleGroupItem value="yjs">{t(modeText.yjs.label)}</ToggleGroupItem>
       </ToggleGroup>
 
       {/* Per-part explanation, tied to the selected toggle */}
-      <p className="mx-auto max-w-2xl text-center font-light text-muted-foreground">{modeText[mode].description}</p>
+      <p className="mx-auto max-w-2xl text-center font-light text-muted-foreground">
+        <Trans
+          t={t}
+          i18nKey={modeText[mode].text}
+          components={{ strong: <strong className="font-semibold text-foreground" /> }}
+        />
+      </p>
 
       {/* biome-ignore lint/a11y/useSemanticElements: decorative diagram acts as a click-to-reveal toggle; a real <button> can't wrap the SVG + absolutely-positioned nodes */}
       <div

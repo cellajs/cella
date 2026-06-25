@@ -35,6 +35,7 @@ interface CreateNewsletterFormProps {
 
 export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
+  const subjectLabel = t('c:subject').toLowerCase();
 
   const [testOnly, setTestOnly] = useState<boolean>(false);
 
@@ -98,7 +99,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           control={form.control}
           inputClassName="font-bold"
           name="subject"
-          placeholder={t('c:placeholder.subject')}
+          placeholder={t('c:placeholder.type_input', { inputLabel: subjectLabel })}
           label={t('c:subject')}
           required
         />

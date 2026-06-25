@@ -38,7 +38,7 @@
     "infra:compose": "pnpm --filter infra compose:generate",
     "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm --filter shared lens:check && pnpm lint:fix",
     "lint": "pnpm biome check .",
-    "lint:fix": "pnpm biome check --write .",
+    "lint:fix": "pnpm biome check --write --unsafe",
     "ts": "pnpm -r ts",
     "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf && pnpm --filter cdc tsperf && pnpm --filter yjs tsperf",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",

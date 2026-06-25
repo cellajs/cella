@@ -28,7 +28,7 @@ UI updates
 
 ## Postgres, OpenAPI & React Query
 
-Postgres + OpenAPI + React Query are the foundational primitives. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. The core sync concept is a classic _notify-then-fetch sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
+Postgres + OpenAPI + React Query are the foundational primitives. This means standard OpenAPI endpoints remain the default, while product entities are 'upgraded' with transaction tracking, offline support, and realtime streaming. It is a _notify-then-fetch_ sync: A worker notifies the client, which then fetches the new data using an endpoint that is not much diferent in shape compared to the rest of your codebase.
 
 | Entity type | Features | Example |
 |------|--------------|---------|
@@ -826,6 +826,7 @@ pnpm offline:watch
 **Influences:**
 - [ElectricSQL](https://electric-sql.com/) - Shape-based sync, PostgreSQL logical replication
 - [LiveStore](https://livestore.io/) - SQLite-based sync with event sourcing
+- [Sequin](https://sequinstream.com/) - Postgres change data capture with strict ordering, backfills, and exactly-once delivery
 - [TinyBase](https://tinybase.org/) - Reactive data store with CRDT support, HLC design influence
 - [y-protocols](https://github.com/yjs/y-protocols) - Yjs sync/awareness protocol primitives
 - [Teleportal](https://teleportal.tools/) - Local-first sync engine with CRDTs and end-to-end encryption
