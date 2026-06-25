@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { normalizeOps } from 'shared/version-changes';
 import type { AuthContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { resolveUpdateOps } from '#/core/stx';
@@ -18,9 +19,13 @@ export async function updateAttachmentOp(
   input: UpdateAttachmentInput,
   opts: { fullResponse?: boolean },
 ) {
-  const { ops: rawOps, stx } = input;
+  const { ops: incomingOps, stx: incomingStx } = input;
   const { fullResponse } = opts;
   const user = ctx.var.user;
+
+  // Runtime touch point 1: normalize old-shape ops + stx keys to canonical
+  // (no-op until a lens ships). Mirror-writes the twin field during expand.
+  const { ops: rawOps, stx } = normalizeOps('attachment', incomingOps, incomingStx);
 
   // Single tenantContext wraps permission check + write to avoid double-transaction pool pressure
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {

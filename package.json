@@ -36,7 +36,7 @@
     "seed": "pnpm --filter backend seed",
     "infra": "pnpm infra:compose && pnpm --filter infra cli",
     "infra:compose": "pnpm --filter infra compose:generate",
-    "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm lint:fix",
+    "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm --filter shared lens:check && pnpm lint:fix",
     "lint": "pnpm biome check .",
     "lint:fix": "pnpm biome check --write .",
     "ts": "pnpm -r ts",

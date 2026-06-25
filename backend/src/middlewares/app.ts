@@ -7,6 +7,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
+import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { loggerMiddleware } from '#/middlewares/logger';
 
 const app = new OpenAPIHono<Env>();
@@ -37,7 +38,7 @@ const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  allowHeaders: ['content-type', 'x-cache-token', 'traceparent', 'tracestate'],
+  allowHeaders: ['content-type', 'x-cache-token', 'x-client-version', 'traceparent', 'tracestate'],
   maxAge: 7200,
 };
 
@@ -46,6 +47,9 @@ app.use('*', cors(corsOptions));
 
 // CSRF protection
 app.use('*', csrf({ origin: appConfig.frontendUrl }));
+
+// Schema-evolution client-version telemetry (Phase 1: telemetry-only fleet floor)
+app.use('*', clientVersionMiddleware);
 
 // Body limit
 app.use('*', dynamicBodyLimit);

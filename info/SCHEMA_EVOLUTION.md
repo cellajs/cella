@@ -416,3 +416,27 @@ Items 1–5 ship value alone (expand-window tolerance covers the PWA-skew window
 4. **`retype` deltas** (e.g., `string → number`) need `custom` converters and may be genuinely lossy backward; policy decision per lens (`lossyBackward` + telemetry) rather than a general solution.
 5. **Yjs-edited description fields** are outside the lens system (CRDT binary, separate worker); renaming a description-derived field touches the Yjs derived-fields PATCH contract — treat as frozen-envelope-adjacent until needed.
 6. **Expand-phase mirror writes** produce dual deltas in CDC `changedFields` and slightly larger payloads during the window — accepted noise, documented.
+
+---
+
+## Prior art and references
+
+The lens approach here is not novel — it composes well-established ideas. Useful background for anyone extending the system:
+
+### The lens model (closest prior art)
+- **Project Cambria — "Translate your data with lenses"** (Ink & Switch). Bidirectional lenses for evolving document schemas in local-first apps, with forward/backward transforms and graph-based version resolution. `doba` is effectively a typed, modern take on this model. <https://www.inkandswitch.com/cambria/> · code: <https://github.com/inkandswitch/cambria>
+- **Local-first software** (Ink & Switch) — motivates offline-tolerant schema migration and sync. <https://www.inkandswitch.com/local-first/>
+- **`doba` / `dobajs`** — the transform/registry engine this plan builds on. <https://github.com/karol-broda/doba>
+
+### Bidirectional transformations (the theory under "lenses")
+- **Boomerang / lenses** — Foster, Greenwald, Moore, Pierce & Schmitt, *"Combinators for Bidirectional Tree Transformations: A Linguistic Approach to the View-Update Problem."* Origin of the well-behaved `get`/`put` lens laws our `forward`/`backward` pairs approximate.
+
+### Expand/contract rollout (our `phase: 'expand' | 'contract'`)
+- **Martin Fowler — ParallelChange (expand–contract).** <https://martinfowler.com/bliki/ParallelChange.html>
+- **Refactoring Databases** (Ambler & Sadalage) — catalog of safe, staged schema migrations the `delta` kinds mirror.
+- **Evolutionary Database Design.** <https://martinfowler.com/articles/evodb.html>
+
+### Adjacent / corroborating
+- **CRDT data migration** — Automerge docs and the Ink & Switch CRDT work; rationale for our lens also rewriting `stx.fieldTimestamps` (HLC) keys, not just field names.
+- **Per-consumer API versioning** — Stripe's API-upgrade write-ups describe response down-migration keyed on consumer version, the shape of our Phase 2 `downgradeEntity` + `Accept-Version`.
+

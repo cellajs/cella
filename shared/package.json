@@ -5,6 +5,7 @@
   "scripts": {
     "ts": "cd .. && tsgo -p shared/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
+    "lens:check": "tsx scripts/check-lenses.ts",
     "test": "vitest run"
   },
   "exports": {
@@ -17,7 +18,8 @@
     "./otel": "./src/otel.ts",
     "./config-builder": "./src/config-builder/index.ts",
     "./pino": "./src/pino.ts",
-    "./module-registry": "./src/module-registry.ts"
+    "./module-registry": "./src/module-registry.ts",
+    "./version-changes": "./src/version-changes/index.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.51.4",
@@ -32,6 +34,7 @@
     "@opentelemetry/sdk-node": "catalog:",
     "@opentelemetry/sdk-trace-base": "^2.8.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
+    "dobajs": "catalog:",
     "nanoid": "^5.1.14",
     "picocolors": "^1.1.1",
     "pino": "^10.3.1",
@@ -41,6 +44,7 @@
   "devDependencies": {
     "@typescript/native-preview": "catalog:",
     "strip-json-comments": "^5.0.3",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

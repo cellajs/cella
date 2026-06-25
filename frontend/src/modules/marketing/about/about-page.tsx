@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowDownIcon, CheckIcon, CopyIcon, RedoIcon } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -17,13 +18,14 @@ import { AboutSection } from '~/modules/marketing/about/section';
 import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { Why } from '~/modules/marketing/about/why';
 import { MarketingFooter } from '~/modules/marketing/footer';
+import { GithubIcon } from '~/modules/marketing/icons/github';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
-const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
+const aboutSectionIds = ['hero', 'showcase', 'why', 'how-it-works', 'features', 'integrations', 'call-to-action'];
 
 function AboutPage() {
   const { t } = useTranslation();
@@ -44,38 +46,63 @@ function AboutPage() {
           // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
           text="about:hero.text"
         >
-          <div className="glow-button relative mb-8 max-xs:hidden">
-            <Input
-              readOnly
-              value="pnpm create @cellajs/cella"
-              className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
-            />
-            {copied && (
-              <div className="absolute top-2.5 right-2 left-8 rounded-full bg-background py-2 text-left font-mono text-sm">
-                copied! bon voyage 🚀
-              </div>
-            )}
-
+          <div className="mb-8 flex xs:flex-row flex-col items-center gap-4">
             <Button
-              onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
-              size="icon"
-              variant="ghost"
-              className="absolute top-2 right-2 rounded-full"
+              variant="plain"
+              size="lg"
+              onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
+              className="group h-14 rounded-full! px-8 transition"
+              aria-label={t('about:github_star')}
             >
-              {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+              <GithubIcon className="mr-2 size-4 transition-transform group-hover:scale-110" />
+              {t('about:github_star')}
             </Button>
+            <div className="glow-button relative max-xs:hidden">
+              <Input
+                readOnly
+                value="pnpm create @cellajs/cella"
+                className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
+              />
+              {copied && (
+                <div className="absolute top-2.5 right-2 left-8 rounded-full bg-background py-2 text-left font-mono text-sm">
+                  copied! bon voyage 🚀
+                </div>
+              )}
+
+              <Button
+                onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
+                size="icon"
+                variant="ghost"
+                className="absolute top-2 right-2 rounded-full"
+              >
+                {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+              </Button>
+            </div>
           </div>
           <Button
             variant="ghost"
             size="lg"
-            className="group"
+            className="group max-sm:hidden"
             onClick={() => scrollToSectionById('why')}
             aria-label="Read more"
           >
-            <span className="font-normal opacity-70 group-hover:opacity-100">{t('about:why')}</span>
+            <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:why')}</span>
             <ArrowDownIcon size={16} className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Button>
         </Hero>
+
+        {/* Core features */}
+        <AboutSection
+          key={'benefits'}
+          sectionId="benefits"
+          title="about:features.title"
+          text="about:features.text"
+          textComponents={{
+            featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
+          }}
+        >
+          <Why />
+        </AboutSection>
 
         <div className="my-12">
           {/* Why cella */}
@@ -100,7 +127,7 @@ function AboutPage() {
               />
             </p>
 
-            <ul className="mx-auto mb-12 max-w-3xl list-disc space-y-2 pl-12 font-semibold text-muted-foreground marker:text-foreground sm:text-lg sm:leading-6">
+            <ul className="mx-auto mb-12 max-w-3xl space-y-2 pl-4 font-semibold text-muted-foreground marker:text-foreground sm:list-disc sm:pl-12 sm:text-lg sm:leading-6">
               <li>
                 <Trans
                   t={t}
@@ -117,18 +144,21 @@ function AboutPage() {
                 <Trans t={t} i18nKey="about:cella_approach_point_3" />
               </li>
             </ul>
+          </AboutSection>
 
+          {/* Showcase */}
+          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text">
+            <Showcase />
+          </AboutSection>
+
+          <AboutSection
+            key={'how-it-works'}
+            sectionId="how-it-works"
+            title="about:how.title"
+            text="about:how.text"
+            alternate
+          >
             <SyncDiagram />
-
-            <p className="mx-auto max-w-2xl font-light">
-              <Trans
-                t={t}
-                i18nKey="about:sync_flow"
-                components={{
-                  strong: <strong className="font-semibold text-foreground" />,
-                }}
-              />
-            </p>
           </AboutSection>
 
           {/* Why template */}
@@ -156,19 +186,6 @@ function AboutPage() {
             </AboutSection>
           </div>
 
-          {/* Core features */}
-          <AboutSection
-            key={'benefits'}
-            sectionId="benefits"
-            title="about:features.title"
-            text="about:features.text"
-            textComponents={{
-              featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
-            }}
-          >
-            <Why />
-          </AboutSection>
-
           {/* Stack */}
           <AboutSection
             key={'stack'}
@@ -188,11 +205,6 @@ function AboutPage() {
             text="about:integrations.text"
           >
             <InfoCards />
-          </AboutSection>
-
-          {/* Showcase */}
-          <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text">
-            <Showcase />
           </AboutSection>
 
           {/* Call to Action */}

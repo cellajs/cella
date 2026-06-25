@@ -42,7 +42,7 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
             </span>
           </h1>
           {text && (
-            <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl md:text-2xl md:leading-10">
+            <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl leading-8 md:text-2xl md:leading-10">
               <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
             </h2>
           )}

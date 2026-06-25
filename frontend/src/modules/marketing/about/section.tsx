@@ -32,7 +32,7 @@ export const AboutSectionHeader = ({ title, text, textComponents, className = ''
       )}
       {text && (
         <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-          {textComponents ? <Trans i18nKey={text} components={textComponents} /> : t(text)}
+          <Trans i18nKey={text} components={textComponents} />
         </p>
       )}
     </div>

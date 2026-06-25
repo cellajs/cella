@@ -1,5 +1,6 @@
 import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
+import { currentSchemaVersion } from 'shared/version-changes';
 import { ApiError, clientConfig } from '~/lib/api';
 import { checkConnectivity } from '~/query/offline/connectivity';
 
@@ -15,10 +16,16 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   responseStyle: 'data',
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+    // Schema-evolution telemetry header (Phase 1: telemetry-only fleet floor).
+    // One place covers the whole generated SDK. See info/SCHEMA_EVOLUTION.md.
+    const headers = new Headers(init?.headers);
+    headers.set('x-client-version', String(currentSchemaVersion));
+    const requestInit: RequestInit = { ...init, headers };
+
     let response: Response;
 
     try {
-      response = await clientConfig.fetch(input, init);
+      response = await clientConfig.fetch(input, requestInit);
     } catch (error) {
       // Network-level failure (no HTTP response) — probe actual connectivity
       if (error instanceof TypeError) checkConnectivity();

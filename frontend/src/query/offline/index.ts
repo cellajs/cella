@@ -8,6 +8,13 @@
  */
 
 export { applyArrayDelta, computeArrayDelta, isArrayDelta, mergeArrayDeltas } from './array-delta';
+export {
+  clearFailedSync,
+  exportFailedSync,
+  type FailedSyncRecord,
+  listFailedSync,
+  quarantineFailedSync,
+} from './failed-sync';
 export { createFieldTimestamps, createHLC } from './hlc';
 export { coalescePendingCreate, squashPendingMutation } from './squash-utils';
 export { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from './stx-utils';

@@ -5,6 +5,7 @@ import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
 import { getHealthResponse } from '#/lib/health';
+import '#/lib/lens-telemetry'; // registers doba lens telemetry hooks (side-effect)
 import middlewares from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();

@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { normalizeOps } from 'shared/version-changes';
 import type { AuthContext } from '#/core/context';
 import type { OperationResult } from '#/core/operation-result';
 import { resolveUpdateOps } from '#/core/stx';
@@ -18,9 +19,13 @@ export async function updatePageOp(
   input: UpdatePageInput,
   opts: { fullResponse?: boolean },
 ) {
-  const { ops, stx } = input;
+  const { ops: rawOps, stx: rawStx } = input;
   const { fullResponse } = opts;
   const user = ctx.var.user;
+
+  // Runtime touch point 1: normalize old-shape ops + stx keys to canonical
+  // (no-op until a lens ships). Mirror-writes the twin field during expand.
+  const { ops, stx } = normalizeOps('page', rawOps, rawStx);
 
   const { entity } = await getValidProductEntity(ctx, id, 'page', 'update');
   const resolved = resolveUpdateOps(entity, ops, stx);

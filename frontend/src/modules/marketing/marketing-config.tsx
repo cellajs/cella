@@ -318,6 +318,8 @@ export const showcaseItems: ShowcaseItem[] = [
   {
     id: 'raak',
     url: 'https://www.raak.dev',
+    cellaLoc: 142000,
+    totalLoc: 162000,
     lightItems: [
       { id: nanoid(), url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
       { id: nanoid(), url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
