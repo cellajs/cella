@@ -105,7 +105,7 @@ function AboutPage() {
           text="about:stack.text"
           alternate={true}
         >
-          <InfoGrid namespace="stack" items={stackItems} image expandable />
+          <InfoGrid namespace="stack" items={stackItems} image expandable tileClassName="bg-background" />
         </AboutSection>
 
         {/* Integrations */}

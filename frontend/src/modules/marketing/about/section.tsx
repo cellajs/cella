@@ -52,7 +52,7 @@ export const AboutSection = ({
   return (
     <section
       id={sectionId ? `spy-${sectionId}` : undefined}
-      className={`container max-w-none overflow-hidden px-4 py-8 md:py-12 lg:py-24 ${backgroundClass}`}
+      className={`container max-w-none overflow-hidden px-4 py-8 md:py-12 lg:py-20 ${backgroundClass}`}
     >
       <AboutSectionHeader title={title} text={text} textComponents={textComponents} className="mb-12" />
       {children}

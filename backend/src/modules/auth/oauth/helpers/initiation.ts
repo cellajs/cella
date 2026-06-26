@@ -43,6 +43,7 @@ export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthC
  * @param url - Provider’s authorization endpoint
  * @param state - OAuth state param
  * @param codeVerifier - PKCE code verifier (optional)
+ * @param nonce - OIDC nonce echoed back in the provider id_token (optional)
  * @returns redirect response
  */
 export const handleOAuthInitiation = async (
@@ -51,9 +52,10 @@ export const handleOAuthInitiation = async (
   url: URL,
   state: string,
   codeVerifier?: string,
+  nonce?: string,
 ) => {
   const { type, redirectAfter } = ctx.req.valid('query');
-  const cookieContent = { codeVerifier, type, redirectAfter };
+  const cookieContent = { codeVerifier, nonce, type, redirectAfter };
 
   if (type === 'connect') {
     try {

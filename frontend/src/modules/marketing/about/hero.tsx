@@ -36,13 +36,13 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
   return (
     <section id="spy-hero" className={sectionClass}>
       <header ref={ref} className={cn('container flex max-w-4xl flex-col items-center gap-4 text-center', headerClass)}>
-        <h1 className="mt-6 mb-6 font-heading text-3xl leading-10 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
+        <h1 className="mb-6 font-heading text-3xl leading-10 sm:mt-6 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
           <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
             {t(title)}
           </span>
         </h1>
         {text && (
-          <h2 className="mx-auto mb-8 max-w-4xl text-foreground/80 text-xl leading-8 md:text-2xl md:leading-10">
+          <h2 className="mx-auto mb-8 max-w-4xl text-foreground/90 text-xl leading-8 md:text-2xl md:leading-10">
             <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
           </h2>
         )}

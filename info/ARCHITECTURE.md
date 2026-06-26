@@ -140,7 +140,7 @@ Cookie-based sessions (hashed, typed as `regular`/`impersonation`/`mfa`) with si
 
 A `tenant` is not an entity — but a `resource` that acts as top-level isolation unit.
 
-Tenant-scoped routes use `/:tenantId/` in the path. Guards (`authGuard` → `tenantGuard` → `orgGuard`) validate membership and set `ctx.var.db` to `baseDb`. Product entity handlers wrap their DB operations in `tenantRead()` or `tenantWrite()` to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS). See AGENTS.md for the full guard chain.
+Tenant-scoped routes use `/:tenantId/` in the path. Guards (`authGuard` → `tenantGuard` → `orgGuard`) validate membership and set `ctx.var.db` to `baseDb`. Product entity handlers wrap their DB operations in `tenantRead()` (read-only) or `tenantContext()` (read-write) to get an RLS-scoped transaction. Context entity handlers use `baseDb` directly (no RLS). See AGENTS.md for the full guard chain.
 
 ## Security & tenant isolation
 
@@ -167,8 +167,8 @@ All RLS policies on product entities are fail-closed: missing or empty session c
 
 Product entity handlers use helpers from `backend/src/db/tenant-context.ts`:
 
-- **`tenantRead(ctx, fn)`** — Opens a read-only transaction with RLS session variables. `SET TRANSACTION READ ONLY` provides lock-free reads. SELECT policies are evaluated.
-- **`tenantWrite(fn)`** — Opens a plain read-write transaction. No session variables are set — write isolation is enforced by guards + composite FKs + immutability triggers, not RLS.
+- **`tenantRead(ctx, fn)`** — Opens a read-only transaction (`BEGIN READ ONLY`, lock-free) with RLS session variables set. SELECT policies are evaluated.
+- **`tenantContext(ctx, fn)`** — Opens a read-write transaction and also sets the RLS session variables, so SELECT policies still pass for reads performed inside the write (e.g. `resolveEntity`, `RETURNING`). There are no RLS *write* policies — write isolation is enforced by guards + composite FKs + immutability triggers, not RLS.
 
 The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx } }` so query functions can use the RLS-scoped transaction.
 

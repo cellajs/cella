@@ -12,6 +12,7 @@ export const oauthCookiePayloadSchema = z.object({
   type: z.enum(oauthFlowTypes).default('auth'),
   redirectAfter: z.string().optional(),
   codeVerifier: z.string().optional(),
+  nonce: z.string().optional(),
 });
 
 export type OAuthCookiePayload = z.infer<typeof oauthCookiePayloadSchema>;
