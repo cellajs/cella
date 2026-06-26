@@ -20,7 +20,13 @@ export function SyncEnginePage() {
           textComponents={{ em: <em className="italic" /> }}
         >
           <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
-            {t('about:cella_approach_intro')}
+            <Trans
+              t={t}
+              i18nKey="about:cella_approach_intro"
+              components={{
+                strong: <strong className="font-semibold text-foreground" />,
+              }}
+            />
           </p>
 
           <p className="mx-auto mb-6 max-w-3xl text-muted-foreground leading-normal sm:text-lg sm:leading-7">
