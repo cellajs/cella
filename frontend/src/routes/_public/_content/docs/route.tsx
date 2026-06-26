@@ -5,7 +5,6 @@ import { pagesListQueryOptions } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 import { createErrorComponent, createNotFoundComponent, withSuspense } from '~/routes/route-utils';
 import appTitle from '~/utils/app-title';
-import { noDirectAccess } from '~/utils/no-direct-access';
 
 const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 
@@ -15,9 +14,6 @@ const DocsLayout = lazy(() => import('~/modules/docs/docs-layout'));
 export const Route = createFileRoute('/_public/_content/docs')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Docs') }] }),
-  beforeLoad: async () => {
-    noDirectAccess('/docs', '/docs/operations');
-  },
   errorComponent: createErrorComponent('public', '/docs'),
   notFoundComponent: createNotFoundComponent('public', '/docs'),
   loader: async () => {

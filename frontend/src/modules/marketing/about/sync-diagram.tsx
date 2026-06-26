@@ -1,5 +1,5 @@
-import { DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ArrowRightIcon, DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -10,11 +10,11 @@ type SyncMode = 'rest' | 'cdc' | 'yjs';
 // Node positions in a 0–100 coordinate space (percentages of the container).
 // Keeping them here makes it easy to nudge layout and later anchor connector lines.
 const nodes = {
-  database: { x: 50, y: 78, Icon: DatabaseIcon, label: 'Postgres DB' },
-  api: { x: 65, y: 22, Icon: ServerIcon, label: 'API server' },
-  cdc: { x: 80, y: 78, Icon: ServerIcon, label: 'CDC worker' },
-  client: { x: 35, y: 22, Icon: MonitorIcon, label: 'Client' },
-  yjs: { x: 20, y: 78, Icon: ServerIcon, label: 'Yjs worker' },
+  database: { x: 50, y: 80, Icon: DatabaseIcon, label: 'Postgres DB' },
+  api: { x: 65, y: 20, Icon: ServerIcon, label: 'API server' },
+  cdc: { x: 80, y: 80, Icon: ServerIcon, label: 'CDC worker' },
+  client: { x: 35, y: 20, Icon: MonitorIcon, label: 'Client' },
+  yjs: { x: 20, y: 80, Icon: ServerIcon, label: 'Yjs worker' },
 } as const;
 
 type NodeKey = keyof typeof nodes;
@@ -28,10 +28,11 @@ const requestEdges: {
   offset?: number;
   labelOffset?: number;
   oneWay?: boolean;
+  bidirectional?: boolean;
   stroke?: string;
 }[] = [
   { from: 'cdc', to: 'database', label: 'SQL', offset: -6, oneWay: true, labelOffset: -14 },
-  { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14 },
+  { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14, bidirectional: true },
 ];
 
 // Stream connections (dashed). Solid = HTTP, dashed = streams. `bidirectional` adds a start arrowhead.
@@ -178,12 +179,15 @@ export const SyncDiagram = () => {
   // Time (s) subtracted from delays so a toggle only animates the part that is new — the
   // shared structure from earlier parts stays put while the new flow draws in from t≈0.
   const [rebase, setRebase] = useState(0);
+  // "Try me" hint nudges the user to interact; hidden as soon as they switch parts.
+  const [hint, setHint] = useState(true);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
   const { t } = useTranslation();
 
   // Switch parts: keep everything the previous part already showed, animate only the delta.
   const switchMode = (target: SyncMode) => {
     if (target === mode) return;
+    setHint(false);
     const prev = modeConfig[mode];
     const next = modeConfig[target];
     const newEdges = next.edges.filter((edge) => !prev.edges.includes(edge));
@@ -270,28 +274,49 @@ export const SyncDiagram = () => {
   return (
     <div className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
       {/* Mode toggle — switches which nodes/edges and timeline the diagram shows */}
-      <ToggleGroup
-        type="single"
-        value={mode}
-        onValueChange={(value) => {
-          if (value) switchMode(value as SyncMode);
-        }}
-        variant="merged"
-        className="mb-6"
-      >
-        <ToggleGroupItem value="rest">{t(modeText.rest.label)}</ToggleGroupItem>
-        <ToggleGroupItem value="cdc">{t(modeText.cdc.label)}</ToggleGroupItem>
-        <ToggleGroupItem value="yjs">{t(modeText.yjs.label)}</ToggleGroupItem>
-      </ToggleGroup>
+      <div className="relative mb-6">
+        {hint && (
+          <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground text-sm max-sm:hidden">
+            {t('about:try_me')}
+            <motion.span
+              animate={{ x: [0, 4, 0] }}
+              transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}
+            >
+              <ArrowRightIcon size={16} />
+            </motion.span>
+          </div>
+        )}
+        <ToggleGroup
+          type="single"
+          value={mode}
+          onValueChange={(value) => {
+            if (value) switchMode(value as SyncMode);
+          }}
+          variant="merged"
+        >
+          <ToggleGroupItem value="rest">{t(modeText.rest.label)}</ToggleGroupItem>
+          <ToggleGroupItem value="cdc">{t(modeText.cdc.label)}</ToggleGroupItem>
+          <ToggleGroupItem value="yjs">{t(modeText.yjs.label)}</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
 
-      {/* Per-part explanation, tied to the selected toggle */}
-      <p className="mx-auto max-w-2xl text-center font-light text-muted-foreground">
-        <Trans
-          t={t}
-          i18nKey={modeText[mode].text}
-          components={{ strong: <strong className="font-semibold text-foreground" /> }}
-        />
-      </p>
+      {/* Per-part explanation, tied to the selected toggle (old fades out, new fades in) */}
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={mode}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="mx-auto mb-4 max-w-2xl text-center font-light text-muted-foreground text-sm"
+        >
+          <Trans
+            t={t}
+            i18nKey={modeText[mode].text}
+            components={{ strong: <strong className="font-normal text-foreground" /> }}
+          />
+        </motion.p>
+      </AnimatePresence>
 
       {/* biome-ignore lint/a11y/useSemanticElements: decorative diagram acts as a click-to-reveal toggle; a real <button> can't wrap the SVG + absolutely-positioned nodes */}
       <div
@@ -307,7 +332,7 @@ export const SyncDiagram = () => {
         tabIndex={0}
         aria-pressed={showAllLabels}
         aria-label="Toggle all data-flow labels"
-        className="relative aspect-square w-full cursor-pointer sm:aspect-3/2 md:aspect-2/1"
+        className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
         {/* SVG overlay — drawn in real pixel space, re-measured on resize */}
         {geom && (
@@ -344,84 +369,94 @@ export const SyncDiagram = () => {
                   <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--primary)" />
                 </marker>
               </defs>
-              {requestEdges.map(({ from, to, label, label2, offset, labelOffset, oneWay, stroke = '#9ca3af' }) => {
-                const key = `${from}-${to}`;
-                if (!activeEdges.includes(key)) return null;
-                const line = trimmedLine(from, to, offset);
-                if (!line) return null;
-                const anim = edgeAnim[mode][key] ?? fallbackAnim;
-                const lp = label ? labelPos(line, labelOffset) : null;
-                const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
-                const showEnd = !anim.draw || drawn[key];
-                const delay = startDelay(anim.delay, drawn[key]);
-                const labelDelay = delay + (anim.draw ? anim.duration : 0);
-                const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
-                // Inherited labels stay hidden until the line (or near it) is hovered.
-                const relevant = introducedEdges.has(key);
-                const showLabel = relevant || hovered === key || showAllLabels;
-                return (
-                  <g
-                    key={key}
-                    onMouseEnter={() => setHovered(key)}
-                    onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
-                  >
-                    {/* Wide transparent hit area so hovering near the line reveals its label. */}
-                    <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
-                    <motion.line
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
-                      stroke={stroke}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      markerStart={oneWay || anim.draw ? undefined : `url(#${markerId})`}
-                      markerEnd={showEnd ? `url(#${markerId})` : undefined}
-                      initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
-                      animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}
-                      transition={
-                        anim.draw
-                          ? {
-                              pathLength: { delay, duration: anim.duration, ease: 'easeInOut' },
-                              opacity: { delay, duration: 0.001 },
-                            }
-                          : { delay, duration: anim.duration, ease: 'easeInOut' }
-                      }
-                      onAnimationComplete={anim.draw ? () => setDrawn((d) => ({ ...d, [key]: true })) : undefined}
-                    />
-                    {lp && (
-                      <motion.text
-                        x={lp.x}
-                        y={lp.y}
-                        fill={stroke}
-                        fontSize={11}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showLabel ? 1 : 0 }}
-                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                      >
-                        {label}
-                      </motion.text>
-                    )}
-                    {lp2 && (
-                      <motion.text
-                        x={lp2.x}
-                        y={lp2.y}
-                        fill={stroke}
-                        fontSize={11}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showLabel ? 1 : 0 }}
-                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                      >
-                        {label2}
-                      </motion.text>
-                    )}
-                  </g>
-                );
-              })}
+              {requestEdges.map(
+                ({ from, to, label, label2, offset, labelOffset, oneWay, bidirectional, stroke = '#9ca3af' }) => {
+                  const key = `${from}-${to}`;
+                  if (!activeEdges.includes(key)) return null;
+                  const line = trimmedLine(from, to, offset);
+                  if (!line) return null;
+                  const anim = edgeAnim[mode][key] ?? fallbackAnim;
+                  const lp = label ? labelPos(line, labelOffset) : null;
+                  const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
+                  const showEnd = !anim.draw || drawn[key];
+                  const delay = startDelay(anim.delay, drawn[key]);
+                  const labelDelay = delay + (anim.draw ? anim.duration : 0);
+                  const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
+                  // Inherited labels stay hidden until the line (or near it) is hovered.
+                  const relevant = introducedEdges.has(key);
+                  const showLabel = relevant || hovered === key || showAllLabels;
+                  return (
+                    <g
+                      key={key}
+                      onMouseEnter={() => setHovered(key)}
+                      onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
+                    >
+                      {/* Wide transparent hit area so hovering near the line reveals its label. */}
+                      <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
+                      <motion.line
+                        x1={line.x1}
+                        y1={line.y1}
+                        x2={line.x2}
+                        y2={line.y2}
+                        stroke={stroke}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        markerStart={
+                          bidirectional
+                            ? showEnd
+                              ? `url(#${markerId})`
+                              : undefined
+                            : oneWay || anim.draw
+                              ? undefined
+                              : `url(#${markerId})`
+                        }
+                        markerEnd={showEnd ? `url(#${markerId})` : undefined}
+                        initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
+                        animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}
+                        transition={
+                          anim.draw
+                            ? {
+                                pathLength: { delay, duration: anim.duration, ease: 'easeInOut' },
+                                opacity: { delay, duration: 0.001 },
+                              }
+                            : { delay, duration: anim.duration, ease: 'easeInOut' }
+                        }
+                        onAnimationComplete={anim.draw ? () => setDrawn((d) => ({ ...d, [key]: true })) : undefined}
+                      />
+                      {lp && (
+                        <motion.text
+                          x={lp.x}
+                          y={lp.y}
+                          fill={stroke}
+                          fontSize={11}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: showLabel ? 1 : 0 }}
+                          transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
+                        >
+                          {label}
+                        </motion.text>
+                      )}
+                      {lp2 && (
+                        <motion.text
+                          x={lp2.x}
+                          y={lp2.y}
+                          fill={stroke}
+                          fontSize={11}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: showLabel ? 1 : 0 }}
+                          transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
+                        >
+                          {label2}
+                        </motion.text>
+                      )}
+                    </g>
+                  );
+                },
+              )}
             </g>
 
             {/* Streams: dashed colored lines with matching arrowheads (WAL / WebSocket / SSE) */}
@@ -590,7 +625,7 @@ export const SyncDiagram = () => {
               >
                 <Icon className="size-5 text-foreground sm:size-7 md:size-8" strokeWidth={1.5} />
               </div>
-              <span className="text-[10px] text-muted-foreground sm:text-xs">{label}</span>
+              <span className="truncate text-muted-foreground text-xs">{label}</span>
             </motion.div>
           );
         })}

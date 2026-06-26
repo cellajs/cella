@@ -3,7 +3,6 @@ import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic'
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { env } from '#/env';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
 import { handleOAuthInitiation, parseOAuthCookie } from '#/modules/auth/oauth/helpers/initiation';
@@ -17,18 +16,15 @@ import {
   microsoftAuth,
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
+import { validateOidcNonce } from '#/modules/auth/oauth/helpers/validate-oidc-nonce';
 import authOAuthRoutes from '#/modules/auth/oauth/oauth-routes';
 import { defaultHook } from '#/utils/default-hook';
 
-// Scopes for OAuth providers
+// Scopes for OAuth providers. `openid` is required for Google/Microsoft so the token
+// endpoint returns an id_token, which carries the nonce we validate on callback.
 const githubScopes = ['user:email'];
-const googleScopes = ['profile', 'email'];
-const microsoftScopes = ['profile', 'email'];
-
-// When no microsoft tenant is configured, we use common with openid scope
-if (!env.MICROSOFT_TENANT_ID) {
-  microsoftScopes.push('openid');
-}
+const googleScopes = ['openid', 'profile', 'email'];
+const microsoftScopes = ['openid', 'profile', 'email'];
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -61,13 +57,15 @@ app.openapi(authOAuthRoutes.google, async (ctx) => {
     });
   }
 
-  // Generate a `state`, PKCE, and scoped URL.
+  // Generate a `state`, PKCE, OIDC `nonce`, and scoped URL.
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
+  const nonce = generateState();
   const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
+  url.searchParams.set('nonce', nonce);
 
-  // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-  return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier);
+  // Start the OAuth session & flow (Persist `state`, `codeVerifier` and `nonce`)
+  return await handleOAuthInitiation(ctx, 'google', url, state, codeVerifier, nonce);
 });
 
 app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
@@ -80,13 +78,15 @@ app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
     });
   }
 
-  // Generate a `state`, PKCE, and scoped URL.
+  // Generate a `state`, PKCE, OIDC `nonce`, and scoped URL.
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
+  const nonce = generateState();
   const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
+  url.searchParams.set('nonce', nonce);
 
-  // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-  return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier);
+  // Start the OAuth session & flow (Persist `state`, `codeVerifier` and `nonce`)
+  return await handleOAuthInitiation(ctx, 'microsoft', url, state, codeVerifier, nonce);
 });
 
 app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
@@ -160,6 +160,10 @@ app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
   try {
     // Exchange authorization code for access token and fetch Google user info
     const googleValidation = await googleAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
+
+    // Defense-in-depth: bind the callback to initiation via the id_token nonce
+    validateOidcNonce(googleValidation, cookiePayload.nonce, strategy);
+
     const accessToken = googleValidation.accessToken();
 
     const headers = { Authorization: `Bearer ${accessToken}` };
@@ -199,6 +203,10 @@ app.openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
   try {
     // Exchange authorization code for access token and fetch Microsoft user info
     const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
+
+    // Defense-in-depth: bind the callback to initiation via the id_token nonce
+    validateOidcNonce(microsoftValidation, cookiePayload.nonce, strategy);
+
     const accessToken = microsoftValidation.accessToken();
 
     const headers = { Authorization: `Bearer ${accessToken}` };

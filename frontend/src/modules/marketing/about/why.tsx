@@ -32,6 +32,9 @@ export function Why() {
                           featuresLink: (
                             <Link to="/features" className="underline underline-offset-4 hover:text-primary" />
                           ),
+                          syncEngineLink: (
+                            <Link to="/sync-engine" className="underline underline-offset-4 hover:text-primary" />
+                          ),
                         }}
                       />
                     </p>

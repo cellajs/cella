@@ -24,14 +24,14 @@ Global middleware chain (`backend/src/middlewares/app.ts`): secureHeaders → Op
 
 Route-level guards in `backend/src/middlewares/guard/` control auth and tenant isolation:
 - `authGuard`: Validates session, sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.db` (baseDb).
-- `tenantGuard`: Verifies tenant membership, loads tenant row, sets `ctx.var.db = baseDb` and `ctx.var.tenantId`. Product entity handlers use `tenantRead()` for RLS-scoped reads and `tenantWrite()` for plain write transactions. Context entity handlers use `ctx.var.db` (baseDb) directly — no RLS.
+- `tenantGuard`: Verifies tenant membership, loads tenant row, sets `ctx.var.db = baseDb` and `ctx.var.tenantId`. Product entity handlers use `tenantRead()` for RLS-scoped reads and `tenantContext()` for read-write transactions (which also set RLS session vars so internal SELECTs/RETURNING pass). Context entity handlers use `ctx.var.db` (baseDb) directly — no RLS.
 - `orgGuard`: Resolves organization and verifies membership.
 - `publicGuard`: For unauthenticated routes, sets `ctx.var.db` to baseDb. Public product entity handlers use `publicRead()` for RLS-scoped reads.
 - `crossTenantGuard`: Validates authentication for cross-tenant routes, sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for cross-tenant product entity queries.
 - Also: `sysAdminGuard`, `relatableGuard`.
 
 ### Database access patterns
-- **Product entity handlers** wrap reads in `tenantRead(ctx, fn)` (RLS-scoped SELECT) and writes in `tenantWrite(fn)` (plain transaction — no RLS write policies) from `backend/src/db/tenant-context.ts`.
+- **Product entity handlers** wrap reads in `tenantRead(ctx, fn)` (RLS-scoped SELECT) and writes in `tenantContext(ctx, fn)` (read-write transaction that sets RLS session vars so internal SELECTs/RETURNING pass; no RLS write policies — write isolation via guards + FKs + triggers) from `backend/src/db/tenant-context.ts`.
 - **Context entity handlers** use `ctx.var.db` (baseDb) directly — no RLS.
 - **Public product entity routes** use `publicRead(tenantId, fn)` for unauthenticated access.
 

@@ -19,16 +19,17 @@ interface InfoTileProps {
   layers?: readonly string[];
   image?: boolean;
   invertClassName?: string;
+  tileClassName?: string;
 }
 
-function InfoTile({ id, namespace, layers, image, invertClassName }: InfoTileProps) {
+function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName = 'bg-card' }: InfoTileProps) {
   const { t } = useTranslation();
   const title = `about:${namespace}.${id}`;
   const text = `about:${namespace}.${id}.text`;
 
   if (image) {
     return (
-      <div className="relative overflow-hidden rounded-lg bg-card p-2">
+      <div className={`relative overflow-hidden rounded-lg ${tileClassName} p-2`}>
         <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-6">
           <img
             src={`/static/images/features/${id}.svg`}
@@ -44,7 +45,7 @@ function InfoTile({ id, namespace, layers, image, invertClassName }: InfoTilePro
   }
 
   return (
-    <div className="rounded-lg bg-card p-6">
+    <div className={`rounded-lg ${tileClassName} p-6`}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-medium">{t(title)}</h3>
         {layers?.map((layer) => (
@@ -69,6 +70,8 @@ interface InfoGridProps<C extends string> {
   hideCategoryHeader?: boolean;
   /** Render an SVG image icon per tile (from `/static/images/features/<id>.svg`). */
   image?: boolean;
+  /** Background/surface classes for each tile. Defaults to `bg-card`. */
+  tileClassName?: string;
   /** Wrap a flat (ungrouped) grid in an expandable list. Ignored when grouping by category. */
   expandable?: boolean;
   /** Grid column classes for the flat (ungrouped) layout. */
@@ -81,6 +84,7 @@ export function InfoGrid<C extends string>({
   categoryIcons,
   hideCategoryHeader,
   image,
+  tileClassName,
   expandable,
   className = 'sm:grid-cols-2 md:grid-cols-3',
 }: InfoGridProps<C>) {
@@ -97,6 +101,7 @@ export function InfoGrid<C extends string>({
       layers={item.layers}
       image={image}
       invertClassName={invertClass}
+      tileClassName={tileClassName}
     />
   );
 

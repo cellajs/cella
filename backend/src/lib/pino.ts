@@ -2,11 +2,25 @@ import { appConfig } from 'shared';
 import { createLogger, createLogHelpers } from 'shared/pino';
 import { env } from '#/env';
 
-// Sensitive fields to redact from logs (auth tokens, credentials)
-const redactedFields = [
-  '**.secret', // Session secrets, token secrets, TOTP secrets
-  '**.credentialId', // Passkey credentials
+// Sensitive fields to redact from logs (auth tokens, credentials).
+// fast-redact (used by pino) does NOT support a recursive `**` wildcard, so each
+// sensitive key is listed at the root (event meta is spread at the log root) and
+// one level deep via `*.` (e.g. errorDetails.token). `code` is deliberately NOT
+// redacted: it is logged legitimately as a websocket close code (cdc-websocket.ts),
+// not as an OAuth authorization code.
+const sensitiveKeys = [
+  'secret', // Session secrets, token secrets, TOTP secrets
+  'credentialId', // Passkey credentials
+  'token',
+  'accessToken',
+  'refreshToken',
+  'idToken',
+  'codeVerifier',
+  'sessionToken',
+  'nonce',
+  'password',
 ];
+export const redactedFields = sensitiveKeys.flatMap((key) => [key, `*.${key}`]);
 
 // Check both NODE_ENV and appConfig.mode — NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';

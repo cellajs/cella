@@ -138,11 +138,10 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'page', category: 'data' },
 
   // Security & multi-tenancy
-  { id: 'rls', category: 'security' },
-  { id: 'rls_read_write', category: 'security' },
-  { id: 'guard_chain', category: 'security' },
   { id: 'tenant_isolation', category: 'security' },
   { id: 'permission_manager', category: 'security' },
+  { id: 'guard_chain', category: 'security' },
+  { id: 'rls', category: 'security' },
   { id: 'immutability', category: 'security' },
 
   // Authentication
@@ -246,7 +245,6 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'per_field_merge', category: 'consistency', layers: ['api'] },
   { id: 'text_merge', category: 'consistency', layers: ['yjs'] },
   { id: 'canonical_queries', category: 'consistency', layers: ['client'] },
-  { id: 'sync_stale_time', category: 'consistency', layers: ['client'] },
   { id: 'cache_integrity', category: 'consistency', layers: ['client', 'api'] },
   { id: 'cache_token', category: 'consistency', layers: ['cdc', 'api'] },
   { id: 'ttl_cache', category: 'consistency', layers: ['api'] },

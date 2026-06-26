@@ -9,7 +9,7 @@ import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
-  'focus-effect inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50 [&:not(.absolute)]:active:translate-y-[.05rem]',
+  'focus-effect inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50 [&:not(.absolute):not(.relative)]:active:translate-y-[.05rem]',
   {
     variants: {
       variant: {

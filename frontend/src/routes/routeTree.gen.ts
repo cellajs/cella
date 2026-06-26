@@ -37,6 +37,7 @@ import { Route as AppSystemRequestsRouteImport } from './_app/system/requests'
 import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organizations'
 import { Route as PublicContentDocsRouteRouteImport } from './_public/_content/docs/route'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
+import { Route as PublicContentDocsIndexRouteImport } from './_public/_content/docs/index'
 import { Route as PublicAuthEmailVerificationReasonRouteImport } from './_public/auth/email-verification.$reason'
 import { Route as PublicContentDocsSchemasRouteImport } from './_public/_content/docs/schemas'
 import { Route as PublicContentDocsPagesRouteImport } from './_public/_content/docs/pages'
@@ -188,6 +189,11 @@ const AppTenantIdOrganizationSlugRouteRoute =
     path: '/$tenantId/$organizationSlug',
     getParentRoute: () => AppRouteRoute,
   } as any)
+const PublicContentDocsIndexRoute = PublicContentDocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicContentDocsRouteRoute,
+} as any)
 const PublicAuthEmailVerificationReasonRoute =
   PublicAuthEmailVerificationReasonRouteImport.update({
     id: '/email-verification/$reason',
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
+  '/docs/': typeof PublicContentDocsIndexRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -313,7 +320,6 @@ export interface FileRoutesByTo {
   '/sign-out': typeof PublicSignOutRoute
   '/sync-engine': typeof PublicSyncEngineRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
-  '/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
   '/system/tenants': typeof AppSystemTenantsRoute
@@ -330,6 +336,7 @@ export interface FileRoutesByTo {
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
+  '/docs': typeof PublicContentDocsIndexRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -373,6 +380,7 @@ export interface FileRoutesById {
   '/_public/_content/docs/pages': typeof PublicContentDocsPagesRoute
   '/_public/_content/docs/schemas': typeof PublicContentDocsSchemasRoute
   '/_public/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
+  '/_public/_content/docs/': typeof PublicContentDocsIndexRoute
   '/_app/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/_app/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/_app/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -414,6 +422,7 @@ export interface FileRouteTypes {
     | '/docs/pages'
     | '/docs/schemas'
     | '/auth/email-verification/$reason'
+    | '/docs/'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
@@ -436,7 +445,6 @@ export interface FileRouteTypes {
     | '/sign-out'
     | '/sync-engine'
     | '/$tenantId/$organizationSlug'
-    | '/docs'
     | '/system/organizations'
     | '/system/requests'
     | '/system/tenants'
@@ -453,6 +461,7 @@ export interface FileRouteTypes {
     | '/docs/pages'
     | '/docs/schemas'
     | '/auth/email-verification/$reason'
+    | '/docs'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/_public/_content/docs/pages'
     | '/_public/_content/docs/schemas'
     | '/_public/auth/email-verification/$reason'
+    | '/_public/_content/docs/'
     | '/_app/$tenantId/$organizationSlug/organization/attachments'
     | '/_app/$tenantId/$organizationSlug/organization/members'
     | '/_app/$tenantId/$organizationSlug/organization/settings'
@@ -706,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantIdOrganizationSlugRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_public/_content/docs/': {
+      id: '/_public/_content/docs/'
+      path: '/'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof PublicContentDocsIndexRouteImport
+      parentRoute: typeof PublicContentDocsRouteRoute
+    }
     '/_public/auth/email-verification/$reason': {
       id: '/_public/auth/email-verification/$reason'
       path: '/email-verification/$reason'
@@ -875,6 +892,7 @@ interface PublicContentDocsRouteRouteChildren {
   PublicContentDocsOverviewRoute: typeof PublicContentDocsOverviewRoute
   PublicContentDocsPagesRoute: typeof PublicContentDocsPagesRoute
   PublicContentDocsSchemasRoute: typeof PublicContentDocsSchemasRoute
+  PublicContentDocsIndexRoute: typeof PublicContentDocsIndexRoute
   PublicContentDocsOperationsTableRoute: typeof PublicContentDocsOperationsTableRoute
   PublicContentDocsPageIdRoute: typeof PublicContentDocsPageIdRoute
   PublicContentDocsPageIdEditRoute: typeof PublicContentDocsPageIdEditRoute
@@ -886,6 +904,7 @@ const PublicContentDocsRouteRouteChildren: PublicContentDocsRouteRouteChildren =
     PublicContentDocsOverviewRoute: PublicContentDocsOverviewRoute,
     PublicContentDocsPagesRoute: PublicContentDocsPagesRoute,
     PublicContentDocsSchemasRoute: PublicContentDocsSchemasRoute,
+    PublicContentDocsIndexRoute: PublicContentDocsIndexRoute,
     PublicContentDocsOperationsTableRoute:
       PublicContentDocsOperationsTableRoute,
     PublicContentDocsPageIdRoute: PublicContentDocsPageIdRoute,
