@@ -1,8 +1,8 @@
-import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
+import { userScopedName } from '~/lib/storage-scope';
 import type { NavItemId } from '~/modules/navigation/types';
 
 interface NavigationStoreState {
@@ -128,7 +128,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
         }),
         {
           version: 8,
-          name: `${appConfig.slug}-navigation`,
+          name: userScopedName('navigation'),
           partialize: (state) => ({
             keepOpenPreference: state.keepOpenPreference,
             detailedMenu: state.detailedMenu,

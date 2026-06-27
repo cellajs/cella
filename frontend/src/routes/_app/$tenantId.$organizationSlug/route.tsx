@@ -10,9 +10,9 @@ import { noDirectAccess } from '~/utils/no-direct-access';
  */
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug')({
   staticData: { isAuth: true },
-  beforeLoad: async ({ params, cause }) => {
+  beforeLoad: async ({ params, cause, matches }) => {
     // Redirect bare layout path to the organization page
-    noDirectAccess('/$tenantId/$organizationSlug', '/$tenantId/$organizationSlug/organization');
+    noDirectAccess(matches, '/_app/$tenantId/$organizationSlug', '/$tenantId/$organizationSlug/organization');
 
     return await organizationLayoutBeforeLoad({ params, cause });
   },

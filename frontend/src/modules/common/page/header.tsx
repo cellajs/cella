@@ -1,10 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronRightIcon, HomeIcon } from 'lucide-react';
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextEntityBase, MembershipBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
-import { useScrollTo } from '~/hooks/use-scroll-to';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import { Badge } from '~/modules/ui/badge';
@@ -15,24 +13,19 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '~/modules/ui/breadcrumb';
-import { getContextEntityRoute } from '~/utils/context-entity-route';
+import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: (ContextEntityBase | UserBase) & { membership?: MembershipBase | null };
   panel?: React.ReactNode;
   parent?: ContextEntityBase;
-  disableScroll?: boolean;
 };
 
-export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) {
+export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
-  const scrollToRef = useRef<HTMLDivElement>(null);
 
   // Use enriched membership from entity data (baked in via cache enrichment)
   const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
-
-  // Scroll to page header on load
-  useScrollTo(disableScroll ? null : scrollToRef);
 
   // Get parent route using app-specific resolver (handles hierarchy differences per fork)
   const parentRoute = parent ? getContextEntityRoute(parent) : null;
@@ -41,7 +34,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div className="absolute bottom-0 flex h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs" ref={scrollToRef}>
+      <div className="absolute bottom-0 flex h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs" id="pt">
         <EntityAvatar
           id={entity.id}
           name={entity.name}
@@ -86,7 +79,7 @@ export function PageHeader({ entity, panel, parent, disableScroll, ...coverProps
                     <BreadcrumbItem>
                       <BreadcrumbLink
                         className="flex items-center text-foreground/70"
-                        render={<Link to={parentRoute.to} params={parentRoute.params} />}
+                        render={<Link to={parentRoute.to} params={parentRoute.params} {...pageTopHashNav} />}
                       >
                         <span className="truncate max-sm:max-w-24">{parent.name}</span>
                       </BreadcrumbLink>

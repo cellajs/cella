@@ -179,7 +179,7 @@ const authGeneralRoutes = {
     xGuard: [publicGuard],
     tags: ['auth', 'cella'],
     summary: 'Sign out',
-    description: 'Signs out the *current user* and clears the active session.',
+    description: 'Signs out the current user and clears the active session.',
     responses: {
       204: { description: 'User signed out' },
       ...errorResponseRefs,

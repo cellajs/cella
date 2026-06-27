@@ -16,6 +16,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     title,
     titleContent = title,
     drawerOnMobile = true,
+    outsideScroll = false,
     className,
     headerClassName,
     container,
@@ -70,6 +71,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       <DialogContent
         id={String(id)}
         container={containerElement}
+        outsideScroll={outsideScroll}
         className={cn(className, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? finalFocusRef : undefined}

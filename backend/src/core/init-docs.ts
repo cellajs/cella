@@ -46,7 +46,7 @@ const initDocs = async (app: OpenAPIHono<Env>) => {
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
-    name: `${appConfig.slug}-session-${appConfig.apiVersion}`,
+    name: `${appConfig.slug}-session-${appConfig.cookieVersion}`,
     description:
       "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });

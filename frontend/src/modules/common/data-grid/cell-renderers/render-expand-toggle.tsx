@@ -196,12 +196,15 @@ export function RenderExpandToggle({
   return (
     <span className="relative flex h-full w-full items-center justify-center">
       {paths.length > 0 && (
+        // No fixed width/height: `preserveAspectRatio="none"` lets the SVG stretch to fill the
+        // actual rendered cell (via `inset-0` + `h-full w-full`). On mobile the grid renders rows
+        // ~1.2x taller and the rem-scaled UI grows the column, so the connector follows along
+        // instead of staying locked to the desktop px size. The viewBox stays in desktop user-units.
         <svg
           aria-hidden
-          className="pointer-events-none absolute inset-0 text-input"
+          className="pointer-events-none absolute inset-0 h-full w-full text-input"
           viewBox={`0 0 ${COL} ${rowHeight}`}
-          width={COL}
-          height={rowHeight}
+          preserveAspectRatio="none"
         >
           {paths.map((p, i) => (
             <path

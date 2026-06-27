@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
 import { appConfig } from 'shared';
 import { collectedData, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
+import { LegalCrossLink } from '~/modules/marketing/legal/legal-cross-link';
 import { LegalSection } from '~/modules/marketing/legal/legal-section';
 import { ProcessedDataTypes } from '~/modules/marketing/legal/processed-data-types';
 import { Subprocessors } from '~/modules/marketing/legal/subprocessors';
@@ -28,10 +28,7 @@ function PrivacyText() {
         <p>
           {company} ("we", "us", "our") operates {appName} (the "Service"). This Privacy Policy explains how we collect,
           use and protect your information. By using the Service you accept this policy and our{' '}
-          <Link to="/legal" hash="terms">
-            Terms of Use
-          </Link>
-          .
+          <LegalCrossLink subject="terms">Terms of Use</LegalCrossLink>.
         </p>
       </LegalSection>
 

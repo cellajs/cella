@@ -4,6 +4,21 @@ import type { EntityRoute } from '~/modules/navigation/types';
 import { type EntityRouteEntry, entityRouteConfig } from '~/routes-config';
 
 /**
+ * Navigation hint for entity-page links. Spread into a `<Link>` or `navigate()`.
+ *
+ * `hash`/`hashScrollIntoView` land a new/forward navigation on the page header (`id="pt"`), leaving
+ * the cover scrolled just above it. Works with TanStack Router's scroll restoration: on PUSH/REPLACE
+ * the router's hash path runs `scrollIntoView` on the header; on history back/forward the cached
+ * scroll position is restored and this hint is ignored. The scroll travel itself is masked by the
+ * page-enter fade on the org page (see `.animate-page-enter`), not by a view transition (the router's
+ * `viewTransition` doesn't capture React's concurrent commit here).
+ */
+export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {
+  hash: 'pt',
+  hashScrollIntoView: { block: 'start', behavior: 'instant' },
+};
+
+/**
  * Config-driven entity path resolver
  *
  * Resolves an entity to its route using `entityRouteConfig`. Each entity declares

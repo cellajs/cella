@@ -1,18 +1,16 @@
 import { getMyMemberships } from 'sdk';
-import type { ContextEntityType } from 'shared';
-import { contextEntityListQueriesByType } from '~/list-queries-config';
+import { appConfig, type ContextEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic';
 import { queryClient } from '~/query/query-client';
 
 /**
  * Invalidate all context entity detail queries (fallback when contextType unknown)
  */
 function invalidateAllContextDetails(): void {
-  const registry = contextEntityListQueriesByType;
-  for (const contextType of Object.keys(registry)) {
+  for (const contextType of appConfig.contextEntityTypes) {
     queryClient.invalidateQueries({
       predicate: (query) => query.queryKey[0] === contextType && query.queryKey[1] === 'detail',
       refetchType: 'none',
@@ -27,12 +25,9 @@ function invalidateAllContextDetails(): void {
  * @param contextType - The context entity type (e.g., 'organization'), or null for fallback
  */
 export function invalidateContextList(contextType: ContextEntityType | null): void {
-  const userId = useUserStore.getState().user.id;
-  const queryFactory = contextType ? contextEntityListQueriesByType[contextType] : null;
-
-  if (queryFactory) {
-    const queryKey = queryFactory({ relatableUserId: userId }).queryKey;
-    queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
+  if (contextType && hasEntityQueryKeys(contextType)) {
+    // Invalidate by the `list` prefix key — covers all filtered list variants for this context type.
+    queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(contextType).list.base, refetchType: 'active' });
   } else {
     invalidateAllContextDetails();
   }

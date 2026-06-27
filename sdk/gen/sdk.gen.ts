@@ -677,7 +677,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * Signs out the *current user* and clears the active session.
+ * Signs out the current user and clears the active session.
  *
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/sign-out) ·· _auth_cella_
  *
@@ -880,7 +880,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
 /**
  * Create passkey
  *
- * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
+ * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.
  *
  * **POST /auth/passkey** ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey) ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey) ·· _auth_cella_
  *
@@ -922,7 +922,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
 /**
  * Delete passkey
  *
- * Delete a passkey by id from the *current user*.
+ * Delete a passkey by id from the current user.
  *
  * **DELETE /auth/passkey/{id}** ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/DELETE/auth/passkey/{id}) ·· [deletePasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/auth/passkey/{id}) ·· _auth_cella_
  *
@@ -1212,7 +1212,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
 /**
  * Delete self
  *
- * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
+ * Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  *
  * **DELETE /me** ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me) ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me) ·· _me_cella_
  *
@@ -1247,7 +1247,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
 /**
  * Get self
  *
- * Returns the *current user*.
+ * Returns the current user.
  *
  * **GET /me** ·· [getMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me) ·· [getMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me) ·· _me_cella_
  *
@@ -1282,7 +1282,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
 /**
  * Update self
  *
- * Updates the *current user*.
+ * Updates the current user.
  *
  * **PUT /me** ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me) ·· [updateMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me) ·· _me_cella_
  *
@@ -1329,7 +1329,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
 /**
  * Toggle MFA
  *
- * Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.
+ * Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.
  *
  * **PUT /me/mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me/mfa) ·· _me_cella_
  *
@@ -1371,7 +1371,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
 /**
  * Get auth data
  *
- * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
+ * Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.
  *
  * **GET /me/auth** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/auth) ·· _me_cella_
  *
@@ -1441,7 +1441,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Terminate sessions
  *
- * Ends one or more sessions for the *current user* based on provided session IDs.
+ * Ends one or more sessions for the current user based on provided session IDs.
  *
  * **DELETE /me/sessions** ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *
@@ -1481,7 +1481,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(
 /**
  * Leave entity
  *
- * Removes the *current user* from an entity they are a member of.
+ * Removes the current user from an entity they are a member of.
  *
  * **DELETE /me/leave** ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/leave) ·· [deleteMyMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/leave) ·· _me_cella_
  *
@@ -1518,7 +1518,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
+ * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
  *
@@ -1556,7 +1556,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
 /**
  * Unsubscribe
  *
- * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
+ * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.
  *
  * **GET /me/unsubscribe** ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/unsubscribe) ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/unsubscribe) ·· _me_cella_
  *
@@ -1584,7 +1584,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(
 /**
  * Get my memberships
  *
- * Returns all memberships for the *current user* across all context entities.
+ * Returns all memberships for the current user across all context entities.
  *
  * **GET /me/memberships** ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/memberships) ·· [getMyMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/memberships) ·· _me_cella_
  *
@@ -1619,7 +1619,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Get unseen counts
  *
- * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).
+ * Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed as total (from context_counters) minus seen (from seen_by).
  *
  * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
  *

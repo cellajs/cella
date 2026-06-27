@@ -40,7 +40,7 @@ export const marketingNavConfig = [
 
 export const socials = [
   { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
-  { title: 'Element', href: appConfig.company.element, icon: ElementIcon },
+  { title: 'Chat', href: appConfig.company.element, icon: ElementIcon },
   { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
 ];
 
@@ -127,6 +127,7 @@ export type FeaturesPageItem = {
 
 export const featuresPageItems: FeaturesPageItem[] = [
   // Data modelling
+  { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
   { id: 'context_entities', category: 'data' },
   { id: 'product_entities', category: 'data' },

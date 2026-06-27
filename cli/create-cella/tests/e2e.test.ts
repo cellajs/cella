@@ -1,35 +1,44 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { create } from '#/create';
 
 /**
  * E2E test for create-cella CLI.
- * This test does a full install and verifies the project is set up correctly.
  *
- * The cella template (backend, frontend, shared, ...) is downloaded from the github remote,
- * but the placeholder config template ships with the create-cella package itself, so the
- * locally-checked-out template asset is what gets validated here.
+ * Scaffolds a project from the LOCAL checkout (not the github remote), so the placeholder
+ * config template is validated against the local backend/frontend/shared in the same PR -
+ * no remote drift, no network. This keeps the test deterministic and CI-safe.
  *
- * Note: This test is slow (~60s+) as it runs pnpm install and generate.
+ * By default install + generate are skipped (fast scaffold-only run) and the scaffolding,
+ * env interpolation and git wiring are asserted. Set `CREATE_CELLA_E2E_FULL=true` to run the
+ * heavy path that also installs deps, generates migrations and type-checks the scaffold.
  */
+const FULL = process.env.CREATE_CELLA_E2E_FULL === 'true';
+
 describe('create-cella e2e', () => {
+  const repoRoot = resolve(import.meta.dirname, '../../..');
   const projectName = `cella-e2e-test-${Date.now()}`;
   const targetFolder = join(tmpdir(), projectName);
 
-  beforeAll(async () => {
-    // Create a full project with all steps
-    await create({
-      projectName,
-      targetFolder,
-      newBranchName: 'development',
-      packageManager: 'pnpm',
-      portOffset: 0,
-      silent: true,
-    });
-  }, 120000); // 2 minute timeout for full install
+  beforeAll(
+    async () => {
+      // Create a full project with all steps
+      await create({
+        projectName,
+        targetFolder,
+        newBranchName: 'development',
+        packageManager: 'pnpm',
+        portOffset: 0,
+        templateUrl: repoRoot,
+        skipInstall: !FULL,
+        silent: true,
+      });
+    },
+    FULL ? 600000 : 120000,
+  ); // FULL also copies the repo + runs pnpm install/generate
 
   afterAll(() => {
     // Cleanup
@@ -46,7 +55,7 @@ describe('create-cella e2e', () => {
       expect(existsSync(join(targetFolder, 'locales'))).toBe(true);
     });
 
-    it('should have node_modules installed', () => {
+    it.skipIf(!FULL)('should have node_modules installed', () => {
       expect(existsSync(join(targetFolder, 'node_modules'))).toBe(true);
       expect(existsSync(join(targetFolder, 'backend', 'node_modules'))).toBe(true);
       expect(existsSync(join(targetFolder, 'frontend', 'node_modules'))).toBe(true);
@@ -94,7 +103,7 @@ describe('create-cella e2e', () => {
   });
 
   describe('database migrations', () => {
-    it('should have generated drizzle migrations', () => {
+    it.skipIf(!FULL)('should have generated drizzle migrations', () => {
       const drizzlePath = join(targetFolder, 'backend', 'drizzle');
       expect(existsSync(drizzlePath)).toBe(true);
 
@@ -108,7 +117,7 @@ describe('create-cella e2e', () => {
       expect(hasMigrationSql).toBe(true);
     });
 
-    it('should have snapshot files in migration directories', () => {
+    it.skipIf(!FULL)('should have snapshot files in migration directories', () => {
       const drizzlePath = join(targetFolder, 'backend', 'drizzle');
       const dirs = readdirSync(drizzlePath, { withFileTypes: true })
         .filter((d) => d.isDirectory())
@@ -145,9 +154,15 @@ describe('create-cella e2e', () => {
       expect(content).not.toContain('__project_slug__');
     });
 
-    it('should produce no TypeScript errors in shared/config/config.default.ts', () => {
+    it.skipIf(!FULL)('should produce no TypeScript errors in shared/config/config.default.ts', () => {
       // Run tsc via the backend tsconfig which includes ../shared/*
-      execSync('npx tsc --noEmit', { cwd: join(targetFolder, 'backend'), stdio: 'pipe' });
+      try {
+        execSync('npx tsc --noEmit', { cwd: join(targetFolder, 'backend'), stdio: 'pipe' });
+      } catch (error) {
+        const e = error as { stdout?: Buffer; stderr?: Buffer };
+        const output = `${e.stdout?.toString() ?? ''}${e.stderr?.toString() ?? ''}`;
+        throw new Error(`tsc reported errors in the scaffolded project:\n${output}`);
+      }
     });
   });
 

@@ -118,7 +118,7 @@ export const config = {
    ******************************************************************************/
 
   senderEmail: 'notifications@shareworks.nl',
-  supportEmail: 'support@cellajs.com',
+  supportEmail: 'info@cellajs.com',
   securityEmail: 'security@cellajs.com',
 
   /******************************************************************************
@@ -127,7 +127,6 @@ export const config = {
 
   mode: 'development' as ConfigMode,
   maintenance: false,
-  cookieVersion: 'v1',
 
   has: {
     pwa: true as boolean,
@@ -136,6 +135,23 @@ export const config = {
     uploadEnabled: true as boolean,
     chatSupport: false as boolean,
   },
+
+  /******************************************************************************
+   * VERSIONING
+   *
+   * Three independent tokens. Bump the relevant one in the SAME PR as the change
+   * it guards:
+   * - apiVersion: API contract / frozen-envelope version (wire structure).
+   * - cookieVersion: session cookie name; bump to invalidate all sessions.
+   * - clientCacheVersion: persisted client query-cache shape; bump on a breaking
+   *   change to a cached entity so clients wipe stale cache (queued mutations are
+   *   preserved). CI's schema-bust gate enforces this. Temporary escape hatch
+   *   until the lens system lands. See info/SCHEMA_EVOLUTION.md.
+   ******************************************************************************/
+
+  apiVersion: 'v1',
+  cookieVersion: 'v1',
+  clientCacheVersion: 'v1',
 
   /******************************************************************************
    * AUTHENTICATION
@@ -155,7 +171,6 @@ export const config = {
    * API CONFIGURATION
    ******************************************************************************/
 
-  apiVersion: 'v1',
   apiDescription: `⚠️ ATTENTION: PRERELEASE!
                   This API is organized into modules based on logical domains.`,
 
@@ -277,7 +292,7 @@ export const config = {
     name: 'CellaJS',
     shortName: 'Cella',
     email: 'info@cellajs.com',
-    supportEmail: 'support@cellajs.com',
+    supportEmail: 'info@cellajs.com',
     tel: '+31 6 12345678',
     streetAddress: 'Drizzle Road 42',
     postcode: '90210 JS',

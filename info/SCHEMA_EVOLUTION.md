@@ -6,6 +6,19 @@
 
 ---
 
+## Active mechanism: cache-bust escape hatch (interim)
+
+The full lens system below is **built but dormant** (the engine lives in `shared/src/version-changes/` with an empty lens list; it is imported nowhere in runtime paths). Until lenses are finished and stable, breaking schema changes are handled by a simpler, throwaway escape hatch:
+
+1. **`appConfig.clientCacheVersion`** ([shared/config/config.default.ts](../shared/config/config.default.ts)) — a string token, colocated with `apiVersion`/`cookieVersion` in the VERSIONING section. Bump it (e.g. `'v1' → 'v2'`) in the **same PR** as any breaking change to a cached entity's wire shape.
+2. **Client wipe, mutations preserved** — on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data (product records + bundled context queries) but **keeps queued mutations**, which replay against the fresh cache. A missing version (pre-feature build) seeds without wiping. Session scopes are wiped wholesale.
+3. **Mutation salvage (Level 0)** — kept mutations replay; any that 4xx are quarantined to the `failed_sync` Dexie table ([frontend/src/query/offline/failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) rather than dropped (non-blocking, JSON-exportable). Level 1 (field-level strip against the current request schema) is a future tightening.
+4. **CI gate** — `schema-bust-gate` in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs oasdiff on the committed `backend/openapi.cache.json` (base vs head). A breaking diff **fails the PR** unless `clientCacheVersion` was bumped in the same PR. Couple with a `feat!` PR title so release-please cuts a major. The gate is PR-time only — it never blocks the release/deploy jobs.
+
+**Teardown**: when lenses are stable, delete `appConfig.clientCacheVersion`, the persister bust branch, the `failed_sync` quarantine, and the `schema-bust-gate` job; wire the lens engine in its place. No entanglement — the cache-version mechanism and the lens engine are independent.
+
+---
+
 ## TL;DR
 
 Breaking schema changes (e.g., rename `task.name` → `task.title`) are shipped as **append-only lens modules**. Each lens declares the change once; everything else is derived from that declaration:

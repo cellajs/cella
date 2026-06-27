@@ -1,9 +1,10 @@
+import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { Organization } from 'sdk';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Onboarding } from '~/modules/home/onboarding/steps';
-import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { useUserStore } from '~/modules/user/user-store';
 
 /**
@@ -33,11 +34,15 @@ function WelcomePage() {
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
         <DialogContent
           aria-describedby={undefined}
-          className="mt-0 flex h-screen min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0 max-sm:max-h-[100dvh]"
+          className="mt-0 flex h-screen max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0 max-sm:max-h-dvh"
         >
           <span className="sr-only">
             <DialogTitle>Welcome</DialogTitle>
           </span>
+          <DialogClose className="focus-effect absolute top-4 right-4 z-10 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100">
+            <XIcon className="size-5" strokeWidth={1.5} />
+            <span className="sr-only">Close</span>
+          </DialogClose>
           <Onboarding
             onboarding={onboarding}
             setOnboardingState={setOnboardingState}

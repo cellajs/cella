@@ -13,11 +13,13 @@ type SearchBlockResult = EnrichedContextEntity | UserBase;
 type SearchBlockProps = {
   results: SearchBlockResult[];
   entityType: ContextEntityType | 'user';
+  /** Hide the leading separator (used for the first visible group). */
+  hideSeparator?: boolean;
 };
 
 const contextEntities: readonly string[] = appConfig.contextEntityTypes;
 
-export const SearchResultBlock = ({ results, entityType }: SearchBlockProps) => {
+export const SearchResultBlock = ({ results, entityType, hideSeparator = false }: SearchBlockProps) => {
   const { t } = useTranslation();
   const isContext = contextEntities.includes(entityType);
   const [collapsed, setCollapsed] = useState(false);
@@ -26,7 +28,7 @@ export const SearchResultBlock = ({ results, entityType }: SearchBlockProps) => 
 
   return (
     <div key={entityType} className="flex w-full flex-col gap-1">
-      <ComboboxSeparator />
+      {!hideSeparator && <ComboboxSeparator className="h-0 border-border border-t border-dashed bg-transparent" />}
       <ComboboxGroup>
         <button
           type="button"

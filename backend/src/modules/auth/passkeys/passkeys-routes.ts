@@ -51,7 +51,7 @@ const authPasskeysRoutes = {
     tags: ['auth', 'cella'],
     summary: 'Create passkey',
     description:
-      'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.',
+      'Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.',
     request: {
       body: {
         required: true,
@@ -77,7 +77,7 @@ const authPasskeysRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Delete passkey',
-    description: 'Delete a passkey by id from the *current user*.',
+    description: 'Delete a passkey by id from the current user.',
     request: { params: z.object({ id: validIdSchema }) },
     responses: {
       204: {

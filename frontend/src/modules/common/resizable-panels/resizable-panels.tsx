@@ -11,7 +11,6 @@ interface PanelConfig {
   minWidth: number;
   collapsedWidth: number;
   collapsible: boolean;
-  grow: boolean;
 }
 
 interface PanelEntry extends PanelConfig {
@@ -405,8 +404,6 @@ interface PanelGroupProps {
   onCollapseChange?: (panelId: string, collapsed: boolean) => void;
   /** Called after mount with imperative methods for external panel control. */
   onReady?: (api: PanelGroupApi) => void;
-  /** When false, panels always fit the container (no horizontal scroll). Default: true (auto-detected). */
-  overflow?: boolean;
   className?: string;
   children: ReactNode;
 }
@@ -417,7 +414,6 @@ export function ResizablePanelGroup({
   onLayoutChanged,
   onCollapseChange,
   onReady,
-  overflow = true,
   className,
   children,
 }: PanelGroupProps) {
@@ -489,7 +485,6 @@ export function ResizablePanelGroup({
   // Uses parent's width — the container itself may have min-width set by
   // updateContainerWidth(), which would inflate its own getBoundingClientRect().
   const computeAutoFill = () => {
-    if (!overflow) return true;
     const container = containerRef.current;
     if (!container) return true;
     const parentWidth = container.parentElement
@@ -787,7 +782,7 @@ export function ResizablePanelGroup({
     for (const panel of panelsRef.current) {
       const w = widthsRef.current[panel.id] ?? panel.minWidth;
       const isCollapsed = panel.collapsible && w <= panel.collapsedWidth;
-      if (isCollapsed || !panel.grow) {
+      if (isCollapsed) {
         allocated += w;
       } else {
         resizable.push(panel);
@@ -931,8 +926,6 @@ interface PanelProps {
   collapsedWidth?: number;
   /** Whether the panel can be collapsed by dragging past the halfway point */
   collapsible?: boolean;
-  /** Whether the panel grows during proportional redistribution (default: true) */
-  grow?: boolean;
   className?: string;
   children?: ReactNode;
   ref?: Ref<HTMLDivElement>;
@@ -944,7 +937,6 @@ export function ResizablePanel({
   minWidth,
   collapsedWidth = 0,
   collapsible = false,
-  grow = true,
   className,
   children,
   ref,
@@ -962,10 +954,10 @@ export function ResizablePanel({
   useEffect(() => {
     const el = internalRef.current;
     if (!el || !ctx) return;
-    const entry: PanelEntry = { id, element: el, minWidth, collapsedWidth, collapsible, grow };
+    const entry: PanelEntry = { id, element: el, minWidth, collapsedWidth, collapsible };
     ctx.registerPanel(entry);
     return () => ctx.unregisterPanel(id);
-  }, [id, minWidth, collapsedWidth, collapsible, grow, ctx]);
+  }, [id, minWidth, collapsedWidth, collapsible, ctx]);
 
   return (
     <div

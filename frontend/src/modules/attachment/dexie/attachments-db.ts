@@ -10,7 +10,8 @@
  */
 
 import { Dexie, type EntityTable } from 'dexie';
-import { appConfig, type UploadTemplateId } from 'shared';
+import type { UploadTemplateId } from 'shared';
+import { userScopedName } from '~/lib/storage-scope';
 
 export type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
@@ -163,7 +164,7 @@ class AttachmentsDatabase extends Dexie {
   downloadQueue!: EntityTable<DownloadQueueEntry, 'id'>;
 
   constructor() {
-    super(`${appConfig.slug}-attachments`);
+    super(userScopedName('attachments'));
 
     this.version(1).stores({
       blobs:

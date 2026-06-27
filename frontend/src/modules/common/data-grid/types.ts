@@ -133,6 +133,13 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Options for cell editing */
   readonly editorOptions?: Maybe<{
     /**
+     * The kind of editor this cell opens. Drives the cell's hover cursor so the
+     * affordance matches the interaction: a text I-beam for free-text editors,
+     * a pointer for editors that open a picker (select, drawer, popover…).
+     * @default 'text'
+     */
+    readonly editorType?: Maybe<'text' | 'select'>;
+    /**
      * Render the cell content in addition to the edit cell content.
      * Enable this option when the editor is rendered outside the grid, like a modal for example.
      * By default, the cell content is not rendered when the edit cell is open.

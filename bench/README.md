@@ -33,9 +33,15 @@ pnpm bench attachment-edit
 | `pnpm bench` | Interactive scenario picker (seeds DB in background) |
 | `pnpm bench <name>` | Run a specific scenario non-interactively |
 | `pnpm bench <name> --skip-seed` | Run a scenario, skipping the DB seed |
+| `pnpm bench --all` | Run every scenario in sequence |
+| `pnpm bench --all --short` | Quick smoke run of every scenario (1s/1VU, no thresholds, no baselines) |
 | `pnpm bench help` | List available scenarios |
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data from db (baselines are kept) |
+
+A Vitest smoke test (`src/tests/all-scenarios.test.ts`) runs `--all --short` to catch
+broken scenarios. It auto-skips when the local stack is not reachable, so it is safe
+in the monorepo `pnpm test` run without `pnpm dev` up.
 
 ## How it works
 

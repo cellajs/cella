@@ -1,3 +1,5 @@
+// DORMANT: tests the dormant lens cache-migration module (not wired into runtime).
+// Kept for coverage; see info/SCHEMA_EVOLUTION.md.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the lens engine: simulate a single attachment rename name → title.

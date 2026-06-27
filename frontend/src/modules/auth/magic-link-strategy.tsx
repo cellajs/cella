@@ -11,13 +11,16 @@ import { Button } from '~/modules/ui/button';
  */
 export function MagicLinkStrategy({ email }: { email?: string }) {
   const { t } = useTranslation();
-  const { setStep, email: storeEmail } = useAuthStore();
+  const { setStep, setMagicLinkMode, email: storeEmail } = useAuthStore();
 
   const targetEmail = email || storeEmail;
 
   const { mutate: send, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email: targetEmail } }),
-    onSuccess: () => setStep('magicLinkSent', targetEmail),
+    onSuccess: () => {
+      setMagicLinkMode('signin');
+      setStep('magicLinkSent', targetEmail);
+    },
     onError: () => toaster(t('error:reported_try_later'), 'error'),
   });
 

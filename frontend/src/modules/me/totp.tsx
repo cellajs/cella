@@ -3,11 +3,11 @@ import { CheckIcon, RotateCcwKeyIcon, UnlinkIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { useUserStore } from '~/modules/user/user-store';
 
 export function Totp() {
@@ -22,7 +22,7 @@ export function Totp() {
 
   const openSetupTotp = () => {
     useDialoger.getState().create(
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<Skeleton className="mx-auto my-3 h-72.75 w-72.75" />}>
         <SetupTotp />
       </Suspense>,
       {

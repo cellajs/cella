@@ -11,7 +11,7 @@ import { seenGroupingContextTypes } from '~/modules/seen/helpers';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
-import { getContextEntityRoute } from '~/utils/context-entity-route';
+import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
@@ -52,6 +52,7 @@ export const MenuSheetItem = ({ item, icon: Icon, className }: MenuSheetItemProp
       to={to}
       params={params}
       search={search}
+      {...pageTopHashNav}
       resetScroll={false}
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}

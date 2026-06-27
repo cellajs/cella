@@ -14,6 +14,10 @@ import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-bu
 // Re-export for external consumers
 export { roles, hierarchy } from './hierarchy-config';
 
+// Set these early for reuse
+const entityTypes = ['user', 'organization', 'attachment', 'page'] as const;
+const productEntityTypes = ['attachment', 'page'] as const;
+
 export const config = {
 
   /******************************************************************************
@@ -21,13 +25,13 @@ export const config = {
    ******************************************************************************/
 
   /** All entity types in the app - must match hierarchy.allTypes. */
-  entityTypes: ['user', 'organization', 'attachment', 'page'] as const,
+  entityTypes,
 
   /** Context entities with memberships - must match hierarchy.contextTypes. */
   contextEntityTypes: ['organization'] as const,
 
   /** Product/content entities - must match hierarchy.productTypes. */
-  productEntityTypes: ['attachment', 'page'] as const,
+  productEntityTypes,
 
   /**
    * Product entity types tracked for seen/unseen counts.
@@ -53,7 +57,11 @@ export const config = {
    * Entity embeddings: declares which entities are embedded as ID arrays inside
    * other entities. Forks extend when adding new embedding relationships.
    */
-  entityEmbeddings: [] as readonly { readonly embeddedEntity: string; readonly hostEntity: string; readonly hostColumn: string }[],
+  entityEmbeddings: [] as readonly {
+    readonly embeddedEntity: (typeof productEntityTypes)[number];
+    readonly hostEntity: (typeof productEntityTypes)[number];
+    readonly hostColumn: string;
+  }[],
 
   /**
    * User menu structure of context entities with optional nested subentities.
@@ -156,6 +164,8 @@ export const config = {
   maintenance: false,
   /** Cookie version - increment when changing cookie structure to invalidate old cookies */
   cookieVersion: 'v1',
+  /** Persisted client query-cache shape - bump on a breaking change to a cached entity so clients wipe stale cache. See info/SCHEMA_EVOLUTION.md */
+  clientCacheVersion: 'v1',
 
   /******************************************************************************
    * FEATURE FLAGS

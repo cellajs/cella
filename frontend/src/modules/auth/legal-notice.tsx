@@ -1,20 +1,46 @@
-import { type RefObject, Suspense, useRef } from 'react';
+import { type RefObject, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
+import { LegalDialogNavProvider } from '~/modules/marketing/legal/legal-cross-link';
 import { LegalText } from '~/modules/marketing/legal/legal-text';
 import { Button } from '~/modules/ui/button';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 
-export const LegalNotice = ({
-  email = '',
-  mode = 'signup',
-}: {
+/**
+ * Self-contained legal dialog body. Owns the current subject so cross-links can swap
+ * content (terms <-> privacy) without leaving the page. Keeps the dialog title in sync
+ * and resets scroll to the top on each swap.
+ */
+function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
+  const { t } = useTranslation();
+  const [subject, setSubject] = useState(initialSubject);
+
+  useEffect(() => {
+    const dialoger = useDialoger.getState();
+    dialoger.update('legal', { title: t(legalConfig[subject].label) });
+    dialoger.scrollToTop('legal');
+  }, [subject, t]);
+
+  return (
+    <LegalDialogNavProvider value={setSubject}>
+      <Suspense fallback={<Spinner className="mt-10 h-10 w-10" />}>
+        <LegalText subject={subject} />
+      </Suspense>
+    </LegalDialogNavProvider>
+  );
+}
+
+/**
+ * Renders a legal notice with links open a dialog for the terms and privacy policy.
+ */
+interface LegalNoticeProps {
   email?: string;
   mode?: 'waitlist' | 'signup' | 'verify';
-}) => {
+}
+
+export const LegalNotice = ({ email = '', mode = 'signup' }: LegalNoticeProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -22,19 +48,12 @@ export const LegalNotice = ({
   const privacyButtonRef = useRef(null);
 
   const openDialog = (legalSubject: LegalSubject, triggerRef: RefObject<HTMLButtonElement | null>) => () => {
-    const dialogComponent = (
-      <ScrollArea className="max-h-[75vh]">
-        <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-          <LegalText subject={legalSubject} />
-        </Suspense>
-      </ScrollArea>
-    );
-
-    createDialog(dialogComponent, {
+    createDialog(<LegalDialog initialSubject={legalSubject} />, {
       id: 'legal',
       triggerRef,
       title: t(legalConfig[legalSubject].label),
-      className: 'md:max-w-4xl mb-10 p-6',
+      className: 'md:max-w-4xl p-6',
+      outsideScroll: true,
       drawerOnMobile: false,
     });
   };

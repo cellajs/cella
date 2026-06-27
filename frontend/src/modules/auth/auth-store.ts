@@ -8,6 +8,7 @@ type State = {
   error: ApiError | null;
   restrictedMode: boolean;
   signedIn: boolean; // True after successful sign-in, prevents UI flash during route transition
+  magicLinkMode: 'signin' | 'signup'; // Which flow triggered the magicLinkSent step, used for contextual copy
 };
 
 type Actions = {
@@ -16,6 +17,7 @@ type Actions = {
   setError: (error: ApiError) => void;
   setRestrictedMode: (restricted: boolean) => void;
   setSignedIn: (signedIn: boolean) => void;
+  setMagicLinkMode: (mode: 'signin' | 'signup') => void;
   resetSteps: () => void;
 };
 
@@ -25,6 +27,7 @@ const initial: State = {
   error: null,
   restrictedMode: false,
   signedIn: false,
+  magicLinkMode: 'signin',
 };
 
 /**
@@ -37,5 +40,6 @@ export const useAuthStore = create<State & Actions>((set) => ({
   setError: (error) => set(() => ({ error })),
   setRestrictedMode: (restrictedMode) => set(() => ({ restrictedMode })),
   setSignedIn: (signedIn) => set(() => ({ signedIn })),
+  setMagicLinkMode: (magicLinkMode) => set(() => ({ magicLinkMode })),
   resetSteps: () => set(() => ({ ...initial })),
 }));

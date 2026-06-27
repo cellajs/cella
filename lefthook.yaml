@@ -1,4 +1,11 @@
 ---
+commit-msg:
+  commands:
+    commitlint:
+      # Enforce Conventional Commits so release-please can derive versions and
+      # changelog sections. {1} is the path to the commit message file.
+      run: pnpm exec commitlint --edit {1}
+
 pre-commit:
   parallel: true
   commands:

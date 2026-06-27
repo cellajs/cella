@@ -1,9 +1,16 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { currentSchemaVersion } from 'shared/version-changes';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
-import { entityTypeOf } from '~/query/cache-migration';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
 import type { QueryMeta } from '~/query/react-query';
+
+const productEntitySet = new Set<string>(appConfig.productEntityTypes);
+
+/** Product entity type encoded in a query/mutation key, or undefined. */
+function entityTypeOf(key: unknown): string | undefined {
+  const head = Array.isArray(key) ? key[0] : undefined;
+  return typeof head === 'string' && productEntitySet.has(head) ? head : undefined;
+}
 
 // Lazy import to break circular dependency: query-client → on-error → flush-stores → query-client
 // Without this, HMR re-evaluation hits a TDZ error on `onError`.
@@ -13,7 +20,7 @@ const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess
 
 /**
  * Quarantine a mutation that fails replay with a 4xx so no offline edit is lost
- * (info/SCHEMA_EVOLUTION.md, 1.9). Best-effort, lazy-imported to avoid cycles.
+ * after a cache bust. Best-effort, lazy-imported to avoid cycles. See info/SCHEMA_EVOLUTION.md.
  */
 function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
   const status = error?.status;
@@ -24,13 +31,13 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   const mutationId = Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
   if (!mutationId) return;
 
-  const entityType = entityTypeOf(mutationKey) ?? undefined;
+  const entityType = entityTypeOf(mutationKey);
   import('~/query/offline')
     .then(({ quarantineFailedSync }) =>
       quarantineFailedSync({
         mutationId,
         entityType,
-        clientSchemaVersion: currentSchemaVersion,
+        clientCacheVersion: appConfig.clientCacheVersion,
         status,
         variables: vars,
         error,

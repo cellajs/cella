@@ -12,6 +12,9 @@ import { queryClient } from '~/query/query-client';
  * Flushes sensitive stores and resets the application state.
  * For account removal, it clears all data and resets UI state.
  *
+ * Cross-user isolation is handled structurally by per-user storage namespaces
+ * (see `~/lib/storage-scope`); this just clears the current user's own state.
+ *
  * @param {boolean} [removeAccount=false] - Whether to remove the user account.
  */
 export const flushStores = (removeAccount?: boolean) => {
@@ -30,5 +33,5 @@ export const flushStores = (removeAccount?: boolean) => {
   // Clear below on remove account
   useAlertStore.getState().clearAlertStore();
   useUIStore.getState().clearUIStore();
-  useUserStore.setState({ lastUser: null as unknown as MeUser });
+  useUserStore.setState({ lastUser: null });
 };

@@ -9,9 +9,10 @@ import { noDirectAccess } from '~/utils/no-direct-access';
  */
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization')({
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' } },
-  beforeLoad: () => {
+  beforeLoad: ({ matches }) => {
     noDirectAccess(
-      '/$tenantId/$organizationSlug/organization',
+      matches,
+      '/_app/$tenantId/$organizationSlug/organization',
       '/$tenantId/$organizationSlug/organization/attachments',
     );
   },

@@ -1,15 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
-import {
-  ResizablePanel,
-  ResizablePanelGroup,
-  ResizableSeparator,
-} from '~/modules/common/resizable-panels/resizable-panels';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
@@ -17,22 +12,43 @@ import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/modules/ui/ui-store';
 
+const MIN_SIDEBAR_WIDTH = 256;
+const MAX_SIDEBAR_WIDTH = 600;
+const DEFAULT_SIDEBAR_WIDTH = 288;
+
 function DocsLayout() {
   const navigate = useNavigate();
-  const { pathname } = useRouterState({ select: (s) => s.location });
   const isMobile = useBreakpointBelow('sm');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
 
-  // Track scroll position for scroll-to-top button visibility
+  // Resizable sidebar width (desktop only). The main content uses window scroll,
+  // offset by this width — no nested scroll container, so window scroll restoration just works.
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+
+  // Track scroll position for scroll-to-top button visibility (mobile floating nav)
   const { scrollTop } = useScrollVisibility(isMobile, mainRef);
   const showScrollTop = scrollTop > 300;
 
-  // Scroll main container to top on route changes (main is the scroll container, not window)
-  useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0 });
-  }, [pathname]);
+  // Drag the sidebar edge to resize. Updates width during pointer move, ends on pointer up.
+  const startSidebarResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev: PointerEvent) => {
+      const next = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.body.style.cursor = '';
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.body.style.cursor = 'col-resize';
+  };
 
   // Fetch tags via React Query (reduces bundle size)
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
@@ -118,30 +134,24 @@ function DocsLayout() {
     );
   }
 
-  // Desktop layout with resizable panels
+  // Desktop layout: fixed resizable sidebar + window-scrolled main content
   return (
-    <div className="h-screen">
-      <ResizablePanelGroup id="docs-layout" overflow={false} className="h-screen">
-        {!focusView && (
-          <>
-            <ResizablePanel id="docs-sidebar" className="z-30" minWidth={256} grow={false}>
-              <div className="h-screen">
-                <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
-              </div>
-            </ResizablePanel>
-            <ResizableSeparator
-              index={0}
-              className="relative z-30 w-px bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
-            />
-          </>
-        )}
-        <ResizablePanel id="docs-main" className="has-[.focus-view-container.focused]:w-screen!" minWidth={480}>
-          <main ref={mainRef} className="h-screen overflow-auto pb-[70vh]">
-            <Outlet />
-          </main>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+    <>
+      {!focusView && (
+        <aside className="fixed inset-y-0 left-0 z-30 flex bg-background" style={{ width: sidebarWidth }}>
+          <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+          <button
+            type="button"
+            aria-label="Resize sidebar"
+            onPointerDown={startSidebarResize}
+            className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
+          />
+        </aside>
+      )}
+      <main className="pb-[70vh]" style={{ marginLeft: focusView ? 0 : sidebarWidth }}>
+        <Outlet />
+      </main>
+    </>
   );
 }
 

@@ -5,6 +5,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
+import { userScopedName } from '~/lib/storage-scope';
 import { queryClient } from '~/query/query-client';
 
 /** Batch of seen entity IDs grouped by org and entity type */
@@ -253,7 +254,7 @@ export const useSeenStore = create<SeenStoreState>()(
         },
       }),
       {
-        name: `${appConfig.slug}-seen`,
+        name: userScopedName('seen'),
         storage: createJSONStorage(() => localStorage),
         // Only persist flushedIds — store as array for JSON compatibility
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
