@@ -1,4 +1,13 @@
 ---
+# Disable lefthook's gradient banner / colored decorations. They render as
+# garbled ANSI escapes in VS Code's Source Control & Output panels (which don't
+# support 24-bit gradient codes). Keep only the meaningful summary + failures.
+colors: false
+output:
+  - summary
+  - failure
+  - execution_out
+
 commit-msg:
   commands:
     commitlint:
