@@ -21,7 +21,8 @@
  * @see info/ARCHITECTURE.md for full architecture documentation
  */
 
-import { getTableName, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import { getTableName, type SQL, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { appConfig, hierarchy } from 'shared';
 import { nanoidTenant } from 'shared/nanoid';
@@ -55,12 +56,8 @@ const TEST_MEMBERSHIP_B = '00000000-0000-4000-a000-000000000007';
 const TEST_PAGE_A = '00000000-0000-4000-a000-000000000008';
 const TEST_PAGE_B = '00000000-0000-4000-a000-000000000009';
 const TEST_PAGE_PUBLIC = '00000000-0000-4000-a000-00000000000a';
-const TEST_PROJECT_A = '00000000-0000-4000-a000-00000000000b';
-const TEST_TASK_A = '00000000-0000-4000-a000-00000000000c';
-const TEST_LABEL_A = '00000000-0000-4000-a000-00000000000d';
 const TEST_ATTACHMENT_A = '00000000-0000-4000-a000-00000000000e';
 const TEST_ATTACHMENT_C = '00000000-0000-4000-a000-00000000000f';
-const TEST_WORKSPACE_A = '00000000-0000-4000-a000-000000000010';
 const TEST_ACTIVITY_A = 'rls-activity-001';
 
 // Runtime role connection (subject to RLS)
@@ -70,12 +67,76 @@ let runtimeDb: NodePgDatabase;
 /** Whether runtime_role exists in the test database */
 let rolesAvailable = false;
 let requiredTablesAvailable = false;
-const supportsLegacyRlsMatrix = ['project', 'task', 'label', 'workspace'].every((entityType) =>
-  appConfig.entityTypes.includes(entityType as (typeof appConfig.entityTypes)[number]),
-);
 
 /** Parentless product entity types (no org FK, no RLS) — derived from hierarchy config */
 const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
+
+/**
+ * Org-scoped product entities are the RLS-subject tables (tenant SELECT policy + FORCE RLS).
+ * Derived from config so the suite adapts to whatever entity model is loaded:
+ * base Cella → ['attachment']; a fork may add e.g. 'task', 'label'.
+ */
+const rlsProductTypes = appConfig.productEntityTypes.filter((t) => !parentlessTypes.has(t));
+
+/**
+ * Per-entity seed fixtures for the generic RLS product-entity tests
+ * (write-through, composite FK, CDC seq). This is the FORK EXTENSION POINT:
+ * add an entry per org-scoped product entity a fork defines (e.g. `task`, `label`)
+ * and the write-through / FK / CDC blocks automatically cover it.
+ *
+ * Each entry owns its own prerequisite + representative-row seeding so entities
+ * with extra parents (e.g. a task needing a project) stay self-contained.
+ */
+interface RlsProductFixture {
+  /** Table name (e.g. 'attachments'). */
+  table: string;
+  /** Pre-seeded representative row id (tenant A / org A) used by update/CDC tests. */
+  rowId: string;
+  /** Original name of the representative row, for restore after update tests. */
+  rowName: string;
+  /** Build an INSERT for a fresh row (caller supplies a unique id — no ON CONFLICT). */
+  insert: (p: { id: string; tenantId: string; orgId: string; createdBy: string }) => SQL;
+  /** Seed prerequisites + the representative row (runs as admin/superuser). */
+  seed: () => Promise<void>;
+  /** Remove the representative row + prerequisites. */
+  cleanup: () => Promise<void>;
+}
+
+const rlsProductFixtures: Record<string, RlsProductFixture> = {
+  attachment: {
+    table: 'attachments',
+    rowId: TEST_ATTACHMENT_A,
+    rowName: 'Test File',
+    insert: ({ id, tenantId, orgId, createdBy }) => sql`
+      INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
+      VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}, ${orgId}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
+    `,
+    seed: async () => {
+      // Two attachments: one in Org A (User A has membership), one in Org C (User A has NO membership)
+      await adminDb.execute(sql`
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
+        VALUES
+          (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
+          (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}, ${TEST_ORG_C}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
+        ON CONFLICT (id) DO NOTHING
+      `);
+    },
+    cleanup: async () => {
+      await adminDb.execute(sql`DELETE FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`);
+    },
+  },
+};
+
+/**
+ * RLS product types that have a fixture — what the generic blocks iterate (collection-time).
+ * Table existence is checked at runtime in `beforeAll` (see `activeRlsProducts`).
+ */
+const iterableRlsProducts = rlsProductTypes
+  .filter((t) => rlsProductFixtures[t])
+  .map((t) => [t, rlsProductFixtures[t]] as const);
+
+/** RLS product fixtures whose table actually exists in the test DB (populated in beforeAll). */
+let activeRlsProducts: { type: string; fixture: RlsProductFixture }[] = [];
 
 /**
  * Check if RLS roles exist in the test database.
@@ -103,7 +164,8 @@ async function tableExists(tableName: string): Promise<boolean> {
 }
 
 async function checkRequiredTablesExist(): Promise<boolean> {
-  const requiredTables = ['attachments', 'organizations', 'memberships', 'pages', 'tasks', 'labels', 'projects'];
+  // Base entities present in every Cella app — fork-specific product tables are checked per-fixture.
+  const requiredTables = ['attachments', 'organizations', 'memberships', 'pages'];
   const results = await Promise.all(requiredTables.map((tableName) => tableExists(tableName)));
   return results.every(Boolean);
 }
@@ -111,9 +173,13 @@ async function checkRequiredTablesExist(): Promise<boolean> {
 /**
  * Create RLS roles in the test database if they don't exist.
  * Also re-applies the RLS setup (FORCE RLS, ownership, grants).
+ *
+ * Table targets are derived from the entity model so the setup adapts to whatever
+ * product entities the app defines — base Cella forces RLS on `attachments` +
+ * `yjs_documents`; a fork additionally covers e.g. `tasks`, `labels`.
  */
 async function ensureRlsRoles() {
-  // Create roles if missing
+  // Create roles if missing (idempotent)
   await adminDb.execute(sql`
     DO $$
     BEGIN
@@ -123,44 +189,36 @@ async function ensureRlsRoles() {
       IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
         CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
       END IF;
-
-      GRANT USAGE ON SCHEMA public TO runtime_role;
-      GRANT ALL ON SCHEMA public TO admin_role;
-
-      -- Table ownership and FORCE RLS (product entities only)
-      ALTER TABLE attachments OWNER TO admin_role;
-      ALTER TABLE tasks OWNER TO admin_role;
-      ALTER TABLE labels OWNER TO admin_role;
-      ALTER TABLE yjs_documents OWNER TO admin_role;
-
-      ALTER TABLE attachments FORCE ROW LEVEL SECURITY;
-      ALTER TABLE tasks FORCE ROW LEVEL SECURITY;
-      ALTER TABLE labels FORCE ROW LEVEL SECURITY;
-      ALTER TABLE yjs_documents FORCE ROW LEVEL SECURITY;
-
-      -- Grants for runtime_role (RLS-subject tables)
-      GRANT SELECT, INSERT, UPDATE, DELETE ON attachments TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON tasks TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON labels TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON yjs_documents TO runtime_role;
-
-      -- Grants for runtime_role (non-RLS tables — includes pages, which have no RLS)
-      GRANT SELECT, INSERT, UPDATE, DELETE ON pages TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON organizations TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON projects TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON memberships TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON inactive_memberships TO runtime_role;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role;
-      GRANT SELECT ON tenants TO runtime_role;
-
-      -- Admin gets full access
-      GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role;
-      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role;
-
-      -- pg_catalog for JSONB operators
-      GRANT USAGE ON SCHEMA pg_catalog TO runtime_role;
     END $$;
   `);
+
+  await adminDb.execute(sql`GRANT USAGE ON SCHEMA public TO runtime_role`);
+  await adminDb.execute(sql`GRANT ALL ON SCHEMA public TO admin_role`);
+
+  // RLS-subject tables (FORCE RLS) — org-scoped product entities + yjs_documents.
+  const rlsSubjectTables = [
+    'yjs_documents',
+    ...rlsProductTypes.map((t) => getTableName(entityTables[t as keyof typeof entityTables])),
+  ];
+  for (const table of rlsSubjectTables) {
+    if (!(await tableExists(table))) continue;
+    await adminDb.execute(sql.raw(`ALTER TABLE ${table} OWNER TO admin_role`));
+    await adminDb.execute(sql.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`));
+    await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO runtime_role`));
+  }
+
+  // Non-RLS tables runtime_role must access (write isolation enforced by guards at the app layer).
+  const nonRlsTables = ['pages', 'organizations', 'memberships', 'inactive_memberships', 'users', 'tenants'];
+  for (const table of nonRlsTables) {
+    if (!(await tableExists(table))) continue;
+    const priv = table === 'tenants' ? 'SELECT' : 'SELECT, INSERT, UPDATE, DELETE';
+    await adminDb.execute(sql.raw(`GRANT ${priv} ON ${table} TO runtime_role`));
+  }
+
+  // Admin gets full access; pg_catalog for JSONB operators.
+  await adminDb.execute(sql`GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role`);
+  await adminDb.execute(sql`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role`);
+  await adminDb.execute(sql`GRANT USAGE ON SCHEMA pg_catalog TO runtime_role`);
 }
 
 /**
@@ -216,47 +274,17 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Create project in Org A (needed for task/label FKs)
-  await adminDb.execute(sql`
-    INSERT INTO projects (id, entity_type, tenant_id, name, slug, organization_id, created_at)
-    VALUES (${TEST_PROJECT_A}, 'project', ${TEST_TENANT_A}, 'RLS Project A', ${`rls-proj-a-${Date.now()}`}, ${TEST_ORG_A}, NOW())
-    ON CONFLICT (id) DO NOTHING
-  `);
+  // Seed RLS-subject product entities via their fixtures (base: attachment; forks add more).
+  for (const { fixture } of activeRlsProducts) {
+    await fixture.seed();
+  }
 
-  // Create task in Org A / Project A
-  await adminDb.execute(sql`
-    INSERT INTO tasks (id, entity_type, tenant_id, name, stx, keywords, summary, variant, display_order, status, organization_id, project_id, created_by)
-    VALUES (${TEST_TASK_A}, 'task', ${TEST_TENANT_A}, 'RLS Task A', '{}', '', '', 1, 1, 5, ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-    ON CONFLICT (id) DO NOTHING
-  `);
-
-  // Create label in Org A / Project A
-  await adminDb.execute(sql`
-    INSERT INTO labels (id, entity_type, tenant_id, name, stx, keywords, organization_id, project_id, created_by)
-    VALUES (${TEST_LABEL_A}, 'label', ${TEST_TENANT_A}, 'RLS Label A', '{}', '', ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-    ON CONFLICT (id) DO NOTHING
-  `);
-
-  // Create attachments: one in Org A (User A has membership), one in Org C (User A has NO membership)
-  await adminDb.execute(sql`
-    INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
-    VALUES
-      (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
-      (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}, ${TEST_ORG_C}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
-    ON CONFLICT (id) DO NOTHING
-  `);
-
-  // Create workspace in Org A (needed for immutability trigger tests)
-  await adminDb.execute(sql`
-    INSERT INTO workspaces (id, entity_type, tenant_id, name, slug, organization_id, created_by, created_at)
-    VALUES (${TEST_WORKSPACE_A}, 'workspace', ${TEST_TENANT_A}, 'RLS Workspace A', ${`rls-ws-a-${Date.now()}`}, ${TEST_ORG_A}, ${TEST_USER_A}, NOW())
-    ON CONFLICT (id) DO NOTHING
-  `);
-
-  // Create activity row (needed for append-only trigger test)
+  // Create activity row (needed for append-only trigger test). table_name is a plain
+  // varchar (no FK) — use any active product table, falling back to a base table.
+  const activityTable = activeRlsProducts[0]?.fixture.table ?? 'attachments';
   await adminDb.execute(sql`
     INSERT INTO activities (id, tenant_id, action, table_name, type, created_at)
-    VALUES (${TEST_ACTIVITY_A}, ${TEST_TENANT_A}, 'create', 'tasks', 'entity', NOW())
+    VALUES (${TEST_ACTIVITY_A}, ${TEST_TENANT_A}, 'create', ${activityTable}, 'entity', NOW())
     ON CONFLICT DO NOTHING
   `);
 }
@@ -266,14 +294,11 @@ async function setupTestData() {
  */
 async function cleanupTestData() {
   await adminDb.execute(sql`DELETE FROM activities WHERE id = ${TEST_ACTIVITY_A}`);
-  await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id IN (${TEST_TASK_A}, ${TEST_LABEL_A})`);
-  await adminDb.execute(sql`DELETE FROM tasks WHERE id = ${TEST_TASK_A}`);
-  await adminDb.execute(sql`DELETE FROM labels WHERE id = ${TEST_LABEL_A}`);
-  await adminDb.execute(sql`DELETE FROM attachments WHERE id IN (${TEST_ATTACHMENT_A}, ${TEST_ATTACHMENT_C})`);
+  for (const { fixture } of activeRlsProducts) {
+    await fixture.cleanup();
+  }
   await adminDb.execute(sql`DELETE FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`);
-  await adminDb.execute(sql`DELETE FROM workspaces WHERE id = ${TEST_WORKSPACE_A}`);
   await adminDb.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
-  await adminDb.execute(sql`DELETE FROM projects WHERE id = ${TEST_PROJECT_A}`);
   await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B}, ${TEST_ORG_C})`);
   await adminDb.execute(sql`DELETE FROM users WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
   await adminDb.execute(sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B})`);
@@ -446,7 +471,20 @@ describe('RLS Security Tests', () => {
 // RLS policy verification (runtime_role connection — genuinely subject to RLS)
 // ============================================================================
 
-(supportsLegacyRlsMatrix ? describe : describe.skip)('RLS Policy Verification', () => {
+/**
+ * Whether the environment can run the RLS suite: roles + base tables present.
+ * Checked at module load (after global-setup migrations) so the suite skips
+ * gracefully on a DB without RLS roles rather than failing every assertion.
+ */
+const rlsSuiteReady = await (async () => {
+  try {
+    return (await checkRolesExist()) && (await checkRequiredTablesExist());
+  } catch {
+    return false;
+  }
+})();
+
+(rlsSuiteReady ? describe : describe.skip)('RLS Policy Verification', () => {
   beforeAll(async () => {
     requiredTablesAvailable = await checkRequiredTablesExist();
     if (!requiredTablesAvailable) {
@@ -472,7 +510,13 @@ describe('RLS Security Tests', () => {
     const rows = getRows<{ role: string }>(await runtimeDb.execute(sql`SELECT current_user as role`));
     expect(rows[0].role).toBe('runtime_role');
 
-    // 4. Set up test data as superuser
+    // 4. Resolve which RLS product fixtures have a backing table in this DB
+    activeRlsProducts = [];
+    for (const [type, fixture] of iterableRlsProducts) {
+      if (await tableExists(fixture.table)) activeRlsProducts.push({ type, fixture });
+    }
+
+    // 5. Set up test data as superuser
     await setupTestData();
   });
 
@@ -717,154 +761,95 @@ describe('RLS Security Tests', () => {
   describe('Write-through on RLS tables', () => {
     // These tests would have caught the original bug where FORCE RLS + SELECT-only policy
     // caused all writes to be denied with "new row violates row-level security policy".
+    // Driven by the entity model: covers every org-scoped product entity with a fixture.
 
-    it('should allow inserting a task as runtime_role', async () => {
-      const id = '00000000-0000-4000-a000-000000000101';
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-          INSERT INTO tasks (id, entity_type, tenant_id, name, stx, keywords, summary, variant, display_order, status, organization_id, project_id, created_by)
-          VALUES (${id}, 'task', ${TEST_TENANT_A}, 'WT Task', '{}', '', '', 1, 99, 5, ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-        `),
-      );
-      await adminDb.execute(sql`DELETE FROM tasks WHERE id = ${id}`);
+    describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
+      it('should allow INSERT as runtime_role', async () => {
+        const id = randomUUID();
+        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+          tx.execute(fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A })),
+        );
+        await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+      });
+
+      it('should allow UPDATE as runtime_role', async () => {
+        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+          tx.execute(sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}'`)),
+        );
+        // Restore
+        await adminDb.execute(
+          sql.raw(`UPDATE ${fixture.table} SET name = '${fixture.rowName}' WHERE id = '${fixture.rowId}'`),
+        );
+      });
+
+      it('should allow DELETE as runtime_role', async () => {
+        const id = randomUUID();
+        await adminDb.execute(
+          fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A }),
+        );
+        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+          tx.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`)),
+        );
+        const rows = getRows(await adminDb.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)));
+        expect(rows).toHaveLength(0);
+      });
     });
 
-    it('should allow inserting an attachment as runtime_role', async () => {
-      const id = '00000000-0000-4000-a000-000000000102';
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-          INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
-          VALUES (${id}, 'attachment', ${TEST_TENANT_A}, 'WT File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
-        `),
-      );
-      await adminDb.execute(sql`DELETE FROM attachments WHERE id = ${id}`);
-    });
-
-    it('should allow inserting a label as runtime_role', async () => {
-      const id = '00000000-0000-4000-a000-000000000103';
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-          INSERT INTO labels (id, entity_type, tenant_id, name, stx, keywords, organization_id, project_id, created_by)
-          VALUES (${id}, 'label', ${TEST_TENANT_A}, 'WT Label', '{}', '', ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-        `),
-      );
-      await adminDb.execute(sql`DELETE FROM labels WHERE id = ${id}`);
-    });
-
-    it('should allow inserting a yjs_document as runtime_role', async () => {
+    it.skipIf(iterableRlsProducts.length === 0)('should allow inserting a yjs_document as runtime_role', async () => {
+      const [entityType, fixture] = iterableRlsProducts[0];
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`
           INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
-          VALUES ('task', ${TEST_TASK_A}, ${TEST_TENANT_A}, ${TEST_ORG_A}, '\\x00')
+          VALUES (${entityType}, ${fixture.rowId}, ${TEST_TENANT_A}, ${TEST_ORG_A}, '\\x00')
           ON CONFLICT (entity_type, entity_id) DO NOTHING
         `),
       );
-      await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id = ${TEST_TASK_A}`);
+      await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id = ${fixture.rowId}`);
     });
 
-    it('should allow updating a task as runtime_role', async () => {
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`UPDATE tasks SET name = 'Updated Task' WHERE id = ${TEST_TASK_A}`),
-      );
-      // Restore
-      await adminDb.execute(sql`UPDATE tasks SET name = 'RLS Task A' WHERE id = ${TEST_TASK_A}`);
-    });
-
-    it('should allow updating an attachment as runtime_role', async () => {
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`UPDATE attachments SET name = 'Updated File' WHERE id = ${TEST_ATTACHMENT_A}`),
-      );
-      await adminDb.execute(sql`UPDATE attachments SET name = 'Test File' WHERE id = ${TEST_ATTACHMENT_A}`);
-    });
-
-    it('should allow updating a label as runtime_role', async () => {
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`UPDATE labels SET name = 'Updated Label' WHERE id = ${TEST_LABEL_A}`),
-      );
-      await adminDb.execute(sql`UPDATE labels SET name = 'RLS Label A' WHERE id = ${TEST_LABEL_A}`);
-    });
-
-    it('should allow deleting a task as runtime_role', async () => {
-      const id = '00000000-0000-4000-a000-000000000104';
-      await adminDb.execute(sql`
-        INSERT INTO tasks (id, entity_type, tenant_id, name, stx, keywords, summary, variant, display_order, status, organization_id, project_id, created_by)
-        VALUES (${id}, 'task', ${TEST_TENANT_A}, 'Del Task', '{}', '', '', 1, 98, 5, ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-        ON CONFLICT (id) DO NOTHING
-      `);
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`DELETE FROM tasks WHERE id = ${id}`),
-      );
-      const rows = getRows(await adminDb.execute(sql`SELECT id FROM tasks WHERE id = ${id}`));
-      expect(rows).toHaveLength(0);
-    });
-
-    it('should allow writing without tenant context (write-through is unconditional)', async () => {
-      const id = '00000000-0000-4000-a000-000000000105';
-      // Write without any session context — write-through policy uses sql`true`
-      await queryWithoutContext(async (tx) =>
-        tx.execute(sql`
-          INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
-          VALUES (${id}, 'attachment', ${TEST_TENANT_A}, 'No Context File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'nc.txt', 'text/plain', '50', 'attachments/nc.txt')
-        `),
-      );
-      // SELECT without context should still be denied (fail-closed read)
-      const rows = await queryWithoutContext(async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id = ${id}`),
-      );
-      expect(rows).toHaveLength(0);
-      // Cleanup
-      await adminDb.execute(sql`DELETE FROM attachments WHERE id = ${id}`);
-    });
+    it.skipIf(iterableRlsProducts.length === 0)(
+      'should allow writing without tenant context (write-through is unconditional)',
+      async () => {
+        const [, fixture] = iterableRlsProducts[0];
+        const id = randomUUID();
+        // Write without any session context — write-through policy uses sql`true`
+        await queryWithoutContext(async (tx) =>
+          tx.execute(fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A })),
+        );
+        // SELECT without context should still be denied (fail-closed read)
+        const rows = await queryWithoutContext(async (tx) =>
+          tx.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)),
+        );
+        expect(rows).toHaveLength(0);
+        // Cleanup
+        await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+      },
+    );
   });
 
   // ---- Composite FK violation (tenant_id must match organization's tenant_id) ----
 
   describe('Composite foreign key enforcement', () => {
-    it('should reject inserting a task with mismatched tenant_id / organization_id', async () => {
-      // Org A belongs to Tenant A — inserting with Tenant B should violate composite FK
-      await expect(
-        unwrapDrizzle(
-          adminDb.execute(sql`
-          INSERT INTO tasks (id, entity_type, tenant_id, name, stx, keywords, summary, variant, display_order, status, organization_id, project_id, created_by)
-          VALUES ('00000000-0000-4000-a000-000000000201', 'task', ${TEST_TENANT_B}, 'FK Task', '{}', '', '', 1, 99, 5, ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-        `),
-        ),
-      ).rejects.toThrow(/foreign key|violates/i);
-    });
+    describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
+      it('should reject INSERT with mismatched tenant_id / organization_id', async () => {
+        // Org A belongs to Tenant A — inserting with Tenant B should violate the composite FK
+        await expect(
+          unwrapDrizzle(
+            adminDb.execute(
+              fixture.insert({ id: randomUUID(), tenantId: TEST_TENANT_B, orgId: TEST_ORG_A, createdBy: TEST_USER_A }),
+            ),
+          ),
+        ).rejects.toThrow(/foreign key|violates/i);
+      });
 
-    it('should reject inserting a label with mismatched tenant_id / organization_id', async () => {
-      await expect(
-        unwrapDrizzle(
-          adminDb.execute(sql`
-          INSERT INTO labels (id, entity_type, tenant_id, name, stx, keywords, organization_id, project_id, created_by)
-          VALUES ('00000000-0000-4000-a000-000000000202', 'label', ${TEST_TENANT_B}, 'FK Label', '{}', '', ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-        `),
-        ),
-      ).rejects.toThrow(/foreign key|violates/i);
-    });
-
-    it('should reject inserting an attachment with mismatched tenant_id / organization_id', async () => {
-      await expect(
-        unwrapDrizzle(
-          adminDb.execute(sql`
-          INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
-          VALUES ('00000000-0000-4000-a000-000000000203', 'attachment', ${TEST_TENANT_B}, 'FK File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'fk.txt', 'text/plain', '10', 'attachments/fk.txt')
-        `),
-        ),
-      ).rejects.toThrow(/foreign key|violates/i);
-    });
-
-    it('should allow inserting with matching tenant_id / organization_id', async () => {
-      const id = '00000000-0000-4000-a000-000000000204';
-      await expect(
-        adminDb.execute(sql`
-          INSERT INTO tasks (id, entity_type, tenant_id, name, stx, keywords, summary, variant, display_order, status, organization_id, project_id, created_by)
-          VALUES (${id}, 'task', ${TEST_TENANT_A}, 'FK Valid', '{}', '', '', 1, 97, 5, ${TEST_ORG_A}, ${TEST_PROJECT_A}, ${TEST_USER_A})
-          ON CONFLICT (id) DO NOTHING
-        `),
-      ).resolves.not.toThrow();
-      // Cleanup
-      await adminDb.execute(sql`DELETE FROM tasks WHERE id = ${id}`);
+      it('should allow INSERT with matching tenant_id / organization_id', async () => {
+        const id = randomUUID();
+        await expect(
+          adminDb.execute(fixture.insert({ id, tenantId: TEST_TENANT_A, orgId: TEST_ORG_A, createdBy: TEST_USER_A })),
+        ).resolves.not.toThrow();
+        // Cleanup
+        await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+      });
     });
   });
 
@@ -976,28 +961,34 @@ describe('RLS Security Tests', () => {
       expect(rows[0]?.bypass).toBe(true);
     });
 
-    it('admin_role can UPDATE seq on a task row without tenant context', async () => {
-      // Read current seq (admin connection, no app.tenant_id set anywhere)
-      const before = getRows<{ seq: string | number }>(
-        await adminRoleDb.execute(sql`SELECT seq FROM tasks WHERE id = ${TEST_TASK_A}`),
-      );
-      expect(before, 'admin_role must see the task row (BYPASSRLS)').toHaveLength(1);
+    it.skipIf(iterableRlsProducts.length === 0)(
+      'admin_role can UPDATE seq on a product row without tenant context',
+      async () => {
+        const [, fixture] = iterableRlsProducts[0];
+        // Read current seq (admin connection, no app.tenant_id set anywhere)
+        const before = getRows<{ seq: string | number }>(
+          await adminRoleDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
+        );
+        expect(before, 'admin_role must see the product row (BYPASSRLS)').toHaveLength(1);
 
-      // bigint columns come back as strings from node-pg; coerce
-      const newSeq = Number(before[0].seq ?? 0) + 1;
-      const updateResult = await adminRoleDb.execute(
-        sql`UPDATE tasks SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = ${TEST_TASK_A}`,
-      );
+        // bigint columns come back as strings from node-pg; coerce
+        const newSeq = Number(before[0].seq ?? 0) + 1;
+        const updateResult = await adminRoleDb.execute(
+          sql.raw(
+            `UPDATE ${fixture.table} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = '${fixture.rowId}'`,
+          ),
+        );
 
-      // node-pg returns rowCount; the regression bug manifests as 0 here
-      expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(
-        1,
-      );
+        // node-pg returns rowCount; the regression bug manifests as 0 here
+        expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(
+          1,
+        );
 
-      const after = getRows<{ seq: string | number }>(
-        await adminDb.execute(sql`SELECT seq FROM tasks WHERE id = ${TEST_TASK_A}`),
-      );
-      expect(Number(after[0].seq)).toBe(newSeq);
-    });
+        const after = getRows<{ seq: string | number }>(
+          await adminDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
+        );
+        expect(Number(after[0].seq)).toBe(newSeq);
+      },
+    );
   });
 });

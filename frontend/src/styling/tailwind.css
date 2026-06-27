@@ -223,3 +223,34 @@
     display: none;
   }
 }
+
+/* Page-enter curtain. On a context-entity navigation the page scrolls to its header (#pt); this
+   overlay covers the content area, holds the background for the first frames so the scroll travel
+   (forward) or restore (back/forward) happens off-screen, then fades out to reveal the positioned
+   page. Lives over #app-content only, so the sidebar/nav don't flash. */
+@keyframes page-enter-curtain {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.page-enter-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: var(--background);
+  pointer-events: none;
+  animation: page-enter-curtain 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-curtain {
+    animation: none;
+    opacity: 0;
+  }
+}

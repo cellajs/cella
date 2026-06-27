@@ -3,6 +3,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
+import { setSkipPageEnter } from '~/routes/nav-transition';
 import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 
@@ -14,7 +15,7 @@ import type { BoundaryType } from '~/routes/types';
 const router = createRouter({
   scrollRestoration: true,
   scrollRestorationBehavior: 'instant',
-  defaultHashScrollIntoView: { behavior: 'smooth' },
+  defaultHashScrollIntoView: { block: 'start', behavior: 'instant' },
   routeTree,
   defaultPreload: false,
   context: {},
@@ -36,6 +37,12 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
 /**
  * Router lifecycle subscriptions
  */
+// Track the latest history action: PUSH/REPLACE = forward/new, BACK/FORWARD/GO = history traversal.
+let lastHistoryAction = 'PUSH';
+router.history.subscribe(({ action }) => {
+  lastHistoryAction = action.type;
+});
+
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   if (!pathChanged) return;
 
@@ -45,6 +52,13 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   // Boundary based cleanup
   const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
   cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
+
+  // Skip the page-enter mask when moving between two pages of the same leaf route (e.g. org -> org)
+  // via a forward navigation — there is no scroll delta to mask in that case.
+  const fromLeafId = router.state.matches.at(-1)?.routeId;
+  const toLeafId = pendingMatches.at(-1)?.routeId;
+  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
+  setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
 
   useNavigationStore.getState().setNavLoading(true);
 });

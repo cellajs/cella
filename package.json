@@ -46,9 +46,9 @@
     "build:staging": "pnpm -r --parallel build:staging",
     "start": "pnpm -r --parallel start",
     "test": "pnpm test:full",
-    "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run --silent=passed-only --hideSkippedTests",
+    "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run --silent=passed-only",
     "test:core:verbose": "pnpm docker:test && cross-env TEST_MODE=core vitest run",
-    "test:full": "pnpm docker:test && cross-env TEST_MODE=full COVERAGE_REPORTERS=summary vitest run --coverage.enabled --silent=passed-only --hideSkippedTests",
+    "test:full": "pnpm docker:test && cross-env TEST_MODE=full COVERAGE_REPORTERS=summary vitest run --coverage.enabled --silent=passed-only",
     "test:full:verbose": "pnpm docker:test && cross-env TEST_MODE=full vitest run",
     "test:update": "pnpm docker:test && cross-env TEST_MODE=core vitest run -u",
     "cella": "pnpm --filter @cellajs/cli cella",
@@ -57,16 +57,57 @@
     "bench": "pnpm -C bench bench"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.0",
+    "@biomejs/biome": "^2.5.1",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@evilmartians/lefthook": "^2.1.9",
     "@typescript/native-preview": "catalog:",
     "cross-env": "catalog:",
-    "knip": "^6.17.1",
+    "knip": "^6.20.0",
     "rimraf": "^6.1.3",
     "semver": "^7.7.3",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "packageManager": "pnpm@11.8.0"
+  "packageManager": "pnpm@11.8.0",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "type-enum": [
+        2,
+        "always",
+        [
+          "feat",
+          "fix",
+          "perf",
+          "refactor",
+          "revert",
+          "docs",
+          "chore",
+          "build",
+          "ci",
+          "style",
+          "test"
+        ]
+      ],
+      "header-max-length": [
+        2,
+        "always",
+        120
+      ],
+      "body-max-line-length": [
+        0,
+        "always",
+        200
+      ],
+      "footer-max-line-length": [
+        0,
+        "always",
+        200
+      ]
+    }
+  }
 }

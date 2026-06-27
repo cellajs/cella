@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
-  const { email, resetSteps, restrictedMode, setStep } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode } = useAuthStore();
 
   const isMobile = window.innerWidth < 640;
 
@@ -43,7 +43,10 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   // Send magic link for email-based sign-up
   const { mutate: sendMagic, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email } }),
-    onSuccess: () => setStep('magicLinkSent', form.getValues('email') || email),
+    onSuccess: () => {
+      setMagicLinkMode('signup');
+      setStep('magicLinkSent', form.getValues('email') || email);
+    },
     onError: () => toaster(t('error:reported_try_later'), 'error'),
   });
 

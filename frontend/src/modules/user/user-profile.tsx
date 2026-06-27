@@ -52,7 +52,6 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
       <PageHeader
         entity={user}
         canUpdate={isSelf}
-        disableScroll={true}
         coverUpdateCallback={coverUpdateCallback}
         panel={
           isSelf && (

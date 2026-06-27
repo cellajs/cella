@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
+import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { processAppCatchup, processPublicCatchup } from './catchup-processor';
@@ -492,11 +493,6 @@ export const publicStreamManager = new StreamManager('PublicStream', {
   processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
 });
 
-/** Check if the app sync stream is in 'live' state (catchup done, SSE connected). */
-export function isSyncStreamLive(): boolean {
-  return appStreamManager.useStore.getState().state === 'live';
-}
-
 // App Stream
 
 export const appStreamManager = new StreamManager('AppStream', {
@@ -514,6 +510,10 @@ export const appStreamManager = new StreamManager('AppStream', {
   },
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
 });
+
+// Mirror app-stream liveness into the low-level basic-layer flag so `syncStaleTime` can read it
+// without importing this (realtime) module. Inverts a `query/basic` -> `query/realtime` dependency.
+appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live'));
 
 /**
  * Wait for the first stream catchup to complete after page load.

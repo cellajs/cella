@@ -44,7 +44,7 @@ function AttachmentDialogHandlerBase() {
           if (!isCleanup) close();
         },
         drawerOnMobile: false,
-        className: 'min-w-full h-dvh max-sm:max-h-[100dvh] border-0 p-0 rounded-none flex flex-col mt-0',
+        className: 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0',
         headerClassName: 'hidden',
       });
     });

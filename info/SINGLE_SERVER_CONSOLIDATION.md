@@ -1,13 +1,18 @@
 # Single-server consolidation — running AI, Yjs & CDC inside one backend
 
-> **Status:** Analysis / decision aid. No code change is proposed here yet — this
-> documents where the codebase already is, what "fold everything into one backend"
-> would actually take, and the frictions/risks worth knowing before committing.
+> **Status:** Design plan / decision aid. This describes how to support **both** deployment
+> shapes from one codebase — it is not a refactor for its own sake.
 >
-> **Question (from devs):** deploying a separate server for **CDC**, **Yjs** and **AI**
-> alongside the **API** is overwhelming. Can they all run inside a single backend, where
-> a `MODE`/config switch decides how it spins up — so the same code can run as one VM
-> (cheap, pre-production) *or* as separate VMs (scaled, production)?
+> **Goal (from devs):** deploying a separate server for **CDC**, **Yjs** and **AI** alongside
+> the **API** is overwhelming. We want the *same* code to run two ways, chosen by config:
+> - **Split (default):** each service in its own process / VM. Scales independently; this is
+>   the production shape **and what local development uses**.
+> - **Single-VM:** the backend/API process also runs every enabled service in-process — one
+>   cheap box for demos, previews and small forks.
+>
+> The switch is a single `appConfig.singleVM: boolean` (default `false`). When `false`, `MODE`
+> selects the one subsystem a process runs (the split). When `true`, `MODE` is ignored and the
+> backend boots itself plus every service enabled via `x-service`.
 >
 > Read alongside [ARCHITECTURE.md](./ARCHITECTURE.md), [SYNC_ENGINE.md](./SYNC_ENGINE.md)
 > and [MULTI_FORK_SHARING.md](./MULTI_FORK_SHARING.md). That last doc pushes the *opposite*
@@ -18,24 +23,25 @@
 
 ## TL;DR
 
-- **AI is already done.** The `ai/` package is a 12-line shim that sets `MODE=ai-worker`
-  and imports the backend's `main.ts`. All AI code lives in `backend/src/modules/ai/`, and
-  the deployed `ai` service [reuses the backend image](../infra/config/services.config.ts)
-  at the same SHA. This is the exact pattern the question asks to generalise.
-- **The HTTP seams of every service already live in the API process and are config-gated.**
-  The Yjs token route, the MCP/AI routes, and the CDC WebSocket receiver are all mounted on
-  the API today and 404 / no-op when their `appConfig.services.<x>.enabled` flag is off (via
-  the [`x-service`](../backend/src/core/x-routes.ts) gate). "Make the routes available on the
-  main API by config" is **already the behaviour** — flip the flag.
-- **What is *not* co-located is the three stateful worker runtimes:** the Yjs WebSocket
-  relay, the CDC logical-replication consumer, and the AI pg-boss job loop. Folding those
-  into one process is feasible and mostly mechanical for AI/Yjs, but **CDC carries a real
-  deploy-lifecycle constraint** (a single replication slot can't survive a blue-green
-  overlap) that must be respected, not papered over.
-- **Recommended shape:** make `MODE` a *set* of subsystems (`MODE=api,ai,yjs,cdc`) resolved
-  through a small in-process **subsystem registry**, default the single-VM/dev profile to
-  "all", and keep the per-VM split as just a different `MODE` value. Gate the CDC subsystem
-  so it can only co-reside with an **in-place** (non-overlapping) deploy.
+- **Two shapes, one codebase.** Default is the **split** (one service per process/VM).
+  Setting `appConfig.singleVM = true` collapses every enabled service into the backend
+  process. No separate "monolith build" — same image, same code, a config flag chooses.
+- **`MODE` stays a single value** naming the one subsystem a process runs
+  (`api | ai | yjs | cdc | migrate | …`). This is the per-VM model, the default, and how the
+  deployed `ai` service already works ([reusing the backend image](../infra/config/services.config.ts)
+  at the same SHA, with `MODE: 'ai-worker'`).
+- **Why split is the default — including in development.** Bugs hide more easily when you
+  *only ever* run everything in one process: cross-service boundaries, network seams, env
+  validation and deploy-lifecycle constraints simply never get exercised. Running split by
+  default (dev too) surfaces those early. Single-VM is the convenience escape hatch, not the
+  baseline.
+- **`singleVM: true` ignores `MODE`** and boots the backend plus every service whose
+  `appConfig.services.<x>.enabled` is true — the *same* flag the
+  [`x-service`](../backend/src/core/x-routes.ts) route gate already reads per request. No
+  per-service `MODE` juggling: enablement is the single source of truth in this mode.
+- **AI already proves the model; CDC is the one real constraint.** Folding AI/Yjs in is
+  mostly mechanical. CDC holds a single Postgres replication slot, so co-hosting it forfeits
+  the API's blue-green deploy — fine for single-VM previews, must stay split in production.
 
 ---
 
@@ -60,57 +66,80 @@ Two structural facts make consolidation tractable:
    else                               await import('./main.api');
    ```
    It is a single enum (`'api' | 'ai-worker' | 'migrate'`,
-   [env.ts](../backend/src/env.ts)). Generalising it to a *set* is the central change.
+   [env.ts](../backend/src/env.ts)). **`MODE` stays single-valued** — naming the one
+   subsystem a process runs. We extend the enum (e.g. `yjs`, `cdc`) rather than turning it
+   into a set; the "run several at once" case is handled by `singleVM`, not by `MODE`.
 
 2. **Service enablement is already a first-class config axis.**
    [`appConfig.services`](../shared/config/config.default.ts) carries
    `{ frontend, backend, cdc, yjs, ai }.enabled`, and the
    [`x-service`](../backend/src/core/x-routes.ts) route gate reads it **per request**, so a
    disabled service's routes 404 without being unmounted (keeping OpenAPI/SDK output stable).
-   `cdc/yjs/ai` workers also self-check the same flag and no-op when disabled.
+   `cdc/yjs/ai` workers also self-check the same flag and no-op when disabled. **In
+   `singleVM` mode this same flag decides what boots in-process** — no new switch to learn.
 
 So the question is **not** "can the routes live on the API" (they do) — it's **"can the three
-heavy worker runtimes be booted inside the same process, selectable by config?"**
+heavy worker runtimes boot inside the backend process when `singleVM` is on, while staying
+independently deployable when it's off?"**
 
 ---
 
-## The proposal: `MODE` as a composable subsystem set
+## The two shapes
 
-Replace the single-value `MODE` with a resolved **set of subsystems**, and introduce one small
-in-process registry that each subsystem registers with. The process boots exactly the
-subsystems its `MODE` selects.
+One codebase, one image, two ways to run — chosen by `appConfig.singleVM`.
 
-```ts
-// conceptual — backend/src/core/subsystems.ts
-type Subsystem = {
-  name: 'api' | 'ai' | 'yjs' | 'cdc';
-  needsHttpServer?: boolean;     // mounts routes on the shared Hono app
-  ownsReplicationSlot?: boolean; // CDC — affects allowed deploy strategy
-  start(ctx: BootContext): Promise<Stoppable>;
-};
-```
+### Shape 1 — split (default, `singleVM: false`)
 
-- `MODE=api` → today's behaviour (API + already-mounted gated routes).
-- `MODE=ai-worker` → today's behaviour (AI job loop only).
-- `MODE=all` (or `MODE=api,ai,yjs,cdc`) → **one process**, one VM: API serves HTTP, and the
-  AI/Yjs/CDC runtimes start in-process. This is the "cheap pre-production single VM" the devs
-  want.
-- Production keeps splitting by deploying the **same image** with different `MODE` values per
-  VM — exactly how the `ai` service already works
+Each process runs exactly one subsystem, chosen by `MODE`. This is the production shape and the
+**development** shape.
+
+- `MODE=api` → API serves HTTP (plus the already-mounted, gated service routes).
+- `MODE=ai-worker` → AI pg-boss job loop only.
+- `MODE=yjs` / `MODE=cdc` → (new enum values) the Yjs relay / CDC replication consumer only.
+- `MODE=migrate` → one-shot migration, then exit.
+- Production and dev both run the **same image** with a different `MODE` per VM/process —
+  exactly how the `ai` service already works today
   ([services.config.ts](../infra/config/services.config.ts) sets `MODE: 'ai-worker'`,
   `reusesImageOf: 'backend'`).
 
-`appConfig.services.<x>.enabled` stays the **capability** switch (is this feature part of the
-app at all); `MODE` becomes the **placement** switch (which process runs it). A subsystem boots
-only when it is both *enabled* and *selected by MODE*.
+### Shape 2 — single-VM (`singleVM: true`)
+
+The backend/API process **ignores `MODE`** and boots itself plus every service whose
+`appConfig.services.<x>.enabled` is true (the same flag `x-service` reads). One process, one VM:
+the API serves HTTP and the enabled AI/Yjs/CDC runtimes start in-process. This is the cheap box
+for demos, previews and small forks.
+
+```ts
+// conceptual — backend/src/main.ts
+if (appConfig.singleVM) {
+  // MODE is ignored; enablement is the only switch
+  await startApi();                                       // always
+  if (appConfig.services.ai.enabled)  await startAi();
+  if (appConfig.services.yjs.enabled) await startYjs();
+  if (appConfig.services.cdc.enabled) await startCdc();    // see CDC caveat below
+} else {
+  // split: one subsystem per process, chosen by MODE
+  switch (env.MODE) {
+    case 'migrate':   await import('./main.migrate'); break;
+    case 'ai-worker': await import('./main.ai-worker'); break;
+    case 'yjs':       await import('./main.yjs'); break;
+    case 'cdc':       await import('./main.cdc'); break;
+    default:          await import('./main.api');
+  }
+}
+```
+
+Each subsystem is just a `start()/stop()` pair the backend can call directly — no heavyweight
+registry required. The only metadata that matters operationally is "does this subsystem own the
+replication slot?" (CDC), because that gates whether single-VM can blue-green.
 
 ### Why this is mostly already true for AI
 
 [`ai-worker-entry.ts`](../backend/src/modules/ai/worker/ai-worker-entry.ts) already: checks
 `appConfig.services.ai.enabled`, mounts routes on the shared `baseApp`, starts pg-boss, and
-registers a graceful-shutdown handler. That is a subsystem in all but name — it just happens to
-own its own `serve()` call. Refactoring it to *register* with a process that may also be running
-the API is a small, contained change.
+registers a graceful-shutdown handler. That is exactly a `start()` in all but name — it just
+happens to own its own `serve()` call. Calling it from the backend process (single-VM) instead
+of from its own entrypoint (split) is a small, contained change.
 
 ---
 
@@ -124,9 +153,9 @@ the API is a small, contained change.
   "overwhelming to deploy" complaint, and dovetails with
   [MULTI_FORK_SHARING.md](./MULTI_FORK_SHARING.md)'s STARDUST-sized boxes for demo/staging
   forks.
-- **No code fork between "small" and "scaled".** The split deployment is just a different
-  `MODE`; there is no separate "monolith build". This is the proven property of the AI path
-  already in production config.
+- **No code fork between "small" and "scaled".** Single-VM is a config flag, not a separate
+  build; the split is just `MODE` per VM. Same image either way — the proven property of the
+  AI path already in production config.
 - **Shared lifecycle primitives already exist.** `setupGracefulShutdown` from
   [`shared/worker-lifecycle`](../shared/src/), `waitForBackend`, and the OTel wrapper are
   already used identically by all four entrypoints, so a registry can own them once.
@@ -153,13 +182,14 @@ two live consumers would double-consume the slot. The **API**, by contrast, depl
 > exists to prevent.
 
 Mitigations (pick one, none free):
-- **Single-VM profile uses in-place/exclusive deploys** (a brief restart gap). Acceptable for
-  pre-production, which is the whole point of the single-VM mode. Document that co-hosting CDC
+- **Single-VM uses in-place/exclusive deploys** (a brief restart gap). Acceptable for
+  pre-production, which is the whole point of single-VM mode. Document that co-hosting CDC
   forfeits zero-downtime API rollout.
-- **Keep CDC selectable but default it OFF in `MODE=all` for production-shaped deploys**, so
-  only dev/staging single VMs co-host it. Production keeps CDC on its own `exclusive` VM.
-- The subsystem registry marks CDC `ownsReplicationSlot: true`; a boot-time assertion **refuses
-  to start** if CDC is selected alongside an overlap deploy strategy. Fail loud, not silent.
+- **Even with `singleVM: true`, keep `services.cdc.enabled` OFF for production-shaped boxes**,
+  so only dev/staging single VMs co-host CDC. Production keeps CDC split onto its own
+  `exclusive` VM.
+- Mark CDC as the slot owner; a boot-time assertion **refuses to start** if `singleVM` would
+  co-host CDC alongside an overlap (blue-green) deploy strategy. Fail loud, not silent.
 
 CDC also has its own health server on a separate port
 ([cdc-worker.ts](../cdc/src/cdc-worker.ts), `CDC_HEALTH_PORT`) and a back-pressure path that
@@ -189,31 +219,32 @@ production VMs that don't use them. Today each worker image carries only its own
 ### 4. Env validation becomes all-or-nothing
 
 [env.ts](../backend/src/env.ts) hard-requires `YJS_SECRET`, `CDC_SECRET`, `PII_HASH_SECRET`
-etc. *unconditionally*. A unified process that can run as API-only would now demand Yjs/CDC
-secrets it doesn't use. Mitigation: make secret requirements **conditional on the resolved
-subsystem set** (zod `superRefine` keyed off `MODE`/`services`), so `MODE=api` doesn't require
-`YJS_SECRET`. This is a prerequisite, not an afterthought.
+etc. *unconditionally*. A backend that can run as API-only (split, `MODE=api`) would now demand
+Yjs/CDC secrets it doesn't use. Mitigation: make secret requirements **conditional on what will
+actually boot** (zod `superRefine` keyed off `singleVM` + `services.*.enabled` in single-VM, or
+`MODE` in split), so `MODE=api` doesn't require `YJS_SECRET`. This is a prerequisite, not an
+afterthought.
 
 ### 5. Shared-fate blast radius
 
 One process = one crash domain. An unhandled rejection in the CDC pipeline or an OOM from a Yjs
 spike takes the API down with it. Today a CDC crash leaves the API serving. Mitigation: this is
 **acceptable for pre-production** (the target of single-VM mode) and **unacceptable for
-production**, which keeps the split. The registry should isolate each subsystem's failures
+production**, which keeps the split. Single-VM boot should isolate each subsystem's failures
 (catch + restart the subsystem, not the process) where feasible.
 
 ### 6. Observability / OTel resource identity
 
 Each worker today reports a distinct OTel `service.name` and has its own tracing init. Merged,
 they share one process — dashboards/alerts keyed on per-service resources blur. Mitigation: tag
-spans/metrics with a `subsystem` attribute and keep one OTel SDK init in the registry rather
-than four.
+spans/metrics with a `subsystem` attribute and keep one OTel SDK init in the backend process
+rather than four.
 
 ### 7. Migrations & boot ordering
 
 Already handled and worth preserving: the API owns migrations (`RUN_MIGRATIONS_ON_BOOT`,
-`MODE=migrate` one-shot), and workers `waitForBackend` before starting. In a single process the
-ordering is internal — the registry must run the migrate/role step **before** starting CDC
+`MODE=migrate` one-shot), and workers `waitForBackend` before starting. In single-VM the
+ordering is internal — the backend must run the migrate/role step **before** starting CDC
 (which needs the publication/slot) and before Yjs/AI touch the DB.
 
 ---
@@ -235,28 +266,33 @@ ordering is internal — the registry must run the migrate/role step **before** 
 
 ## Recommended path
 
-1. **Generalise `MODE` to a subsystem set + add a tiny subsystem registry.** Resolve
-   `MODE=all` (or comma-list) into the set of subsystems to boot; each subsystem exposes
-   `start()/stop()` and metadata (`needsHttpServer`, `ownsReplicationSlot`). Refactor the
-   existing AI worker entry to *register* instead of owning its own `serve()`. Low risk — AI is
-   already 90% of this shape.
-2. **Make env validation subsystem-conditional.** `MODE=api` must not require `YJS_SECRET` /
-   `CDC_SECRET`. Prerequisite for a single-binary that can run any subset.
-3. **Fold Yjs into the registry.** It only depends on `shared` today and already aliases
-   `#/*` to backend; moving its relay under the registry (its own port, gated by
-   `services.yjs.enabled` + MODE) is mechanical. Keep it splittable back out unchanged.
-4. **Fold CDC last, behind a guard.** Mark it `ownsReplicationSlot`; refuse to co-boot it with
-   an overlapping API deploy strategy. Default it **off** in production-shaped `MODE=all`, **on**
-   for dev/staging single VMs. Route its health through `/health`.
-5. **Collapse `cdc/` and `yjs/` to thin shims** (like `ai/`) once their runtimes live in the
-   backend, deleting the duplicated env/otel/build/Dockerfile copies. Production deploys keep
-   splitting by setting `MODE` per VM on the **one** backend image (the `ai` service already
-   proves this works end-to-end).
+1. **Add `appConfig.singleVM: boolean` (default `false`)** and branch boot in
+   [`main.ts`](../backend/src/main.ts): when `false`, today's `MODE` switch (extended with
+   `yjs`/`cdc` values); when `true`, ignore `MODE` and boot the API plus every
+   `services.<x>.enabled` subsystem in-process. Default `false` keeps split as the baseline —
+   for production **and** development.
+2. **Extract each worker's runtime into a `start()/stop()` pair** the backend can call directly.
+   AI is already 90% there ([`ai-worker-entry.ts`](../backend/src/modules/ai/worker/ai-worker-entry.ts));
+   it just needs to stop owning its own `serve()`. No heavyweight registry — plain functions.
+3. **Make env validation conditional on what boots.** `MODE=api` (split) and a `singleVM` box
+   with Yjs/CDC disabled must not require `YJS_SECRET` / `CDC_SECRET`. Prerequisite for one
+   binary that can run any subset.
+4. **Fold Yjs in.** It only depends on `shared` today and already aliases `#/*` to backend;
+   exposing its relay as a `start()` (own port, gated by `services.yjs.enabled`) is mechanical.
+   Keep it splittable back out unchanged via `MODE=yjs`.
+5. **Fold CDC last, behind a guard.** Mark it the slot owner; refuse to co-boot it under
+   `singleVM` alongside an overlapping (blue-green) API deploy. Keep `services.cdc.enabled`
+   **off** for production-shaped single VMs, **on** for dev/staging. Route its health through
+   `/health`.
+6. **Collapse `cdc/` and `yjs/` to thin shims** (like `ai/`) once their runtimes live in the
+   backend, deleting the duplicated env/otel/build/Dockerfile copies. Split deploys keep
+   working by setting `MODE` per VM on the **one** backend image (the `ai` service already
+   proves this end-to-end).
 
-**Stop after step 3 if that's enough** — AI + Yjs in one VM already removes two of the three
-"extra servers", and CDC's slot constraint makes it the only one where co-location trades away
-zero-downtime API deploys. Treat CDC as opt-in, and the single-VM/dev win is captured without
-compromising the production rollout story.
+**Single-VM is the escape hatch, not the default.** Default `singleVM: false` means dev and
+prod both run split, so cross-service and deploy-lifecycle bugs surface early. Flip the flag for
+a cheap one-box preview; keep CDC split in production because its slot constraint trades away
+zero-downtime API deploys.
 
 ---
 

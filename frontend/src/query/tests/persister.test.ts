@@ -8,7 +8,17 @@ vi.mock('shared', () => ({
   appConfig: {
     slug: 'test-app',
     productEntityTypes: ['task', 'label', 'attachment', 'page'],
+    clientCacheVersion: 'v1',
   },
+}));
+
+// Pin the storage scope so these tests exercise the persister mechanics against a
+// stable `rq` scope (per-user scoping is covered in storage-scope.test.ts).
+vi.mock('~/lib/storage-scope', () => ({
+  ANON_OWNER: 'anon',
+  getOwnerId: () => 'anon',
+  getQueryScope: () => 'rq',
+  userScopedName: (base: string) => `test-app-${base}`,
 }));
 
 // Stub window.addEventListener for the module-level beforeunload listener
@@ -354,6 +364,59 @@ describe('per-query IDB persister', () => {
       const queryRecords = await db2.table('queries').where('scope').equals(oldScope).count();
       expect(metaRecords).toBe(0);
       expect(queryRecords).toBe(0);
+      db2.close();
+    });
+  });
+
+  describe('cache-bust on schema change', () => {
+    it('wipes cached queries but keeps queued mutations when clientCacheVersion changes', async () => {
+      const client: PersistedClient = {
+        timestamp: 1000,
+        buster: '',
+        clientState: {
+          queries: [makeQuery('["task","list","org-1"]', 'task', 100, [{ id: 't1' }]), makeQuery('["me"]', 'me', 200)],
+          mutations: [
+            {
+              mutationKey: ['task', 'create'],
+              state: {
+                context: undefined,
+                data: undefined,
+                error: null,
+                failureCount: 0,
+                failureReason: null,
+                isPaused: true,
+                status: 'pending',
+                variables: { title: 'offline edit' },
+                submittedAt: 100,
+              },
+            },
+          ],
+        },
+      };
+      await persister.persistClient(client);
+      await persister.flush();
+
+      // Simulate a prior build's clientCacheVersion persisted on disk (now stale vs 'v1').
+      const { Dexie: D } = await import('dexie');
+      const db = new D('test-app-query-persister');
+      db.version(3).stores({ queries: 'id, scope', meta: 'key' });
+      const meta = await db.table('meta').get('rq');
+      await db.table('meta').put({ ...meta, clientCacheVersion: 'v0' });
+      db.close();
+
+      const restored = await persister.restoreClient();
+      expect(restored).toBeDefined();
+      // Cached query data is gone (both product + context)...
+      expect(restored!.clientState.queries).toHaveLength(0);
+      // ...but the queued offline mutation survives for replay.
+      expect(restored!.clientState.mutations).toHaveLength(1);
+      expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
+
+      // Pointer advanced to current so a subsequent restore does not re-bust.
+      const db2 = new D('test-app-query-persister');
+      db2.version(3).stores({ queries: 'id, scope', meta: 'key' });
+      const metaAfter = await db2.table('meta').get('rq');
+      expect(metaAfter.clientCacheVersion).toBe('v1');
       db2.close();
     });
   });

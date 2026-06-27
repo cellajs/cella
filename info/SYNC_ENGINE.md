@@ -760,6 +760,8 @@ Descriptions on product entities (`task`, `page`, etc.) use Yjs CRDT for real-ti
 
 The Yjs worker is a standalone `yjs/` workspace package (like `cdc/`). It is a **pure binary relay** — the server never instantiates a `Y.Doc`. It stores and relays raw `Uint8Array` updates with zero document memory.
 
+> **Authorization.** The relay authorizes each connection **locally** rather than calling back to the backend. On WS upgrade it verifies the HMAC token, then runs the shared permission engine (`shared/src/permissions`, the same engine the backend uses) against an RLS-scoped read of the entity scope + the user's memberships — see `yjs/src/data/permissions.ts` (`canEditEntity`). Denied → close `4003`, missing ancestor scope → `4400`, DB/resolver error → `4503`. Extracting the engine into `shared` means the relay and the backend can never drift on the same decision.
+
 ```
 Online editing:
   Browser → y-websocket provider → Yjs worker (standalone service, own port)

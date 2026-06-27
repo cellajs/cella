@@ -15,6 +15,7 @@ export type DialogData = {
   triggerRef: TriggerRef;
   description?: ReactNode;
   drawerOnMobile?: boolean;
+  outsideScroll?: boolean;
   className?: string;
   headerClassName?: string;
   container?: DialogContainerOptions;
@@ -36,6 +37,7 @@ interface DialogStoreState {
   update: (id: number | string, updates: Partial<InternalDialog>) => void;
   remove: (id?: number | string, opts?: { isCleanup?: boolean }) => void;
   get: (id: number | string) => InternalDialog | undefined;
+  scrollToTop: (id: number | string) => void;
 
   triggerRefs: Record<string, TriggerRef | null>;
 
@@ -92,6 +94,11 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   },
 
   get: (id) => get().dialogs.find((d) => d.id === id),
+
+  scrollToTop: (id) => {
+    const popup = document.getElementById(String(id));
+    popup?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 });
+  },
 
   setTriggerRef: (id, ref) => {
     set((state) => ({

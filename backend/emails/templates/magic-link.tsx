@@ -18,20 +18,22 @@ const appName = appConfig.name;
 interface MagicLinkStatic {
   magicLinkUrl: string;
   name: string;
+  isNewUser: boolean;
 }
 
 /**
- * Email template for magic link sign-in.
+ * Email template for magic link sign-in and sign-up.
  */
 export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipient & { email: string }>()({
-  translate(lng, { magicLinkUrl, name }) {
+  translate(lng, { magicLinkUrl, name, isNewUser }) {
+    const keyBase = isNewUser ? 'backend:email.magic_link.signup' : 'backend:email.magic_link';
     return {
-      subject: i18n.t('backend:email.magic_link.subject', { lng, appName }),
-      previewText: i18n.t('backend:email.magic_link.preview', { appName, lng }),
-      headerText: i18n.t('backend:email.magic_link.title', { appName, lng }),
+      subject: i18n.t(`${keyBase}.subject`, { lng, appName }),
+      previewText: i18n.t(`${keyBase}.preview`, { appName, lng }),
+      headerText: i18n.t(`${keyBase}.title`, { appName, lng }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name }) : '',
-      bodyHtml: i18n.t('backend:email.magic_link.text', { lng, appName }),
-      buttonText: i18n.t('c:sign_in', { lng }),
+      bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName }),
+      buttonText: i18n.t(isNewUser ? 'c:sign_up' : 'c:sign_in', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       magicLinkUrl,
     };
@@ -53,7 +55,7 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
     );
   },
   preview: {
-    statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily' },
+    statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false },
     recipient: {},
   },
 });

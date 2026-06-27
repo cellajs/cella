@@ -10,10 +10,16 @@
  *   pnpm bench                                  # interactive picker
  *   pnpm bench attachment-edit                  # run a scenario directly
  *   pnpm bench attachment-edit --skip-seed      # skip bench data seeding
+ *   pnpm bench --all                            # run every scenario back-to-back
+ *   pnpm bench --all --short                    # quick smoke run of every scenario
  *   pnpm bench help                             # list available scenarios
  *
  * The scenario name is a positional argument. The legacy `--scenario <name>`
  * flag is still accepted as an alias.
+ *
+ * `--all` runs each discovered scenario in sequence. `--short` shrinks every
+ * scenario to a single 1s / 1-VU phase and drops the ensure thresholds, turning
+ * a run into a fast smoke check rather than a load test (no baselines saved).
  *
  * Each run is automatically saved to .baselines/<scenario>.json and compared
  * against the previous run — no flag required.
@@ -28,22 +34,13 @@ import { fileURLToPath } from 'node:url';
 import { select } from '@inquirer/prompts';
 import ora from 'ora';
 import pg from 'pg';
-import { appConfig } from 'shared';
 import pc from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
-import { BACKEND_PORT, BASE_URL, createBenchProcessEnv, DB_URL } from './config';
+import { createBenchProcessEnv, DB_URL } from './config';
+import { isPostgresReady, isServiceHealthy, SERVICES } from './preflight';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
-
-// Only services the app actually runs are health-checked. yjs and ai are skipped
-// when disabled in appConfig.services.
-const SERVICES = {
-  backend: `${BASE_URL}/health`,
-  ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${BACKEND_PORT + 1}/health` } : {}),
-  ...(appConfig.services.yjs.enabled !== false ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
-  ...(appConfig.services.ai.enabled !== false ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
-} as const;
 
 // ── CLI args ───────────────────────────────────────────────────────────────
 
@@ -51,18 +48,22 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let scenario: string | undefined;
   let skipSeed = false;
+  let all = false;
+  let short = false;
   let help = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--scenario' && args[i + 1]) scenario = args[++i];
     else if (arg === '--skip-seed') skipSeed = true;
+    else if (arg === '--all') all = true;
+    else if (arg === '--short') short = true;
     else if (arg === 'help' || arg === '--help' || arg === '-h') help = true;
     // First bare (non-flag) argument is the scenario name.
     else if (!arg.startsWith('-') && scenario === undefined) scenario = arg;
   }
 
-  return { scenario, skipSeed, help };
+  return { scenario, skipSeed, all, short, help };
 }
 
 // ── Scenario discovery ─────────────────────────────────────────────────────
@@ -92,8 +93,12 @@ function scenarioDescription(name: string): string {
 
 /** Print usage and the list of available scenarios (for `pnpm bench help`). */
 function printUsage(scenarios: string[]): void {
-  console.info(`${pc.bold('Usage:')} pnpm bench [scenario] [--skip-seed]\n`);
+  console.info(`${pc.bold('Usage:')} pnpm bench [scenario] [--all] [--short] [--skip-seed]\n`);
   console.info('Run without a scenario for an interactive picker.\n');
+  console.info(pc.bold('Flags:'));
+  console.info(`  ${'--all'.padEnd(22)}${pc.dim('run every scenario in sequence')}`);
+  console.info(`  ${'--short'.padEnd(22)}${pc.dim('quick smoke run (1s/1VU, no thresholds, no baselines)')}`);
+  console.info(`  ${'--skip-seed'.padEnd(22)}${pc.dim('skip bench data seeding')}\n`);
   console.info(pc.bold('Scenarios:'));
   for (const name of scenarios) {
     console.info(`  ${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`);
@@ -106,27 +111,6 @@ function printUsage(scenarios: string[]): void {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 // ── Preflight ──────────────────────────────────────────────────────────────
-
-async function isPostgresReady(): Promise<boolean> {
-  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
-  try {
-    await pool.query('SELECT 1');
-    return true;
-  } catch {
-    return false;
-  } finally {
-    await pool.end();
-  }
-}
-
-async function isServiceHealthy(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url);
-    return res.status === 204 || res.ok;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Fail-fast preflight. Bench expects Postgres seeded with app data and the
@@ -197,10 +181,28 @@ function seedDatabase(): Promise<{ output: string }> {
 
 // ── Artillery ──────────────────────────────────────────────────────────────
 
-function runArtillery(name: string): { exitCode: number; reportPath: string } {
+/**
+ * Artillery `--overrides` payload for `--short`: collapse every phase into a
+ * single 1s / 1-VU arrival and drop the ensure thresholds, so a run becomes a
+ * fast "does it still work" smoke check rather than a load test. Loop `count`s
+ * inside scenario flows stay as-is but execute once (single VU).
+ */
+const SHORT_OVERRIDES = JSON.stringify({
+  config: {
+    phases: [{ duration: 1, arrivalRate: 1, name: 'smoke' }],
+    plugins: { ensure: { thresholds: [] } },
+  },
+});
+
+function runArtillery(
+  name: string,
+  { short = false }: { short?: boolean } = {},
+): { exitCode: number; reportPath: string } {
   const reportPath = resolve(tmpdir(), `artillery-${name}-${Date.now()}.json`);
+  const args = ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath];
+  if (short) args.push('--overrides', SHORT_OVERRIDES);
   try {
-    execFileSync('npx', ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath], {
+    execFileSync('npx', args, {
       cwd: BENCH_ROOT,
       stdio: 'inherit',
       env: createBenchProcessEnv(),
@@ -403,6 +405,41 @@ function cleanup() {
   cleanupFns.length = 0;
 }
 
+// ── Run a single scenario ──────────────────────────────────────────────────
+
+/**
+ * Run one scenario end to end: start the silent CDC poller, run Artillery, then
+ * (for full runs) compare against and save the baseline. Short runs are smoke
+ * checks, so their metrics are not comparable and never touch baselines.
+ * Returns the Artillery exit code.
+ */
+async function runScenario(name: string, { short }: { short: boolean }): Promise<number> {
+  // Always runs in the background, silently. Stays invisible unless CDC actually
+  // processed events during the run — no flag, no developer awareness needed.
+  const cdcPoller = startCdcPoller();
+  const stopPoller = () => cdcPoller.proc.kill('SIGINT');
+  registerCleanup(stopPoller);
+
+  console.info(`${pc.cyan('▸')} running ${pc.bold(name)}${short ? pc.dim(' (short)') : ''}...\n`);
+  const { exitCode, reportPath } = runArtillery(name, { short });
+
+  // Stop the poller and flush its summary (printed only if CDC saw events).
+  stopPoller();
+  const cdcSummary = (await cdcPoller.summary).trimEnd();
+  if (cdcSummary) console.info(cdcSummary);
+
+  if (!short) {
+    const metrics = extractMetrics(reportPath, name);
+    if (metrics) {
+      const baseline = loadBaseline(name);
+      printComparison(metrics, baseline);
+      saveBaseline(metrics);
+    }
+  }
+
+  return exitCode;
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -418,7 +455,7 @@ async function main() {
   printHeader('bench cli');
 
   const scenarios = discoverScenarios();
-  const { scenario: cliScenario, skipSeed, help } = parseArgs();
+  const { scenario: cliScenario, skipSeed, all, short, help } = parseArgs();
 
   if (scenarios.length === 0) {
     console.error(pc.red('No scenarios found in scenarios/'));
@@ -442,10 +479,10 @@ async function main() {
 
   // ── 2. Scenario selection ──
 
-  // When using --scenario, seed in parallel (no TUI to conflict with).
-  // In interactive mode, seed after selection to avoid spinner corrupting the prompt.
+  // Seed in parallel whenever there is no interactive picker to corrupt
+  // (--all or an explicit scenario). The picker path seeds after selection.
   let seedPromise: Promise<void> | undefined;
-  if (!skipSeed && cliScenario) {
+  if (!skipSeed && (cliScenario || all)) {
     const seedSpinner = ora('seeding database...').start();
     seedPromise = seedDatabase()
       .then(() => {
@@ -459,26 +496,28 @@ async function main() {
       });
   }
 
-  let selected: string;
+  let selected = '';
 
-  if (cliScenario) {
-    selected = cliScenario;
-  } else {
-    const choices = [
-      ...scenarios.map((name) => ({
-        value: name,
-        name: `${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`,
-      })),
-      { type: 'separator' as const, separator: '─'.repeat(40) },
-      { value: 'exit', name: pc.red(`exit${' '.repeat(18)}${pc.dim('quit without running')}`) },
-    ];
+  if (!all) {
+    if (cliScenario) {
+      selected = cliScenario;
+    } else {
+      const choices = [
+        ...scenarios.map((name) => ({
+          value: name,
+          name: `${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`,
+        })),
+        { type: 'separator' as const, separator: '─'.repeat(40) },
+        { value: 'exit', name: pc.red(`exit${' '.repeat(18)}${pc.dim('quit without running')}`) },
+      ];
 
-    selected = await select({ message: 'select scenario', choices });
+      selected = await select({ message: 'select scenario', choices });
 
-    if (selected === 'exit') {
-      console.info(pc.dim('\nexited.'));
-      cleanup();
-      process.exit(0);
+      if (selected === 'exit') {
+        console.info(pc.dim('\nexited.'));
+        cleanup();
+        process.exit(0);
+      }
     }
   }
 
@@ -503,38 +542,20 @@ async function main() {
 
   await clearRateLimits();
 
-  // ── 4. CDC poller ──
+  // ── 4. Run scenario(s) ──
 
-  // Always runs in the background, silently. Stays invisible unless CDC actually
-  // processed events during the run — no flag, no developer awareness needed.
-  const cdcPoller = startCdcPoller();
-  registerCleanup(() => cdcPoller.proc.kill('SIGINT'));
-
-  // ── 5. Run Artillery ──
-
-  console.info(`${pc.cyan('▸')} running ${pc.bold(selected)}...\n`);
-  let artilleryExitCode = 0;
+  const toRun = all ? scenarios : [selected];
+  let failureCode = 0;
   try {
-    const { exitCode, reportPath } = runArtillery(selected);
-    artilleryExitCode = exitCode;
-
-    // Stop the poller and flush its summary (printed only if CDC saw events).
-    cdcPoller.proc.kill('SIGINT');
-    const cdcSummary = (await cdcPoller.summary).trimEnd();
-    if (cdcSummary) console.info(cdcSummary);
-
-    // ── 6. Baseline comparison ──
-    const metrics = extractMetrics(reportPath, selected);
-    if (metrics) {
-      const baseline = loadBaseline(selected);
-      printComparison(metrics, baseline);
-      saveBaseline(metrics);
+    for (const name of toRun) {
+      const code = await runScenario(name, { short });
+      if (code !== 0) failureCode = code;
     }
   } finally {
     cleanup();
   }
 
-  if (artilleryExitCode !== 0) process.exit(artilleryExitCode);
+  if (failureCode !== 0) process.exit(failureCode);
 }
 
 main().catch((err) => {

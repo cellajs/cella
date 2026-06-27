@@ -7,7 +7,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
-import { clientVersionMiddleware } from '#/middlewares/client-version';
+// DORMANT (lens system): import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { loggerMiddleware } from '#/middlewares/logger';
 
 const app = new OpenAPIHono<Env>();
@@ -38,7 +38,8 @@ const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  allowHeaders: ['content-type', 'x-cache-token', 'x-client-version', 'traceparent', 'tracestate'],
+  // DORMANT (lens system): add 'x-client-version' to allowHeaders when reconnecting.
+  allowHeaders: ['content-type', 'x-cache-token', 'traceparent', 'tracestate'],
   maxAge: 7200,
 };
 
@@ -48,8 +49,8 @@ app.use('*', cors(corsOptions));
 // CSRF protection
 app.use('*', csrf({ origin: appConfig.frontendUrl }));
 
-// Schema-evolution client-version telemetry (Phase 1: telemetry-only fleet floor)
-app.use('*', clientVersionMiddleware);
+// DORMANT (lens system): client schema-version telemetry. See info/SCHEMA_EVOLUTION.md.
+// app.use('*', clientVersionMiddleware);
 
 // Body limit
 app.use('*', dynamicBodyLimit);

@@ -14,8 +14,17 @@ import { appStreamManager } from '~/query/realtime/stream-store';
 export const getAndSetMe = async () => {
   const { user, isSystemAdmin } = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;
+  const previousUserId = useUserStore.getState().lastUser?.id;
+
   useUserStore.getState().setUser(user, skipLastUser);
   useUserStore.getState().setIsSystemAdmin(isSystemAdmin);
+
+  // A different user signed in on this browser. Per-user storage namespaces are
+  // bound at boot from the persisted user id (just updated above), so a full
+  // reload rebinds every cache/store to the new owner. The previous user's data
+  // stays isolated in its own namespace — no surgical flush, and no cross-user bleed.
+  if (!skipLastUser && previousUserId && previousUserId !== user.id) window.location.reload();
+
   return user;
 };
 

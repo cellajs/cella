@@ -147,7 +147,7 @@ const Bucket = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="relative flex min-w-0 flex-col rounded-2xl bg-background p-2 sm:p-6">
+    <div className="relative flex min-w-0 flex-col rounded-2xl bg-background px-2 py-4 sm:px-6 sm:py-6">
       <DashedBorder animated={animated} />
       <h3 className="mb-4 text-center font-semibold text-foreground text-xs sm:text-base">{t(title)}</h3>
       <AnimatePresence mode="wait" initial={false}>

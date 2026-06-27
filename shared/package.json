@@ -35,7 +35,7 @@
     "@opentelemetry/sdk-trace-base": "^2.8.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "dobajs": "catalog:",
-    "nanoid": "^5.1.14",
+    "nanoid": "^5.1.16",
     "picocolors": "^1.1.1",
     "pino": "^10.3.1",
     "pino-opentelemetry-transport": "^3.0.0",

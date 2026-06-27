@@ -4,15 +4,23 @@ import { Spinner } from '~/modules/common/spinner';
 
 /**
  * Toggles between a spinner and search icon based on search state.
+ *
+ * @param appearDelay - Seconds to wait before fading in the spinner (default: 0.3 to avoid flicker on fast responses). Pass 0 to show it immediately.
  */
-export function SearchSpinner({ isSearching, value }: { isSearching: boolean; value: string }) {
+interface SearchSpinnerProps {
+  isSearching: boolean;
+  value: string;
+  appearDelay?: number;
+}
+
+export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchSpinnerProps) {
   return (
     <AnimatePresence mode="wait" initial={false}>
       {isSearching ? (
         <motion.div
           key="spinner"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { delay: 0.3 } }} // appear with delay
+          animate={{ opacity: 1, transition: { delay: appearDelay } }} // appear with delay
           exit={{ opacity: 0, transition: { delay: 0 } }} // disappear immediately
         >
           <Spinner className="mr-2 size-4 h-auto shrink-0 group-[.text-lg]:size-5" noDelay />

@@ -1,3 +1,6 @@
+// DORMANT: lens-system module, intentionally not wired into runtime. Reconnect
+// when lenses are activated. Active mechanism today is clientCacheVersion.
+// See info/SCHEMA_EVOLUTION.md.
 /**
  * Schema-evolution telemetry (Phase 1).
  *

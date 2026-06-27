@@ -44,12 +44,21 @@ function DialogContent({
   container,
   initialFocus,
   finalFocus,
+  outsideScroll = false,
   ...props
 }: DialogPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
     container?: HTMLElement | null;
     initialFocus?: DialogPrimitive.Popup.Props['initialFocus'];
     finalFocus?: DialogPrimitive.Popup.Props['finalFocus'];
+    /**
+     * Scroll behavior when the content is taller than the screen:
+     * - `false` (default, inside scroll): the popup stays on screen and scrolls internally,
+     *   so the popup is the scroll container (sticky children stick to the popup).
+     * - `true` (outside scroll): the popup grows and the viewport scrolls around it
+     *   (sticky children stick to the viewport).
+     */
+    outsideScroll?: boolean;
   }) {
   return (
     <DialogPortal container={container || undefined}>
@@ -57,7 +66,14 @@ function DialogContent({
       <DialogPrimitive.Viewport
         data-slot="dialog-viewport"
         className={cn(
-          !container && 'fixed inset-0 in-[.sheeter-open]:z-125 z-115 place-items-center overflow-y-auto sm:grid',
+          !container && [
+            'fixed inset-0 in-[.sheeter-open]:z-125 z-115',
+            outsideScroll
+              ? // Outside scroll: the viewport scrolls; the popup grows past the edges (my-auto centers it, p-4 keeps a gap).
+                'flex flex-col items-center overflow-y-auto p-4'
+              : // Inside scroll: the viewport only centers; the popup is capped and scrolls internally.
+                'grid place-items-center overflow-hidden',
+          ],
         )}
       >
         <DialogPrimitive.Popup
@@ -65,7 +81,10 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto mt-4 grid w-[95vw] starting:scale-95 gap-4 overflow-x-clip overflow-y-clip rounded-lg bg-background p-4 starting:opacity-0 shadow-lg duration-200 focus-visible:outline-none data-starting-style:scale-95 data-closed:animate-out data-open:animate-in data-starting-style:opacity-0 max-sm:max-h-[85dvh] max-sm:overflow-y-auto',
+            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto grid w-[95vw] starting:scale-95 grid-cols-[minmax(0,1fr)] gap-4 overflow-x-clip rounded-lg bg-background p-4 starting:opacity-0 shadow-lg duration-200 focus-visible:outline-none data-starting-style:scale-95 data-closed:animate-out data-open:animate-in data-starting-style:opacity-0',
+            // Scroll-mode specific layout (skipped when rendered inside a container, which handles its own scroll).
+            // Inside scroll keeps a screen-edge gap via max-height (full-bleed dialogs can override with `max-h-none`).
+            container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',
             className,
           )}
           {...props}

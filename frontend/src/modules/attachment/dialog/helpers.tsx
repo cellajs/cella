@@ -23,7 +23,7 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
         current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
       },
       drawerOnMobile: false,
-      className: 'min-w-full h-dvh max-sm:max-h-[100dvh] border-0 p-0 rounded-none flex flex-col mt-0',
+      className: 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
     },
   );

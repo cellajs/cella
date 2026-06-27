@@ -6,7 +6,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { EnrichedContextEntity } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardFooter } from '~/modules/ui/card';
-import { getContextEntityRoute } from '~/utils/context-entity-route';
+import { getContextEntityRoute, pageTopHashNav } from '~/utils/context-entity-route';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -22,6 +22,7 @@ export const EntityGridTile = ({ entity }: { entity: EnrichedContextEntity & Pic
           to={to}
           params={params}
           search={search}
+          {...pageTopHashNav}
           className="group tile-link relative w-full focus-visible:outline-none focus-visible:ring-0"
         >
           <div

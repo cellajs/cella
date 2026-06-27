@@ -45,7 +45,7 @@ const seenRoutes = {
     tags: ['seen', 'cella'],
     summary: 'Get unseen counts',
     description:
-      'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. ' +
+      'Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. ' +
       'Computed as total (from context_counters) minus seen (from seen_by).',
     responses: {
       200: {

@@ -1,6 +1,7 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cp, mkdir } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { downloadTemplate } from 'giget';
 import { addRemote } from '#/add-remote';
 import { TEMPLATE_URL } from '#/constants';
@@ -27,6 +28,7 @@ export async function create({
   templateUrl,
   portOffset,
   adminEmail,
+  skipInstall = false,
   silent = false,
 }: CreateOptions): Promise<void> {
   // Save the original working directory
@@ -57,10 +59,34 @@ export async function create({
         );
       }
 
-      await cp(sourcePath, targetFolder, {
-        recursive: true,
-        filter: (src) => !src.includes('node_modules') && !src.includes('.git'),
-      });
+      // Copy only what git would track (respects .gitignore: no build output, no local .env secrets).
+      // Falls back to a plain recursive copy when the template isn't a git repo.
+      let tracked: string[] = [];
+      try {
+        tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
+          cwd: sourcePath,
+        })
+          .toString()
+          .split('\0')
+          .filter(Boolean);
+      } catch {
+        // not a git repo - fall through to recursive copy
+      }
+
+      if (tracked.length > 0) {
+        for (const rel of tracked) {
+          const src = join(sourcePath, rel);
+          if (!existsSync(src)) continue; // tracked but deleted in the working tree
+          const dest = join(targetFolder, rel);
+          await mkdir(dirname(dest), { recursive: true });
+          await cp(src, dest);
+        }
+      } else {
+        await cp(sourcePath, targetFolder, {
+          recursive: true,
+          filter: (src) => !src.includes('node_modules') && !src.includes('.git'),
+        });
+      }
     } else {
       progress.step('downloading cella template');
       await downloadTemplate(template, {
@@ -76,14 +102,14 @@ export async function create({
     const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     await cleanTemplate({ targetFolder, projectName, displayName, portOffset, adminEmail });
 
-    // Install dependencies
-    if (!shouldSkipStep('install')) {
+    // Install dependencies (generate needs installed deps, so --skip-install skips both)
+    if (!skipInstall && !shouldSkipStep('install')) {
       progress.step('installing dependencies');
       await install(packageManager);
     }
 
     // Generate SQL files
-    if (!shouldSkipStep('generate')) {
+    if (!skipInstall && !shouldSkipStep('generate')) {
       progress.step('generating migrations');
       await generate(packageManager);
     }

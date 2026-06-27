@@ -359,7 +359,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Signs out the *current user* and clears the active session.",
+        "description": "Signs out the current user and clears the active session.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -556,7 +556,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.",
+        "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -589,7 +589,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Delete a passkey by id from the *current user*.",
+        "description": "Delete a passkey by id from the current user.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -880,7 +880,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns the *current user*.",
+        "description": "Returns the current user.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -911,7 +911,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates the *current user*.",
+        "description": "Updates the current user.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -944,7 +944,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
+        "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -977,7 +977,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Enable or disable multifactor authentication for the *current user*. Always requires passkey or TOTP reauthentication.",
+        "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1010,7 +1010,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.",
+        "description": "Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1073,7 +1073,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Ends one or more sessions for the *current user* based on provided session IDs.",
+        "description": "Ends one or more sessions for the current user based on provided session IDs.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1106,7 +1106,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Removes the *current user* from an entity they are a member of.",
+        "description": "Removes the current user from an entity they are a member of.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1140,7 +1140,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization",
+        "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1171,7 +1171,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.",
+        "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1204,7 +1204,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns all memberships for the *current user* across all context entities.",
+        "description": "Returns all memberships for the current user across all context entities.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1235,7 +1235,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the *current user*. Computed as total (from context_counters) minus seen (from seen_by).",
+        "description": "Returns the number of unseen product entities per parent context entity (e.g., project) and entity type for the current user. Computed as total (from context_counters) minus seen (from seen_by).",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -21909,9 +21909,9 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 11,
-        "description": "Endpoints related to the *current user*, meaning the user associated with the active session making
+        "description": "Endpoints related to the current user, meaning the user associated with the active session making
     the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
-    any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a
+    any user in the system, \`me\` endpoints are scoped exclusively to the current user and follow a
     different authorization flow.",
         "kind": "module",
         "name": "me",

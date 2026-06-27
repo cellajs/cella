@@ -1,3 +1,6 @@
+// DORMANT: lens-system module, intentionally not wired (not imported by the
+// persister/tab-coordinator). Reconnect when lenses are activated. Active
+// mechanism today is clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
 /**
  * Stale-bundle guard (info/SCHEMA_EVOLUTION.md, 1.7).
  *

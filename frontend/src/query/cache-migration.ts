@@ -1,3 +1,6 @@
+// DORMANT: lens-system module, intentionally not wired (not imported by the
+// persister/query-client). Reconnect when lenses are activated. Active mechanism
+// today is clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
 /**
  * Boot-time cache migration (Phase 1, runtime touch point 2).
  *

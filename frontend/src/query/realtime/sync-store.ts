@@ -1,8 +1,8 @@
-import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
+import { userScopedName } from '~/lib/storage-scope';
 
 interface OrgSyncState {
   tenantId: string;
@@ -115,7 +115,7 @@ export const useSyncStore = create<SyncStoreState>()(
         reset: () => set(() => initialState),
       })),
       {
-        name: `${appConfig.slug}-sync`,
+        name: userScopedName('sync'),
         storage: createJSONStorage(() => localStorage),
         partialize: (state) => ({
           cursor: state.cursor,

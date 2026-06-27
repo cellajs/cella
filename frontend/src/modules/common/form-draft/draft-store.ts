@@ -1,7 +1,7 @@
-import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { userScopedName } from '~/lib/storage-scope';
 
 interface DraftStoreState {
   forms: Record<string, unknown>; // Draft forms
@@ -45,7 +45,7 @@ export const useDraftStore = create<DraftStoreState>()(
         },
         isFormDirty: (key: string) => !!get().dirtyForms[key],
       }),
-      { version: 1, name: `${appConfig.slug}-drafts`, storage: createJSONStorage(() => sessionStorage) },
+      { version: 1, name: userScopedName('drafts'), storage: createJSONStorage(() => sessionStorage) },
     ),
   ),
 );

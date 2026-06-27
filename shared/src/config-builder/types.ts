@@ -215,7 +215,6 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   // Mode & flags
   mode: ConfigMode;
   maintenance: boolean;
-  cookieVersion: string;
 
   // Feature flags (in-app UX/behavior toggles)
   has: HasFlagsConfig;
@@ -225,8 +224,12 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   enabledOAuthProviders: readonly BaseOAuthProviders[];
   totpConfig: TotpConfig;
 
-  // API configuration
+  // Versioning
   apiVersion: string;
+  cookieVersion: string;
+  clientCacheVersion: string;
+
+  // API configuration
   apiDescription: string;
 
   // Request limits

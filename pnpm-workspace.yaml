@@ -13,8 +13,8 @@ allowBuilds:
 allowUnusedPatches: true
 blockExoticSubdeps: true
 catalog:
-  '@aws-sdk/client-s3': ^3.1073.0
-  '@hono/node-server': ^2.0.5
+  '@aws-sdk/client-s3': ^3.1075.0
+  '@hono/node-server': ^2.0.6
   '@opentelemetry/auto-instrumentations-node': ^0.77.0
   '@opentelemetry/exporter-logs-otlp-http': ^0.219.0
   '@opentelemetry/exporter-metrics-otlp-http': ^0.219.0
@@ -25,10 +25,10 @@ catalog:
   '@opentelemetry/sdk-node': ^0.219.0
   '@types/node': 24.10.13
   '@types/react': 19.2.17
-  '@typescript/native-preview': 7.0.0-dev.20260619.1
+  '@typescript/native-preview': 7.0.0-dev.20260624.1
   cross-env: ^10.1.0
   dobajs: 0.1.0
-  hono: ^4.12.26
+  hono: ^4.12.27
   rate-limiter-flexible: ^11.2.0
   tsup: ^8.5.1
   tsx: ^4.22.4
@@ -37,30 +37,7 @@ catalog:
 catalogMode: manual
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - esbuild@0.25.0
-  - protobufjs@8.0.2
-  - protobufjs@8.2.0
-  - esbuild@0.28.1
-  - protobufjs@8.5.1
-  - js-yaml@4.1.2
-  - protobufjs@8.4.1
-  - '@opentelemetry/core@2.8.0'
-overrides:
-  '@opentelemetry/core@>=2.0.0 <2.8.0': ^2.8.0
-  '@opentelemetry/core@<1.30.1': 1.30.1
-  esbuild@<0.25.0: ^0.25.0
-  esbuild@>=0.27.3 <0.28.1: ^0.28.1
-  form-data@>=4.0.0 <4.0.6: ^4.0.6
-  hono@<4.12.25: ^4.12.25
-  joi@<17.13.4: ^17.13.4
-  js-yaml@<=4.1.1: ^4.1.2
-  protobufjs@>=8.0.0 <8.2.0: ^8.2.0
-  protobufjs@>=8.0.0 <=8.0.1: ^8.0.2
-  protobufjs@>=8.0.0 <=8.4.0: ^8.4.1
-  protobufjs@>=8.0.0 <=8.5.0: ^8.5.1
-  protobufjs@<=7.6.2: ^7.6.3
-  uuid@<11.1.1: ^11.1.1
-  ws@>=8.0.0 <8.21.0: ^8.21.0
+  - '@tanstack/ai@0.38.0'
 packages:
   - ai
   - backend

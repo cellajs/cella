@@ -20,9 +20,7 @@ import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
-import { currentSchemaVersion } from 'shared/version-changes';
-import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
-import { isBundleStale } from '~/query/schema-version-guard';
+import { getOwnerId, getQueryScope } from '~/lib/storage-scope';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -47,8 +45,8 @@ interface PersistedMetaRecord {
   key: string;
   timestamp: number;
   buster: string;
-  /** Persisted global schema ordinal (lens count). Drives the boot migration pass. */
-  schemaVersion?: number;
+  /** Persisted client cache version (appConfig.clientCacheVersion). Mismatch wipes cached queries. */
+  clientCacheVersion?: string;
   mutations: DehydratedState['mutations'];
   /** Context queries bundled directly in meta */
   contextQueries: DehydratedQuery[];
@@ -235,36 +233,22 @@ function createIDBPersister(scope = 'rq') {
   }
 
   /**
-   * Boot migration pass: rewrite cached product rows + queued mutations from the
-   * persisted ordinal up to current. Chunked, idempotent, pointer advanced last
-   * so an interrupted pass re-runs safely. Leader gating is applied by the caller.
+   * Cache-bust on a breaking schema change: wipe cached query DATA (product
+   * records + bundled context queries) but KEEP queued mutations so offline
+   * edits replay (and quarantine to failed_sync if they then 4xx). Advances the
+   * stored clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
    */
-  async function migrateScope(fromVersion: number) {
-    const CHUNK = 200;
-    const productRecords = await queryDb.queries.where('scope').equals(scope).toArray();
-    for (let i = 0; i < productRecords.length; i += CHUNK) {
-      const chunk = productRecords.slice(i, i + CHUNK);
-      const migrated = await Promise.all(
-        chunk.map(async (rec) => {
-          const entityType = entityTypeOf(rec.queryKey);
-          if (!entityType) return rec;
-          return { ...rec, state: await migrateQueryState(entityType, rec.state, fromVersion) };
-        }),
-      );
-      await queryDb.queries.bulkPut(migrated);
-    }
-
-    const meta = await queryDb.meta.get(scope);
-    if (!meta) return;
-    const contextQueries = await Promise.all(
-      (meta.contextQueries ?? []).map(async (q) => {
-        const entityType = entityTypeOf(q.queryKey);
-        return entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q;
-      }),
-    );
-    const mutations = migrateMutations(meta.mutations ?? [], fromVersion);
-    // Final write advances the pointer only once everything else is rewritten.
-    await queryDb.meta.put({ ...meta, contextQueries, mutations, schemaVersion: currentSchemaVersion });
+  async function bustQueriesKeepMutations() {
+    await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
+      const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
+      await queryDb.queries.bulkDelete(ids);
+      const existing = await queryDb.meta.get(scope);
+      if (existing) {
+        await queryDb.meta.put({ ...existing, contextQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
+      }
+    });
+    lastPersistedAt.clear();
+    lastContextSnapshot = '';
   }
 
   async function flush() {
@@ -272,10 +256,6 @@ function createIDBPersister(scope = 'rq') {
     pendingClient = null;
     timeoutId = null;
     if (!client) return;
-
-    // Stale-bundle guard (1.7): a tab behind a newer bundle must never write —
-    // it would downgrade the store another tab just migrated.
-    if (isBundleStale()) return;
 
     try {
       const { queries, mutations } = client.clientState;
@@ -331,7 +311,7 @@ function createIDBPersister(scope = 'rq') {
             key: scope,
             timestamp: client.timestamp,
             buster: client.buster,
-            schemaVersion: currentSchemaVersion,
+            clientCacheVersion: appConfig.clientCacheVersion,
             mutations,
             contextQueries,
           });
@@ -370,17 +350,18 @@ function createIDBPersister(scope = 'rq') {
         let meta = await queryDb.meta.get(scope);
         if (!meta) return undefined;
 
-        // Schema-evolution boot migration (runtime touch point 2). No-op while
-        // currentSchemaVersion === persisted pointer. See info/SCHEMA_EVOLUTION.md.
-        const pointer = meta.schemaVersion ?? 0;
-        if (pointer !== currentSchemaVersion) {
-          // Cold session scopes and rollback deploys (pointer ahead) are wiped
-          // rather than migrated — they are allowed to refetch.
-          if (scope.startsWith(SESSION_KEY_PREFIX) || pointer > currentSchemaVersion) {
+        // Cache-bust on breaking schema change: a mismatch between the persisted
+        // version and appConfig.clientCacheVersion wipes cached query data (keeping
+        // queued mutations). A missing version (pre-feature build) seeds without
+        // wiping. See info/SCHEMA_EVOLUTION.md.
+        const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
+        if (persistedVersion !== appConfig.clientCacheVersion) {
+          if (scope.startsWith(SESSION_KEY_PREFIX)) {
+            // Session scopes are cold — wipe entirely rather than salvage.
             await clearScope();
             return undefined;
           }
-          await migrateScope(pointer);
+          await bustQueriesKeepMutations();
           meta = (await queryDb.meta.get(scope)) ?? meta;
         }
 
@@ -456,11 +437,11 @@ function createIDBPersister(scope = 'rq') {
   } satisfies Persister & { flush: () => Promise<void>; teardown: () => void };
 }
 
-/** Persistent offline persister — shared scope, survives browser restart. */
-export const persister = createIDBPersister();
+/** Persistent offline persister — per-user scope (`rq:<ownerId>`), survives browser restart. */
+export const persister = createIDBPersister(getQueryScope());
 
-/** Session-scoped persister — per-tab scope, cleaned on tab close. */
-export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}`);
+/** Session-scoped persister — per-tab + per-user scope, cleaned on tab close. */
+export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}:${getOwnerId()}`);
 
 /**
  * Remove orphaned session records older than 2 hours.
@@ -471,7 +452,7 @@ export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTa
 export async function cleanupOrphanedSessions(): Promise<void> {
   try {
     const cutoff = Date.now() - ORPHAN_MAX_AGE_MS;
-    const currentSessionScope = `${SESSION_KEY_PREFIX}${getTabSessionId()}`;
+    const currentSessionScope = `${SESSION_KEY_PREFIX}${getTabSessionId()}:${getOwnerId()}`;
     const allMeta = await queryDb.meta.toArray();
     const orphanScopes = allMeta
       .filter((m) => m.key.startsWith(SESSION_KEY_PREFIX) && m.key !== currentSessionScope && m.timestamp < cutoff)

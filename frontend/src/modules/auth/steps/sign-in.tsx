@@ -38,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignInStep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, resetSteps, restrictedMode, setStep, setSignedIn } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode } = useAuthStore();
 
   const { lastUser, clearUserStore } = useUserStore();
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
@@ -114,7 +114,10 @@ export function SignInStep() {
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') } }),
-    onSuccess: () => setStep('magicLinkSent', form.getValues('email')),
+    onSuccess: () => {
+      setMagicLinkMode('signin');
+      setStep('magicLinkSent', form.getValues('email'));
+    },
   });
 
   const onSubmit = (body: FormValues) => {

@@ -1,4 +1,3 @@
-import i18n from 'i18next';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
@@ -38,23 +37,6 @@ export const createNotFoundComponent = (boundary: BoundaryType, homePath?: strin
 };
 
 // === Static route components ===
-
-export const RootErrorComponent = ({ error }: { error: unknown }) => (
-  <ErrorNotice boundary="root" error={error as ErrorNoticeError} />
-);
-
-export const RootNotFoundComponent = () => (
-  <ErrorNotice
-    error={{
-      type: 'page_not_found',
-      severity: 'info',
-      status: 404,
-      name: i18n.t('error:page_not_found'),
-      message: i18n.t('error:page_not_found.text'),
-    }}
-    boundary="root"
-  />
-);
 
 export const ErrorNoticePageComponent = () => <ErrorNotice boundary="public" />;
 

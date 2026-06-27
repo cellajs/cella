@@ -28,7 +28,9 @@ export const AboutSectionHeader = ({ title, text, textComponents, className = ''
   return (
     <div className={`mx-auto flex max-w-3xl flex-col justify-center gap-4 ${className}`.trim()}>
       {title && (
-        <h2 className="font-heading font-semibold text-3xl leading-[1.1] sm:text-center md:text-4xl">{t(title)}</h2>
+        <h2 className="font-heading font-semibold text-2xl leading-[1.1] sm:text-center sm:text-3xl md:text-4xl">
+          {t(title)}
+        </h2>
       )}
       {text && (
         <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">

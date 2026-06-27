@@ -1,4 +1,20 @@
 ---
+# Disable lefthook's gradient banner / colored decorations. They render as
+# garbled ANSI escapes in VS Code's Source Control & Output panels (which don't
+# support 24-bit gradient codes). Keep only the meaningful summary + failures.
+colors: false
+output:
+  - summary
+  - failure
+  - execution_out
+
+commit-msg:
+  commands:
+    commitlint:
+      # Enforce Conventional Commits so release-please can derive versions and
+      # changelog sections. {1} is the path to the commit message file.
+      run: pnpm exec commitlint --edit {1}
+
 pre-commit:
   parallel: true
   commands:

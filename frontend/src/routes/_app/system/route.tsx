@@ -8,8 +8,8 @@ import { noDirectAccess } from '~/utils/no-direct-access';
  */
 export const Route = createFileRoute('/_app/system')({
   staticData: { isAuth: true },
-  beforeLoad: () => {
-    noDirectAccess('/system', '/system/users');
+  beforeLoad: ({ matches }) => {
+    noDirectAccess(matches, '/_app/system', '/system/users');
   },
   component: SystemPage,
   errorComponent: createErrorComponent('app'),

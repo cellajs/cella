@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 /**
  * Retrieves the version from the package.json file of a GitHub repository.
  * If the package.json file is not found or an error occurs, it returns 'unknown'.
@@ -12,17 +10,20 @@ export async function extractPackageJsonVersionFromUri(repositoryUrl: string, br
   // Extract owner and repo from the URL
   const [owner, repo] = repositoryUrl.replace('github:', '').split('/');
 
-  // Construct the URL for the package.json file in the provided branch
-  const packageJsonUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/package.json`;
+  // Use the GitHub contents API to fetch the package.json file for the given branch
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/package.json?ref=${branch}`;
 
   try {
-    // Fetch the package.json file
-    const response = await axios.get(packageJsonUrl);
-    const packageJson = response.data;
+    const response = await fetch(apiUrl, {
+      headers: { Accept: 'application/vnd.github.raw+json' },
+    });
+    if (!response.ok) return 'unknown';
+
+    const packageJson = (await response.json()) as { version?: string };
 
     // Return the version from the package.json, or 'unknown' if not found
     return packageJson.version || 'unknown';
-  } catch (error) {
+  } catch {
     // If there's an error (file not found, etc.), return 'unknown'
     return 'unknown';
   }

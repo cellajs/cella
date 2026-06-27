@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
 import { appConfig } from 'shared';
 import { legalConfig } from '~/modules/marketing/legal/legal-config';
 import { LegalContact } from '~/modules/marketing/legal/legal-contact';
+import { LegalCrossLink } from '~/modules/marketing/legal/legal-cross-link';
 import { LegalSection } from '~/modules/marketing/legal/legal-section';
 
 const sections = legalConfig.terms.sections;
@@ -37,29 +37,21 @@ function TermsText() {
       <LegalSection id={s('agreement').id} label={s('agreement').label}>
         <p>
           By accessing or using the Service you agree to be bound by these Terms and our{' '}
-          <Link to="/legal" hash="privacy">
-            Privacy Policy
-          </Link>
-          . These Terms form a legally binding agreement between you and {company}. If you do not agree, do not use the
-          Service.
+          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink>. These Terms form a legally binding
+          agreement between you and {company}. If you do not agree, do not use the Service.
         </p>
         <p>
           We may update these Terms from time to time. We will notify you of material changes via email or an
           announcement on the Service. Changes to pricing or features on the{' '}
-          <Link to="/legal" hash="privacy">
-            Privacy Policy
-          </Link>{' '}
-          page are always communicated in advance.
+          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> page are always communicated in advance.
         </p>
       </LegalSection>
 
       <LegalSection id={s('privacy').id} label={s('privacy').label}>
         <p>
           Your use of the Service is also governed by our{' '}
-          <Link to="/legal" hash="privacy">
-            Privacy Policy
-          </Link>
-          , which describes how we collect, use and protect your data.
+          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink>, which describes how we collect, use and
+          protect your data.
         </p>
       </LegalSection>
 
@@ -118,10 +110,8 @@ function TermsText() {
       <LegalSection id={s('termination').id} label={s('termination').label}>
         <p>
           You may delete your account at any time. See our{' '}
-          <Link to="/legal" hash="privacy">
-            Privacy Policy
-          </Link>{' '}
-          for how we handle your data after termination.
+          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> for how we handle your data after
+          termination.
         </p>
         <p>
           We may terminate or suspend your access for any reason, including breach of these Terms. We will try to

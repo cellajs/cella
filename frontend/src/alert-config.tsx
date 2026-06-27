@@ -11,7 +11,7 @@ if (appConfig.mode === 'development') {
     id: 'test-credentials',
     modes: ['public'],
     icon: InfoIcon,
-    className: 'rounded-none border-0 border-t z-10 fixed bottom-0 left-0 right-0',
+    className: 'rounded-none border-0 border-t z-40 fixed bottom-0 left-0 right-0',
     children: (
       <>
         <strong className="mr-2">Testing credentials</strong>

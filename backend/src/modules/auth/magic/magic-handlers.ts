@@ -80,7 +80,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const magicLinkUrl = new URL(verifyPath, appConfig.backendUrl);
 
   // Send email
-  const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name };
+  const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name, isNewUser: !existingUser };
   const recipients = [{ email: normalizedEmail, lng: user.language }];
 
   mailer.prepareEmails(magicLinkEmail, staticProps, recipients);

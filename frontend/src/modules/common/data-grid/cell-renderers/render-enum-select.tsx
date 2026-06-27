@@ -14,6 +14,7 @@ import type { RenderEditCellProps } from '../types';
  *   the popover/drawer while the editor is mounted.
  */
 export const enumSelectEditorOptions = {
+  editorType: 'select',
   commitOnOutsideClick: false,
   displayCellContent: true,
 } as const;

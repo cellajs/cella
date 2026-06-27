@@ -7,7 +7,7 @@ import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
 
-type LastUser = Pick<MeUser, 'email'>;
+type LastUser = Pick<MeUser, 'id' | 'email'>;
 
 /** Construct the store key for a context-scoped Yjs token. */
 export const yjsTokenKey = (entityType: string, tenantId: string) => `${entityType}:${tenantId}`;
@@ -41,6 +41,7 @@ export const useUserStore = create<UserStoreState>()(
               ...user,
             },
             lastUser: {
+              id: user.id,
               email: user.email,
             },
           }));
@@ -53,6 +54,7 @@ export const useUserStore = create<UserStoreState>()(
             if (skipLastUser) return;
 
             state.lastUser = {
+              id: user.id,
               email: user.email,
             };
           });
@@ -67,6 +69,7 @@ export const useUserStore = create<UserStoreState>()(
         setLastUser: (lastUser) => {
           set((state) => {
             state.lastUser = {
+              id: lastUser.id,
               email: lastUser.email,
             };
           });

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
+import { userScopedName } from '~/lib/storage-scope';
 import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
 export type AlertKeys = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
@@ -96,7 +97,7 @@ export const useAlertStore = create<AlertStoreState>()(
         }),
         {
           version: 1,
-          name: `${appConfig.slug}-alerts`,
+          name: userScopedName('alerts'),
           partialize: (state) => ({
             alertsSeen: state.alertsSeen,
             downAlert: state.downAlert,

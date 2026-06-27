@@ -6,7 +6,7 @@
  * surfaced in a non-blocking banner with JSON export (UI consumes `listFailedSync`).
  */
 import { Dexie } from 'dexie';
-import { appConfig } from 'shared';
+import { userScopedName } from '~/lib/storage-scope';
 
 export interface FailedSyncRecord {
   /** Auto-increment primary key. */
@@ -15,8 +15,8 @@ export interface FailedSyncRecord {
   mutationId: string;
   /** Product entity type, when known. */
   entityType?: string;
-  /** Schema ordinal the client was on when the mutation failed. */
-  clientSchemaVersion: number;
+  /** Client cache version (appConfig.clientCacheVersion) the client was on when it failed. */
+  clientCacheVersion: string;
   /** HTTP status of the failed replay. */
   status: number;
   /** Serialized mutation variables (for export / manual repair). */
@@ -31,7 +31,7 @@ class FailedSyncDB extends Dexie {
   failedSync!: Dexie.Table<FailedSyncRecord, number>;
 
   constructor() {
-    super(`${appConfig.slug}-failed-sync`);
+    super(userScopedName('failed-sync'));
     this.version(1).stores({ failedSync: '++id, mutationId, entityType, createdAt' });
   }
 }

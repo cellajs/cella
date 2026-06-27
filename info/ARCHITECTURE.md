@@ -149,9 +149,11 @@ Cella uses three defense-in-depth layers. The permission manager and guard chain
 | Layer | What it catches | Key files |
 |-------|----------------|-----------|
 | Guard chain (orgGuard) | Cross-org access within a tenant | `backend/src/middlewares/guard/` |
-| Permission Manager | Unauthorized actions (role/membership checks) | `backend/src/permissions/` |
+| Permission Manager | Unauthorized actions (role/membership checks) | `backend/src/permissions/` (engine in `shared/src/permissions`) |
 | Row-Level Security | Cross-tenant data leaks (product entities only) | `backend/src/db/rls-helpers.ts`, `backend/src/db/tenant-context.ts` |
 | Composite Foreign Keys | Franken-rows (mismatched tenant/org references) | `backend/src/db/schema/` |
+
+The permission decision engine (`checkPermission` / `getAllDecisions`) lives in `shared/src/permissions` so it is computed by exactly one implementation across tiers: backend handlers and the standalone Yjs relay (`yjs/src/data/permissions.ts`) both authorize against the same engine, with no backend round-trip from the relay.
 
 ### Boundaries
 

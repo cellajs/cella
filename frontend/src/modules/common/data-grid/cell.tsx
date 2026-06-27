@@ -44,6 +44,18 @@ function Cell<R, SR>({
 
   const { cellClass } = column;
 
+  const isEditable = isCellEditableUtil(column, row);
+  // Editable cells get an explicit cursor so the hover affordance matches the
+  // editor: an I-beam for free-text inputs, a pointer for editors that open a
+  // picker (select/popover/drawer). Without this, every editable cell inherits
+  // the browser's text I-beam from its selectable content — misleading for
+  // non-text editors.
+  const editorCursor = isEditable
+    ? column.editorOptions?.editorType === 'select'
+      ? 'cursor-pointer'
+      : 'cursor-text'
+    : undefined;
+
   className = getCellClassname(
     column,
     {
@@ -58,10 +70,10 @@ function Cell<R, SR>({
     // (instead of :focus-within) avoids showing the outline on mouse clicks.
     !isCellSelectionEnabled &&
       'has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
+    editorCursor,
     typeof cellClass === 'function' ? cellClass(row) : cellClass,
     className,
   );
-  const isEditable = isCellEditableUtil(column, row);
 
   // Non-focusable columns get tabIndex -1
   const effectiveTabIndex = column.focusable === false ? -1 : tabIndex;

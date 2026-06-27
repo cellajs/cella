@@ -135,7 +135,7 @@ export const PageTabNav = ({
         )}
         {title && <div className="max-w-42 truncate font-semibold text-sm leading-5 sm:block">{title}</div>}
       </div>
-      <div className="max-w-screen overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="scrollbar-none max-w-screen overflow-x-auto [&::-webkit-scrollbar]:hidden">
         <div className="inline-flex min-w-max gap-1 px-1 sm:flex sm:justify-center">
           {tabs.map(
             (

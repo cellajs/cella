@@ -130,18 +130,12 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
   );
 }
 
-function ComboboxItem({
-  className,
-  children,
-  hideIndicator = false,
-  ...props
-}: ComboboxPrimitive.Item.Props & { hideIndicator?: boolean }) {
+function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.Props) {
   return (
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        'relative flex w-full cursor-default select-none items-center gap-2 rounded-sm py-1.5 pl-2 text-sm outline-hidden',
-        hideIndicator ? 'pr-2' : 'pr-8',
+        'relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden',
         'data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-50',
         "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
@@ -149,14 +143,12 @@ function ComboboxItem({
       {...props}
     >
       {children}
-      {!hideIndicator && (
-        <ComboboxPrimitive.ItemIndicator
-          data-slot="combobox-item-indicator"
-          render={<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />}
-        >
-          <CheckIcon className="pointer-events-none pointer-coarse:size-5 size-4" />
-        </ComboboxPrimitive.ItemIndicator>
-      )}
+      <ComboboxPrimitive.ItemIndicator
+        data-slot="combobox-item-indicator"
+        render={<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />}
+      >
+        <CheckIcon className="pointer-events-none pointer-coarse:size-5 size-4" />
+      </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   );
 }
@@ -290,6 +282,7 @@ function ComboboxSearchInput({
   className,
   wrapClassName,
   isSearching = false,
+  spinnerDelay,
   showClear = true,
   value,
   ref,
@@ -298,6 +291,7 @@ function ComboboxSearchInput({
   value: string;
   wrapClassName?: string;
   isSearching?: boolean;
+  spinnerDelay?: number;
   showClear?: boolean;
 }) {
   return (
@@ -305,7 +299,7 @@ function ComboboxSearchInput({
       data-slot="combobox-search-input-wrapper"
       className={cn('group relative flex h-10 items-center border-b px-3', wrapClassName, value.length > 0 && 'pr-10')}
     >
-      <SearchSpinner isSearching={isSearching} value={value} />
+      <SearchSpinner isSearching={isSearching} value={value} appearDelay={spinnerDelay} />
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
         className={cn(

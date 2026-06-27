@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "pg-format": "^1.0.4",
-    "nanoid": "^5.1.14",
-    "ora": "^9.4.0",
+    "nanoid": "^5.1.16",
+    "ora": "^9.4.1",
     "pg": "^8.22.0",
+    "pg-format": "^1.0.4",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"

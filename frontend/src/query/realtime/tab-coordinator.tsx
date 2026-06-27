@@ -1,16 +1,15 @@
 import { useEffect } from 'react';
-import { currentSchemaVersion } from 'shared/version-changes';
+// DORMANT (lens system): import { currentSchemaVersion } from 'shared/version-changes';
 import { create } from 'zustand';
-import { markBundleStale } from '~/query/schema-version-guard';
+// DORMANT (lens system): import { markBundleStale } from '~/query/schema-version-guard';
 import type { AppStreamNotification } from './types';
 
 const channelName = 'tab-sync';
 const leaderLockName = 'tab-leader';
 
 /** Message types for BroadcastChannel communication */
-type BroadcastMessage =
-  | { type: 'stream-notification'; notification: AppStreamNotification; organizationId: string }
-  | { type: 'schema-version'; version: number };
+// DORMANT (lens system): add `| { type: 'schema-version'; version: number }` to this union when reconnecting.
+type BroadcastMessage = { type: 'stream-notification'; notification: AppStreamNotification; organizationId: string };
 
 /** Tab coordinator state */
 interface TabCoordinatorState {
@@ -73,11 +72,8 @@ export const initTabCoordinator = async (): Promise<void> => {
       broadcastChannel = new BroadcastChannel(channelName);
       broadcastChannel.onmessage = handleBroadcastMessage;
       console.debug('[TabCoordinator] BroadcastChannel initialized');
-      // Announce our schema version so other tabs can detect skew (1.7).
-      broadcastChannel.postMessage({
-        type: 'schema-version',
-        version: currentSchemaVersion,
-      } satisfies BroadcastMessage);
+      // DORMANT (lens system): announce schema version so other tabs detect skew.
+      // broadcastChannel.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
     }
 
     // Attempt leader election via Web Locks
@@ -188,18 +184,11 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
   const store = useTabCoordinatorStore.getState();
   const message = event.data;
 
-  if (message.type === 'schema-version') {
-    // A newer bundle exists in another tab → mark this one stale and stop persisting.
-    if (message.version > currentSchemaVersion) markBundleStale();
-    // Reply so the newer tab learns nothing changes, and older tabs learn we're ahead.
-    else if (message.version < currentSchemaVersion && broadcastChannel) {
-      broadcastChannel.postMessage({
-        type: 'schema-version',
-        version: currentSchemaVersion,
-      } satisfies BroadcastMessage);
-    }
-    return;
-  }
+  // DORMANT (lens system): on a higher schema version, mark this bundle stale.
+  // if (message.type === 'schema-version') {
+  //   if (message.version > currentSchemaVersion) markBundleStale();
+  //   return;
+  // }
 
   if (message.type === 'stream-notification' && !store.isLeader) {
     // Only process if we're a follower (leader already processed via SSE)
