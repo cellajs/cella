@@ -5,16 +5,43 @@ import {
   checkPermission,
   type ContextEntityIdColumns,
   type ContextEntityType,
-  entityMetadata,
   hierarchy,
   isContextEntity,
   isProductEntity,
-  membershipMetadata,
   type PermissionMembership,
   type ProductEntityType,
+  toColumnName,
+  toTableName,
 } from 'shared';
 import type { DocContext } from '../constants';
 import { withClient } from './db';
+
+/**
+ * Column names that exist on a table, read once from Postgres and cached per process.
+ *
+ * Lets the relay select only the columns a table actually has (e.g. tenant-less `pages` has no
+ * `tenant_id`, and each fork's entities differ) without importing backend drizzle schema. The DB is
+ * the source of truth, so this stays correct across forks and migrations.
+ */
+const tableColumnsCache = new Map<string, Promise<Set<string>>>();
+
+function getTableColumnNames(client: pg.PoolClient, table: string): Promise<Set<string>> {
+  let cached = tableColumnsCache.get(table);
+  if (!cached) {
+    cached = client
+      .query<{ column_name: string }>(
+        `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
+        [table],
+      )
+      .then((r) => new Set(r.rows.map((row) => row.column_name)))
+      .catch((err) => {
+        tableColumnsCache.delete(table); // don't cache failures
+        throw err;
+      });
+    tableColumnsCache.set(table, cached);
+  }
+  return cached;
+}
 
 /**
  * Load the user's memberships in the shape the permission engine expects.
@@ -23,10 +50,14 @@ import { withClient } from './db';
  * naturally limited to the active tenant. Only the three columns the engine reads are selected.
  */
 export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<PermissionMembership[]> {
-  const c = membershipMetadata.columns;
-  const projection = `"${c.contextType}" AS "contextType", "${c.contextId}" AS "contextId", "${c.role}" AS "role"`;
+  const table = toTableName('membership');
+  const contextType = toColumnName('contextType');
+  const contextId = toColumnName('contextId');
+  const role = toColumnName('role');
+  const userIdColumn = toColumnName('userId');
+  const projection = `"${contextType}" AS "contextType", "${contextId}" AS "contextId", "${role}" AS "role"`;
   const { rows } = await client.query<PermissionMembership>(
-    `SELECT ${projection} FROM "${membershipMetadata.table}" WHERE "${c.userId}" = $1`,
+    `SELECT ${projection} FROM "${table}" WHERE "${userIdColumn}" = $1`,
     [userId],
   );
   return rows;
@@ -42,30 +73,34 @@ export interface EntityScopeRow extends Partial<ContextEntityIdColumns> {
 /**
  * Resolve an entity's ancestor scope (e.g. `organizationId`), `createdBy`, and `tenantId`.
  *
- * Reads only the columns the permission engine needs from the entity's table. Column and table names
- * come from the trusted drizzle registry (never user input); the entity id is parameterized.
- * Returns `null` if the entity type is not collaboratively editable or the row does not exist.
+ * Reads only the columns the permission engine needs. Table and column names are derived from the
+ * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
+ * test) and filtered to the columns the table actually has via {@link getTableColumnNames} — so it
+ * works for every fork's entity types without importing backend drizzle schema. The entity id is
+ * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
  */
 export async function resolveEntityScope(
   client: pg.PoolClient,
   entityType: ContextEntityType | ProductEntityType,
   entityId: string,
 ): Promise<EntityScopeRow | null> {
-  const meta = entityMetadata[entityType];
-  if (!meta) return null;
-  const columns = meta.columns;
+  // Only entity types this app declares are resolvable.
+  if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
 
-  const selectKeys = new Set<string>(['id']);
-  if (columns.createdBy) selectKeys.add('createdBy');
-  if (columns.tenantId) selectKeys.add('tenantId');
+  const table = toTableName(entityType);
+  const existing = await getTableColumnNames(client, table);
+  if (!existing.has('id')) return null; // unknown / non-conforming table
+
+  // Logical keys the permission engine may read, filtered to columns the table actually has.
+  const candidateKeys = ['id', 'createdBy', 'tenantId'];
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    const idKey = appConfig.entityIdColumnKeys[ancestor];
-    if (columns[idKey]) selectKeys.add(idKey);
+    candidateKeys.push(appConfig.entityIdColumnKeys[ancestor]);
   }
+  const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
 
-  const projection = [...selectKeys].map((key) => `"${columns[key]}" AS "${key}"`).join(', ');
+  const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
   const { rows } = await client.query<EntityScopeRow>(
-    `SELECT ${projection} FROM "${meta.table}" WHERE "${columns.id}" = $1 LIMIT 1`,
+    `SELECT ${projection} FROM "${table}" WHERE "id" = $1 LIMIT 1`,
     [entityId],
   );
   return rows[0] ?? null;
