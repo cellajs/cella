@@ -34,8 +34,9 @@ export interface GenRef {
  * the source of truth so a partial deploy is always recoverable by recomputing
  * desired-vs-live rather than replaying a transition:
  *   - `active`   — the generation currently serving live on the LB.
- *   - `previous` — the last good generation, retained (its VM kept alive) so a
- *                  rollback is a pointer flip rather than a rebuild.
+ *   - `previous` — the last good generation, retained (its VM kept but POWERED
+ *                  OFF to pause compute billing) so a rollback is a pointer
+ *                  flip + power-on rather than a rebuild.
  *   - `pendingSha` — a deploy INTENT: the SHA being rolled in. The genId is
  *                  derived and materialized by the Pulumi program (the genId
  *                  authority), then read back by the orchestrator — so the
