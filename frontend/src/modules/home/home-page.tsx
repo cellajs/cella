@@ -15,9 +15,9 @@ import { useUserStore } from '~/modules/user/user-store';
  */
 export function HomePage() {
   const { t } = useTranslation();
-  const { user, isSystemAdmin } = useUserStore();
+  const { user } = useUserStore();
 
-  const showMfaAlert = isSystemAdmin && !user.mfaRequired;
+  const showMfaAlert = !user.mfaRequired;
 
   return (
     <div className="container">
