@@ -2361,7 +2361,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
 /**
  * Delete requests
  *
- * Deletes one or more *requests* from the system by their IDs.
+ * Deletes one or more requests from the system by their IDs.
  *
  * **DELETE /requests** ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/requests) ·· _requests_cella_
  *
@@ -2401,7 +2401,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
 /**
  * Get list of requests
  *
- * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
+ * Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.
  *
  * **GET /requests** ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/requests) ·· _requests_cella_
  *
@@ -2442,7 +2442,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
+ * Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
  *
@@ -2506,7 +2506,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
 /**
  * Delete organizations
  *
- * Deletes one or more *organizations* by ID within a tenant.
+ * Deletes one or more organizations by ID within a tenant.
  *
  * **DELETE /{tenantId}/organizations** ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/organizations) ·· [deleteOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/DELETE/{tenantId}/organizations) ·· _organizations_cella_context_
  *
@@ -2547,7 +2547,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Create organizations
  *
- * Creates one or more new *organizations* within a tenant.
+ * Creates one or more new organizations within a tenant.
  *
  * **POST /{tenantId}/organizations** ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/organizations) ·· [createOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/POST/{tenantId}/organizations) ·· _organizations_cella_context_
  *
@@ -2587,7 +2587,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get list of organizations
  *
- * Returns a list of *organizations*.
+ * Returns a list of organizations.
  *
  * **GET /organizations** ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/organizations) ·· [getOrganizations](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/organizations) ·· _organizations_cella_context_
  *
@@ -2632,7 +2632,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves an organization by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
  *
  * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
@@ -2671,7 +2671,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Update organization
  *
- * Updates an *organization* within a tenant.
+ * Updates an organization within a tenant.
  *
  * **PUT /{tenantId}/organizations/{id}** ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}) ·· [updateOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/PUT/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
@@ -2728,7 +2728,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
 /**
  * Delete pages
  *
- * Delete one or more *pages* by ID.
+ * Delete one or more pages by ID.
  *
  * **DELETE /pages** ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/DELETE/pages) ·· _pages_cella_product_
  *
@@ -2769,7 +2769,7 @@ export const deletePages = <ThrowOnError extends boolean = true>(
 /**
  * Get pages
  *
- * Get all matching *pages*.
+ * Get all matching pages.
  *
  * **GET /pages** ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages) ·· _pages_cella_product_
  *
@@ -2803,7 +2803,7 @@ export const getPages = <ThrowOnError extends boolean = true>(
 /**
  * Create pages
  *
- * Insert one or more new *pages*. Returns created pages and any rejected items.
+ * Insert one or more new pages. Returns created pages and any rejected items.
  *
  * **POST /pages** ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/pages) ·· _pages_cella_product_
  *
@@ -2842,7 +2842,7 @@ export const createPages = <ThrowOnError extends boolean = true>(
 /**
  * Get page
  *
- * Get a single *page* by ID. Cached using LRU - first request warms cache.
+ * Get a single page by ID. Cached using LRU - first request warms cache.
  *
  * **GET /pages/{id}** ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages/{id}) ·· _pages_cella_product_
  *
@@ -2871,7 +2871,7 @@ export const getPage = <ThrowOnError extends boolean = true>(
 /**
  * Update page
  *
- * Update a single *page* by ID.
+ * Update a single page by ID.
  *
  * **PUT /pages/{id}** ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/pages/{id}) ·· _pages_cella_product_
  *
@@ -2993,7 +2993,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
 /**
  * Delete attachments
  *
- * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
+ * Deletes one or more attachment records by ID. This does not delete the underlying file in storage.
  *
  * **DELETE /{tenantId}/{organizationId}/attachments** ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/attachments) ·· [deleteAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/DELETE/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
@@ -3036,7 +3036,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Get attachments
  *
- * Returns a paginated list of *attachments* for the organization.
+ * Returns a paginated list of attachments for the organization.
  *
  * **GET /{tenantId}/{organizationId}/attachments** ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments) ·· [getAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
@@ -3079,7 +3079,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Create attachments
  *
- * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
+ * Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.
  *
  * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/attachments) ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/{tenantId}/{organizationId}/attachments) ·· _attachments_cella_product_
  *
@@ -3158,7 +3158,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(
 /**
  * Get attachment
  *
- * Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.
+ * Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.
  *
  * **GET /{tenantId}/{organizationId}/attachments/{id}** ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/attachments/{id}) ·· [getAttachment](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
@@ -3196,7 +3196,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Update attachment
  *
- * Updates metadata of an *attachment*, such as its name or associated entity.
+ * Updates metadata of an attachment, such as its name or associated entity.
  *
  * **PUT /{tenantId}/{organizationId}/attachments/{id}** ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· [updateAttachment](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/{tenantId}/{organizationId}/attachments/{id}) ·· _attachments_cella_product_
  *
@@ -3241,7 +3241,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
 /**
  * Delete memberships
  *
- * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
+ * Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).
  *
  * **DELETE /{tenantId}/{organizationId}/memberships** ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships) ·· [deleteMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
@@ -3285,7 +3285,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
+ * Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.
  *
  * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
@@ -3330,7 +3330,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
+ * Updates the membership metadata, such as role, `muted`, or `archived` status.
  *
  * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *
@@ -3418,7 +3418,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 /**
  * Get list of members
  *
- * Retrieves members (users) of a context entity by ID, including their associated *membership* data.
+ * Retrieves members (users) of a context entity by ID, including their associated membership data.
  *
  * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
  *

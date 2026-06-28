@@ -55,8 +55,8 @@ function OperationsPage() {
 
   return (
     <div>
-      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
-        <div className="container flex items-center gap-3 py-5">
+      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" placeholderClassName="my-2" hideWhenOutOfView>
+        <div className="container flex items-center gap-3 py-3">
           <ViewModeToggle />
 
           <span className="text-muted-foreground text-sm lowercase">

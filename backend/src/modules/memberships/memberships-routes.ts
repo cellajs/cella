@@ -44,7 +44,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Create memberships',
     description:
-      'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
+      'Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.',
     request: {
       params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -78,7 +78,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Delete memberships',
     description:
-      'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
+      'Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).',
     request: {
       params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -110,7 +110,7 @@ const membershipRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Update membership',
-    description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
+    description: 'Updates the membership metadata, such as role, `muted`, or `archived` status.',
     request: {
       params: idInTenantOrgParamSchema,
       body: {
@@ -158,7 +158,7 @@ const membershipRoutes = {
     xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['memberships', 'cella'],
     summary: 'Get list of members',
-    description: 'Retrieves members (users) of a context entity by ID, including their associated *membership* data.',
+    description: 'Retrieves members (users) of a context entity by ID, including their associated membership data.',
     request: {
       params: tenantOrgParamSchema,
       query: memberListQuerySchema,

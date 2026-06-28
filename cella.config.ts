@@ -43,6 +43,7 @@ export default defineConfig({
       'frontend/public/static/screenshots',
       'frontend/src/modules/common/bg-animation',
       'frontend/src/routes/routeTree.gen.ts',
+      'sdk/src/plugins/openapi-parser/tests/__snapshots__/parse-spec.test.ts.snap'
     ],
     // Paths pinned to fork; prefer fork version during merge conflicts
     pinned: [

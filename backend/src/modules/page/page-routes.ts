@@ -31,7 +31,7 @@ const pagesRoutes = {
     xRateLimiter: [bulkPointsLimiter],
     tags: ['pages', 'cella', 'product'],
     summary: 'Create pages',
-    description: 'Insert one or more new *pages*. Returns created pages and any rejected items.',
+    description: 'Insert one or more new pages. Returns created pages and any rejected items.',
     request: {
       body: {
         required: true,
@@ -70,7 +70,7 @@ const pagesRoutes = {
     xGuard: [publicGuard],
     tags: ['pages', 'cella', 'product'],
     summary: 'Get pages',
-    description: 'Get all matching *pages*.',
+    description: 'Get all matching pages.',
     request: {
       query: pageListQuerySchema,
     },
@@ -95,7 +95,7 @@ const pagesRoutes = {
     xCache: [publicCache('page')],
     tags: ['pages', 'cella', 'product'],
     summary: 'Get page',
-    description: 'Get a single *page* by ID. Cached using LRU - first request warms cache.',
+    description: 'Get a single page by ID. Cached using LRU - first request warms cache.',
     request: {
       params: z.object({
         id: z.string(),
@@ -120,7 +120,7 @@ const pagesRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['pages', 'cella', 'product'],
     summary: 'Update page',
-    description: 'Update a single *page* by ID.',
+    description: 'Update a single page by ID.',
     request: {
       params: z.object({ id: z.string() }),
       query: fullResponseQuerySchema,
@@ -148,7 +148,7 @@ const pagesRoutes = {
     xRateLimiter: [bulkPointsLimiter],
     tags: ['pages', 'cella', 'product'],
     summary: 'Delete pages',
-    description: 'Delete one or more *pages* by ID.',
+    description: 'Delete one or more pages by ID.',
     request: {
       body: {
         required: true,

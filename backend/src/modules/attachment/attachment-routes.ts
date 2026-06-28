@@ -38,7 +38,7 @@ const attachmentRoutes = {
     xGuard: [authGuard, tenantGuard, orgGuard],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachments',
-    description: 'Returns a paginated list of *attachments* for the organization.',
+    description: 'Returns a paginated list of attachments for the organization.',
     request: {
       params: tenantOrgParamSchema,
       query: attachmentListQuerySchema,
@@ -68,7 +68,7 @@ const attachmentRoutes = {
     tags: ['attachments', 'cella', 'product'],
     summary: 'Create attachments',
     description:
-      'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
+      'Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.',
     request: {
       params: tenantOrgParamSchema,
       body: {
@@ -103,7 +103,7 @@ const attachmentRoutes = {
     xCache: [appCache()],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
-    description: 'Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.',
+    description: 'Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.',
     request: {
       params: idInTenantOrgParamSchema,
     },
@@ -126,7 +126,7 @@ const attachmentRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Update attachment',
-    description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
+    description: 'Updates metadata of an attachment, such as its name or associated entity.',
     request: {
       params: idInTenantOrgParamSchema,
       query: fullResponseQuerySchema,
@@ -154,7 +154,7 @@ const attachmentRoutes = {
     xRateLimiter: [bulkPointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Delete attachments',
-    description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
+    description: 'Deletes one or more attachment records by ID. This does not delete the underlying file in storage.',
     request: {
       params: tenantOrgParamSchema,
       body: {

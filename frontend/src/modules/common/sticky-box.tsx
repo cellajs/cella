@@ -1,4 +1,4 @@
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
 
 function getScrollParent(node: HTMLElement) {
@@ -14,538 +14,231 @@ function getScrollParent(node: HTMLElement) {
   return window;
 }
 
-function isOffsetElement(el: HTMLElement): boolean {
-  return el.firstChild ? (el.firstChild as HTMLElement).offsetParent === el : true;
-}
+// Passive event listeners are baseline in all supported browsers.
+const passiveArg = { passive: true } as const;
 
-function offsetTill(node: HTMLElement, target: HTMLElement) {
-  let current = node;
-  let finalTarget = target;
-
-  let offset = 0;
-  // If target is not an offsetParent itself, subtract its offsetTop and set correct target
-  if (!isOffsetElement(target)) {
-    offset += node.offsetTop - target.offsetTop;
-    finalTarget = node.offsetParent as HTMLElement;
-    offset += -node.offsetTop;
-  }
-  do {
-    offset += current.offsetTop;
-    current = current.offsetParent as HTMLElement;
-  } while (current && current !== finalTarget);
-  return offset;
-}
-
-function getParentNode(node: HTMLElement) {
-  let currentParent = node.parentElement;
-  while (currentParent) {
-    const style = getComputedStyle(currentParent, null);
-    if (style.getPropertyValue('display') !== 'contents') break;
-    currentParent = currentParent.parentElement;
-  }
-  return currentParent || window;
-}
-
-let stickyProp: null | string = null;
-if (CSS?.supports) {
-  if (CSS.supports('position', 'sticky')) stickyProp = 'sticky';
-  else if (CSS.supports('position', '-webkit-sticky')) stickyProp = '-webkit-sticky';
-}
-
-// Inspired by https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md#feature-detection
-let passiveArg: false | { passive: true } = false;
-try {
-  const opts = Object.defineProperty({}, 'passive', {
-    // eslint-disable-next-line getter-return
-    get() {
-      passiveArg = { passive: true };
-    },
-  });
-  const emptyHandler = () => {};
-  window.addEventListener('testPassive', emptyHandler, opts);
-  window.removeEventListener('testPassive', emptyHandler, opts);
-} catch (e) {}
-
-/*
-
-prop overview:
-
-scroll parent
-=============
-- scrollY (onScroll)
-- scrollParentHeight (onResize)
-- scrollParentOffsetTop (onResize)
-
-parent
-======
-- naturalTop (onResize)
-- parentHeight (onResize)
-
-sticky
-======
-- nodeHeight (onResize)
-- offset (onResize)
-
-Fns
-===
-reLayout() (also called on init)
-onScroll()
-*/
-
-type UnsubList = (() => void)[];
-type MeasureFn<T extends object> = (opts: { top: number; left: number; height: number; width: number }) => T;
-
-const getDimensions = <T extends object>(opts: {
-  el: HTMLElement | Window;
-  onChange: () => void;
-  unsubs: UnsubList;
-  measure: MeasureFn<T>;
-}): T => {
-  const { el, onChange, unsubs, measure } = opts;
-  if (el === window) {
-    const getRect = () => ({ top: 0, left: 0, height: window.innerHeight, width: window.innerWidth });
-    const mResult = measure(getRect());
-    const handler = () => {
-      Object.assign(mResult, measure(getRect()));
-      onChange();
-    };
-    window.addEventListener('resize', handler, passiveArg);
-    unsubs.push(() => window.removeEventListener('resize', handler));
-    return mResult;
-  }
-  const mResult = measure((el as HTMLElement).getBoundingClientRect());
-  const handler: ResizeObserverCallback = () => {
-    // Note the e[0].contentRect is different from `getBoundingClientRect`
-    Object.assign(mResult, measure((el as HTMLElement).getBoundingClientRect()));
-    onChange();
-  };
-  const ro = new ResizeObserver(handler);
-  ro.observe(el as HTMLElement);
-  unsubs.push(() => ro.disconnect());
-  return mResult;
-};
-
-function getVerticalPadding(node: HTMLElement) {
-  const computedParentStyle = getComputedStyle(node, null);
-  const parentPaddingTop = Number.parseInt(computedParentStyle.getPropertyValue('padding-top'), 10);
-  const parentPaddingBottom = Number.parseInt(computedParentStyle.getPropertyValue('padding-bottom'), 10);
-  return { top: parentPaddingTop, bottom: parentPaddingBottom };
-}
-
-enum MODES {
-  stickyTop = 0,
-  stickyBottom = 1,
-  relative = 2,
-  small = 3,
-}
-
-type StickyMode = null | (typeof MODES)[keyof typeof MODES];
-
-function setup(node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxConfig>) {
-  const { bottom, offsetBottom, offsetTop } = opts;
-  const scrollPane = getScrollParent(node);
-
-  let isScheduled = false;
-  const scheduleOnLayout = () => {
-    if (!isScheduled) {
-      requestAnimationFrame(() => {
-        const nextMode = onLayout();
-        if (nextMode !== mode) {
-          changeMode(nextMode);
-        } else if (nextMode === MODES.stickyBottom && !bottom) {
-          // ensure it still is at bottom
-          const { height: viewPortHeight } = scrollPaneDims;
-          const { height: nodeHeight } = nodeDims;
-          node.style.top = `${viewPortHeight - nodeHeight - offsetBottom}px`;
-        } else if (nextMode === MODES.relative) {
-          const { height: viewPortHeight, offsetTop: scrollPaneOffset } = scrollPaneDims;
-          const { height: parentHeight, naturalTop } = parentDims;
-          const { height: nodeHeight } = nodeDims;
-          const relativeOffset = Math.max(
-            0,
-            scrollPaneOffset + latestScrollY + viewPortHeight - (naturalTop + nodeHeight + offsetBottom),
-          );
-          if (bottom) {
-            const nextBottom = Math.max(0, parentHeight - nodeHeight - relativeOffset);
-            node.style.bottom = `${nextBottom}px`;
-          } else {
-            node.style.top = `${relativeOffset}px`;
-          }
-        }
-        isScheduled = false;
-      });
-    }
-    isScheduled = true;
-  };
-
-  let latestScrollY = scrollPane === window ? window.scrollY : (scrollPane as HTMLElement).scrollTop;
-
-  const isBoxTooLow = (scrollY: number) => {
-    const { offsetTop: scrollPaneOffset, height: viewPortHeight } = scrollPaneDims;
-    const { naturalTop } = parentDims;
-    const { height: nodeHeight } = nodeDims;
-
-    if (scrollY + scrollPaneOffset + viewPortHeight >= naturalTop + nodeHeight + relativeOffset + offsetBottom) {
-      return true;
-    }
-    return false;
-  };
-
-  const onLayout = (): StickyMode => {
-    const { height: viewPortHeight } = scrollPaneDims;
-    const { height: nodeHeight } = nodeDims;
-    if (nodeHeight + offsetTop + offsetBottom <= viewPortHeight) {
-      return MODES.small;
-    }
-    if (isBoxTooLow(latestScrollY)) {
-      return MODES.stickyBottom;
-    }
-    return MODES.relative;
-  };
-
-  const scrollPaneIsOffsetEl = scrollPane !== window && isOffsetElement(scrollPane as HTMLElement);
-  const scrollPaneDims = getDimensions({
-    el: scrollPane,
-    onChange: scheduleOnLayout,
-    unsubs,
-    measure: ({ height, top }) => ({
-      height,
-      offsetTop: scrollPaneIsOffsetEl ? top : 0,
-    }),
-  });
-
-  const parentNode = getParentNode(node);
-  const parentPaddings = parentNode === window ? { top: 0, bottom: 0 } : getVerticalPadding(parentNode as HTMLElement);
-  const parentDims = getDimensions({
-    el: parentNode,
-    onChange: scheduleOnLayout,
-    unsubs,
-    measure: ({ height }) => ({
-      height: height - parentPaddings.top - parentPaddings.bottom,
-      naturalTop:
-        parentNode === window
-          ? 0
-          : offsetTill(parentNode as HTMLElement, scrollPane as HTMLElement) +
-            parentPaddings.top +
-            scrollPaneDims.offsetTop,
-    }),
-  });
-
-  const nodeDims = getDimensions({
-    el: node,
-    onChange: scheduleOnLayout,
-    unsubs,
-    measure: ({ height }) => ({ height }),
-  });
-
-  let relativeOffset = 0;
-  let mode = onLayout();
-
-  const changeMode = (newMode: StickyMode) => {
-    const prevMode = mode;
-    mode = newMode;
-    if (prevMode === MODES.relative) relativeOffset = -1;
-    if (newMode === MODES.small) {
-      if (stickyProp) {
-        node.style.position = stickyProp;
-      }
-      if (bottom) {
-        node.style.bottom = `${offsetBottom}px`;
-      } else {
-        node.style.top = `${offsetTop}px`;
-      }
-      // When offsetBottom is set for a top-sticky small element, unstick
-      // before the parent's bottom edge by switching to relative positioning
-      if (!bottom && offsetBottom > 0) {
-        let isUnstuck = false;
-        let rafId = 0;
-        const checkUnstick = () => {
-          cancelAnimationFrame(rafId);
-          rafId = requestAnimationFrame(() => {
-            const parentEl = getParentNode(node);
-            if (parentEl === window) return;
-            const parentRect = (parentEl as HTMLElement).getBoundingClientRect();
-            const nodeHeight = node.offsetHeight;
-            // Calculate where the node bottom WOULD be if sticky (avoids oscillation from reading actual rect)
-            const scrollPaneTop = scrollPane === window ? 0 : (scrollPane as HTMLElement).getBoundingClientRect().top;
-            const stickyBottom = scrollPaneTop + offsetTop + nodeHeight;
-            const spaceBelow = parentRect.bottom - stickyBottom;
-
-            if (spaceBelow <= offsetBottom && !isUnstuck) {
-              isUnstuck = true;
-              node.style.position = 'relative';
-              node.style.top = `${parentRect.height - nodeHeight - offsetBottom}px`;
-            } else if (spaceBelow > offsetBottom && isUnstuck) {
-              isUnstuck = false;
-              if (stickyProp) node.style.position = stickyProp;
-              node.style.top = `${offsetTop}px`;
-            }
-          });
-        };
-        const sp = scrollPane;
-        sp.addEventListener('scroll', checkUnstick, passiveArg);
-        unsubs.push(() => {
-          cancelAnimationFrame(rafId);
-          sp.removeEventListener('scroll', checkUnstick);
-        });
-      }
-      return;
-    }
-
-    const { height: viewPortHeight, offsetTop: scrollPaneOffset } = scrollPaneDims;
-    const { height: parentHeight, naturalTop } = parentDims;
-    const { height: nodeHeight } = nodeDims;
-    if (newMode === MODES.relative) {
-      node.style.position = 'relative';
-      relativeOffset =
-        prevMode === MODES.stickyTop
-          ? Math.max(0, scrollPaneOffset + latestScrollY - naturalTop + offsetTop)
-          : Math.max(0, scrollPaneOffset + latestScrollY + viewPortHeight - (naturalTop + nodeHeight + offsetBottom));
-      if (bottom) {
-        const nextBottom = Math.max(0, parentHeight - nodeHeight - relativeOffset);
-        node.style.bottom = `${nextBottom}px`;
-      } else {
-        node.style.top = `${relativeOffset}px`;
-      }
-    } else {
-      if (stickyProp) {
-        node.style.position = stickyProp;
-      }
-      if (newMode === MODES.stickyBottom) {
-        if (bottom) {
-          node.style.bottom = `${offsetBottom}px`;
-        } else {
-          node.style.top = `${viewPortHeight - nodeHeight - offsetBottom}px`;
-        }
-      } else {
-        // stickyTop
-        if (bottom) {
-          node.style.bottom = `${viewPortHeight - nodeHeight - offsetBottom}px`;
-        } else {
-          node.style.top = `${offsetTop}px`;
-        }
-      }
-    }
-  };
-  changeMode(mode);
-
-  const onScroll = (scrollY: number) => {
-    if (scrollY === latestScrollY) return;
-    const scrollDelta = scrollY - latestScrollY;
-    latestScrollY = scrollY;
-    if (mode === MODES.small) return;
-
-    const { offsetTop: scrollPaneOffset, height: viewPortHeight } = scrollPaneDims;
-    const { naturalTop, height: parentHeight } = parentDims;
-    const { height: nodeHeight } = nodeDims;
-
-    if (scrollDelta > 0) {
-      // scroll down
-      if (mode === MODES.stickyTop) {
-        if (scrollY + scrollPaneOffset + offsetTop > naturalTop) {
-          const topOffset = Math.max(0, scrollPaneOffset + latestScrollY - naturalTop + offsetTop);
-          if (scrollY + scrollPaneOffset + viewPortHeight <= naturalTop + nodeHeight + topOffset + offsetBottom) {
-            changeMode(MODES.relative);
-          } else {
-            changeMode(MODES.stickyBottom);
-          }
-        }
-      } else if (mode === MODES.relative) {
-        if (isBoxTooLow(scrollY)) changeMode(MODES.stickyBottom);
-      }
-    } else {
-      // scroll up
-      if (mode === MODES.stickyBottom) {
-        if (scrollPaneOffset + scrollY + viewPortHeight < naturalTop + parentHeight + offsetBottom) {
-          const bottomOffset = Math.max(
-            0,
-            scrollPaneOffset + latestScrollY + viewPortHeight - (naturalTop + nodeHeight + offsetBottom),
-          );
-          if (scrollPaneOffset + scrollY + offsetTop >= naturalTop + bottomOffset) {
-            changeMode(MODES.relative);
-          } else {
-            changeMode(MODES.stickyTop);
-          }
-        }
-      } else if (mode === MODES.relative) {
-        if (scrollPaneOffset + scrollY + offsetTop < naturalTop + relativeOffset) {
-          changeMode(MODES.stickyTop);
-        }
-      }
-    }
-  };
-
-  const handleScroll =
-    scrollPane === window ? () => onScroll(window.scrollY) : () => onScroll((scrollPane as HTMLElement).scrollTop);
-
-  scrollPane.addEventListener('scroll', handleScroll, passiveArg);
-  scrollPane.addEventListener('mousewheel', handleScroll, passiveArg);
-  unsubs.push(
-    () => scrollPane.removeEventListener('scroll', handleScroll),
-    () => scrollPane.removeEventListener('mousewheel', handleScroll),
-  );
-}
-
-type StickyBoxConfig = {
+type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
+  /** Offset (px) from the top of the scroll container at which the bar pins. */
   offsetTop?: number;
-  offsetBottom?: number;
-  bottom?: boolean;
+  /** Disable sticky behaviour entirely (renders children in a plain div). */
   enabled?: boolean;
+  /** Hide the bar while scrolling down and reveal it while scrolling up. */
+  hideWhenOutOfView?: boolean;
+  /**
+   * Classes for the in-flow placeholder wrapper. Use this for breathing-room
+   * margin (e.g. `my-2`) so it stays symmetric and scrolls away when affixed —
+   * margin on the bar itself would offset the fixed position.
+   */
+  placeholderClassName?: string;
 };
 
 /**
- * Provides sticky positioning behavior for a target element.
+ * Affix header that pins to the top of its scroll container. When it sticks, the
+ * bar pops out of flow (`position: fixed`) and a placeholder reserves its natural
+ * height — so the affixed bar can resize (e.g. shrink padding via `data-sticky`)
+ * without reflowing the content below.
+ *
+ * Not for tall sticky *sidebars*: use plain CSS instead —
+ * `sticky top-X max-h-[calc(100vh-…)] overflow-y-auto`.
  */
-function useStickyBox({ offsetTop = 0, offsetBottom = 0, bottom = false, enabled = true }: StickyBoxConfig = {}) {
-  const [node, setNode] = useState<HTMLElement | null>(null);
-  const [isSticky, setIsSticky] = useState<boolean>(false);
+export function StickyBox({
+  enabled = true,
+  offsetTop = 0,
+  hideWhenOutOfView,
+  children,
+  className,
+  placeholderClassName,
+  style,
+  ...rest
+}: StickyBoxProps) {
+  const placeholderRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Last measured in-flow height of the bar, captured while not stuck.
+  const naturalHeightRef = useRef(0);
 
+  const [stuck, setStuck] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [metrics, setMetrics] = useState<{ left: number; width: number; top: number; height: number } | null>(null);
+  // While unsticking, keep reserving the bar's height until its size transition
+  // settles, so the in-flow resize doesn't reflow the content below.
+  const [settling, setSettling] = useState(false);
+  const reservedHeightRef = useRef(0);
+  const prevStuckRef = useRef(false);
+
+  // Detect the stuck state with a zero-height sentinel at the bar's natural top.
   useEffect(() => {
-    if (!enabled || !node || !stickyProp) return;
-    const unsubs: UnsubList = [];
-    setup(node, unsubs, { offsetBottom, offsetTop, bottom, enabled });
+    const sentinel = sentinelRef.current;
+    if (!enabled || !sentinel) {
+      setStuck(false);
+      return;
+    }
+    const scrollParent = getScrollParent(sentinel);
+    const root = scrollParent === window ? null : (scrollParent as HTMLElement);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const rb = entry.rootBounds;
+        if (!rb) return;
+        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rb.top);
+      },
+      { root, rootMargin: `${-offsetTop}px 0px 0px 0px`, threshold: [0] },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [enabled, offsetTop]);
 
-    const scrollPane = getScrollParent(node);
-    const addTarget: Window | HTMLElement = scrollPane;
-
-    let lastIsSticky = false;
-    let ticking = false;
-
-    const calculateIsSticky = () => {
-      const elRect = node.getBoundingClientRect();
-      const spRect =
-        scrollPane === window
-          ? { top: 0, bottom: window.innerHeight }
-          : (scrollPane as HTMLElement).getBoundingClientRect();
-
-      return bottom
-        ? elRect.bottom >= spRect.bottom - offsetBottom - 0.5 // epsilon
-        : elRect.top <= spRect.top + offsetTop + 0.5;
+  // Track the bar's natural height while in flow, so the placeholder can reserve
+  // exactly that space the moment the bar pops out to `position: fixed`.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (stuck || !bar) return;
+    const update = () => {
+      naturalHeightRef.current = bar.offsetHeight;
     };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [stuck]);
 
-    const handleScrollLike = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const isStickyNow = calculateIsSticky();
-        if (isStickyNow !== lastIsSticky) {
-          setIsSticky(isStickyNow);
-          lastIsSticky = isStickyNow;
-        }
-        ticking = false;
+  // While stuck, keep the fixed bar aligned to where the placeholder sits.
+  useLayoutEffect(() => {
+    if (!enabled || !stuck) {
+      setMetrics(null);
+      return;
+    }
+    const placeholder = placeholderRef.current;
+    if (!placeholder) return;
+    const scrollParent = getScrollParent(placeholder);
+
+    const measure = () => {
+      const rect = placeholder.getBoundingClientRect();
+      const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
+      setMetrics({
+        left: rect.left,
+        width: rect.width,
+        top: containerTop + offsetTop,
+        height: naturalHeightRef.current,
       });
     };
+    measure();
 
-    const onResize = () => handleScrollLike();
-
-    addTarget.addEventListener('scroll', handleScrollLike, passiveArg);
-    window.addEventListener('resize', onResize, passiveArg);
-
-    // also observe size changes of the scroll parent if it's an element
-    let ro: ResizeObserver | undefined;
-    if (scrollPane !== window) {
-      ro = new ResizeObserver(onResize);
-      ro.observe(scrollPane as HTMLElement);
-    }
-
-    // initial check
-    handleScrollLike();
-
+    const ro = new ResizeObserver(measure);
+    ro.observe(placeholder);
+    window.addEventListener('resize', measure, passiveArg);
+    // A fixed element is viewport-anchored, so only an element scroller needs re-sync.
+    const syncScroll = scrollParent !== window;
+    if (syncScroll) scrollParent.addEventListener('scroll', measure, passiveArg);
     return () => {
-      for (const fn of unsubs) fn();
-      addTarget.removeEventListener('scroll', handleScrollLike);
-      window.removeEventListener('resize', onResize);
-      ro?.disconnect();
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      if (syncScroll) scrollParent.removeEventListener('scroll', measure);
     };
-  }, [node, offsetBottom, offsetTop, bottom, enabled]);
+  }, [enabled, stuck, offsetTop]);
 
-  if (!enabled) return [() => {}, false] as const;
-  return [setNode, isSticky] as const;
-}
-
-type StickyBoxCompProps = StickyBoxConfig &
-  Omit<ComponentProps<'div'>, 'ref'> & {
-    /** When true, hides the sticky box when its natural position scrolls out of the viewport */
-    hideWhenOutOfView?: boolean;
-  };
-
-export function StickyBox(props: StickyBoxCompProps) {
-  const {
-    enabled = true,
-    offsetTop,
-    offsetBottom,
-    bottom,
-    children,
-    className,
-    style,
-    hideWhenOutOfView,
-    ...rest
-  } = props;
-
-  const ref = useRef<HTMLDivElement>(null);
-  const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
-  const [visible, setVisible] = useState(true);
-
+  // hideWhenOutOfView: reveal on scroll up, hide on scroll down, always show at top.
   useEffect(() => {
-    if (ref.current) setRef(ref.current);
-  }, [setRef]);
-
-  useEffect(() => {
-    if (!hideWhenOutOfView || !enabled || !ref.current) return;
-
-    const scrollParent = getScrollParent(ref.current);
+    if (!hideWhenOutOfView || !enabled || !placeholderRef.current) return;
+    const scrollParent = getScrollParent(placeholderRef.current);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+    let accumulated = 0;
     let ticking = false;
-
-    // Use isSticky (already computed) instead of a sentinel IntersectionObserver.
-    // When not sticky, the element is at its natural position → always visible.
-    // When sticky and scrolling down → hide; scrolling up → show.
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
         const currentY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
-
-        // Hide during programmatic scrolls (e.g. scrollToSection)
-        if (isProgrammaticScroll()) {
+        const delta = currentY - lastScrollY;
+        if (currentY <= offsetTop) {
+          setVisible(true);
+          accumulated = 0;
+        } else if (isProgrammaticScroll()) {
           setVisible(false);
+          accumulated = 0;
         } else {
-          const delta = currentY - lastScrollY;
-          if (Math.abs(delta) > 10) setVisible(delta < 0);
+          accumulated = Math.sign(delta) === Math.sign(accumulated) ? accumulated + delta : delta;
+          if (accumulated > 10) {
+            setVisible(false);
+            accumulated = 0;
+          } else if (accumulated < -10) {
+            setVisible(true);
+            accumulated = 0;
+          }
         }
-
         lastScrollY = currentY;
         ticking = false;
       });
     };
-
     scrollParent.addEventListener('scroll', onScroll, passiveArg);
-    return () => {
-      scrollParent.removeEventListener('scroll', onScroll);
-    };
-  }, [hideWhenOutOfView, enabled]);
+    return () => scrollParent.removeEventListener('scroll', onScroll);
+  }, [hideWhenOutOfView, enabled, offsetTop]);
 
-  // When element returns to its natural (non-sticky) position, ensure it's visible
+  // Ensure visible again whenever the bar is back in its natural position.
   useEffect(() => {
-    if (hideWhenOutOfView && !isSticky) setVisible(true);
-  }, [hideWhenOutOfView, isSticky]);
+    if (hideWhenOutOfView && !stuck) setVisible(true);
+  }, [hideWhenOutOfView, stuck]);
 
-  if (!hideWhenOutOfView || !enabled) {
-    return (
-      <div className={className} data-sticky={isSticky} style={style} ref={ref} {...rest}>
-        {children}
-      </div>
-    );
+  // Remember the reserved (natural) height while stuck so it can be held during
+  // the un-stick transition below.
+  useEffect(() => {
+    if (stuck && metrics) reservedHeightRef.current = metrics.height;
+  }, [stuck, metrics]);
+
+  // On unstick, keep the placeholder reserving the natural height until the bar's
+  // size transition finishes — otherwise releasing the placeholder while the bar
+  // is still animating back to full size reflows the content below (jump + glide).
+  useEffect(() => {
+    const wasStuck = prevStuckRef.current;
+    prevStuckRef.current = stuck;
+    if (!wasStuck || stuck) return;
+
+    setSettling(true);
+    const bar = barRef.current;
+    let timer = 0;
+    const finish = () => {
+      window.clearTimeout(timer);
+      bar?.removeEventListener('transitionend', onEnd);
+      setSettling(false);
+    };
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === bar && e.propertyName.startsWith('padding')) finish();
+    };
+    bar?.addEventListener('transitionend', onEnd);
+    // Fallback in case the bar has no size transition to listen for.
+    timer = window.setTimeout(finish, 350);
+    return () => {
+      window.clearTimeout(timer);
+      bar?.removeEventListener('transitionend', onEnd);
+    };
+  }, [stuck]);
+
+  const barStyle: React.CSSProperties = { ...style };
+  if (stuck && metrics) {
+    barStyle.position = 'fixed';
+    barStyle.top = metrics.top;
+    barStyle.left = metrics.left;
+    barStyle.width = metrics.width;
+  }
+  if (hideWhenOutOfView && enabled) {
+    barStyle.transition = 'transform 300ms ease, opacity 300ms ease';
+    if (!visible) {
+      barStyle.transform = 'translateY(-100%)';
+      barStyle.opacity = 0;
+      barStyle.pointerEvents = 'none';
+    }
   }
 
-  const hideStyle: React.CSSProperties = {
-    transition: 'transform 300ms ease, opacity 300ms ease',
-    ...(visible ? {} : { transform: 'translateY(-100%)', opacity: 0, pointerEvents: 'none' as const }),
-  };
+  // Placeholder reserves the bar's natural height while stuck — and through the
+  // un-stick transition — so the bar can resize without reflowing content below.
+  const placeholderStyle: React.CSSProperties | undefined =
+    stuck && metrics ? { height: metrics.height } : settling ? { height: reservedHeightRef.current } : undefined;
 
   return (
-    <div className={className} data-sticky={isSticky} style={{ ...style, ...hideStyle }} ref={ref} {...rest}>
-      {children}
+    <div ref={placeholderRef} className={placeholderClassName} style={placeholderStyle}>
+      <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
+      <div ref={barRef} className={className} data-sticky={stuck} style={barStyle} {...rest}>
+        {children}
+      </div>
     </div>
   );
 }

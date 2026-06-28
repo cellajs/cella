@@ -121,12 +121,11 @@ async function main(): Promise<void> {
 
       case 'sync': {
         const result = await runSync(config);
-        if (config.settings.syncWithPackages !== false && result.success) {
-          await runPackages(config);
-        } else if (config.settings.syncWithPackages !== false) {
-          console.warn(
-            `${warningMark} package sync skipped because the merge has unresolved conflicts. resolve them, commit the merge, then rerun sync.`,
-          );
+        if (config.settings.syncWithPackages !== false) {
+          // Run package sync even when the merge left conflicts: package.json files
+          // that are themselves conflicted are skipped and reported; all others are
+          // still synced so you get the latest upstream deps.
+          await runPackages(config, { conflictedFiles: result.conflicts });
         }
         break;
       }
