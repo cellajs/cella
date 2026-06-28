@@ -103,6 +103,8 @@ export {
   getAllDecisions,
   MissingScopeError,
   type PermissionResult,
+  toColumnName,
+  toTableName,
   validateAncestorScope,
   validateMembership,
   validateSubject,

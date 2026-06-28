@@ -45,7 +45,7 @@ export function LegalPage() {
     <MarketingLayout title={t('c:legal')}>
       <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
         <div className="mx-auto md:mt-3 md:w-[25%] md:min-w-48">
-          <div className="group sticky top-3 z-10">
+          <div className="group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto">
             <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} collapseText />
             <LegalAside subjects={subjects} currentSubject={currentSubject} className="py-2" />
           </div>

@@ -12,6 +12,7 @@ export const contactFormHandler = (ref: RefObject<HTMLButtonElement | null>) => 
     id: 'contact-form',
     triggerRef: ref,
     drawerOnMobile: false,
+    outsideScroll: true,
     className: 'sm:max-w-5xl',
     title: i18n.t('c:contact_us'),
     titleContent: <UnsavedBadge title={i18n.t('c:contact_us')} />,

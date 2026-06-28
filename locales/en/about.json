@@ -190,7 +190,7 @@
   "features.yjs_collaboration.text": "Real-time co-editing with live presence, powered by Yjs. While connected, concurrent edits merge cleanly with no conflicts.",
   "features.zero_downtime": "Zero-downtime deploys",
   "features.zero_downtime.text": "Each deploy boots a new version alongside the running one and only shifts traffic over after it passes a health and version check, keeping the old version as a rollback target.",
-  "hero.text": "Cella is a <strong>TypeScript template</strong> to build web apps that need <strong>offline & real-time sync features</strong>. Postgres, OpenAPI & React Query are authorative.",
+  "hero.text": "Cella is a <strong>TypeScript template</strong> to ship apps with <strong>offline & real-time sync features</strong> on day one. Postgres, OpenAPI & React Query are authorative.",
   "hero.title": "Ship modern web apps. Use a classic REST API.",
   "prerelease": "Prerelease",
   "pricing.plan_1.1": "Member of CellaJS community",

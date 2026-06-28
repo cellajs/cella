@@ -3,6 +3,7 @@ import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
 import { adoptOrphanedPolicy } from '../../lib/adopt-orphaned-policy'
+import { adoptOrphanedSecrets } from '../../lib/adopt-orphaned-secrets'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../../lib/control-store'
 import { infraDir } from '../../lib/paths'
@@ -101,6 +102,25 @@ export async function runApply(context: InfraContext): Promise<void> {
     } catch (error) {
       console.warn(`${warningMark} ${(error as Error).message}`)
     }
+  }
+
+  // Operator-managed Secret Manager containers can exist in Scaleway but be
+  // missing from Pulumi state (e.g. after a state rebuild/restore), which makes
+  // `pulumi up` try to create them and fail with "cannot have same secret name
+  // in same path". Adopt any such orphans into state first; idempotent once
+  // imported. Supersedes the manual OPERATOR_SECRET_IMPORTS env hook.
+  try {
+    await adoptOrphanedSecrets({
+      stack: targetStack,
+      cwd: infraDir,
+      env: applyEnv,
+      secretKey: bootSecret,
+      projectId,
+      region: appConfig.s3.region,
+      path: `/${appConfig.slug}-${context.environment}/`,
+    })
+  } catch (error) {
+    console.warn(`${warningMark} ${(error as Error).message}`)
   }
 
   // Reconcile gen/sha into the local Pulumi config from live state before

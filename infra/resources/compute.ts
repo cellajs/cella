@@ -15,7 +15,8 @@
  * Generation state lives in the S3 control object (resources/control.ts), an
  * append-only-ish ledger written by the orchestrator around a cutover:
  *   active     — the generation currently serving live on the LB
- *   previous   — the last good generation, retained for pointer-flip rollback
+ *   previous   — the last good generation, retained but POWERED OFF (compute
+ *                billing paused) as a pointer-flip rollback target
  *   pendingSha — the SHA being rolled in (the genId is derived here, not stored)
  * compute materialises a VM for {active} ∪ {pending} ∪ {previous}, deduplicated
  * by id, so a same-config redeploy collapses to a single VM and a partial deploy
@@ -312,6 +313,14 @@ interface Generation {
   id: string
   /** Image SHA baked into this generation. */
   sha: string
+  /**
+   * Provision this generation's VM powered off. Set only for the retained
+   * `previous` generation: it is off the LB and exists purely as a rollback
+   * target, so it is powered down to pause its compute billing (Scaleway bills
+   * a running Instance per hour; a `stopped` Instance pauses that charge while
+   * its volume stays for a fast power-on rollback).
+   */
+  stopped?: boolean
 }
 
 /**
@@ -344,16 +353,19 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 /**
  * Generations a service materialises: the live one (`active`, else the pending
  * intent on first deploy), the pending generation being rolled in, and the
- * retained `previous` generation (kept alive so a rollback is a pointer flip).
+ * retained `previous` generation (powered off — off the LB, kept only so a
+ * rollback is a pointer flip + power-on rather than a rebuild).
  * Deduplicated by id — when a pending SHA hashes to the active id (a same-config
  * redeploy) it collapses to a single VM. Index 0 is the live binding target.
+ * A generation that is also active or pending (deduped to the earlier, started
+ * entry) is never powered off; only a distinct `previous`-only VM is stopped.
  */
 function activeGenerations(svc: ServiceDefinition): Generation[] {
   const entry = controlState.rollout[svc.slug]
   const fingerprint = serviceFingerprint(svc)
   const pending: Generation | undefined = entry?.pendingSha ? { id: deriveGenId(entry.pendingSha, fingerprint), sha: entry.pendingSha } : undefined
   const active: Generation | undefined = entry?.active ? { id: entry.active.id, sha: entry.active.sha } : undefined
-  const previous: Generation | undefined = entry?.previous ? { id: entry.previous.id, sha: entry.previous.sha } : undefined
+  const previous: Generation | undefined = entry?.previous ? { id: entry.previous.id, sha: entry.previous.sha, stopped: true } : undefined
 
   const generations: Generation[] = []
   const seen = new Set<string>()
@@ -471,6 +483,11 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     securityGroupId: securityGroup.id,
     cloudInit: buildCloudInit(serviceConfig, generation.sha),
     ipIds: [ip.id],
+    // Active/pending generations run; a retained `previous` generation is
+    // powered off to pause its compute billing (rollback = flip the pointer and
+    // power it back on). NOT in `ignoreChanges`, so Pulumi reconciles the power
+    // state as a generation is promoted to `previous` or back to `active`.
+    state: generation.stopped ? 'stopped' : 'started',
   }, {
     // A generation VM is immutable: cloud-init AND the baked image are part of
     // the generation's identity, fixed at creation. A new cloud-init or a

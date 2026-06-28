@@ -7,7 +7,7 @@
   },
   {
     "name": "attachments",
-    "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client; the API handles\n    metadata registration, linking, access, and preview utilities.",
+    "description": "Endpoints for managing file based attachments (e.g. images, PDFs, documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client; the API handles\n    metadata registration, linking, access, and preview utilities.",
     "count": 6,
     "kind": "module"
   },
@@ -19,7 +19,7 @@
   },
   {
     "name": "entities",
-    "description": "Endpoints that operate across multiple entity types, such as `users` and `organizations`.\n    *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n    and entity visibility.",
+    "description": "Endpoints that operate across multiple entity types, such as `users` and `organizations`.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These endpoints offer shared logic across modules, including slug validation\n    and entity visibility.",
     "count": 5,
     "kind": "module"
   },
@@ -31,7 +31,7 @@
   },
   {
     "name": "memberships",
-    "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a\n    `user` and a contextual `entity` (e.g., an `organization`). Each membership includes role information\n    and status flags such as `archived` or `muted`. Memberships can also reference parent entities,\n    enabling hierarchical context.",
+    "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    `user` and a contextual `entity` (e.g., an `organization`). Each membership includes role information\n    and status flags such as `archived` or `muted`. Memberships can also reference parent entities,\n    enabling hierarchical context.",
     "count": 6,
     "kind": "module"
   },
@@ -49,13 +49,13 @@
   },
   {
     "name": "pages",
-    "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline\n    capabilities. Pages can be organized hierarchically and are used in /docs.",
+    "description": "Endpoints for managing pages, which are product entities supporting realtime sync and offline\n    capabilities. Pages can be organized hierarchically and are used in /docs.",
     "count": 5,
     "kind": "module"
   },
   {
     "name": "requests",
-    "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,\n    and waitlist entries.",
+    "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
     "count": 3,
     "kind": "module"
   },
@@ -73,13 +73,13 @@
   },
   {
     "name": "tenants",
-    "description": "System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by\n    Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.",
+    "description": "System-level endpoints for managing tenants. Tenants are top-level isolation boundaries used by\n    Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.",
     "count": 9,
     "kind": "module"
   },
   {
     "name": "users",
-    "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as\n    `organizations`), a `user` is a \"global\" entity and not scoped to a specific context. These endpoints\n    are intended for administrative operations on any user in the system.",
+    "description": "Endpoints for managing users at the system level. Unlike context entities (such as\n    `organizations`), a `user` is a \"global\" entity and not scoped to a specific context. These endpoints\n    are intended for administrative operations on any user in the system.",
     "count": 2,
     "kind": "module"
   },

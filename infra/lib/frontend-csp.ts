@@ -19,12 +19,31 @@ const cspOrigins = {
   s3Private: appConfig.s3.privateCDNUrl,
 }
 
+const connectSrc = [
+  `connect-src 'self' blob:`,
+  cspOrigins.api,
+  cspOrigins.yjs,
+  cspOrigins.ai,
+  cspOrigins.s3Host,
+  cspOrigins.s3Buckets,
+  cspOrigins.s3Public,
+  cspOrigins.s3Private,
+  'https://*.transloadit.com',
+  'wss://*.transloadit.com',
+  'https://transloaditstatus.com',
+  '*.gleap.io',
+  'wss://ws.gleap.io',
+  'ingest.maple.dev',
+]
+  .filter(Boolean)
+  .join(' ')
+
 export const frontendCsp = [
   `default-src 'self'`,
   `script-src 'self' *.gleap.io maps.googleapis.com`,
   `worker-src 'self' blob:`,
   `style-src 'self' 'unsafe-inline'`,
-  `connect-src 'self' blob: ${cspOrigins.api} ${cspOrigins.yjs} ${cspOrigins.ai} ${cspOrigins.s3Host} ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private} https://*.transloadit.com wss://*.transloadit.com https://transloaditstatus.com *.gleap.io wss://ws.gleap.io`,
+  connectSrc,
   `img-src 'self' blob: https: data:`,
   `media-src 'self' blob: data: https://i.ytimg.com *.gleap.io ${cspOrigins.s3Buckets} ${cspOrigins.s3Public} ${cspOrigins.s3Private}`,
   `frame-src 'self' *.youtube.com *.vimeo.com *.gleap.io`,

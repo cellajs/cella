@@ -12,7 +12,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PackageJsonSyncKey, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { createSpinner, spinnerSuccess, spinnerText } from '../utils/display';
+import { createSpinner, spinnerSuccess, spinnerText, warningMark } from '../utils/display';
 
 /** Package.json structure */
 interface PackageJson {
@@ -380,17 +380,32 @@ async function syncPackageJson(
  *
  * Dynamically discovers all package.json locations in both fork and upstream,
  * then syncs configured keys using safe merge logic (add-only, bump-only).
+ *
+ * When `conflictedFiles` is provided (e.g. after a sync that left conflicts),
+ * any package.json that is itself unmerged is skipped to avoid clobbering
+ * conflict markers; all other package.json files are still synced.
  */
-export async function runPackages(config: RuntimeConfig): Promise<void> {
+export async function runPackages(config: RuntimeConfig, options: { conflictedFiles?: string[] } = {}): Promise<void> {
   createSpinner('syncing package.json files...');
 
   const keysToSync = config.settings.packageJsonSync || ['dependencies', 'devDependencies'];
+  const conflictedSet = new Set(options.conflictedFiles ?? []);
 
   // Dynamically discover package locations
   const locations = await discoverPackageLocations(config.forkPath, config.upstreamRef);
   const results: { location: string; changes: string[] }[] = [];
+  const skipped: string[] = [];
 
   for (const location of locations) {
+    const pkgRelPath = location ? `${location}/package.json` : 'package.json';
+
+    // Skip package.json files that are themselves conflicted from the merge —
+    // writing to them would clobber the conflict markers the user must resolve.
+    if (conflictedSet.has(pkgRelPath)) {
+      skipped.push(pkgRelPath);
+      continue;
+    }
+
     spinnerText(`syncing ${location || 'root'}/package.json...`);
 
     const { updated, changes } = await syncPackageJson(config.forkPath, config.upstreamRef, location, keysToSync);
@@ -411,6 +426,17 @@ export async function runPackages(config: RuntimeConfig): Promise<void> {
       for (const change of changes) {
         console.info(`    ${pc.dim('→')} ${change}`);
       }
+    }
+  }
+
+  // Report any package.json files deferred due to merge conflicts
+  if (skipped.length > 0) {
+    console.info();
+    console.warn(
+      `${warningMark} skipped ${skipped.length} conflicted package.json file(s) — resolve the conflicts, commit the merge, then rerun \`pnpm cella sync\`:`,
+    );
+    for (const path of skipped) {
+      console.warn(`    ${pc.dim('→')} ${path}`);
     }
   }
 }

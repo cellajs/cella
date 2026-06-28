@@ -16,7 +16,7 @@ const activityRoutes = {
     tags: ['activities', 'cella'],
     summary: 'Get list of activities',
     description:
-      'Returns a paginated list of *activities* (audit log entries). Activities track create, update, and delete operations across all resources.',
+      'Returns a paginated list of activities (audit log entries). Activities track create, update, and delete operations across all resources.',
     request: { query: activityListQuerySchema },
     responses: {
       200: {

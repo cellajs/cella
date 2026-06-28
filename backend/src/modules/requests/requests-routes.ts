@@ -20,7 +20,7 @@ const requestRoutes = {
     tags: ['requests', 'cella'],
     summary: 'Create request',
     description:
-      'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
+      'Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
         required: true,
@@ -45,7 +45,7 @@ const requestRoutes = {
     xGuard: [authGuard, sysAdminGuard],
     tags: ['requests', 'cella'],
     summary: 'Get list of requests',
-    description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
+    description: 'Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.',
     request: { query: requestListQuerySchema },
     responses: {
       200: {
@@ -71,7 +71,7 @@ const requestRoutes = {
     xRateLimiter: [bulkPointsLimiter],
     tags: ['requests', 'cella'],
     summary: 'Delete requests',
-    description: 'Deletes one or more *requests* from the system by their IDs.',
+    description: 'Deletes one or more requests from the system by their IDs.',
     request: {
       body: {
         required: true,

@@ -36,7 +36,7 @@ const organizationRoutes = {
     xRateLimiter: [insertEntityLock, bulkPointsLimiter],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Create organizations',
-    description: 'Creates one or more new *organizations* within a tenant.',
+    description: 'Creates one or more new organizations within a tenant.',
     request: {
       params: tenantOnlyParamSchema,
       body: {
@@ -67,7 +67,7 @@ const organizationRoutes = {
     xGuard: [authGuard, crossTenantGuard, relatableGuard],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Get list of organizations',
-    description: 'Returns a list of *organizations*.',
+    description: 'Returns a list of organizations.',
     request: { query: organizationListQuerySchema },
     responses: {
       200: {
@@ -92,7 +92,7 @@ const organizationRoutes = {
     xGuard: [authGuard, tenantGuard],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Get organization',
-    description: 'Retrieves an *organization* by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
+    description: 'Retrieves an organization by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: organizationQuerySchema },
     responses: {
       200: {
@@ -113,7 +113,7 @@ const organizationRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Update organization',
-    description: 'Updates an *organization* within a tenant.',
+    description: 'Updates an organization within a tenant.',
     request: {
       params: tenantIdParamSchema,
       body: {
@@ -139,7 +139,7 @@ const organizationRoutes = {
     xRateLimiter: [bulkPointsLimiter],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Delete organizations',
-    description: 'Deletes one or more *organizations* by ID within a tenant.',
+    description: 'Deletes one or more organizations by ID within a tenant.',
     request: {
       params: tenantOnlyParamSchema,
       body: {

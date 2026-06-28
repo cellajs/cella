@@ -35,3 +35,4 @@ export { buildSubject, buildSubjectFromEntity } from './build-subject';
 export { validateAncestorScope } from './validate-ancestor-scope';
 export { MissingScopeError } from './missing-scope-error';
 export { type BatchPermissionResult, checkPermission, type PermissionResult } from './check-permission';
+export { toColumnName, toTableName } from './schema-naming';

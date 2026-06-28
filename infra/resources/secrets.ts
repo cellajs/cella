@@ -28,6 +28,11 @@ const secretPath = `/${naming.slug}-${mode}/`
  * Entries are `secretName=region/uuid` (the Scaleway Secret `.id` form) and are
  * only consulted for operator secrets. Once a container is in state the variable
  * is no longer needed and should be removed.
+ *
+ * Manual fallback only: the "Apply infra change" CLI flow now self-heals this
+ * drift automatically via `lib/adopt-orphaned-secrets.ts` (it lists the live
+ * containers and `pulumi import`s any that are missing from state before
+ * `pulumi up`). Use this env hook for non-CLI runs or to force a specific id.
  */
 function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
   if (!raw) return {}

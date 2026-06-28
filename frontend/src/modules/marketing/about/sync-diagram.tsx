@@ -308,7 +308,7 @@ export const SyncDiagram = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeInOut' }}
-          className="mx-auto mb-4 max-w-2xl text-center font-light text-muted-foreground text-sm"
+          className="mx-auto mb-4 max-w-2xl font-light text-muted-foreground text-sm sm:text-center"
         >
           <Trans
             t={t}
