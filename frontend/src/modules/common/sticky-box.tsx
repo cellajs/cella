@@ -1,5 +1,6 @@
-import { type ComponentProps, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
+import { cn } from '~/utils/cn';
 
 function getScrollParent(node: HTMLElement) {
   let parent: HTMLElement | null = node;
@@ -20,23 +21,26 @@ const passiveArg = { passive: true } as const;
 type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   /** Offset (px) from the top of the scroll container at which the bar pins. */
   offsetTop?: number;
+  /** Release the bar this many px before the bottom of its containing block (e.g. to clear a footer). */
+  offsetBottom?: number;
   /** Disable sticky behaviour entirely (renders children in a plain div). */
   enabled?: boolean;
   /** Hide the bar while scrolling down and reveal it while scrolling up. */
   hideWhenOutOfView?: boolean;
   /**
-   * Classes for the in-flow placeholder wrapper. Use this for breathing-room
-   * margin (e.g. `my-2`) so it stays symmetric and scrolls away when affixed —
-   * margin on the bar itself would offset the fixed position.
+   * Classes for the zero-height sentinel that marks the bar's natural top. Use
+   * this for breathing-room margin (e.g. `my-2`) around the pin point.
    */
   placeholderClassName?: string;
 };
 
 /**
- * Affix header that pins to the top of its scroll container. When it sticks, the
- * bar pops out of flow (`position: fixed`) and a placeholder reserves its natural
- * height — so the affixed bar can resize (e.g. shrink padding via `data-sticky`)
- * without reflowing the content below.
+ * Affix header that pins to the top of its scroll container via CSS
+ * `position: sticky`. Placement is owned by the browser — robust inside
+ * transformed/virtualized ancestors where `position: fixed` would anchor to the
+ * wrong containing block. A zero-height sentinel + IntersectionObserver is the
+ * single source of truth for the `data-sticky` state (used for styling), and an
+ * optional `offsetBottom` releases the bar before the container's bottom edge.
  *
  * Not for tall sticky *sidebars*: use plain CSS instead —
  * `sticky top-X max-h-[calc(100vh-…)] overflow-y-auto`.
@@ -44,6 +48,7 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
+  offsetBottom = 0,
   hideWhenOutOfView,
   children,
   className,
@@ -51,22 +56,17 @@ export function StickyBox({
   style,
   ...rest
 }: StickyBoxProps) {
-  const placeholderRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  // Last measured in-flow height of the bar, captured while not stuck.
-  const naturalHeightRef = useRef(0);
 
   const [stuck, setStuck] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [metrics, setMetrics] = useState<{ left: number; width: number; top: number; height: number } | null>(null);
-  // While unsticking, keep reserving the bar's height until its size transition
-  // settles, so the in-flow resize doesn't reflow the content below.
-  const [settling, setSettling] = useState(false);
-  const reservedHeightRef = useRef(0);
-  const prevStuckRef = useRef(false);
+  // When set, the bar is docked near the container bottom (offsetBottom release)
+  // via `position: relative` instead of sticky, so it scrolls away with content.
+  const [clampedTop, setClampedTop] = useState<number | null>(null);
 
-  // Detect the stuck state with a zero-height sentinel at the bar's natural top.
+  // Source of truth for `data-sticky`: a zero-height sentinel at the bar's
+  // natural top. Once it scrolls past the pin line, the bar is considered stuck.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!enabled || !sentinel) {
@@ -87,59 +87,47 @@ export function StickyBox({
     return () => io.disconnect();
   }, [enabled, offsetTop]);
 
-  // Track the bar's natural height while in flow, so the placeholder can reserve
-  // exactly that space the moment the bar pops out to `position: fixed`.
+  // offsetBottom: CSS sticky always travels to the bottom of its containing
+  // block. To release earlier (e.g. clear a footer), switch the bar to a
+  // relative offset once the sticky position would come within offsetBottom of
+  // the container's bottom edge.
   useEffect(() => {
     const bar = barRef.current;
-    if (stuck || !bar) return;
-    const update = () => {
-      naturalHeightRef.current = bar.offsetHeight;
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(bar);
-    return () => ro.disconnect();
-  }, [stuck]);
-
-  // While stuck, keep the fixed bar aligned to where the placeholder sits.
-  useLayoutEffect(() => {
-    if (!enabled || !stuck) {
-      setMetrics(null);
+    const parent = bar?.parentElement;
+    if (!enabled || offsetBottom <= 0 || !bar || !parent) {
+      setClampedTop(null);
       return;
     }
-    const placeholder = placeholderRef.current;
-    if (!placeholder) return;
-    const scrollParent = getScrollParent(placeholder);
-
-    const measure = () => {
-      const rect = placeholder.getBoundingClientRect();
-      const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-      setMetrics({
-        left: rect.left,
-        width: rect.width,
-        top: containerTop + offsetTop,
-        height: naturalHeightRef.current,
+    const scrollParent = getScrollParent(bar);
+    let raf = 0;
+    const check = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const parentRect = parent.getBoundingClientRect();
+        const barHeight = bar.offsetHeight;
+        const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
+        const stickyBottom = scrollTop + offsetTop + barHeight;
+        const spaceBelow = parentRect.bottom - stickyBottom;
+        setClampedTop(spaceBelow <= offsetBottom ? Math.max(0, parent.clientHeight - barHeight - offsetBottom) : null);
       });
     };
-    measure();
-
-    const ro = new ResizeObserver(measure);
-    ro.observe(placeholder);
-    window.addEventListener('resize', measure, passiveArg);
-    // A fixed element is viewport-anchored, so only an element scroller needs re-sync.
-    const syncScroll = scrollParent !== window;
-    if (syncScroll) scrollParent.addEventListener('scroll', measure, passiveArg);
+    check();
+    scrollParent.addEventListener('scroll', check, passiveArg);
+    window.addEventListener('resize', check, passiveArg);
+    const ro = new ResizeObserver(check);
+    ro.observe(parent);
     return () => {
+      cancelAnimationFrame(raf);
+      scrollParent.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
       ro.disconnect();
-      window.removeEventListener('resize', measure);
-      if (syncScroll) scrollParent.removeEventListener('scroll', measure);
     };
-  }, [enabled, stuck, offsetTop]);
+  }, [enabled, offsetBottom, offsetTop]);
 
   // hideWhenOutOfView: reveal on scroll up, hide on scroll down, always show at top.
   useEffect(() => {
-    if (!hideWhenOutOfView || !enabled || !placeholderRef.current) return;
-    const scrollParent = getScrollParent(placeholderRef.current);
+    if (!hideWhenOutOfView || !enabled || !sentinelRef.current) return;
+    const scrollParent = getScrollParent(sentinelRef.current);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
     let accumulated = 0;
     let ticking = false;
@@ -178,48 +166,21 @@ export function StickyBox({
     if (hideWhenOutOfView && !stuck) setVisible(true);
   }, [hideWhenOutOfView, stuck]);
 
-  // Remember the reserved (natural) height while stuck so it can be held during
-  // the un-stick transition below.
-  useEffect(() => {
-    if (stuck && metrics) reservedHeightRef.current = metrics.height;
-  }, [stuck, metrics]);
-
-  // On unstick, keep the placeholder reserving the natural height until the bar's
-  // size transition finishes — otherwise releasing the placeholder while the bar
-  // is still animating back to full size reflows the content below (jump + glide).
-  useEffect(() => {
-    const wasStuck = prevStuckRef.current;
-    prevStuckRef.current = stuck;
-    if (!wasStuck || stuck) return;
-
-    setSettling(true);
-    const bar = barRef.current;
-    let timer = 0;
-    const finish = () => {
-      window.clearTimeout(timer);
-      bar?.removeEventListener('transitionend', onEnd);
-      setSettling(false);
-    };
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === bar && e.propertyName.startsWith('padding')) finish();
-    };
-    bar?.addEventListener('transitionend', onEnd);
-    // Fallback in case the bar has no size transition to listen for.
-    timer = window.setTimeout(finish, 350);
-    return () => {
-      window.clearTimeout(timer);
-      bar?.removeEventListener('transitionend', onEnd);
-    };
-  }, [stuck]);
-
-  const barStyle: React.CSSProperties = { ...style };
-  if (stuck && metrics) {
-    barStyle.position = 'fixed';
-    barStyle.top = metrics.top;
-    barStyle.left = metrics.left;
-    barStyle.width = metrics.width;
+  // Disabled: render children in a plain div (no sentinel, no sticky).
+  if (!enabled) {
+    return (
+      <div className={className} style={style} {...rest}>
+        {children}
+      </div>
+    );
   }
-  if (hideWhenOutOfView && enabled) {
+
+  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: offsetTop };
+  if (clampedTop !== null) {
+    barStyle.position = 'relative';
+    barStyle.top = clampedTop;
+  }
+  if (hideWhenOutOfView) {
     barStyle.transition = 'transform 300ms ease, opacity 300ms ease';
     if (!visible) {
       barStyle.transform = 'translateY(-100%)';
@@ -228,18 +189,15 @@ export function StickyBox({
     }
   }
 
-  // Placeholder reserves the bar's natural height while stuck — and through the
-  // un-stick transition — so the bar can resize without reflowing content below.
-  const placeholderStyle: React.CSSProperties | undefined =
-    stuck && metrics ? { height: metrics.height } : settling ? { height: reservedHeightRef.current } : undefined;
-
+  // The bar is a near-direct child (only preceded by the sentinel) so its sticky
+  // containing block is the caller's parent — letting it travel the full content.
   return (
-    <div ref={placeholderRef} className={placeholderClassName} style={placeholderStyle}>
-      <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
+    <>
+      <div ref={sentinelRef} aria-hidden className={cn('pointer-events-none -mb-px h-px', placeholderClassName)} />
       <div ref={barRef} className={className} data-sticky={stuck} style={barStyle} {...rest}>
         {children}
       </div>
-    </div>
+    </>
   );
 }
 // ISC License

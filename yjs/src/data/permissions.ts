@@ -1,5 +1,3 @@
-import { getTableColumns, getTableName } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
 import type pg from 'pg';
 import {
   appConfig,
@@ -7,19 +5,16 @@ import {
   checkPermission,
   type ContextEntityIdColumns,
   type ContextEntityType,
+  entityMetadata,
   hierarchy,
   isContextEntity,
   isProductEntity,
+  membershipMetadata,
   type PermissionMembership,
   type ProductEntityType,
 } from 'shared';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { entityTables } from '#/tables';
 import type { DocContext } from '../constants';
 import { withClient } from './db';
-
-const membershipColumns = getTableColumns(membershipsTable) as Record<string, PgColumn>;
-const membershipTableName = getTableName(membershipsTable);
 
 /**
  * Load the user's memberships in the shape the permission engine expects.
@@ -28,9 +23,10 @@ const membershipTableName = getTableName(membershipsTable);
  * naturally limited to the active tenant. Only the three columns the engine reads are selected.
  */
 export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<PermissionMembership[]> {
-  const projection = `"${membershipColumns.contextType.name}" AS "contextType", "${membershipColumns.contextId.name}" AS "contextId", "${membershipColumns.role.name}" AS "role"`;
+  const c = membershipMetadata.columns;
+  const projection = `"${c.contextType}" AS "contextType", "${c.contextId}" AS "contextId", "${c.role}" AS "role"`;
   const { rows } = await client.query<PermissionMembership>(
-    `SELECT ${projection} FROM "${membershipTableName}" WHERE "${membershipColumns.userId.name}" = $1`,
+    `SELECT ${projection} FROM "${membershipMetadata.table}" WHERE "${c.userId}" = $1`,
     [userId],
   );
   return rows;
@@ -55,10 +51,9 @@ export async function resolveEntityScope(
   entityType: ContextEntityType | ProductEntityType,
   entityId: string,
 ): Promise<EntityScopeRow | null> {
-  const table = entityTables[entityType as keyof typeof entityTables];
-  if (!table) return null;
-
-  const columns = getTableColumns(table) as Record<string, PgColumn>;
+  const meta = entityMetadata[entityType];
+  if (!meta) return null;
+  const columns = meta.columns;
 
   const selectKeys = new Set<string>(['id']);
   if (columns.createdBy) selectKeys.add('createdBy');
@@ -68,9 +63,9 @@ export async function resolveEntityScope(
     if (columns[idKey]) selectKeys.add(idKey);
   }
 
-  const projection = [...selectKeys].map((key) => `"${columns[key].name}" AS "${key}"`).join(', ');
+  const projection = [...selectKeys].map((key) => `"${columns[key]}" AS "${key}"`).join(', ');
   const { rows } = await client.query<EntityScopeRow>(
-    `SELECT ${projection} FROM "${getTableName(table)}" WHERE "${columns.id.name}" = $1 LIMIT 1`,
+    `SELECT ${projection} FROM "${meta.table}" WHERE "${columns.id}" = $1 LIMIT 1`,
     [entityId],
   );
   return rows[0] ?? null;
