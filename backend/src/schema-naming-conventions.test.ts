@@ -1,4 +1,4 @@
-import { getTableColumns, getTableName } from 'drizzle-orm';
+import { getColumns, getTableName } from 'drizzle-orm';
 import { appConfig, toColumnName, toTableName } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -15,7 +15,7 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
   const readKeys = ['id', 'createdBy', 'tenantId', ...Object.values(appConfig.entityIdColumnKeys)];
 
   it('memberships table and the columns the engine reads', () => {
-    const cols = getTableColumns(membershipsTable) as Record<string, { name: string }>;
+    const cols = getColumns(membershipsTable) as Record<string, { name: string }>;
     expect(toTableName('membership')).toBe(getTableName(membershipsTable));
     for (const key of ['contextType', 'contextId', 'role', 'userId']) {
       expect(cols[key]?.name, `memberships.${key}`).toBe(toColumnName(key));
@@ -26,7 +26,7 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
     for (const [entityType, table] of Object.entries(entityTables)) {
       expect(toTableName(entityType), `table name for "${entityType}"`).toBe(getTableName(table));
 
-      const cols = getTableColumns(table) as Record<string, { name: string }>;
+      const cols = getColumns(table) as Record<string, { name: string }>;
       for (const key of readKeys) {
         // Only columns the table actually has matter — the relay probes presence at runtime.
         if (cols[key]) expect(cols[key].name, `column "${entityType}.${key}"`).toBe(toColumnName(key));

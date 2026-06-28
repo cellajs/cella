@@ -26,7 +26,7 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 
   for (const { embeddedEntity, hostEntity, hostColumn: hostColumnName } of appConfig.entityEmbeddings) {
     const hostTable = getEntityTable(hostEntity as Parameters<typeof getEntityTable>[0]);
-    // getTableColumns returns literal-keyed columns; widen for runtime string lookup
+    // getColumns returns literal-keyed columns; widen for runtime string lookup
     const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
 
     const hostColumn = columns[hostColumnName];

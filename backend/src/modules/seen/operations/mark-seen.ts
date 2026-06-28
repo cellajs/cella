@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, gt, inArray, sql } from 'drizzle-orm';
+import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { SeenTrackedEntityType } from 'shared';
 import { appConfig, hierarchy } from 'shared';
@@ -50,7 +50,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], entityTy
 
   // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
   const orgTable = entityTable as OrgScopedEntityTable;
-  const columns = getTableColumns(entityTable);
+  const columns = getColumns(entityTable);
 
   // Derive context ID column from hierarchy parent (e.g., task → project → 'projectId')
   const parentType = hierarchy.getParent(entityType);
