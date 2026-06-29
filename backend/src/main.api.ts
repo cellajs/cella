@@ -78,6 +78,20 @@ const main = async () => {
 
       cdcWebSocketServer.attachToServer(server!);
 
+      // Single-VM: this API process also runs every enabled service in-process.
+      // Reuses each subsystem's own start() (which self-checks its enabled flag
+      // and registers its own graceful shutdown). cdc keeps its slot + WS hop.
+      if (appConfig.singleVM) {
+        if (appConfig.services.cdc.enabled) {
+          console.warn(
+            `${timestamp()} [startup] singleVM + cdc: API holds the replication slot — deploy must be exclusive (no blue-green)`,
+          );
+          await (await import('cdc')).runCdcWorker();
+        }
+        if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
+        if (appConfig.services.ai.enabled) await (await import('#/modules/ai/worker/ai-worker-entry')).startAiWorker();
+      }
+
       const tunnelUrl = await startTunnel(info);
 
       renderAscii();

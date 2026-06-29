@@ -1,8 +1,11 @@
 {
-  "name": "yjs",
+  "name": "yjs-worker",
   "version": "0.0.1",
   "description": "Yjs WebSocket relay for collaborative editing and document persistence",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "engines": {
     "node": "24.x"
   },

@@ -213,6 +213,27 @@
       }
     },
     {
+      // The MODE=cdc shim is the one sanctioned place backend boots the CDC
+      // worker (single backend image, split deploy via MODE). It mirrors ai/.
+      "includes": ["backend/src/main.cdc.ts", "backend/src/main.api.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
+                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
+                  "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["shared/**"],
       "linter": {
         "rules": {

@@ -276,7 +276,7 @@ export const SyncDiagram = () => {
       {/* Mode toggle — switches which nodes/edges and timeline the diagram shows */}
       <div className="relative mb-6">
         {hint && (
-          <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground text-sm max-sm:hidden">
+          <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
             {t('about:try_me')}
             <motion.span
               animate={{ x: [0, 4, 0] }}

@@ -201,6 +201,9 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   aiUrl: string;
   services: Record<string, AppServiceEndpointConfig>;
+  // Cost escape hatch: backend (MODE=api) also boots every enabled service
+  // in-process when true. Default false keeps the split (one service/process).
+  singleVM: boolean;
   aboutUrl: string;
   statusUrl: string;
   productionUrl: string;

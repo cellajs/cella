@@ -106,6 +106,11 @@ export const config = {
     ai: { enabled: false as boolean, publicUrl: 'https://ai.cellajs.com' },
   },
 
+  // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
+  // service in-process — one VM for previews/small forks. Default false keeps the
+  // split (one service per process). cdc co-hosting forfeits API blue-green.
+  singleVM: false as boolean,
+
   aboutUrl: '/about',
   statusUrl: '',
   productionUrl: 'https://www.cellajs.com',

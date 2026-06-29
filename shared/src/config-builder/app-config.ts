@@ -30,6 +30,10 @@ if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AU
 if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
 if (process.env.AI_API_URL) merged.aiUrl = process.env.AI_API_URL;
 
+// Cost escape hatch: backend co-hosts every enabled service in-process. Set via
+// env so `pnpm dev:single` (or a preview deploy) flips it without a config edit.
+if (process.env.SINGLE_VM) merged.singleVM = process.env.SINGLE_VM === 'true';
+
 merged.services = {
   ...merged.services,
   frontend: { ...(merged.services.frontend ?? {}), publicUrl: merged.frontendUrl },
