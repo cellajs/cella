@@ -30,6 +30,7 @@ type CliOptionState = Pick<
   | 'fork'
   | 'hard'
   | 'unpinned'
+  | 'track'
   | 'force'
   | 'checkOverrides'
   | 'coverage'
@@ -63,6 +64,7 @@ const defaultOptions: CliOptionState = {
   fork: undefined,
   hard: false,
   unpinned: false,
+  track: undefined,
   force: false,
   checkOverrides: false,
   coverage: false,
@@ -84,6 +86,7 @@ function readOptions(opts: Record<string, unknown>): CliOptionState {
     fork: typeof opts.fork === 'string' ? opts.fork : undefined,
     hard: opts.hard === true,
     unpinned: opts.unpinned === true,
+    track: opts.track === 'release' || opts.track === 'branch' ? opts.track : undefined,
     force: opts.force === true,
     checkOverrides: opts.checkOverrides === true,
     coverage: opts.coverage === true,
@@ -99,6 +102,7 @@ const serviceDefinitions: ServiceDefinition[] = [
       { flags: '--list', description: 'non-interactive output for tooling (one file per line)' },
       { flags: '--json', description: 'machine-readable output for tooling/agents' },
       { flags: '--scope <scope>', description: 'analyze scope for --list/--json: all|risk|protected' },
+      { flags: '--track <mode>', description: 'override upstream tracking for this run: release|branch' },
       { flags: '--diff <path>', description: 'print unified diff for one file, then exit' },
       { flags: '--open-diff <path>', description: 'open VS Code side-by-side diff for one file, then exit' },
     ],
@@ -110,6 +114,7 @@ const serviceDefinitions: ServiceDefinition[] = [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--hard', description: 'overwrite drifted files with upstream version (aggressive realignment)' },
       { flags: '--unpinned', description: 'ignore pinned files (except package.json) to resurface upstream changes' },
+      { flags: '--track <mode>', description: 'override upstream tracking for this run: release|branch' },
     ],
     menuDescription: () => 'merge upstream changes + sync package.json',
   },
@@ -216,6 +221,7 @@ function buildProgram(setSelection: (selection: CliServiceSelection) => void): C
         '  $ cella analyze --open-diff frontend/src/routes/index.tsx',
         '  $ cella sync --hard',
         '  $ cella sync --unpinned',
+        '  $ cella sync --track branch',
         '  $ cella audit --check-overrides',
         '  $ cella contributions --fork raak --json',
       ].join('\n'),
@@ -264,12 +270,14 @@ function buildRuntimeConfig(
   forkPath: string,
   selection: CliServiceSelection,
 ): RuntimeConfig {
-  const { upstreamRef } = resolveUpstream(userConfig.settings);
+  // Static fallback ref (branch tip). For release tracking the merge engine resolves
+  // the concrete release-tag ref after fetching and writes it back to config.upstreamRef.
+  const { branchRef } = resolveUpstream(userConfig.settings);
 
   return {
     ...userConfig,
     forkPath,
-    upstreamRef,
+    upstreamRef: branchRef,
     service: selection.service ?? 'analyze',
     ...selection.options,
   };

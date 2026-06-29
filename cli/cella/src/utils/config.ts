@@ -13,27 +13,35 @@ import { resolveAppModuleFolders } from './module-territory';
 /** Default git remote name used to point at the upstream repository. */
 export const DEFAULT_UPSTREAM_REMOTE = 'cella-upstream';
 
+/** Default branch used when a config omits `upstreamBranch` / `workingBranch`. */
+export const DEFAULT_BRANCH = 'main';
+
 /**
- * Resolve the upstream comparison target from sync settings.
+ * Resolve the upstream tracking plan from sync settings.
  *
- * Single source of truth shared by the CLI entry point and the merge engine so
- * the pinned-vs-tip rule and remote-name default are not duplicated.
+ * Single source of truth shared by the CLI entry point and the merge engine.
+ * The concrete ref for release tracking (latest/pinned tag) can only be resolved
+ * after fetching, so this returns a plan; the merge engine turns it into a ref.
  *
  * - `remoteName`: the local git remote pointing at `upstreamUrl` (defaulted).
- * - `pinnedSha`: present only when the config pins upstream to an exact commit.
- * - `upstreamRef`: the ref used for diffing. When pinned, this is the exact SHA
- *   (security: only a reviewed commit is compared/merged). Otherwise it tracks
- *   the branch tip `<remoteName>/<upstreamBranch>`.
+ * - `track`: 'release' (default) syncs to a release tag; 'branch' follows the tip.
+ * - `branch`: upstream branch (defaulted to 'main'), used for branch tracking + links.
+ * - `tag`: an explicit release tag to pin to (release track only).
+ * - `branchRef`: `<remoteName>/<branch>` — the branch-track ref and static fallback.
  */
 export function resolveUpstream(settings: SyncSettings): {
   remoteName: string;
-  pinnedSha?: string;
-  upstreamRef: string;
+  track: 'release' | 'branch';
+  branch: string;
+  tag?: string;
+  branchRef: string;
 } {
   const remoteName = settings.upstreamRemoteName || DEFAULT_UPSTREAM_REMOTE;
-  const pinnedSha = settings.upstreamPinnedSha;
-  const upstreamRef = pinnedSha ?? `${remoteName}/${settings.upstreamBranch}`;
-  return { remoteName, pinnedSha, upstreamRef };
+  const track = settings.upstreamTrack ?? 'release';
+  const branch = settings.upstreamBranch ?? DEFAULT_BRANCH;
+  const tag = settings.upstreamTag;
+  const branchRef = `${remoteName}/${branch}`;
+  return { remoteName, track, branch, tag, branchRef };
 }
 
 /**

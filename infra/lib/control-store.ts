@@ -34,18 +34,17 @@ export interface GenRef {
  * the source of truth so a partial deploy is always recoverable by recomputing
  * desired-vs-live rather than replaying a transition:
  *   - `active`   — the generation currently serving live on the LB.
- *   - `previous` — the last good generation, retained (its VM kept but POWERED
- *                  OFF to pause compute billing) so a rollback is a pointer
- *                  flip + power-on rather than a rebuild.
  *   - `pendingSha` — a deploy INTENT: the SHA being rolled in. The genId is
  *                  derived and materialized by the Pulumi program (the genId
  *                  authority), then read back by the orchestrator — so the
  *                  ledger never has to predict an id the program owns.
  *   - `seq`      — monotonic counter, bumped on each promotion (ordering + GC).
+ * No `previous` is kept: the old generation is reaped once the new one is
+ * healthy, and rollback is a revert commit + forward redeploy (recreates every
+ * service, including cdc, from its content-addressed id).
  */
 export interface ServiceRollout {
   active?: GenRef
-  previous?: GenRef
   pendingSha?: string
   seq: number
 }
@@ -110,12 +109,11 @@ function parseGenRef(slug: string, field: string, value: unknown): GenRef {
 
 function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
   if (!isRecord(value)) throw new Error(`control: rollout['${slug}'] must be an object`)
-  const { active, previous, pendingSha, seq } = value
+  const { active, pendingSha, seq } = value
   if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].seq must be a number`)
   if (pendingSha !== undefined && typeof pendingSha !== 'string') throw new Error(`control: rollout['${slug}'].pendingSha must be a string`)
   const out: ServiceRollout = { seq }
   if (active !== undefined) out.active = parseGenRef(slug, 'active', active)
-  if (previous !== undefined) out.previous = parseGenRef(slug, 'previous', previous)
   if (pendingSha !== undefined) out.pendingSha = pendingSha
   return out
 }
@@ -179,23 +177,13 @@ export function setPending(current: ServiceRollout | undefined, sha: string): Se
   return { ...base, pendingSha: sha }
 }
 
-/** Promote a resolved generation to active: the old active becomes `previous`
- *  (its VM retained for rollback), `seq` advances, and the pending intent is
- *  cleared. Stamps the new active with the advanced seq. */
+/** Promote a resolved generation to active: `seq` advances and the pending
+ *  intent is cleared. The old active is not retained — its VM is reaped once the
+ *  new one is healthy, so rollback is a revert commit + redeploy. */
 export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
   const base = current ?? emptyRollout()
   const seq = base.seq + 1
-  const next: ServiceRollout = { seq, active: { id: resolved.id, sha: resolved.sha, seq } }
-  if (base.active) next.previous = base.active
-  return next
-}
-
-/** Flip back to the previous generation (still running). A pointer swap, not a
- *  rebuild. No-op when there is no previous generation to fall back to. */
-export function rollback(current: ServiceRollout | undefined): ServiceRollout {
-  const base = current ?? emptyRollout()
-  if (!base.previous) return { ...base, pendingSha: undefined }
-  return { seq: base.seq, active: base.previous, previous: base.active, pendingSha: undefined }
+  return { seq, active: { id: resolved.id, sha: resolved.sha, seq } }
 }
 
 /** Read the control object. Returns the empty state (and no etag) when the

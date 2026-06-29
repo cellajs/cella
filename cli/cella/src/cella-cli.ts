@@ -106,7 +106,7 @@ async function main(): Promise<void> {
     // Run preflight checks (except for audit/forks/contributions/stats which don't need clean working dir)
     if (!['audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze';
-      await preflight(forkPath, userConfig.settings.workingBranch, {
+      await preflight(forkPath, userConfig.settings.workingBranch ?? 'main', {
         skipCleanCheck: isReadOnly,
         warnOnBranch: isReadOnly,
       });

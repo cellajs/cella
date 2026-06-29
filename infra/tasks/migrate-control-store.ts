@@ -54,8 +54,9 @@ export type MigrationResult =
   | { action: 'already-v2' }
   | { action: 'migrated'; state: ControlState }
 
-/** Sanitise a schemaVersion-2 document: drop any `active`/`previous` pointer that
- *  lacks a valid `id` (the corruption a pre-fix sync could write). Returns
+/** Sanitise a schemaVersion-2 document: drop any `active` pointer that lacks a
+ *  valid `id` (the corruption a pre-fix sync could write) and strip any obsolete
+ *  `previous` pointer (generations are no longer retained for rollback). Returns
  *  `already-v2` when nothing needed repair, else `migrated` with the clean state. */
 function sanitizeV2(doc: Record<string, unknown>): MigrationResult {
   const bootstrap: BootstrapState = isRecord(doc.bootstrap) ? (doc.bootstrap as BootstrapState) : {}
@@ -67,11 +68,9 @@ function sanitizeV2(doc: Record<string, unknown>): MigrationResult {
     const seq = typeof value.seq === 'number' ? value.seq : 0
     const entry: ServiceRollout = { seq }
     const active = validGenRef(value.active)
-    const previous = validGenRef(value.previous)
     if (value.active !== undefined && !active) repaired = true
-    if (value.previous !== undefined && !previous) repaired = true
+    if (value.previous !== undefined) repaired = true // obsolete pointer, dropped
     if (active) entry.active = active
-    if (previous) entry.previous = previous
     if (typeof value.pendingSha === 'string') entry.pendingSha = value.pendingSha
     rollout[slug] = entry
   }

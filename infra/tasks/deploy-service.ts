@@ -121,14 +121,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   const service = getFlag(argv, '--service') as ServiceName | undefined
   const sha = getFlag(argv, '--sha')
   const stack = getFlag(argv, '--stack')
-  if (!service || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE] [--skip-destroy]')
+  if (!service || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
-
-  // When set, stop after promoting the new generation: the old generation is left
-  // in place (retained as `previous`, off the LB, drained) for a later
-  // `pulumi up` to reap once it ages out to previous-previous. The rollout uses
-  // this so each service's teardown does not block the next service.
-  const skipDestroy = argv.includes('--skip-destroy')
 
   const definition = servicesByName.get(service)
   if (!definition) throw new Error(`Unknown service '${service}'`)
@@ -187,10 +181,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
 
   console.info(`[deploy ${service}] promoting generation ${target.genId}`)
   await updateStore(stack, service, (cur) => promote(cur, { id: target.genId, sha }))
-  if (skipDestroy) {
-    console.info(`[deploy ${service}] previous generation retained for rollback; previous-previous reaped by a later pulumi up`)
-    return
-  }
+  // Reap the old generation now that the new one serves healthily. No `previous`
+  // is retained; rollback is a revert commit + redeploy (recreates every service).
   pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 }
 

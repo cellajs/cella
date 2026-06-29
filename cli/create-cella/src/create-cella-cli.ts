@@ -9,6 +9,7 @@ import { create } from '#/create';
 import { type CreateOptions, cli, showWelcome } from '#/modules/cli';
 import { detectUsedPorts, findNextOffset } from '#/utils/detect-used-ports';
 import { extractPackageJsonVersionFromUri } from '#/utils/extract-package-json-version-from-uri';
+import { fetchLatestCommit, fetchLatestRelease } from '#/utils/fetch-template-metadata';
 import { isEmptyDirectory } from '#/utils/is-empty-directory';
 import { validateProjectName } from '#/utils/validate-project-name';
 
@@ -22,6 +23,10 @@ async function main(): Promise<void> {
   // Shared theme to clear prompts after answering
   const promptTheme = { prefix: '', style: { answer: (text: string) => text } };
   const promptContext = { clearPromptOnDone: true };
+
+  // Choose which template snapshot to scaffold from: a stable release or the
+  // latest commit. Skipped when a custom --template is provided (ref doesn't apply).
+  const templateRef = cli.options.template ? undefined : await promptTemplateRef(promptTheme, promptContext);
 
   // Prompt for project name if not provided
   if (!cli.directory) {
@@ -91,6 +96,7 @@ async function main(): Promise<void> {
     newBranchName: cli.newBranchName,
     packageManager: cli.packageManager,
     templateUrl: cli.options.template,
+    templateRef,
     portOffset,
     adminEmail,
     skipInstall: cli.options.skipInstall,
@@ -100,6 +106,49 @@ async function main(): Promise<void> {
 }
 
 main().catch(console.error);
+
+/**
+ * Show a short intro with the two starting points (latest release and latest
+ * commit, each with its date) and let the user choose which template snapshot to
+ * scaffold from. Returns the giget ref (release tag or commit SHA), or undefined
+ * to use the default branch (when metadata is unavailable).
+ */
+async function promptTemplateRef(theme: object, context: object): Promise<string | undefined> {
+  const [release, commit] = await Promise.all([fetchLatestRelease(TEMPLATE_URL), fetchLatestCommit(TEMPLATE_URL)]);
+
+  // No metadata (offline / rate-limited) — fall back to the default branch silently.
+  if (!release && !commit) return undefined;
+
+  // One-sentence intro followed by the two data points.
+  console.info(
+    pc.dim("You're about to scaffold a new app from the cella template — pick which snapshot to start from:"),
+  );
+  if (release) console.info(`  ${pc.cyan('Latest release')}  ${release.tag} ${pc.dim(`· ${release.date}`)}`);
+  if (commit) {
+    console.info(
+      `  ${pc.cyan('Latest commit')}   ${commit.shortSha} ${pc.dim(`· ${commit.message} · ${commit.date}`)}`,
+    );
+  }
+  console.info();
+
+  // Only one available — use it without prompting.
+  if (!release) return commit ? commit.sha : undefined;
+  if (!commit) return release.tag;
+
+  const choice = await select(
+    {
+      message: 'Start from',
+      theme,
+      choices: [
+        { name: `Latest release ${pc.dim(`(${release.tag}, stable)`)}`, value: 'release' },
+        { name: `Latest commit ${pc.dim(`(${commit.shortSha}, bleeding edge)`)}`, value: 'commit' },
+      ],
+    },
+    context,
+  );
+
+  return choice === 'release' ? release.tag : commit.sha;
+}
 
 /** Format an offset as a port overview string, e.g. "10 → :3010 / :4010 / :5442" */
 function formatOffset(o: number, suffix = ''): string {

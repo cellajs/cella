@@ -305,7 +305,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   // analysis against merge-base(baseRef, fork), so a long-lived feature branch
   // has an older merge-base than '<workingBranch>' and may surface extra
   // 'diverged' files that would show clean from the working branch.
-  const workingBranch = config.settings.workingBranch;
+  const workingBranch = config.settings.workingBranch ?? 'main';
   if (baseRef !== workingBranch) {
     console.info(
       `${warningMark} ${pc.yellow(`not on working branch '${workingBranch}'`)} ${pc.dim(`comparing forks against '${baseRef}'`)}`,

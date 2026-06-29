@@ -21,29 +21,13 @@ function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
 }
 
 function runDeployService(item: RolloutItem, opts: { stack: string; sha: string }): void {
-  // --skip-destroy: don't tear down the old generation inline. The promoted
-  // old generation is retained as `previous` (rollback target); powering it off
-  // and reaping the previous-previous straggler is deferred to the single
-  // reconcile `pulumi up` below. Keeps VM teardown off the deploy's critical path.
-  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack, '--skip-destroy']
+  // Each deploy-service does its own final `pulumi up` after a healthy cutover,
+  // reaping the old generation inline — no `previous` is retained. Rollback is a
+  // revert commit + redeploy, which recreates every service (cdc included).
+  const args = ['--filter', 'infra', 'deploy-service', '--service', item.service, '--sha', opts.sha, '--stack', opts.stack]
   if (item.health_url) args.push('--health-url', item.health_url)
   const res = spawnSync('pnpm', args, { stdio: 'inherit', env: process.env })
   if (res.status !== 0) throw new Error(`deploy-service failed for ${item.service} with exit ${res.status}`)
-}
-
-// Final reconcile after every service has cut over and promoted. A single
-// whole-stack `pulumi up` converges compute to the post-deploy ledger: it powers
-// OFF each retained `previous` generation (now off the LB — pausing its compute
-// billing so a deploy doesn't pay twice per service) and destroys any
-// previous-previous straggler that aged out of the ledger. Off the per-service
-// critical path: runs once, only after all cutovers are healthy.
-function reconcileGenerations(stack: string): void {
-  const res = spawnSync('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive'], {
-    cwd: new URL('..', import.meta.url).pathname,
-    stdio: 'inherit',
-    env: process.env,
-  })
-  if (res.status !== 0) throw new Error(`pulumi up (generation reconcile) failed with exit ${res.status}`)
 }
 
 export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: RolloutItem[]; stack: string; sha: string } {
@@ -61,7 +45,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (args.primary.length === 0) console.info('No primary rollout service configured — skipping primary rollout.')
   for (const item of args.primary) runDeployService(item, args)
   for (const item of args.rest) runDeployService(item, args)
-  reconcileGenerations(args.stack)
 }
 
 if (isMain(import.meta.url)) {

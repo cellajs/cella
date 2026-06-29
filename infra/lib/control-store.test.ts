@@ -12,7 +12,6 @@ import {
   promote,
   readControlState,
   releaseLock,
-  rollback,
   serializeControlState,
   setPending,
   stateBucket,
@@ -63,7 +62,7 @@ describe('parse/serialize', () => {
       schemaVersion: 2,
       bootstrap: { completedAt: '2026-06-20T00:00:00Z' },
       rollout: {
-        backend: { seq: 6, active: { id: 'aa11', sha: 'abc', seq: 5 }, previous: { id: 'bb22', sha: 'old', seq: 4 }, pendingSha: 'def' },
+        backend: { seq: 6, active: { id: 'aa11', sha: 'abc', seq: 5 }, pendingSha: 'def' },
         cdc: { seq: 2, active: { id: 'cc33', sha: 'abc', seq: 2 } },
       },
       updatedAt: '2026-06-20T01:00:00Z',
@@ -234,25 +233,14 @@ describe('ledger transitions', () => {
     expect(setPending(undefined, 'def')).toEqual({ seq: 0, pendingSha: 'def' })
   })
 
-  it('promote advances seq, moves active to previous, and clears pending', () => {
+  it('promote advances seq, sets active, and clears pending', () => {
     const active = { id: 'aa11', sha: 'abc', seq: 3 }
     const next = promote({ seq: 3, active, pendingSha: 'def' }, { id: 'bb22', sha: 'def' })
-    expect(next).toEqual({ seq: 4, active: { id: 'bb22', sha: 'def', seq: 4 }, previous: active })
+    expect(next).toEqual({ seq: 4, active: { id: 'bb22', sha: 'def', seq: 4 } })
   })
 
-  it('promote on a first deploy has no previous', () => {
+  it('promote on a first deploy starts from seq 1', () => {
     expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({ seq: 1, active: { id: 'bb22', sha: 'def', seq: 1 } })
-  })
-
-  it('rollback swaps active and previous (a pointer flip, no rebuild)', () => {
-    const active = { id: 'bb22', sha: 'def', seq: 4 }
-    const previous = { id: 'aa11', sha: 'abc', seq: 3 }
-    expect(rollback({ seq: 4, active, previous, pendingSha: 'zzz' })).toEqual({ seq: 4, active: previous, previous: active })
-  })
-
-  it('rollback is a no-op (only clears pending) when there is no previous', () => {
-    const active = { id: 'bb22', sha: 'def', seq: 4 }
-    expect(rollback({ seq: 4, active, pendingSha: 'zzz' })).toEqual({ seq: 4, active })
   })
 
   it('emptyRollout starts at seq 0 with no pointers', () => {

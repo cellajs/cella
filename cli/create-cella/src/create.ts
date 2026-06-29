@@ -26,6 +26,7 @@ export async function create({
   newBranchName,
   packageManager,
   templateUrl,
+  templateRef,
   portOffset,
   adminEmail,
   skipInstall = false,
@@ -88,8 +89,10 @@ export async function create({
         });
       }
     } else {
-      progress.step('downloading cella template');
-      await downloadTemplate(template, {
+      // Pin to the chosen ref (release tag or commit SHA) when provided.
+      const downloadId = templateRef ? `${template}#${templateRef}` : template;
+      progress.step(`downloading cella template${templateRef ? ` (${templateRef})` : ''}`);
+      await downloadTemplate(downloadId, {
         cwd: process.cwd(),
         dir: targetFolder,
         force: true,
