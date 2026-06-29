@@ -3,7 +3,7 @@
   "separate-pull-requests": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
-  "include-v-in-tag": true,
+  "include-v-in-tag": false,
   "changelog-sections": [
     { "type": "feat", "section": "🎉 New features" },
     { "type": "fix", "section": "🐞 Bug fixes" },

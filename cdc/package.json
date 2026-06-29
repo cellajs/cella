@@ -1,6 +1,6 @@
 {
   "name": "cdc",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "PostgreSQL logical-replication worker for activity and sync events",
   "type": "module",
   "exports": {

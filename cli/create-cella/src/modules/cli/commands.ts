@@ -20,7 +20,6 @@ function parsePortOffset(value: string): number {
 
 // Initialize CLI variables
 let directory: string | null = null;
-const newBranchName: string | null = null;
 const packageManager = 'pnpm';
 
 /**
@@ -63,7 +62,6 @@ export function runCli(): CLIConfig {
     options,
     args: command.args,
     directory,
-    newBranchName,
     packageManager,
   };
 }

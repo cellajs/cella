@@ -29,8 +29,6 @@ packages:
   - studio
   - yjs
   - bench
-patchedDependencies:
-  '@atlaskit/pragmatic-drag-and-drop@1.8.1': patches/@atlaskit__pragmatic-drag-and-drop@1.8.1.patch
 peerDependencyRules:
   allowedVersions:
     '@opentelemetry/api': '>=1'

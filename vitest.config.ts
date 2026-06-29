@@ -37,7 +37,7 @@ export default defineConfig({
         test: {
           name: '@cellajs/create-cella',
           root: 'cli/create-cella',
-          exclude: ['**/node_modules/**', '**/dist/**', 'tests/release-artifact.test.ts', 'tests/release-smoke.test.ts'],
+          exclude: ['**/node_modules/**', '**/dist/**', 'tests/release-smoke.test.ts'],
         },
       },
       'shared',

@@ -1,17 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, rm } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkbox } from '@inquirer/prompts';
 import { downloadTemplate } from 'giget';
+import pc from 'picocolors';
 import { addRemote } from '#/add-remote';
 import { TEMPLATE_URL } from '#/constants';
-import { type CreateOptions, showSuccess } from '#/modules/cli';
+import { type CreateOptions, confirmChoice, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
-import { gitAddAll, gitBranch, gitCheckout, gitCommit, gitInit } from '#/utils/git';
+import { gitAddAll, gitCommit, gitInit } from '#/utils/git';
 import { createProgress, pauseSpinner, resumeSpinner } from '#/utils/progress';
 import { generate, install } from '#/utils/run-package-manager-command';
-import { scanOptionalModules } from '#/utils/scan-optional-modules';
+import { optionalModuleFolders, scanOptionalModules } from '#/utils/scan-optional-modules';
 
 /** Check if a path is a local directory */
 function isLocalPath(path: string): boolean {
@@ -25,7 +26,6 @@ function shouldSkipStep(name: 'install' | 'generate' | 'git' | 'remote'): boolea
 export async function create({
   projectName,
   targetFolder,
-  newBranchName,
   packageManager,
   templateUrl,
   templateRef,
@@ -54,8 +54,12 @@ export async function create({
       progress.step('copying local template');
       const sourcePath = resolve(originalCwd, templateUrl);
 
-      // Check if target is inside source (would cause EINVAL)
-      if (targetFolder.startsWith(sourcePath)) {
+      // Check if target is inside source (would cause EINVAL). Use a path-boundary check
+      // (not a string prefix) so siblings like `cella-try-app` next to `cella` aren't
+      // misdetected as being inside the template.
+      const rel = relative(sourcePath, targetFolder);
+      const targetInsideTemplate = rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+      if (targetInsideTemplate) {
         throw new Error(
           'Cannot create project inside the template directory.\n' +
             `  Run from outside: cd ~ && pnpm create @cellajs/cella ${projectName} --template ${templateUrl}`,
@@ -129,12 +133,6 @@ export async function create({
       await gitInit(targetFolder);
       await gitAddAll(targetFolder);
       await gitCommit(targetFolder, 'Initial commit');
-
-      if (newBranchName) {
-        progress.step(`creating branch '${newBranchName}'`);
-        await gitBranch(targetFolder, newBranchName);
-        await gitCheckout(targetFolder, newBranchName);
-      }
     }
 
     // Add upstream remote
@@ -144,7 +142,7 @@ export async function create({
     }
 
     // Done
-    progress.done(`created ${projectName}`);
+    progress.done(pc.bold(`created ${projectName}`));
   } catch (error) {
     progress.fail(error instanceof Error ? error.message : String(error));
     process.exit(1);
@@ -167,27 +165,37 @@ async function promptOptionalModules(targetFolder: string): Promise<void> {
   const modules = await scanOptionalModules(targetFolder);
   if (modules.length === 0) return;
 
+  // Non-interactive (CI, piped stdin, no TTY): can't render a checkbox — keep every module
+  // rather than crashing with "User force closed the prompt". Matches the default-keep behavior.
+  if (!process.stdin.isTTY) return;
+
   pauseSpinner();
-  const keep = await checkbox({
-    message: 'Optional modules to include',
-    choices: modules.map((m) => ({ name: `${m.name} — ${m.description}`, value: m.name, checked: true })),
-  });
+  // Blank line to separate the preceding progress step from this prompt.
+  console.info();
+  const keep = await checkbox(
+    {
+      message: 'Optional modules to include',
+      // Leading space on the radio icons adds a gap after the cursor (inquirer renders
+      // `${cursor}${checkbox} ${name}` with no space between cursor and checkbox).
+      theme: { icon: { checked: ` ${pc.green('◉')}`, unchecked: ' ◯' } },
+      choices: modules.map((m) => ({
+        name: `${m.name} ${pc.dim(`· ${m.description}`)}`,
+        value: m.name,
+        checked: true,
+      })),
+    },
+    // Clear the answered prompt so we can print a compact, non-bold summary that lists
+    // only the kept module names (not their descriptions).
+    { clearPromptOnDone: true },
+  );
+
+  // Keep the choice visible after the prompt clears: plain label plus the selected
+  // module names only (not their descriptions), or "none" when everything was deselected.
+  confirmChoice('Optional modules', keep.length ? keep.join(', ') : pc.dim('none'));
   resumeSpinner();
 
-  const removeFolders = modules.filter((m) => !keep.includes(m.name)).map((m) => m.folder);
-  // A module owns `modules/<name>` plus a static asset folder `public/static/<name>` and its
-  // route folders: pathless `_<name>` (URL-transparent) or path-based `<name>` (e.g. /auth),
-  // under both `routes/_public` and `routes/_app`.
-  const extraFolders = modules
-    .filter((m) => !keep.includes(m.name))
-    .flatMap((m) => [
-      `frontend/src/routes/_public/_${m.name}`,
-      `frontend/src/routes/_public/${m.name}`,
-      `frontend/src/routes/_app/_${m.name}`,
-      `frontend/src/routes/_app/${m.name}`,
-      `frontend/public/static/${m.name}`,
-    ]);
-  await Promise.all(
-    [...removeFolders, ...extraFolders].map((f) => rm(join(targetFolder, f), { recursive: true, force: true })),
-  );
+  // Remove every folder owned by a deselected module. `optionalModuleFolders` lists more
+  // route variants than any single module uses; `force: true` ignores the ones absent here.
+  const folders = modules.filter((m) => !keep.includes(m.name)).flatMap(optionalModuleFolders);
+  await Promise.all(folders.map((f) => rm(join(targetFolder, f), { recursive: true, force: true })));
 }

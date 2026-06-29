@@ -35,7 +35,7 @@ export function AuthLayout() {
           <Outlet />
 
           <Link to="/about" className="focus-effect mx-auto rounded-md p-4 hover:opacity-90 active:scale-95">
-            <Logo height={34} />
+            <Logo height={40} />
           </Link>
 
           <AppFooterLinks className="justify-center" links={authFooterLinks} />

@@ -54,20 +54,6 @@ export async function gitCommit(repoPath: string, message: string): Promise<stri
 }
 
 /**
- * Creates a new branch with the specified name.
- */
-export async function gitBranch(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(['branch', branchName], repoPath);
-}
-
-/**
- * Checks out the specified branch.
- */
-export async function gitCheckout(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(['checkout', branchName], repoPath);
-}
-
-/**
  * Gets the URL of a remote.
  */
 export async function gitRemoteGetUrl(repoPath: string, remoteName: string): Promise<string> {

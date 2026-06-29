@@ -14,6 +14,9 @@ out
 dist-ssr
 *.local
 
+# Default scaffold output from running create-cella locally
+my-cella-app
+
 # Editor directories and files
 .idea
 .DS_Store

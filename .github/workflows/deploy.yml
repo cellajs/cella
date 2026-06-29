@@ -178,7 +178,6 @@ jobs:
     needs: [setup]
     permissions:
       contents: read
-    environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -276,10 +275,7 @@ jobs:
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
         run: pnpm --filter infra stack-lock acquire --stack "$STACK" --operation deploy --ttl-min 60
 
-      # Pre-install the Scaleway plugin as a retryable step before `pulumi up`
-      # pulls it implicitly. GITHUB_TOKEN authenticates the download (5000/hr vs
-      # the unauthenticated 60/hr shared limit that surfaces as `403 rate limit
-      # exceeded` mid-deploy); the cached binary is reused by later steps.
+      # Pre-install the Scaleway plugin as a retryable step before `pulumi up` pulls it implicitly.
       - name: Pre-install Pulumi providers
         working-directory: infra
         env:
@@ -314,12 +310,8 @@ jobs:
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
-          # Authenticate any implicit provider-plugin re-fetch (5000/hr vs the
-          # unauthenticated 60/hr shared limit that surfaced as a mid-deploy 403).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          # The Pulumi program reads the shared singleton, which selects config by
-          # APP_MODE. Set it from the stack mode so no module mutates env at runtime.
           APP_MODE: ${{ needs.setup.outputs.environment }}
         run: |
           pnpm --filter infra sync-rollout-config --stack "$STACK"
@@ -360,7 +352,6 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STACK: ${{ needs.setup.outputs.pulumi_stack }}
-          # Pulumi program selects shared config by APP_MODE; set it from the stack mode.
           APP_MODE: ${{ needs.setup.outputs.environment }}
           IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
           PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}
@@ -389,7 +380,6 @@ jobs:
     needs: [setup, pulumi, build-images]
     permissions:
       contents: read
-    environment: ${{ needs.setup.outputs.environment }}
     strategy:
       fail-fast: true
       matrix:
@@ -426,7 +416,6 @@ jobs:
     needs: [setup, pulumi, build-images, roll-backend]
     permissions:
       contents: read
-    environment: ${{ needs.setup.outputs.environment }}
     strategy:
       fail-fast: true
       matrix:
@@ -536,7 +525,7 @@ jobs:
     # contents: read is required for actions/checkout below (private repo).
     permissions:
       contents: read
-    environment: ${{ needs.setup.outputs.environment }}
+    # No `environment:` — smoke checks hit public URLs only (no secrets).
     env:
       EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
       ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}

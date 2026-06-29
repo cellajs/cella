@@ -11,7 +11,6 @@ export interface CLIConfig {
   options: CLIOptions;
   args: string[];
   directory: string | null;
-  newBranchName: string | null;
   packageManager: string;
 }
 
@@ -19,7 +18,6 @@ export interface CLIConfig {
 export interface CreateOptions {
   projectName: string;
   targetFolder: string;
-  newBranchName?: string | null;
   packageManager: string;
   templateUrl?: string;
   /** Giget ref (release tag or commit SHA) to download the template at. Ignored for local templates. */

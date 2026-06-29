@@ -25,6 +25,16 @@ export function showWelcome(templateVersion: string): void {
 }
 
 /**
+ * Print a cleared prompt's outcome as a persistent confirmation line:
+ * `✓ <label> · <value>`, followed by a blank separator line. Used after prompts
+ * that clear themselves on done so the chosen value stays visible.
+ */
+export function confirmChoice(label: string, value: string): void {
+  console.info(`${pc.green('✓')} ${label} · ${value}`);
+  console.info();
+}
+
+/**
  * Displays the final success message after project creation.
  */
 export function showSuccess(
@@ -34,28 +44,25 @@ export function showSuccess(
   needsCd: boolean,
   packageManager: string,
 ): void {
+  console.info();
+
+  console.info(pc.bold('Next steps'));
   console.info(DIVIDER);
   console.info();
 
-  // Navigation instruction
   if (needsCd) {
-    console.info(`${pc.green('→')} cd ${pc.cyan(relativePath)}`);
-    console.info();
+    console.info(`${pc.dim('$')} cd ${pc.cyan(relativePath)}`);
   }
-
-  // Quick start options
-  console.info(`${pc.green('→')} ${pc.cyan(`${packageManager} quick`)}       ${pc.gray('(pglite, no docker)')}`);
-  console.info();
-  console.info(pc.gray('or, for full setup:'));
-  console.info();
   console.info(
-    `${pc.green('→')} ${pc.cyan(`${packageManager} docker`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} seed`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} dev`)}`,
+    `${pc.dim('$')} ${pc.cyan(`${packageManager} docker`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} seed`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} dev`)}`,
   );
   console.info();
 
-  // Credentials
-  console.info(`sign in: ${pc.gray('admin-test@cellajs.com / 12345678')}`);
+  // Point to the generated README for first-run details and sign-in credentials. Use the
+  // path relative to the new project so the terminal linkifies the right file (not this CLI's).
+  const readmePath = relativePath ? `${relativePath}/README.md` : 'README.md';
+  console.info(`${pc.gray('To get started building, please read:')} ${pc.cyan(readmePath)}`);
   console.info();
-  console.info(`enjoy building ${pc.green(projectName)} with cella!`);
+  console.info(`🥳 enjoy building ${pc.green(projectName)} with cella!`);
   console.info();
 }

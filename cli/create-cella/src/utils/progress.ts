@@ -32,8 +32,6 @@ export interface ProgressTracker {
   done: (message: string) => void;
   /** Mark the tracker as failed with error message */
   fail: (message: string) => void;
-  /** Wrap an async operation to auto-fail on error */
-  wrap: <T>(fn: () => Promise<T>) => Promise<T>;
 }
 
 /**
@@ -96,23 +94,6 @@ export function createProgress(title: string, silent = false): ProgressTracker {
       spinner.stop();
       activeSpinner = null;
       log(`${pc.red('✗')} ${pc.red(message)}`);
-    },
-
-    wrap: async <T>(fn: () => Promise<T>): Promise<T> => {
-      try {
-        return await fn();
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        // Stop spinner and show tree-style breakdown on failure
-        spinner.stop();
-        activeSpinner = null;
-        log(pc.cyan(`\n${title}`));
-        for (const step of completedSteps) {
-          log(pc.gray(`  ├─ ${step}`));
-        }
-        log(pc.red(`  └─ ✗ ${errorMessage}`));
-        throw error;
-      }
     },
   };
 }

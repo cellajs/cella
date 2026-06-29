@@ -120,7 +120,7 @@ export async function cleanTemplate({
  * Removes all contents within a specified folder.
  * @param folderPath - The path of the folder to clean.
  */
-export async function removeFolderContents(folderPath: string): Promise<void> {
+async function removeFolderContents(folderPath: string): Promise<void> {
   // List all files in the folder
   const files = await fs.readdir(folderPath);
 
@@ -146,7 +146,7 @@ export async function removeFolderContents(folderPath: string): Promise<void> {
  * Removes a specified file or folder.
  * @param pathToRemove - The path to the file or folder to remove.
  */
-export async function removeFileOrFolder(pathToRemove: string): Promise<void> {
+async function removeFileOrFolder(pathToRemove: string): Promise<void> {
   await fs.rm(pathToRemove, { recursive: true, force: true });
 }
 
@@ -155,7 +155,7 @@ export async function removeFileOrFolder(pathToRemove: string): Promise<void> {
  * @param src - The source file path.
  * @param dest - The destination file path.
  */
-export async function copyFile(src: string, dest: string): Promise<void> {
+async function copyFile(src: string, dest: string): Promise<void> {
   try {
     // Check if the source file exists
     await fs.access(src);

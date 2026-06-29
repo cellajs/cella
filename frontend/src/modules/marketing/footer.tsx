@@ -94,7 +94,7 @@ export const MarketingFooter = () => {
             }}
             className="focus-effect mt-12 rounded-sm p-1 hover:opacity-90 active:scale-95"
           >
-            <Logo textColor="white" iconColor="#793f599e" />
+            <Logo textColor="white" iconColor="#b07a939e" />
           </Link>
 
           <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">

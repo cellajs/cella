@@ -33,6 +33,7 @@
   },
   "scripts": {
     "start": "tsx ./src/create-cella-cli.ts",
+    "try": "tsx ./src/create-cella-cli.ts ../../../cella-try-app --template ../.. --skip-install",
     "clean": "rimraf ./dist",
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
@@ -42,7 +43,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
-    "test:release": "pnpm run build && vitest run tests/release-artifact.test.ts tests/release-smoke.test.ts",
+    "test:release": "pnpm run build && vitest run tests/release-smoke.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

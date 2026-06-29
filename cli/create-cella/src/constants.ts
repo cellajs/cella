@@ -16,16 +16,13 @@ export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
 /** Export details from package.json */
 export const DESCRIPTION: string = packageJson.description;
 export const VERSION: string = packageJson.version;
-export const AUTHOR: string = packageJson.author;
 export const WEBSITE: string = packageJson.homepage;
-export const GITHUB: string = packageJson.repository.url;
 
 export function getHeaderLine(templateVersion?: string): string {
-  const leftText = `⧈ ${NAME} · v${VERSION} · cella v${templateVersion}`;
-  const rightText = packageJson.homepage.replace('https://', '');
-  const left = `${pc.cyan(`⧈ ${NAME}`)} ${pc.dim(`· v${VERSION} · cella v${templateVersion}`)}`;
-  const right = pc.cyan(rightText);
-  const padding = Math.max(1, 60 - leftText.length - rightText.length);
+  const leftText = `⧈ ${NAME} · ${VERSION} · cella ${templateVersion}`;
+  const left = `${pc.cyan(`⧈ ${NAME}`)} ${pc.dim(`· ${VERSION} · cella ${templateVersion}`)}`;
+  const right = pc.cyan(WEBSITE);
+  const padding = Math.max(1, 60 - leftText.length - WEBSITE.length);
   return `${left}${' '.repeat(padding)}${right}`;
 }
 

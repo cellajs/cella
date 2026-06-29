@@ -1,14 +1,8 @@
 # Quickstart
 
-This document describes how to develop your own app based on Cella. Also make sure to read the [architecture](./ARCHITECTURE.md) info.
+This document gives some quick tips to get started with building your own web app using cella. We assume you already used `pnpm create @cellajs/cella` to install the template. Also make sure to read the [architecture](./ARCHITECTURE.md) info.
 
-Do not fork this repo directly. Use the create CLI to get started:
-
-```bash
-pnpm create @cellajs/cella
-```
-
-When installed, use:
+When you finished installing cella, use:
 
 ```bash
 pnpm install

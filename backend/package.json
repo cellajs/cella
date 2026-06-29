@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "Hono API server with postgres, auth, CRUD, and real-time sync",
   "type": "module",
   "engines": {

@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export interface LogoProps extends React.SVGProps<SVGSVGElement> {
@@ -10,11 +9,10 @@ export interface LogoProps extends React.SVGProps<SVGSVGElement> {
 }
 
 export function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, ...props }: LogoProps) {
-  const { mode, theme } = useUIStore();
-  const defaultTextColor = mode === 'light' ? '#333' : '#fff';
-  const defaultIconColor = theme === 'none' ? '#333' : (appConfig.theme.colors[theme] ?? '#333');
-  if (!textColor) textColor = defaultTextColor;
-  if (!iconColor) iconColor = defaultIconColor;
+  const { mode } = useUIStore();
+  const defaultColor = mode === 'light' ? '#333' : '#fff';
+  textColor ??= defaultColor;
+  iconColor ??= defaultColor;
 
   return (
     <svg
@@ -27,20 +25,19 @@ export function Logo({ className, iconColor, textColor, height = 50, iconOnly = 
       viewBox={iconOnly ? '-50 -50 600 600' : '-50 -50 1900 600'}
     >
       <title>Logo</title>
-      <g id="svg-logo-icon" fill="none" fillRule="evenodd" style={{ transformBox: 'fill-box' }} transform="rotate(0)">
+      <g id="svg-logo-icon" fill="none" fillRule="evenodd">
         <path
           fill={iconColor}
-          d="M335 15a150 150 0 0 1 150 150v170a150 150 0 0 1-150 150H165A150 150 0 0 1 15 335V165A150 150 0 0 1 165 15h170Zm-50 150h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
+          fillOpacity={0.3}
+          d="M335,15 C417.843,15 485,82.157 485,165 L485,335 C485,417.843 417.843,485 335,485 L165,485 C82.157,485 15,417.843 15,335 L15,165 C15,82.157 82.157,15 165,15 Z M295,150 C325.376,150 350,174.624 350,205 L350,295 C350,325.376 325.376,350 295,350 L205,350 C174.624,350 150,325.376 150,295 L150,205 C150,174.624 174.624,150 205,150 Z"
         />
         <path
-          fill="#FFF"
-          fillOpacity=".4"
-          d="M315 65a120 120 0 0 1 120 120v130a120 120 0 0 1-120 120H185A120 120 0 0 1 65 315V185A120 120 0 0 1 185 65h130Zm-30 100h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
+          fill={iconColor}
+          d="M335,15 C417.843,15 485,82.157 485,165 L485,335 C485,417.843 417.843,485 335,485 L165,485 C82.157,485 15,417.843 15,335 L15,165 C15,82.157 82.157,15 165,15 Z M335,50 C398.513,50 450,101.487 450,165 L450,335 C450,398.513 398.513,450 335,450 L165,450 C101.487,450 50,398.513 50,335 L50,165 C50,101.487 101.487,50 165,50 Z"
         />
         <path
-          fill="#FFF"
-          fillOpacity=".5"
-          d="M295 115a90 90 0 0 1 90 90v90a90 90 0 0 1-90 90h-90a90 90 0 0 1-90-90v-90a90 90 0 0 1 90-90h90Zm-10 50h-70a50 50 0 0 0-50 50v70a50 50 0 0 0 50 50h70a50 50 0 0 0 50-50v-70a50 50 0 0 0-50-50Z"
+          fill={iconColor}
+          d="M295,115 C344.706,115 385,155.294 385,205 L385,295 C385,344.706 344.706,385 295,385 L205,385 C155.294,385 115,344.706 115,295 L115,205 C115,155.294 155.294,115 205,115 Z M295,150 C325.376,150 350,174.624 350,205 L350,295 C350,325.376 325.376,350 295,350 L205,350 C174.624,350 150,325.376 150,295 L150,205 C150,174.624 174.624,150 205,150 Z"
         />
       </g>
 

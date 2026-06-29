@@ -29,7 +29,6 @@ describe('create-cella e2e', () => {
       await create({
         projectName,
         targetFolder,
-        newBranchName: 'development',
         packageManager: 'pnpm',
         portOffset: 0,
         templateUrl: repoRoot,
@@ -131,11 +130,6 @@ describe('create-cella e2e', () => {
   describe('git repository', () => {
     it('should have initialized git', () => {
       expect(existsSync(join(targetFolder, '.git'))).toBe(true);
-    });
-
-    it('should be on development branch', () => {
-      const gitHead = readFileSync(join(targetFolder, '.git', 'HEAD'), 'utf-8');
-      expect(gitHead.trim()).toBe('ref: refs/heads/development');
     });
 
     it('should have upstream remote configured', () => {

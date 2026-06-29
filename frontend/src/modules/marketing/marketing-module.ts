@@ -4,6 +4,6 @@ registerModule({
   name: 'marketing',
   owner: 'cella',
   scope: 'frontend',
-  description: 'Public marketing site (about, features, sync-engine, legal page). Legal dialog stays in auth.',
+  description: 'Public about page. If not included, set appConfig.aboutUrl to an external URL.',
   optional: true,
 });

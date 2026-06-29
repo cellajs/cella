@@ -6,7 +6,7 @@ import { input, select } from '@inquirer/prompts';
 import pc from 'picocolors';
 import { TEMPLATE_URL } from '#/constants';
 import { create } from '#/create';
-import { type CreateOptions, cli, showWelcome } from '#/modules/cli';
+import { type CreateOptions, cli, confirmChoice, showWelcome } from '#/modules/cli';
 import { detectUsedPorts, findNextOffset } from '#/utils/detect-used-ports';
 import { extractPackageJsonVersionFromUri } from '#/utils/extract-package-json-version-from-uri';
 import { fetchLatestCommit, fetchLatestRelease } from '#/utils/fetch-template-metadata';
@@ -44,11 +44,6 @@ async function main(): Promise<void> {
     );
   }
 
-  // Default to creating a 'development' working branch
-  if (!cli.newBranchName) {
-    cli.newBranchName = 'development';
-  }
-
   const targetFolder = resolve(cli.directory);
   const projectName = basename(targetFolder)?.toLowerCase() || 'project';
 
@@ -76,24 +71,26 @@ async function main(): Promise<void> {
 
   // Scan sibling directories and prompt for port offset
   const portOffset = cli.options.portOffset ?? (await promptPortOffset(targetFolder, promptTheme, promptContext));
+  confirmChoice('Port offset', formatOffset(portOffset));
 
-  // Prompt for admin email
+  // Prompt for admin email. Default uses the reserved `example.com` domain (RFC 2606) so the
+  // seed address can never resolve or route real mail — it's a placeholder, not a real inbox.
   const adminEmail =
     cli.options.adminEmail ??
     (await input(
       {
         message: 'Admin email for initial seed user',
-        default: `admin@${projectName}.com`,
+        default: 'admin@example.com',
         theme: promptTheme,
       },
       promptContext,
     ));
+  confirmChoice('Admin email', adminEmail);
 
   // Proceed with the project creation
   const createOptions: CreateOptions = {
     projectName,
     targetFolder,
-    newBranchName: cli.newBranchName,
     packageManager: cli.packageManager,
     templateUrl: cli.options.template,
     templateRef,
@@ -120,19 +117,20 @@ async function promptTemplateRef(theme: object, context: object): Promise<string
   if (!release && !commit) return undefined;
 
   // One-sentence intro followed by the two data points.
-  console.info(
-    pc.dim("You're about to scaffold a new app from the cella template — pick which snapshot to start from:"),
-  );
-  if (release) console.info(`  ${pc.cyan('Latest release')}  ${release.tag} ${pc.dim(`· ${release.date}`)}`);
+  console.info(pc.dim('You are about to install the Cella template.'));
+  console.info();
+
+  if (release) console.info(`  Latest release:  ${release.tag} ${pc.dim(`· ${release.date}`)}`);
   if (commit) {
-    console.info(
-      `  ${pc.cyan('Latest commit')}   ${commit.shortSha} ${pc.dim(`· ${commit.message} · ${commit.date}`)}`,
-    );
+    console.info(`  Latest commit:  ${commit.shortSha} ${pc.dim(`· ${commit.message} · ${commit.date}`)}`);
+    // Clickable link to the exact commit on GitHub, in grey below the summary line.
+    const repo = TEMPLATE_URL.replace('github:', '');
+    console.info(`  ${pc.gray(`https://github.com/${repo}/commit/${commit.sha}`)}`);
   }
   console.info();
 
   // Only one available — use it without prompting.
-  if (!release) return commit ? commit.sha : undefined;
+  if (!release) return commit?.sha;
   if (!commit) return release.tag;
 
   const choice = await select(
@@ -140,14 +138,20 @@ async function promptTemplateRef(theme: object, context: object): Promise<string
       message: 'Start from',
       theme,
       choices: [
-        { name: `Latest release ${pc.dim(`(${release.tag}, stable)`)}`, value: 'release' },
-        { name: `Latest commit ${pc.dim(`(${commit.shortSha}, bleeding edge)`)}`, value: 'commit' },
+        { name: 'Latest release', value: 'release' },
+        { name: 'Latest commit', value: 'commit' },
       ],
     },
     context,
   );
 
-  return choice === 'release' ? release.tag : commit.sha;
+  // The prompt clears itself on done, so keep the choice visible with a checkmark.
+  if (choice === 'release') {
+    confirmChoice('Latest release', release.tag);
+    return release.tag;
+  }
+  confirmChoice('Latest commit', commit.shortSha);
+  return commit.sha;
 }
 
 /** Format an offset as a port overview string, e.g. "10 → :3010 / :4010 / :5442" */
@@ -160,19 +164,26 @@ async function promptPortOffset(targetFolder: string, theme: object, context: ob
   const usedPorts = await detectUsedPorts(targetFolder);
   const suggested = findNextOffset(usedPorts);
 
+  // Fold a compact hint into the prompt message itself so it's wiped by clearPromptOnDone
+  // once an offset is chosen — no leftover "Detected forks" trail. Override the default
+  // message style (which bolds everything) so only the "Port offset" title is bold.
+  let message = `${pc.bold('Port offset')} ${pc.dim('· to avoid conflicts with other forks/clones')}`;
   if (usedPorts.length > 0) {
-    console.info(pc.dim('\nDetected cella forks in sibling directories:'));
-    for (const p of usedPorts) {
-      console.info(pc.dim(`  ${p.project}: frontend :${p.frontend}, backend :${p.backend} (offset ${p.offset})`));
-    }
-    console.info();
+    const count = usedPorts.length;
+    message += pc.dim(`\nDetected ${count} sibling fork${count === 1 ? '' : 's'} · suggested offset ${suggested}`);
   }
+  const portTheme = {
+    ...(theme as Record<string, unknown>),
+    style: { ...((theme as { style?: object }).style ?? {}), message: (text: string) => text },
+  };
 
-  const presets = [0, 10, 20, 30].filter((o) => o !== suggested);
+  // Presets exclude 0 (always offered as the explicit default below) and the suggested
+  // value (offered first) to avoid duplicate choices.
+  const presets = [10, 20, 30].filter((o) => o !== suggested);
   const choice = await select(
     {
-      message: 'Port offset (avoids conflicts with sibling forks)',
-      theme,
+      message,
+      theme: portTheme,
       choices: [
         ...(suggested > 0 ? [{ name: formatOffset(suggested, ' (suggested)'), value: suggested }] : []),
         { name: formatOffset(0, ' (default)'), value: 0 },

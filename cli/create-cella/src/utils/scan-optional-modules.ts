@@ -35,6 +35,24 @@ export async function scanOptionalModules(targetFolder: string): Promise<Optiona
   return modules.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Every project-root-relative folder removed when an optional module is deselected: its own
+ * module folder plus the route and static-asset folders it may own. Route folders are
+ * speculative — a module owns either a pathless `_<name>` (URL-transparent) or a path-based
+ * `<name>` route, under `routes/_public` and/or `routes/_app` — so callers remove only the
+ * variants that actually exist. Single-sourced here so removal and tests stay in sync.
+ */
+export function optionalModuleFolders({ name, folder }: OptionalModule): string[] {
+  return [
+    folder,
+    `frontend/src/routes/_public/_${name}`,
+    `frontend/src/routes/_public/${name}`,
+    `frontend/src/routes/_app/_${name}`,
+    `frontend/src/routes/_app/${name}`,
+    `frontend/public/static/${name}`,
+  ];
+}
+
 async function collectModuleFiles(dir: string, out: string[]): Promise<void> {
   const entries = await readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
