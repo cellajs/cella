@@ -5,7 +5,7 @@ import appTitle from '~/utils/app-title';
 /**
  * Dedicated page explaining Cella's sync engine.
  */
-export const Route = createFileRoute('/_public/sync-engine')({
+export const Route = createFileRoute('/_public/_marketing/sync-engine')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Sync engine') }] }),
   component: SyncEnginePage,

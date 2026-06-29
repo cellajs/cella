@@ -93,6 +93,8 @@
     "sanitize-html": "^2.17.5",
     "sdk": "workspace:*",
     "shared": "workspace:*",
+    "cdc": "workspace:*",
+    "yjs-worker": "workspace:*",
     "slugify": "^1.6.9",
     "transloadit": "4.10.8",
     "ua-parser-js": "^2.0.10",

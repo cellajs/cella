@@ -1,10 +1,10 @@
 import { appConfig } from 'shared';
-import { collectedData, legalConfig } from '~/modules/marketing/legal/legal-config';
-import { LegalContact } from '~/modules/marketing/legal/legal-contact';
-import { LegalCrossLink } from '~/modules/marketing/legal/legal-cross-link';
-import { LegalSection } from '~/modules/marketing/legal/legal-section';
-import { ProcessedDataTypes } from '~/modules/marketing/legal/processed-data-types';
-import { Subprocessors } from '~/modules/marketing/legal/subprocessors';
+import { collectedData, legalConfig } from '~/modules/auth/legal/legal-config';
+import { LegalContact } from '~/modules/auth/legal/legal-contact';
+import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
+import { LegalSection } from '~/modules/auth/legal/legal-section';
+import { ProcessedDataTypes } from '~/modules/auth/legal/processed-data-types';
+import { Subprocessors } from '~/modules/auth/legal/subprocessors';
 
 const sections = legalConfig.privacy.sections;
 const s = (id: string) => sections.find((sec) => sec.id === id)!;

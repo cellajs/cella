@@ -54,6 +54,15 @@ async function loadContext(): Promise<InfraContext> {
     throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.')
   }
 
+  // Operator application id — required like SCW_PROJECT_ID once bootstrapped:
+  // granted full S3 on the CI-scoped buckets (storage.ts) so operator keys can
+  // read/refresh them. On a fresh stack it doesn't exist yet — bootstrap creates
+  // the app and writes the id into backend/.env, so only enforce it afterwards.
+  const operatorApplicationId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim()
+  if (!operatorApplicationId && state === 'bootstrapped') {
+    throw new Error('SCW_OPERATOR_APPLICATION_ID is not set — add it to backend/.env before running the infra CLI.')
+  }
+
   return {
     environment,
     stackPath,
@@ -92,9 +101,9 @@ const mode: CliMode =
         message: 'Existing config detected. How would you like to proceed?',
         default: 'resume',
         choices: [
-          { name: 'Resume', value: 'resume', description: 'Idempotent re-run; refreshes config & GitHub secrets. Cannot apply changes to DB/VPC/PN (CI key is read-only there).' },
+          { name: 'Resume', value: 'resume', description: 'Verify & sync config + GitHub secrets with the CI key; self-heals missing keys. Read-only on DB/VPC/PN — cannot change protected infra.' },
           { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
-          { name: 'Apply infra change', value: 'apply', description: 'One-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes; provider auth is supplied via env.' },
+          { name: 'Apply infra change', value: 'apply', description: 'Privileged converge: one-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes the CI key cannot. No refresh (buckets are CI-scoped).' },
           { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
           { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },

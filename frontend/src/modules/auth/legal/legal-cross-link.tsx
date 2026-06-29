@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { createContext, type ReactNode, use } from 'react';
-import type { LegalSubject } from '~/modules/marketing/legal/legal-config';
+import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 
 /**
  * When legal texts are rendered inside the legal dialog, this context provides a handler

@@ -5,6 +5,8 @@ export interface ModuleConfig {
   owner: 'cella' | 'app';
   description: string;
   scope: ModuleScope;
+  /** When true, the module is opt-in at scaffold time; its folder is removed if deselected. */
+  optional?: boolean;
 }
 
 const modules: ModuleConfig[] = [];

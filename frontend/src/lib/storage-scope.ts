@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 
 /**
+//  * TODO REVIEW
  * Per-user local-storage namespacing.
  *
  * Client-side storage (IndexedDB query cache, queued mutations, persisted zustand

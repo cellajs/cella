@@ -1,15 +1,17 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
+import { checkbox } from '@inquirer/prompts';
 import { downloadTemplate } from 'giget';
 import { addRemote } from '#/add-remote';
 import { TEMPLATE_URL } from '#/constants';
 import { type CreateOptions, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
 import { gitAddAll, gitBranch, gitCheckout, gitCommit, gitInit } from '#/utils/git';
-import { createProgress } from '#/utils/progress';
+import { createProgress, pauseSpinner, resumeSpinner } from '#/utils/progress';
 import { generate, install } from '#/utils/run-package-manager-command';
+import { scanOptionalModules } from '#/utils/scan-optional-modules';
 
 /** Check if a path is a local directory */
 function isLocalPath(path: string): boolean {
@@ -100,6 +102,9 @@ export async function create({
       });
     }
 
+    // Ask which optional modules to keep, then drop deselected paths
+    if (!silent) await promptOptionalModules(targetFolder);
+
     // Clean the template, generate configs
     progress.step('cleaning template');
     const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -151,4 +156,38 @@ export async function create({
 
   // Display final success message
   showSuccess(projectName, targetFolder, relativePath, needsCd, packageManager);
+}
+
+/**
+ * Scan the downloaded template for optional modules and let the user deselect them.
+ * Deselected modules have their whole folder removed before cleaning. Default keeps
+ * everything (parity with previous behavior).
+ */
+async function promptOptionalModules(targetFolder: string): Promise<void> {
+  const modules = await scanOptionalModules(targetFolder);
+  if (modules.length === 0) return;
+
+  pauseSpinner();
+  const keep = await checkbox({
+    message: 'Optional modules to include',
+    choices: modules.map((m) => ({ name: `${m.name} — ${m.description}`, value: m.name, checked: true })),
+  });
+  resumeSpinner();
+
+  const removeFolders = modules.filter((m) => !keep.includes(m.name)).map((m) => m.folder);
+  // A module owns `modules/<name>` plus a static asset folder `public/static/<name>` and its
+  // route folders: pathless `_<name>` (URL-transparent) or path-based `<name>` (e.g. /auth),
+  // under both `routes/_public` and `routes/_app`.
+  const extraFolders = modules
+    .filter((m) => !keep.includes(m.name))
+    .flatMap((m) => [
+      `frontend/src/routes/_public/_${m.name}`,
+      `frontend/src/routes/_public/${m.name}`,
+      `frontend/src/routes/_app/_${m.name}`,
+      `frontend/src/routes/_app/${m.name}`,
+      `frontend/public/static/${m.name}`,
+    ]);
+  await Promise.all(
+    [...removeFolders, ...extraFolders].map((f) => rm(join(targetFolder, f), { recursive: true, force: true })),
+  );
 }

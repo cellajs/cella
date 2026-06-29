@@ -193,7 +193,7 @@ function UserAccountPage() {
                           return (
                             <div key={provider.id} className="flex items-center justify-center gap-2 px-3 py-2">
                               <img
-                                src={`/static/images/${provider.id}-icon.svg`}
+                                src={`/static/auth/${provider.id}-icon.svg`}
                                 alt={provider.id}
                                 className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
                                 loading="lazy"
@@ -213,7 +213,7 @@ function UserAccountPage() {
                             onClick={() => authenticateWithProvider(provider.id as EnabledOAuthProvider)}
                           >
                             <img
-                              src={`/static/images/${provider.id}-icon.svg`}
+                              src={`/static/auth/${provider.id}-icon.svg`}
                               alt={provider.id}
                               className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
                               loading="lazy"

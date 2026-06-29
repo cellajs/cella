@@ -17,7 +17,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
-import Logo from '/static/logo/logo-icon-only.svg';
+import Logo from '/static/common/logo/logo-icon-only.svg';
 
 type MapConfig = {
   id: string;

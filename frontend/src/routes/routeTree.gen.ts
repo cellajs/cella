@@ -12,33 +12,33 @@ import { Route as rootRouteImport } from './__root'
 import { Route as PublicRouteRouteImport } from './_public/route'
 import { Route as AppRouteRouteImport } from './_app/route'
 import { Route as AppIndexRouteImport } from './_app/index'
-import { Route as PublicSyncEngineRouteImport } from './_public/sync-engine'
-import { Route as PublicSignOutRouteImport } from './_public/sign-out'
-import { Route as PublicFeaturesRouteImport } from './_public/features'
 import { Route as PublicErrorRouteImport } from './_public/error'
-import { Route as PublicContactRouteImport } from './_public/contact'
-import { Route as PublicAccessibilityRouteImport } from './_public/accessibility'
-import { Route as PublicAboutRouteImport } from './_public/about'
 import { Route as AppWelcomeRouteImport } from './_app/welcome'
 import { Route as AppHomeRouteImport } from './_app/home'
 import { Route as AppAccountRouteImport } from './_app/account'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicContentRouteRouteImport } from './_public/_content/route'
 import { Route as AppSystemRouteRouteImport } from './_app/system/route'
-import { Route as PublicLegalIndexRouteImport } from './_public/legal.index'
-import { Route as PublicLegalSubjectRouteImport } from './_public/legal.$subject'
 import { Route as PublicAuthUnsubscribedRouteImport } from './_public/auth/unsubscribed'
+import { Route as PublicAuthSignOutRouteImport } from './_public/auth/sign-out'
 import { Route as PublicAuthMfaRouteImport } from './_public/auth/mfa'
 import { Route as PublicAuthErrorRouteImport } from './_public/auth/error'
 import { Route as PublicAuthAuthenticateRouteImport } from './_public/auth/authenticate'
+import { Route as PublicMarketingSyncEngineRouteImport } from './_public/_marketing/sync-engine'
+import { Route as PublicMarketingFeaturesRouteImport } from './_public/_marketing/features'
+import { Route as PublicMarketingContactRouteImport } from './_public/_marketing/contact'
+import { Route as PublicMarketingAccessibilityRouteImport } from './_public/_marketing/accessibility'
+import { Route as PublicMarketingAboutRouteImport } from './_public/_marketing/about'
 import { Route as AppSystemUsersRouteImport } from './_app/system/users'
 import { Route as AppSystemTenantsRouteImport } from './_app/system/tenants'
 import { Route as AppSystemRequestsRouteImport } from './_app/system/requests'
 import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organizations'
 import { Route as PublicContentDocsRouteRouteImport } from './_public/_content/docs/route'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
+import { Route as PublicMarketingLegalIndexRouteImport } from './_public/_marketing/legal.index'
 import { Route as PublicContentDocsIndexRouteImport } from './_public/_content/docs/index'
 import { Route as PublicAuthEmailVerificationReasonRouteImport } from './_public/auth/email-verification.$reason'
+import { Route as PublicMarketingLegalSubjectRouteImport } from './_public/_marketing/legal.$subject'
 import { Route as PublicContentDocsSchemasRouteImport } from './_public/_content/docs/schemas'
 import { Route as PublicContentDocsPagesRouteImport } from './_public/_content/docs/pages'
 import { Route as PublicContentDocsOverviewRouteImport } from './_public/_content/docs/overview'
@@ -64,39 +64,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const PublicSyncEngineRoute = PublicSyncEngineRouteImport.update({
-  id: '/sync-engine',
-  path: '/sync-engine',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicSignOutRoute = PublicSignOutRouteImport.update({
-  id: '/sign-out',
-  path: '/sign-out',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicFeaturesRoute = PublicFeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
 const PublicErrorRoute = PublicErrorRouteImport.update({
   id: '/error',
   path: '/error',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicContactRoute = PublicContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicAccessibilityRoute = PublicAccessibilityRouteImport.update({
-  id: '/accessibility',
-  path: '/accessibility',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicAboutRoute = PublicAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
@@ -128,19 +98,14 @@ const AppSystemRouteRoute = AppSystemRouteRouteImport.update({
   path: '/system',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const PublicLegalIndexRoute = PublicLegalIndexRouteImport.update({
-  id: '/legal/',
-  path: '/legal/',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicLegalSubjectRoute = PublicLegalSubjectRouteImport.update({
-  id: '/legal/$subject',
-  path: '/legal/$subject',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
 const PublicAuthUnsubscribedRoute = PublicAuthUnsubscribedRouteImport.update({
   id: '/unsubscribed',
   path: '/unsubscribed',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicAuthSignOutRoute = PublicAuthSignOutRouteImport.update({
+  id: '/sign-out',
+  path: '/sign-out',
   getParentRoute: () => PublicAuthRouteRoute,
 } as any)
 const PublicAuthMfaRoute = PublicAuthMfaRouteImport.update({
@@ -157,6 +122,33 @@ const PublicAuthAuthenticateRoute = PublicAuthAuthenticateRouteImport.update({
   id: '/authenticate',
   path: '/authenticate',
   getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicMarketingSyncEngineRoute =
+  PublicMarketingSyncEngineRouteImport.update({
+    id: '/_marketing/sync-engine',
+    path: '/sync-engine',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
+const PublicMarketingFeaturesRoute = PublicMarketingFeaturesRouteImport.update({
+  id: '/_marketing/features',
+  path: '/features',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicMarketingContactRoute = PublicMarketingContactRouteImport.update({
+  id: '/_marketing/contact',
+  path: '/contact',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicMarketingAccessibilityRoute =
+  PublicMarketingAccessibilityRouteImport.update({
+    id: '/_marketing/accessibility',
+    path: '/accessibility',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
+const PublicMarketingAboutRoute = PublicMarketingAboutRouteImport.update({
+  id: '/_marketing/about',
+  path: '/about',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
 const AppSystemUsersRoute = AppSystemUsersRouteImport.update({
   id: '/users',
@@ -189,6 +181,12 @@ const AppTenantIdOrganizationSlugRouteRoute =
     path: '/$tenantId/$organizationSlug',
     getParentRoute: () => AppRouteRoute,
   } as any)
+const PublicMarketingLegalIndexRoute =
+  PublicMarketingLegalIndexRouteImport.update({
+    id: '/_marketing/legal/',
+    path: '/legal/',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
 const PublicContentDocsIndexRoute = PublicContentDocsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -199,6 +197,12 @@ const PublicAuthEmailVerificationReasonRoute =
     id: '/email-verification/$reason',
     path: '/email-verification/$reason',
     getParentRoute: () => PublicAuthRouteRoute,
+  } as any)
+const PublicMarketingLegalSubjectRoute =
+  PublicMarketingLegalSubjectRouteImport.update({
+    id: '/_marketing/legal/$subject',
+    path: '/legal/$subject',
+    getParentRoute: () => PublicRouteRoute,
   } as any)
 const PublicContentDocsSchemasRoute =
   PublicContentDocsSchemasRouteImport.update({
@@ -272,32 +276,32 @@ export interface FileRoutesByFullPath {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/welcome': typeof AppWelcomeRoute
-  '/about': typeof PublicAboutRoute
-  '/accessibility': typeof PublicAccessibilityRoute
-  '/contact': typeof PublicContactRoute
   '/error': typeof PublicErrorRoute
-  '/features': typeof PublicFeaturesRoute
-  '/sign-out': typeof PublicSignOutRoute
-  '/sync-engine': typeof PublicSyncEngineRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/docs': typeof PublicContentDocsRouteRouteWithChildren
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
   '/system/tenants': typeof AppSystemTenantsRoute
   '/system/users': typeof AppSystemUsersRoute
+  '/about': typeof PublicMarketingAboutRoute
+  '/accessibility': typeof PublicMarketingAccessibilityRoute
+  '/contact': typeof PublicMarketingContactRoute
+  '/features': typeof PublicMarketingFeaturesRoute
+  '/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/auth/authenticate': typeof PublicAuthAuthenticateRoute
   '/auth/error': typeof PublicAuthErrorRoute
   '/auth/mfa': typeof PublicAuthMfaRoute
+  '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
-  '/legal/$subject': typeof PublicLegalSubjectRoute
-  '/legal/': typeof PublicLegalIndexRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/docs/operations': typeof PublicContentDocsOperationsRoute
   '/docs/overview': typeof PublicContentDocsOverviewRoute
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
+  '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/docs/': typeof PublicContentDocsIndexRoute
+  '/legal/': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -312,31 +316,31 @@ export interface FileRoutesByTo {
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/welcome': typeof AppWelcomeRoute
-  '/about': typeof PublicAboutRoute
-  '/accessibility': typeof PublicAccessibilityRoute
-  '/contact': typeof PublicContactRoute
   '/error': typeof PublicErrorRoute
-  '/features': typeof PublicFeaturesRoute
-  '/sign-out': typeof PublicSignOutRoute
-  '/sync-engine': typeof PublicSyncEngineRoute
   '/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/system/organizations': typeof AppSystemOrganizationsRoute
   '/system/requests': typeof AppSystemRequestsRoute
   '/system/tenants': typeof AppSystemTenantsRoute
   '/system/users': typeof AppSystemUsersRoute
+  '/about': typeof PublicMarketingAboutRoute
+  '/accessibility': typeof PublicMarketingAccessibilityRoute
+  '/contact': typeof PublicMarketingContactRoute
+  '/features': typeof PublicMarketingFeaturesRoute
+  '/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/auth/authenticate': typeof PublicAuthAuthenticateRoute
   '/auth/error': typeof PublicAuthErrorRoute
   '/auth/mfa': typeof PublicAuthMfaRoute
+  '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
-  '/legal/$subject': typeof PublicLegalSubjectRoute
-  '/legal': typeof PublicLegalIndexRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/docs/operations': typeof PublicContentDocsOperationsRoute
   '/docs/overview': typeof PublicContentDocsOverviewRoute
   '/docs/pages': typeof PublicContentDocsPagesRoute
   '/docs/schemas': typeof PublicContentDocsSchemasRoute
+  '/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/docs': typeof PublicContentDocsIndexRoute
+  '/legal': typeof PublicMarketingLegalIndexRoute
   '/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -354,13 +358,7 @@ export interface FileRoutesById {
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/welcome': typeof AppWelcomeRoute
-  '/_public/about': typeof PublicAboutRoute
-  '/_public/accessibility': typeof PublicAccessibilityRoute
-  '/_public/contact': typeof PublicContactRoute
   '/_public/error': typeof PublicErrorRoute
-  '/_public/features': typeof PublicFeaturesRoute
-  '/_public/sign-out': typeof PublicSignOutRoute
-  '/_public/sync-engine': typeof PublicSyncEngineRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
   '/_public/_content/docs': typeof PublicContentDocsRouteRouteWithChildren
@@ -368,19 +366,25 @@ export interface FileRoutesById {
   '/_app/system/requests': typeof AppSystemRequestsRoute
   '/_app/system/tenants': typeof AppSystemTenantsRoute
   '/_app/system/users': typeof AppSystemUsersRoute
+  '/_public/_marketing/about': typeof PublicMarketingAboutRoute
+  '/_public/_marketing/accessibility': typeof PublicMarketingAccessibilityRoute
+  '/_public/_marketing/contact': typeof PublicMarketingContactRoute
+  '/_public/_marketing/features': typeof PublicMarketingFeaturesRoute
+  '/_public/_marketing/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/_public/auth/authenticate': typeof PublicAuthAuthenticateRoute
   '/_public/auth/error': typeof PublicAuthErrorRoute
   '/_public/auth/mfa': typeof PublicAuthMfaRoute
+  '/_public/auth/sign-out': typeof PublicAuthSignOutRoute
   '/_public/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
-  '/_public/legal/$subject': typeof PublicLegalSubjectRoute
-  '/_public/legal/': typeof PublicLegalIndexRoute
   '/_app/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/_public/_content/docs/operations': typeof PublicContentDocsOperationsRoute
   '/_public/_content/docs/overview': typeof PublicContentDocsOverviewRoute
   '/_public/_content/docs/pages': typeof PublicContentDocsPagesRoute
   '/_public/_content/docs/schemas': typeof PublicContentDocsSchemasRoute
+  '/_public/_marketing/legal/$subject': typeof PublicMarketingLegalSubjectRoute
   '/_public/auth/email-verification/$reason': typeof PublicAuthEmailVerificationReasonRoute
   '/_public/_content/docs/': typeof PublicContentDocsIndexRoute
+  '/_public/_marketing/legal/': typeof PublicMarketingLegalIndexRoute
   '/_app/$tenantId/$organizationSlug/organization/attachments': typeof AppTenantIdOrganizationSlugOrganizationAttachmentsRoute
   '/_app/$tenantId/$organizationSlug/organization/members': typeof AppTenantIdOrganizationSlugOrganizationMembersRoute
   '/_app/$tenantId/$organizationSlug/organization/settings': typeof AppTenantIdOrganizationSlugOrganizationSettingsRoute
@@ -397,32 +401,32 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/welcome'
-    | '/about'
-    | '/accessibility'
-    | '/contact'
     | '/error'
-    | '/features'
-    | '/sign-out'
-    | '/sync-engine'
     | '/$tenantId/$organizationSlug'
     | '/docs'
     | '/system/organizations'
     | '/system/requests'
     | '/system/tenants'
     | '/system/users'
+    | '/about'
+    | '/accessibility'
+    | '/contact'
+    | '/features'
+    | '/sync-engine'
     | '/auth/authenticate'
     | '/auth/error'
     | '/auth/mfa'
+    | '/auth/sign-out'
     | '/auth/unsubscribed'
-    | '/legal/$subject'
-    | '/legal/'
     | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
     | '/docs/pages'
     | '/docs/schemas'
+    | '/legal/$subject'
     | '/auth/email-verification/$reason'
     | '/docs/'
+    | '/legal/'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
@@ -437,31 +441,31 @@ export interface FileRouteTypes {
     | '/account'
     | '/home'
     | '/welcome'
-    | '/about'
-    | '/accessibility'
-    | '/contact'
     | '/error'
-    | '/features'
-    | '/sign-out'
-    | '/sync-engine'
     | '/$tenantId/$organizationSlug'
     | '/system/organizations'
     | '/system/requests'
     | '/system/tenants'
     | '/system/users'
+    | '/about'
+    | '/accessibility'
+    | '/contact'
+    | '/features'
+    | '/sync-engine'
     | '/auth/authenticate'
     | '/auth/error'
     | '/auth/mfa'
+    | '/auth/sign-out'
     | '/auth/unsubscribed'
-    | '/legal/$subject'
-    | '/legal'
     | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
     | '/docs/pages'
     | '/docs/schemas'
+    | '/legal/$subject'
     | '/auth/email-verification/$reason'
     | '/docs'
+    | '/legal'
     | '/$tenantId/$organizationSlug/organization/attachments'
     | '/$tenantId/$organizationSlug/organization/members'
     | '/$tenantId/$organizationSlug/organization/settings'
@@ -478,13 +482,7 @@ export interface FileRouteTypes {
     | '/_app/account'
     | '/_app/home'
     | '/_app/welcome'
-    | '/_public/about'
-    | '/_public/accessibility'
-    | '/_public/contact'
     | '/_public/error'
-    | '/_public/features'
-    | '/_public/sign-out'
-    | '/_public/sync-engine'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
     | '/_public/_content/docs'
@@ -492,19 +490,25 @@ export interface FileRouteTypes {
     | '/_app/system/requests'
     | '/_app/system/tenants'
     | '/_app/system/users'
+    | '/_public/_marketing/about'
+    | '/_public/_marketing/accessibility'
+    | '/_public/_marketing/contact'
+    | '/_public/_marketing/features'
+    | '/_public/_marketing/sync-engine'
     | '/_public/auth/authenticate'
     | '/_public/auth/error'
     | '/_public/auth/mfa'
+    | '/_public/auth/sign-out'
     | '/_public/auth/unsubscribed'
-    | '/_public/legal/$subject'
-    | '/_public/legal/'
     | '/_app/$tenantId/$organizationSlug/organization'
     | '/_public/_content/docs/operations'
     | '/_public/_content/docs/overview'
     | '/_public/_content/docs/pages'
     | '/_public/_content/docs/schemas'
+    | '/_public/_marketing/legal/$subject'
     | '/_public/auth/email-verification/$reason'
     | '/_public/_content/docs/'
+    | '/_public/_marketing/legal/'
     | '/_app/$tenantId/$organizationSlug/organization/attachments'
     | '/_app/$tenantId/$organizationSlug/organization/members'
     | '/_app/$tenantId/$organizationSlug/organization/settings'
@@ -541,53 +545,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_public/sync-engine': {
-      id: '/_public/sync-engine'
-      path: '/sync-engine'
-      fullPath: '/sync-engine'
-      preLoaderRoute: typeof PublicSyncEngineRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/sign-out': {
-      id: '/_public/sign-out'
-      path: '/sign-out'
-      fullPath: '/sign-out'
-      preLoaderRoute: typeof PublicSignOutRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/features': {
-      id: '/_public/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof PublicFeaturesRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
     '/_public/error': {
       id: '/_public/error'
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof PublicErrorRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/contact': {
-      id: '/_public/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof PublicContactRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/accessibility': {
-      id: '/_public/accessibility'
-      path: '/accessibility'
-      fullPath: '/accessibility'
-      preLoaderRoute: typeof PublicAccessibilityRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/about': {
-      id: '/_public/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof PublicAboutRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_app/welcome': {
@@ -632,25 +594,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSystemRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/_public/legal/': {
-      id: '/_public/legal/'
-      path: '/legal'
-      fullPath: '/legal/'
-      preLoaderRoute: typeof PublicLegalIndexRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/legal/$subject': {
-      id: '/_public/legal/$subject'
-      path: '/legal/$subject'
-      fullPath: '/legal/$subject'
-      preLoaderRoute: typeof PublicLegalSubjectRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
     '/_public/auth/unsubscribed': {
       id: '/_public/auth/unsubscribed'
       path: '/unsubscribed'
       fullPath: '/auth/unsubscribed'
       preLoaderRoute: typeof PublicAuthUnsubscribedRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/auth/sign-out': {
+      id: '/_public/auth/sign-out'
+      path: '/sign-out'
+      fullPath: '/auth/sign-out'
+      preLoaderRoute: typeof PublicAuthSignOutRouteImport
       parentRoute: typeof PublicAuthRouteRoute
     }
     '/_public/auth/mfa': {
@@ -673,6 +628,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/authenticate'
       preLoaderRoute: typeof PublicAuthAuthenticateRouteImport
       parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_marketing/sync-engine': {
+      id: '/_public/_marketing/sync-engine'
+      path: '/sync-engine'
+      fullPath: '/sync-engine'
+      preLoaderRoute: typeof PublicMarketingSyncEngineRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/_marketing/features': {
+      id: '/_public/_marketing/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof PublicMarketingFeaturesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/_marketing/contact': {
+      id: '/_public/_marketing/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof PublicMarketingContactRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/_marketing/accessibility': {
+      id: '/_public/_marketing/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof PublicMarketingAccessibilityRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/_marketing/about': {
+      id: '/_public/_marketing/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof PublicMarketingAboutRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/_app/system/users': {
       id: '/_app/system/users'
@@ -716,6 +706,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantIdOrganizationSlugRouteRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_public/_marketing/legal/': {
+      id: '/_public/_marketing/legal/'
+      path: '/legal'
+      fullPath: '/legal/'
+      preLoaderRoute: typeof PublicMarketingLegalIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/_public/_content/docs/': {
       id: '/_public/_content/docs/'
       path: '/'
@@ -729,6 +726,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/email-verification/$reason'
       preLoaderRoute: typeof PublicAuthEmailVerificationReasonRouteImport
       parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/_marketing/legal/$subject': {
+      id: '/_public/_marketing/legal/$subject'
+      path: '/legal/$subject'
+      fullPath: '/legal/$subject'
+      preLoaderRoute: typeof PublicMarketingLegalSubjectRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/_public/_content/docs/schemas': {
       id: '/_public/_content/docs/schemas'
@@ -931,6 +935,7 @@ interface PublicAuthRouteRouteChildren {
   PublicAuthAuthenticateRoute: typeof PublicAuthAuthenticateRoute
   PublicAuthErrorRoute: typeof PublicAuthErrorRoute
   PublicAuthMfaRoute: typeof PublicAuthMfaRoute
+  PublicAuthSignOutRoute: typeof PublicAuthSignOutRoute
   PublicAuthUnsubscribedRoute: typeof PublicAuthUnsubscribedRoute
   PublicAuthEmailVerificationReasonRoute: typeof PublicAuthEmailVerificationReasonRoute
 }
@@ -939,6 +944,7 @@ const PublicAuthRouteRouteChildren: PublicAuthRouteRouteChildren = {
   PublicAuthAuthenticateRoute: PublicAuthAuthenticateRoute,
   PublicAuthErrorRoute: PublicAuthErrorRoute,
   PublicAuthMfaRoute: PublicAuthMfaRoute,
+  PublicAuthSignOutRoute: PublicAuthSignOutRoute,
   PublicAuthUnsubscribedRoute: PublicAuthUnsubscribedRoute,
   PublicAuthEmailVerificationReasonRoute:
     PublicAuthEmailVerificationReasonRoute,
@@ -951,29 +957,27 @@ const PublicAuthRouteRouteWithChildren = PublicAuthRouteRoute._addFileChildren(
 interface PublicRouteRouteChildren {
   PublicContentRouteRoute: typeof PublicContentRouteRouteWithChildren
   PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
-  PublicAboutRoute: typeof PublicAboutRoute
-  PublicAccessibilityRoute: typeof PublicAccessibilityRoute
-  PublicContactRoute: typeof PublicContactRoute
   PublicErrorRoute: typeof PublicErrorRoute
-  PublicFeaturesRoute: typeof PublicFeaturesRoute
-  PublicSignOutRoute: typeof PublicSignOutRoute
-  PublicSyncEngineRoute: typeof PublicSyncEngineRoute
-  PublicLegalSubjectRoute: typeof PublicLegalSubjectRoute
-  PublicLegalIndexRoute: typeof PublicLegalIndexRoute
+  PublicMarketingAboutRoute: typeof PublicMarketingAboutRoute
+  PublicMarketingAccessibilityRoute: typeof PublicMarketingAccessibilityRoute
+  PublicMarketingContactRoute: typeof PublicMarketingContactRoute
+  PublicMarketingFeaturesRoute: typeof PublicMarketingFeaturesRoute
+  PublicMarketingSyncEngineRoute: typeof PublicMarketingSyncEngineRoute
+  PublicMarketingLegalSubjectRoute: typeof PublicMarketingLegalSubjectRoute
+  PublicMarketingLegalIndexRoute: typeof PublicMarketingLegalIndexRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicContentRouteRoute: PublicContentRouteRouteWithChildren,
   PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
-  PublicAboutRoute: PublicAboutRoute,
-  PublicAccessibilityRoute: PublicAccessibilityRoute,
-  PublicContactRoute: PublicContactRoute,
   PublicErrorRoute: PublicErrorRoute,
-  PublicFeaturesRoute: PublicFeaturesRoute,
-  PublicSignOutRoute: PublicSignOutRoute,
-  PublicSyncEngineRoute: PublicSyncEngineRoute,
-  PublicLegalSubjectRoute: PublicLegalSubjectRoute,
-  PublicLegalIndexRoute: PublicLegalIndexRoute,
+  PublicMarketingAboutRoute: PublicMarketingAboutRoute,
+  PublicMarketingAccessibilityRoute: PublicMarketingAccessibilityRoute,
+  PublicMarketingContactRoute: PublicMarketingContactRoute,
+  PublicMarketingFeaturesRoute: PublicMarketingFeaturesRoute,
+  PublicMarketingSyncEngineRoute: PublicMarketingSyncEngineRoute,
+  PublicMarketingLegalSubjectRoute: PublicMarketingLegalSubjectRoute,
+  PublicMarketingLegalIndexRoute: PublicMarketingLegalIndexRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(

@@ -245,6 +245,9 @@ importers:
       arctic:
         specifier: ^3.7.0
         version: 3.7.0
+      cdc:
+        specifier: workspace:*
+        version: link:../cdc
       drizzle-orm:
         specifier: 1.0.0-rc.3
         version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(pg@8.22.0)(zod@4.4.3)
@@ -341,6 +344,9 @@ importers:
       ws:
         specifier: ^8.21.0
         version: 8.21.0
+      yjs-worker:
+        specifier: workspace:*
+        version: link:../yjs
       zod:
         specifier: ^4.4.3
         version: 4.4.3

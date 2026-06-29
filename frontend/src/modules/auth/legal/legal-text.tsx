@@ -1,4 +1,4 @@
-import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
+import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 
 /**
  * Component to render legal text based on the given subject.

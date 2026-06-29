@@ -23,8 +23,8 @@ export const CountryFlag = ({
 
   const flagUrl =
     imgType === 'svg'
-      ? `/static/flags/${countryCode.toLowerCase()}.svg`
-      : `/static/flags/png/${countryCode.toLowerCase()}.png`;
+      ? `/static/common/flags/${countryCode.toLowerCase()}.svg`
+      : `/static/common/flags/png/${countryCode.toLowerCase()}.png`;
 
   if (!isOnline) return null;
   return (

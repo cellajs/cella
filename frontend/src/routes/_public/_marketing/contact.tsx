@@ -5,7 +5,7 @@ import appTitle from '~/utils/app-title';
 /**
  * Contact page for user inquiries and support.
  */
-export const Route = createFileRoute('/_public/contact')({
+export const Route = createFileRoute('/_public/_marketing/contact')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Contact') }] }),
   component: ContactPage,

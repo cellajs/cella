@@ -4,5 +4,6 @@ registerModule({
   name: 'marketing',
   owner: 'cella',
   scope: 'frontend',
-  description: 'Marketing pages and static site content.',
+  description: 'Public marketing site (about, features, sync-engine, legal page). Legal dialog stays in auth.',
+  optional: true,
 });

@@ -5,6 +5,7 @@ import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { Logo } from '~/modules/common/logo';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
@@ -12,7 +13,6 @@ import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { PagesSidebar } from '~/modules/docs/sidebar/pages-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import type { GenTagSummary } from '~/modules/docs/types';
-import { Logo } from '~/modules/marketing/logo';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {

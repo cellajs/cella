@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/nanoid';
+import { ElementIcon } from '~/modules/common/icons/element';
+import { GithubIcon } from '~/modules/common/icons/github';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
-import { ElementIcon } from '~/modules/marketing/icons/element';
-import { GithubIcon } from '~/modules/marketing/icons/github';
 
 /*************************************************************************************************
  * Nav
@@ -319,21 +319,21 @@ export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoin
 export const whyLightSlides = [
   {
     id: nanoid(),
-    url: '/static/screenshots/system-page.png',
+    url: '/static/marketing/screenshots/system-page.png',
     name: 'System page',
     filename: 'system-page.png',
     contentType: 'image/png',
   },
   {
     id: nanoid(),
-    url: '/static/screenshots/org-page.png',
+    url: '/static/marketing/screenshots/org-page.png',
     name: 'Organization page',
     filename: 'org-page.png',
     contentType: 'image/png',
   },
   {
     id: nanoid(),
-    url: '/static/screenshots/settings.png',
+    url: '/static/marketing/screenshots/settings.png',
     name: 'User settings page',
     filename: 'settings.png',
     contentType: 'image/png',
@@ -342,21 +342,21 @@ export const whyLightSlides = [
 export const whyDarkSlides = [
   {
     id: nanoid(),
-    url: '/static/screenshots/system-page-dark.png',
+    url: '/static/marketing/screenshots/system-page-dark.png',
     name: 'System page',
     filename: 'system-page-dark.png',
     contentType: 'image/png',
   },
   {
     id: nanoid(),
-    url: '/static/screenshots/org-page-dark.png',
+    url: '/static/marketing/screenshots/org-page-dark.png',
     name: 'Organization page',
     filename: 'org-page-dark.png',
     contentType: 'image/png',
   },
   {
     id: nanoid(),
-    url: '/static/screenshots/settings-dark.png',
+    url: '/static/marketing/screenshots/settings-dark.png',
     name: 'User settings page',
     filename: 'settings-dark.png',
     contentType: 'image/png',
@@ -374,12 +374,12 @@ export const showcaseItems: ShowcaseItem[] = [
     cellaLoc: 142000,
     totalLoc: 162000,
     lightItems: [
-      { id: nanoid(), url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
-      { id: nanoid(), url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-1.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-2.png', contentType: 'image/png' },
     ],
     darkItems: [
-      { id: nanoid(), url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
-      { id: nanoid(), url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-1-dark.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-2-dark.png', contentType: 'image/png' },
     ],
   },
 ];

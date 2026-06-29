@@ -73,7 +73,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
           >
             <img
               data-provider={provider}
-              src={`/static/images/${provider}-icon.svg`}
+              src={`/static/auth/${provider}-icon.svg`}
               alt={provider}
               className="mr-1 size-4 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"

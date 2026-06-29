@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
-import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
 import { objectEntries } from '~/utils/object-entries';
 
 /**
@@ -26,7 +26,7 @@ export function LegalPage() {
     [],
   );
 
-  const { subject: currentSubject } = useParams({ from: '/_public/legal/$subject' });
+  const { subject: currentSubject } = useParams({ from: '/_public/_marketing/legal/$subject' });
 
   // Get section IDs for the current subject
   const sectionIds = useMemo(

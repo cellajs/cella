@@ -32,7 +32,7 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
       <div className={`relative overflow-hidden rounded-lg ${tileClassName} p-2`}>
         <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-6">
           <img
-            src={`/static/images/features/${id}.svg`}
+            src={`/static/marketing/features/${id}.svg`}
             alt={t(title)}
             className={`mb-2 h-8 w-8 object-contain ${invertClassName ?? ''}`}
             loading="lazy"
@@ -68,7 +68,7 @@ interface InfoGridProps<C extends string> {
   categoryIcons?: Record<C, LucideIcon>;
   /** Hide the per-category icon + title headers (e.g. when a parent section already provides one). */
   hideCategoryHeader?: boolean;
-  /** Render an SVG image icon per tile (from `/static/images/features/<id>.svg`). */
+  /** Render an SVG image icon per tile (from `/static/marketing/features/<id>.svg`). */
   image?: boolean;
   /** Background/surface classes for each tile. Defaults to `bg-card`. */
   tileClassName?: string;
