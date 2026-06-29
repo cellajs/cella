@@ -140,24 +140,24 @@ viteConfig.plugins?.push(
       theme_color: '#222222',
       icons: [
         {
-          src: '/static/icons/icon-192x192.png',
+          src: '/static/common/icons/icon-192x192.png',
           sizes: '192x192',
           type: 'image/png',
         },
         {
-          src: '/static/icons/icon-512x512.png',
+          src: '/static/common/icons/icon-512x512.png',
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: '/static/icons/icon-512x512.svg',
+          src: '/static/common/icons/icon-512x512.svg',
           sizes: '512x512',
           type: 'image/svg+xml',
           purpose: 'any',
         },
         {
-          src: '/static/icons/maskable-icon-512x512.png',
+          src: '/static/common/icons/maskable-icon-512x512.png',
           sizes: '512x512',
           type: 'image/png',
           purpose: 'maskable',
@@ -166,7 +166,7 @@ viteConfig.plugins?.push(
     },
     injectManifest: {
       globPatterns: ['**/*.{js,css,html,svg,png,svg,ico,woff2}'],
-      globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
+      globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   })

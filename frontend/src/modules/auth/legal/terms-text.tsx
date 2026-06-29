@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
-import { legalConfig } from '~/modules/marketing/legal/legal-config';
-import { LegalContact } from '~/modules/marketing/legal/legal-contact';
-import { LegalCrossLink } from '~/modules/marketing/legal/legal-cross-link';
-import { LegalSection } from '~/modules/marketing/legal/legal-section';
+import { legalConfig } from '~/modules/auth/legal/legal-config';
+import { LegalContact } from '~/modules/auth/legal/legal-contact';
+import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
+import { LegalSection } from '~/modules/auth/legal/legal-section';
 
 const sections = legalConfig.terms.sections;
 const s = (id: string) => sections.find((sec) => sec.id === id)!;

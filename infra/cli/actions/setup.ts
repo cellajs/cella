@@ -1,10 +1,12 @@
 import { spawnSync } from 'node:child_process'
+import { resolve } from 'node:path'
 import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark, warningMark } from 'shared/console'
 import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
 import { ensureDnsZone } from '../../lib/ensure-dns-zone'
+import { writeEnvVar } from '../../lib/env-file'
 import { syncGithubEnvironment } from '../../lib/github-sync'
 import { infraDir } from '../../lib/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/permissions'
@@ -17,6 +19,7 @@ import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
 import { setupCiKey } from '../../tasks/setup-ci-key'
+import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { createStepRunner, envOr, resolveVerifiedPassphrase } from '../shared'
@@ -222,6 +225,25 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
 
+  // Operator IAM application — created on fresh/rotate (bootstrap key has IAMManager).
+  // Grants Object Storage access so a key minted under it can read/refresh the
+  // CI-scoped buckets (storage.ts OperatorAccess). No key is minted; the dev makes
+  // one in the console. The app id is exported as SCW_OPERATOR_APPLICATION_ID into
+  // backend/.env (idempotent: reuses the app and only fills a blank id).
+  let operatorAppId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() ?? ''
+  if (needsCiKey) {
+    try {
+      const op = await setupOperatorApp({ callerSecretKey: scwSecretKey, projectId: scwProjectId, slug: appConfig.slug })
+      operatorAppId = op.applicationId
+      if (!process.env.SCW_OPERATOR_APPLICATION_ID?.trim()) {
+        writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_OPERATOR_APPLICATION_ID', operatorAppId)
+        process.env.SCW_OPERATOR_APPLICATION_ID = operatorAppId
+      }
+    } catch (error) {
+      console.warn(`${warningMark} Operator app setup failed: ${(error as Error).message}`)
+    }
+  }
+
   // Identity ids (applicationId, vmApplicationId, operatorPrincipal) are derived
   // from the IAM API and the VM reader key lives in Secret Manager, so stack
   // config only needs a non-secret bootstrap marker.
@@ -255,6 +277,12 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate keys"')}.`)
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`)
+  }
+  if (operatorAppId) {
+    console.info(
+      `  ${checkMark} Operator IAM app: ${pc.cyanBright(operatorAppId)} ${pc.dim('(SCW_OPERATOR_APPLICATION_ID, written to backend/.env)')}\n` +
+        `    ${pc.dim('Create an operator API key under it for bucket/refresh access:')} ${pc.cyanBright('https://console.scaleway.com/iam/api-keys')}`,
+    )
   }
   console.info(divider)
 

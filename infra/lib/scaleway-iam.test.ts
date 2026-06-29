@@ -171,4 +171,20 @@ describe('provisionScopedKey', () => {
     const { buildRules: _drop, ...noRules } = config
     await expect(provisionScopedKey(baseOpts, noRules)).rejects.toThrow(/buildRules is required/)
   })
+
+  it('skips key minting when mintKey is false (app + policy only)', async () => {
+    const { fn, calls } = makeFetch([
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [] } },
+      { method: 'POST', match: '/iam/v1alpha1/applications', body: { id: 'app-op', name: 'demo-demo-key' } },
+      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-op', name: 'demo-demo-key-policy' } },
+    ])
+    vi.stubGlobal('fetch', fn)
+
+    const result = await provisionScopedKey(baseOpts, { ...config, mintKey: false })
+
+    expect(result).toMatchObject({ accessKey: '', secretKey: '', applicationId: 'app-op' })
+    // No api-key reads, deletes, or creates — the human mints one in the console.
+    expect(calls.some((c) => c.url.includes('/api-keys'))).toBe(false)
+  })
 })

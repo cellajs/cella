@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_public')({
   staticData: { isAuth: false, boundary: 'public' },
   component: PublicLayout,
   beforeLoad: ({ location, cause }) => {
-    if (cause !== 'enter' || location.pathname === '/sign-out') return;
+    if (cause !== 'enter' || location.pathname === '/auth/sign-out') return;
 
     // Hydrate the current user in the background so public pages can show an
     // authenticated state when a session exists. This MUST NOT block rendering:

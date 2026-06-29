@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { appConfig } from 'shared';
 import { Img } from './primitives';
 
-const logoUrl = `${appConfig.productionUrl}/static/logo/logo.png`;
+const logoUrl = `${appConfig.productionUrl}/static/common/logo/logo.png`;
 
 /**
  * Email logo component using an image with a text fallback.

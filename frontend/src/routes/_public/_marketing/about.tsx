@@ -5,7 +5,7 @@ import appTitle from '~/utils/app-title';
 /**
  * Public about page describing the application.
  */
-export const Route = createFileRoute('/_public/about')({
+export const Route = createFileRoute('/_public/_marketing/about')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('About') }] }),
   component: AboutPage,

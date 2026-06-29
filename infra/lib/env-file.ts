@@ -15,6 +15,8 @@
  * the agent's hydration (agent/src/runtime-secrets.ts).
  */
 
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+
 export type EnvFileUndeliverableReason = 'empty' | 'multiline'
 
 export interface EnvFileDeliverability {
@@ -27,4 +29,13 @@ export function isEnvFileDeliverable(value: string): EnvFileDeliverability {
   if (value === '') return { ok: false, reason: 'empty' }
   if (value.includes('\n') || value.includes('\r')) return { ok: false, reason: 'multiline' }
   return { ok: true }
+}
+
+/** Set or replace a `KEY=value` line in a dotenv file, creating the file if absent. */
+export function writeEnvVar(path: string, key: string, value: string): void {
+  const existing = existsSync(path) ? readFileSync(path, 'utf8') : ''
+  const line = `${key}=${value}`
+  const re = new RegExp(`^${key}=.*$`, 'm')
+  const next = re.test(existing) ? existing.replace(re, line) : `${existing}${existing.endsWith('\n') || existing === '' ? '' : '\n'}${line}\n`
+  writeFileSync(path, next)
 }

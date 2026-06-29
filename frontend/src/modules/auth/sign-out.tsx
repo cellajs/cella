@@ -3,6 +3,7 @@ import { HeartIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from 'sdk';
+import { appConfig } from 'shared';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { flushStores } from '~/utils/flush-stores';
@@ -11,7 +12,7 @@ import { flushStores } from '~/utils/flush-stores';
 export function SignOut() {
   const { t } = useTranslation();
 
-  const { force } = useSearch({ from: '/_public/sign-out' });
+  const { force } = useSearch({ from: '/_public/auth/sign-out' });
 
   const signOutTriggeredRef = useRef(false);
 
@@ -30,7 +31,7 @@ export function SignOut() {
         toaster(t('c:already_signed_out'), 'warning');
       }
       // Force full page reload to ensure clean state
-      window.location.href = '/about';
+      window.location.href = appConfig.aboutUrl;
     };
 
     handleSignOut();

@@ -62,6 +62,11 @@ export interface ScopedKeyConfig {
    * policy it does not own.
    */
   managePolicy?: boolean
+  /**
+   * Whether to mint an API key. Defaults to `true`. Set `false` to provision
+   * only the application + policy and let a human mint a key in the console
+   * (operator app). The result's accessKey/secretKey are empty strings then. */
+  mintKey?: boolean
 }
 
 export interface ProvisionScopedKeyOptions {
@@ -184,6 +189,11 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   //    returns the secret_key at creation time, so pre-existing keys are
   //    unrecoverable dead weight — purging them keeps re-runs from accumulating
   //    orphans.
+  if (config.mintKey === false) {
+    log(`  ${checkMark} Key minting skipped — create one in the console for ${app.name}`)
+    return { accessKey: '', secretKey: '', applicationId: app.id, organizationId }
+  }
+
   const { api_keys: existingKeys = [] } = await scw<{ api_keys?: Array<{ access_key: string }> }>(
     callerSecretKey,
     'GET',

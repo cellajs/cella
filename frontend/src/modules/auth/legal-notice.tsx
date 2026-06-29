@@ -1,11 +1,11 @@
 import { type RefObject, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
+import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
+import { LegalText } from '~/modules/auth/legal/legal-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
-import { type LegalSubject, legalConfig } from '~/modules/marketing/legal/legal-config';
-import { LegalDialogNavProvider } from '~/modules/marketing/legal/legal-cross-link';
-import { LegalText } from '~/modules/marketing/legal/legal-text';
 import { Button } from '~/modules/ui/button';
 
 /**

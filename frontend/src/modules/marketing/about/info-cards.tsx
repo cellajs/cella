@@ -35,7 +35,7 @@ export function InfoCards() {
             >
               <div className="flex items-center space-x-2">
                 <img
-                  src={`/static/images/integrations/${id}.svg`}
+                  src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}
                   className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
                   loading="lazy"

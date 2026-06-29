@@ -68,6 +68,15 @@ export const projectId: string = requireEnv('SCW_DEFAULT_PROJECT_ID')
 /** Scaleway organization id — scopes the org-level IAM application lookups below. */
 export const organizationId: string = requireEnv('SCW_DEFAULT_ORGANIZATION_ID')
 
+/**
+ * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
+ * IAM application is granted full S3 access on the CI-scoped bucket policies, so
+ * an operator key under it can read/refresh buckets without being the CI deploy
+ * app. Bucket policies are deny-by-default: without this, even an org-admin or
+ * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
+ * Empty = only the CI deploy app + public reads, the default. */
+export const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
+
 /** CI deploy application id — the `<slug>-ci-deploy` principal CI authenticates as. */
 export const ciDeployApplicationId = scaleway.iam
   .getApplicationOutput({ name: `${appConfig.slug}-ci-deploy`, organizationId })

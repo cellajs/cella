@@ -108,7 +108,9 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
         persister: activePersister,
         dehydrateOptions: {
           // Public routes (!isActive): always persist. App routes: only leader persists after ready.
-          shouldDehydrateMutation: () => !isActive || (isReady && isLeader),
+          // Only paused mutations are persisted — they're the offline replay queue. Active/streaming
+          // mutations (e.g. AI chat SSE) can hold non-cloneable data (ReadableStream) and must be skipped.
+          shouldDehydrateMutation: (mutation) => mutation.state.isPaused && (!isActive || (isReady && isLeader)),
           shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
         },
       }}

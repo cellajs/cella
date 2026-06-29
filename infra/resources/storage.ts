@@ -11,11 +11,27 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
-import { naming, region, tags, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId } from '../pulumi-context'
+import { naming, region, tags, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
 
 // Derived from IAM by name.
 const applicationId = ciDeployApplicationId
 const vmApplicationId = vmReaderApplicationId
+
+// Optional operator application (from SCW_OPERATOR_APPLICATION_ID) granted full
+// S3 access alongside the CI deploy app, so a key under it can read & refresh
+// buckets. Bucket policies are deny-by-default, so without this only the CI app
+// (and public GetObject) can touch them. One Sid per bucket, omitted when unset
+// so existing forks see no policy change.
+const operatorAccess = (bucketName: pulumi.Input<string>) =>
+  operatorApplicationId
+    ? [{
+        Sid: 'OperatorAccess',
+        Effect: 'Allow',
+        Principal: { SCW: `application_id:${operatorApplicationId}` },
+        Action: ['s3:*'],
+        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+      }]
+    : []
 
 // Days before stale, content-hashed frontend chunks under `assets/` are
 // expired by Object Storage. Must outlive any reasonable open browser tab on
@@ -95,6 +111,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
           pulumi.interpolate`${frontendBucket.name}/*`,
         ],
       },
+      ...operatorAccess(frontendBucket.name),
     ],
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }], dependsOn: [frontendWebsite] })
@@ -149,6 +166,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
           pulumi.interpolate`${publicUploadsBucket.name}/*`,
         ],
       },
+      ...operatorAccess(publicUploadsBucket.name),
     ],
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
@@ -218,6 +236,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
           pulumi.interpolate`${bootDiagBucket.name}/*`,
         ],
       },
+      ...operatorAccess(bootDiagBucket.name),
     ],
   }),
 })

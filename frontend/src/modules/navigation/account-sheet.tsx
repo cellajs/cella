@@ -149,7 +149,7 @@ export const AccountSheet = () => {
           icon={LogOutIcon}
           id="btn-signout"
           label={t('c:sign_out')}
-          action="/sign-out"
+          action="/auth/sign-out"
         />
       </div>
 

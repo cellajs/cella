@@ -27,7 +27,7 @@ export function DeleteSelf({ callback, dialog: isDialog }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userQueryKeys.detail.byId(user.id) });
 
-      navigate({ to: '/sign-out', replace: true, search: { force: true } });
+      navigate({ to: '/auth/sign-out', replace: true, search: { force: true } });
       if (isDialog) removeDialog();
 
       callback?.({ data: user, status: 'success' });

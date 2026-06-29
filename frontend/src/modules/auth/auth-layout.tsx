@@ -1,8 +1,9 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
+import { appConfig } from 'shared';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
-import { Logo } from '~/modules/marketing/logo';
+import { Logo } from '~/modules/common/logo';
 
 const BgAnimation = lazy(() => import('~/modules/common/bg-animation/bg-animation'));
 
@@ -12,7 +13,7 @@ export function AuthLayout() {
   const pathname = (resolvedLocation ?? location).pathname;
   const isSignInPage = pathname === '/auth/authenticate';
 
-  const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
+  const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: appConfig.aboutUrl }];
 
   if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
