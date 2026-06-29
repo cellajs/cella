@@ -33,7 +33,7 @@ import {
   createWorktree,
   ensureRemote,
   fetch,
-  fetchSha,
+  fetchUpstreamTags,
   fileExistsAtRef,
   fileExistsInWorktree,
   getCommitInfo,
@@ -49,6 +49,8 @@ import {
   mergeAbort,
   removeFileFromWorktree,
   removeMergeHead,
+  resolveLatestReleaseTag,
+  resolvePinnedReleaseTag,
   restoreToHead,
   storeLastSyncRef,
 } from '../utils/git';
@@ -380,7 +382,7 @@ export async function runMergeEngine(
     onStep?: StepCallback;
   },
 ): Promise<MergeResult> {
-  const { forkPath, upstreamRef } = config;
+  const { forkPath } = config;
   const worktreePath = getWorktreePath(forkPath);
   const { apply, onProgress, onStep } = options;
 
@@ -396,26 +398,41 @@ export async function runMergeEngine(
   try {
     // Setup upstream remote
     onProgress?.('setting up upstream remote...');
-    const { remoteName, pinnedSha } = resolveUpstream(config.settings);
+    const { remoteName, track: configTrack, tag, branchRef } = resolveUpstream(config.settings);
+    // A per-run --track flag (config.track) overrides the configured tracking mode.
+    const track = config.track ?? configTrack;
     await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
-    onStep?.('remote configured', `${upstreamRef} → ${config.settings.upstreamUrl}`);
 
-    // Fetch upstream
+    // Fetch upstream (branches, plus release tags into a fork-safe namespace).
     onProgress?.(`fetching upstream (${remoteName})...`);
     await fetch(forkPath, remoteName);
 
-    // When pinned, also fetch the exact SHA so it's guaranteed reachable even
-    // if it predates a shallow branch fetch, then verify the ref resolves to it.
-    if (pinnedSha) {
-      await fetchSha(forkPath, remoteName, pinnedSha);
-      const resolved = await getCommitInfo(forkPath, upstreamRef);
-      if (resolved.hash !== pinnedSha) {
-        throw new Error(
-          `upstreamPinnedSha mismatch: config pins ${pinnedSha} but ref resolves to ${resolved.hash}. ` +
-            'Bump upstreamPinnedSha in cella.config.ts via PR after reviewing upstream commits.',
-        );
+    // Resolve the concrete ref to merge from. Release tracking (default) syncs to a
+    // published release tag; branch tracking follows the upstream branch tip.
+    let upstreamRef = branchRef;
+    let releaseTag: string | undefined;
+    if (track === 'release') {
+      await fetchUpstreamTags(forkPath, remoteName);
+      if (tag) {
+        upstreamRef = await resolvePinnedReleaseTag(forkPath, remoteName, tag);
+        releaseTag = tag;
+      } else {
+        const latest = await resolveLatestReleaseTag(forkPath, remoteName);
+        if (!latest) {
+          throw new Error(
+            `no upstream releases (v*) found on '${remoteName}'. Set upstreamTrack: 'branch' to follow ${branchRef}, ` +
+              `or check that ${config.settings.upstreamUrl} publishes release tags.`,
+          );
+        }
+        upstreamRef = latest.ref;
+        releaseTag = latest.tag;
       }
     }
+
+    // Expose the resolved ref to downstream steps (packages/analyze read config.upstreamRef
+    // after the engine runs). The static fallback set at CLI parse time is the branch tip.
+    config.upstreamRef = upstreamRef;
+    onStep?.('remote configured', `${releaseTag ?? upstreamRef} → ${config.settings.upstreamUrl}`);
 
     // Get GitHub base URLs for commit links
     const upstreamGitHubUrl = getGitHubBaseUrl(config.settings.upstreamUrl);
@@ -480,7 +497,7 @@ export async function runMergeEngine(
             autoMergedFiles,
             {
               upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
-              upstreamBranch: config.settings.upstreamBranch,
+              upstreamBranch: config.settings.upstreamBranch ?? 'main',
               fileLinkMode: config.settings.fileLinkMode,
               upstreamViewPath,
               forkPath,
@@ -508,7 +525,9 @@ export async function runMergeEngine(
         summary,
         worktreePath: forkPath,
         conflicts: remainingConflicts,
-        upstreamBranch: config.settings.upstreamBranch,
+        upstreamBranch: config.settings.upstreamBranch ?? 'main',
+        upstreamRef,
+        upstreamTag: releaseTag,
         upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
         forkGitHubUrl: forkGitHubUrl ?? undefined,
         upstreamCommit,
@@ -559,7 +578,9 @@ export async function runMergeEngine(
       summary,
       worktreePath,
       conflicts: potentialConflicts,
-      upstreamBranch: config.settings.upstreamBranch,
+      upstreamBranch: config.settings.upstreamBranch ?? 'main',
+      upstreamRef,
+      upstreamTag: releaseTag,
       upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
       forkGitHubUrl: forkGitHubUrl ?? undefined,
       upstreamCommit,

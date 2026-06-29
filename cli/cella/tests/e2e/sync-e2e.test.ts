@@ -18,6 +18,7 @@ import {
   renameFileAndCommit,
   resetFork,
   type TestEnv,
+  tagUpstream,
 } from './helpers/test-env';
 
 describe('sync e2e', () => {
@@ -660,6 +661,91 @@ describe('sync e2e', () => {
       const behindFile = result.files.find((f) => f.path === 'squash-file.ts');
       expect(behindFile).toBeDefined();
       expect(behindFile?.status).toBe('behind');
+    });
+  });
+
+  describe('release tracking', () => {
+    it('should sync to the latest release tag, not the untagged branch tip', async () => {
+      // Released change (tagged) followed by an unreleased change (no tag).
+      makeCommit(env.upstreamPath, {
+        files: { 'released.ts': '// released\nexport const r = 1;\n' },
+        message: 'feat: released change',
+      });
+      tagUpstream(env.upstreamPath, 'v0.1.0');
+      makeCommit(env.upstreamPath, {
+        files: { 'unreleased.ts': '// unreleased\nexport const u = 1;\n' },
+        message: 'feat: unreleased change',
+      });
+
+      fetchUpstream(env.forkPath);
+      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release', mergeStrategy: 'merge' });
+      const result = await runSync(config);
+
+      expect(result.success).toBe(true);
+      expect(result.upstreamTag).toBe('v0.1.0');
+      // Released file is synced; the untagged commit is not pulled in.
+      expect(fileExists(env.forkPath, 'released.ts')).toBe(true);
+      expect(fileExists(env.forkPath, 'unreleased.ts')).toBe(false);
+    });
+
+    it('should sync to a pinned release tag instead of the latest', async () => {
+      makeCommit(env.upstreamPath, {
+        files: { 'v1.ts': '// v1\nexport const a = 1;\n' },
+        message: 'feat: v1 change',
+      });
+      tagUpstream(env.upstreamPath, 'v0.1.0');
+      makeCommit(env.upstreamPath, {
+        files: { 'v2.ts': '// v2\nexport const b = 1;\n' },
+        message: 'feat: v2 change',
+      });
+      tagUpstream(env.upstreamPath, 'v0.2.0');
+
+      fetchUpstream(env.forkPath);
+      const config = buildRuntimeConfig(env, {
+        service: 'sync',
+        track: 'release',
+        tag: 'v0.1.0',
+        mergeStrategy: 'merge',
+      });
+      const result = await runSync(config);
+
+      expect(result.success).toBe(true);
+      expect(result.upstreamTag).toBe('v0.1.0');
+      expect(fileExists(env.forkPath, 'v1.ts')).toBe(true);
+      expect(fileExists(env.forkPath, 'v2.ts')).toBe(false);
+    });
+
+    it('should error when release tracking finds no release tags', async () => {
+      makeCommit(env.upstreamPath, {
+        files: { 'untagged.ts': '// untagged\nexport const x = 1;\n' },
+        message: 'feat: untagged change',
+      });
+
+      fetchUpstream(env.forkPath);
+      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release', mergeStrategy: 'merge' });
+
+      await expect(runSync(config)).rejects.toThrow(/no upstream releases/);
+    });
+
+    it('should let --track branch override release config to follow the untagged tip', async () => {
+      // Release-track config, but no release tags exist yet.
+      makeCommit(env.upstreamPath, {
+        files: { 'tip.ts': '// tip\nexport const t = 1;\n' },
+        message: 'feat: untagged tip change',
+      });
+
+      fetchUpstream(env.forkPath);
+      const config = buildRuntimeConfig(env, {
+        service: 'sync',
+        track: 'release',
+        trackOverride: 'branch',
+        mergeStrategy: 'merge',
+      });
+      const result = await runSync(config);
+
+      expect(result.success).toBe(true);
+      expect(result.upstreamTag).toBeUndefined();
+      expect(fileExists(env.forkPath, 'tip.ts')).toBe(true);
     });
   });
 });

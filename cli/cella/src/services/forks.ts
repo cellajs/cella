@@ -10,7 +10,7 @@ import process from 'node:process';
 import { Separator, select } from '@inquirer/prompts';
 import type { ForkConfig, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { loadConfig } from '../utils/config';
+import { loadConfig, resolveUpstream } from '../utils/config';
 import { warningMark } from '../utils/display';
 import { getCommitInfo, getCurrentBranch, getStoredSyncRef, git, isClean } from '../utils/git';
 import { printNoForksHint, validateForkPath } from './fork-utils';
@@ -142,8 +142,8 @@ async function syncFork(config: RuntimeConfig, forkPath: string, forkName: strin
   await preflightFork(forkPath, pushBranch);
 
   // Build runtime config for the fork
-  const remoteName = forkConfig.settings.upstreamRemoteName || 'cella-upstream';
-  const upstreamRef = `${remoteName}/${forkConfig.settings.upstreamBranch}`;
+  const { branchRef } = resolveUpstream(forkConfig.settings);
+  const upstreamRef = branchRef;
 
   const forkRuntimeConfig: RuntimeConfig = {
     ...forkConfig,
@@ -217,7 +217,7 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
     const resolvedForkPath = resolve(config.forkPath, selectedPath);
     const selectedFork = forks.find((f) => f.localPath === selectedPath);
     const forkName = selectedFork?.name ?? basename(resolvedForkPath);
-    const pushBranch = selectedFork?.pushBranch ?? config.settings.workingBranch;
+    const pushBranch = selectedFork?.pushBranch ?? config.settings.workingBranch ?? 'main';
 
     await syncFork(config, resolvedForkPath, forkName, pushBranch);
 

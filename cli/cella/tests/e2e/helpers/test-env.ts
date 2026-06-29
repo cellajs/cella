@@ -171,6 +171,13 @@ export function fetchUpstream(forkPath: string): void {
 }
 
 /**
+ * Create an annotated tag at the current HEAD of a repo (simulates a release).
+ */
+export function tagUpstream(repoPath: string, tag: string): void {
+  exec(`git tag -a ${tag} -m "release ${tag}"`, repoPath);
+}
+
+/**
  * Build a RuntimeConfig for testing without going through CLI.
  */
 export function buildRuntimeConfig(
@@ -180,14 +187,27 @@ export function buildRuntimeConfig(
     pinned?: string[];
     ignored?: string[];
     mergeStrategy?: 'merge' | 'squash';
+    track?: 'release' | 'branch';
+    tag?: string;
+    trackOverride?: 'release' | 'branch';
   } = {},
 ): RuntimeConfig {
-  const { service = 'analyze', pinned = [], ignored = [], mergeStrategy = 'squash' } = options;
+  const {
+    service = 'analyze',
+    pinned = [],
+    ignored = [],
+    mergeStrategy = 'squash',
+    track = 'branch',
+    tag,
+    trackOverride,
+  } = options;
 
   const config: CellaCliConfig = {
     settings: {
       upstreamUrl: env.upstreamPath,
       upstreamBranch: 'main',
+      upstreamTrack: track,
+      upstreamTag: tag,
       workingBranch: 'main',
       mergeStrategy,
     },
@@ -202,6 +222,7 @@ export function buildRuntimeConfig(
     forkPath: env.forkPath,
     upstreamRef: `${UPSTREAM_REMOTE}/main`,
     service,
+    track: trackOverride,
     logFile: false,
     list: false,
     json: false,

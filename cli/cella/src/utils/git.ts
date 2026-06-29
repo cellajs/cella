@@ -113,12 +113,52 @@ export async function fetch(cwd: string, remoteName: string): Promise<void> {
 }
 
 /**
- * Fetch a specific commit SHA from a remote. Used when pinning to ensure
- * the SHA is reachable even if it predates a shallow fetch of the branch tip.
- * Requires `uploadpack.allowReachableSHA1InWant` on the remote (enabled on github.com).
+ * Fetch upstream tags into a remote-scoped namespace (`refs/<remoteName>/tags/*`)
+ * instead of the local `refs/tags/*`. This keeps cella's release tags from
+ * colliding with the fork's own release tags (forks run their own release-please).
+ * `--no-tags` prevents git from also writing them into `refs/tags/*`.
  */
-export async function fetchSha(cwd: string, remoteName: string, sha: string): Promise<void> {
-  await git(['fetch', remoteName, sha], cwd);
+export async function fetchUpstreamTags(cwd: string, remoteName: string): Promise<void> {
+  await git(['fetch', remoteName, '--no-tags', `+refs/tags/*:refs/${remoteName}/tags/*`], cwd);
+}
+
+/**
+ * Resolve the latest upstream release tag (semver-sorted `v*` tag) from the
+ * remote-scoped tag namespace. Excludes non-template tags (e.g. `create-cella-v*`).
+ * Returns the short tag name and its full ref, or null when no release exists.
+ */
+export async function resolveLatestReleaseTag(
+  cwd: string,
+  remoteName: string,
+): Promise<{ tag: string; ref: string } | null> {
+  const prefix = `refs/${remoteName}/tags/`;
+  const output = await git(['for-each-ref', '--sort=-version:refname', '--format=%(refname)', prefix], cwd, {
+    ignoreErrors: true,
+  });
+  if (!output) return null;
+  for (const line of output.split('\n')) {
+    const ref = line.trim();
+    if (!ref) continue;
+    const tag = ref.slice(prefix.length);
+    // Template release tags look like 'v0.5.0'; skip component tags like 'create-cella-v*'.
+    if (/^v\d/.test(tag)) return { tag, ref };
+  }
+  return null;
+}
+
+/**
+ * Resolve a pinned upstream release tag to its remote-scoped ref, verifying the
+ * tag exists locally after a tag fetch.
+ */
+export async function resolvePinnedReleaseTag(cwd: string, remoteName: string, tag: string): Promise<string> {
+  const ref = `refs/${remoteName}/tags/${tag}`;
+  const verified = await git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], cwd, { ignoreErrors: true });
+  if (!verified) {
+    throw new Error(
+      `upstreamTag '${tag}' not found in '${remoteName}' releases. Check the tag name (e.g. 'v0.5.0') or that upstream publishes release tags.`,
+    );
+  }
+  return ref;
 }
 
 /**

@@ -47,7 +47,7 @@ Service-specific help is available via `pnpm cella <service> --help`.
 | Service | Useful options |
 |---------|----------------|
 | analyze | `--log`, `--list`, `--json`, `--scope <all\|risk\|protected>`, `--diff <path>`, `--open-diff <path>` |
-| sync | `--log`, `--hard`, `--unpinned` |
+| sync | `--log`, `--hard`, `--unpinned`, `--track <release\|branch>` |
 | audit | `--list`, `--force`, `--check-overrides` |
 | forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
 | contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
@@ -64,6 +64,23 @@ Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible d
 
 - **`ignored`** - Files completely excluded from sync (existing and new)
 - **`pinned`** - Full fork control: existing, modified, or deleted files are preserved
+
+## Upstream tracking
+
+The sync CLI tracks upstream cella one of two ways, set via `settings.upstreamTrack`:
+
+| Mode | Behavior | For |
+|------|----------|-----|
+| `release` (default) | Sync to a published cella release tag (`v*`). Stable and reviewable — each bump maps to a changelog. | Most forks |
+| `branch` | Follow the bleeding-edge tip of `settings.upstreamBranch`. | cella maintainers, active development on unreleased changes |
+
+With `release`, the **latest** release is used unless you pin a specific one with `settings.upstreamTag` (e.g. `'v0.5.0'`), which you bump via PR after reviewing the release's changelog — like a human-readable lockfile entry.
+
+For a one-off run that ignores the configured mode, pass `--track`:
+
+```bash
+pnpm cella sync --track branch   # follow the tip once, without editing config
+```
 
 ## Merge Strategy
 
@@ -177,8 +194,8 @@ forks: [
   {
     name: 'raak',
     localPath: '../raak',     // Path to the local fork clone
-    pullBranch: 'development', // Branch cella pulls contributions FROM
-    pushBranch: 'development', // Branch cella syncs changes INTO (forks service)
+    pullBranch: 'main',       // Branch cella pulls contributions FROM
+    pushBranch: 'main',       // Branch cella syncs changes INTO (forks service)
   },
 ],
 ```

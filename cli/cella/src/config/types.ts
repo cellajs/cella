@@ -33,25 +33,39 @@ export interface SyncSettings {
   /** Upstream repository URL (e.g., 'git@github.com:cellajs/cella.git') */
   upstreamUrl: string;
 
-  /** Upstream branch to sync from (e.g., 'development') */
-  upstreamBranch: string;
+  /**
+   * Upstream branch, used for `upstreamTrack: 'branch'` and for GitHub file links.
+   * Defaults to 'main'.
+   */
+  upstreamBranch?: string;
 
   /**
-   * Optional commit SHA to pin upstream to. When set, analyze/sync operations
-   * fetch and diff against this exact commit instead of the tip of `upstreamBranch`.
-   * Bump via PR to make upstream changes reviewable — analogous to a lockfile entry
-   * for the upstream template. Recommended for CI to defend against a compromised
-   * upstream pushing unreviewed commits between sync runs.
-   *
-   * Example: 'a1b2c3d4e5f6...' (full 40-char SHA)
+   * How to track upstream cella. Defaults to 'release'.
+   * - 'release' (default): sync to a published cella release tag (`v*`). Stable and
+   *   reviewable — each bump maps to a changelog. Uses the latest release unless
+   *   `upstreamTag` pins a specific one.
+   * - 'branch': follow the bleeding-edge tip of `upstreamBranch`. For cella
+   *   maintainers and forks doing active development on top of unreleased changes.
    */
-  upstreamPinnedSha?: string;
+  upstreamTrack?: 'release' | 'branch';
+
+  /**
+   * Pin to a specific cella release tag (e.g. 'v0.5.0') instead of the latest.
+   * Only used when `upstreamTrack` is 'release' (the default). Bump via PR after
+   * reviewing the release's changelog — analogous to a lockfile entry for the
+   * upstream template, but human-readable and tied to semver.
+   */
+  upstreamTag?: string;
 
   /** Git remote name for upstream (default: 'cella-upstream') */
   upstreamRemoteName?: string;
 
-  /** This repo's working branch that upstream changes are synced into (e.g., 'development') */
-  workingBranch: string;
+  /**
+   * Fork branch that must be checked out to receive upstream syncs (preflight
+   * guardrail). This is a fork-side branch, unrelated to cella's branching.
+   * Defaults to 'main'.
+   */
+  workingBranch?: string;
 
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
@@ -168,10 +182,11 @@ export const cellaConfigSchema = z
     settings: z
       .object({
         upstreamUrl: z.string().min(1),
-        upstreamBranch: z.string().min(1),
-        upstreamPinnedSha: z.string().optional(),
+        upstreamBranch: z.string().min(1).optional(),
+        upstreamTrack: z.enum(['release', 'branch']).optional(),
+        upstreamTag: z.string().optional(),
         upstreamRemoteName: z.string().optional(),
-        workingBranch: z.string().min(1),
+        workingBranch: z.string().min(1).optional(),
         packageJsonSync: z
           .array(
             z.enum([
@@ -271,6 +286,12 @@ export interface RuntimeConfig extends CellaCliConfig {
    */
   unpinned?: boolean;
 
+  /**
+   * Override upstream tracking for this run (analyze/sync), ignoring `settings.upstreamTrack`.
+   * 'branch' follows the upstream branch tip (bleeding edge); 'release' uses a release tag.
+   */
+  track?: 'release' | 'branch';
+
   /** Bypass pnpm metadata cache for fresh registry data (audit service) */
   force?: boolean;
 
@@ -340,6 +361,10 @@ export interface MergeResult {
   success: boolean;
   /** Upstream branch name for file links */
   upstreamBranch?: string;
+  /** Resolved concrete upstream ref that was merged (branch ref or release tag ref) */
+  upstreamRef?: string;
+  /** Upstream release tag synced (when tracking releases) */
+  upstreamTag?: string;
   files: AnalyzedFile[];
   summary: AnalysisSummary;
   worktreePath: string;

@@ -154,22 +154,14 @@ jobs:
       - name: Run sync CLI unit tests
         run: pnpm --filter @cellajs/cli test
 
-      - name: Verify upstream is pinned (supply-chain guard)
-        # CI must fetch a reviewed, pinned upstream SHA — never a moving branch tip.
-        # Bump `settings.upstreamPinnedSha` in cella.config.ts via PR after reviewing
-        # the upstream diff. This neutralises a compromised upstream branch.
-        run: |
-          if ! grep -qE "upstreamPinnedSha:\s*'[0-9a-f]{40}'" cella.config.ts; then
-            echo "::error file=cella.config.ts::settings.upstreamPinnedSha must be set to a 40-char commit SHA in CI"
-            exit 1
-          fi
-
       - name: Run sync analysis (dry-run)
         # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
         # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
+        # --track branch keeps this a stable tool smoke-test independent of whether
+        # upstream has cut a release yet (release resolution is covered by e2e tests).
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          pnpm cella analyze
+          pnpm cella analyze --track branch
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)

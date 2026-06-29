@@ -6,12 +6,13 @@ import { defineConfig } from './cli/cella/config';
 export default defineConfig({
   settings: {
     upstreamUrl: 'git@github.com:cellajs/cella.git',
-    upstreamBranch: 'development',
-    // Pin to a reviewed upstream commit. Bump via PR after reviewing the diff
-    // (https://github.com/cellajs/cella/compare/<old>...<new>). CI enforces this
-    // is set to defend against a compromised upstream branch.
-    // upstreamPinnedSha: '7ec622f8ea864b392daf9b176966f78ab29d7f82',
-    workingBranch: 'development',
+    upstreamBranch: 'main',
+    // Sync to the latest cella release by default (recommended): stable, reviewable,
+    // and tied to a changelog. To pin a specific release, set `upstreamTag: 'v0.5.0'`
+    // and bump it via PR. For active development on unreleased cella changes, set
+    // `upstreamTrack: 'branch'` to follow the tip of `upstreamBranch` instead.
+    // upstreamTrack: 'release',
+    // upstreamTag: 'v0.5.0',
     syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
     mergeStrategy: 'squash',
@@ -22,7 +23,7 @@ export default defineConfig({
   // - pullBranch: branch cella pulls contributions from (contributions service)
   // - pushBranch: branch cella syncs changes into (forks service)
   forks: [
-    { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'development', pushBranch: 'development' },
+    { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'main', pushBranch: 'main' },
   ],
 
   // File overrides
