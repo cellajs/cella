@@ -4,24 +4,9 @@ name: Deploy
 permissions: {}
 
 on:
-  # Automatic deployment to production on main branch
-  push:
-    branches:
-      - main
-    paths:
-      - 'backend/**'
-      - 'cdc/**'
-      - 'yjs/**'
-      - 'frontend/**'
-      - 'infra/**'
-      - 'shared/**'
-      - 'locales/**'
-      - 'json/**'
-      - 'sdk/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/deploy.yml'
+  # Automatic deployment to production only when a release is cut.
+  release:
+    types: [published]
 
   # Manual deployment for any environment
   workflow_dispatch:

@@ -11,6 +11,10 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 There is no manual `pnpm version` / `git push --tags` step anymore.
 
+### Deploys happen on release, not per merge
+
+Production deploys are triggered only when the `cella` template GitHub Release is published — not on every merge to `main`. The deploy workflow ([.github/workflows/deploy.yml](../.github/workflows/deploy.yml)) listens for `release: published`, so a deploy is tied to release-please cutting a release. `@cellajs/create-cella` ships as a draft release and does not trigger a deploy. Manual deploys to staging/production are still available via `workflow_dispatch`.
+
 ### Release gate (security + e2e)
 
 Heavy checks we don't want on every feature PR run **only at release time**, inside [.github/workflows/release.yml](../.github/workflows/release.yml), not as branch-protection required checks:
