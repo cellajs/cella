@@ -1,0 +1,161 @@
+import {
+  AdvancedMarker,
+  APIProvider,
+  ControlPosition,
+  Map as GMap,
+  InfoWindow,
+  MapControl,
+  useAdvancedMarkerRef,
+} from '@vis.gl/react-google-maps';
+import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import { useMountedState } from '~/hooks/use-mounted-state';
+import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { Button } from '~/modules/ui/button';
+import { useUIStore } from '~/modules/ui/ui-store';
+import Logo from '/static/common/logo/logo-icon-only.svg';
+
+type MapConfig = {
+  id: string;
+  label: string;
+  mapId?: string;
+  mapTypeId?: string;
+};
+
+const mapStyles: MapConfig[] = [
+  {
+    id: 'light',
+    label: 'Light',
+    mapId: '49ae42fed52588c3',
+    mapTypeId: 'roadmap',
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    mapId: '739af084373f96fe',
+    mapTypeId: 'roadmap',
+  },
+];
+
+function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: number } }) {
+  const { t } = useTranslation();
+  const [markerRef, marker] = useAdvancedMarkerRef();
+  const [infowindowOpen, setInfowindowOpen] = useState(true);
+
+  return (
+    <>
+      <AdvancedMarker ref={markerRef} onClick={() => setInfowindowOpen(true)} position={position} title="More info">
+        <img src={Logo} width="30" height="30" alt={appConfig.name} />
+      </AdvancedMarker>
+
+      {infowindowOpen && (
+        <InfoWindow headerDisabled={true} shouldFocus={false} anchor={marker}>
+          <div className="min-w-36 p-1 text-slate-800 text-xs">
+            <div className="flex items-center justify-between">
+              <strong className="text-sm">{appConfig.company.name}</strong>
+              <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
+                <XIcon size={14} />
+              </Button>
+            </div>
+            <span className="block">{appConfig.company.streetAddress}</span>
+            <span className="block">{appConfig.company.country}</span>
+            <a
+              href={appConfig.company.googleMapsUrl}
+              target="_blank"
+              className="focus-effect mt-1 flex rounded-md p-1 font-semibold"
+              rel="noreferrer"
+            >
+              <MilestoneIcon size={12} strokeWidth={2.5} className="mr-1" />
+              {t('c:get_directions')}
+              <ArrowUpRightIcon size={12} className="ml-1 opacity-50" />
+            </a>
+          </div>
+        </InfoWindow>
+      )}
+    </>
+  );
+}
+
+type CustomZoomControlProps = {
+  controlPosition: ControlPosition;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+};
+
+function CustomZoomControl({ controlPosition, zoom, onZoomChange }: CustomZoomControlProps) {
+  return (
+    <MapControl position={controlPosition}>
+      <div className="m-2 flex flex-col p-1">
+        <Button
+          onClick={() => onZoomChange(zoom + 0.5)}
+          size="micro"
+          variant="outlineGhost"
+          className="rounded-b-none border-b-0"
+        >
+          <PlusIcon size={14} />
+        </Button>
+        <Button onClick={() => onZoomChange(zoom - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
+          <MinusIcon size={14} />
+        </Button>
+      </div>
+    </MapControl>
+  );
+}
+
+function ContactFormMap() {
+  const mode = useUIStore((state) => state.mode);
+  const [zoom, setZoom] = useState(appConfig.company.mapZoom);
+  const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
+  const { hasStarted } = useMountedState();
+
+  if (!appConfig.company.coordinates || !appConfig.googleMapsKey) return null;
+
+  return (
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
+      )}
+    >
+      <div className="h-full w-full">
+        <div className="h-full w-full overflow-hidden rounded-sm bg-accent">
+          <APIProvider apiKey={appConfig.googleMapsKey} libraries={['marker']}>
+            <AnimatePresence>
+              {hasStarted && (
+                <motion.div
+                  key="gmap"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  className="h-full w-full"
+                >
+                  <GMap
+                    mapId={mapConfig.mapId || null}
+                    mapTypeId={mapConfig.mapTypeId}
+                    gestureHandling="greedy"
+                    disableDefaultUI
+                    defaultCenter={appConfig.company.coordinates}
+                    zoom={zoom}
+                    defaultZoom={appConfig.company.mapZoom}
+                  >
+                    <MarkerWithInfoWindow position={appConfig.company.coordinates} />
+                    <CustomZoomControl
+                      controlPosition={ControlPosition.LEFT_BOTTOM}
+                      zoom={zoom}
+                      onZoomChange={setZoom}
+                    />
+                  </GMap>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </APIProvider>
+        </div>
+      </div>
+    </ErrorBoundary>
+  );
+}
+export default ContactFormMap;

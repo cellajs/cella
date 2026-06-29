@@ -1,0 +1,325 @@
+[
+  {
+    "operationId": "getRequests",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Requests",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Request",
+              "items": {
+                "type": "object",
+                "description": "A contact or waitlist submission from an unauthenticated user.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "message": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "email": { "type": "string", "required": true, "maxLength": 255 },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["waitlist", "newsletter", "contact"]
+                  },
+                  "wasInvited": { "type": "boolean", "required": true }
+                },
+                "ref": "#/components/schemas/Request"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
+              "email": "melinda_donnelly-bashirian18@gmail.com",
+              "type": "contact",
+              "message": "Canonicus capio aedificium consequuntur velum.",
+              "createdAt": "2024-09-19T17:10:46.529Z",
+              "wasInvited": false
+            },
+            {
+              "id": "d772a771-fc15-4065-be63-546594859fc3",
+              "email": "nash_effertz@gmail.com",
+              "type": "contact",
+              "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
+              "createdAt": "2024-03-06T02:06:40.920Z",
+              "wasInvited": false
+            }
+          ],
+          "total": 2
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false, "maxLength": 255 },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["id", "email", "type", "createdAt"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "seqCursor": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createRequest",
+    "responses": [
+      {
+        "status": 201,
+        "description": "Requests",
+        "name": "Request",
+        "ref": "#/components/schemas/Request",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A contact or waitlist submission from an unauthenticated user.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "message": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "email": { "type": "string", "required": true, "maxLength": 255 },
+            "type": {
+              "type": "string",
+              "required": true,
+              "enum": ["waitlist", "newsletter", "contact"]
+            },
+            "wasInvited": { "type": "boolean", "required": true }
+          },
+          "ref": "#/components/schemas/Request",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
+          "email": "ahmed.braun57@gmail.com",
+          "type": "contact",
+          "message": "Sapiente antiquus temptatio.",
+          "createdAt": "2024-12-03T03:40:42.368Z",
+          "wasInvited": true
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "required": true,
+            "format": "email",
+            "maxLength": 255
+          },
+          "type": {
+            "type": "string",
+            "required": true,
+            "enum": ["waitlist", "newsletter", "contact"]
+          },
+          "message": {
+            "type": ["string", "null"],
+            "required": true,
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteRequests",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

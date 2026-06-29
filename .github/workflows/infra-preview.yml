@@ -1,0 +1,118 @@
+# =============================================================================
+# Infra preview on PRs
+# =============================================================================
+# Runs `pulumi preview` against the production stack for any PR that touches
+# infrastructure code, and posts the plan as a job summary so reviewers can
+# see what would change before merging. Read-only — never calls `pulumi up`.
+# =============================================================================
+
+name: Infra preview
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - 'shared/**'
+      - '.github/workflows/infra-preview.yml'
+
+concurrency:
+  group: infra-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  preview:
+    # Skip preview for PRs from forks — they cannot access repo secrets, and
+    # we do not want to expose Scaleway/Pulumi credentials to fork code.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Source SCW_*/PULUMI_CONFIG_PASSPHRASE from the production Environment.
+    # Repo-level secrets were removed so credentials live in one place only.
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        run: curl -fsSL https://get.pulumi.com | sh -s && echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Derive stack + state bucket
+        id: derive
+        run: pnpm --filter infra print-deploy-env production >> $GITHUB_OUTPUT
+
+      - name: Ensure Pulumi state bucket exists
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: pnpm --filter infra ensure-state-bucket
+
+      - name: Login to S3 state backend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          STATE_BUCKET: ${{ steps.derive.outputs.state_bucket }}
+          REGION: ${{ steps.derive.outputs.region }}
+        run: pulumi login "s3://$STATE_BUCKET?endpoint=s3.$REGION.scw.cloud&region=$REGION"
+
+      # Pre-install the Scaleway resource plugin (authenticated, retryable) so
+      # `pulumi preview` does not hit the unauthenticated 60-req/hr GitHub plugin
+      # download limit that GitHub-hosted runners routinely exhaust (403).
+      - name: Pre-install Pulumi providers
+        working-directory: infra
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('@pulumiverse/scaleway/package.json').version")
+          for attempt in 1 2 3 4 5; do
+            if pulumi plugin install resource scaleway "v$version"; then
+              echo "scaleway plugin v$version installed"
+              break
+            fi
+            echo "plugin install attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+
+      - name: Pulumi preview
+        working-directory: infra
+        env:
+          # AWS_* = state-bucket S3 access only. The Scaleway provider authenticates
+          # from SCW_* env (the CI deploy key) — scaleway:accessKey/secretKey/projectId
+          # are no longer stored in stack config.
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STACK: ${{ steps.derive.outputs.pulumi_stack }}
+          # Pulumi program selects shared config by APP_MODE; set it from the stack mode.
+          APP_MODE: ${{ steps.derive.outputs.environment }}
+        run: |
+          pulumi stack select "$STACK"
+          {
+            echo '## Pulumi preview — `'"$STACK"'`'
+            echo ''
+            echo '```'
+            pulumi preview --stack "$STACK" --diff 2>&1 | tee /tmp/preview.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

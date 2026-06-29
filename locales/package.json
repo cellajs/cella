@@ -1,0 +1,8 @@
+{
+"name": "locales",
+"description": "i18next translation resources and locale exports",
+"type": "module",
+"exports": {
+  ".": "./index.ts"
+}
+}

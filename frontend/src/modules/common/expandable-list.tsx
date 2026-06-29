@@ -1,0 +1,71 @@
+import { ChevronDownIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+
+interface ExpandableListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  initialDisplayCount: number;
+  alwaysShowAll?: boolean;
+  expandText: string;
+}
+
+/**
+ * A list that can be expanded to show all items.
+ */
+export const ExpandableList = <T,>({
+  items,
+  renderItem,
+  initialDisplayCount,
+  alwaysShowAll = false,
+  expandText,
+}: ExpandableListProps<T>) => {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(alwaysShowAll);
+  const hasExpandedOnce = useRef(false);
+
+  return (
+    <>
+      {items.map((item, index) => {
+        const isInitiallyVisible = index < initialDisplayCount;
+        const shouldAnimate = hasExpandedOnce.current && !isInitiallyVisible;
+
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
+          <AnimatePresence key={index}>
+            {isInitiallyVisible || expanded ? (
+              <motion.div
+                initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+              >
+                {renderItem(item, index)}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        );
+      })}
+
+      {!expanded && items.length > initialDisplayCount && (
+        <Button
+          variant="ghost"
+          className="group flex w-full items-center"
+          onClick={() => {
+            hasExpandedOnce.current = true;
+            setExpanded(true);
+          }}
+        >
+          <Badge size="sm" className="mr-2 aspect-square px-1 py-0">
+            {items.length - initialDisplayCount}
+          </Badge>
+          {t(expandText)}
+          <ChevronDownIcon className="ml-2 opacity-50 transition-opacity group-hover:opacity-100" size={16} />
+        </Button>
+      )}
+    </>
+  );
+};

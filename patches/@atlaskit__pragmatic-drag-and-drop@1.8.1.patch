@@ -1,0 +1,138 @@
+diff --git a/dist/cjs/ledger/lifecycle-manager.js b/dist/cjs/ledger/lifecycle-manager.js
+index 5f1a61cc97f91e6e457dcd7d73b10ff8f5223e13..1bbd99caf0707486e9c325715486780ba971ad86 100644
+--- a/dist/cjs/ledger/lifecycle-manager.js
++++ b/dist/cjs/ledger/lifecycle-manager.js
+@@ -168,6 +168,41 @@ function start(_ref2) {
+   }, {
+     type: 'dragenter',
+     listener: onUpdateEvent
++  }, {
++    // 📜 [patched] Re-run drop target detection on scroll during a drag.
++    // The browser does not fire `dragover` while the page is scrolling under
++    // a stationary pointer (especially on iOS touch drags), so without this
++    // the active drop target and its `data` (e.g. closest edge) freeze on the
++    // last element that was under the pointer.
++    // `scroll` does not bubble, but the outer listener uses `capture: true`
++    // which catches scroll events from any element on the way down.
++    type: 'scroll',
++    listener: function listener() {
++      var input = state.current.input;
++      if (!input) {
++        return;
++      }
++      var target = (0, _getElementFromPointWithoutHoneyPot.getElementFromPointWithoutHoneypot)({
++        x: input.clientX,
++        y: input.clientY
++      });
++      if (!target) {
++        return;
++      }
++      var nextDropTargets = getDropTargetsOver({
++        target: target,
++        input: input,
++        source: dragType.payload,
++        current: state.current.dropTargets
++      });
++      updateState({
++        dropTargets: nextDropTargets,
++        input: input
++      });
++      dispatch.drag({
++        current: state.current
++      });
++    }
+   }, {
+     type: 'dragleave',
+     listener: function listener(event) {
+diff --git a/dist/es2019/ledger/lifecycle-manager.js b/dist/es2019/ledger/lifecycle-manager.js
+index e1810f6fb9ab627f0026b559c8cea6b93b890c2e..513b4ce898c45b258925deaeb31a4d2a5af3f22e 100644
+--- a/dist/es2019/ledger/lifecycle-manager.js
++++ b/dist/es2019/ledger/lifecycle-manager.js
+@@ -162,6 +162,41 @@ function start({
+   }, {
+     type: 'dragenter',
+     listener: onUpdateEvent
++  }, {
++    // 📜 [patched] Re-run drop target detection on scroll during a drag.
++    // The browser does not fire `dragover` while the page is scrolling under
++    // a stationary pointer (especially on iOS touch drags), so without this
++    // the active drop target and its `data` (e.g. closest edge) freeze on the
++    // last element that was under the pointer.
++    // `scroll` does not bubble, but the outer listener uses `capture: true`
++    // which catches scroll events from any element on the way down.
++    type: 'scroll',
++    listener() {
++      const input = state.current.input;
++      if (!input) {
++        return;
++      }
++      const target = getElementFromPointWithoutHoneypot({
++        x: input.clientX,
++        y: input.clientY
++      });
++      if (!target) {
++        return;
++      }
++      const nextDropTargets = getDropTargetsOver({
++        target,
++        input,
++        source: dragType.payload,
++        current: state.current.dropTargets
++      });
++      updateState({
++        dropTargets: nextDropTargets,
++        input
++      });
++      dispatch.drag({
++        current: state.current
++      });
++    }
+   }, {
+     type: 'dragleave',
+     listener(event) {
+diff --git a/dist/esm/ledger/lifecycle-manager.js b/dist/esm/ledger/lifecycle-manager.js
+index ee8f1213d89c206a3da5d6101f45fcacf3c09318..636036a66278f1d26b000d18edf802480731b7d7 100644
+--- a/dist/esm/ledger/lifecycle-manager.js
++++ b/dist/esm/ledger/lifecycle-manager.js
+@@ -161,6 +161,41 @@ function start(_ref2) {
+   }, {
+     type: 'dragenter',
+     listener: onUpdateEvent
++  }, {
++    // 📜 [patched] Re-run drop target detection on scroll during a drag.
++    // The browser does not fire `dragover` while the page is scrolling under
++    // a stationary pointer (especially on iOS touch drags), so without this
++    // the active drop target and its `data` (e.g. closest edge) freeze on the
++    // last element that was under the pointer.
++    // `scroll` does not bubble, but the outer listener uses `capture: true`
++    // which catches scroll events from any element on the way down.
++    type: 'scroll',
++    listener: function listener() {
++      var input = state.current.input;
++      if (!input) {
++        return;
++      }
++      var target = getElementFromPointWithoutHoneypot({
++        x: input.clientX,
++        y: input.clientY
++      });
++      if (!target) {
++        return;
++      }
++      var nextDropTargets = getDropTargetsOver({
++        target: target,
++        input: input,
++        source: dragType.payload,
++        current: state.current.dropTargets
++      });
++      updateState({
++        dropTargets: nextDropTargets,
++        input: input
++      });
++      dispatch.drag({
++        current: state.current
++      });
++    }
+   }, {
+     type: 'dragleave',
+     listener: function listener(event) {

@@ -1,0 +1,71 @@
+import { and, eq, inArray } from 'drizzle-orm';
+import { AppError } from '#/core/error';
+import { xMiddleware } from '#/core/x-middleware';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+
+/**
+ * Guard middleware that checks if the requesting user is relatable to a target user.
+ * Two users are relatable if they share at least one organization membership.
+ *
+ * Reads `relatableUserId` from path params (fallback: query params).
+ * No-ops if param is absent or matches the requesting user.
+ * System admins bypass the check.
+ *
+ * @example
+ * ```ts
+ * xGuard: [authGuard, crossTenantGuard, relatableGuard],
+ * // Route must include relatableUserId as path or query param
+ * path: '/users/{relatableUserId}',
+ * ```
+ */
+export const relatableGuard = xMiddleware(
+  {
+    functionName: 'relatableGuard',
+    type: 'x-guard',
+    name: 'relatable',
+    description: 'Checks that the requesting user shares at least one organization with the target user',
+  },
+  async (ctx, next) => {
+    // Read relatableUserId from path params, then query params
+    const targetUserId = ctx.req.param('relatableUserId') ?? ctx.req.query('relatableUserId');
+
+    const user = ctx.var.user;
+    const isSystemAdmin = ctx.var.isSystemAdmin;
+
+    // No-op if param absent or requesting self
+    if (!targetUserId || targetUserId === user.id || targetUserId === user.slug) {
+      await next();
+      return;
+    }
+
+    // System admins bypass relatability check
+    if (isSystemAdmin) {
+      await next();
+      return;
+    }
+
+    // Get the requesting user's organization IDs
+    const memberships = ctx.var.memberships;
+    const myOrgIds = [...new Set(memberships.map((m) => m.organizationId))];
+
+    if (myOrgIds.length === 0) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
+    }
+
+    // Check if target user shares at least one organization with requesting user.
+    // The memberships_select_authenticated_policy allows any authenticated user to
+    // read membership rows, so this query works in cross-tenant RLS context.
+    const db = ctx.var.db;
+    const [shared] = await db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, targetUserId), inArray(membershipsTable.organizationId, myOrgIds)))
+      .limit(1);
+
+    if (!shared) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
+    }
+
+    await next();
+  },
+);

@@ -1,0 +1,91 @@
+---
+allowBuilds:
+  '@evilmartians/lefthook': true
+  '@parcel/watcher': false
+  '@playwright/browser-chromium': false
+  core-js: false
+  esbuild: true
+  msgpackr-extract: false
+  protobufjs: false
+  unix-dgram: false
+# Allow patches whose package isn't installed in a given filtered install
+# (e.g. backend-only Docker build excludes the frontend, where pragmatic-drag-and-drop lives).
+allowUnusedPatches: true
+blockExoticSubdeps: true
+catalog:
+  '@aws-sdk/client-s3': ^3.1075.0
+  '@hono/node-server': ^2.0.6
+  '@opentelemetry/auto-instrumentations-node': ^0.77.0
+  '@opentelemetry/exporter-logs-otlp-http': ^0.219.0
+  '@opentelemetry/exporter-metrics-otlp-http': ^0.219.0
+  '@opentelemetry/exporter-trace-otlp-http': ^0.219.0
+  '@opentelemetry/resources': ^2.8.0
+  '@opentelemetry/sdk-logs': ^0.219.0
+  '@opentelemetry/sdk-metrics': ^2.8.0
+  '@opentelemetry/sdk-node': ^0.219.0
+  '@types/node': 24.10.13
+  '@types/react': 19.2.17
+  '@typescript/native-preview': 7.0.0-dev.20260626.1
+  cross-env: ^10.1.0
+  dobajs: 0.1.0
+  hono: ^4.12.27
+  rate-limiter-flexible: ^11.2.0
+  tsup: ^8.5.1
+  tsx: ^4.22.4
+  typescript: ^6.0.3
+  vitest: ^4.1.9
+catalogMode: manual
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@tanstack/ai@0.38.0'
+  - protobufjs@8.0.2
+  - protobufjs@8.2.0
+  - esbuild@0.28.1
+  - protobufjs@8.5.1
+  - js-yaml@4.1.2
+  - protobufjs@8.4.1
+  - '@opentelemetry/core@2.8.0'
+overrides:
+  # OTel core must keep TWO majors side-by-side: Pulumi's tracing stack pins core 1.30.1
+  # (uses the 1.x `TracesSamplerValues`, removed in 2.x), while the app's OTel (shared/, yjs/)
+  # needs 2.8.0. Floor each major separately — never cross the 1.x->2.x boundary, or Pulumi
+  # crashes with `Cannot read properties of undefined (reading 'AlwaysOn')`.
+  '@opentelemetry/core@>=2.0.0 <2.8.0': ^2.8.0
+  '@opentelemetry/core@<1.30.1': 1.30.1
+  esbuild@<=0.24.2: ^0.28.1
+  esbuild@>=0.27.3 <0.28.1: ^0.28.1
+  js-yaml@<=4.1.1: ^4.1.2
+  protobufjs@>=8.0.0 <8.2.0: ^8.2.0
+  protobufjs@>=8.0.0 <=8.0.1: ^8.0.2
+  protobufjs@>=8.0.0 <=8.4.0: ^8.4.1
+  protobufjs@>=8.0.0 <=8.5.0: ^8.5.1
+packages:
+  - ai
+  - backend
+  - cdc
+  - shared
+  - cli/*
+  - frontend
+  - infra
+  - locales
+  - sdk
+  - studio
+  - yjs
+  - bench
+patchedDependencies:
+  '@atlaskit/pragmatic-drag-and-drop@1.8.1': patches/@atlaskit__pragmatic-drag-and-drop@1.8.1.patch
+peerDependencyRules:
+  allowedVersions:
+    '@opentelemetry/api': '>=1'
+    '@types/react': '>=19'
+    '@uppy/core': '5'
+    babel-plugin-react-compiler: '>=19'
+    react: '19'
+    react-dom: '19'
+    typescript: '6'
+    vite: '8'
+  ignoreMissing:
+    - canvas
+    - '@floating-ui/dom'
+publicHoistPattern:
+  - pdfjs-dist

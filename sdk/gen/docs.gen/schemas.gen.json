@@ -1,0 +1,2215 @@
+[
+  {
+    "name": "Attachment",
+    "ref": "#/components/schemas/Attachment",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["attachment"]
+        },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "stx": {
+          "type": "object",
+          "required": true,
+          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+          "properties": {
+            "mutationId": {
+              "type": "string",
+              "required": true,
+              "description": "Unique mutation ID",
+              "maxLength": 36
+            },
+            "sourceId": {
+              "type": "string",
+              "required": true,
+              "description": "Tab/instance identifier for echo prevention",
+              "maxLength": 64
+            },
+            "fieldTimestamps": {
+              "type": "object",
+              "required": true,
+              "description": "Per-field HLC timestamps for scalar fields being changed",
+              "additionalProperties": { "type": "string", "required": false }
+            }
+          },
+          "ref": "#/components/schemas/StxBase"
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 1000000
+        },
+        "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+        "createdBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "updatedBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "deletedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "deletedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "seq": {
+          "type": "integer",
+          "required": true,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "public": { "type": "boolean", "required": true },
+        "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+        "groupId": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "filename": { "type": "string", "required": true, "maxLength": 255 },
+        "contentType": { "type": "string", "required": true, "maxLength": 255 },
+        "convertedContentType": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "size": { "type": "string", "required": true, "maxLength": 255 },
+        "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+        "convertedKey": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "thumbnailKey": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "organizationId": { "type": "string", "required": true, "format": "uuid" },
+        "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["attachments"],
+      "owner": ["cella"]
+    },
+    "description": "A product entity for file attachment metadata.",
+    "example": {
+      "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+      "tenantId": "qnt152",
+      "entityType": "attachment",
+      "name": "rightfully_lest_noted.mp3",
+      "description": null,
+      "keywords": "vereor strenuus verecundia",
+      "public": false,
+      "bucketName": "attachments",
+      "groupId": null,
+      "filename": "rightfully_lest_noted.mp3",
+      "contentType": "video/mp4",
+      "convertedContentType": null,
+      "size": "7611296",
+      "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+      "convertedKey": null,
+      "thumbnailKey": null,
+      "createdAt": "2024-10-12T12:26:26.417Z",
+      "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+      "updatedAt": "2024-10-12T12:26:26.417Z",
+      "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+      "deletedAt": null,
+      "deletedBy": null,
+      "seq": 123,
+      "stx": {
+        "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
+        "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+        "fieldTimestamps": {}
+      },
+      "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+    }
+  },
+  {
+    "name": "ContextEntityBase",
+    "ref": "#/components/schemas/ContextEntityBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "tenantId": { "type": "string", "required": true },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        },
+        "slug": { "type": "string", "required": true },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "bannerUrl": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["entities"],
+      "owner": ["cella"]
+    },
+    "description": "Base schema for entities with memberships (e.g. organization).",
+    "example": {
+      "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
+      "createdAt": "2024-11-30T08:11:29.841Z",
+      "updatedAt": "2024-12-25T20:49:14.328Z",
+      "tenantId": "fux7yivt59ywq1bpokswyyxl",
+      "name": "Hamill - Price",
+      "entityType": "organization",
+      "slug": "hamill---price",
+      "thumbnailUrl": null,
+      "bannerUrl": null
+    }
+  },
+  {
+    "name": "ProductEntityBase",
+    "ref": "#/components/schemas/ProductEntityBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "updatedBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["attachment", "page"]
+        },
+        "keywords": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["entities"],
+      "owner": ["cella"]
+    },
+    "description": "Base schema for content entities with creator tracking (e.g. page, attachment).",
+    "example": {
+      "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
+      "createdAt": "2024-07-02T14:28:38.152Z",
+      "updatedAt": "2024-07-03T04:17:25.780Z",
+      "name": "Capitulus vesco cursim alter.",
+      "description": "Veritas itaque basium a. Sufficio ter nostrum cilicium tersus ara. Earum ascit trans somniculosus.",
+      "keywords": "sint clementia corrigo",
+      "createdBy": {
+        "id": "c50da656-29b0-4d6a-8aa2-323def17f952",
+        "name": "Alexa Runte",
+        "slug": "alexa.runte",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
+      "updatedBy": {
+        "id": "f48d91fa-25fe-448c-83c3-17d8260c952a",
+        "name": "Lina Abbott",
+        "slug": "lina.abbott19",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
+      "entityType": "page"
+    }
+  },
+  {
+    "name": "StreamNotification",
+    "ref": "#/components/schemas/StreamNotification",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "required": true,
+          "enum": ["create", "update", "delete"]
+        },
+        "entityType": {
+          "type": ["string", "null"],
+          "required": true,
+          "enum": ["attachment", "page", null]
+        },
+        "resourceType": {
+          "type": ["string", "null"],
+          "required": true,
+          "enum": ["request", "membership", "inactive_membership", "tenant", null]
+        },
+        "subjectId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "organizationId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "tenantId": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "contextType": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Context entity type for membership events (e.g. organization, project)",
+          "enum": ["organization", null]
+        },
+        "seq": {
+          "type": ["integer", "null"],
+          "required": true,
+          "description": "Per-entityType sequence number used for gap detection in sync"
+        },
+        "contextId": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "Context entity ID for grouping (e.g. projectId for tasks in unseen counts)"
+        },
+        "stx": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Sync transaction metadata for HLC conflict resolution",
+          "properties": {
+            "mutationId": {
+              "type": "string",
+              "required": true,
+              "description": "Unique mutation ID",
+              "maxLength": 36
+            },
+            "sourceId": {
+              "type": "string",
+              "required": true,
+              "description": "Tab/instance identifier for echo prevention",
+              "maxLength": 64
+            },
+            "fieldTimestamps": {
+              "type": "object",
+              "required": true,
+              "description": "Per-field HLC timestamps for scalar fields being changed",
+              "additionalProperties": { "type": "string", "required": false }
+            }
+          },
+          "extendsRef": "#/components/schemas/StxBase"
+        },
+        "cacheToken": {
+          "type": ["string", "null"],
+          "required": true,
+          "description": "HMAC-signed token for single-entity LRU cache access"
+        },
+        "batchUntilSeq": {
+          "type": ["integer", "null"],
+          "required": true,
+          "description": "Last seq for a batched notification — client should fetch range"
+        },
+        "propagation": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Embedded entity propagation hint for cross-entity cache invalidation",
+          "properties": {
+            "sourceType": {
+              "type": "string",
+              "required": true,
+              "description": "Entity type that triggered the propagation (e.g. label)"
+            },
+            "targetType": {
+              "type": "string",
+              "required": true,
+              "description": "Entity type whose cache should be invalidated (e.g. task)"
+            },
+            "field": {
+              "type": "string",
+              "required": true,
+              "description": "Field on the target entity that references the source (e.g. labels)"
+            },
+            "update": {
+              "type": "array",
+              "required": true,
+              "description": "Target entity IDs that need cache refresh",
+              "itemType": "string"
+            },
+            "remove": {
+              "type": "array",
+              "required": true,
+              "description": "Target entity IDs that need the source reference removed",
+              "itemType": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["entities"],
+      "owner": ["cella"]
+    },
+    "description": "Realtime notification delivered via SSE for entity and membership changes.",
+    "example": {
+      "action": "update",
+      "entityType": "attachment",
+      "resourceType": null,
+      "subjectId": "781e15ee-c97a-4d0a-8424-18ee4c50d02b",
+      "organizationId": "a9fc6f05-cf39-41b4-8378-e8c3a3796f6a",
+      "tenantId": "4qv8uf107q9zmdjan1ygz1el",
+      "contextType": null,
+      "contextId": "67b4d7ec-f6a8-40d0-905c-ee1180d3e4a2",
+      "seq": 135,
+      "cacheToken": "V9Umhb9C4l3EKNwaUqHHn49KRYOFMDbd",
+      "stx": {
+        "mutationId": "725782b0-16f4-4b4f-9577-8ebfa336f370",
+        "sourceId": "be2fe601-891c-4ade-b70e-12c6d41d18b9",
+        "fieldTimestamps": {}
+      },
+      "batchUntilSeq": null,
+      "propagation": null
+    }
+  },
+  {
+    "name": "Me",
+    "ref": "#/components/schemas/Me",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "required": true,
+          "description": "A user with profile data and activity timestamps.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "email": { "type": "string", "required": true, "format": "email" },
+            "mfaRequired": { "type": "boolean", "required": true },
+            "firstName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "lastName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "language": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "newsletter": { "type": "boolean", "required": true },
+            "userFlags": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "finishedOnboarding": { "type": "boolean", "required": true }
+              }
+            },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "lastSeenAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastSignInAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/User"
+        },
+        "isSystemAdmin": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the current user has system admin privileges."
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["me"],
+      "owner": ["cella"]
+    },
+    "description": "The currently authenticated user with their system admin status.",
+    "example": {
+      "user": {
+        "id": "caad4530-7189-4ad0-8822-372adc47fa07",
+        "entityType": "user",
+        "name": "Donald McClure",
+        "firstName": "Donald",
+        "lastName": "McClure",
+        "email": "donald.mcclure57@yahoo.com",
+        "slug": "donaldmcclure74",
+        "description": null,
+        "thumbnailUrl": null,
+        "bannerUrl": null,
+        "language": "en",
+        "newsletter": true,
+        "mfaRequired": false,
+        "userFlags": {},
+        "createdAt": "2024-07-14T11:38:21.926Z",
+        "updatedAt": "2024-07-14T11:38:21.926Z",
+        "updatedBy": null,
+        "lastStartedAt": "2024-07-14T11:38:21.926Z",
+        "lastSignInAt": "2024-07-14T11:38:21.926Z",
+        "lastSeenAt": "2024-07-14T11:38:21.926Z"
+      },
+      "isSystemAdmin": false
+    }
+  },
+  {
+    "name": "MeAuthData",
+    "ref": "#/components/schemas/MeAuthData",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "enabledOAuth": {
+          "type": "array",
+          "required": true,
+          "itemType": "string",
+          "enum": ["github"]
+        },
+        "hasTotp": { "type": "boolean", "required": true },
+        "sessions": {
+          "type": "array",
+          "required": true,
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "required": true, "format": "uuid" },
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["regular", "impersonation", "mfa"]
+              },
+              "userId": { "type": "string", "required": true, "format": "uuid" },
+              "deviceName": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "deviceType": {
+                "type": "string",
+                "required": true,
+                "enum": ["desktop", "mobile"]
+              },
+              "deviceOs": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "browser": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "authStrategy": {
+                "type": "string",
+                "required": true,
+                "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+              },
+              "ipHash": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 64
+              },
+              "ipSubnetHash": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 64
+              },
+              "ipCountry": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 2
+              },
+              "ipAsn": {
+                "type": ["integer", "null"],
+                "required": true,
+                "minimum": -2147483648,
+                "maximum": 2147483647
+              },
+              "createdAt": { "type": "string", "required": true },
+              "expiresAt": { "type": "string", "required": true },
+              "isCurrent": { "type": "boolean", "required": true }
+            }
+          }
+        },
+        "passkeys": {
+          "type": "array",
+          "required": true,
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "required": true, "format": "uuid" },
+              "userId": { "type": "string", "required": true, "format": "uuid" },
+              "deviceName": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "deviceType": {
+                "type": "string",
+                "required": true,
+                "enum": ["desktop", "mobile"]
+              },
+              "deviceOs": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "browser": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 },
+              "createdAt": { "type": "string", "required": true }
+            }
+          }
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["me"],
+      "owner": ["cella"]
+    },
+    "description": "Authentication metadata for the current user session.",
+    "example": {
+      "enabledOAuth": ["github"],
+      "hasTotp": false,
+      "sessions": [
+        {
+          "id": "0ff9d780-10bf-4531-b073-c93c225553bc",
+          "userId": "3fdbee2a-ceb3-401e-b7af-e58710cdd4a5",
+          "type": "regular",
+          "createdAt": "2024-05-28T17:45:48.607Z",
+          "expiresAt": "2024-06-27T17:45:48.607Z",
+          "deviceName": "Firefox on Windows",
+          "deviceType": "desktop",
+          "deviceOs": "iOS",
+          "browser": "Edge",
+          "authStrategy": "passkey",
+          "ipHash": null,
+          "ipSubnetHash": null,
+          "ipCountry": null,
+          "ipAsn": null,
+          "isCurrent": true
+        }
+      ],
+      "passkeys": []
+    }
+  },
+  {
+    "name": "UploadToken",
+    "ref": "#/components/schemas/UploadToken",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "public": { "type": "boolean", "required": true },
+        "sub": { "type": "string", "required": true },
+        "s3": { "type": "boolean", "required": true },
+        "signature": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "params": {
+          "required": true,
+          "anyOf": [
+            {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "auth": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "key": { "type": "string", "required": true },
+                    "expires": { "type": "string", "required": false }
+                  }
+                }
+              },
+              "additionalProperties": { "type": "object", "required": false }
+            },
+            { "type": "null", "required": false }
+          ]
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["me"],
+      "owner": ["cella"]
+    },
+    "description": "A signed token authorizing file uploads to the configured storage provider.",
+    "example": {
+      "public": false,
+      "sub": "x1lsgegsw6imziogthaolhvy",
+      "s3": true,
+      "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
+      "params": {
+        "auth": { "key": "uploads/kx5n7c1cush46z5cnizlmyd8", "expires": "2025-01-01T04:15:50.483Z" }
+      }
+    }
+  },
+  {
+    "name": "InactiveMembership",
+    "ref": "#/components/schemas/InactiveMembership",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "contextType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        },
+        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "email": { "type": "string", "required": true, "maxLength": 255 },
+        "userId": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "tokenId": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "role": {
+          "type": "string",
+          "required": true,
+          "enum": ["admin", "member"]
+        },
+        "rejectedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "organizationId": { "type": "string", "required": true, "format": "uuid" }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["memberships"],
+      "owner": ["cella"]
+    },
+    "description": "A membership record for a user who has not yet accepted an invitation.",
+    "example": {
+      "id": "cf791004-1364-4e1a-b066-c72c120aaea2",
+      "contextType": "organization",
+      "contextId": "5440aeff-3fb0-400b-98b1-ebefcdf13a71",
+      "email": "luther34@gmail.com",
+      "userId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
+      "tokenId": "1ea0bf25-06d9-4e65-9415-68a14ed89fa2",
+      "role": "admin",
+      "rejectedAt": null,
+      "createdAt": "2024-02-07T13:46:57.160Z",
+      "createdBy": "d867375a-62c7-4ac5-86d4-66be272d180e",
+      "organizationId": "4fa889f9-15ca-4730-a060-e4167170b7db",
+      "tenantId": "test01"
+    }
+  },
+  {
+    "name": "Membership",
+    "ref": "#/components/schemas/Membership",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "contextType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        },
+        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "userId": { "type": "string", "required": true, "format": "uuid" },
+        "role": {
+          "type": "string",
+          "required": true,
+          "enum": ["admin", "member"]
+        },
+        "createdBy": { "type": "string", "required": true, "format": "uuid" },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "updatedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "archived": { "type": "boolean", "required": true },
+        "muted": { "type": "boolean", "required": true },
+        "displayOrder": {
+          "type": "number",
+          "required": true,
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        "organizationId": { "type": "string", "required": true, "format": "uuid" }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["memberships"],
+      "owner": ["cella"]
+    },
+    "description": "A user's membership in a context entity, including role and activity data.",
+    "example": {
+      "id": "92f342dd-6e67-4956-ab1c-f91b3ce934d7",
+      "contextType": "organization",
+      "contextId": "0b5344ae-d952-4047-b5e1-309a11b66764",
+      "userId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+      "organizationId": "14e27393-e22a-45d1-8c22-3250dc6fc109",
+      "role": "member",
+      "displayOrder": 27,
+      "muted": false,
+      "archived": false,
+      "createdAt": "2024-10-28T10:38:59.996Z",
+      "createdBy": "e73242d3-88f3-450e-838c-c98f7f3d9215",
+      "updatedAt": "2024-10-28T10:38:59.996Z",
+      "updatedBy": null,
+      "tenantId": "test01"
+    }
+  },
+  {
+    "name": "MembershipBase",
+    "ref": "#/components/schemas/MembershipBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "contextType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        },
+        "contextId": { "type": "string", "required": true, "format": "uuid" },
+        "userId": { "type": "string", "required": true, "format": "uuid" },
+        "role": {
+          "type": "string",
+          "required": true,
+          "enum": ["admin", "member"]
+        },
+        "archived": { "type": "boolean", "required": true },
+        "muted": { "type": "boolean", "required": true },
+        "displayOrder": {
+          "type": "number",
+          "required": true,
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        "organizationId": { "type": "string", "required": true, "format": "uuid" }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["memberships"],
+      "owner": ["cella"]
+    },
+    "description": "Core membership fields shared across active and inactive memberships.",
+    "example": {
+      "id": "da336271-583f-4567-913c-f17c567ab81d",
+      "tenantId": "vw3f7p",
+      "contextType": "organization",
+      "contextId": "993dce90-023a-4125-a6a3-03215e93aa04",
+      "userId": "154db176-be65-484a-bb34-246b1f99f492",
+      "organizationId": "45a11f6e-5760-4a44-96c4-3c1b43d10162",
+      "role": "member",
+      "displayOrder": 43,
+      "muted": false,
+      "archived": false
+    }
+  },
+  {
+    "name": "Organization",
+    "ref": "#/components/schemas/Organization",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "slug": { "type": "string", "required": true, "maxLength": 255 },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "bannerUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "createdBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "updatedBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "shortName": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "country": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "timezone": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "required": true,
+          "enum": ["en", "nl"]
+        },
+        "languages": {
+          "type": "array",
+          "required": true,
+          "minItems": 1,
+          "itemType": "string",
+          "enum": ["en", "nl"]
+        },
+        "notificationEmail": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "color": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "logoUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "websiteUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "welcomeText": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 1000000
+        },
+        "authStrategies": {
+          "type": "array",
+          "required": true,
+          "itemType": "string",
+          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+        },
+        "chatSupport": { "type": "boolean", "required": true },
+        "included": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "membership": {
+              "type": "object",
+              "required": false,
+              "description": "Core membership fields shared across active and inactive memberships.",
+              "properties": {
+                "id": { "type": "string", "required": true, "format": "uuid" },
+                "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                "contextType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["organization"]
+                },
+                "contextId": { "type": "string", "required": true, "format": "uuid" },
+                "userId": { "type": "string", "required": true, "format": "uuid" },
+                "role": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["admin", "member"]
+                },
+                "archived": { "type": "boolean", "required": true },
+                "muted": { "type": "boolean", "required": true },
+                "displayOrder": {
+                  "type": "number",
+                  "required": true,
+                  "minimum": -140737488355328,
+                  "maximum": 140737488355327
+                },
+                "organizationId": { "type": "string", "required": true, "format": "uuid" }
+              },
+              "ref": "#/components/schemas/MembershipBase"
+            },
+            "counts": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "membership": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "admin": { "type": "number", "required": true },
+                    "member": { "type": "number", "required": true },
+                    "pending": { "type": "number", "required": true },
+                    "total": { "type": "number", "required": true }
+                  }
+                },
+                "entities": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "attachment": { "type": "number", "required": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["organizations"],
+      "owner": ["cella"]
+    },
+    "description": "The main context entity is an organization.",
+    "example": {
+      "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+      "tenantId": "d1lgzb",
+      "entityType": "organization",
+      "name": "Spencer, Pouros and Bergnaum",
+      "slug": "spencer-pouros-and-bergnaum",
+      "shortName": "Spencer,",
+      "country": "Sweden",
+      "timezone": "Europe/Vaduz",
+      "defaultLanguage": "en",
+      "languages": ["en"],
+      "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+      "color": "#cda6af",
+      "thumbnailUrl": null,
+      "bannerUrl": null,
+      "logoUrl": null,
+      "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+      "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+      "authStrategies": ["passkey"],
+      "chatSupport": true,
+      "createdAt": "2024-12-25T15:04:42.969Z",
+      "createdBy": null,
+      "updatedAt": "2024-12-25T15:04:42.969Z",
+      "updatedBy": null,
+      "included": {
+        "membership": {
+          "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+          "tenantId": "6vxzq0",
+          "contextType": "organization",
+          "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+          "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+          "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "role": "admin",
+          "displayOrder": 2,
+          "muted": false,
+          "archived": false
+        },
+        "counts": {
+          "membership": {
+            "admin": 30,
+            "member": 63,
+            "pending": 13,
+            "total": 93
+          },
+          "entities": { "attachment": 178, "page": 257 }
+        }
+      }
+    }
+  },
+  {
+    "name": "Page",
+    "ref": "#/components/schemas/Page",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["page"]
+        },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "stx": {
+          "type": "object",
+          "required": true,
+          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+          "properties": {
+            "mutationId": {
+              "type": "string",
+              "required": true,
+              "description": "Unique mutation ID",
+              "maxLength": 36
+            },
+            "sourceId": {
+              "type": "string",
+              "required": true,
+              "description": "Tab/instance identifier for echo prevention",
+              "maxLength": 64
+            },
+            "fieldTimestamps": {
+              "type": "object",
+              "required": true,
+              "description": "Per-field HLC timestamps for scalar fields being changed",
+              "additionalProperties": { "type": "string", "required": false }
+            }
+          },
+          "ref": "#/components/schemas/StxBase"
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 1000000
+        },
+        "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+        "createdBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "updatedBy": {
+          "type": ["object", "null"],
+          "required": true,
+          "description": "Minimal user data for references.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            }
+          },
+          "extendsRef": "#/components/schemas/UserMinimalBase"
+        },
+        "deletedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "deletedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "seq": {
+          "type": "integer",
+          "required": true,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["unpublished", "published", "archived"]
+        },
+        "renderMode": {
+          "type": "string",
+          "required": true,
+          "enum": ["default", "overview", "nodeOnly"]
+        },
+        "publicAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "parentId": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "displayOrder": {
+          "type": "number",
+          "required": true,
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["pages"],
+      "owner": ["cella"]
+    },
+    "description": "A content page for documentation purposes.",
+    "example": {
+      "id": "851e5ae9-ef5b-4406-a468-8997f0d08f5c",
+      "entityType": "page",
+      "name": "Volubilis conturbo cubo sponte utpote.",
+      "description": "[{\"id\":\"wv1pvo6ikw8yaifq40mapyzk\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Pecco vulticulus cunctatio dolorum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xwx21e333ngqujcbpukfple6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"h3tnk9zpovjd1ic979l5apjd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"AI-driven optimal concept\",\"styles\":{}}],\"children\":[]},{\"id\":\"fixisx6z8hucvnngw4r6gjfz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"tcsht8b45feprfkhrd8bblxz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Animadverto maxime theatrum esse amo statua adfectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"zubypddo8vfjx4d5px26kw7k\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"q8bqakccdhvdb8s40m4i46ag\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adiuvo brevis conturbo alveus ver ait deserunt decet.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l7dazo02dcpq1pli45kzw5po\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vestrum solus cohors trucido ad vorax voluptatum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4mygjrjwhp4cvi7x941wz85b\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conor ullam conculco turpis cui tametsi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"avgoyfos69bvat094q3skvku\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.\",\"styles\":{}}],\"children\":[]}]",
+      "keywords": "repellat speculum terga",
+      "status": "unpublished",
+      "renderMode": "default",
+      "publicAt": "2024-08-06T00:46:23.127Z",
+      "parentId": null,
+      "displayOrder": 61.84,
+      "createdAt": "2024-08-06T00:46:23.127Z",
+      "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+      "updatedAt": "2024-08-06T00:46:23.127Z",
+      "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
+      "deletedAt": null,
+      "deletedBy": null,
+      "seq": 434,
+      "stx": {
+        "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
+        "sourceId": "56b8c007-8e68-4f47-b816-fb2404a2a519",
+        "fieldTimestamps": {}
+      }
+    }
+  },
+  {
+    "name": "Request",
+    "ref": "#/components/schemas/Request",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "message": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "email": { "type": "string", "required": true, "maxLength": 255 },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["waitlist", "newsletter", "contact"]
+        },
+        "wasInvited": { "type": "boolean", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["requests"],
+      "owner": ["cella"]
+    },
+    "description": "A contact or waitlist submission from an unauthenticated user.",
+    "example": {
+      "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
+      "email": "ahmed.braun57@gmail.com",
+      "type": "contact",
+      "message": "Sapiente antiquus temptatio.",
+      "createdAt": "2024-12-03T03:40:42.368Z",
+      "wasInvited": true
+    }
+  },
+  {
+    "name": "Tenant",
+    "ref": "#/components/schemas/Tenant",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "maxLength": 24 },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["active", "suspended", "archived"]
+        },
+        "restrictions": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "quotas": {
+              "type": "object",
+              "required": true,
+              "description": "Entity quotas (0 = unlimited)",
+              "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+            },
+            "rateLimits": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "apiPointsPerHour": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Max API points per hour per user within this tenant",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "subscriptionId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "required": true,
+          "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+        },
+        "subscriptionPlan": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "domainsCount": {
+          "type": "integer",
+          "required": true,
+          "description": "Number of domains claimed by this tenant"
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["tenants"],
+      "owner": ["cella"]
+    },
+    "description": "A tenant representing an isolated data partition for multi-tenancy."
+  },
+  {
+    "name": "User",
+    "ref": "#/components/schemas/User",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "required": true },
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["user"]
+        },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "slug": { "type": "string", "required": true, "maxLength": 255 },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "bannerUrl": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 2048
+        },
+        "email": { "type": "string", "required": true, "format": "email" },
+        "mfaRequired": { "type": "boolean", "required": true },
+        "firstName": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "lastName": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "language": {
+          "type": "string",
+          "required": true,
+          "enum": ["en", "nl"]
+        },
+        "newsletter": { "type": "boolean", "required": true },
+        "userFlags": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "finishedOnboarding": { "type": "boolean", "required": true }
+          }
+        },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "updatedBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "lastSeenAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastStartedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastSignInAt": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["users"],
+      "owner": ["cella"]
+    },
+    "description": "A user with profile data and activity timestamps.",
+    "example": {
+      "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+      "entityType": "user",
+      "name": "Cathy Hodkiewicz",
+      "firstName": "Cathy",
+      "lastName": "Hodkiewicz",
+      "email": "cathy.hodkiewicz@hotmail.com",
+      "slug": "cathyhodkiewicz17",
+      "description": null,
+      "thumbnailUrl": null,
+      "bannerUrl": null,
+      "language": "en",
+      "newsletter": false,
+      "mfaRequired": false,
+      "userFlags": {},
+      "createdAt": "2024-12-13T10:04:17.464Z",
+      "updatedAt": "2024-12-13T10:04:17.464Z",
+      "updatedBy": null,
+      "lastStartedAt": "2024-12-13T10:04:17.464Z",
+      "lastSignInAt": "2024-12-13T10:04:17.464Z",
+      "lastSeenAt": "2024-12-13T10:04:17.464Z"
+    }
+  },
+  {
+    "name": "UserBase",
+    "ref": "#/components/schemas/UserBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "slug": { "type": "string", "required": true },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "bannerUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "description": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "email": { "type": "string", "required": true, "format": "email" },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["user"]
+        }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["users"],
+      "owner": ["cella"]
+    },
+    "description": "Base user schema with essential fields for identification and display.",
+    "example": {
+      "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
+      "createdAt": "2024-01-28T04:41:50.387Z",
+      "updatedAt": "2024-05-12T18:44:59.999Z",
+      "name": "Rosalia Bayer",
+      "description": null,
+      "entityType": "user",
+      "slug": "rosalia.bayer28",
+      "thumbnailUrl": null,
+      "bannerUrl": null,
+      "email": "rosalia_bayer@hotmail.com"
+    }
+  },
+  {
+    "name": "UserMinimalBase",
+    "ref": "#/components/schemas/UserMinimalBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "slug": { "type": "string", "required": true },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["user"]
+        }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["users"],
+      "owner": ["cella"]
+    },
+    "description": "Minimal user data for references.",
+    "example": {
+      "id": "d6ecd8ea-406d-4160-8fbd-8407414b54b2",
+      "name": "Alverta Waelchi",
+      "slug": "alverta.waelchi91",
+      "thumbnailUrl": null,
+      "entityType": "user"
+    }
+  },
+  {
+    "name": "ApiError",
+    "ref": "#/components/schemas/ApiError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "integer",
+          "required": true,
+          "minimum": 400,
+          "maximum": 599
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      }
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Standard error response returned by all API endpoints.",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "BadRequestError",
+    "ref": "#/components/schemas/BadRequestError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [400]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when the request is malformed or contains invalid data.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "ConflictError",
+    "ref": "#/components/schemas/ConflictError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [409]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when the request conflicts with current resource state.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "ForbiddenError",
+    "ref": "#/components/schemas/ForbiddenError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [403]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when the user lacks permission for the requested action.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "NotFoundError",
+    "ref": "#/components/schemas/NotFoundError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [404]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when the requested resource cannot be found.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "StxBase",
+    "ref": "#/components/schemas/StxBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "mutationId": {
+          "type": "string",
+          "required": true,
+          "description": "Unique mutation ID",
+          "maxLength": 36
+        },
+        "sourceId": {
+          "type": "string",
+          "required": true,
+          "description": "Tab/instance identifier for echo prevention",
+          "maxLength": 64
+        },
+        "fieldTimestamps": {
+          "type": "object",
+          "required": true,
+          "description": "Per-field HLC timestamps for scalar fields being changed",
+          "additionalProperties": { "type": "string", "required": false }
+        }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "owner": ["cella"]
+    },
+    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+    "example": {
+      "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
+      "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
+      "fieldTimestamps": {}
+    }
+  },
+  {
+    "name": "TooManyRequestsError",
+    "ref": "#/components/schemas/TooManyRequestsError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [429]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when rate limits are exceeded.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "UnauthorizedError",
+    "ref": "#/components/schemas/UnauthorizedError",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "message": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "status": {
+          "type": "number",
+          "required": true,
+          "enum": [401]
+        },
+        "severity": {
+          "type": "string",
+          "required": true,
+          "enum": ["fatal", "error", "warn", "info", "debug", "trace"]
+        },
+        "entityType": {
+          "type": "string",
+          "required": false,
+          "enum": ["user", "organization", "attachment", "page"]
+        },
+        "logId": { "type": "string", "required": false },
+        "path": { "type": "string", "required": false },
+        "method": { "type": "string", "required": false },
+        "timestamp": { "type": "string", "required": false },
+        "userId": { "type": "string", "required": false },
+        "organizationId": { "type": "string", "required": false },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "additionalProperties": {
+            "required": false,
+            "anyOf": [
+              { "type": "number", "required": false },
+              { "type": "string", "required": false },
+              { "type": "array", "required": false, "itemType": "string" },
+              { "type": "boolean", "required": false },
+              { "type": "null", "required": false }
+            ]
+          }
+        }
+      },
+      "extendsRef": "#/components/schemas/ApiError"
+    },
+    "schemaTag": "errors",
+    "tagsByKind": {
+      "schema": ["errors"],
+      "owner": ["cella"]
+    },
+    "description": "Error returned when authentication is missing or invalid.",
+    "extendsRef": "#/components/schemas/ApiError",
+    "example": {
+      "name": "BadRequestError",
+      "message": "error:bad_request_action",
+      "type": "validation_error",
+      "status": 400,
+      "severity": "warn",
+      "timestamp": "2025-01-01T12:00:00.000Z"
+    }
+  }
+]

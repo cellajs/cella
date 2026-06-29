@@ -1,0 +1,511 @@
+[
+  {
+    "operationId": "checkSlug",
+    "responses": [
+      { "status": 204, "description": "Slug is available" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "entityType": {
+            "type": "string",
+            "required": true,
+            "enum": ["organization"]
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getPublicStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "SSE stream started",
+        "contentType": "text/event-stream",
+        "schema": { "type": "object", "contentType": "text/event-stream" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "postPublicCatchup",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catchup summary",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "changes": {
+              "type": "object",
+              "required": true,
+              "description": "Per-entityType change summary: { [entityType]: { entitySeqs? } }",
+              "additionalProperties": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "entitySeqs": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "entityCounts": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "childContextChanges": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "entitySeqs": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        },
+                        "entityCounts": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        }
+                      }
+                    }
+                  },
+                  "propagation": {
+                    "type": "array",
+                    "required": false,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type that triggered the propagation (e.g. label)"
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type whose cache should be invalidated (e.g. task)"
+                        },
+                        "field": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Field on the target entity that references the source (e.g. labels)"
+                        },
+                        "update": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need cache refresh",
+                          "itemType": "string"
+                        },
+                        "remove": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need the source reference removed",
+                          "itemType": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "required": false,
+            "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
+          },
+          "seqs": {
+            "type": "object",
+            "required": false,
+            "description": "Client-side sequence numbers per scope: { \"organizationId:s:page\": 42 }",
+            "additionalProperties": { "type": "integer", "required": false }
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getAppStream",
+    "responses": [
+      {
+        "status": 200,
+        "description": "SSE stream started",
+        "contentType": "text/event-stream",
+        "schema": { "type": "object", "contentType": "text/event-stream" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "postAppCatchup",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Catchup summary",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "changes": {
+              "type": "object",
+              "required": true,
+              "description": "Per-org change summary: { [organizationId]: { entitySeqs?, entityCounts? } }",
+              "additionalProperties": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "entitySeqs": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "entityCounts": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": { "type": "integer", "required": false }
+                  },
+                  "childContextChanges": {
+                    "type": "object",
+                    "required": false,
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "entitySeqs": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        },
+                        "entityCounts": {
+                          "type": "object",
+                          "required": false,
+                          "additionalProperties": { "type": "integer", "required": false }
+                        }
+                      }
+                    }
+                  },
+                  "propagation": {
+                    "type": "array",
+                    "required": false,
+                    "itemType": "object",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type that triggered the propagation (e.g. label)"
+                        },
+                        "targetType": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Entity type whose cache should be invalidated (e.g. task)"
+                        },
+                        "field": {
+                          "type": "string",
+                          "required": true,
+                          "description": "Field on the target entity that references the source (e.g. labels)"
+                        },
+                        "update": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need cache refresh",
+                          "itemType": "string"
+                        },
+                        "remove": {
+                          "type": "array",
+                          "required": true,
+                          "description": "Target entity IDs that need the source reference removed",
+                          "itemType": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "cursor": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "Last activity ID (use as offset for next request)"
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "changes": {
+            "org-example-id": {
+              "entitySeqs": { "attachment": 1 }
+            }
+          },
+          "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "required": false,
+            "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
+          },
+          "seqs": {
+            "type": "object",
+            "required": false,
+            "description": "Client-side sequence numbers per scope: { \"organizationId:s:page\": 42 }",
+            "additionalProperties": { "type": "integer", "required": false }
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

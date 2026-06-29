@@ -1,0 +1,1556 @@
+[
+  {
+    "operationId": "getAttachments",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachments",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A product entity for file attachment metadata.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "properties": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
+                      }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 1000000
+                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "seq": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "043315eb-ed4a-44ea-9cb4-a6c0fe212f50",
+              "tenantId": "leyvjb",
+              "entityType": "attachment",
+              "name": "vice.mar",
+              "description": null,
+              "keywords": "concedo quae arca",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "vice.mar",
+              "contentType": "image/gif",
+              "convertedContentType": null,
+              "size": "5109236",
+              "originalKey": "uploads/weg2q4gqa3vx9cfyey6mqh9h/vice.mar",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-11-21T01:19:53.533Z",
+              "createdBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "updatedAt": "2024-11-21T01:19:53.533Z",
+              "updatedBy": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 318,
+              "stx": {
+                "mutationId": "897a617f-1449-4760-95cc-9f521e3f100f",
+                "sourceId": "db238d10-af2a-44b7-a00b-63f20bc295d2",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "966a04b5-5092-46e5-aef7-3b6c996a20eb"
+            },
+            {
+              "id": "65b1a01e-b422-4db6-8339-b813cf84d752",
+              "tenantId": "t5nr6k",
+              "entityType": "attachment",
+              "name": "bah_oof_truthfully.css",
+              "description": null,
+              "keywords": "appello depono ultio",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "bah_oof_truthfully.css",
+              "contentType": "audio/aac",
+              "convertedContentType": null,
+              "size": "1633382",
+              "originalKey": "uploads/qv4k6bwmvl0e44bpmhsyauxc/bah_oof_truthfully.css",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-10-29T04:35:17.725Z",
+              "createdBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "updatedAt": "2024-10-29T04:35:17.725Z",
+              "updatedBy": "772a771f-c150-465e-9635-46594859fc3d",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 447,
+              "stx": {
+                "mutationId": "de8ccfef-453b-4f07-b4c2-ef77d580cc1e",
+                "sourceId": "d9017e5b-49fb-41c3-acc0-f3df8449a148",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "c7c8981c-d73a-47bf-9e99-126641d43cb8"
+            }
+          ],
+          "total": 2
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false, "maxLength": 255 },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["name", "createdAt", "contentType"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "seqCursor": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createAttachments",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachments already created (idempotent)",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A product entity for file attachment metadata.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "properties": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
+                      }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 1000000
+                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "seq": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "tenantId": "fz7rau",
+              "entityType": "attachment",
+              "name": "ugh_besides.svgz",
+              "description": null,
+              "keywords": "vulgo vinum atavus",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "ugh_besides.svgz",
+              "contentType": "video/webm",
+              "convertedContentType": null,
+              "size": "9148253",
+              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-18T21:12:59.543Z",
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-18T21:12:59.543Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 348,
+              "stx": {
+                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
+                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
+            },
+            {
+              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "tenantId": "8r85na",
+              "entityType": "attachment",
+              "name": "instead_volleyball.jpe",
+              "description": null,
+              "keywords": "derelinquo attollo autem",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "instead_volleyball.jpe",
+              "contentType": "application/json",
+              "convertedContentType": null,
+              "size": "9478414",
+              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-24T16:36:46.247Z",
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-24T16:36:46.247Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 276,
+              "stx": {
+                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
+                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
+            }
+          ],
+          "rejectedIds": []
+        }
+      },
+      {
+        "status": 201,
+        "description": "Attachments created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Attachment",
+              "items": {
+                "type": "object",
+                "description": "A product entity for file attachment metadata.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "stx": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "properties": {
+                      "mutationId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Unique mutation ID",
+                        "maxLength": 36
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "required": true,
+                        "description": "Tab/instance identifier for echo prevention",
+                        "maxLength": 64
+                      },
+                      "fieldTimestamps": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Per-field HLC timestamps for scalar fields being changed",
+                        "additionalProperties": { "type": "string", "required": false }
+                      }
+                    },
+                    "ref": "#/components/schemas/StxBase"
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 1000000
+                  },
+                  "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "deletedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "deletedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "seq": {
+                    "type": "integer",
+                    "required": true,
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "public": { "type": "boolean", "required": true },
+                  "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+                  "groupId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "filename": { "type": "string", "required": true, "maxLength": 255 },
+                  "contentType": { "type": "string", "required": true, "maxLength": 255 },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "size": { "type": "string", "required": true, "maxLength": 255 },
+                  "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+                  "convertedKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "thumbnailKey": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "ref": "#/components/schemas/Attachment"
+              }
+            },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "c9ed9cd1-f55c-4648-a7a8-af2ccb4380b2",
+              "tenantId": "fz7rau",
+              "entityType": "attachment",
+              "name": "ugh_besides.svgz",
+              "description": null,
+              "keywords": "vulgo vinum atavus",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "ugh_besides.svgz",
+              "contentType": "video/webm",
+              "convertedContentType": null,
+              "size": "9148253",
+              "originalKey": "uploads/hhoizpinjn9as93qcb6pakf4/ugh_besides.svgz",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-04-18T21:12:59.543Z",
+              "createdBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "updatedAt": "2024-04-18T21:12:59.543Z",
+              "updatedBy": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 348,
+              "stx": {
+                "mutationId": "efa0a617-2297-4810-b621-a44be44424dd",
+                "sourceId": "25f82c13-8ca8-4877-b51a-dbdbf08b9af3",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "691ea12d-93d0-4a05-89eb-59fada054211"
+            },
+            {
+              "id": "7a21be26-ba4e-4e7e-b27d-369703e5ea44",
+              "tenantId": "8r85na",
+              "entityType": "attachment",
+              "name": "instead_volleyball.jpe",
+              "description": null,
+              "keywords": "derelinquo attollo autem",
+              "public": false,
+              "bucketName": "attachments",
+              "groupId": null,
+              "filename": "instead_volleyball.jpe",
+              "contentType": "application/json",
+              "convertedContentType": null,
+              "size": "9478414",
+              "originalKey": "uploads/bl6y4dvzpz75e03ldr2ga54h/instead_volleyball.jpe",
+              "convertedKey": null,
+              "thumbnailKey": null,
+              "createdAt": "2024-02-24T16:36:46.247Z",
+              "createdBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "updatedAt": "2024-02-24T16:36:46.247Z",
+              "updatedBy": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "deletedAt": null,
+              "deletedBy": null,
+              "seq": 276,
+              "stx": {
+                "mutationId": "41ffc3e0-8db5-44ef-8dd4-5f10b01ab309",
+                "sourceId": "c5fd1fb3-1ba5-42c2-9db0-9b47a24f941b",
+                "fieldTimestamps": {}
+              },
+              "organizationId": "1cc76d33-0afc-40f8-b565-ad527c313a69"
+            }
+          ],
+          "rejectedIds": []
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "name": { "type": "string", "required": false, "maxLength": 255 },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+            "public": { "type": "boolean", "required": false },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": false,
+              "format": "uuid"
+            },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": false,
+              "maxLength": 255
+            },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": false,
+              "maxLength": 2048
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": false,
+              "maxLength": 2048
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
+                }
+              },
+              "ref": "#/components/schemas/StxBase"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 50,
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteAttachments",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          },
+          "stx": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "mutationId": { "type": "string", "required": true },
+              "sourceId": { "type": "string", "required": true }
+            }
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getPresignedUrl",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Presigned URL",
+        "contentType": "application/json",
+        "schema": { "type": "string", "contentType": "application/json" }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "key": { "type": "string", "required": true, "maxLength": 2048 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getAttachment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachment",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A product entity for file attachment metadata.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["attachment"]
+            },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
+                }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "deletedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deletedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "seq": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+          },
+          "ref": "#/components/schemas/Attachment",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "tenantId": "qnt152",
+          "entityType": "attachment",
+          "name": "rightfully_lest_noted.mp3",
+          "description": null,
+          "keywords": "vereor strenuus verecundia",
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "rightfully_lest_noted.mp3",
+          "contentType": "video/mp4",
+          "convertedContentType": null,
+          "size": "7611296",
+          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T12:26:26.417Z",
+          "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "updatedAt": "2024-10-12T12:26:26.417Z",
+          "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
+          "seq": 123,
+          "stx": {
+            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
+            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "fieldTimestamps": {}
+          },
+          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "updateAttachment",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachment was updated",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A product entity for file attachment metadata.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["attachment"]
+            },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
+                }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "deletedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deletedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "seq": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "public": { "type": "boolean", "required": true },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": { "type": "string", "required": true, "maxLength": 255 },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "originalKey": { "type": "string", "required": true, "maxLength": 2048 },
+            "convertedKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "thumbnailKey": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+          },
+          "ref": "#/components/schemas/Attachment",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "1eb1a578-1a68-45a7-9ee9-b7e9b6c234f2",
+          "tenantId": "qnt152",
+          "entityType": "attachment",
+          "name": "rightfully_lest_noted.mp3",
+          "description": null,
+          "keywords": "vereor strenuus verecundia",
+          "public": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "rightfully_lest_noted.mp3",
+          "contentType": "video/mp4",
+          "convertedContentType": null,
+          "size": "7611296",
+          "originalKey": "uploads/fkyy8dwkbmpkeuemouu8t58r/rightfully_lest_noted.mp3",
+          "convertedKey": null,
+          "thumbnailKey": null,
+          "createdAt": "2024-10-12T12:26:26.417Z",
+          "createdBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "updatedAt": "2024-10-12T12:26:26.417Z",
+          "updatedBy": "0de893f1-dbbf-43d7-b4da-932e8fed4f40",
+          "deletedAt": null,
+          "deletedBy": null,
+          "seq": 123,
+          "stx": {
+            "mutationId": "6d81d96a-7bdc-4827-9d21-ba6fd6449bad",
+            "sourceId": "e036cee3-625c-452e-ab1a-be9390460217",
+            "fieldTimestamps": {}
+          },
+          "organizationId": "0841e0bb-2810-4252-8874-9789e1db3e97"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "fullResponse": {
+            "required": false,
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "ops": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "name": { "type": "string", "required": false, "maxLength": 255 },
+              "originalKey": { "type": "string", "required": false }
+            }
+          },
+          "stx": {
+            "type": "object",
+            "required": true,
+            "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+            "properties": {
+              "mutationId": {
+                "type": "string",
+                "required": true,
+                "description": "Unique mutation ID",
+                "maxLength": 36
+              },
+              "sourceId": {
+                "type": "string",
+                "required": true,
+                "description": "Tab/instance identifier for echo prevention",
+                "maxLength": 64
+              },
+              "fieldTimestamps": {
+                "type": "object",
+                "required": true,
+                "description": "Per-field HLC timestamps for scalar fields being changed",
+                "additionalProperties": { "type": "string", "required": false }
+              }
+            },
+            "ref": "#/components/schemas/StxBase"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

@@ -1,0 +1,30 @@
+# GET /me — looping VUs test read throughput ceiling.
+#
+# Each VU loops 20 times, hitting the /me endpoint.
+# Sustained at 100 arrivals/s (~2000 req/s).
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/auth.ts"
+  phases:
+    - duration: 10
+      arrivalRate: 50
+      name: "ramp up"
+    - duration: 15
+      arrivalRate: 100
+      name: "sustained"
+  plugins:
+    ensure:
+      thresholds:
+        - http.response_time.p95: 500
+        - http.response_time.p99: 1000
+
+scenarios:
+  - beforeScenario: "authenticate"
+    flow:
+      - loop:
+          - get:
+              url: "/me"
+              headers:
+                cookie: "{{ cookie }}"
+          - think: "10ms"
+        count: 20

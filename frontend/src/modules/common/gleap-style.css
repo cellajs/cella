@@ -1,0 +1,22 @@
+.bb-feedback-button {
+  z-index: 20 !important;
+}
+
+.bb-feedback-button > .bb-feedback-button-icon {
+  background-color: var(--secondary);
+}
+
+.bb-feedback-button > .bb-feedback-button-icon > svg {
+  fill: var(--primary);
+  color: var(--primary);
+}
+
+.bb-feedback-button .bb-logo-logo--default path {
+  fill: currentColor;
+}
+
+@media (max-width: 639px) {
+  .bb-feedback-button {
+    display: none !important;
+  }
+}

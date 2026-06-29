@@ -1,0 +1,89 @@
+import { useSearch } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { appConfig, type EnabledOAuthProvider } from 'shared';
+import type { AuthStep } from '~/modules/auth/types';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { Button } from '~/modules/ui/button';
+import { useUIStore } from '~/modules/ui/ui-store';
+
+export const mapOAuthProviders = [
+  { id: 'github', name: 'Github' },
+  { id: 'google', name: 'Google' },
+  { id: 'microsoft', name: 'Microsoft' },
+] as const;
+
+type OAuthProvider = (typeof mapOAuthProviders)[number];
+
+/**
+ * Display OAuth providers to sign in, sign up, accept invitation
+ *
+ * @param authStep The action type to perform
+ */
+export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) {
+  const { t } = useTranslation();
+  const mode = useUIStore((state) => state.mode);
+  const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
+
+  const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
+
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+  const actionText = authStep === 'signIn' ? t('c:sign_in') : authStep === 'signUp' ? t('c:sign_up') : t('c:continue');
+
+  const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
+    try {
+      setLoadingProvider(provider);
+
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
+      const params = new URLSearchParams({ redirectAfter: redirectPath });
+
+      if (tokenId) {
+        params.set('tokenId', tokenId);
+        params.set('type', 'invite');
+      } else params.set('type', 'auth');
+
+      const providerUrl = `${baseUrl}?${params.toString()}`;
+      window.location.assign(providerUrl);
+    } catch (error) {
+      toaster(t('c:url_malformed'), 'error');
+      setLoadingProvider(null);
+    }
+  };
+
+  if (appConfig.enabledOAuthProviders.length < 1) return null;
+
+  return (
+    <div data-mode={mode} className="group flex flex-col space-y-2">
+      {appConfig.enabledOAuthProviders.map((provider) => {
+        // Map provider data
+        const providerData = mapOAuthProviders.find(
+          (p): p is OAuthProvider & { id: typeof provider } => p.id === provider,
+        );
+
+        if (!providerData) return null;
+
+        return (
+          <Button
+            loading={loadingProvider === provider}
+            key={provider}
+            type="button"
+            variant="plain"
+            className="gap-1"
+            onClick={() => authenticateWithProvider(providerData.id)}
+          >
+            <img
+              data-provider={provider}
+              src={`/static/auth/${provider}-icon.svg`}
+              alt={provider}
+              className="mr-1 size-4 data-[provider=github]:group-data-[mode=dark]:invert"
+              loading="lazy"
+            />
+            <span>
+              {actionText} {t('c:with').toLowerCase()} {t(providerData.name)}
+            </span>
+          </Button>
+        );
+      })}
+    </div>
+  );
+}

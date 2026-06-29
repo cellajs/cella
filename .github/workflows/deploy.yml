@@ -1,0 +1,567 @@
+name: Deploy
+
+# Deny-by-default: each job opts in to the scopes it actually needs.
+permissions: {}
+
+on:
+  # Automatic deployment to production only when a release is cut.
+  release:
+    types: [published]
+
+  # Manual deployment for any environment
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+
+# Prevent concurrent deployments to the same environment
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Determine environment and detect which services changed
+  # -------------------------------------------------------------------------
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      environment: ${{ steps.derive.outputs.environment }}
+      pulumi_stack: ${{ steps.derive.outputs.pulumi_stack }}
+      registry_ns: ${{ steps.derive.outputs.registry_ns }}
+      frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
+      state_bucket: ${{ steps.derive.outputs.state_bucket }}
+      vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
+      region: ${{ steps.derive.outputs.region }}
+      enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
+      image_tag: ${{ steps.derive.outputs.image_tag }}
+      build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
+      primary_rollout_matrix: ${{ steps.derive.outputs.primary_rollout_matrix }}
+      roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Derive resource names from shared config
+        id: derive
+        env:
+          ENV: ${{ github.event.inputs.environment || 'production' }}
+          GIT_REF: ${{ github.ref }}
+          GIT_SHA: ${{ github.sha }}
+        run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
+
+  # -------------------------------------------------------------------------
+  # Build and push Docker images
+  # -------------------------------------------------------------------------
+  build-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [setup]
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.build_images_matrix) }}
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: rg.${{ needs.setup.outputs.region }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push ${{ matrix.service }} image
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:${{ needs.setup.outputs.image_tag }}
+          # RELEASE_SHA is baked into the image as ENV for verification later
+          build-args: |
+            RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          provenance: false
+
+  # -------------------------------------------------------------------------
+  # Every VM `docker run`s a boot agent first.
+  # -------------------------------------------------------------------------
+  build-agent-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Build agent bundle
+        run: pnpm --filter infra agent:build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: rg.${{ needs.setup.outputs.region }}.scw.cloud
+          username: nologin
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Build and push boot-agent image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          context: infra/agent
+          file: infra/agent/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/cella-boot-agent:${{ needs.setup.outputs.image_tag }}
+          cache-from: type=gha,scope=boot-agent
+          cache-to: type=gha,mode=max,scope=boot-agent
+          provenance: false
+
+  # -------------------------------------------------------------------------
+  # Build frontend bundle (no upload). Runs in parallel with build-images so
+  # the artifact is ready when publish-frontend gates on backend health.
+  # -------------------------------------------------------------------------
+  build-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        env:
+          ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
+        run: |
+          pnpm --filter infra print-frontend-build-env --services-json "$ENABLED_SERVICES_JSON" >> "$GITHUB_ENV"
+          pnpm --filter frontend build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # Apply Pulumi infrastructure
+  # -------------------------------------------------------------------------
+  pulumi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [setup, build-agent-image, build-images]
+    # contents: read for checkout.
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure Pulumi state bucket exists
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        run: pnpm --filter infra ensure-state-bucket
+
+      - name: Login to S3 state backend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          STATE_BUCKET: ${{ needs.setup.outputs.state_bucket }}
+          REGION: ${{ needs.setup.outputs.region }}
+        run: pulumi login "s3://$STATE_BUCKET?endpoint=s3.$REGION.scw.cloud&region=$REGION"
+
+      - name: Select stack
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+        run: pulumi stack select "$STACK"
+
+      # Take the stack lock so a CI deploy and an operator `apply` (CLI) cannot
+      # mutate the same stack concurrently. Released unconditionally at the end
+      # of this job; a dead lock self-expires after the TTL or via CLI Unlock.
+      - name: Acquire stack lock
+        working-directory: infra
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+        run: pnpm --filter infra stack-lock acquire --stack "$STACK" --operation deploy --ttl-min 60
+
+      # Pre-install the Scaleway plugin as a retryable step before `pulumi up`
+      # pulls it implicitly. GITHUB_TOKEN authenticates the download (5000/hr vs
+      # the unauthenticated 60/hr shared limit that surfaces as `403 rate limit
+      # exceeded` mid-deploy); the cached binary is reused by later steps.
+      - name: Pre-install Pulumi providers
+        working-directory: infra
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm --filter infra install-pulumi-providers
+
+      # Gate the registry wait before the deploy proceeds: a fresh/replaced VM
+      # pulls the pinned SHA during cloud-init and fails boot if the image isn't
+      # pushed yet. The wait loop (and the "exclude ai / include frontend" rule)
+      # lives in infra/tasks/wait-for-images.ts, unit-tested against the service
+      # matrix so it can't drift.
+      - name: Wait for image tags in registry
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          REGION: ${{ needs.setup.outputs.region }}
+          REGISTRY_NS: ${{ needs.setup.outputs.registry_ns }}
+          TAG: ${{ needs.setup.outputs.image_tag }}
+          BUILD_IMAGES_MATRIX: ${{ needs.setup.outputs.build_images_matrix }}
+        run: |
+          set -uo pipefail
+          REGISTRY="rg.$REGION.scw.cloud"
+          echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" -u nologin --password-stdin >/dev/null
+          pnpm --filter infra wait-for-images --registry "$REGISTRY" --ns "$REGISTRY_NS" --tag "$TAG" --build-images-json "$BUILD_IMAGES_MATRIX"
+
+      - name: Pulumi up (base infra)
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          # Authenticate any implicit provider-plugin re-fetch (5000/hr vs the
+          # unauthenticated 60/hr shared limit that surfaced as a mid-deploy 403).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          # The Pulumi program reads the shared singleton, which selects config by
+          # APP_MODE. Set it from the stack mode so no module mutates env at runtime.
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+        run: |
+          pnpm --filter infra sync-rollout-config --stack "$STACK"
+          pulumi up --stack "$STACK" --yes
+
+      - name: Verify VM reader IAM grant
+        working-directory: infra
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          VM_READER_APP: ${{ needs.setup.outputs.vm_reader_app }}
+        run: |
+          # Resolve the VM reader app by name and verify its IAM policies using
+          # the synced project and organization ids. Passing the org id avoids
+          # the Account `read project` call that CI cannot make.
+          pnpm --filter infra assert-vm-grants --application-name "$VM_READER_APP" --project-id "$SCW_DEFAULT_PROJECT_ID" --organization-id "$SCW_DEFAULT_ORGANIZATION_ID"
+
+      - name: Verify runtime secrets are deliverable
+        working-directory: infra
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          REGION: ${{ needs.setup.outputs.region }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SERVICES_MATRIX: ${{ needs.setup.outputs.enabled_services_json }}
+        run: pnpm --filter infra assert-secrets-deliverable --region "$REGION" --project-id "$SCW_DEFAULT_PROJECT_ID" --services-json "$SERVICES_MATRIX"
+
+      - name: Deploy VM generations with explicit cutover
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+          # Pulumi program selects shared config by APP_MODE; set it from the stack mode.
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          PRIMARY_ROLLOUT_MATRIX: ${{ needs.setup.outputs.primary_rollout_matrix }}
+          ROLL_REST_MATRIX: ${{ needs.setup.outputs.roll_rest_matrix }}
+        run: pnpm --filter infra deploy-rollout --stack "$STACK" --sha "$IMAGE_TAG" --primary-json "$PRIMARY_ROLLOUT_MATRIX" --rest-json "$ROLL_REST_MATRIX"
+
+      - name: Release stack lock
+        if: always()
+        working-directory: infra
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+          STACK: ${{ needs.setup.outputs.pulumi_stack }}
+        run: pnpm --filter infra stack-lock release --stack "$STACK"
+
+  # -------------------------------------------------------------------------
+  # Verify the rollout — the pulumi job above runs deploy-service per VM service
+  # (image SHA baked into cloud-init, explicit LB cutover for public services).
+  # These jobs only confirm each public service serves the expected SHA
+  # (X-App-Version == SHA), preserving the existing branch-protection shape.
+  # -------------------------------------------------------------------------
+  roll-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [setup, pulumi, build-images]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.primary_rollout_matrix) }}
+    env:
+      REGION: ${{ needs.setup.outputs.region }}
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      SERVICE: ${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
+      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
+        if: matrix.health_url != ''
+        env:
+          BASE: ${{ matrix.health_url }}
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
+
+  roll-rest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [setup, pulumi, build-images, roll-backend]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.roll_rest_matrix) }}
+    env:
+      REGION: ${{ needs.setup.outputs.region }}
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      SERVICE: ${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
+      - name: Wait for ${{ matrix.service }} to serve ${{ needs.setup.outputs.image_tag }}
+        if: matrix.health_url != ''
+        env:
+          BASE: ${{ matrix.health_url }}
+        run: pnpm --filter infra wait-for-version --url "$BASE/health" --sha "$EXPECTED_SHA"
+
+  # -------------------------------------------------------------------------
+  # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
+  # -------------------------------------------------------------------------
+  upload-frontend-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup, build-frontend]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Upload versioned assets (long cache, no --delete)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        run: |
+          BUCKET="s3://$BUCKET_NAME"
+          aws s3 sync dist/ "$BUCKET/" \
+            --endpoint-url "$S3_ENDPOINT" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "sw.js" \
+            --exclude "sw.js.map" \
+            --exclude "manifest.webmanifest"
+
+  # -------------------------------------------------------------------------
+  # Atomic frontend flip: publish the mutable entry files so users start
+  # loading the new build. Deliberately AFTER the rollout is verified
+  # -------------------------------------------------------------------------
+  publish-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup, upload-frontend-assets, roll-backend, roll-rest]
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Upload entry files (no-cache) — strictly after assets
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ needs.setup.outputs.region }}
+          S3_ENDPOINT: https://s3.${{ needs.setup.outputs.region }}.scw.cloud
+          BUCKET_NAME: ${{ needs.setup.outputs.frontend_bucket }}
+        run: |
+          BUCKET="s3://$BUCKET_NAME"
+          for f in index.html sw.js manifest.webmanifest; do
+            if [ -f "dist/$f" ]; then
+              aws s3 cp "dist/$f" "$BUCKET/$f" \
+                --endpoint-url "$S3_ENDPOINT" \
+                --cache-control "no-cache, no-store, must-revalidate"
+            fi
+          done
+
+  # -------------------------------------------------------------------------
+  # Smoke tests — last-mile sanity checks executed against live resources
+  # -------------------------------------------------------------------------
+  smoke-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [setup, publish-frontend]
+    # contents: read is required for actions/checkout below (private repo).
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    env:
+      EXPECTED_SHA: ${{ needs.setup.outputs.image_tag }}
+      ENABLED_SERVICES_JSON: ${{ needs.setup.outputs.enabled_services_json }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra...
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Run smoke checks
+        run: pnpm --filter infra smoke --sha "$EXPECTED_SHA" --services-json "$ENABLED_SERVICES_JSON" --dist "$GITHUB_WORKSPACE/dist/index.html"
+

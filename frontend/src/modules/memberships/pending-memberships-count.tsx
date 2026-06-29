@@ -1,0 +1,64 @@
+import { onlineManager } from '@tanstack/react-query';
+import { lazy, Suspense, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { toaster } from '~/modules/common/toaster/toaster';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
+import { Button } from '~/modules/ui/button';
+
+const PendingMembershipsTable = lazy(() => import('~/modules/memberships/pending-table/pending-memberships-table'));
+
+type EntityWithIncluded = EnrichedContextEntity & Pick<Organization, 'included'>;
+const hasIncluded = (contextEntity: EnrichedContextEntity): contextEntity is EntityWithIncluded =>
+  'included' in contextEntity;
+
+/**
+ * Component to display pending memberships count.
+ * Users can click to open them in a table in a sheet.
+ */
+export const PendingMembershipsCount = ({ contextEntity }: { contextEntity: EnrichedContextEntity }) => {
+  const { t } = useTranslation();
+  const buttonRef = useRef(null);
+
+  const createSheet = sheeter.getState().create;
+
+  // Open pending memberships sheet
+  const openSheet = () => {
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+
+    createSheet(
+      <div className="container">
+        <Suspense>
+          <PendingMembershipsTable contextEntity={contextEntity} />
+        </Suspense>
+      </div>,
+      {
+        id: 'pending-invites',
+        triggerRef: buttonRef,
+        side: 'right',
+        className: 'max-w-full lg:max-w-4xl',
+        title: t('c:pending_invitations'),
+        description: t('c:pending_invitations.text', {
+          entityType: t(`c:${contextEntity.entityType}`).toLowerCase(),
+        }),
+      },
+    );
+  };
+
+  if (!hasIncluded(contextEntity) || !contextEntity.included.counts) return null;
+
+  return (
+    <Button
+      ref={buttonRef}
+      disabled={contextEntity.included.counts.membership.pending < 1}
+      variant="ghost"
+      size="xs"
+      className=""
+      onClick={openSheet}
+    >
+      {new Intl.NumberFormat('de-DE').format(contextEntity.included.counts.membership.pending)}{' '}
+      {t('c:pending').toLowerCase()}
+    </Button>
+  );
+};

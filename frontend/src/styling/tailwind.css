@@ -1,0 +1,256 @@
+@import "tailwindcss";
+@import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
+@import "../modules/common/blocknote/styles.css" layer(base);
+
+@config "../../tailwind.config.ts";
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Light"),
+      local("OpenSans-Light"),
+      url(/static/ui/OpenSans-Light.woff2) format("woff2"),
+      url(/static/ui/OpenSans-Light.woff) format("woff");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Regular"),
+      local("OpenSans-Regular"),
+      url(/static/ui/OpenSans-Regular.woff2) format("woff2"),
+      url(/static/ui/OpenSans-Regular.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  /* REMARK: 500 weight somehow causes a flicker in resize  */
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Medium"),
+      local("OpenSans-Medium"),
+      url(/static/ui/OpenSans-Medium.woff2) format("woff2"),
+      url(/static/ui/OpenSans-Medium.woff) format("woff");
+    font-weight: 500;
+    font-style: normal;
+    font-display: block;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Semibold"),
+      local("OpenSans-Semibold"),
+      url(/static/ui/OpenSans-SemiBold.woff2) format("woff2"),
+      url(/static/ui/OpenSans-SemiBold.woff) format("woff");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Open Sans";
+    src:
+      local("Open Sans Bold"),
+      local("OpenSans-Bold"),
+      url(/static/ui/OpenSans-Bold.woff2) format("woff2"),
+      url(/static/ui/OpenSans-Bold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+}
+
+@utility submenu-section {
+  &:before {
+    border-left: 2px dotted var(--foreground);
+    content: "";
+    display: block;
+    position: absolute;
+    margin-top: 0.6rem;
+    margin-left: 1.7rem;
+    opacity: 0.5;
+    z-index: 0;
+    width: 0.05rem;
+    height: calc(100% - 1.5rem);
+  }
+}
+
+/* Opaque soft intent colors using color-mix (no transparency) */
+@utility soft-bg {
+  background-color: color-mix(in srgb, var(--intent-color) 10%, var(--background));
+}
+
+@utility soft-bg-hover {
+  background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
+}
+
+@utility soft-border {
+  border-color: color-mix(in srgb, var(--intent-color) 20%, var(--background));
+}
+
+@layer components {
+  .focus-effect {
+    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer base {
+  /* Theme tokens */
+  :root,
+  .bn-container.bn-shadcn {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.2067 0.01 285.49);
+    --card: oklch(0.987 0.0013 285.76);
+    --card-foreground: oklch(0.2067 0.01 285.49);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.1155 0 0);
+    --primary: oklch(0.2061 0.006 285.56);
+    --primary-foreground: oklch(0.9627 0 0);
+    --secondary: oklch(0.9575 0.0044 285.76);
+    --secondary-foreground: oklch(0.3138 0.0102 285.63);
+    --muted: oklch(0.9575 0.0044 285.76);
+    --muted-foreground: oklch(0.4571 0.0112 285.63);
+    --accent: oklch(0.9575 0.0044 285.76);
+    --accent-foreground: oklch(0.2067 0.01 285.49);
+    --destructive: oklch(0.5137 0.2082 29.23);
+    --destructive-foreground: oklch(0.9851 0 0);
+    --border: oklch(0.92 0.004 285.75);
+    --input: oklch(0.88 0.005 285.75);
+    --ring: oklch(0.2067 0.01 285.49);
+    --radius: 0.5rem;
+    --success: oklch(0.5917 0.2014 142.5);
+    --success-foreground: oklch(0.9851 0 0);
+    --warning: oklch(0.68 0.16 70);
+    --warning-foreground: oklch(0.9851 0 0);
+    --brand: oklch(0.2061 0.006 285.56);
+    --brand-foreground: oklch(0.9627 0 0);
+
+    --sidebar: oklch(0.9575 0.0044 285.76);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  .dark,
+  .bn-container.bn-shadcn.dark {
+    --background: oklch(0.1963 0.0092 285.53);
+    --foreground: oklch(0.9627 0 0);
+    --card: oklch(0.232 0.0095 285.56);
+    --card-foreground: oklch(0.9627 0 0);
+    --popover: oklch(0.1963 0.0092 285.53);
+    --popover-foreground: oklch(0.9627 0 0);
+    --primary: oklch(0.9851 0 0);
+    --primary-foreground: oklch(0.3138 0.0102 285.63);
+    --secondary: oklch(0.3138 0.0102 285.63);
+    --secondary-foreground: oklch(0.9851 0 0);
+    --muted: oklch(0.3138 0.0102 285.63);
+    --muted-foreground: oklch(0.8089 0.0128 285.86);
+    --accent: oklch(0.3138 0.0102 285.63);
+    --accent-foreground: oklch(0.9851 0 0);
+    --destructive: oklch(0.5137 0.2082 29.23);
+    --destructive-foreground: oklch(0.9851 0 0);
+    --border: oklch(0.36 0.011 285.63);
+    --input: oklch(0.42 0.011 285.63);
+    --ring: oklch(0.86 0.0096 285.72);
+    --success: oklch(0.5917 0.2014 142.5);
+    --success-foreground: oklch(0.9851 0 0);
+    --warning: oklch(0.68 0.16 70);
+    --warning-foreground: oklch(0.9851 0 0);
+    --brand: oklch(0.9851 0 0);
+    --brand-foreground: oklch(0.3138 0.0102 285.63);
+
+    --sidebar: oklch(0.3138 0.0102 285.63);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.439 0 0);
+  }
+}
+
+@layer base {
+  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
+  html {
+    @apply font-sans overscroll-none max-sm:text-[19px];
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-full overscroll-none;
+  }
+
+  .container {
+    @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
+  }
+
+  /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */
+  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
+    display: none !important;
+  }
+
+  /* Hide devtools */
+  .tsqd-open-btn-container,
+  .TanStackRouterDevtools > button {
+    display: none !important;
+  }
+
+  /* Hide create-task button when board is empty (no projects) */
+  body:has([data-board-empty]) #create-task {
+    display: none;
+  }
+}
+
+/* Page-enter curtain. On a context-entity navigation the page scrolls to its header (#pt); this
+   overlay covers the content area, holds the background for the first frames so the scroll travel
+   (forward) or restore (back/forward) happens off-screen, then fades out to reveal the positioned
+   page. Lives over #app-content only, so the sidebar/nav don't flash. */
+@keyframes page-enter-curtain {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.page-enter-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: var(--background);
+  pointer-events: none;
+  animation: page-enter-curtain 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-curtain {
+    animation: none;
+    opacity: 0;
+  }
+}

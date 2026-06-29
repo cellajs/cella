@@ -1,0 +1,30 @@
+import { Button, Section } from './primitives';
+
+/**
+ * Email button component for call-to-action links with consistent styling.
+ */
+export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
+  <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
+    <Button
+      align="center"
+      height={38}
+      width={200}
+      style={{
+        textAlign: 'center',
+        background: '#000',
+        color: 'white',
+        padding: '0.75rem 1.25rem',
+        fontSize: '1rem',
+        textDecoration: 'none',
+        fontWeight: 'font-semibold',
+        borderRadius: '0.25rem',
+      }}
+      href={href}
+    >
+      {ButtonText}
+    </Button>
+  </Section>
+);
+
+// Template export
+export const Template = EmailButton;

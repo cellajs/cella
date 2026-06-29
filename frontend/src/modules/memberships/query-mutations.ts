@@ -1,0 +1,399 @@
+import { onlineManager, useMutation } from '@tanstack/react-query';
+import { t } from 'i18next';
+import {
+  deleteMemberships,
+  type Membership,
+  type MembershipBase,
+  type MembershipInviteResponse,
+  membershipInvite,
+  type Organization,
+  updateMembership,
+} from 'sdk';
+import { appConfig, type ContextEntityType } from 'shared';
+import type { ApiError } from '~/lib/api';
+import { toaster } from '~/modules/common/toaster/toaster';
+import type { EnrichedContextEntity } from '~/modules/entities/types';
+import { meKeys } from '~/modules/me/query';
+import { memberQueryKeys } from '~/modules/memberships/query';
+import type {
+  DeleteMembership,
+  EntityMembershipContextProp,
+  InfiniteMemberQueryData,
+  InviteMember,
+  Member,
+  MemberContextProp,
+  MemberQueryData,
+  MutationUpdateMembership,
+} from '~/modules/memberships/types';
+import { useUserStore } from '~/modules/user/user-store';
+import {
+  changeInfiniteQueryData,
+  changeQueryData,
+  formatUpdatedCacheData,
+  getEntityQueryKeys,
+  getQueryItems,
+  getSimilarQueries,
+  invalidateOnMembershipChange,
+  isInfiniteQueryData,
+  isQueryData,
+} from '~/query/basic';
+import { queryClient } from '~/query/query-client';
+
+const limit = appConfig.requestLimits.members;
+
+/**
+ * Update a membership in the myMemberships cache.
+ * This is the single source of truth for current user's memberships.
+ */
+export const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) => {
+  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
+    if (!oldData) return oldData;
+    return {
+      ...oldData,
+      items: oldData.items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)),
+    };
+  });
+};
+
+/**
+ * Add a new membership to the myMemberships cache.
+ * Used when the current user is invited to a new entity.
+ */
+export const addMyMembershipCache = (newMembership: MembershipBase) => {
+  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
+    if (!oldData) return { items: [newMembership] };
+    return { ...oldData, items: [...oldData.items, newMembership] };
+  });
+};
+
+/**
+ * Upsert a membership in the myMemberships cache.
+ * Updates existing membership by id, or appends when missing.
+ */
+export const upsertMyMembershipCache = (membership: MembershipBase) => {
+  const exists = queryClient
+    .getQueryData<{ items: MembershipBase[] }>(meKeys.memberships)
+    ?.items.some((m) => m.id === membership.id);
+
+  if (exists) updateMyMembershipCache(membership);
+  else addMyMembershipCache(membership);
+};
+
+/**
+ * Update an entity's data in all matching list cache queries.
+ * Uses the entity query registry to resolve query keys dynamically.
+ */
+const updateEntityInListCache = (entityType: ContextEntityType, updatedItems: { id: string }[]) => {
+  const keys = getEntityQueryKeys(entityType);
+
+  const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
+  for (const [queryKey, queryData] of queries) {
+    if (!queryData) continue;
+    if (isInfiniteQueryData(queryData)) changeInfiniteQueryData(queryKey, updatedItems, 'update');
+    else if (isQueryData(queryData)) changeQueryData(queryKey, updatedItems, 'update');
+  }
+};
+
+const onError = (
+  _: ApiError,
+  __: InviteMember | MutationUpdateMembership | DeleteMembership,
+  context?: MemberContextProp[],
+) => {
+  if (context?.length) {
+    for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
+  }
+};
+
+export const useInviteMemberMutation = () =>
+  useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
+    mutationKey: memberQueryKeys.update(),
+    mutationFn: ({ body, path, query }) => membershipInvite({ body, path, query }),
+    onSuccess: ({ invitesSentCount }, { contextEntity }) => {
+      const { id: entityId, entityType, organizationId } = contextEntity;
+
+      if (invitesSentCount) {
+        // If the entity is not an organization but belongs to one, update its cache too
+        if (entityType !== 'organization' && organizationId) {
+          const orgKeys = getEntityQueryKeys('organization');
+          const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
+          queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) =>
+            updateMembershipCounts(oldOrg, invitesSentCount),
+          );
+        }
+
+        const entityPendingTableQueries = getSimilarQueries(
+          memberQueryKeys.list.similarPending({ entityId, entityType }),
+        );
+        for (const [queryKey] of entityPendingTableQueries)
+          queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
+
+        // Update entity detail cache using the proper query key
+        const entityKeys = getEntityQueryKeys(entityType);
+        const detailQueryKey = entityKeys.detail.byId(entityId);
+        queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) =>
+          updateMembershipCounts(oldEntity, invitesSentCount),
+        );
+
+        // Invalidate entity detail/list queries to ensure fresh data
+        invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+      }
+    },
+    onError,
+  });
+
+export const useMemberUpdateMutation = () =>
+  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipContextProp>({
+    mutationKey: memberQueryKeys.update(),
+    mutationFn: async ({ path, body }) => {
+      return await updateMembership({ body, path });
+    },
+    onMutate: async (variables) => {
+      const { entityId, entityType, path, body } = variables;
+      const { tenantId, organizationId, id } = path;
+      const membershipInfo = { id, ...body };
+
+      // Store previous query data for rollback if an Apierror occurs
+      const context = {
+        queryContext: [] as MemberContextProp[],
+        toastMessage: t('c:success.update_item', { item: t('c:membership') }),
+        entityType,
+      };
+
+      // Set toast message based on what was updated
+      if (body?.archived !== undefined) {
+        context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, {
+          resource: t(`c:${entityType}`),
+        });
+      } else if (body?.muted !== undefined) {
+        context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, {
+          resource: t(`c:${entityType}`),
+        });
+      } else if (body?.role) {
+        context.toastMessage = t('c:success.update_item', { item: t('c:role') });
+      } else if (body?.displayOrder !== undefined)
+        context.toastMessage = t('c:success.update_item', { item: t('c:order') });
+
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      updateMyMembershipCache(membershipInfo);
+
+      // Get affected queries
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      // Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Member>(similarKey);
+
+      // Iterate over affected queries and optimistically update cache
+      for (const [queryKey, previousData] of queries) {
+        if (!previousData) continue;
+
+        queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (oldData) => {
+          if (!oldData) return oldData;
+
+          const prevItems = getQueryItems(oldData);
+          const updatedData = updateMembers(prevItems, membershipInfo);
+
+          return formatUpdatedCacheData(oldData, updatedData, limit);
+        });
+
+        context.queryContext.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
+      }
+
+      return context;
+    },
+    onSuccess: async (
+      updatedMembership,
+      { entityId, entityType, path: { tenantId, organizationId } },
+      { toastMessage },
+    ) => {
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      updateMyMembershipCache(updatedMembership);
+
+      // Get affected queries
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      //Cancel all affected queries
+      const queries = getSimilarQueries<Member>(similarKey);
+
+      for (const query of queries) {
+        const [activeKey] = query;
+
+        // if role changes invalidate role based filter
+        if (updatedMembership.role && activeKey.some((el) => typeof el === 'object' && el && 'role' in el && el.role)) {
+          queryClient.invalidateQueries({ queryKey: activeKey, refetchType: 'all' });
+          continue;
+        }
+
+        queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(activeKey, (oldData) => {
+          if (!oldData) return oldData;
+
+          const prevItems = getQueryItems(oldData);
+          const updatedData = updateMembers(prevItems, updatedMembership);
+
+          return formatUpdatedCacheData(oldData, updatedData, limit);
+        });
+      }
+
+      // Invalidate entity queries to ensure counts and data are fresh
+      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+
+      toaster(toastMessage, 'success');
+    },
+    onError: (_, __, context) => {
+      // Invalidate memberships to undo the optimistic update — enrichment subscriber re-syncs entity lists
+      queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
+      onError(_, __, context?.queryContext);
+    },
+  });
+
+export const useMembershipsDeleteMutation = () =>
+  useMutation<void, ApiError, DeleteMembership, MemberContextProp[]>({
+    mutationKey: memberQueryKeys.delete(),
+    mutationFn: async ({ path, body, query }) => {
+      await deleteMemberships({ path, body, query });
+    },
+    onMutate: async (variables) => {
+      const {
+        members,
+        query: { entityId, entityType },
+        path: { tenantId, organizationId },
+      } = variables;
+      const ids = members.map(({ id }) => id);
+
+      const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
+
+      // Get affected queries
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Member>(similarKey);
+
+      // Iterate over affected queries and optimistically update cache
+      for (const [queryKey, previousData] of queries) {
+        if (!previousData) continue;
+
+        queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (oldData) => {
+          if (!oldData) return oldData;
+
+          const prevItems = getQueryItems(oldData);
+          const updatedMemberships = deletedMembers(prevItems, ids);
+
+          return formatUpdatedCacheData(oldData, updatedMemberships, limit, -ids.length);
+        });
+
+        context.push([queryKey, previousData]); // Store previous data for rollback if needed
+      }
+
+      return context;
+    },
+    onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
+      // Invalidate entity queries to ensure counts are fresh
+      invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
+      toaster(t('c:success.delete_members'), 'success');
+    },
+    onError,
+  });
+
+const updateMembers = (members: Member[], variables: { id: string } & Record<string, unknown>) => {
+  return members.map((member) => {
+    // Update the task itself
+    if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };
+
+    // No changes, return member as-is
+    return member;
+  });
+};
+
+const deletedMembers = (members: Member[], ids: string[]) => {
+  return members
+    .map((member) => {
+      if (ids.includes(member.id)) return null;
+      return member;
+    })
+    .filter((m): m is Member => m !== null);
+};
+
+/**
+ * Update the memberships and pending membership count in the cache for a given entity.
+ */
+const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
+  if (!oldEntity?.included.counts) return oldEntity;
+
+  return {
+    ...oldEntity,
+    included: {
+      ...oldEntity.included,
+      counts: {
+        ...oldEntity.included.counts,
+        membership: {
+          ...oldEntity.included.counts.membership,
+          pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount,
+        },
+      },
+    },
+  };
+};
+
+/** Variables for changing a user's role on a context entity from an entity table */
+type ChangeEntityRoleVariables = {
+  entity: EnrichedContextEntity;
+  role: MembershipBase['role'];
+};
+
+type ChangeEntityRoleResult = {
+  entity: EnrichedContextEntity;
+  membership: MembershipBase;
+  wasNew: boolean;
+};
+
+/**
+ * Entity-agnostic mutation hook for changing a user's role on a context entity.
+ * Handles both updating an existing membership and creating a new one via invite.
+ * Updates the entity list cache and myMemberships cache automatically.
+ */
+export const useChangeEntityRoleMutation = () =>
+  useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
+    mutationFn: async ({ entity, role }) => {
+      if (!onlineManager.isOnline()) {
+        toaster(t('c:action.offline.text'), 'warning');
+        throw new Error('offline');
+      }
+
+      const { id: entityId, entityType, tenantId, membership } = entity;
+      // For organization entities, organizationId is the entity itself; for children it comes from the entity data
+      const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
+      if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
+
+      if (membership?.id) {
+        // Existing membership — update role
+        const updated = await updateMembership({
+          body: { role },
+          path: { id: membership.id, tenantId, organizationId },
+        });
+        return { entity, membership: updated, wasNew: false };
+      }
+
+      // No membership — create via invite
+      const { email } = useUserStore.getState().user;
+      const result = await membershipInvite({
+        query: { entityId, entityType },
+        path: { tenantId, organizationId },
+        body: { emails: [email], role },
+      });
+
+      const created = result.data?.[0];
+      if (!created) throw new Error('Failed to create membership');
+      return { entity, membership: created, wasNew: true };
+    },
+    onSuccess: ({ entity, membership }) => {
+      // Update myMemberships cache — global subscriber enriches entity lists automatically
+      upsertMyMembershipCache(membership);
+
+      // Update entity list cache with the new/updated membership
+      const updatedEntity = { ...entity, membership };
+      updateEntityInListCache(entity.entityType, [updatedEntity]);
+
+      toaster(t('c:success.role_updated'), 'success');
+    },
+    onError: () => {
+      toaster(t('error:error'), 'error');
+    },
+  });

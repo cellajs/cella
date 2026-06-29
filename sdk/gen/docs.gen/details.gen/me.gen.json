@@ -1,0 +1,1416 @@
+[
+  {
+    "operationId": "getMe",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User",
+        "name": "Me",
+        "ref": "#/components/schemas/Me",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "The currently authenticated user with their system admin status.",
+          "properties": {
+            "user": {
+              "type": "object",
+              "required": true,
+              "description": "A user with profile data and activity timestamps.",
+              "properties": {
+                "createdAt": { "type": "string", "required": true },
+                "id": { "type": "string", "required": true, "format": "uuid" },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                },
+                "name": { "type": "string", "required": true, "maxLength": 255 },
+                "description": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "slug": { "type": "string", "required": true, "maxLength": 255 },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "bannerUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "email": { "type": "string", "required": true, "format": "email" },
+                "mfaRequired": { "type": "boolean", "required": true },
+                "firstName": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "lastName": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "language": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["en", "nl"]
+                },
+                "newsletter": { "type": "boolean", "required": true },
+                "userFlags": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "finishedOnboarding": { "type": "boolean", "required": true }
+                  }
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "updatedBy": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "format": "uuid"
+                },
+                "lastSeenAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "lastStartedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "lastSignInAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                }
+              },
+              "ref": "#/components/schemas/User"
+            },
+            "isSystemAdmin": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the current user has system admin privileges."
+            }
+          },
+          "ref": "#/components/schemas/Me",
+          "contentType": "application/json"
+        },
+        "example": {
+          "user": {
+            "id": "caad4530-7189-4ad0-8822-372adc47fa07",
+            "entityType": "user",
+            "name": "Donald McClure",
+            "firstName": "Donald",
+            "lastName": "McClure",
+            "email": "donald.mcclure57@yahoo.com",
+            "slug": "donaldmcclure74",
+            "description": null,
+            "thumbnailUrl": null,
+            "bannerUrl": null,
+            "language": "en",
+            "newsletter": true,
+            "mfaRequired": false,
+            "userFlags": {},
+            "createdAt": "2024-07-14T11:38:21.926Z",
+            "updatedAt": "2024-07-14T11:38:21.926Z",
+            "updatedBy": null,
+            "lastStartedAt": "2024-07-14T11:38:21.926Z",
+            "lastSignInAt": "2024-07-14T11:38:21.926Z",
+            "lastSeenAt": "2024-07-14T11:38:21.926Z"
+          },
+          "isSystemAdmin": false
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "updateMe",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User",
+        "name": "User",
+        "ref": "#/components/schemas/User",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A user with profile data and activity timestamps.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "email": { "type": "string", "required": true, "format": "email" },
+            "mfaRequired": { "type": "boolean", "required": true },
+            "firstName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "lastName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "language": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "newsletter": { "type": "boolean", "required": true },
+            "userFlags": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "finishedOnboarding": { "type": "boolean", "required": true }
+              }
+            },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "lastSeenAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastSignInAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/User",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+          "entityType": "user",
+          "name": "Cathy Hodkiewicz",
+          "firstName": "Cathy",
+          "lastName": "Hodkiewicz",
+          "email": "cathy.hodkiewicz@hotmail.com",
+          "slug": "cathyhodkiewicz17",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "language": "en",
+          "newsletter": false,
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-12-13T10:04:17.464Z",
+          "updatedAt": "2024-12-13T10:04:17.464Z",
+          "updatedBy": null,
+          "lastStartedAt": "2024-12-13T10:04:17.464Z",
+          "lastSignInAt": "2024-12-13T10:04:17.464Z",
+          "lastSeenAt": "2024-12-13T10:04:17.464Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "bannerUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "firstName": {
+            "type": ["string", "null"],
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "lastName": {
+            "type": ["string", "null"],
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "language": {
+            "type": "string",
+            "required": false,
+            "enum": ["en", "nl"]
+          },
+          "newsletter": { "type": "boolean", "required": false },
+          "thumbnailUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "slug": {
+            "type": "string",
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "userFlags": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "finishedOnboarding": { "type": "boolean", "required": false }
+            }
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteMe",
+    "responses": [
+      { "status": 204, "description": "User deleted" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "toggleMfa",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User",
+        "name": "User",
+        "ref": "#/components/schemas/User",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A user with profile data and activity timestamps.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["user"]
+            },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "description": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "email": { "type": "string", "required": true, "format": "email" },
+            "mfaRequired": { "type": "boolean", "required": true },
+            "firstName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "lastName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "language": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "newsletter": { "type": "boolean", "required": true },
+            "userFlags": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "finishedOnboarding": { "type": "boolean", "required": true }
+              }
+            },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "lastSeenAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastStartedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastSignInAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/User",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+          "entityType": "user",
+          "name": "Cathy Hodkiewicz",
+          "firstName": "Cathy",
+          "lastName": "Hodkiewicz",
+          "email": "cathy.hodkiewicz@hotmail.com",
+          "slug": "cathyhodkiewicz17",
+          "description": null,
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "language": "en",
+          "newsletter": false,
+          "mfaRequired": false,
+          "userFlags": {},
+          "createdAt": "2024-12-13T10:04:17.464Z",
+          "updatedAt": "2024-12-13T10:04:17.464Z",
+          "updatedBy": null,
+          "lastStartedAt": "2024-12-13T10:04:17.464Z",
+          "lastSignInAt": "2024-12-13T10:04:17.464Z",
+          "lastSeenAt": "2024-12-13T10:04:17.464Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "passkeyData": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "credentialId": { "type": "string", "required": true },
+              "clientDataJSON": { "type": "string", "required": true },
+              "authenticatorObject": { "type": "string", "required": true },
+              "signature": { "type": "string", "required": true }
+            }
+          },
+          "totpCode": { "type": "string", "required": false },
+          "mfaRequired": { "type": "boolean", "required": true }
+        },
+        "required": false,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getMyAuth",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User sign-up info",
+        "name": "MeAuthData",
+        "ref": "#/components/schemas/MeAuthData",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "Authentication metadata for the current user session.",
+          "properties": {
+            "enabledOAuth": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github"]
+            },
+            "hasTotp": { "type": "boolean", "required": true },
+            "sessions": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["regular", "impersonation", "mfa"]
+                  },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
+                  "deviceName": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["desktop", "mobile"]
+                  },
+                  "deviceOs": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "browser": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "authStrategy": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "ipHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipSubnetHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipCountry": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2
+                  },
+                  "ipAsn": {
+                    "type": ["integer", "null"],
+                    "required": true,
+                    "minimum": -2147483648,
+                    "maximum": 2147483647
+                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "expiresAt": { "type": "string", "required": true },
+                  "isCurrent": { "type": "boolean", "required": true }
+                }
+              }
+            },
+            "passkeys": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
+                  "deviceName": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["desktop", "mobile"]
+                  },
+                  "deviceOs": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "browser": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 },
+                  "createdAt": { "type": "string", "required": true }
+                }
+              }
+            }
+          },
+          "ref": "#/components/schemas/MeAuthData",
+          "contentType": "application/json"
+        },
+        "example": {
+          "enabledOAuth": ["github"],
+          "hasTotp": false,
+          "sessions": [
+            {
+              "id": "0ff9d780-10bf-4531-b073-c93c225553bc",
+              "userId": "3fdbee2a-ceb3-401e-b7af-e58710cdd4a5",
+              "type": "regular",
+              "createdAt": "2024-05-28T17:45:48.607Z",
+              "expiresAt": "2024-06-27T17:45:48.607Z",
+              "deviceName": "Firefox on Windows",
+              "deviceType": "desktop",
+              "deviceOs": "iOS",
+              "browser": "Edge",
+              "authStrategy": "passkey",
+              "ipHash": null,
+              "ipSubnetHash": null,
+              "ipCountry": null,
+              "ipAsn": null,
+              "isCurrent": true
+            }
+          ],
+          "passkeys": []
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "getMyInvitations",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Invitations pending",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "entity": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Base schema for entities with memberships (e.g. organization).",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "createdAt": { "type": "string", "required": true },
+                      "updatedAt": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "tenantId": { "type": "string", "required": true },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["organization"]
+                      },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "bannerUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      }
+                    },
+                    "ref": "#/components/schemas/ContextEntityBase"
+                  },
+                  "inactiveMembership": {
+                    "type": "object",
+                    "required": true,
+                    "description": "A membership record for a user who has not yet accepted an invitation.",
+                    "properties": {
+                      "createdAt": { "type": "string", "required": true },
+                      "id": { "type": "string", "required": true, "format": "uuid" },
+                      "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                      "contextType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["organization"]
+                      },
+                      "contextId": { "type": "string", "required": true, "format": "uuid" },
+                      "email": { "type": "string", "required": true, "maxLength": 255 },
+                      "userId": {
+                        "type": ["string", "null"],
+                        "required": true,
+                        "format": "uuid"
+                      },
+                      "tokenId": {
+                        "type": ["string", "null"],
+                        "required": true,
+                        "format": "uuid"
+                      },
+                      "role": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["admin", "member"]
+                      },
+                      "rejectedAt": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "createdBy": {
+                        "type": ["object", "null"],
+                        "required": true,
+                        "description": "Minimal user data for references.",
+                        "properties": {
+                          "id": { "type": "string", "required": true },
+                          "name": { "type": "string", "required": true },
+                          "slug": { "type": "string", "required": true },
+                          "thumbnailUrl": {
+                            "type": ["string", "null"],
+                            "required": true
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["user"]
+                          }
+                        },
+                        "extendsRef": "#/components/schemas/UserMinimalBase"
+                      },
+                      "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                    },
+                    "ref": "#/components/schemas/InactiveMembership"
+                  }
+                }
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "entity": {
+                "id": "21706e63-57b3-4215-a579-fd75f58d0366",
+                "createdAt": "2024-03-24T21:00:55.860Z",
+                "updatedAt": "2024-09-10T09:05:20.741Z",
+                "tenantId": "kbjmurn9341gpf179lp8d6lk",
+                "name": "MacGyver LLC",
+                "entityType": "organization",
+                "slug": "macgyver-llc",
+                "thumbnailUrl": null,
+                "bannerUrl": null
+              },
+              "inactiveMembership": {
+                "id": "3f5e59d4-e502-4132-8e0d-915e1951a439",
+                "contextType": "organization",
+                "contextId": "dc3036bd-bd6a-4ea8-8385-228db2dcc869",
+                "email": "preston36@gmail.com",
+                "userId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
+                "tokenId": "825afcfd-ad27-4c12-81b8-610c7358603f",
+                "role": "member",
+                "rejectedAt": null,
+                "createdAt": "2024-11-13T15:29:06.546Z",
+                "createdBy": "00a860e8-42d5-4fdb-a0c0-498664dbe27b",
+                "organizationId": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
+                "tenantId": "test01"
+              }
+            },
+            {
+              "entity": {
+                "id": "e53bddbf-0ba1-476f-81f8-ab33a63f6993",
+                "createdAt": "2024-05-24T14:59:18.336Z",
+                "updatedAt": "2024-06-11T06:23:04.786Z",
+                "tenantId": "i9qj90kx71lz51b5gpm0z1yc",
+                "name": "Kutch - Bernier",
+                "entityType": "organization",
+                "slug": "kutch---bernier",
+                "thumbnailUrl": null,
+                "bannerUrl": null
+              },
+              "inactiveMembership": {
+                "id": "40302515-5a0c-4427-9dd4-7dee4eb2c5eb",
+                "contextType": "organization",
+                "contextId": "221aad91-1de2-4e38-93b7-dcc8a33619bf",
+                "email": "mitchell.cummerata29@gmail.com",
+                "userId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
+                "tokenId": "7ef9bfca-0c17-4be8-8d73-0a05e99f5949",
+                "role": "admin",
+                "rejectedAt": null,
+                "createdAt": "2024-04-11T17:15:50.993Z",
+                "createdBy": "79eeb9fc-d1b1-4f1e-a874-19513f16c2bc",
+                "organizationId": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
+                "tenantId": "test01"
+              }
+            }
+          ],
+          "total": 2
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "deleteMySessions",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          }
+        },
+        "required": false,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteMyMembership",
+    "responses": [
+      { "status": 204, "description": "Membership removed" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "entityId": { "type": "string", "required": true, "maxLength": 50 },
+          "entityType": {
+            "type": "string",
+            "required": true,
+            "enum": ["organization"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getUploadToken",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Upload token with a scope for a user or organization",
+        "name": "UploadToken",
+        "ref": "#/components/schemas/UploadToken",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A signed token authorizing file uploads to the configured storage provider.",
+          "properties": {
+            "public": { "type": "boolean", "required": true },
+            "sub": { "type": "string", "required": true },
+            "s3": { "type": "boolean", "required": true },
+            "signature": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "params": {
+              "required": true,
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": false,
+                  "properties": {
+                    "auth": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "key": { "type": "string", "required": true },
+                        "expires": { "type": "string", "required": false }
+                      }
+                    }
+                  },
+                  "additionalProperties": { "type": "object", "required": false }
+                },
+                { "type": "null", "required": false }
+              ]
+            }
+          },
+          "ref": "#/components/schemas/UploadToken",
+          "contentType": "application/json"
+        },
+        "example": {
+          "public": false,
+          "sub": "x1lsgegsw6imziogthaolhvy",
+          "s3": true,
+          "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
+          "params": {
+            "auth": { "key": "uploads/kx5n7c1cush46z5cnizlmyd8", "expires": "2025-01-01T04:15:50.483Z" }
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "public": {
+            "required": false,
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
+          },
+          "organizationId": { "type": "string", "required": false },
+          "templateId": {
+            "type": "string",
+            "required": true,
+            "enum": ["avatar", "cover", "attachment"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "unsubscribeMe",
+    "responses": [
+      { "status": 302, "description": "Redirect to FE" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "token": { "type": "string", "required": true }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getMyMemberships",
+    "responses": [
+      {
+        "status": 200,
+        "description": "User memberships",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/MembershipBase",
+              "items": {
+                "type": "object",
+                "description": "Core membership fields shared across active and inactive memberships.",
+                "properties": {
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "contextType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "contextId": { "type": "string", "required": true, "format": "uuid" },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
+                  "role": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["admin", "member"]
+                  },
+                  "archived": { "type": "boolean", "required": true },
+                  "muted": { "type": "boolean", "required": true },
+                  "displayOrder": {
+                    "type": "number",
+                    "required": true,
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
+                  },
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                },
+                "ref": "#/components/schemas/MembershipBase"
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  }
+]

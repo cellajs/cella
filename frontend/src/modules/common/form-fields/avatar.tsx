@@ -1,0 +1,99 @@
+import { onlineManager } from '@tanstack/react-query';
+import { TrashIcon, UploadIcon } from 'lucide-react';
+import { useRef } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-avatar';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { Button } from '~/modules/ui/button';
+import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
+
+interface Props {
+  // biome-ignore lint/suspicious/noExplicitAny: Accept any form shape
+  form: UseFormReturn<any>;
+  name: string;
+  label: string;
+  entity: {
+    id?: string;
+    name?: string | null;
+  };
+  type: EntityAvatarProps['type'];
+}
+
+/**
+ * Form field for uploading and managing an avatar image.
+ */
+export function AvatarFormField({ form, label, name, entity, type }: Props) {
+  const { t } = useTranslation();
+  const uploadButtonRef = useRef(null);
+  const upload = useUploader();
+
+  const { control } = form;
+  const url = form.getValues(name);
+
+  const handleUpdateURL = (key: string | null) => {
+    const urlWithPublicCDN = key ? `${appConfig.s3.publicCDNUrl}/${key}` : null;
+    form.setValue(name, urlWithPublicCDN, { shouldDirty: true });
+  };
+
+  // Open upload dialog
+  const openUploadDialog = () => {
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+    upload.create({
+      id: 'upload-image',
+      isPublic: true,
+      personalUpload: true,
+      plugins: ['webcam', 'image-editor', 'url'],
+      templateId: 'avatar',
+      statusEventHandler: {
+        onComplete(result) {
+          const url = result.thumbnail[0].url;
+          if (url) handleUpdateURL(url);
+          upload.remove();
+        },
+      },
+      title: t('c:upload_item', { item: t('c:profile_picture').toLowerCase() }),
+    });
+  };
+
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={() => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <div className="flex gap-4">
+            <EntityAvatar type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
+
+            <div className="flex flex-col gap-2">
+              {appConfig.has.uploadEnabled ? (
+                <p className="text-xs sm:text-sm">{t('c:upload_img_max_10mb.text')}</p>
+              ) : (
+                appConfig.mode === 'development' && (
+                  <p className="text-muted-foreground text-xs sm:text-sm">{t('c:restrict_image_upload')}</p>
+                )
+              )}
+              <div className="flex items-center gap-2">
+                {appConfig.has.uploadEnabled && (
+                  <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
+                    <UploadIcon size={16} className="mr-2" />
+                    <span>{t('c:upload')}</span>
+                  </Button>
+                )}
+
+                {url && (
+                  <Button variant="secondary" onClick={() => handleUpdateURL(null)} size="sm">
+                    <TrashIcon size={16} />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </FormItem>
+      )}
+    />
+  );
+}

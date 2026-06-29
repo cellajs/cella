@@ -1,0 +1,69 @@
+import { type RefObject, useEffect } from 'react';
+import { useBodyClass } from '~/hooks/use-body-class';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
+import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
+
+interface FloatingNavProps {
+  /** Items to render as floating buttons */
+  items: FloatingNavItem[];
+  /** Ref to scroll container for visibility tracking (defaults to window) */
+  scrollContainerRef?: RefObject<HTMLElement | null>;
+  /** Custom body class to add when floating nav is active */
+  bodyClass?: string;
+  /** When this value changes, visibility is reset to visible */
+  resetTrigger?: unknown;
+}
+
+/**
+ * Floating navigation for mobile devices.
+ * Renders FAB-style buttons that show/hide based on scroll direction.
+ * Callers are responsible for building the items array.
+ */
+export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
+  const isMobile = useBreakpointBelow('sm');
+  const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);
+  const setFloatingNavActive = useNavigationStore((state) => state.setFloatingNavActive);
+
+  // Reset visibility when resetTrigger changes (e.g., page change, sidebar toggle)
+  useEffect(() => {
+    if (resetTrigger !== undefined) reset();
+  }, [resetTrigger, reset]);
+
+  // Count items that could be visible (for body class and empty check)
+  const visibleItems = items.filter((item) => item.visible !== false);
+  const isActive = isMobile && visibleItems.length > 0;
+
+  // Keep body class for CSS consumers (app-layout, menu-sheet header)
+  useBodyClass({ [bodyClass]: isActive });
+
+  // Sync to store for direct React consumers (bottom-bar-nav)
+  useEffect(() => {
+    setFloatingNavActive(isActive);
+    return () => setFloatingNavActive(false);
+  }, [isActive, setFloatingNavActive]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <nav id="floating-nav">
+      {items.map((item) => {
+        // Combine global showButtons with individual item visibility
+        const isItemVisible = showButtons && item.visible !== false;
+        return (
+          <FloatingNavButton
+            key={item.id}
+            className={isItemVisible ? 'opacity-100' : 'pointer-events-none -bottom-12 scale-50 opacity-0'}
+            id={item.id}
+            icon={item.icon}
+            onClick={item.onClick}
+            ariaLabel={item.ariaLabel}
+            direction={item.direction ?? 'right'}
+          />
+        );
+      })}
+    </nav>
+  );
+}
+export type { FloatingNavItem } from '~/modules/navigation/floating-nav/button';

@@ -1,0 +1,141 @@
+import { infiniteQueryOptions } from '@tanstack/react-query';
+import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
+import { appConfig } from 'shared';
+import { baseInfiniteQueryOptions } from '~/query/basic';
+
+type GetPendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
+  GetPendingMembershipsData['path'];
+type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
+
+const keys = {
+  all: ['member'],
+  list: {
+    base: ['member', 'list'],
+    members: (filters: GetMembersParams) => [...keys.list.base, filters],
+    similarMembers: (filters: Pick<GetMembersParams, 'tenantId' | 'organizationId' | 'entityId' | 'entityType'>) => [
+      ...keys.list.base,
+      filters,
+    ],
+    pending: (filters: GetPendingMembershipsParams) => ['invites', ...keys.list.base, filters],
+    similarPending: (filters: Pick<GetPendingMembershipsParams, 'entityId' | 'entityType'>) => [
+      'invites',
+      ...keys.list.base,
+      filters,
+    ],
+  },
+  update: () => ['member', 'update'],
+  delete: () => ['member', 'delete'],
+};
+
+export const memberQueryKeys = keys;
+
+/**
+ * Infinite query options to fetch a paginated list of members.
+ *
+ * This function returns the configuration needed to query a list of members from target entity with pagination.
+ *
+ * @param param.entityId - ID or slug of entity.
+ * @param param.entityType - Type of entity.
+ * @param param.tenantId - Tenant ID.
+ * @param param.organizationId - ID or slug of organization.
+ * @param param.q - Optional search query to filter members by (default is an empty string).
+ * @param param.role - Role of the members to filter by.
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.members`).
+ * @returns Infinite query options.
+ */
+export const membersListQueryOptions = ({
+  entityId,
+  tenantId,
+  organizationId,
+  entityType,
+  q = '',
+  sort = 'createdAt',
+  order = 'desc',
+  role,
+  userIds,
+  limit: baseLimit = appConfig.requestLimits.members,
+}: GetMembersParams & { limit?: number }) => {
+  const limit = String(baseLimit);
+
+  const queryKey = keys.list.members({ entityId, entityType, tenantId, organizationId, q, sort, order, role, userIds });
+
+  return infiniteQueryOptions({
+    queryKey,
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || (page || 0) * Number(limit));
+
+      return await getMembers({
+        query: { q, sort, order, role, userIds, limit, entityId, entityType, offset },
+        path: { tenantId, organizationId },
+        signal,
+      });
+    },
+    ...baseInfiniteQueryOptions,
+    refetchOnMount: true,
+  });
+};
+
+/**
+ * Infinite query options to fetch a paginated list of invited members.
+ *
+ * This function returns the configuration needed to query a list of members from target entity with pagination.
+ *
+ * @param param.entityId - ID or slug of entity.
+ * @param param.entityType - Type of entity.
+ * @param param.tenantId - Tenant ID.
+ * @param param.organizationId - ID or slug of organization.
+ * @param param.q - Optional search query to filter invited members by (default is an empty string).
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.pendingMemberships`).
+ * @returns Infinite query options.
+ */
+export const pendingMembershipsQueryOptions = ({
+  entityId,
+  tenantId,
+  organizationId,
+  entityType,
+  q = '',
+  sort = 'createdAt',
+  order = 'desc',
+  limit: baseLimit = appConfig.requestLimits.pendingMemberships,
+}: GetPendingMembershipsParams & { limit?: number }) => {
+  const limit = String(baseLimit);
+  const queryKey = keys.list.pending({ entityId, entityType, tenantId, organizationId, q, sort, order });
+
+  return infiniteQueryOptions({
+    queryKey,
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || (page || 0) * Number(limit));
+
+      return await getPendingMemberships({
+        query: { q, sort, order, limit, entityId, entityType, offset },
+        path: { tenantId, organizationId },
+        signal,
+      });
+    },
+    ...baseInfiniteQueryOptions,
+    refetchOnMount: true,
+  });
+};
+
+/** Fetch members for table export. Bypasses cache; returns flat items. */
+export const fetchMembersForExport = async (params: GetMembersParams & { limit: number }) => {
+  const { limit, ...rest } = params;
+  const { items } = await getMembers({
+    query: {
+      q: rest.q,
+      sort: rest.sort ?? 'createdAt',
+      order: rest.order ?? 'asc',
+      role: rest.role,
+      limit: String(limit),
+      offset: '0',
+      entityId: rest.entityId,
+      entityType: rest.entityType,
+    },
+    path: { tenantId: rest.tenantId, organizationId: rest.organizationId },
+  });
+  return items;
+};

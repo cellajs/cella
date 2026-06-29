@@ -1,0 +1,1066 @@
+[
+  {
+    "operationId": "getTenants",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Tenants list",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Tenant",
+              "items": {
+                "type": "object",
+                "description": "A tenant representing an isolated data partition for multi-tenancy.",
+                "properties": {
+                  "id": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "status": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["active", "suspended", "archived"]
+                  },
+                  "restrictions": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "quotas": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Entity quotas (0 = unlimited)",
+                        "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+                      },
+                      "rateLimits": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "apiPointsPerHour": {
+                            "type": "integer",
+                            "required": true,
+                            "description": "Max API points per hour per user within this tenant",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "createdBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "subscriptionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "subscriptionStatus": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+                  },
+                  "subscriptionPlan": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "domainsCount": {
+                    "type": "integer",
+                    "required": true,
+                    "description": "Number of domains claimed by this tenant"
+                  }
+                },
+                "ref": "#/components/schemas/Tenant"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false, "maxLength": 255 },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["createdAt", "name"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "seqCursor": { "type": "string", "required": false },
+          "status": {
+            "type": "string",
+            "required": false,
+            "description": "Filter by status",
+            "enum": ["active", "suspended", "archived"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createTenant",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Created tenant",
+        "name": "Tenant",
+        "ref": "#/components/schemas/Tenant",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
+          "properties": {
+            "id": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["active", "suspended", "archived"]
+            },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "subscriptionId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "subscriptionStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+            },
+            "subscriptionPlan": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "domainsCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of domains claimed by this tenant"
+            }
+          },
+          "ref": "#/components/schemas/Tenant",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "required": false,
+            "enum": ["active", "suspended", "archived"]
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "selfCreateTenant",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Created tenant",
+        "name": "Tenant",
+        "ref": "#/components/schemas/Tenant",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
+          "properties": {
+            "id": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["active", "suspended", "archived"]
+            },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "subscriptionId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "subscriptionStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+            },
+            "subscriptionPlan": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "domainsCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of domains claimed by this tenant"
+            }
+          },
+          "ref": "#/components/schemas/Tenant",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "required": true,
+            "minLength": 2,
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "updateTenant",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Updated tenant",
+        "name": "Tenant",
+        "ref": "#/components/schemas/Tenant",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant representing an isolated data partition for multi-tenancy.",
+          "properties": {
+            "id": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["active", "suspended", "archived"]
+            },
+            "restrictions": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "quotas": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Entity quotas (0 = unlimited)",
+                  "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+                },
+                "rateLimits": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "apiPointsPerHour": {
+                      "type": "integer",
+                      "required": true,
+                      "description": "Max API points per hour per user within this tenant",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "subscriptionId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "subscriptionStatus": {
+              "type": "string",
+              "required": true,
+              "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+            },
+            "subscriptionPlan": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "domainsCount": {
+              "type": "integer",
+              "required": true,
+              "description": "Number of domains claimed by this tenant"
+            }
+          },
+          "ref": "#/components/schemas/Tenant",
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "required": false,
+            "enum": ["active", "suspended", "archived"]
+          },
+          "subscriptionId": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "subscriptionStatus": {
+            "type": "string",
+            "required": false,
+            "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+          },
+          "subscriptionPlan": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "restrictions": {
+            "type": "object",
+            "required": false,
+            "description": "Partial restrictions override",
+            "properties": {
+              "quotas": {
+                "type": "object",
+                "required": false,
+                "description": "Entity quotas (0 = unlimited)",
+                "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+              },
+              "rateLimits": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                  "apiPointsPerHour": { "type": "integer", "required": false, "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getDomains",
+    "responses": [
+      {
+        "status": 200,
+        "description": "List of domains",
+        "contentType": "application/json",
+        "schema": {
+          "type": "array",
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "id": { "type": "string", "required": true, "format": "uuid" },
+              "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+              "domain": { "type": "string", "required": true, "maxLength": 255 },
+              "verified": { "type": "boolean", "required": true },
+              "verificationToken": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 50
+              },
+              "verifiedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "lastCheckedAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "createdAt": { "type": "string", "required": true }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Created domain",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "domain": { "type": "string", "required": true, "maxLength": 255 },
+            "verified": { "type": "boolean", "required": true },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string",
+            "required": true,
+            "minLength": 4,
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain with verification token",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "domain": { "type": "string", "required": true, "maxLength": 255 },
+            "verified": { "type": "boolean", "required": true },
+            "verificationToken": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 50
+            },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "deleteDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Domain removed",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "domain": { "type": "string", "required": true, "maxLength": 255 },
+            "verified": { "type": "boolean", "required": true },
+            "verifiedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "lastCheckedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "createdAt": { "type": "string", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "verifyDomain",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Verification result",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean", "required": true },
+            "domain": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "id": { "type": "string", "required": true, "format": "uuid" },
+                "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                "domain": { "type": "string", "required": true, "maxLength": 255 },
+                "verified": { "type": "boolean", "required": true },
+                "verificationToken": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 50
+                },
+                "verifiedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "lastCheckedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "createdAt": { "type": "string", "required": true }
+              }
+            },
+            "diagnostics": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "recordsFound": { "type": "array", "required": true, "itemType": "string" },
+                "expectedToken": { "type": "string", "required": true }
+              }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  }
+]

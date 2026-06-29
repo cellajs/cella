@@ -1,0 +1,63 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { uploadBootDiagnostics } from './diagnostics'
+
+let tempDir: string | undefined
+
+afterEach(async () => {
+  if (tempDir) await rm(tempDir, { recursive: true, force: true })
+  tempDir = undefined
+})
+
+describe('uploadBootDiagnostics', () => {
+  it('uploads full and failure logs for failed boots', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'cella-diag-'))
+    const logFile = join(tempDir, 'boot.log')
+    await writeFile(logFile, 'hello boot', 'utf-8')
+    const calls: Array<{ url: string; body?: string; auth?: string }> = []
+    const keys = await uploadBootDiagnostics({
+      bucket: 'cella-boot-diag',
+      region: 'nl-ams',
+      accessKey: 'access',
+      secretKey: 'secret',
+      service: 'backend',
+      releaseSha: 'abc123',
+      bootRc: 1,
+      logFile,
+      now: new Date('2026-06-19T12:00:00Z'),
+      fetchImpl: async (url, init) => {
+        calls.push({ url, body: init?.body, auth: init?.headers?.Authorization })
+        return { ok: true, status: 200, text: async () => '' }
+      },
+    })
+    expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log', 'boot-diag/backend-failed-20260619T120000Z.log'])
+    expect(calls).toHaveLength(2)
+    expect(calls[0].url).toContain('https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log')
+    expect(calls[0].auth).toMatch(/AWS4-HMAC-SHA256 Credential=access\/20260619\/nl-ams\/s3\/aws4_request/)
+    expect(calls[0].body).toContain('release=abc123')
+    expect(calls[0].body).toContain('hello boot')
+  })
+
+  it('uploads only the full log for successful boots', async () => {
+    const calls: string[] = []
+    const keys = await uploadBootDiagnostics({
+      bucket: 'cella-boot-diag',
+      region: 'nl-ams',
+      accessKey: 'access',
+      secretKey: 'secret',
+      service: 'frontend',
+      releaseSha: 'abc123',
+      bootRc: 0,
+      logFile: '/missing/log',
+      now: new Date('2026-06-19T12:00:00Z'),
+      fetchImpl: async (url) => {
+        calls.push(url)
+        return { ok: true, status: 200, text: async () => '' }
+      },
+    })
+    expect(keys).toEqual(['boot-diag/frontend-20260619T120000Z-boot.log'])
+    expect(calls).toHaveLength(1)
+  })
+})

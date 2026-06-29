@@ -1,0 +1,117 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { onlineManager } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
+import { ArrowRightIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { zCreateRequestBody } from 'sdk/zod.gen';
+import { appConfig } from 'shared';
+import type { z } from 'zod';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { useCreateRequestMutation } from '~/modules/requests/query';
+import { SubmitButton } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
+
+const formSchema = zCreateRequestBody;
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface WaitlistFormProps {
+  email?: string;
+  inputClassName?: string;
+  buttonContent?: string | React.ReactNode;
+  buttonClassName?: string;
+  dialog?: boolean;
+  className?: string;
+  callback?: (args: CallbackArgs) => void;
+}
+
+/**
+ * Waitlist form to request access to application. Can be used in dialog or embedded in an (auth) page layout.
+ */
+export const WaitlistForm = ({
+  email,
+  inputClassName,
+  buttonContent,
+  buttonClassName,
+  dialog: isDialog,
+  callback,
+  className,
+}: WaitlistFormProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const isMobile = window.innerWidth < 640;
+
+  const { mutate: createRequest, isPending } = useCreateRequestMutation();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { email, type: 'waitlist', message: null },
+  });
+
+  const onSubmit = (body: FormValues) => {
+    if (!onlineManager.isOnline()) return toaster(t('c:action.offline.text'), 'warning');
+
+    createRequest(body, {
+      onSuccess: () => {
+        navigate({ to: '/about', replace: true });
+        toaster(t('c:success.waitlist_request', { appName: appConfig.name }), 'success');
+
+        if (isDialog) useDialoger.getState().remove();
+        callback?.({ status: 'success' });
+      },
+      onError: (error) => {
+        if (callback && error.status === 409) {
+          callback({ error, status: 'fail' });
+          return;
+        }
+      },
+    });
+  };
+
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)}
+        className={cn('flex items-end gap-4 max-sm:flex-col max-xs:min-w-full', className)}
+      >
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem className={`${!email ? '' : 'hidden'} w-full grow gap-0`}>
+              <FormControl>
+                <Input
+                  {...field}
+                  className={cn('block', inputClassName)}
+                  type="email"
+                  autoFocus={!isMobile}
+                  disabled={!!email}
+                  readOnly={!!email}
+                  placeholder={t('c:email')}
+                />
+              </FormControl>
+              <FormMessage className="mt-2" />
+            </FormItem>
+          )}
+        />
+        <SubmitButton loading={isPending} className={cn('w-full px-6', buttonClassName)}>
+          {buttonContent ? (
+            buttonContent
+          ) : (
+            <>
+              {t('c:join')}
+              <ArrowRightIcon size={16} className="ml-2" />
+            </>
+          )}
+        </SubmitButton>
+      </form>
+    </Form>
+  );
+};

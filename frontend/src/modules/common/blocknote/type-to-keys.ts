@@ -1,0 +1,24 @@
+import type { CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
+
+/**
+ * Mapping of base Blocknote types to their corresponding SlashItemKeys.
+ */
+export const baseBlocknoteTypeToKeys = {
+  table: ['table'],
+  notify: ['notify'],
+  paragraph: ['paragraph'],
+  heading: ['heading', 'heading_2', 'heading_3', 'heading_4', 'heading_5', 'heading_6'],
+  quote: ['quote'],
+  codeBlock: ['code_block'],
+  bulletListItem: ['bullet_list'],
+  numberedListItem: ['numbered_list'],
+  checklistItem: ['checklistItem'],
+  checkListItem: ['checklistItem'],
+  file: ['file'],
+  image: ['image'],
+  video: ['video'],
+  audio: ['audio'],
+  emoji: ['emoji'],
+  toggleListItem: ['toggle_list'],
+  divider: ['divider'],
+} satisfies Record<CustomBlockTypes, SlashItemKeys[]>;

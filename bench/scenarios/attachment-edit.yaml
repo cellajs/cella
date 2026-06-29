@@ -1,0 +1,39 @@
+# Attachment Edit step-up — looping VUs find the throughput ceiling.
+#
+# Each VU loops 20 times (persistent connections, k6-style).
+# Steps up: 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak).
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/attachment-edit.ts"
+  phases:
+    - duration: 10
+      arrivalRate: 25
+      name: "hold 25"
+    - duration: 10
+      arrivalRate: 50
+      name: "hold 50"
+    - duration: 10
+      arrivalRate: 75
+      name: "hold 75"
+    - duration: 10
+      arrivalRate: 100
+      name: "hold 100"
+  plugins:
+    ensure:
+      maxErrorRate: 1
+      thresholds:
+        - http.response_time.p95: 3000
+
+scenarios:
+  - beforeScenario: "authenticate"
+    flow:
+      - loop:
+          - function: "buildAttachmentEditPayload"
+          - put:
+              url: "/{{ tenantId }}/{{ orgId }}/attachments/{{ attachmentId }}"
+              headers:
+                Content-Type: "application/json"
+                cookie: "{{ cookie }}"
+              json: "{{ payload }}"
+          - think: "50ms"
+        count: 20

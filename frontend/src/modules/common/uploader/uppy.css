@@ -1,0 +1,40 @@
+.uppy-Container .uppy-DashboardContent-back,
+.uppy-Container .uppy-DashboardContent-save,
+.uppy-Container .uppy-Dashboard-browse,
+.uppy-Container .uppy-Dashboard-link {
+  color: var(--primary); /* Replace with your desired color */
+}
+
+.uppy-Container .uppy-Dashboard-browse:focus,
+.uppy-Container .uppy-Dashboard-browse:hover {
+  border-bottom: 0.125rem solid var(--primary);
+}
+
+.uppy-Dashboard-note {
+  font-size: 12px;
+}
+
+.uppy-DashboardTab-btn {
+  display: flex;
+}
+
+.uppy-Url-input {
+  border-radius: 0.25rem;
+  border: 0.1rem solid var(--muted);
+  padding: 0.25rem;
+}
+
+.uppy-Url-input:focus-visible {
+  outline: 0.1rem solid var(--accent-foreground);
+}
+.uppy-Url-importButton {
+  padding: 0.3rem 1rem !important;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  border: 0.1rem solid var(--primary);
+  background-color: oklch(from var(--primary) l c h / 0.07);
+  color: var(--primary);
+  display: inline-block;
+  line-height: inherit;
+  vertical-align: middle;
+}

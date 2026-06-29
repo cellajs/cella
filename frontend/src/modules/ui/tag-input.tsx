@@ -1,0 +1,409 @@
+import type { VariantProps } from 'class-variance-authority';
+import { LoaderIcon, RefreshCwIcon } from 'lucide-react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { Badge, type badgeVariants } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
+
+enum Delimiter {
+  Comma = ',',
+  Enter = 'Enter',
+}
+
+type OmittedInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'placeholder' | 'size' | 'value'>;
+
+/** Delimiter can be a single character, 'Enter', or a regex pattern for splitting */
+type DelimiterType = Delimiter | RegExp;
+
+interface TagInputStyleClassesProps {
+  tagList?: string;
+  tag?: { body?: string; closeButton?: string };
+  input?: string;
+  clearAllButton?: string;
+}
+
+interface TagInputProps extends OmittedInputProps {
+  tags: string[];
+  setTags: React.Dispatch<React.SetStateAction<string[]>>;
+
+  placeholder?: string;
+  placeholderWhenFull?: string;
+
+  delimiter?: DelimiterType;
+  truncate?: number;
+  minLength?: number;
+  maxLength?: number;
+  maxTags?: number;
+
+  addOnPaste?: boolean;
+  addTagsOnBlur?: boolean;
+  showCount?: boolean;
+  showClearAllButton?: boolean;
+  isLoading?: boolean;
+
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  badgeVariants?: Partial<VariantProps<typeof badgeVariants>>;
+  styleClasses?: TagInputStyleClassesProps;
+
+  onInputChange?: (value: string) => void;
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+  onTagAdd?: (tag: string) => void;
+  onTagRemove?: (tag: string) => void;
+  onClearAll?: () => void;
+  onTagClick?: (tag: string) => void;
+  validateTag?: (tag: string) => boolean;
+}
+
+function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputElement>) {
+  const {
+    tags,
+    setTags,
+
+    placeholder,
+    placeholderWhenFull = 'Max tags reached',
+
+    delimiter = Delimiter.Enter,
+    truncate,
+    minLength,
+    maxLength,
+    maxTags,
+
+    addOnPaste = false,
+    addTagsOnBlur = false,
+    showCount = false,
+    showClearAllButton = false,
+    isLoading = false,
+
+    badgeVariants,
+    inputProps = {},
+    styleClasses = {},
+
+    onInputChange,
+    onFocus,
+    onBlur,
+    onTagAdd,
+    onTagRemove,
+    onClearAll,
+    onTagClick,
+    validateTag,
+  } = props;
+
+  const { t } = useTranslation();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [activeTagIndex, setActiveTagIndex] = React.useState<number | null>(null);
+  const [inputValue, setInputValue] = React.useState('');
+  const [tagCount, setTagCount] = React.useState(Math.max(0, tags.length));
+
+  /** Check if delimiter matches in value (supports regex or string) */
+  const delimiterMatches = (value: string): boolean => {
+    if (delimiter instanceof RegExp) return delimiter.test(value);
+    return value.includes(delimiter);
+  };
+
+  /** Split value by delimiter (supports regex or string) */
+  const splitByDelimiter = (value: string): string[] => {
+    if (delimiter instanceof RegExp) return value.split(delimiter);
+    return value.split(delimiter);
+  };
+
+  if (maxTags !== undefined && maxTags < 1) {
+    console.warn('maxTags cannot be less than 1');
+    return null;
+  }
+
+  const newTagValidation = (newTagText: string) => {
+    if (validateTag && !validateTag(newTagText)) return 'Tag is not valid';
+
+    if (minLength && newTagText.length < minLength) return 'Tag is too short';
+
+    if (maxLength && newTagText.length > maxLength) return 'Tag is too long';
+
+    if (maxTags && tags.length > maxTags) return 'Reached the maximum number of tags allowed';
+
+    if (tags.some((oldTag) => oldTag === newTagText)) return `Duplicate tag "${newTagText}" not added`;
+
+    return null;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (addOnPaste && delimiterMatches(newValue)) {
+      const splitValues = splitByDelimiter(newValue)
+        .map((v) => v.trim())
+        .filter((v) => v && v.length > 0); // Remove empty strings
+
+      for (const newTag of splitValues) {
+        const errorMessage = newTagValidation(newTag);
+        if (errorMessage) return toaster(errorMessage, 'warning');
+
+        setTags((prevTags) => [...prevTags, newTag]);
+        onTagAdd?.(newTag);
+      }
+
+      setInputValue('');
+    } else setInputValue(newValue);
+
+    onInputChange?.(newValue);
+  };
+
+  const handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    setActiveTagIndex(null); // Reset active tag index when the input field gains focus
+    onFocus?.(event);
+  };
+
+  const handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (activeTagIndex !== null) setActiveTagIndex(null);
+
+    if (addTagsOnBlur && inputValue.trim()) {
+      const newTag = inputValue.trim();
+
+      const errorMessage = newTagValidation(newTag);
+      if (errorMessage) return toaster(errorMessage, 'warning');
+
+      setTags([...tags, newTag]);
+      onTagAdd?.(newTag);
+      setTagCount((prevTagCount) => prevTagCount + 1);
+      setInputValue('');
+    }
+
+    onBlur?.(event);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const { key } = e;
+    const trimmedInput = inputValue.trim();
+    const hasInput = trimmedInput.length > 0;
+
+    // Check if key matches delimiter (string match for non-regex, or Enter as universal confirm)
+    const isDelimiterKey = delimiter instanceof RegExp ? key === 'Enter' : key === delimiter || key === 'Enter';
+
+    // Adding a new tag
+    if (isDelimiterKey && hasInput) {
+      e.preventDefault();
+
+      const errorMessage = newTagValidation(trimmedInput);
+      if (errorMessage) return toaster(errorMessage, 'warning');
+
+      setTags([...tags, trimmedInput]);
+      onTagAdd?.(trimmedInput);
+      setTagCount((prevTagCount) => prevTagCount + 1);
+      setInputValue('');
+      return;
+    }
+
+    if (!hasInput) {
+      // Swallow Enter so it doesn't trigger implicit form submission when there's nothing to add
+      if (key === 'Enter' && activeTagIndex === null) {
+        e.preventDefault();
+        return;
+      }
+      if (key === 'Backspace' && tags.length) {
+        e.preventDefault();
+        removeTagByIndex(tags.length - 1);
+        return;
+      }
+      if (key === 'ArrowRight') {
+        e.preventDefault();
+        setActiveTagIndex((prev) => (prev === null || prev + 1 >= tags.length ? 0 : prev + 1));
+        return;
+      }
+      if (key === 'ArrowLeft') {
+        e.preventDefault();
+        setActiveTagIndex((prev) => (prev === null || prev === 0 ? tags.length - 1 : prev - 1));
+        return;
+      }
+    }
+
+    if (activeTagIndex !== null) {
+      e.preventDefault();
+      switch (key) {
+        case 'Escape':
+          setActiveTagIndex(null);
+          break;
+        case 'Delete':
+          removeTagByIndex(activeTagIndex);
+          break;
+        case 'Backspace':
+          removeTagByIndex(activeTagIndex);
+          break;
+        case 'Home':
+          setActiveTagIndex(0);
+          break;
+        case 'End':
+          setActiveTagIndex(tags.length - 1);
+          break;
+        case 'Enter':
+          onTagClick?.(tags[activeTagIndex]);
+          break;
+      }
+    }
+  };
+
+  const removeTagByIndex = (index: number) => {
+    const newTags = [...tags];
+    const removedTag = newTags.splice(index, 1)[0];
+
+    removeTag(removedTag);
+  };
+
+  const removeTag = (TagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== TagToRemove));
+    setTagCount((prevTagCount) => prevTagCount - 1);
+    onTagRemove?.(tags.find((tag) => tag === TagToRemove) || '');
+
+    if (activeTagIndex !== null) setActiveTagIndex(activeTagIndex === 0 ? 0 : activeTagIndex - 1);
+  };
+
+  const handleClearAll = () => {
+    setTags([]);
+    setTagCount(0);
+    setActiveTagIndex(null);
+
+    onClearAll?.();
+  };
+
+  // Bring focus to input when clicking on tag wrapper
+  const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if ((e.target as HTMLElement)?.id !== 'tag-input-wrapper') return;
+    inputRef.current?.focus();
+  };
+
+  const truncatedTags = truncate
+    ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag))
+    : tags;
+
+  return (
+    <div className="relative flex flex-col" ref={ref}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse  */}
+      <div
+        id="tag-input-wrapper"
+        role="group"
+        onClick={handleClick}
+        className={cn(
+          'flex flex-wrap items-center rounded-md px-3 py-1 text-sm shadow-xs ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm sm:focus-within:ring-2 sm:focus-within:ring-ring sm:focus-within:ring-offset-2',
+          'focus-effect flex-row border border-input bg-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          styleClasses?.input,
+        )}
+      >
+        <TagList
+          tags={truncatedTags}
+          badgeVariants={badgeVariants}
+          onTagClick={onTagClick}
+          onRemoveTag={removeTag}
+          classStyleProps={{
+            tagListClasses: cn(styleClasses?.tagList, tags.length < 1 && 'hidden', 'pr-1'),
+            tagClasses: styleClasses?.tag,
+          }}
+          activeTagIndex={activeTagIndex}
+        />
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder={maxTags !== undefined && tags.length >= maxTags ? placeholderWhenFull : placeholder}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          {...inputProps}
+          className={cn(
+            '-my-px h-8 w-auto grow border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
+            tags.length && 'ml-1',
+          )}
+          disabled={maxTags !== undefined && tags.length >= maxTags}
+        />
+        {isLoading && <LoaderIcon className="ml-2 size-4 animate-spin text-muted-foreground" />}
+      </div>
+
+      {showCount && (
+        <Badge
+          size="micro"
+          className={`absolute -top-1 z-10 inline-flex items-center justify-center p-0 text-[10px] ${maxTags ? '-right-2 w-5' : '-right-1 w-4'}`}
+        >
+          {tagCount}
+          {maxTags && `/${maxTags}`}
+        </Badge>
+      )}
+      {showClearAllButton && (
+        <Button
+          type="button"
+          onClick={handleClearAll}
+          className={cn('mt-2 flex items-center gap-1', styleClasses?.clearAllButton)}
+        >
+          {t('c:clear_all')}
+          <RefreshCwIcon size={16} />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(TagInputBase);
+
+type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'onTagClick'> & {
+  activeTagIndex: null | number;
+  classStyleProps: {
+    tagListClasses: TagInputStyleClassesProps['tagList'];
+    tagClasses: TagInputStyleClassesProps['tag'];
+  };
+  onRemoveTag: (id: string) => void;
+};
+
+function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) {
+  return (
+    <div className={cn('flex flex-row flex-wrap gap-1 rounded-md', classStyleProps.tagListClasses)}>
+      {tags.map((tag, index) => (
+        <Badge
+          key={tag}
+          {...badgeVariants}
+          className={cn(
+            'gap-0.5 pr-0',
+            {
+              'focus-effect': index === activeTagIndex,
+            },
+            classStyleProps.tagClasses?.body,
+          )}
+          onClick={() => onTagClick?.(tag)}
+        >
+          {tag}
+          <Button
+            type="button"
+            variant="ghost"
+            size="micro"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event from bubbling up to the tag span
+              onRemoveTag(tag);
+            }}
+            className={cn(
+              'size-4.5 cursor-pointer rounded-full p-0 ring-inset active:translate-y-0! sm:focus-visible:ring-2',
+              classStyleProps.tagClasses?.closeButton,
+            )}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-x"
+            >
+              <title className="hidden">Close Icon</title>
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </Button>
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+export { TagInput, type TagInputProps };

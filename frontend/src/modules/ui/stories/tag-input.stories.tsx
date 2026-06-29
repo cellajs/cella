@@ -1,0 +1,217 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
+import { TagInput } from '~/modules/ui/tag-input';
+
+/**
+ * An advanced tag input component that allows users to add, remove, and manage tags with various customization options.
+ */
+const meta: Meta = {
+  title: 'ui/TagInput',
+  component: TagInput,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+  },
+} satisfies Meta;
+
+export default meta;
+
+type Story = StoryObj;
+
+/**
+ * Default tag input with basic functionality.
+ */
+export const Default: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['react', 'typescript', 'storybook']);
+    return <TagInput tags={tags} setTags={setTags} placeholder="Add a tag..." showCount={true} />;
+  },
+};
+
+/**
+ * Tag input with maximum tag limit.
+ */
+export const WithMaxTags: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['frontend', 'backend', 'database']);
+    return <TagInput tags={tags} setTags={setTags} maxTags={5} showCount={true} placeholder="Add up to 5 tags..." />;
+  },
+};
+
+/**
+ * Tag input with character length validation.
+ */
+export const WithLengthValidation: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['short', 'medium-length', 'very-long-tag-example']);
+    return (
+      <TagInput tags={tags} setTags={setTags} minLength={3} maxLength={20} placeholder="Tags must be 3-20 characters" />
+    );
+  },
+};
+
+/**
+ * Tag input with clear all functionality.
+ */
+export const WithClearAll: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['important', 'urgent', 'review', 'pending']);
+    return <TagInput tags={tags} setTags={setTags} showClearAllButton={true} placeholder="Add tags..." />;
+  },
+};
+
+/**
+ * Tag input with custom badge styling.
+ */
+export const CustomStyling: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['feature', 'bug', 'enhancement']);
+    return (
+      <TagInput
+        tags={tags}
+        setTags={setTags}
+        placeholder="Add tags..."
+        badgeVariants={{ variant: 'secondary' }}
+        styleClasses={{
+          tagList: 'gap-2',
+          tag: {
+            body: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
+            closeButton: 'text-blue-600 hover:text-blue-800',
+          },
+        }}
+      />
+    );
+  },
+};
+
+/**
+ * Tag input with tag truncation for long tags.
+ */
+export const WithTruncation: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState([
+      'very-long-tag-name-that-should-be-truncated',
+      'another-extremely-long-tag-for-testing-purposes',
+      'short',
+    ]);
+    return <TagInput tags={tags} setTags={setTags} truncate={15} placeholder="Add tags..." />;
+  },
+};
+
+/**
+ * Tag input with add on blur functionality.
+ */
+export const AddOnBlur: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['existing-tag']);
+    return <TagInput tags={tags} setTags={setTags} addTagsOnBlur={true} placeholder="Type and click away to add tag" />;
+  },
+};
+
+/**
+ * Tag input with custom validation function.
+ */
+export const CustomValidation: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['valid-tag-1', 'valid-tag-2']);
+
+    const validateTag = (tag: string) => {
+      // Only allow alphanumeric tags and hyphens
+      return /^[a-zA-Z0-9-]+$/.test(tag);
+    };
+
+    return (
+      <TagInput
+        tags={tags}
+        setTags={setTags}
+        validateTag={validateTag}
+        placeholder="Only alphanumeric characters and hyphens allowed"
+      />
+    );
+  },
+};
+
+/**
+ * Tag input with tag click handler.
+ */
+export const WithTagClick: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['clickable', 'interactive', 'responsive']);
+
+    const handleTagClick = (tag: string) => {
+      alert(`Clicked tag: ${tag}`);
+    };
+
+    return (
+      <TagInput tags={tags} setTags={setTags} onTagClick={handleTagClick} placeholder="Click on tags to interact" />
+    );
+  },
+};
+
+/**
+ * Empty tag input ready for user interaction.
+ */
+export const Empty: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState<string[]>([]);
+    return <TagInput tags={tags} setTags={setTags} placeholder="Start typing to add tags..." />;
+  },
+};
+
+/**
+ * Complex example with all features enabled.
+ */
+export const FullFeatured: Story = {
+  render: function Render() {
+    const [tags, setTags] = useState(['react', 'typescript', 'storybook', 'testing']);
+
+    const handleTagAdd = (tag: string) => {
+      console.info('Tag added:', tag);
+    };
+
+    const handleTagRemove = (tag: string) => {
+      console.info('Tag removed:', tag);
+    };
+
+    const handleClearAll = () => {
+      console.info('All tags cleared');
+    };
+
+    const handleTagClick = (tag: string) => {
+      console.info('Tag clicked:', tag);
+    };
+
+    return (
+      <div className="w-full max-w-md space-y-4">
+        <div className="text-muted-foreground text-sm">Full-featured tag input with all options enabled</div>
+        <TagInput
+          tags={tags}
+          setTags={setTags}
+          placeholder="Add tags (paste supported)..."
+          maxTags={10}
+          minLength={2}
+          maxLength={25}
+          showCount={true}
+          showClearAllButton={true}
+          addOnPaste={true}
+          addTagsOnBlur={true}
+          truncate={20}
+          badgeVariants={{ variant: 'outline' }}
+          onTagAdd={handleTagAdd}
+          onTagRemove={handleTagRemove}
+          onClearAll={handleClearAll}
+          onTagClick={handleTagClick}
+          validateTag={(tag) => !tag.includes('invalid') && tag.length >= 2}
+        />
+        <div className="text-muted-foreground text-xs">
+          <div>• Type and press Enter to add</div>
+          <div>• Click tags to interact</div>
+          <div>• Paste comma-separated values</div>
+          <div>• Click away to add current input</div>
+          <div>• Use arrow keys to navigate tags</div>
+          <div>• Press Delete/Backspace on selected tags</div>
+        </div>
+      </div>
+    );
+  },
+};

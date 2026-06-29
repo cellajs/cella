@@ -1,0 +1,26 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+
+    "allowImportingTsExtensions": true,
+
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
+
+    "rootDir": "../",
+    "sourceMap": true,
+    "inlineSources": true,
+
+    // Set `sourceRoot` to  "/" to strip the build path prefix
+    // from generated source code references.
+    // This improves issue grouping in Sentry.
+    "sourceRoot": "/",
+
+    "paths": {
+      "#/*": ["./src/*"],
+      "#json/*": ["../json/*"],
+    },
+  },
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*",  "tests", "scripts", "trigger.config.ts", "../shared/*", "../cdc/src/**/*", "../ai/src/**/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+}

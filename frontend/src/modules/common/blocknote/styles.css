@@ -1,0 +1,400 @@
+/* Lift editing task card above sibling virtualizer items so BlockNote floating UI (slash menu, toolbar) isn't clipped */
+li:has([data-state="editing"]),
+li:has(.is-focused) {
+  z-index: 10;
+}
+
+/* BlockNote applies the `className` we pass to <BlockNoteView> onto BOTH the real editor
+   container (.bn-root.bn-container) AND its empty portal mount point (a bare .bn-root used
+   only for floating UI). When that className carries box chrome (border, padding, background,
+   min-height, overflow), the portal renders as a stray empty box below the editor. Strip the
+   chrome from the portal root so it collapses back to BlockNote's intended neutral mount point.
+   Higher specificity than Tailwind utilities (0,2,0 vs 0,1,0) means no !important is needed. */
+.bn-root:not(.bn-container) {
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  background: transparent;
+}
+
+/* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
+
+/* Override BlockNote's default soft editor text color with our foreground for bright editing/expanded text */
+.bn-container.bn-shadcn {
+  --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+  --bn-colors-editor-text: var(--foreground);
+}
+
+/* Override BlockNote's hardcoded font-family on .bn-default-styles (from @blocknote/core)
+   which bypasses the --bn-font-family CSS variable */
+.bn-container.bn-shadcn .bn-default-styles {
+  font-family: "Open Sans", ui-sans-serif, sans-serif;
+}
+
+/* To hide selction of file content when editor not editable */
+.bn-editor[contenteditable="false"] .ProseMirror-selectednode > .bn-block-content > *,
+.bn-editor[contenteditable="false"] .bn-block-content.ProseMirror-selectednode > * {
+  outline: none !important;
+}
+
+/* To disable click on file buttons when editor not editable */
+.bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
+  cursor: default !important;
+}
+.bn-editor[contenteditable="false"] .bn-add-file-button {
+  pointer-events: none !important;
+}
+/* To hide file buttons placeholders when editor not editable */
+.bn-editor[contenteditable="false"] p.bn-add-file-button-text {
+  display: none;
+}
+
+/* To hide formattingtoolbar when editor not editable */
+.bn-container:has(.bn-editor[contenteditable="false"]) > [data-floating-ui-focusable] {
+  display: none !important;
+}
+
+.bn-shadcn p {
+  font-size: 0.888rem;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
+  padding: 0;
+}
+
+.bn-shadcn.bn-container.inline > p {
+  display: inline;
+}
+
+.bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
+  color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+}
+
+/* BlockNote renders its placeholder via `::after` on `.bn-block-content` (see
+   @blocknote/core's Placeholder extension). Override its font sizing so the
+   placeholder matches the editor's paragraph text instead of the larger default. */
+.bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-size: 0.888rem;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+.bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
+  display: none;
+}
+
+.bn-shadcn code {
+  font-size: 0.85em;
+  line-height: 1rem;
+  background: color-mix(in oklch, var(--input) 50%, transparent);
+  padding: 0.15rem;
+  border-radius: 0.25rem;
+  color: #e8912d;
+}
+
+.bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
+  background: color-mix(in oklch, var(--input) 50%, transparent);
+  border: 0.05rem solid color-mix(in oklch, var(--ring) 40%, transparent);
+}
+
+.bn-block-content[data-content-type="codeBlock"] code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: none;
+  color: #fff;
+}
+
+.bn-block-content[data-content-type="codeBlock"] > pre {
+  padding: 1.2rem 1rem 1rem;
+}
+
+.bn-add-file-button {
+  visibility: hidden;
+}
+
+.bn-editor .bn-add-file-button {
+  visibility: visible;
+}
+
+.bn-grid-suggestion-menu-item[aria-selected="true"],
+.bn-grid-suggestion-menu-item:hover {
+  background-color: var(--accent) !important;
+}
+
+.bn-grid-suggestion-menu-empty-item,
+.bn-grid-suggestion-menu-loader {
+  padding: 0.5rem;
+}
+
+.bn-grid-suggestion-menu {
+  max-height: 25rem !important;
+  background-color: var(--popover) !important;
+  border: 0.05rem solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0.05rem 4px 0 rgb(0 0 0 / 0.1) !important;
+  gap: 0.75rem !important;
+  padding: 0.5rem !important;
+}
+
+/* Override hardcoded inline text colors from pasted content that break dark mode.
+ * Since textColorSelect is disabled, explicit colors only enter via paste and should inherit. */
+.bn-default-styles [data-style-type="textColor"],
+.bn-default-styles span[style*="color:"] {
+  color: inherit !important;
+}
+
+/* Dense mode - tighter line height and no vertical spacing between blocks */
+.bn-shadcn.bn-dense p {
+  line-height: 1.3;
+  min-height: 1.3rem;
+}
+
+.bn-shadcn.bn-dense .bn-block-outer,
+.bn-shadcn.bn-dense .bn-default-styles {
+  line-height: 1.3;
+}
+
+.bn-container.bn-shadcn a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  text-decoration-color: color-mix(in oklch, var(--foreground) 20%, transparent);
+}
+
+.bn-link-toolbar > button.px-3 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  height: 2rem;
+}
+
+.bn-link-toolbar > button:hover {
+  background-color: var(--muted);
+}
+
+.bn-container.bn-shadcn a:hover {
+  text-decoration-color: var(--foreground);
+}
+
+.bn-container.bn-shadcn b,
+.bn-container.bn-shadcn strong {
+  font-weight: 600;
+}
+
+.bn-shadcn .bn-side-menu {
+  position: relative;
+  left: -0.6rem;
+  top: -0.15rem;
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.bn-shadcn .bn-side-menu:hover,
+.bn-shadcn .bn-side-menu:focus-within {
+  opacity: 1;
+}
+
+@media (max-width: 639px) {
+  /* Hide side menu on small screens */
+  .bn-shadcn .bn-side-menu {
+    display: none !important;
+  }
+}
+
+.prosemirror-dropcursor-block {
+  border-radius: 2rem;
+}
+
+.bn-block .bn-editor {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
+.bn-shadcn .bn-editor {
+  white-space: pre-wrap !important;
+  padding: 0px !important;
+  background: transparent !important;
+  height: 100%;
+  width: 100%;
+}
+
+.bn-toolbar.bn-formatting-toolbar button {
+  height: 2.25rem;
+  width: 2.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.bn-toolbar.bn-formatting-toolbar button:hover {
+  background-color: var(--muted);
+}
+
+.bn-menu-item {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.bn-dropdown-button {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.slash-menu {
+  max-height: 40vh;
+  overflow-y: auto;
+  background-color: var(--popover) !important;
+  border: 0.05rem solid var(--border) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  padding: 0.25rem;
+}
+
+.slash-menu-item {
+  border-radius: 0.25rem;
+  font-size: 0.888rem;
+  min-width: 14rem;
+  align-items: center;
+  display: flex;
+  height: 2.25rem;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.slash-menu-item-badge {
+  font-size: 0.8rem;
+  min-width: 1rem;
+  align-items: center;
+  color: var(--muted-foreground);
+  opacity: 0.5 !important;
+  display: flex;
+  padding: 0.125rem 0 0.125rem 0.25rem;
+}
+
+.slash-menu-separator {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.slash-menu-item[aria-selected="true"] {
+  background-color: var(--accent);
+}
+.slash-menu-item:hover {
+  background-color: color-mix(in oklch, var(--accent) 60%, transparent);
+}
+
+.notify {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: 4px;
+  min-height: 32px;
+  padding: 4px;
+}
+
+.notify[data-notify-type="warning"] {
+  background-color: #fff6e6;
+}
+
+.notify[data-notify-type="error"] {
+  background-color: #ffe6e6;
+}
+
+.notify[data-notify-type="info"] {
+  background-color: #e6ebff;
+}
+
+.notify[data-notify-type="success"] {
+  background-color: #e6ffe6;
+}
+
+[data-color-scheme="dark"] .notify[data-notify-type="warning"] {
+  background-color: #805d20;
+}
+
+[data-color-scheme="dark"] .notify[data-notify-type="error"] {
+  background-color: #802020;
+}
+
+[data-color-scheme="dark"] .notify[data-notify-type="info"] {
+  background-color: #203380;
+}
+
+[data-color-scheme="dark"] .notify[data-notify-type="success"] {
+  background-color: #208020;
+}
+
+/* styles.css */
+.no-hover-bg:hover {
+  background-color: transparent !important;
+}
+
+.notify-icon-wrapper {
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 12px;
+  margin-right: 12px;
+  height: 18px;
+  width: 18px;
+  user-select: none;
+  cursor: pointer;
+}
+
+.notify-icon[data-notify-icon-type="warning"] {
+  color: #e69819;
+}
+
+.notify-icon[data-notify-icon-type="error"] {
+  color: #d80d0d;
+}
+
+.notify-icon[data-notify-icon-type="info"] {
+  color: #507aff;
+}
+
+.notify-icon[data-notify-icon-type="success"] {
+  color: #0bc10b;
+}
+
+.inline-content {
+  flex-grow: 1;
+}
+
+/* For showing saved checklistItem */
+.bn-block-content[data-content-type="checklistItem"] > input {
+  margin: 0;
+  margin-inline-end: 0.5em;
+  margin-bottom: 0.4em;
+  cursor: pointer;
+}
+
+.bn-shadcn th {
+  border: 0.05rem solid var(--table-border);
+  border-collapse: collapse;
+}
+.bn-shadcn td {
+  padding: 4px;
+  border: 0.05rem solid var(--table-border);
+  border-collapse: collapse;
+}
+
+/* Heading sizes - defaults from Blocknote are too big */
+[data-content-type="heading"] {
+  --level: 1.8rem;
+}
+[data-content-type="heading"][data-level="2"] {
+  --level: 1.4rem;
+}
+[data-content-type="heading"][data-level="3"] {
+  --level: 1.1rem;
+}

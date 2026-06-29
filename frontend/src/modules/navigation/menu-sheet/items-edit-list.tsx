@@ -1,0 +1,52 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { UserMenuItem } from '~/modules/me/types';
+import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
+
+export const MenuSheetItemsEdit = ({
+  data,
+  isArchived,
+  options,
+}: {
+  data: UserMenuItem[];
+  options?: MenuSectionOptions;
+  isArchived: boolean;
+}) => {
+  const { t } = useTranslation();
+  const { detailedMenu } = useNavigationStore();
+  const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
+
+  if (options && data.length === 0) {
+    return (
+      <li className="py-2 text-center text-light text-muted-foreground text-sm">
+        {t('c:no_resource_yet', { resource: options.entityType })}
+      </li>
+    );
+  }
+
+  const filteredItems = data
+    .filter((i) => (isArchived ? i.membership.archived : !i.membership.archived))
+    .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
+
+  const toggleSubmenuVisibility = (itemId: string) => {
+    setSubmenuVisibility((prevState) => ({
+      ...prevState,
+      [itemId]: !prevState[itemId],
+    }));
+  };
+
+  return filteredItems.map((item) => (
+    <MenuItemEditWrapper
+      key={item.id}
+      unarchiveItems={filteredItems}
+      item={item}
+      options={options}
+      isArchived={isArchived}
+      detailedMenu={detailedMenu}
+      isSubmenuArchivedVisible={submenuVisibility[item.id]}
+      toggleSubmenuVisibility={toggleSubmenuVisibility}
+    />
+  ));
+};

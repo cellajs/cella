@@ -1,0 +1,36 @@
+/**
+ * Mock generators for stream notification schemas.
+ * Used for both app and public stream notification OpenAPI examples.
+ */
+
+import { faker } from '@faker-js/faker';
+import { mockNanoid, mockUuid, withFakerSeed } from '#/mocks';
+import { mockStxBase } from './sync-transaction-mocks';
+
+/**
+ * Generates a mock StreamNotification example for product entity events.
+ * Used for both app and public stream notifications.
+ *
+ * For product entities (page, attachment):
+ * - entityType is set, resourceType is null
+ * - Includes stx, seq, cacheToken for sync engine
+ * - contextType is null (not a context entity event)
+ */
+export const mockStreamNotification = (key = 'stream-notification:default') =>
+  withFakerSeed(key, () => ({
+    action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
+    entityType: faker.helpers.arrayElement(['page', 'attachment'] as const),
+    resourceType: null,
+    subjectId: mockUuid(),
+    organizationId: mockUuid(),
+    tenantId: mockNanoid(),
+    contextType: null,
+    contextId: mockUuid(),
+    seq: faker.number.int({ min: 1, max: 500 }),
+    // Generate cacheToken BEFORE stx to ensure deterministic output
+    // (stx uses nested withFakerSeed which resets the seed after)
+    cacheToken: faker.string.alphanumeric(32),
+    stx: mockStxBase(`${key}:stx`),
+    batchUntilSeq: null,
+    propagation: null,
+  }));

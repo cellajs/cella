@@ -1,0 +1,222 @@
+name: CI
+
+# Deny-by-default: each job opts in to the scopes it actually needs.
+permissions: {}
+
+# Controls which events and branches will trigger the workflow
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel older runs of the same PR when a new push arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Lint the PR title as a Conventional Commit. We squash-merge, so the PR title
+  # becomes the commit message on main that release-please reads. This is the
+  # real enforcement point (the local lefthook hook can be bypassed with
+  # --no-verify).
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Lint PR title
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            revert
+            docs
+            chore
+            build
+            ci
+            style
+            test
+
+  # Runs linting
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Biome
+        run: pnpm biome check .
+
+  # Runs all tests (full mode with PostgreSQL)
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Create .env files
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          cp ./frontend/.env.example ./frontend/.env
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: cd frontend && pnpm exec playwright install
+
+      - name: Generate OpenAPI spec
+        run: pnpm sdk
+
+      - name: Run database migrations
+        run: pnpm --filter backend push
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+      - name: Run tests (full mode)
+        run: pnpm test:full
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+  # Tests for cella CLI
+  test-cella-cli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0 # Required for git operations in sync CLI
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run sync CLI unit tests
+        run: pnpm --filter @cellajs/cli test
+
+      - name: Run sync analysis (dry-run)
+        # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
+        # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
+        # --track branch keeps this a stable tool smoke-test independent of whether
+        # upstream has cut a release yet (release resolution is covered by e2e tests).
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          pnpm cella analyze --track branch
+
+  # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
+  # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
+  # so offline clients wipe stale persisted query data. Temporary escape hatch
+  # until the lens system lands. See info/SCHEMA_EVOLUTION.md.
+  schema-bust-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0 # need base-branch blobs to diff
+
+      - name: Breaking-change gate
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          SPEC=backend/openapi.cache.json
+          CFG=shared/config/config.default.ts
+
+          # No base spec (first introduction) → nothing to compare.
+          if ! git show "origin/$BASE_REF:$SPEC" > /tmp/base-openapi.json 2>/dev/null; then
+            echo "No base OpenAPI spec; skipping gate."
+            exit 0
+          fi
+          cp "$SPEC" /tmp/head-openapi.json
+
+          # Classify breaking changes (oasdiff exits non-zero on breaking errors).
+          # TODO: pin tufin/oasdiff by digest once chosen.
+          set +e
+          docker run --rm -v /tmp:/specs tufin/oasdiff:v1.20.0 \
+            breaking /specs/base-openapi.json /specs/head-openapi.json --fail-on ERR
+          BREAKING=$?
+          set -e
+          if [ "$BREAKING" -eq 0 ]; then
+            echo "✅ No breaking OpenAPI changes."
+            exit 0
+          fi
+
+          # Breaking change present → require a clientCacheVersion bump in the same PR.
+          BASE_BUSTER=$(git show "origin/$BASE_REF:$CFG" | grep -oE "clientCacheVersion: '[^']+'" || true)
+          HEAD_BUSTER=$(grep -oE "clientCacheVersion: '[^']+'" "$CFG" || true)
+          echo "clientCacheVersion base=[$BASE_BUSTER] head=[$HEAD_BUSTER]"
+          if [ -n "$HEAD_BUSTER" ] && [ "$BASE_BUSTER" != "$HEAD_BUSTER" ]; then
+            echo "✅ Breaking change accompanied by a clientCacheVersion bump."
+            exit 0
+          fi
+
+          echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
+          echo "Bump appConfig.clientCacheVersion (e.g. 'v1' → 'v2') in $CFG and use a 'feat!' PR title so clients wipe stale cache."
+          exit 1
+

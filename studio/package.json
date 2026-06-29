@@ -1,0 +1,22 @@
+{
+  "name": "studio",
+  "version": "0.0.1",
+  "description": "Drizzle Studio launcher for local database inspection",
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env DOTENV_CONFIG_QUIET=true tsx ../backend/scripts/drizzle-studio/start.ts",
+    "stop": "tsx ../backend/scripts/drizzle-studio/stop.ts"
+  },
+  "keywords": [
+    "drizzle"
+  ],
+  "author": "CellaJS <info@cellajs.com>",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "chalk": "^5.6.2",
+    "cross-env": "catalog:",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

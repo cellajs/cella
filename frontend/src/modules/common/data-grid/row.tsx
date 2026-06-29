@@ -1,0 +1,113 @@
+import { memo, useMemo } from 'react';
+import { useLatestCallback } from '~/hooks/use-latest-ref';
+import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
+import type { CalculatedColumn, RenderRowProps } from './types';
+import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils/grid-utils';
+
+function Row<R, SR>({
+  className,
+  rowIdx,
+  gridRowStart,
+  selectedCellIdx,
+  isRowSelectionDisabled,
+  isRowSelected,
+  lastFrozenColumnIndex,
+  row,
+  viewportColumns,
+  selectedCellEditor,
+  onCellMouseDown,
+  onCellClick,
+  onCellDoubleClick,
+  onCellContextMenu,
+  rowClass,
+  onRowChange,
+  selectCell,
+  renderCell,
+  selectedCellRange,
+  isCellSelectionEnabled,
+  style,
+  ...props
+}: RenderRowProps<R, SR>) {
+  const handleRowChange = useLatestCallback((column: CalculatedColumn<R, SR>, newRow: R) => {
+    onRowChange(column, rowIdx, newRow);
+  });
+
+  className = cn(
+    'rdg-row group/row contents aria-selected:bg-accent aria-selected:hover:bg-accent',
+    `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
+    {
+      'rdg-row-selected': selectedCellIdx === -1,
+    },
+    rowClass?.(row, rowIdx),
+    className,
+  );
+
+  const cells: React.ReactNode[] = [];
+
+  for (let index = 0; index < viewportColumns.length; index++) {
+    const column = viewportColumns[index];
+    const { idx } = column;
+    const colSpan = getColSpan(column, lastFrozenColumnIndex, { type: 'ROW', row });
+    if (colSpan !== undefined) {
+      index += colSpan - 1;
+    }
+
+    const isCellSelected = selectedCellIdx === idx;
+
+    // Check if cell is in selected range
+    const position = { idx, rowIdx };
+    const isInSelectedRange = selectedCellRange ? isCellInRange(position, selectedCellRange) : false;
+    const rangeBoundary =
+      isInSelectedRange && selectedCellRange ? getCellRangeBoundary(position, selectedCellRange) : undefined;
+
+    if (isCellSelected && selectedCellEditor) {
+      cells.push(selectedCellEditor);
+    } else {
+      cells.push(
+        renderCell(column.key, {
+          column,
+          colSpan,
+          row,
+          rowIdx,
+          isDraggedOver: false,
+          isCellSelected,
+          isCellSelectionEnabled,
+          isInSelectedRange,
+          rangeBoundary,
+          onCellMouseDown,
+          onCellClick,
+          onCellDoubleClick,
+          onCellContextMenu,
+          onRowChange: handleRowChange,
+          selectCell,
+        }),
+      );
+    }
+  }
+
+  const selectionValue = useMemo(
+    (): RowSelectionContextValue => ({ isRowSelected, isRowSelectionDisabled }),
+    [isRowSelectionDisabled, isRowSelected],
+  );
+
+  return (
+    <RowSelectionContext value={selectionValue}>
+      <div
+        role="row"
+        className={className}
+        style={{
+          ...getRowStyle(gridRowStart),
+          ...style,
+        }}
+        {...props}
+      >
+        {cells}
+      </div>
+    </RowSelectionContext>
+  );
+}
+
+const RowComponent = memo(Row) as <R, SR>(props: RenderRowProps<R, SR>) => React.JSX.Element;
+export function defaultRenderRow<R, SR>(key: React.Key, props: RenderRowProps<R, SR>) {
+  return <RowComponent key={key} {...props} />;
+}

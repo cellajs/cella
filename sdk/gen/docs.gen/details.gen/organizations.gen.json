@@ -1,0 +1,1582 @@
+[
+  {
+    "operationId": "createOrganizations",
+    "responses": [
+      {
+        "status": 201,
+        "description": "Organizations were created",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "description": "The main context entity is an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "slug": { "type": "string", "required": true, "maxLength": 255 },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "bannerUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "shortName": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "country": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "timezone": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["en", "nl"]
+                  },
+                  "languages": {
+                    "type": "array",
+                    "required": true,
+                    "minItems": 1,
+                    "itemType": "string",
+                    "enum": ["en", "nl"]
+                  },
+                  "notificationEmail": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "color": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "logoUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "websiteUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "welcomeText": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 1000000
+                  },
+                  "authStrategies": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string",
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "chatSupport": { "type": "boolean", "required": true },
+                  "included": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "membership": {
+                        "type": "object",
+                        "required": true,
+                        "description": "Core membership fields shared across active and inactive memberships.",
+                        "properties": {
+                          "id": { "type": "string", "required": true, "format": "uuid" },
+                          "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                          "contextType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["organization"]
+                          },
+                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "userId": { "type": "string", "required": true, "format": "uuid" },
+                          "role": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["admin", "member"]
+                          },
+                          "archived": { "type": "boolean", "required": true },
+                          "muted": { "type": "boolean", "required": true },
+                          "displayOrder": {
+                            "type": "number",
+                            "required": true,
+                            "minimum": -140737488355328,
+                            "maximum": 140737488355327
+                          },
+                          "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                        },
+                        "ref": "#/components/schemas/MembershipBase"
+                      },
+                      "counts": {
+                        "type": "object",
+                        "required": false,
+                        "properties": {
+                          "membership": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "admin": { "type": "number", "required": true },
+                              "member": { "type": "number", "required": true },
+                              "pending": { "type": "number", "required": true },
+                              "total": { "type": "number", "required": true }
+                            }
+                          },
+                          "entities": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "extendsRef": "#/components/schemas/Organization"
+              }
+            },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "data": [
+            {
+              "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+              "tenantId": "fyc7n2",
+              "entityType": "organization",
+              "name": "Conroy, Kerluke and Rowe",
+              "slug": "conroy-kerluke-and-rowe",
+              "shortName": "Conroy,",
+              "country": "Singapore",
+              "timezone": "Asia/Kuala_Lumpur",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
+              "color": "#dbcbc1",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "logoUrl": null,
+              "websiteUrl": "https://conroy-kerluke-and-rowe.example",
+              "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
+              "authStrategies": ["passkey"],
+              "chatSupport": false,
+              "createdAt": "2024-04-18T21:12:59.543Z",
+              "createdBy": null,
+              "updatedAt": "2024-04-18T21:12:59.543Z",
+              "updatedBy": null,
+              "included": {
+                "membership": {
+                  "id": "1f366272-953c-486d-81dc-ee61f43478a1",
+                  "tenantId": "t4n7co",
+                  "contextType": "organization",
+                  "contextId": "b5c28e6f-552e-42e4-940d-66f5ab0174ab",
+                  "userId": "8ed7182a-e09f-41c6-9302-0e59a26ff7ac",
+                  "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                  "role": "admin",
+                  "displayOrder": 98,
+                  "muted": false,
+                  "archived": false
+                },
+                "counts": {
+                  "membership": {
+                    "admin": 43,
+                    "member": 58,
+                    "pending": 47,
+                    "total": 101
+                  },
+                  "entities": { "attachment": 294, "page": 327 }
+                }
+              }
+            },
+            {
+              "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+              "tenantId": "dwpxxb",
+              "entityType": "organization",
+              "name": "Lemke, Bode and Reichel-Klocko",
+              "slug": "lemke-bode-and-reichel-klocko",
+              "shortName": "Lemke,",
+              "country": "Pakistan",
+              "timezone": "America/Aruba",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
+              "color": "#2ad39a",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "logoUrl": null,
+              "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
+              "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
+              "authStrategies": ["passkey"],
+              "chatSupport": false,
+              "createdAt": "2024-02-24T16:36:46.247Z",
+              "createdBy": null,
+              "updatedAt": "2024-02-24T16:36:46.247Z",
+              "updatedBy": null,
+              "included": {
+                "membership": {
+                  "id": "cf273cfa-8287-4b04-b641-897816829f30",
+                  "tenantId": "4oy2u1",
+                  "contextType": "organization",
+                  "contextId": "a22457ca-c90f-46f6-aa80-2cd0efd36e4f",
+                  "userId": "ddfd40e3-e143-4676-8a93-314d23d2d92f",
+                  "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                  "role": "admin",
+                  "displayOrder": 83,
+                  "muted": false,
+                  "archived": false
+                },
+                "counts": {
+                  "membership": {
+                    "admin": 22,
+                    "member": 122,
+                    "pending": 44,
+                    "total": 144
+                  },
+                  "entities": { "attachment": 321, "page": 94 }
+                }
+              }
+            }
+          ],
+          "rejectedIds": []
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "array",
+        "itemType": "object",
+        "items": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true, "maxLength": 50 },
+            "name": {
+              "type": "string",
+              "required": true,
+              "minLength": 2,
+              "maxLength": 255
+            },
+            "slug": {
+              "type": "string",
+              "required": true,
+              "minLength": 2,
+              "maxLength": 255
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 10,
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteOrganizations",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Success",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getOrganizations",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Organizations",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/Organization",
+              "items": {
+                "type": "object",
+                "description": "The main context entity is an organization.",
+                "properties": {
+                  "createdAt": { "type": "string", "required": true },
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
+                  "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                  "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "slug": { "type": "string", "required": true, "maxLength": 255 },
+                  "thumbnailUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "bannerUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "description": "Minimal user data for references.",
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["user"]
+                      }
+                    },
+                    "extendsRef": "#/components/schemas/UserMinimalBase"
+                  },
+                  "shortName": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "country": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "timezone": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "defaultLanguage": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["en", "nl"]
+                  },
+                  "languages": {
+                    "type": "array",
+                    "required": true,
+                    "minItems": 1,
+                    "itemType": "string",
+                    "enum": ["en", "nl"]
+                  },
+                  "notificationEmail": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "color": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "logoUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "websiteUrl": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2048
+                  },
+                  "welcomeText": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 1000000
+                  },
+                  "authStrategies": {
+                    "type": "array",
+                    "required": true,
+                    "itemType": "string",
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "chatSupport": { "type": "boolean", "required": true },
+                  "included": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "membership": {
+                        "type": "object",
+                        "required": false,
+                        "description": "Core membership fields shared across active and inactive memberships.",
+                        "properties": {
+                          "id": { "type": "string", "required": true, "format": "uuid" },
+                          "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                          "contextType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["organization"]
+                          },
+                          "contextId": { "type": "string", "required": true, "format": "uuid" },
+                          "userId": { "type": "string", "required": true, "format": "uuid" },
+                          "role": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["admin", "member"]
+                          },
+                          "archived": { "type": "boolean", "required": true },
+                          "muted": { "type": "boolean", "required": true },
+                          "displayOrder": {
+                            "type": "number",
+                            "required": true,
+                            "minimum": -140737488355328,
+                            "maximum": 140737488355327
+                          },
+                          "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                        },
+                        "ref": "#/components/schemas/MembershipBase"
+                      },
+                      "counts": {
+                        "type": "object",
+                        "required": false,
+                        "properties": {
+                          "membership": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "admin": { "type": "number", "required": true },
+                              "member": { "type": "number", "required": true },
+                              "pending": { "type": "number", "required": true },
+                              "total": { "type": "number", "required": true }
+                            }
+                          },
+                          "entities": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ref": "#/components/schemas/Organization"
+              }
+            },
+            "total": { "type": "number", "required": true }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+              "tenantId": "6eo7z7",
+              "entityType": "organization",
+              "name": "Anderson - Ferry",
+              "slug": "anderson-ferry",
+              "shortName": "Anderson",
+              "country": "Bahamas",
+              "timezone": "America/Moncton",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@anderson-ferry.example",
+              "color": "#dfeb6e",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "logoUrl": null,
+              "websiteUrl": "https://anderson-ferry.example",
+              "welcomeText": "Welcome to Anderson - Ferry!",
+              "authStrategies": ["passkey"],
+              "chatSupport": true,
+              "createdAt": "2024-11-21T01:19:53.533Z",
+              "createdBy": null,
+              "updatedAt": "2024-11-21T01:19:53.533Z",
+              "updatedBy": null,
+              "included": {
+                "membership": {
+                  "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                  "tenantId": "u87zf2",
+                  "contextType": "organization",
+                  "contextId": "20b96706-4bb8-48b2-94b6-b50c11f65b04",
+                  "userId": "71f83013-c0d6-4ed3-833d-ccc90f1cb64d",
+                  "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                  "role": "admin",
+                  "displayOrder": 83,
+                  "muted": false,
+                  "archived": false
+                },
+                "counts": {
+                  "membership": {
+                    "admin": 30,
+                    "member": 20,
+                    "pending": 27,
+                    "total": 50
+                  },
+                  "entities": { "attachment": 188, "page": 390 }
+                }
+              }
+            },
+            {
+              "id": "772a771f-c150-465e-9635-46594859fc3d",
+              "tenantId": "yzrul7",
+              "entityType": "organization",
+              "name": "Wiegand, Harber and Stark-Abshire",
+              "slug": "wiegand-harber-and-stark-abshire",
+              "shortName": "Wiegand,",
+              "country": "Argentina",
+              "timezone": "Europe/Gibraltar",
+              "defaultLanguage": "en",
+              "languages": ["en"],
+              "notificationEmail": "notifications@wiegand-harber-and-stark-abshire.example",
+              "color": "#a3cb87",
+              "thumbnailUrl": null,
+              "bannerUrl": null,
+              "logoUrl": null,
+              "websiteUrl": "https://wiegand-harber-and-stark-abshire.example",
+              "welcomeText": "Welcome to Wiegand, Harber and Stark-Abshire!",
+              "authStrategies": ["passkey"],
+              "chatSupport": false,
+              "createdAt": "2024-10-29T04:35:17.725Z",
+              "createdBy": null,
+              "updatedAt": "2024-10-29T04:35:17.725Z",
+              "updatedBy": null,
+              "included": {
+                "membership": {
+                  "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                  "tenantId": "lwj64z",
+                  "contextType": "organization",
+                  "contextId": "98ecacac-fb1f-4e61-87c6-f9a972b2e7dd",
+                  "userId": "700617bb-ef60-4b47-8d4a-f7c5d64a3bdf",
+                  "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
+                  "role": "member",
+                  "displayOrder": 73,
+                  "muted": false,
+                  "archived": false
+                },
+                "counts": {
+                  "membership": {
+                    "admin": 7,
+                    "member": 150,
+                    "pending": 18,
+                    "total": 157
+                  },
+                  "entities": { "attachment": 1, "page": 272 }
+                }
+              }
+            }
+          ],
+          "total": 2
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "q": { "type": "string", "required": false, "maxLength": 255 },
+          "sort": {
+            "type": "string",
+            "required": false,
+            "enum": ["id", "name", "createdAt", "displayOrder"]
+          },
+          "order": {
+            "type": "string",
+            "required": false,
+            "enum": ["asc", "desc"]
+          },
+          "offset": { "type": "string", "required": false },
+          "limit": { "type": "string", "required": false },
+          "seqCursor": { "type": "string", "required": false },
+          "relatableUserId": { "type": "string", "required": false, "maxLength": 50 },
+          "role": {
+            "type": "string",
+            "required": false,
+            "enum": ["admin", "member"]
+          },
+          "excludeArchived": {
+            "type": "string",
+            "required": false,
+            "enum": ["true", "false"]
+          },
+          "include": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getOrganization",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Organization",
+        "name": "Organization",
+        "ref": "#/components/schemas/Organization",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "The main context entity is an organization.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["organization"]
+            },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "shortName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "country": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "timezone": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "defaultLanguage": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "languages": {
+              "type": "array",
+              "required": true,
+              "minItems": 1,
+              "itemType": "string",
+              "enum": ["en", "nl"]
+            },
+            "notificationEmail": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "color": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "logoUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "websiteUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "welcomeText": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            },
+            "chatSupport": { "type": "boolean", "required": true },
+            "included": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "membership": {
+                  "type": "object",
+                  "required": false,
+                  "description": "Core membership fields shared across active and inactive memberships.",
+                  "properties": {
+                    "id": { "type": "string", "required": true, "format": "uuid" },
+                    "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                    "contextType": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["organization"]
+                    },
+                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "userId": { "type": "string", "required": true, "format": "uuid" },
+                    "role": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["admin", "member"]
+                    },
+                    "archived": { "type": "boolean", "required": true },
+                    "muted": { "type": "boolean", "required": true },
+                    "displayOrder": {
+                      "type": "number",
+                      "required": true,
+                      "minimum": -140737488355328,
+                      "maximum": 140737488355327
+                    },
+                    "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                  },
+                  "ref": "#/components/schemas/MembershipBase"
+                },
+                "counts": {
+                  "type": "object",
+                  "required": false,
+                  "properties": {
+                    "membership": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "admin": { "type": "number", "required": true },
+                        "member": { "type": "number", "required": true },
+                        "pending": { "type": "number", "required": true },
+                        "total": { "type": "number", "required": true }
+                      }
+                    },
+                    "entities": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ref": "#/components/schemas/Organization",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
+          "entityType": "organization",
+          "name": "Spencer, Pouros and Bergnaum",
+          "slug": "spencer-pouros-and-bergnaum",
+          "shortName": "Spencer,",
+          "country": "Sweden",
+          "timezone": "Europe/Vaduz",
+          "defaultLanguage": "en",
+          "languages": ["en"],
+          "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+          "color": "#cda6af",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "logoUrl": null,
+          "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+          "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+          "authStrategies": ["passkey"],
+          "chatSupport": true,
+          "createdAt": "2024-12-25T15:04:42.969Z",
+          "createdBy": null,
+          "updatedAt": "2024-12-25T15:04:42.969Z",
+          "updatedBy": null,
+          "included": {
+            "membership": {
+              "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+              "tenantId": "6vxzq0",
+              "contextType": "organization",
+              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+              "role": "admin",
+              "displayOrder": 2,
+              "muted": false,
+              "archived": false
+            },
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": { "attachment": 178, "page": 257 }
+            }
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "slug": {
+            "required": false,
+            "anyOf": [{ "type": "string", "required": false }, { "type": "boolean", "required": false }]
+          },
+          "include": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "updateOrganization",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Organization was updated",
+        "name": "Organization",
+        "ref": "#/components/schemas/Organization",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "The main context entity is an organization.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["organization"]
+            },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "slug": { "type": "string", "required": true, "maxLength": 255 },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "Minimal user data for references.",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["user"]
+                }
+              },
+              "extendsRef": "#/components/schemas/UserMinimalBase"
+            },
+            "shortName": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "country": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "timezone": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "defaultLanguage": {
+              "type": "string",
+              "required": true,
+              "enum": ["en", "nl"]
+            },
+            "languages": {
+              "type": "array",
+              "required": true,
+              "minItems": 1,
+              "itemType": "string",
+              "enum": ["en", "nl"]
+            },
+            "notificationEmail": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "color": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "logoUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "websiteUrl": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 2048
+            },
+            "welcomeText": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "authStrategies": {
+              "type": "array",
+              "required": true,
+              "itemType": "string",
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+            },
+            "chatSupport": { "type": "boolean", "required": true },
+            "included": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "membership": {
+                  "type": "object",
+                  "required": false,
+                  "description": "Core membership fields shared across active and inactive memberships.",
+                  "properties": {
+                    "id": { "type": "string", "required": true, "format": "uuid" },
+                    "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                    "contextType": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["organization"]
+                    },
+                    "contextId": { "type": "string", "required": true, "format": "uuid" },
+                    "userId": { "type": "string", "required": true, "format": "uuid" },
+                    "role": {
+                      "type": "string",
+                      "required": true,
+                      "enum": ["admin", "member"]
+                    },
+                    "archived": { "type": "boolean", "required": true },
+                    "muted": { "type": "boolean", "required": true },
+                    "displayOrder": {
+                      "type": "number",
+                      "required": true,
+                      "minimum": -140737488355328,
+                      "maximum": 140737488355327
+                    },
+                    "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                  },
+                  "ref": "#/components/schemas/MembershipBase"
+                },
+                "counts": {
+                  "type": "object",
+                  "required": false,
+                  "properties": {
+                    "membership": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "admin": { "type": "number", "required": true },
+                        "member": { "type": "number", "required": true },
+                        "pending": { "type": "number", "required": true },
+                        "total": { "type": "number", "required": true }
+                      }
+                    },
+                    "entities": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ref": "#/components/schemas/Organization",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+          "tenantId": "d1lgzb",
+          "entityType": "organization",
+          "name": "Spencer, Pouros and Bergnaum",
+          "slug": "spencer-pouros-and-bergnaum",
+          "shortName": "Spencer,",
+          "country": "Sweden",
+          "timezone": "Europe/Vaduz",
+          "defaultLanguage": "en",
+          "languages": ["en"],
+          "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+          "color": "#cda6af",
+          "thumbnailUrl": null,
+          "bannerUrl": null,
+          "logoUrl": null,
+          "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+          "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+          "authStrategies": ["passkey"],
+          "chatSupport": true,
+          "createdAt": "2024-12-25T15:04:42.969Z",
+          "createdBy": null,
+          "updatedAt": "2024-12-25T15:04:42.969Z",
+          "updatedBy": null,
+          "included": {
+            "membership": {
+              "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+              "tenantId": "6vxzq0",
+              "contextType": "organization",
+              "contextId": "cfd2bd5e-6bcd-421d-8e08-509c329c26d9",
+              "userId": "511cb6b8-226a-403e-9b93-c625939bbefa",
+              "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+              "role": "admin",
+              "displayOrder": 2,
+              "muted": false,
+              "archived": false
+            },
+            "counts": {
+              "membership": {
+                "admin": 30,
+                "member": 63,
+                "pending": 13,
+                "total": 93
+              },
+              "entities": { "attachment": 178, "page": 257 }
+            }
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "name": {
+            "type": "string",
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "shortName": {
+            "type": ["string", "null"],
+            "required": false,
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "country": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "timezone": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "defaultLanguage": {
+            "type": "string",
+            "required": false,
+            "enum": ["en", "nl"]
+          },
+          "languages": {
+            "type": "array",
+            "required": false,
+            "minItems": 1,
+            "itemType": "string",
+            "enum": ["en", "nl"]
+          },
+          "notificationEmail": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "color": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "logoUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "bannerUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "websiteUrl": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 2048
+          },
+          "welcomeText": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 1000000
+          },
+          "authStrategies": {
+            "type": "array",
+            "required": false,
+            "itemType": "string",
+            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+          },
+          "chatSupport": { "type": "boolean", "required": false }
+        },
+        "required": false,
+        "contentType": "application/json"
+      }
+    }
+  }
+]

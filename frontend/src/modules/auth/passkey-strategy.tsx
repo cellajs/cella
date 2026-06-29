@@ -1,0 +1,66 @@
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { FingerprintIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
+import { appConfig } from 'shared';
+import { ApiError } from '~/lib/api';
+import { useAuthStore } from '~/modules/auth/auth-store';
+import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
+import type { PasskeyCredentialProps } from '~/modules/auth/types';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { Button } from '~/modules/ui/button';
+import { useUIStore } from '~/modules/ui/ui-store';
+
+interface PasskeyStrategyProps extends Omit<PasskeyCredentialProps, 'type'> {
+  type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
+}
+
+/**
+ * Component for handling passkey authentication and MFA verification. It initiates the WebAuthn flow and communicates with the backend to complete authentication. Used in both sign-in and MFA flows based on the `type` prop.
+ */
+export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const mode = useUIStore((state) => state.mode);
+
+  const { redirect } = useSearch({ strict: false });
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+
+  const { mutate: passkeyAuth } = useMutation<
+    SignInWithPasskeyResponse,
+    ApiError | Error,
+    NonNullable<SignInWithPasskeyData['body']>['email']
+  >({
+    mutationFn: async (email) => {
+      const body = await getPasskeyVerifyCredential({ email, type });
+      return await signInWithPasskey({ body });
+    },
+    onSuccess: () => {
+      useAuthStore.getState().setSignedIn(true);
+      navigate({ to: redirectPath, replace: true });
+    },
+    onError: (error) => {
+      if (type === 'mfa' && error instanceof ApiError) {
+        navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+      }
+      if (type === 'authentication') toaster(t('error:passkey_verification_failed'), 'error');
+    },
+  });
+
+  return (
+    <div data-mode={mode} className="group flex flex-col space-y-2">
+      <Button
+        type="button"
+        variant={type === 'mfa' ? 'default' : 'plain'}
+        onClick={() => passkeyAuth(email)}
+        className="w-full gap-1.5 truncate"
+      >
+        <FingerprintIcon size={16} />
+        <span className="truncate">
+          {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
+        </span>
+      </Button>
+    </div>
+  );
+}

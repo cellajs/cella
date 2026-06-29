@@ -1,0 +1,32 @@
+import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+
+export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
+  const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;
+
+  const updateDialog = useDialoger((state) => state.update);
+
+  // Check if dropdown is open, then disable dismissible
+  const isDropdownOpen = useDropdowner((state) => state.dropdown);
+
+  // onClose trigger handles by remove method
+  const closeDialog = () => useDialoger.getState().remove(dialog.id);
+
+  const onOpenChange = (open: boolean) => {
+    updateDialog(dialog.id, { open });
+    if (!open) closeDialog();
+  };
+
+  return (
+    <Drawer key={id} open={open} disablePointerDismissal={!!isDropdownOpen} onOpenChange={onOpenChange}>
+      <DrawerContent id={String(id)} className={className}>
+        <DrawerHeader data-overlay="dialog" className={title || description ? headerClassName : 'hidden'}>
+          <DrawerTitle className={`${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
+          <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
+        </DrawerHeader>
+        <div className="px-3 pb-3">{content}</div>
+      </DrawerContent>
+    </Drawer>
+  );
+}

@@ -1,0 +1,42 @@
+# Page Load — looping VUs simulate repeated page loads.
+#
+# Each VU loops 15 times, fetching /me + /me/memberships + /organizations.
+# Steps up: 40 → 50 → 60 arrivals/s (~2700 req/s peak).
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/auth.ts"
+  phases:
+    - duration: 10
+      arrivalRate: 40
+      name: "hold 40"
+    - duration: 10
+      arrivalRate: 50
+      name: "hold 50"
+    - duration: 15
+      arrivalRate: 60
+      name: "hold 60"
+  plugins:
+    ensure:
+      maxErrorRate: 1
+      thresholds:
+        - http.response_time.p95: 500
+        - http.response_time.p99: 1000
+
+scenarios:
+  - beforeScenario: "authenticate"
+    flow:
+      - loop:
+          - get:
+              url: "/me"
+              headers:
+                cookie: "{{ cookie }}"
+          - get:
+              url: "/me/memberships"
+              headers:
+                cookie: "{{ cookie }}"
+          - get:
+              url: "/organizations"
+              headers:
+                cookie: "{{ cookie }}"
+          - think: "100ms"
+        count: 15

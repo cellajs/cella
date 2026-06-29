@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "lib": ["es2024", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["gen/**/*", "src/**/*", "openapi-ts.config.ts"]
+}

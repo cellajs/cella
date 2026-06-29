@@ -1,0 +1,84 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+vite.config.ts.*
+node_modules
+dist
+dev-dist
+out
+dist-ssr
+*.local
+
+# Editor directories and files
+.idea
+.DS_Store
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.turbo
+.todos
+.env
+.env.*
+!.env.example
+.envrc
+.pulumi/
+.temp
+
+# Cache
+*.tsbuildinfo
+.million
+.db
+.rendered
+backend/openapi.cache.json
+backend/openapi.manifest.json
+frontend/vite/temp-api-gen-*
+frontend/vite/.generate-client.lock
+sdk/src/temp-api-gen-*
+sdk/src/.generate-client.lock
+sdk/src/.spec-hash
+*.cache.json
+
+# Bench baseline snapshots (local only)
+bench/.baselines/
+
+# Migration scripts
+scripts/migration/
+
+# Other
+.netlify
+.wrangler
+frontend/stats.html
+.junie
+.claude
+.custom
+.kilo
+
+# Cella
+*storybook.log
+storybook-static
+.locales-cache
+
+# GeoIP databases (downloaded at build/dev time, not committed)
+backend/geoip/*.mmdb
+
+# Terraform
+*.tfvars
+!*.tfvars.example
+terraform.tfstate*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# Test coverage output
+coverage/
+*.lcov
+.nyc_output/
+

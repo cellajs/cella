@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom"],
+    "rootDir": ".."
+  },
+  "include": ["./**/*.ts", "../shared/index.ts", "../shared/src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "../shared/**/*.test.ts", "../shared/scripts/**"]
+}

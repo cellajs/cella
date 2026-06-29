@@ -1,0 +1,31 @@
+{
+  "name": "bench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Artillery load-testing scenarios and tooling",
+  "scripts": {
+    "bench": "tsx src/bench-cli.ts",
+    "ts": "tsgo --pretty",
+    "db:seed": "tsx src/data-setup.ts",
+    "db:teardown": "tsx src/data-setup.ts --teardown"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "nanoid": "^5.1.16",
+    "ora": "^9.4.1",
+    "pg": "^8.22.0",
+    "pg-format": "^1.0.4",
+    "picocolors": "^1.1.1",
+    "shared": "workspace:*",
+    "uuidv7": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "^8.20.0",
+    "@types/pg-format": "^1.0.5",
+    "artillery": "^2.0.33",
+    "artillery-plugin-ensure": "^1.27.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

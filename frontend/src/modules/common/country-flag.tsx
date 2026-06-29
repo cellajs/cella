@@ -1,0 +1,42 @@
+import type React from 'react';
+import { useOnlineManager } from '~/hooks/use-online-manager';
+import { cn } from '~/utils/cn';
+
+interface ImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  countryCode: string;
+  className?: string;
+  imgType?: 'svg' | 'png';
+}
+
+export const CountryFlag = ({
+  countryCode,
+  className,
+  imgType = 'svg',
+  width = 16,
+  height = 12,
+  ...props
+}: ImgProps) => {
+  const isOnline = useOnlineManager();
+
+  if (typeof countryCode !== 'string') return null;
+  if (countryCode.toLowerCase() === 'en') countryCode = 'gb';
+
+  const flagUrl =
+    imgType === 'svg'
+      ? `/static/common/flags/${countryCode.toLowerCase()}.svg`
+      : `/static/common/flags/png/${countryCode.toLowerCase()}.png`;
+
+  if (!isOnline) return null;
+  return (
+    <img
+      className={cn('inline overflow-hidden shadow-xs', className)}
+      {...props}
+      src={flagUrl}
+      alt={`Flag of ${countryCode.toUpperCase()}`}
+      width={width}
+      height={height}
+      loading="lazy"
+      decoding="async"
+    />
+  );
+};

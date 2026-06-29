@@ -1,0 +1,69 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { DataTable } from '~/modules/common/data-table/data-table';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { infoQueryOptions } from '~/modules/docs/query';
+import { Card, CardContent } from '~/modules/ui/card';
+
+interface InfoRow {
+  key: string;
+  label: string;
+  value: string;
+}
+
+/**
+ * Displays API overview information in a table format.
+ * Shows title, version, and description from the OpenAPI info.
+ */
+export function OverviewTable() {
+  const { t } = useTranslation();
+
+  // Fetch info via React Query (reduces bundle size)
+  const { data: info } = useSuspenseQuery(infoQueryOptions);
+
+  // Transform info object into rows for the table
+  const rows: InfoRow[] = [
+    { key: 'title', label: t('c:title'), value: info.title },
+    { key: 'version', label: t('c:version'), value: info.version },
+    { key: 'description', label: t('c:description'), value: info.description },
+    { key: 'openapiVersion', label: t('c:docs.openapi_version'), value: info.openapiVersion },
+  ];
+
+  const columns: ColumnOrColumnGroup<InfoRow>[] = [
+    {
+      key: 'label',
+      name: '',
+      width: 160,
+      renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
+    },
+    {
+      key: 'value',
+      name: '',
+      resizable: true,
+      wrapText: 5,
+      renderCell: ({ row }) => <div className="text-muted-foreground leading-5">{row.value}</div>,
+    },
+  ];
+
+  return (
+    <Card className="mb-12 border-0">
+      <CardContent className="rdg-readonly">
+        <DataTable<InfoRow>
+          className="mb-0 border-b pb-0"
+          hideHeader
+          columns={columns}
+          rows={rows}
+          hasNextPage={false}
+          rowKeyGetter={(row) => row.key}
+          isLoading={false}
+          isFetching={false}
+          limit={rows.length}
+          isFiltered={false}
+          rowHeight={42}
+          readOnly
+          enableVirtualization={false}
+        />
+      </CardContent>
+    </Card>
+  );
+}

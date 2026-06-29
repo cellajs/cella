@@ -1,0 +1,85 @@
+/**
+ * Cella Data Grid Styles
+ *
+ * Only rules that cannot be expressed as Tailwind classes live here:
+ * - CSS vars consumed by JS (--rdg-grid-row-start)
+ * - Complex selectors (:nth-last-child, :not())
+ * - Pseudo-elements (::before/::after for drop indicators)
+ * - Relative oklch colors (not in Tailwind palette)
+ *
+ * Everything else is on the components via Tailwind aria-* modifiers.
+ */
+
+/* ==========================================================================
+   Cell Styles (layout that needs CSS vars + complex selectors)
+   ========================================================================== */
+
+/* Grid-row-start via CSS var — cascades naturally through display:contents rows */
+.rdg-cell {
+  grid-row-start: var(--rdg-grid-row-start);
+}
+
+/* Last frozen cell shadow — only when grid is scrolled horizontally */
+[data-scrolled-left] > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen),
+[data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
+  box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
+}
+
+/* ==========================================================================
+   DataTable Overrides (drag-and-drop indicators)
+   ========================================================================== */
+
+/* Drop indicator line spanning the full row.
+ *
+ * The `data-drop-edge` attribute is written imperatively (no React state) by
+ * row-drag-cell.tsx onto the `.rdg-row` element during drag. Plain attribute
+ * selectors only — no `:has()`, no sibling combinators — so style invalidation
+ * is O(1) per row regardless of table size. `:has()` with sibling combinators
+ * is a known foot-gun on large/virtualized lists because it forces relational
+ * re-evaluation across siblings on every attribute mutation.
+ *
+ * Cells use `overflow: hidden`, so absolute pseudo-elements positioned outside
+ * the cell box would be clipped. We use inset box-shadows instead, which paint
+ * inside the cell and are unaffected by overflow.
+ *
+ * To prevent the indicator from "jumping" 2px when the pointer crosses a row
+ * seam, the JS redirects a `bottom` zone on row N to a `top` mark on row N+1
+ * (so the line sits in the same pixel band whether the user is at the bottom
+ * of row N or the top of row N+1). The last row, having no next sibling, is
+ * the only case where `data-drop-edge="bottom"` is actually written to the DOM.
+ */
+.rdg-row[data-drop-edge="top"] > .rdg-cell {
+  box-shadow: inset 0 2px 0 0 var(--primary);
+}
+
+.rdg-row[data-drop-edge="bottom"] > .rdg-cell {
+  box-shadow: inset 0 -2px 0 0 var(--primary);
+}
+
+/* Center drop zone — highlight entire row for reparenting.
+ * Rows use `display: contents` so we can't put a single border on the row.
+ * Instead, compose a continuous 1px ring across all cells using inset
+ * box-shadows: top+bottom on every cell (which join seamlessly between cells),
+ * left only on the first cell, right only on the last. This avoids the noisy
+ * per-cell dashed outline where each cell would draw its own broken rectangle.
+ */
+.rdg-row[data-drop-edge="center"] > .rdg-cell {
+  background-color: oklch(from var(--primary) l c h / 0.08);
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary);
+}
+
+.rdg-row[data-drop-edge="center"] > .rdg-cell:first-child {
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary),
+    inset 1px 0 0 0 var(--primary);
+}
+
+.rdg-row[data-drop-edge="center"] > .rdg-cell:last-child {
+  box-shadow:
+    inset 0 1px 0 0 var(--primary),
+    inset 0 -1px 0 0 var(--primary),
+    inset -1px 0 0 0 var(--primary);
+}

@@ -1,0 +1,99 @@
+/**
+ * Tests for the custom JSON formatter.
+ * Verifies that formatJson produces valid, parseable JSON.
+ */
+
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { formatJson } from '../format-json';
+import { parseOpenApiSpec } from '../parse-spec';
+import type { OpenApiSpec } from '../types';
+
+// Prefer the committed SDK spec (always present on a clean checkout);
+// fall back to the gitignored backend cache (present after `pnpm sdk`).
+const PUBLIC_SPEC = resolve(__dirname, '../../../../gen/openapi.json');
+const CACHE_SPEC = resolve(__dirname, '../../../../../backend/openapi.cache.json');
+const BACKEND_SPEC = existsSync(PUBLIC_SPEC) ? PUBLIC_SPEC : CACHE_SPEC;
+
+describe('formatJson', () => {
+  it('produces valid JSON for primitive values', () => {
+    const cases = [null, 'string', 123, true, false, 0, -1, ''];
+    for (const value of cases) {
+      const output = formatJson(value);
+      expect(() => JSON.parse(output)).not.toThrow();
+      expect(JSON.parse(output)).toEqual(value);
+    }
+  });
+
+  it('produces valid JSON for arrays', () => {
+    const cases = [
+      [],
+      ['a', 'b'],
+      [1, 2, 3],
+      [null, 'mixed', 42],
+      [{ nested: true }],
+      [
+        [1, 2],
+        [3, 4],
+      ],
+    ];
+    for (const value of cases) {
+      const output = formatJson(value);
+      expect(() => JSON.parse(output)).not.toThrow();
+      expect(JSON.parse(output)).toEqual(value);
+    }
+  });
+
+  it('produces valid JSON for objects', () => {
+    const cases = [
+      {},
+      { a: 1 },
+      { type: 'string', required: true },
+      { nested: { deep: { value: 1 } } },
+      { mixed: [1, 2, { inner: 'value' }] },
+    ];
+    for (const value of cases) {
+      const output = formatJson(value);
+      expect(() => JSON.parse(output)).not.toThrow();
+      expect(JSON.parse(output)).toEqual(value);
+    }
+  });
+
+  it('collapses simple arrays to single line', () => {
+    const output = formatJson({ tags: ['a', 'b', 'c'] });
+    expect(output).toContain('["a", "b", "c"]');
+    expect(output.split('\n').length).toBeLessThan(5);
+  });
+
+  it('collapses simple objects (≤3 keys) to single line', () => {
+    const output = formatJson({ prop: { type: 'string', required: true } });
+    expect(output).toContain('{ "type": "string", "required": true }');
+  });
+
+  it('does not collapse objects with >3 keys', () => {
+    const output = formatJson({ a: 1, b: 2, c: 3, d: 4 });
+    expect(output.split('\n').length).toBeGreaterThan(1);
+  });
+
+  it('produces valid JSON for parsed OpenAPI spec', () => {
+    const specJson = readFileSync(BACKEND_SPEC, 'utf-8');
+    const spec = JSON.parse(specJson) as OpenApiSpec;
+    const parsed = parseOpenApiSpec(spec);
+
+    // Test each generated output type
+    const outputs = [
+      { name: 'operations', data: parsed.operations },
+      { name: 'tags', data: parsed.tags },
+      { name: 'info', data: parsed.info },
+      { name: 'schemas', data: parsed.schemas },
+      { name: 'schemaTags', data: parsed.schemaTags },
+    ];
+
+    for (const { name, data } of outputs) {
+      const formatted = formatJson(data);
+      expect(() => JSON.parse(formatted), `${name} should be valid JSON`).not.toThrow();
+      expect(JSON.parse(formatted), `${name} should parse to equal value`).toEqual(data);
+    }
+  });
+});

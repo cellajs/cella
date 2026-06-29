@@ -1,0 +1,115 @@
+{
+  "name": "cella",
+  "version": "0.0.1",
+  "private": false,
+  "license": "MIT",
+  "repository": "https://github.com/cellajs/cella",
+  "description": "Cella is a TypeScript template to build collaborative web apps with sync engine. MIT licensed.",
+  "keywords": [
+    "starter kit",
+    "fullstack",
+    "monorepo",
+    "typescript",
+    "cellajs"
+  ],
+  "author": "CellaJS <info@cellajs.com>",
+  "homepage": "https://cellajs.com",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "docker": "pnpm --filter backend docker:up --detach",
+    "docker:test": "docker compose -f backend/compose.yaml --profile test up -d --wait db_test",
+    "docker:test:down": "docker compose -f backend/compose.yaml --profile test down",
+    "stop": "pnpm -r --parallel --stream stop",
+    "generate": "pnpm --filter backend generate",
+    "sdk": "pnpm --filter backend generate:openapi && pnpm --filter sdk generate:sdk",
+    "clean": "rimraf backend/dist frontend/dist frontend/stats",
+    "dev": "pnpm clean && cross-env pnpm -r --parallel --stream dev",
+    "dev:single": "pnpm clean && cross-env SINGLE_VM=true pnpm -r --parallel --stream --filter backend --filter frontend dev",
+    "dev:migration": "pnpm clean && cross-env DATABASE_URL=postgres://postgres:postgres@0.0.0.0:5555/postgres DATABASE_ADMIN_URL=postgres://postgres:postgres@0.0.0.0:5555/postgres pnpm -r --parallel --stream dev",
+    "tunnel": "pnpm clean && cross-env pnpm -r --parallel --stream tunnel",
+    "dev:proxy": "pnpm clean && cross-env pnpm -r --parallel --stream --filter backend --filter cdc --filter frontend --filter proxy dev",
+    "seed": "pnpm --filter backend seed",
+    "infra": "pnpm infra:compose && pnpm --filter infra cli",
+    "infra:compose": "pnpm --filter infra compose:generate",
+    "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm --filter shared lens:check && pnpm lint:fix",
+    "lint": "pnpm biome check .",
+    "lint:fix": "pnpm biome check --write --unsafe",
+    "ts": "pnpm -r ts",
+    "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf && pnpm --filter cdc tsperf && pnpm --filter yjs-worker tsperf",
+    "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
+    "build:dev": "pnpm -r --parallel build:dev",
+    "build:staging": "pnpm -r --parallel build:staging",
+    "start": "pnpm -r --parallel start",
+    "test": "pnpm test:full",
+    "test:core": "pnpm docker:test && cross-env TEST_MODE=core vitest run --silent=passed-only",
+    "test:core:verbose": "pnpm docker:test && cross-env TEST_MODE=core vitest run",
+    "test:full": "pnpm docker:test && cross-env TEST_MODE=full COVERAGE_REPORTERS=summary vitest run --coverage.enabled --silent=passed-only",
+    "test:full:verbose": "pnpm docker:test && cross-env TEST_MODE=full vitest run",
+    "test:update": "pnpm docker:test && cross-env TEST_MODE=core vitest run -u",
+    "cella": "pnpm --filter @cellajs/cli cella",
+    "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc dev & pnpm --filter frontend offline",
+    "story": "pnpm --filter frontend storybook",
+    "bench": "pnpm -C bench bench",
+    "session": "bash bin/session.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
+    "@evilmartians/lefthook": "^2.1.9",
+    "@typescript/native-preview": "catalog:",
+    "cross-env": "catalog:",
+    "knip": "^6.21.0",
+    "rimraf": "^6.1.3",
+    "semver": "^7.7.3",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "type-enum": [
+        2,
+        "always",
+        [
+          "feat",
+          "fix",
+          "perf",
+          "refactor",
+          "revert",
+          "docs",
+          "chore",
+          "build",
+          "ci",
+          "style",
+          "test"
+        ]
+      ],
+      "header-max-length": [
+        2,
+        "always",
+        120
+      ],
+      "body-max-line-length": [
+        0,
+        "always",
+        200
+      ],
+      "footer-max-line-length": [
+        0,
+        "always",
+        200
+      ]
+    }
+  }
+}

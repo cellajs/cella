@@ -1,0 +1,53 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
+
+/**
+ * For sighted users to preview content available behind a link.
+ */
+const meta = {
+  title: 'ui/HoverCard',
+  component: HoverCard,
+  tags: ['autodocs'],
+  argTypes: {},
+  args: {},
+  render: (args) => (
+    <HoverCard {...args}>
+      <HoverCardTrigger>Hover</HoverCardTrigger>
+      <HoverCardContent>Yeah, that works out. This is me. I am cool.</HoverCardContent>
+    </HoverCard>
+  ),
+  parameters: {
+    layout: 'centered',
+  },
+} satisfies Meta<typeof HoverCard>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+/**
+ * The default form of the hover card.
+ */
+export const Default: Story = {};
+
+export const ShouldShowOnHover: Story = {
+  name: 'when hovering over trigger, should show hover card content',
+  tags: ['!dev', '!autodocs'],
+  play: async ({ canvasElement, step }) => {
+    const canvasBody = within(canvasElement.ownerDocument.body);
+
+    await step('Hover over the trigger element', async () => {
+      await userEvent.hover(await canvasBody.findByText(/hover/i));
+      await waitFor(() =>
+        expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeVisible(),
+      );
+    });
+    await step('Unhover the trigger element', async () => {
+      await userEvent.unhover(await canvasBody.findByText(/hover/i));
+      await waitFor(() =>
+        expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeNull(),
+      );
+    });
+  },
+};

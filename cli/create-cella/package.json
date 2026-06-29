@@ -1,0 +1,66 @@
+{
+  "name": "@cellajs/create-cella",
+  "version": "0.2.2",
+  "private": false,
+  "license": "MIT",
+  "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cellajs/cella",
+    "directory": "cli/create-cella"
+  },
+  "homepage": "https://cellajs.com",
+  "author": "CellaJS <info@cellajs.com>",
+  "engines": {
+    "node": "24.x"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "files": [
+    "configs",
+    "dist",
+    "index.js",
+    "README.md"
+  ],
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "bin": {
+    "create-cella": "index.js"
+  },
+  "scripts": {
+    "start": "tsx ./src/create-cella-cli.ts",
+    "clean": "rimraf ./dist",
+    "build": "tsup",
+    "test-build": "pnpm run build && node index.js",
+    "prepublishOnly": "pnpm run test:release",
+    "check": "pnpm ts && pnpm biome check --write .",
+    "ts": "tsgo --pretty",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:release": "pnpm run build && vitest run tests/release-artifact.test.ts tests/release-smoke.test.ts",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "commander": "^15.0.0",
+    "giget": "^3.3.0",
+    "nano-spawn": "^2.0.0",
+    "ora": "^9.4.1",
+    "picocolors": "^1.1.1",
+    "validate-npm-package-name": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/validate-npm-package-name": "^4.0.2",
+    "@typescript/native-preview": "catalog:",
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
