@@ -29,8 +29,8 @@ case "$cmd" in
     git push -u origin "$branch"
     gh pr create --fill --base main
     ;;
-  done)
   *)
-    echo "usage: pnpm session new <slug> | pr
+    echo "usage: pnpm session new <slug> | pr" >&2
+    exit 1
     ;;
 esac
