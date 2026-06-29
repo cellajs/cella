@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "a1e2782cef9348c0",
+  "inputHash": "2e487f5248932a55",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -1868,7 +1868,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.",
+        "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1900,7 +1900,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1934,7 +1934,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes one or more *requests* from the system by their IDs.",
+        "description": "Deletes one or more requests from the system by their IDs.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -2000,7 +2000,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Creates one or more new *organizations* within a tenant.",
+        "description": "Creates one or more new organizations within a tenant.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2039,7 +2039,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes one or more *organizations* by ID within a tenant.",
+        "description": "Deletes one or more organizations by ID within a tenant.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2077,7 +2077,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a list of *organizations*.",
+        "description": "Returns a list of organizations.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2114,7 +2114,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves an *organization* by ID within a tenant. Pass \`?slug=true\` to resolve by slug instead.",
+        "description": "Retrieves an organization by ID within a tenant. Pass \`?slug=true\` to resolve by slug instead.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2150,7 +2150,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates an *organization* within a tenant.",
+        "description": "Updates an organization within a tenant.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2188,7 +2188,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Get all matching *pages*.",
+        "description": "Get all matching pages.",
         "entityType": "page",
         "extensions": {
           "xCache": [],
@@ -2223,7 +2223,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Insert one or more new *pages*. Returns created pages and any rejected items.",
+        "description": "Insert one or more new pages. Returns created pages and any rejected items.",
         "entityType": "page",
         "extensions": {
           "xCache": [],
@@ -2261,7 +2261,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Delete one or more *pages* by ID.",
+        "description": "Delete one or more pages by ID.",
         "entityType": "page",
         "extensions": {
           "xCache": [],
@@ -2299,7 +2299,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Get a single *page* by ID. Cached using LRU - first request warms cache.",
+        "description": "Get a single page by ID. Cached using LRU - first request warms cache.",
         "entityType": "page",
         "extensions": {
           "xCache": [
@@ -2336,7 +2336,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Update a single *page* by ID.",
+        "description": "Update a single page by ID.",
         "entityType": "page",
         "extensions": {
           "xCache": [],
@@ -2441,7 +2441,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a paginated list of *attachments* for the organization.",
+        "description": "Returns a paginated list of attachments for the organization.",
         "entityType": "attachment",
         "extensions": {
           "xCache": [],
@@ -2478,7 +2478,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.",
+        "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.",
         "entityType": "attachment",
         "extensions": {
           "xCache": [],
@@ -2517,7 +2517,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.",
+        "description": "Deletes one or more attachment records by ID. This does not delete the underlying file in storage.",
         "entityType": "attachment",
         "extensions": {
           "xCache": [],
@@ -2597,7 +2597,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a single *attachment* by ID. Supports CDC cache via X-Cache-Token header.",
+        "description": "Returns a single attachment by ID. Supports CDC cache via X-Cache-Token header.",
         "entityType": "attachment",
         "extensions": {
           "xCache": [
@@ -2636,7 +2636,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates metadata of an *attachment*, such as its name or associated entity.",
+        "description": "Updates metadata of an attachment, such as its name or associated entity.",
         "entityType": "attachment",
         "extensions": {
           "xCache": [],
@@ -2675,7 +2675,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.",
+        "description": "Creates one or more memberships, inviting users (existing or new) to a context entity such as an organization.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -2711,7 +2711,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).",
+        "description": "Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -2746,7 +2746,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates the *membership* metadata, such as role, \`muted\`, or \`archived\` status.",
+        "description": "Updates the membership metadata, such as role, \`muted\`, or \`archived\` status.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -2815,7 +2815,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves members (users) of a context entity by ID, including their associated *membership* data.",
+        "description": "Retrieves members (users) of a context entity by ID, including their associated membership data.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -21884,7 +21884,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 6,
-        "description": "Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to
+        "description": "Endpoints for managing file based attachments (e.g. images, PDFs, documents) linked to
     entities such as organizations or users. Files are uploaded directly by the client; the API handles
     metadata registration, linking, access, and preview utilities.",
         "kind": "module",
@@ -21892,7 +21892,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 23,
-        "description": "*Authentication* endpoints supporting multiple sign-in methods, including OAuth
+        "description": "Authentication endpoints supporting multiple sign-in methods, including OAuth
     (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in,
     email verification, account linking, and impersonation for system admins.",
         "kind": "module",
@@ -21900,8 +21900,8 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 5,
-        "description": "Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
-    *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child
+        "description": "Endpoints that operate across multiple entity types, such as \`users\` and \`organizations\`.
+    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child
     relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
     and entity visibility.",
         "kind": "module",
@@ -21918,7 +21918,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 6,
-        "description": "Endpoints for managing *memberships*, which represent one-to-one relationships between a
+        "description": "Endpoints for managing memberships, which represent one-to-one relationships between a
     \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
     and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
     enabling hierarchical context.",
@@ -21941,14 +21941,14 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 5,
-        "description": "Endpoints for managing *pages*, which are product entities supporting realtime sync and offline
+        "description": "Endpoints for managing pages, which are product entities supporting realtime sync and offline
     capabilities. Pages can be organized hierarchically and are used in /docs.",
         "kind": "module",
         "name": "pages",
       },
       {
         "count": 3,
-        "description": "Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups,
+        "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,
     and waitlist entries.",
         "kind": "module",
         "name": "requests",
@@ -21968,14 +21968,14 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 9,
-        "description": "System-level endpoints for managing *tenants*. Tenants are top-level isolation boundaries used by
+        "description": "System-level endpoints for managing tenants. Tenants are top-level isolation boundaries used by
     Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.",
         "kind": "module",
         "name": "tenants",
       },
       {
         "count": 2,
-        "description": "Endpoints for managing *users* at the system level. Unlike context entities (such as
+        "description": "Endpoints for managing users at the system level. Unlike context entities (such as
     \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
     are intended for administrative operations on any user in the system.",
         "kind": "module",
