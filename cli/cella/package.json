@@ -39,11 +39,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
+    "@types/node": "24.10.13",
+    "@typescript/native-preview": "7.0.0-dev.20260628.1",
     "ts-morph": "^28.0.0",
-    "tsup": "catalog:",
-    "tsx": "catalog:",
-    "vitest": "catalog:"
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "vitest": "^4.1.9"
   }
 }

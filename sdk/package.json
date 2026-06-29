@@ -22,10 +22,10 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
     "@hey-api/spec-types": "^0.2.0",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
+    "@types/node": "24.10.13",
+    "@typescript/native-preview": "7.0.0-dev.20260628.1",
     "chokidar": "^5.0.0",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   }
 }

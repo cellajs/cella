@@ -20,12 +20,12 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
+    "@types/node": "24.10.13",
     "@types/pg": "^8.20.0",
     "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",
     "artillery-plugin-ensure": "^1.27.0",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   }
 }

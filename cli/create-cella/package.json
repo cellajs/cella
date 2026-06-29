@@ -55,12 +55,12 @@
     "validate-npm-package-name": "^8.0.0"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
+    "@types/node": "24.10.13",
     "@types/validate-npm-package-name": "^4.0.2",
-    "@typescript/native-preview": "catalog:",
-    "tsup": "catalog:",
-    "tsx": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "@typescript/native-preview": "7.0.0-dev.20260628.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
