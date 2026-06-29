@@ -39,6 +39,8 @@ case "$cmd" in
     fi
     git push -u origin "$branch"
     gh pr create --fill --base main
+    # Return to main so the next session starts from a clean base.
+    git switch main
     ;;
   *)
     echo "usage: pnpm session new <slug> | pr" >&2
