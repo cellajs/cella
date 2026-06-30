@@ -13,9 +13,13 @@ vi.mock('../dexie/storage-service', () => ({
   },
 }));
 
+import { bindAppDb } from '~/query/app-db';
 import { downloadQueue } from '../dexie/download-queue';
 import { attachmentStorage } from '../dexie/storage-service';
 import { makeAttachment, makeQueueEntry } from './test-setup';
+
+// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
+bindAppDb('test-user');
 
 describe('downloadQueue', () => {
   beforeEach(async () => {

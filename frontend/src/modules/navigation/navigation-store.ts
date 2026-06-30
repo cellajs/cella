@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
-import { userScopedName } from '~/lib/storage-scope';
 import type { NavItemId } from '~/modules/navigation/types';
+import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
@@ -127,15 +127,16 @@ export const useNavigationStore = create<NavigationStoreState>()(
           },
         }),
         {
-          version: 8,
-          name: userScopedName('navigation'),
+          version: 1,
+          name: 'navigation',
+          skipHydration: true,
           partialize: (state) => ({
             keepOpenPreference: state.keepOpenPreference,
             detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
           }),
-          storage: createJSONStorage(() => localStorage),
+          storage: createJSONStorage(() => idbKvStorage('navigation')),
         },
       ),
     ),

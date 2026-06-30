@@ -46,6 +46,10 @@ const viteConfig = {
         },
       },
     },
+    // NOTE: Production source maps are emitted but currently unused by our telemetry backend.
+    // Maple.dev (OpenTelemetry) does not yet consume/symbolicate source maps (no upload or
+    // minified-stack-trace de-minification like Sentry). Kept `true` for devtools/session-replay
+    // readability on this open-source frontend; switch to `false` for leaner builds if desired.
     sourcemap: isDev ? false : true,
     manifest: true,
     minify: isDev ? false : 'esbuild',

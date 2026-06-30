@@ -49,6 +49,10 @@ vi.mock('~/query/query-client', () => ({
   },
 }));
 
+vi.mock('~/query/app-storage', () => ({
+  subscribeOwnerChange: () => () => {},
+}));
+
 vi.mock('~/query/persister', () => ({
   persister: { removeClient: vi.fn() },
   sessionPersister: { removeClient: vi.fn() },
@@ -76,11 +80,15 @@ vi.mock('~/modules/user/user-store', () => ({
 
 vi.mock('~/modules/me/types', () => ({}));
 
+import { bindAppDb } from '~/query/app-db';
 import { downloadQueue } from '../dexie/download-queue';
 import { attachmentStorage } from '../dexie/storage-service';
 import { downloadService } from '../download-service';
 import { findAttachmentInCache } from '../query';
 import { makeAttachment, makeQueueEntry } from './test-setup';
+
+// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
+bindAppDb('test-user');
 
 describe('downloadService.processQueue — failed download retry', () => {
   beforeEach(async () => {

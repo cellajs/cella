@@ -24,6 +24,8 @@ import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
 import { getFileUrl } from '~/modules/attachment/file-url';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
+import { getAppDb } from '~/query/app-db';
+import { subscribeOwnerChange } from '~/query/app-storage';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
@@ -43,6 +45,7 @@ class AttachmentDownloadService {
   private onlineUnsubscribe: (() => void) | null = null;
   private cacheUnsubscribe: (() => void) | null = null;
   private mutationUnsubscribe: (() => void) | null = null;
+  private ownerUnsubscribe: (() => void) | null = null;
 
   /**
    * Get config for local blob storage.
@@ -67,16 +70,14 @@ class AttachmentDownloadService {
 
     // Drive processing reactively from the queue itself: any time there are pending
     // rows, schedule a run. Replaces the previous setInterval polling.
-    // Note: uses a table-scan `.filter` rather than `.where('status')` because `status`
-    // is only part of a compound index (`[organizationId+status]`) in the schema —
-    // the queue is small so a scan is cheap and avoids a schema migration.
-    this.queueSubscription = liveQuery(() =>
-      attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count(),
-    ).subscribe({
-      next: (count) => {
-        if (count > 0) this.processQueueSoon();
-      },
-      error: (err) => console.error('[DownloadService] Queue liveQuery error:', err),
+    this.subscribeQueue();
+
+    // The queue lives in the per-user appdb, which rebinds on sign-in / account switch.
+    // A liveQuery only tracks the DB it first resolved, so re-subscribe on owner change
+    // (and schedule a run) to bind against the freshly opened instance.
+    this.ownerUnsubscribe = subscribeOwnerChange(() => {
+      this.subscribeQueue();
+      this.processQueueSoon();
     });
 
     // Subscribe to query cache to detect new attachments
@@ -119,6 +120,26 @@ class AttachmentDownloadService {
   }
 
   /**
+   * (Re)subscribe the pending-queue liveQuery against the currently bound appdb.
+   * No-ops to a 0 count while signed out (no DB). Tears down any prior subscription first.
+   *
+   * Note: uses a table-scan `.filter` rather than `.where('status')` because `status`
+   * is only part of a compound index (`[organizationId+status]`) in the schema —
+   * the queue is small so a scan is cheap and avoids a schema migration.
+   */
+  private subscribeQueue(): void {
+    this.queueSubscription?.unsubscribe();
+    this.queueSubscription = liveQuery(() =>
+      getAppDb() ? attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count() : 0,
+    ).subscribe({
+      next: (count) => {
+        if (count > 0) this.processQueueSoon();
+      },
+      error: (err) => console.error('[DownloadService] Queue liveQuery error:', err),
+    });
+  }
+
+  /**
    * Stop the download service.
    */
   stop(): void {
@@ -137,6 +158,10 @@ class AttachmentDownloadService {
     if (this.mutationUnsubscribe) {
       this.mutationUnsubscribe();
       this.mutationUnsubscribe = null;
+    }
+    if (this.ownerUnsubscribe) {
+      this.ownerUnsubscribe();
+      this.ownerUnsubscribe = null;
     }
     console.debug('[DownloadService] Stopped');
   }
@@ -186,6 +211,7 @@ class AttachmentDownloadService {
     if (!this.config?.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
+    if (!getAppDb()) return; // Signed out — no per-user queue to process
 
     this.processing = true;
 

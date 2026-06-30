@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
-import { userScopedName } from '~/lib/storage-scope';
+import { idbKvStorage } from '~/query/idb-kv-storage';
 import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
 export type AlertKeys = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
@@ -97,12 +97,13 @@ export const useAlertStore = create<AlertStoreState>()(
         }),
         {
           version: 1,
-          name: userScopedName('alerts'),
+          name: 'alerts',
+          skipHydration: true,
           partialize: (state) => ({
             alertsSeen: state.alertsSeen,
             downAlert: state.downAlert,
           }),
-          storage: createJSONStorage(() => localStorage),
+          storage: createJSONStorage(() => idbKvStorage('alerts')),
         },
       ),
     ),

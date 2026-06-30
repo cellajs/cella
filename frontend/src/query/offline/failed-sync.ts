@@ -5,8 +5,7 @@
  * rather than dropped, so no offline edit is ever silently lost. Records are
  * surfaced in a non-blocking banner with JSON export (UI consumes `listFailedSync`).
  */
-import { Dexie } from 'dexie';
-import { userScopedName } from '~/lib/storage-scope';
+import { getAppDb } from '~/query/app-db';
 
 export interface FailedSyncRecord {
   /** Auto-increment primary key. */
@@ -27,19 +26,10 @@ export interface FailedSyncRecord {
   createdAt: number;
 }
 
-class FailedSyncDB extends Dexie {
-  failedSync!: Dexie.Table<FailedSyncRecord, number>;
-
-  constructor() {
-    super(userScopedName('failed-sync'));
-    this.version(1).stores({ failedSync: '++id, mutationId, entityType, createdAt' });
-  }
-}
-
-const db = new FailedSyncDB();
-
-/** Quarantine a failed mutation. De-duplicates on `mutationId`. */
+/** Quarantine a failed mutation. De-duplicates on `mutationId`. No-ops while signed out. */
 export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' | 'createdAt'>): Promise<void> {
+  const db = getAppDb();
+  if (!db) return;
   try {
     const existing = await db.failedSync.where('mutationId').equals(record.mutationId).first();
     if (existing) return;
@@ -49,14 +39,16 @@ export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' |
   }
 }
 
-/** List quarantined mutations, newest first. */
+/** List quarantined mutations, newest first. Empty while signed out. */
 export async function listFailedSync(): Promise<FailedSyncRecord[]> {
+  const db = getAppDb();
+  if (!db) return [];
   return db.failedSync.orderBy('createdAt').reverse().toArray();
 }
 
 /** Remove a quarantined record once manually replayed/repaired. */
 export async function clearFailedSync(id: number): Promise<void> {
-  await db.failedSync.delete(id);
+  await getAppDb()?.failedSync.delete(id);
 }
 
 /** Export all quarantined records as a JSON string for support/repair. */

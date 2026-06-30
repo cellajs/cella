@@ -104,13 +104,19 @@ Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncSta
 
 Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments, global for pages). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
 
+### Client storage (`appdb`)
+
+All per-user client state lives in **one IndexedDB database per user**, named `${appConfig.slug}:${userId}` (`frontend/src/query/app-db.ts`). It unifies what used to be several separate stores: persisted Zustand state, the React Query cache, attachment blobs, and the failed-sync quarantine. Putting the user id in the database name means nothing inside needs its own per-user scoping, cross-user isolation is structural, and there is a single boundary to encrypt later.
+
+The database is tied to the signed-in user: it opens on sign-in, closes on sign-out, and swaps when switching accounts. Only `ui-store` and `user-store` stay in plain localStorage — they bootstrap who the user is and must be readable before the database opens.
+
 ### Cache persistence
 
-The React Query cache is persisted to IndexedDB via Dexie with two modes controlled by the `offlineAccess` toggle:
-- **Offline mode** (`offlineAccess=true`): shared key, survives browser restart for full offline capability. Sync service eagerly fills cache for all orgs.
-- **Session mode** (`offlineAccess=false`): per-tab session key, survives refresh but cleaned up on tab close. Sync service only resolves staleness for the current org.
+The React Query cache is persisted into `appdb` via Dexie with two modes controlled by the `offlineAccess` toggle:
+- **Offline mode** (`offlineAccess=true`): scope `rq`, survives browser restart for full offline capability. Sync service eagerly fills cache for all orgs.
+- **Session mode** (`offlineAccess=false`): per-tab scope `s-<uuid>`, survives refresh but cleaned up on tab close (orphans swept on next startup). Sync service only resolves staleness for the current org.
 
-Within each mode the persister uses a **hybrid storage layout** (two Dexie tables): product entity queries are stored as individual records in a `queries` table for incremental diffing — only changed queries are written — while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
+While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing — only changed queries are written — while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
 

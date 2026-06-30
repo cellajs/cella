@@ -145,7 +145,10 @@ export async function create({
     progress.done(pc.bold(`created ${projectName}`));
   } catch (error) {
     progress.fail(error instanceof Error ? error.message : String(error));
-    process.exit(1);
+    // Rethrow so callers (CLI entry, tests) see the real failure. The CLI entry
+    // turns this into a non-zero exit; swallowing it here with process.exit hid
+    // the underlying error from CI and vitest.
+    throw error;
   }
 
   // Check if the working directory needs to be changed

@@ -101,8 +101,9 @@ describe('registry module', () => {
 describe('secrets module', () => {
   it('sources runtime secret containers from the central registry', () => {
     expect(secrets).toMatch(/runtimeSecrets\.map\(/)
-    expect(secrets).toMatch(/valueSource === 'pulumi'/)
-    expect(secrets).toMatch(/scaleway\.secrets\.getSecretOutput\(/)
+    expect(secrets).toMatch(/valueSource === 'operator'/)
+    expect(secrets).toMatch(/createSecretContainer\(/)
+    expect(secrets).toMatch(/createSecretVersion\(/)
     expect(secrets).toMatch(/pulumiRuntimeSecretData/)
   })
 

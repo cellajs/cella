@@ -9,9 +9,9 @@
  * This database only stores the actual blob data and sync state.
  */
 
-import { Dexie, type EntityTable } from 'dexie';
+import type { EntityTable } from 'dexie';
 import type { UploadTemplateId } from 'shared';
-import { userScopedName } from '~/lib/storage-scope';
+import { getAppDb } from '~/query/app-db';
 
 export type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
@@ -159,25 +159,24 @@ export interface DownloadQueueEntry {
   attempts: number;
 }
 
-class AttachmentsDatabase extends Dexie {
-  blobs!: EntityTable<AttachmentBlob, 'id'>;
-  downloadQueue!: EntityTable<DownloadQueueEntry, 'id'>;
-
-  constructor() {
-    super(userScopedName('attachments'));
-
-    this.version(1).stores({
-      blobs:
-        '&id, attachmentId, variant, organizationId, source, uploadStatus, contentType, [organizationId+source], [organizationId+uploadStatus], [attachmentId+variant]',
-      downloadQueue: '&id, organizationId, status, priority, [organizationId+status]',
-    });
-
-    // v2: Remove unused indexes (variant, source, contentType, [attachmentId+variant], priority, status)
-    this.version(2).stores({
-      blobs: '&id, attachmentId, organizationId, uploadStatus, [organizationId+source], [organizationId+uploadStatus]',
-      downloadQueue: '&id, organizationId, [organizationId+status]',
-    });
-  }
-}
-
-export const attachmentsDb = new AttachmentsDatabase();
+/**
+ * Attachment blob + download-queue tables live in the unified per-user `appdb`
+ * (`~/query/app-db`). This facade resolves the live tables on every access so callers
+ * keep using `attachmentsDb.blobs` / `attachmentsDb.downloadQueue` unchanged.
+ *
+ * Accessors THROW while signed out (no DB bound) — attachment features are authed-only,
+ * and long-lived consumers (download service, blob-status hooks) re-subscribe on owner
+ * change via `subscribeOwnerChange`. Guard with `getAppDb()` where a no-DB state is reachable.
+ */
+export const attachmentsDb = {
+  get blobs(): EntityTable<AttachmentBlob, 'id'> {
+    const db = getAppDb();
+    if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
+    return db.blobs as unknown as EntityTable<AttachmentBlob, 'id'>;
+  },
+  get downloadQueue(): EntityTable<DownloadQueueEntry, 'id'> {
+    const db = getAppDb();
+    if (!db) throw new Error('[attachmentsDb] No appdb bound (signed out)');
+    return db.downloadQueue as unknown as EntityTable<DownloadQueueEntry, 'id'>;
+  },
+};

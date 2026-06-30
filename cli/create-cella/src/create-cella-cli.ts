@@ -102,7 +102,10 @@ async function main(): Promise<void> {
   await create(createOptions);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
 
 /**
  * Show a short intro with the two starting points (latest release and latest

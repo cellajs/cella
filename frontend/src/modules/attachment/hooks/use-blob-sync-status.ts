@@ -11,6 +11,7 @@ import {
   type BlobVariant,
   type UploadStatus,
 } from '~/modules/attachment/dexie/attachments-db';
+import { getAppDb } from '~/query/app-db';
 
 interface BlobUploadInfo {
   uploadStatus: UploadStatus | null;
@@ -62,7 +63,7 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
  */
 export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
   const blobs = useLiveQuery(
-    () => (attachmentId ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : []),
+    () => (attachmentId && getAppDb() ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : []),
     [attachmentId],
     [] as AttachmentBlob[],
   );

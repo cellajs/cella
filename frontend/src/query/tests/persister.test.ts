@@ -1,6 +1,5 @@
 import 'fake-indexeddb/auto';
 import type { PersistedClient } from '@tanstack/react-query-persist-client';
-import { Dexie } from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock shared config before any module imports
@@ -10,15 +9,6 @@ vi.mock('shared', () => ({
     productEntityTypes: ['task', 'label', 'attachment', 'page'],
     clientCacheVersion: 'v1',
   },
-}));
-
-// Pin the storage scope so these tests exercise the persister mechanics against a
-// stable `rq` scope (per-user scoping is covered in storage-scope.test.ts).
-vi.mock('~/lib/storage-scope', () => ({
-  ANON_OWNER: 'anon',
-  getOwnerId: () => 'anon',
-  getQueryScope: () => 'rq',
-  userScopedName: (base: string) => `test-app-${base}`,
 }));
 
 // Stub window.addEventListener for the module-level beforeunload listener
@@ -36,6 +26,8 @@ vi.stubGlobal('sessionStorage', {
 });
 
 const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~/query/persister');
+// The persister reads/writes the live per-user appdb; bind one (owner `u1`) per test.
+const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -73,17 +65,17 @@ function makePersistedClient(queries: ReturnType<typeof makeQuery>[], timestamp 
 
 /** Delete the test-app database between tests */
 async function deleteDb() {
-  await Dexie.delete('test-app-query-persister');
+  await deleteAppDb();
 }
 
 // -- Tests --------------------------------------------------------------------
 
 describe('per-query IDB persister', () => {
   beforeEach(async () => {
-    // Clear internal lastPersistedAt state + IDB records before wiping the DB
+    // Bind a fresh per-user appdb, then clear internal lastPersistedAt state + IDB records
+    bindAppDb('u1');
     await persister.removeClient();
     await sessionPersister.removeClient();
-    await deleteDb();
     sessionStorageMap.clear();
   });
 
@@ -226,12 +218,8 @@ describe('per-query IDB persister', () => {
       await persister.flush();
 
       // Read from DB directly — product queries should be in queries table
-      const { Dexie: D } = await import('dexie');
-      const db = new D('test-app-query-persister');
-      db.version(3).stores({ queries: 'id, scope', meta: 'key' });
-      const productRecords = await db.table('queries').where('scope').equals('rq').toArray();
+      const productRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
       expect(productRecords).toHaveLength(4);
-      db.close();
     });
 
     it('bundles context queries into the meta record', async () => {
@@ -244,20 +232,15 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient(queries));
       await persister.flush();
 
-      const { Dexie: D } = await import('dexie');
-      const db = new D('test-app-query-persister');
-      db.version(3).stores({ queries: 'id, scope', meta: 'key' });
-
       // No individual records for context queries
-      const queryRecords = await db.table('queries').where('scope').equals('rq').toArray();
+      const queryRecords = await getAppDb()!.queries.where('scope').equals('rq').toArray();
       expect(queryRecords).toHaveLength(0);
 
       // Context queries bundled in meta
-      const meta = await db.table('meta').get('rq');
-      expect(meta.contextQueries).toHaveLength(3);
-      const hashes = meta.contextQueries.map((q: { queryHash: string }) => q.queryHash).sort();
+      const meta = await getAppDb()!.meta.get('rq');
+      expect(meta!.contextQueries).toHaveLength(3);
+      const hashes = meta!.contextQueries.map((q: { queryHash: string }) => q.queryHash).sort();
       expect(hashes).toEqual(['["me"]', '["member","list"]', '["organization","list"]']);
-      db.close();
     });
 
     it('restores both product and context queries together', async () => {
@@ -333,38 +316,32 @@ describe('per-query IDB persister', () => {
   describe('orphaned session cleanup', () => {
     it('removes sessions older than the max age', async () => {
       // Manually insert an old session meta record
-      const { Dexie: D } = await import('dexie');
-      const db = new D('test-app-query-persister');
-      db.version(3).stores({ queries: 'id, scope', meta: 'key' });
+      const db = getAppDb()!;
 
       const oldScope = 's-old-uuid';
-      await db.table('meta').put({
+      await db.meta.put({
         key: oldScope,
         timestamp: Date.now() - 3 * 60 * 60 * 1000, // 3 hours ago (past 2h cutoff)
         buster: '',
         mutations: [],
         contextQueries: [],
       });
-      await db.table('queries').put({
+      await db.queries.put({
         id: `${oldScope}:["task","list"]`,
         scope: oldScope,
         queryHash: '["task","list"]',
         queryKey: ['task', 'list'],
-        state: { data: 'stale', dataUpdatedAt: 100, status: 'success' },
+        state: { data: 'stale', dataUpdatedAt: 100, status: 'success' } as never,
         dataUpdatedAt: 100,
       });
-      db.close();
 
       await cleanupOrphanedSessions();
 
-      // Re-open to verify cleanup
-      const db2 = new D('test-app-query-persister');
-      db2.version(3).stores({ queries: 'id, scope', meta: 'key' });
-      const metaRecords = await db2.table('meta').where('key').equals(oldScope).count();
-      const queryRecords = await db2.table('queries').where('scope').equals(oldScope).count();
+      // Verify cleanup
+      const metaRecords = await db.meta.where('key').equals(oldScope).count();
+      const queryRecords = await db.queries.where('scope').equals(oldScope).count();
       expect(metaRecords).toBe(0);
       expect(queryRecords).toBe(0);
-      db2.close();
     });
   });
 
@@ -397,12 +374,9 @@ describe('per-query IDB persister', () => {
       await persister.flush();
 
       // Simulate a prior build's clientCacheVersion persisted on disk (now stale vs 'v1').
-      const { Dexie: D } = await import('dexie');
-      const db = new D('test-app-query-persister');
-      db.version(3).stores({ queries: 'id, scope', meta: 'key' });
-      const meta = await db.table('meta').get('rq');
-      await db.table('meta').put({ ...meta, clientCacheVersion: 'v0' });
-      db.close();
+      const db = getAppDb()!;
+      const meta = await db.meta.get('rq');
+      await db.meta.put({ ...meta!, clientCacheVersion: 'v0' });
 
       const restored = await persister.restoreClient();
       expect(restored).toBeDefined();
@@ -413,11 +387,8 @@ describe('per-query IDB persister', () => {
       expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
 
       // Pointer advanced to current so a subsequent restore does not re-bust.
-      const db2 = new D('test-app-query-persister');
-      db2.version(3).stores({ queries: 'id, scope', meta: 'key' });
-      const metaAfter = await db2.table('meta').get('rq');
-      expect(metaAfter.clientCacheVersion).toBe('v1');
-      db2.close();
+      const metaAfter = await db.meta.get('rq');
+      expect(metaAfter!.clientCacheVersion).toBe('v1');
     });
   });
 });

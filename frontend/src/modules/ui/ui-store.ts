@@ -97,7 +97,7 @@ export const useUIStore = create<UIStoreState>()(
           })),
       })),
       {
-        version: 2,
+        version: 1,
         name: `${appConfig.slug}-ui`,
         partialize: (state) => ({
           offlineAccess: state.offlineAccess,

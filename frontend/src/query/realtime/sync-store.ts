@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
-import { userScopedName } from '~/lib/storage-scope';
+import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface OrgSyncState {
   tenantId: string;
@@ -115,8 +115,9 @@ export const useSyncStore = create<SyncStoreState>()(
         reset: () => set(() => initialState),
       })),
       {
-        name: userScopedName('sync'),
-        storage: createJSONStorage(() => localStorage),
+        name: 'sync',
+        skipHydration: true,
+        storage: createJSONStorage(() => idbKvStorage('sync')),
         partialize: (state) => ({
           cursor: state.cursor,
           lastSyncAt: state.lastSyncAt,

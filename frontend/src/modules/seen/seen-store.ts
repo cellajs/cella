@@ -5,7 +5,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
-import { userScopedName } from '~/lib/storage-scope';
+import { idbKvStorage } from '~/query/idb-kv-storage';
 import { queryClient } from '~/query/query-client';
 
 /** Batch of seen entity IDs grouped by org and entity type */
@@ -254,8 +254,9 @@ export const useSeenStore = create<SeenStoreState>()(
         },
       }),
       {
-        name: userScopedName('seen'),
-        storage: createJSONStorage(() => localStorage),
+        name: 'seen',
+        skipHydration: true,
+        storage: createJSONStorage(() => idbKvStorage('seen')),
         // Only persist flushedIds — store as array for JSON compatibility
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
         // Rehydrate array back to Set

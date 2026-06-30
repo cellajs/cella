@@ -91,7 +91,7 @@ export const useBoardStore = create<BoardUIState>()(
         },
       })),
       {
-        version: 16,
+        version: 1,
         name: `${appConfig.slug}-board-store`,
         partialize: (state) => ({
           panelCollapseState: state.panelCollapseState,

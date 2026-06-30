@@ -582,7 +582,7 @@ This runs at the top of every update mutation’s `onMutate` — before squash o
 
 **Why leader-only mutation persistence?**
 
-All tabs share a single IndexedDB record for the React Query cache. Each persist operation overwrites the entire record. Without leader-only persistence:
+All tabs of one user share a single IndexedDB record for the React Query cache, inside that user's `appdb` (`${appConfig.slug}:${userId}` — cross-user isolation is structural, see ARCHITECTURE.md "Client storage"). Each persist operation overwrites the entire record. Without leader-only persistence:
 
 ```
 Problem: Race condition on shared IDB record
@@ -714,7 +714,7 @@ The `offlineAccess` toggle controls two things:
 
 | Concern | offlineAccess ON | offlineAccess OFF |
 |---------|-----------------|-------------------|
-| Cache persistence | IndexedDB (survives restart) | Session storage (survives refresh) |
+| Cache persistence | `appdb` `rq` scope (survives restart) | `appdb` `s-<tab>` scope (survives refresh, cleared on tab close) |
 | StaleTime when offline | Infinity | Default (30s) |
 | Product entity staleTime (online) | Infinity (sync-aware) | Infinity (sync-aware) |
 | Product entity sync (current org) | Yes | Yes |

@@ -8,173 +8,27 @@
  * written. Context queries (me, organization, members, …) are bundled into
  * the meta record since they are few, small, and all needed at startup.
  *
- * Storage modes:
- * - **Offline mode** (`offlineAccess=true`): Uses scope `rq`,
- *   persists across browser restarts for full offline capability.
- * - **Session mode** (`offlineAccess=false`): Uses scope `s-<uuid>`,
- *   survives refresh but is cleaned up on tab close via `beforeunload`.
- *   Orphaned sessions (e.g. tab crash) are cleaned up on next app startup.
+ * Owner-aware facade (decision 1d): records live in the per-user `appdb`
+ * (`~/query/app-db`), resolved live on every op. While signed out no DB is bound,
+ * so the persister is a no-op (`restoreClient`→undefined ⇒ in-memory cache,
+ * `persistClient`→skip). The provider therefore stays mounted at root; persistence
+ * simply follows the user. Scope no longer carries the owner (the DB name does):
+ *
+ * - **Offline mode** (`offlineAccess=true`): scope `rq`, survives browser restart.
+ * - **Session mode** (`offlineAccess=false`): scope `s-<uuid>`, survives refresh,
+ *   cleaned on tab close via `beforeunload`; orphans swept on next startup.
  */
 
 import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
-import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
-import { getOwnerId, getQueryScope } from '~/lib/storage-scope';
+import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
 const SESSION_KEY_PREFIX = 's-';
 const SESSION_ID_STORAGE_KEY = `${appConfig.slug}-tab-session-id`;
 const ORPHAN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
-
-// -- Record types ------------------------------------------------------------
-
-interface PersistedQueryRecord {
-  /** Compound key: `${scope}:${queryHash}` */
-  id: string;
-  scope: string;
-  queryHash: string;
-  queryKey: DehydratedQuery['queryKey'];
-  state: DehydratedQuery['state'];
-  dataUpdatedAt: number;
-}
-
-interface PersistedMetaRecord {
-  /** Scope key: 'rq' or 's-<uuid>' */
-  key: string;
-  timestamp: number;
-  buster: string;
-  /** Persisted client cache version (appConfig.clientCacheVersion). Mismatch wipes cached queries. */
-  clientCacheVersion?: string;
-  mutations: DehydratedState['mutations'];
-  /** Context queries bundled directly in meta */
-  contextQueries: DehydratedQuery[];
-}
-
-// -- Dexie database ----------------------------------------------------------
-
-class QueryPersisterDB extends Dexie {
-  queries!: Dexie.Table<PersistedQueryRecord, string>;
-  meta!: Dexie.Table<PersistedMetaRecord, string>;
-
-  constructor() {
-    super(`${appConfig.slug}-query-persister`);
-
-    // v1 — original single-blob table (kept for migration path)
-    this.version(1).stores({ persist: 'key' });
-
-    // v2 — per-query storage with scope + priority index (intermediate)
-    this.version(2)
-      .stores({
-        persist: null,
-        queries: 'id, scope, priority',
-        meta: 'key',
-      })
-      .upgrade(async (tx) => {
-        const oldTable = tx.table('persist');
-        const oldRecords = await oldTable.toArray();
-        if (oldRecords.length === 0) return;
-
-        const queriesTable = tx.table('queries');
-        const metaTable = tx.table('meta');
-
-        for (const record of oldRecords) {
-          const scope = record.key as string;
-          const queries = (record.clientState as DehydratedState)?.queries ?? [];
-          const mutations = (record.clientState as DehydratedState)?.mutations ?? [];
-
-          await metaTable.put({
-            key: scope,
-            timestamp: record.timestamp as number,
-            buster: record.buster as string,
-            mutations,
-            contextQueries: [],
-          });
-
-          if (queries.length > 0) {
-            await queriesTable.bulkPut(
-              queries.map((q) => ({
-                id: `${scope}:${q.queryHash}`,
-                scope,
-                queryHash: q.queryHash,
-                queryKey: q.queryKey,
-                state: q.state,
-                dataUpdatedAt: q.state.dataUpdatedAt,
-                priority: isProductQuery(q.queryKey) ? 'product' : 'context',
-              })),
-            );
-          }
-        }
-      });
-
-    // v3 — bundle context queries into meta, drop priority index, shorten scope
-    this.version(3)
-      .stores({
-        queries: 'id, scope', // Drop priority index
-        meta: 'key',
-      })
-      .upgrade(async (tx) => {
-        const queriesTable = tx.table<PersistedQueryRecord & { priority?: string }>('queries');
-        const metaTable = tx.table<PersistedMetaRecord>('meta');
-
-        // Collect all scopes from meta
-        const allMeta = await metaTable.toArray();
-
-        for (const meta of allMeta) {
-          const oldScope = meta.key;
-          // Remap scope: 'reactQuery' → 'rq', 'session-*' → 's-*'
-          const newScope =
-            oldScope === 'reactQuery'
-              ? 'rq'
-              : oldScope.startsWith('session-')
-                ? `s-${oldScope.slice('session-'.length)}`
-                : oldScope;
-
-          const scopedQueries = await queriesTable.where('scope').equals(oldScope).toArray();
-
-          // Separate context vs product
-          const contextQueries: DehydratedQuery[] = [];
-          const productToKeep: PersistedQueryRecord[] = [];
-          const idsToDelete: string[] = [];
-
-          for (const q of scopedQueries) {
-            idsToDelete.push(q.id); // Delete all old records (old scope prefix)
-            if (isProductQuery(q.queryKey)) {
-              productToKeep.push({
-                id: `${newScope}:${q.queryHash}`,
-                scope: newScope,
-                queryHash: q.queryHash,
-                queryKey: q.queryKey,
-                state: q.state,
-                dataUpdatedAt: q.dataUpdatedAt,
-              });
-            } else {
-              contextQueries.push({
-                queryHash: q.queryHash,
-                queryKey: q.queryKey,
-                state: q.state,
-              });
-            }
-          }
-
-          // Delete old records, insert remapped product records
-          if (idsToDelete.length > 0) await queriesTable.bulkDelete(idsToDelete);
-          if (productToKeep.length > 0) await queriesTable.bulkPut(productToKeep);
-
-          // Update meta with new scope and bundled context queries
-          if (newScope !== oldScope) await metaTable.delete(oldScope);
-          await metaTable.put({
-            ...meta,
-            key: newScope,
-            contextQueries,
-          });
-        }
-      });
-  }
-}
-
-const queryDb = new QueryPersisterDB();
 
 // -- Query classification ----------------------------------------------------
 
@@ -207,11 +61,15 @@ function getTabSessionId(): string {
  */
 const PERSIST_THROTTLE_MS = 1000;
 
+/** In-memory change trackers per persister, reset on owner (DB) rebind. */
+const trackerResets: Array<() => void> = [];
+
 /**
- * Creates a hybrid IndexedDB persister for React Query.
+ * Creates a hybrid IndexedDB persister for React Query, backed by the live `appdb`.
  *
  * Product entity queries are stored as individual IDB records (incremental
- * diffing). Context queries are bundled into the meta record.
+ * diffing). Context queries are bundled into the meta record. All ops no-op while
+ * no per-user DB is bound (signed out).
  */
 function createIDBPersister(scope = 'rq') {
   /** In-memory change tracker: queryHash → last persisted dataUpdatedAt (product queries only) */
@@ -221,15 +79,20 @@ function createIDBPersister(scope = 'rq') {
   let pendingClient: PersistedClient | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  /** Remove all records for this scope (used for cold session scopes + rollback deploys). */
-  async function clearScope() {
-    await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
-      const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
-      await queryDb.queries.bulkDelete(ids);
-      await queryDb.meta.delete(scope);
-    });
+  function resetTracker() {
     lastPersistedAt.clear();
     lastContextSnapshot = '';
+  }
+  trackerResets.push(resetTracker);
+
+  /** Remove all records for this scope (used for cold session scopes + rollback deploys). */
+  async function clearScope(db: AppDatabase) {
+    await db.transaction('rw', db.queries, db.meta, async () => {
+      const ids = await db.queries.where('scope').equals(scope).primaryKeys();
+      await db.queries.bulkDelete(ids);
+      await db.meta.delete(scope);
+    });
+    resetTracker();
   }
 
   /**
@@ -238,17 +101,16 @@ function createIDBPersister(scope = 'rq') {
    * edits replay (and quarantine to failed_sync if they then 4xx). Advances the
    * stored clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
    */
-  async function bustQueriesKeepMutations() {
-    await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
-      const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
-      await queryDb.queries.bulkDelete(ids);
-      const existing = await queryDb.meta.get(scope);
+  async function bustQueriesKeepMutations(db: AppDatabase) {
+    await db.transaction('rw', db.queries, db.meta, async () => {
+      const ids = await db.queries.where('scope').equals(scope).primaryKeys();
+      await db.queries.bulkDelete(ids);
+      const existing = await db.meta.get(scope);
       if (existing) {
-        await queryDb.meta.put({ ...existing, contextQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
+        await db.meta.put({ ...existing, contextQueries: [], clientCacheVersion: appConfig.clientCacheVersion });
       }
     });
-    lastPersistedAt.clear();
-    lastContextSnapshot = '';
+    resetTracker();
   }
 
   async function flush() {
@@ -256,6 +118,9 @@ function createIDBPersister(scope = 'rq') {
     pendingClient = null;
     timeoutId = null;
     if (!client) return;
+
+    const db = getAppDb();
+    if (!db) return;
 
     try {
       const { queries, mutations } = client.clientState;
@@ -304,10 +169,10 @@ function createIDBPersister(scope = 'rq') {
       // 4. Batch write in a single IDB transaction
       const hasProductChanges = upserts.length > 0 || removals.length > 0;
       if (hasProductChanges || contextChanged) {
-        await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
-          if (upserts.length > 0) await queryDb.queries.bulkPut(upserts);
-          if (removals.length > 0) await queryDb.queries.bulkDelete(removals);
-          await queryDb.meta.put({
+        await db.transaction('rw', db.queries, db.meta, async () => {
+          if (upserts.length > 0) await db.queries.bulkPut(upserts);
+          if (removals.length > 0) await db.queries.bulkDelete(removals);
+          await db.meta.put({
             key: scope,
             timestamp: client.timestamp,
             buster: client.buster,
@@ -330,6 +195,7 @@ function createIDBPersister(scope = 'rq') {
 
   return {
     persistClient: async (client: PersistedClient) => {
+      if (!getAppDb()) return; // Signed out → in-memory only
       pendingClient = client;
       if (!timeoutId) {
         timeoutId = setTimeout(flush, PERSIST_THROTTLE_MS);
@@ -346,8 +212,10 @@ function createIDBPersister(scope = 'rq') {
     },
 
     restoreClient: async (): Promise<PersistedClient | undefined> => {
+      const db = getAppDb();
+      if (!db) return undefined; // Signed out → in-memory cache
       try {
-        let meta = await queryDb.meta.get(scope);
+        let meta = await db.meta.get(scope);
         if (!meta) return undefined;
 
         // Cache-bust on breaking schema change: a mismatch between the persisted
@@ -358,15 +226,15 @@ function createIDBPersister(scope = 'rq') {
         if (persistedVersion !== appConfig.clientCacheVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
             // Session scopes are cold — wipe entirely rather than salvage.
-            await clearScope();
+            await clearScope(db);
             return undefined;
           }
-          await bustQueriesKeepMutations();
-          meta = (await queryDb.meta.get(scope)) ?? meta;
+          await bustQueriesKeepMutations(db);
+          meta = (await db.meta.get(scope)) ?? meta;
         }
 
         // Product queries from individual records
-        const productRecords = await queryDb.queries.where('scope').equals(scope).toArray();
+        const productRecords = await db.queries.where('scope').equals(scope).toArray();
 
         // Populate change tracker for subsequent writes
         for (const q of productRecords) {
@@ -403,14 +271,18 @@ function createIDBPersister(scope = 'rq') {
     },
 
     removeClient: async () => {
+      const db = getAppDb();
+      if (!db) {
+        resetTracker();
+        return;
+      }
       try {
-        await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
-          const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
-          await queryDb.queries.bulkDelete(ids);
-          await queryDb.meta.delete(scope);
+        await db.transaction('rw', db.queries, db.meta, async () => {
+          const ids = await db.queries.where('scope').equals(scope).primaryKeys();
+          await db.queries.bulkDelete(ids);
+          await db.meta.delete(scope);
         });
-        lastPersistedAt.clear();
-        lastContextSnapshot = '';
+        resetTracker();
       } catch (error) {
         console.error('[QueryPersister] Failed to remove client:', error);
       }
@@ -423,47 +295,52 @@ function createIDBPersister(scope = 'rq') {
         clearTimeout(timeoutId);
         timeoutId = null;
       }
+      const db = getAppDb();
       // Fire-and-forget — best effort during beforeunload
-      queryDb
-        .transaction('rw', queryDb.queries, queryDb.meta, async () => {
-          const ids = await queryDb.queries.where('scope').equals(scope).primaryKeys();
-          await queryDb.queries.bulkDelete(ids);
-          await queryDb.meta.delete(scope);
-        })
-        .catch(() => {});
-      lastPersistedAt.clear();
-      lastContextSnapshot = '';
+      db?.transaction('rw', db.queries, db.meta, async () => {
+        const ids = await db.queries.where('scope').equals(scope).primaryKeys();
+        await db.queries.bulkDelete(ids);
+        await db.meta.delete(scope);
+      }).catch(() => {});
+      resetTracker();
     },
   } satisfies Persister & { flush: () => Promise<void>; teardown: () => void };
 }
 
-/** Persistent offline persister — per-user scope (`rq:<ownerId>`), survives browser restart. */
-export const persister = createIDBPersister(getQueryScope());
+/** Persistent offline persister — scope `rq`, survives browser restart. */
+export const persister = createIDBPersister('rq');
 
-/** Session-scoped persister — per-tab + per-user scope, cleaned on tab close. */
-export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}:${getOwnerId()}`);
+/** Session-scoped persister — per-tab scope, cleaned on tab close. */
+export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}`);
+
+/** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
+export function resetPersisters(): void {
+  for (const reset of trackerResets) reset();
+}
 
 /**
  * Remove orphaned session records older than 2 hours.
  * Handles cases where `beforeunload` didn't fire (crash, mobile kill).
  * Also skips the current tab's session to avoid self-cleanup on refresh.
- * Call once on app startup (fire-and-forget).
+ * Call once on app startup (fire-and-forget). No-ops while signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
+  const db = getAppDb();
+  if (!db) return;
   try {
     const cutoff = Date.now() - ORPHAN_MAX_AGE_MS;
-    const currentSessionScope = `${SESSION_KEY_PREFIX}${getTabSessionId()}:${getOwnerId()}`;
-    const allMeta = await queryDb.meta.toArray();
+    const currentSessionScope = `${SESSION_KEY_PREFIX}${getTabSessionId()}`;
+    const allMeta = await db.meta.toArray();
     const orphanScopes = allMeta
       .filter((m) => m.key.startsWith(SESSION_KEY_PREFIX) && m.key !== currentSessionScope && m.timestamp < cutoff)
       .map((m) => m.key);
 
     if (orphanScopes.length > 0) {
-      await queryDb.transaction('rw', queryDb.queries, queryDb.meta, async () => {
+      await db.transaction('rw', db.queries, db.meta, async () => {
         for (const orphanScope of orphanScopes) {
-          const ids = await queryDb.queries.where('scope').equals(orphanScope).primaryKeys();
-          await queryDb.queries.bulkDelete(ids);
-          await queryDb.meta.delete(orphanScope);
+          const ids = await db.queries.where('scope').equals(orphanScope).primaryKeys();
+          await db.queries.bulkDelete(ids);
+          await db.meta.delete(orphanScope);
         }
       });
       console.debug(`[QueryPersister] Cleaned up ${orphanScopes.length} orphaned session(s)`);

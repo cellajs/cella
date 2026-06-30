@@ -21,6 +21,7 @@ import {
   type UploadStatus,
 } from '~/modules/attachment/dexie/attachments-db';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
+import { getAppDb } from '~/query/app-db';
 
 /** Fallback chain for blob resolution - try these variants in order */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
@@ -301,6 +302,7 @@ class AttachmentStorageService {
    * Clear all blobs and download queue entries (for sign-out/cleanup).
    */
   async clearAll(): Promise<void> {
+    if (!getAppDb()) return; // No per-user DB bound (signed out / impersonating)
     try {
       await attachmentsDb.blobs.clear();
       await attachmentsDb.downloadQueue.clear();

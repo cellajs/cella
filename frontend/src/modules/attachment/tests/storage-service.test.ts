@@ -6,7 +6,11 @@ vi.mock('shared', async () => ({
   appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
 }));
 
+import { bindAppDb } from '~/query/app-db';
 import { attachmentStorage } from '../dexie/storage-service';
+
+// Attachment tables live in the per-user appdb; bind one so `attachmentsDb` resolves.
+bindAppDb('test-user');
 
 function makeBlob(overrides: Partial<AttachmentBlob> = {}): AttachmentBlob {
   return {
