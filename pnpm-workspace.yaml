@@ -8,14 +8,18 @@ allowBuilds:
   msgpackr-extract: false
   protobufjs: false
   unix-dgram: false
-# Allow patches whose package isn't installed in a given filtered install
-# (e.g. backend-only Docker build excludes the frontend, where pragmatic-drag-and-drop lives).
 allowUnusedPatches: true
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@opentelemetry/core@2.8.0'
 overrides:
+  # protobufjs 8.0.0–8.4.0 carries multiple high-severity advisories (code
+  # injection GHSA-66ff-xgx4-vchm, prototype-pollution code-gen, and DoS
+  # GHSA-wcpc-wj8m-hjx6), all patched by 8.4.1. It's pulled in transitively via
+  # backend > pino-opentelemetry-transport > @opentelemetry/*. Pin the 8.x line
+  # to the latest stable; the separate 7.x line is left untouched.
+  'protobufjs@>=8.0.0 <8.4.1': 8.6.5
 packages:
   - ai
   - backend
