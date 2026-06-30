@@ -167,7 +167,7 @@ describe('TransactionBuffer', () => {
     // Verify onSurvivingEvents was called once (at commit) with just 1 event
     expect(onSurvivingEvents).toHaveBeenCalledTimes(1);
     expect((onSurvivingEvents as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(1);
-  });
+  }, 30_000); // Processes 50k events; the default 10s timeout is too tight on loaded CI runners
 
   it('suppresses child deletes that arrive before parent context entity delete', async () => {
     buffer.onBegin({ tag: 'begin', xid: 101, commitLsn: null, commitTime: BigInt(0) });
