@@ -33,6 +33,17 @@ export const ALLOWED_KEYS = [
 ] as const
 export type AllowedKey = (typeof ALLOWED_KEYS)[number]
 
+/**
+ * Production may only deploy from a trusted ref. The deploy workflow triggers on
+ * `release: published` (which runs on the release tag, e.g. `refs/tags/0.0.2`)
+ * or manual `workflow_dispatch` from `main`. Both are allowed; anything else
+ * (feature branches, arbitrary tags pushed by hand are still gated by the
+ * workflow triggers) is rejected.
+ */
+export function isAllowedProductionRef(gitRef: string): boolean {
+  return gitRef === 'refs/heads/main' || gitRef.startsWith('refs/tags/')
+}
+
 /** Pure builder — given an appConfig, produce the deploy env table. */
 export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
   const { naming } = deriveInfra(appConfig)
@@ -89,8 +100,8 @@ export async function main(): Promise<void> {
   }
   const gitRef = getFlag(process.argv, '--git-ref')
   const gitSha = getFlag(process.argv, '--git-sha')
-  if (mode === 'production' && gitRef && gitRef !== 'refs/heads/main') {
-    console.error(`::error::Production deploys are only allowed from the main branch (got ${gitRef})`)
+  if (mode === 'production' && gitRef && !isAllowedProductionRef(gitRef)) {
+    console.error(`::error::Production deploys are only allowed from the main branch or a release tag (got ${gitRef})`)
     process.exit(1)
   }
   process.env.APP_MODE = mode
