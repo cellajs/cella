@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALLOWED_KEYS, buildDeployEnv } from './print-deploy-env'
+import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
 
 const fakeAppConfig = {
   slug: 'cella',
@@ -111,5 +111,21 @@ describe('buildDeployEnv', () => {
     for (const v of Object.values(buildDeployEnv(fakeAppConfig))) {
       expect(v, `value "${v}"`).not.toMatch(SECRET_PATTERN)
     }
+  })
+})
+
+describe('isAllowedProductionRef', () => {
+  it('allows main', () => {
+    expect(isAllowedProductionRef('refs/heads/main')).toBe(true)
+  })
+
+  it('allows release tags (release-triggered deploys run on the tag ref)', () => {
+    expect(isAllowedProductionRef('refs/tags/0.0.2')).toBe(true)
+    expect(isAllowedProductionRef('refs/tags/1.2.3')).toBe(true)
+  })
+
+  it('rejects feature branches', () => {
+    expect(isAllowedProductionRef('refs/heads/feat/foo')).toBe(false)
+    expect(isAllowedProductionRef('refs/heads/develop')).toBe(false)
   })
 })
