@@ -25,6 +25,8 @@ COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
 COPY locales/package.json ./locales/
+COPY cdc/package.json ./cdc/
+COPY yjs/package.json ./yjs/
 COPY patches/ ./patches/
 
 # Install production dependencies only (--ignore-scripts avoids native build issues)
@@ -42,6 +44,8 @@ COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
 COPY locales/package.json ./locales/
+COPY cdc/package.json ./cdc/
+COPY yjs/package.json ./yjs/
 COPY patches/ ./patches/
 
 # Install all dependencies (including dev for build)
@@ -53,6 +57,8 @@ COPY backend/ ./backend/
 COPY shared/ ./shared/
 COPY sdk/ ./sdk/
 COPY locales/ ./locales/
+COPY cdc/ ./cdc/
+COPY yjs/ ./yjs/
 COPY json/ ./json/
 
 # Build the backend
