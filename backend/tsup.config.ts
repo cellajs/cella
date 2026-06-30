@@ -12,7 +12,8 @@ export default defineConfig({
   format: ['esm'],
   target: 'esnext',
   minify: false,
-  noExternal: ['shared'],
+  // Bundle workspace packages so the Docker image works without pnpm workspace symlinks.
+  noExternal: ['shared', 'cdc', 'yjs-worker'],
   esbuildOptions(options) {
     options.alias = {
       '#': './src',

@@ -358,6 +358,15 @@ jobs:
           ROLL_REST_MATRIX: ${{ needs.setup.outputs.roll_rest_matrix }}
         run: pnpm --filter infra deploy-rollout --stack "$STACK" --sha "$IMAGE_TAG" --primary-json "$PRIMARY_ROLLOUT_MATRIX" --rest-json "$ROLL_REST_MATRIX"
 
+      - name: Boot diagnostics on rollout failure
+        if: failure()
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+        run: pnpm --filter infra diag || true
+
       - name: Release stack lock
         if: always()
         working-directory: infra

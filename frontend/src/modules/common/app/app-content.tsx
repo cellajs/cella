@@ -4,7 +4,7 @@ import { usePageEntityKey } from '~/hooks/use-page-entity-key';
 import { Alerter } from '~/modules/common/alerter/alerter';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { FocusTarget } from '~/modules/navigation/focus-bridge';
-import { getSkipPageEnter } from '~/routes/nav-transition';
+import { getSkipPageEnter } from '~/utils/nav-transition';
 
 /**
  * Main content area for the app layout, includes error boundary and alerter.

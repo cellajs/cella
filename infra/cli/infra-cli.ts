@@ -104,7 +104,7 @@ const mode: CliMode =
           { name: 'Resume', value: 'resume', description: 'Verify & sync config + GitHub secrets with the CI key; self-heals missing keys. Read-only on DB/VPC/PN — cannot change protected infra.' },
           { name: 'Rotate keys', value: 'rotate', description: 'Mint fresh CI deploy and VM reader keys. Use after editing the CI policy permission sets.' },
           { name: 'Apply infra change', value: 'apply', description: 'Privileged converge: one-shot `pulumi up` with a bootstrap key for DB/VPC/PN changes the CI key cannot. No refresh (buckets are CI-scoped).' },
-          { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview` with a Scaleway key (via env). Validates auth & shows drift; makes no changes.' },
+          { name: 'Preview', value: 'preview', description: 'Read-only `pulumi preview`. Validates auth & shows drift; makes no changes.' },
           { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete operator-managed runtime secrets in Scaleway Secret Manager.' },
           { name: 'Unlock', value: 'unlock', description: 'Clear a stale stack lock left by an interrupted apply/deploy. Use only when no run is actually in progress.' },
         ],

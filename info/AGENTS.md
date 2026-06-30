@@ -113,6 +113,14 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - Framework: Vitest. Name tests `*.test.ts`; place near source or under `tests/`.
 - See [info/TESTING.md](./TESTING.md) for test modes and detailed documentation.
 
+## Deploy & boot debugging
+Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control object), with an LB-overlap cutover gated on the new VM serving `X-App-Version: <SHA>` (`/health` → 204 backend/yjs/ai, 200 frontend). A "cutover unhealthy / wait-for-version timeout" means the new VM's app never bound its port — almost always a **boot-time crash**, not the LB. Debug it densely:
+- **First, read the boot logs.** Each VM's boot agent ([infra/agent/src/boot.ts](../infra/agent/src/boot.ts)) starts the app with `docker compose up --wait` (fails the boot if the container exits or never becomes healthy) and uploads the crashed container's stdout/stderr to the `boot-diag/` prefix of the boot-diag bucket. Read it with `pnpm --filter infra diag` (zero-config: derives bucket/region from `appConfig`; `--service backend`, `--list`, `--mode staging`). CI auto-runs this on a failed rollout (`if: failure()` step in [.github/workflows/deploy.yml](../.github/workflows/deploy.yml)).
+- **No SSH / no serial-log API.** SecurityGroup drops inbound; the only live channels are the S3 boot-diag above and the Scaleway **web** serial console (`::cella::` markers + `BOOT FAILED (exit N)`).
+- **Reproduce locally — fastest oracle.** A build can succeed yet crash at runtime (bundling/env). Pull the exact image tag and `docker run` it with minimal valid env (or `node dist/main.js`); a crash like `ERR_MODULE_NOT_FOUND` surfaces in seconds. macOS keychain blocks `docker login` save → use a throwaway `--config` dir with a base64 `auth`.
+- **Common boot-crash classes** (all have bitten prod): backend bundle leaves a workspace dep as a bare external (must be in tsup `noExternal`); multiline secret in a line-based env file; image SHA predates a DB/secret contract change; node-postgres TLS hostname check vs. the dialed IP (`sslmode=require` + host-pinned `checkServerIdentity`); `SecretManagerSecretAccess` missing on the VM reader key (403 on decrypt); instance-type quota too low for create-before-destroy.
+- **Validate infra changes** with `pnpm --filter infra exec vitest run` (infra is **Biome-ignored** — match style by hand) and `pnpm check` at the root.
+
 ## Commits & pull requests
 - Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks. Keep changes scoped.

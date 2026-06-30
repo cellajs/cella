@@ -6,6 +6,9 @@ import { uploadBootDiagnostics } from './diagnostics'
 import { hydrateRuntimeSecrets } from './runtime-secrets'
 import { parseBootPlanJson, type BootPlan } from './plan'
 
+/** Seconds to wait for the started container to become healthy before failing the boot. */
+const startupTimeoutSeconds = 120
+
 export interface BootOptions {
   planPath: string
   exec?: ExecFn
@@ -76,8 +79,18 @@ async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
   await mustExec(exec, command!, args, { cwd: '/opt/app' })
 }
 
+/**
+ * Start the app and wait for its compose healthcheck. `--wait` blocks until the
+ * container is healthy.
+ */
 async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'up', '-d', plan.profile], { cwd: '/opt/app' })
+  await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), plan.profile], { cwd: '/opt/app' })
+}
+
+/** Best-effort tail of the app container's own stdout/stderr for diagnostics. */
+async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
+  const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', plan.profile], { cwd: '/opt/app' })
+  return (res.stdout || res.stderr || '').trim()
 }
 
 export async function boot(opts: BootOptions): Promise<void> {
@@ -87,6 +100,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   const accessKey = await readCredential(plan.credentials.scwAccessKeyFile)
   const secretKey = await readCredential(plan.credentials.scwSecretKeyFile)
   let bootRc = 0
+  let appLogs: string | undefined
 
   try {
     logger.log('info', 'wait-private-network')
@@ -107,6 +121,9 @@ export async function boot(opts: BootOptions): Promise<void> {
   } catch (err) {
     bootRc = 1
     logger.log('error', 'boot-failed', { message: err instanceof Error ? err.message : String(err) })
+    // The agent runs containerized without the host boot log mounted, so capture
+    // the crashed container's own output here to ship it with the diagnostics.
+    appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
     throw err
   } finally {
     try {
@@ -119,6 +136,7 @@ export async function boot(opts: BootOptions): Promise<void> {
         releaseSha: plan.releaseSha,
         bootRc,
         logFile: plan.bootDiagnostics.logFile,
+        appLogs,
       })
     } catch (err) {
       logger.log('warn', 'boot-diagnostics-upload-failed', { message: err instanceof Error ? err.message : String(err) })

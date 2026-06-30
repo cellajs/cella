@@ -60,4 +60,26 @@ describe('uploadBootDiagnostics', () => {
     expect(keys).toEqual(['boot-diag/frontend-20260619T120000Z-boot.log'])
     expect(calls).toHaveLength(1)
   })
+
+  it('appends the captured app logs to the uploaded body', async () => {
+    let body = ''
+    await uploadBootDiagnostics({
+      bucket: 'cella-boot-diag',
+      region: 'nl-ams',
+      accessKey: 'access',
+      secretKey: 'secret',
+      service: 'backend',
+      releaseSha: 'abc123',
+      bootRc: 1,
+      logFile: '/missing/log',
+      appLogs: 'node:internal/modules ... ERR_MODULE_NOT_FOUND',
+      now: new Date('2026-06-19T12:00:00Z'),
+      fetchImpl: async (_url, init) => {
+        body = init?.body ?? ''
+        return { ok: true, status: 200, text: async () => '' }
+      },
+    })
+    expect(body).toContain('--- app logs ---')
+    expect(body).toContain('ERR_MODULE_NOT_FOUND')
+  })
 })
