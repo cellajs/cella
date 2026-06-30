@@ -27,8 +27,8 @@ export function Logo({ className, iconColor, textColor, height = 50, iconOnly = 
       <title>Logo</title>
       <g id="svg-logo-icon" fill="none" fillRule="evenodd">
         <path
-          fill={iconColor}
-          fillOpacity={0.3}
+          fill="#CCCCCC"
+          fillOpacity={0.2}
           d="M335,15 C417.843,15 485,82.157 485,165 L485,335 C485,417.843 417.843,485 335,485 L165,485 C82.157,485 15,417.843 15,335 L15,165 C15,82.157 82.157,15 165,15 Z M295,150 C325.376,150 350,174.624 350,205 L350,295 C350,325.376 325.376,350 295,350 L205,350 C174.624,350 150,325.376 150,295 L150,205 C150,174.624 174.624,150 205,150 Z"
         />
         <path

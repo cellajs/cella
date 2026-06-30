@@ -123,7 +123,7 @@ export const useColumns = (contextEntity: EnrichedContextEntity, isSheet: boolea
       },
       {
         key: 'updatedAt',
-        name: t('c:modified'),
+        name: t('c:updated'),
         hidden: true,
         minWidth: 120,
         placeholderValue: '-',

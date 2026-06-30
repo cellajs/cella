@@ -478,7 +478,9 @@ export async function runMergeEngine(
 
       const summary = calculateSummary(analyzedFiles);
       const synced = summary.behind + summary.diverged + summary.renamed;
-      const isSquash = config.settings.mergeStrategy === 'squash';
+      // Default to squash: forks on the release-please flow squash-merge the sync PR
+      // into a linear-history `main` anyway, so single-parent sync commits are the norm.
+      const isSquash = (config.settings.mergeStrategy ?? 'squash') === 'squash';
 
       // Count total resolved changes (includes ignored/pinned resolutions)
       const totalResolved = synced + summary.ignored + summary.pinned;

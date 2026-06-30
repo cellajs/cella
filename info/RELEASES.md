@@ -55,19 +55,23 @@ While the template is on `0.x`, breaking changes bump the minor and features bum
 
 ### Release automation setup (one-time)
 
-The release workflow ([.github/workflows/release.yml](../.github/workflows/release.yml)) needs a few repo-side secrets and settings. This is required once per repo (and per fork that wants its own releases).
+The release workflow ([.github/workflows/release.yml](../.github/workflows/release.yml)) needs a few secrets and settings. With a per-repo App this is done once per repo; with an org-wide App (recommended for an org that owns multiple repos/forks) most of it is done once for the whole org.
 
 **GitHub App token** — release-please opens the release PR with a token from a dedicated GitHub App. An App token (not the default `GITHUB_TOKEN`) is used so the release PR also *triggers* the CI/`pr-title` checks that are required to merge it.
 
 1. Create a GitHub App (org or account settings → Developer settings → GitHub Apps → New). Disable the webhook. Grant **repository permissions**: `Contents: Read and write` and `Pull requests: Read and write`.
-2. Generate a private key (downloads a `.pem`) and note the numeric **App ID**.
-3. Install the App on this repository only.
-4. Add repo secrets:
-   - `RELEASE_APP_ID` — the App ID.
+2. Generate a private key (downloads a `.pem`) and note the numeric **Client ID**.
+3. Install the App on the repositories that should release — a single repo, or several repos in your org.
+4. Provide the App credentials to the workflow as secrets:
+   - `RELEASE_APP_ID` — the Client ID.
    - `RELEASE_APP_PRIVATE_KEY` — the full contents of the `.pem`.
 
+   Add these as **repo secrets** for a single repo, or as **organization secrets** (scoped to the relevant repos) so every repo in the org reuses the same App without re-adding secrets.
+
+**One App for cella and its forks** — a single GitHub App can be installed on many repositories, so one org-owned App can serve cella itself plus every fork **you own**: install it on each repo and store `RELEASE_APP_ID` / `RELEASE_APP_PRIVATE_KEY` as org secrets. Only the App install is per-repo; the credentials are shared. Forks owned by **other** accounts or orgs can't read your org secrets or private key, so each independent fork still needs to create and install its own App.
+
 **npm publishing** (`@cellajs/create-cella`):
-- `NPM_TOKEN` — an npm **automation** token (does not prompt for OTP).
+- `NPM_TOKEN` — an npm **automation** token (does not prompt for OTP). Only the npm-published package needs this; the `cella` template is GitHub-Release-only. It can be a **repo secret** or an **organization secret** (scoped to the publishing repos) so repos publishing under the same npm scope reuse one token. Forks that publish their own scaffolder under their **own** npm scope must supply their own token — a `@cellajs` token can't (and shouldn't) publish someone else's package.
 
 **Repo settings:**
 - `main` ruleset: squash-merge only, require linear history, and require the `pr-title`, `lint`, `test` and `test-cella-cli` checks. Do **not** require `release-gate` (it runs at release time, not on PRs).

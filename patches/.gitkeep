@@ -1,0 +1,2 @@
+# Keep the patches/ directory present even when no pnpm patches exist.
+# Docker builds COPY patches/ into the image; an empty dir must still exist.

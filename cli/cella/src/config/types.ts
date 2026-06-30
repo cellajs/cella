@@ -64,6 +64,12 @@ export interface SyncSettings {
    * Fork branch that must be checked out to receive upstream syncs (preflight
    * guardrail). This is a fork-side branch, unrelated to cella's branching.
    * Defaults to 'main'.
+   *
+   * With release-please, `main` is squash-merge-only with linear history, so you
+   * cannot commit a sync directly onto it. Point this at a dedicated long-lived
+   * integration branch (e.g. 'cella-sync'): run `pnpm cella sync` there, then open
+   * a PR into `main` and squash-merge it with a conventional commit
+   * (`chore: sync upstream cella <tag>`). See info/RELEASES.md.
    */
   workingBranch?: string;
 
@@ -71,11 +77,19 @@ export interface SyncSettings {
   packageJsonSync?: PackageJsonSyncKey[];
 
   /**
-   * Merge strategy for syncing upstream changes.
-   * Both use real git merge internally for correct 3-way merge and merge-base tracking.
-   * - 'merge': Leaves merge state for user to commit (merge commit with full ancestry).
-   * - 'squash' (default): Auto-commits as single-parent when clean. Falls back to merge
-   *   commit (with IDE 3-way support) when there are conflicts.
+   * Merge strategy for syncing upstream changes. Both use a real git 3-way merge
+   * internally and leave the result staged for you to commit (neither auto-commits).
+   * The difference is the ancestry of the commit you create:
+   * - 'squash' (default): drops `MERGE_HEAD` on a clean sync so your commit is
+   *   single-parent. Keeps linear history — the right choice under release-please,
+   *   where the sync PR is squash-merged into `main` anyway. Relies on the stored
+   *   `refs/cella/last-sync` ref for the next merge-base.
+   * - 'merge': keeps `MERGE_HEAD` so your commit is a two-parent merge commit with
+   *   full upstream ancestry (native git merge-base). Useful on a dedicated
+   *   integration branch where you want true ancestry; not compatible with a
+   *   linear-history `main`.
+   * Conflicts always fall back to a merge commit (with IDE 3-way support) regardless
+   * of strategy.
    */
   mergeStrategy?: MergeStrategy;
 

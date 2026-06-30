@@ -104,7 +104,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <div className="grid grid-cols-[1fr_1fr] place-items-start gap-1 pb-4 text-sm">
+                      <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
                         <div className="place-self-end pr-4 font-medium">Log ID</div>
                         <div>{error.logId || 'na'}</div>
                         <div className="place-self-end pr-4 font-medium">Timestamp</div>
