@@ -3,10 +3,12 @@ name: CI
 # Deny-by-default: each job opts in to the scopes it actually needs.
 permissions: {}
 
-# Controls which events and branches will trigger the workflow
+# CI runs on pull requests only. We squash-merge with linear history and require
+# these checks to pass before merge, so the PR run already validates the exact
+# tree that lands on main — a post-merge `push: main` run would just re-test
+# identical content. Release automation is unaffected: release-please
+# (release.yml) and the deploy (deploy.yml) have their own triggers.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
