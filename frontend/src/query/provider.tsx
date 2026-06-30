@@ -27,19 +27,11 @@ initMutationDefaults(queryClient);
 const unsubscribeEnrichment = initContextEntityEnrichment();
 
 /**
- * Start offline services for background blob caching and upload sync.
- */
-downloadService.start();
-uploadService.start();
-
-/**
- * HMR cleanup: stop services and unsubscribe enrichment to prevent duplicates on re-evaluation.
+ * HMR cleanup: unsubscribe enrichment to prevent duplicates on re-evaluation.
  */
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubscribeEnrichment();
-    downloadService.stop();
-    uploadService.stop();
   });
 }
 
@@ -63,6 +55,18 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   // Clean up orphaned session-scoped IndexedDB entries on mount (fire-and-forget)
   useEffect(() => {
     cleanupOrphanedSessions();
+  }, []);
+
+  // Start offline services for background blob caching and upload sync.
+  // Deferred to mount (not module-eval) to avoid a circular-import TDZ during HMR:
+  // provider.tsx -> download-service -> attachment/query -> realtime -> query/index -> provider.tsx.
+  useEffect(() => {
+    downloadService.start();
+    uploadService.start();
+    return () => {
+      downloadService.stop();
+      uploadService.stop();
+    };
   }, []);
 
   // Select persister based on offline access mode

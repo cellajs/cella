@@ -40,7 +40,7 @@ export function SignInStep() {
   const navigate = useNavigate();
   const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode } = useAuthStore();
 
-  const { lastUser, clearUserStore } = useUserStore();
+  const { lastUser, reset: clearUserStore } = useUserStore();
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const isMobile = window.innerWidth < 640;

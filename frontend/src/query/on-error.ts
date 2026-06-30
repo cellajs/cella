@@ -111,8 +111,10 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // Flush sensitive stores and navigate to the sign-in page
-      flushStores();
+      // Soft-flush sensitive stores and navigate to the sign-in page. Pass `false` so the appdb
+      // (and the user's unsynced offline work) is kept on disk — a 401 is involuntary and the
+      // same user typically re-authenticates and recovers their data.
+      flushStores(false);
       // Dynamic import breaks circular dep: query-client → on-error → router → route tree → query-client
       import('~/routes/router').then(({ default: r }) => r.navigate(redirectOptions));
     }

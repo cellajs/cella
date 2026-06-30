@@ -1,7 +1,8 @@
-import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { isDebugMode } from '~/env';
+import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface BoardUIState {
   // Panel collapse state
@@ -27,18 +28,28 @@ interface BoardUIState {
   boardPanelOrders: Record<string, Record<string, number>>;
   setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
   prunePanelOrders: (boardId: string, knownPanelIds: string[]) => void;
+
+  reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
+
+// Default state values
+const initStore: Pick<
+  BoardUIState,
+  'panelCollapseState' | 'activeBoardId' | 'activeBoardType' | 'activePanelId' | 'boardLayouts' | 'boardPanelOrders'
+> = {
+  panelCollapseState: {},
+  activeBoardId: null,
+  activeBoardType: null,
+  activePanelId: null,
+  boardLayouts: {},
+  boardPanelOrders: {},
+};
 
 export const useBoardStore = create<BoardUIState>()(
   devtools(
     persist(
       immer((set, get) => ({
-        panelCollapseState: {},
-        activeBoardId: null,
-        activeBoardType: null,
-        activePanelId: null,
-        boardLayouts: {},
-        boardPanelOrders: {},
+        ...initStore,
 
         togglePanelCollapsedState: (panelId, newState) => {
           set((state) => {
@@ -89,17 +100,21 @@ export const useBoardStore = create<BoardUIState>()(
             for (const panelId of stale) delete target[panelId];
           });
         },
+
+        reset: () => set(initStore),
       })),
       {
         version: 1,
-        name: `${appConfig.slug}-board-store`,
+        name: 'board',
+        skipHydration: true,
         partialize: (state) => ({
           panelCollapseState: state.panelCollapseState,
           boardLayouts: state.boardLayouts,
           boardPanelOrders: state.boardPanelOrders,
         }),
-        storage: createJSONStorage(() => localStorage),
+        storage: createJSONStorage(() => idbKvStorage('board')),
       },
     ),
+    { enabled: isDebugMode, name: 'board store' },
   ),
 );

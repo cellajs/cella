@@ -3,6 +3,6 @@ import { registerModule } from 'shared/module-registry';
 registerModule({
   name: 'pages',
   owner: 'cella',
-  scope: 'both',
+  scope: ['frontend', 'backend'],
   description: 'UI for managing pages with realtime sync and offline capabilities.',
 });

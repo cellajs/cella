@@ -23,7 +23,7 @@ export function SignOut() {
 
     const handleSignOut = async () => {
       try {
-        flushStores(!!force);
+        flushStores();
         if (!force) await signOut();
         toaster(t('c:success.signed_out'), 'success');
       } catch (error) {

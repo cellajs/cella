@@ -19,6 +19,7 @@
  */
 import { appConfig } from 'shared';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { useBoardStore } from '~/modules/common/board/board-store';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useSeenStore } from '~/modules/seen/seen-store';
@@ -28,8 +29,9 @@ import { bindAppDb, closeAppDb } from '~/query/app-db';
 import { resetPersisters } from '~/query/persister';
 import { useSyncStore } from '~/query/realtime/sync-store';
 
-/** Persisted zustand stores that live in `appdb.kv` (per-user; in-memory while signed out). */
-const appKvStores = [useSeenStore, useSyncStore, useNavigationStore, useDraftStore, useAlertStore];
+/** Persisted zustand stores that live in `appdb.kv` (per-user; in-memory while signed out).
+ *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out. */
+const appKvStores = [useSeenStore, useSyncStore, useNavigationStore, useDraftStore, useAlertStore, useBoardStore];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
@@ -69,6 +71,8 @@ function unbind(): void {
   boundOwner = null;
   closeAppDb();
   resetPersisters();
+  // Reset in-memory state of every per-user store (DB is closed, so these writes no-op on persist).
+  for (const store of appKvStores) store.getState().reset();
   readyPromise = Promise.resolve();
 }
 
@@ -92,7 +96,7 @@ export function appStorageReady(): Promise<void> {
  * old standalone IndexedDB databases. Failures are ignored — this only removes dead noise.
  */
 function gcLegacyStorage(): void {
-  const flag = `${appConfig.slug}-storage-gc-v1`;
+  const flag = `${appConfig.slug}-storage-gc-v2`;
   try {
     if (localStorage.getItem(flag)) return;
 
@@ -104,6 +108,9 @@ function gcLegacyStorage(): void {
         if (prefixes.some((p) => key.startsWith(p))) web.removeItem(key);
       }
     }
+
+    // Board store moved from a single global localStorage key into appdb.kv (per-user).
+    localStorage.removeItem(`${appConfig.slug}-board-store`);
 
     // Legacy standalone IndexedDB databases (now unified into `<slug>:<owner>`).
     indexedDB

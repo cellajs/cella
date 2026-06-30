@@ -71,11 +71,11 @@ vi.mock('~/modules/seen/seen-store', () => ({
 }));
 
 vi.mock('~/modules/ui/ui-store', () => ({
-  useUIStore: { getState: () => ({ setImpersonating: vi.fn(), clearUIStore: vi.fn() }) },
+  useUIStore: { getState: () => ({ setImpersonating: vi.fn(), reset: vi.fn() }) },
 }));
 
 vi.mock('~/modules/user/user-store', () => ({
-  useUserStore: { setState: vi.fn() },
+  useUserStore: { getState: () => ({ reset: vi.fn() }) },
 }));
 
 vi.mock('~/modules/me/types', () => ({}));
@@ -270,12 +270,19 @@ describe('flushStores clears attachment IDB', () => {
     await attachmentsDb.downloadQueue.clear();
   });
 
-  it('flushStores calls attachmentStorage.clearAll', async () => {
+  it('deletes the appdb on sign-out, wiping all attachment data', async () => {
+    const { getAppDb, bindAppDb } = await import('~/query/app-db');
     const { flushStores } = await import('~/utils/flush-stores');
-    const { attachmentStorage } = await import('../dexie/storage-service');
 
-    flushStores();
+    // Sanity: the appdb is bound (attachment data reachable) before sign-out.
+    expect(getAppDb()).not.toBeNull();
 
-    expect(attachmentStorage.clearAll).toHaveBeenCalled();
+    await flushStores();
+
+    // Sign-out deletes + unbinds the appdb — attachment blobs/queue go with it.
+    expect(getAppDb()).toBeNull();
+
+    // Re-bind so the suite's afterEach table cleanup has a DB to operate on.
+    bindAppDb('test-user');
   });
 });

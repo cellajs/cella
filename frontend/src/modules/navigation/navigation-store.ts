@@ -33,6 +33,8 @@ interface NavigationStoreState {
 
   navLoading: boolean; // Navigation is in a loading state
   setNavLoading: (status: boolean) => void; // Updates the loading state
+
+  reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
 
 interface InitStore
@@ -125,6 +127,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.menuSheetPanel = state.menuSheetPanel === panel ? null : panel;
             });
           },
+          reset: () => set(initStore),
         }),
         {
           version: 1,

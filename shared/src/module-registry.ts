@@ -1,10 +1,10 @@
-export type ModuleScope = 'backend' | 'frontend' | 'both';
+export type ModuleScope = 'backend' | 'frontend';
 
 export interface ModuleConfig {
   name: string;
   owner: 'cella' | 'app';
   description: string;
-  scope: ModuleScope;
+  scope: ModuleScope[];
   /** When true, the module is opt-in at scaffold time; its folder is removed if deselected. */
   optional?: boolean;
 }
@@ -19,7 +19,7 @@ export const registerModule = (config: ModuleConfig) => {
 
 export const getModules = (filter?: { scope?: ModuleScope }): ModuleConfig[] => {
   if (!filter) return [...modules];
-  return modules.filter((m) => !filter.scope || m.scope === filter.scope);
+  return modules.filter((m) => !filter.scope || m.scope.includes(filter.scope));
 };
 
 export const onModuleRegister = (fn: (config: ModuleConfig) => void) => {

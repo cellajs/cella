@@ -31,7 +31,7 @@ interface SyncStoreState {
   reset: () => void;
 }
 
-const initialState = {
+const initStore = {
   cursor: null as string | null,
   lastSyncAt: null as string | null,
   orgs: {} as Record<string, OrgSyncState>,
@@ -62,7 +62,7 @@ export const useSyncStore = create<SyncStoreState>()(
   devtools(
     persist(
       immer((set, get) => ({
-        ...initialState,
+        ...initStore,
 
         setCursor: (cursor) =>
           set((s) => {
@@ -112,7 +112,7 @@ export const useSyncStore = create<SyncStoreState>()(
           return flat;
         },
 
-        reset: () => set(() => initialState),
+        reset: () => set(() => initStore),
       })),
       {
         name: 'sync',

@@ -23,7 +23,7 @@ interface AlertStoreState {
   setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
   resetAlertSeen: (alertSeen: string[]) => void; // Resets seen alerts to a new array
   setDownAlert: (downLevel: AlertKeys | null) => void; // Sets the current down alert type
-  clearAlertStore: () => void; // Resets to initial state
+  reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
 
 // Module-level abort controller for recovery polling
@@ -90,7 +90,7 @@ export const useAlertStore = create<AlertStoreState>()(
               state.alertsSeen = alertsSeen;
             });
           },
-          clearAlertStore: () => {
+          reset: () => {
             cancelRecovery();
             set((state) => ({ ...state, ...initStore }), true);
           },

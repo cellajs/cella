@@ -3,6 +3,6 @@ import { registerModule } from 'shared/module-registry';
 registerModule({
   name: 'entities',
   owner: 'cella',
-  scope: 'both',
+  scope: ['frontend', 'backend'],
   description: 'UI for operations across multiple entity types such as users and organizations.',
 });

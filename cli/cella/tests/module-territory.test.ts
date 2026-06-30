@@ -18,7 +18,7 @@ function writeModule(scope: 'backend' | 'frontend', name: string, owner: 'app' |
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, `${name}-module.ts`),
-    `import { registerModule } from 'shared/module-registry';\n\nregisterModule({\n  name: '${name}',\n  owner: '${owner}',\n  scope: 'both',\n  description: 'test',${extra}\n});\n`,
+    `import { registerModule } from 'shared/module-registry';\n\nregisterModule({\n  name: '${name}',\n  owner: '${owner}',\n  scope: ['frontend', 'backend'],\n  description: 'test',${extra}\n});\n`,
   );
 }
 
@@ -63,7 +63,7 @@ describe('resolveAppModuleFolders', () => {
         '',
         '// fork-specific module',
         'registerModule({',
-        "  scope: 'both',",
+        "  scope: ['frontend', 'backend'],",
         "  name: 'tasks',",
         "  description: 'multi',",
         "  owner: 'app', // owned by the fork",

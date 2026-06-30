@@ -40,8 +40,8 @@ interface SeenStoreState {
   stopFlushInterval: () => void;
   /** Flush all pending seen records to the server */
   flush: () => Promise<void>;
-  /** Clear all pending + persisted data (call on sign-out) */
-  clear: () => void;
+  /** Reset in-memory state to initial (call on sign-out; persisted data lives in appdb). */
+  reset: () => void;
 }
 
 const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000; // 10s in dev, 1min in prod
@@ -247,7 +247,8 @@ export const useSeenStore = create<SeenStoreState>()(
           // optimistically in markEntitySeen, and SSE handles external changes.
         },
 
-        clear: () => {
+        reset: () => {
+          // Fresh Map/Set instances (can't share a const) + stop the periodic flush.
           const id = get().flushIntervalId;
           if (id) clearInterval(id);
           set({ pending: new Map(), flushedIds: new Set(), flushIntervalId: null });

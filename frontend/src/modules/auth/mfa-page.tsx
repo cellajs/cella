@@ -17,7 +17,7 @@ export function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { lastUser, clearUserStore } = useUserStore();
+  const { lastUser, reset: clearUserStore } = useUserStore();
   const signedIn = useAuthStore((state) => state.signedIn);
 
   const [isActive, setIsActive] = useState(false);

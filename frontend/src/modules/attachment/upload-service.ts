@@ -5,6 +5,7 @@ import Transloadit from '@uppy/transloadit';
 import { getUploadToken } from 'sdk';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/dexie/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
+import { getAppDb } from '~/query/app-db';
 
 /**
  * Upload Service
@@ -51,6 +52,7 @@ class AttachmentUploadService {
   async attemptSync(): Promise<void> {
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
+    if (!getAppDb()) return; // Signed out — no per-user blob store to process
 
     this.processing = true;
 

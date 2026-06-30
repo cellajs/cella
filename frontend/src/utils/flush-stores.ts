@@ -1,44 +1,36 @@
-import { attachmentStorage } from '~/modules/attachment/dexie/storage-service';
-import { useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import type { MeUser } from '~/modules/me/types';
-import { useSeenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { useUserStore } from '~/modules/user/user-store';
 import { deleteAppDb } from '~/query/app-db';
-import { persister, sessionPersister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 
 /**
- * Flush per-user client state on sign-out (and optionally wipe everything on account removal).
+ * Flush client state when the user leaves the authenticated app.
  *
  * Cross-user isolation is structural: all per-user data lives in one IndexedDB named for the
- * owner (`~/query/app-db`), whose lifecycle is auth-driven (`~/query/app-storage`). Nulling the
- * user below closes (unbinds) that DB automatically; account removal additionally deletes it.
+ * owner (`~/query/app-db`). Nulling the user drives the auth-driven lifecycle
+ * (`~/query/app-storage`) to unbind that DB and reset the in-memory per-user zustand stores.
  *
- * Order matters — the persister/attachment/queue writes must run while the appdb is still bound
- * (i.e. before the user is nulled). Fire-and-forget at call sites; awaiting is optional.
+ * Two modes — the difference is whether the user's data is destroyed or merely closed:
+ * - `wipe = true` (explicit sign-out, default): delete the appdb outright and forget `lastUser`.
+ *   Nothing per-user lingers on disk — a clean slate for shared machines.
+ * - `wipe = false` (involuntary session loss, e.g. a 401): keep the appdb and `lastUser` on disk.
+ *   The DB is only closed, so the SAME user recovers their offline work (queued mutations, drafts)
+ *   and gets a prefilled sign-in after re-authenticating. Avoids data loss on a transient expiry.
  *
- * @param removeAccount - When true, permanently delete the user's appdb and reset UI state.
+ * @param wipe - When true, permanently delete the user's appdb and forget `lastUser`.
  */
-export const flushStores = async (removeAccount?: boolean): Promise<void> => {
+export const flushStores = async (wipe = true): Promise<void> => {
   queryClient.clear();
 
-  // Clear persisted query cache + queued mutations and attachment blobs while the appdb is bound.
-  await Promise.all([sessionPersister.removeClient(), persister.removeClient(), attachmentStorage.clearAll()]);
+  // Hard sign-out only: destroy all per-user persisted data while the owner is still known.
+  if (wipe) await deleteAppDb();
 
-  useSeenStore.getState().clear();
-  useDraftStore.getState().clearForms();
-  useUIStore.getState().setImpersonating(false);
+  // Reset the bootstrap UI session flags (impersonation, offline access); theme/mode persist.
+  useUIStore.getState().reset();
 
-  if (removeAccount) {
-    useAlertStore.getState().clearAlertStore();
-    useUIStore.getState().clearUIStore();
-    // Permanently delete this user's appdb before we forget who they are.
-    await deleteAppDb();
-  }
-
-  // Nulling the user triggers the auth-driven appdb lifecycle to close (unbind) the DB.
-  useUserStore.setState({ user: null as unknown as MeUser });
-  if (removeAccount) useUserStore.setState({ lastUser: null });
+  // Nulling the user drives the appdb lifecycle to unbind (close) the DB and reset every
+  // per-user store's in-memory state. A hard wipe also forgets `lastUser`; a soft flush keeps it.
+  if (wipe) useUserStore.getState().reset();
+  else useUserStore.setState({ user: null as unknown as MeUser, isSystemAdmin: false, yjsTokens: {} });
 };

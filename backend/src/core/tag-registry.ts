@@ -2,7 +2,7 @@ import { onModuleRegister } from 'shared/module-registry';
 
 // Bridge shared module registry to backend tag registry
 onModuleRegister(({ name, owner, description, scope }) => {
-  if (scope === 'backend' || scope === 'both') {
+  if (scope.includes('backend')) {
     registerTag({ tag: name, kind: 'module', parent: owner, description });
   }
 });

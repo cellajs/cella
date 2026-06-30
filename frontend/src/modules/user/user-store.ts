@@ -22,18 +22,22 @@ interface UserStoreState {
   setLastUser: (lastUser: LastUser) => void; // Sets last user identity
   setYjsToken: (key: string, token: string | null) => void; // Sets Yjs auth token for a context
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
-  clearUserStore: () => void; // Resets the store.
+  reset: () => void; // Resets the store.
 }
+
+// Default state values. `user` is `null` at rest; the router guarantees it's set inside app routes.
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'yjsTokens'> = {
+  user: null as unknown as MeUser,
+  isSystemAdmin: false,
+  lastUser: null,
+  yjsTokens: {},
+};
 
 export const useUserStore = create<UserStoreState>()(
   devtools(
     persist(
       immer((set) => ({
-        // Hackish solution to avoid type issues for user being undefined. Router should prevent user ever being undefined in the app layout routes.
-        user: null as unknown as MeUser,
-        isSystemAdmin: false,
-        lastUser: null,
-        yjsTokens: {},
+        ...initStore,
         updateUser: (user) => {
           set((state) => ({
             user: {
@@ -83,14 +87,7 @@ export const useUserStore = create<UserStoreState>()(
             }
           });
         },
-        clearUserStore: () => {
-          set((state) => {
-            state.user = null as unknown as MeUser;
-            state.isSystemAdmin = false;
-            state.lastUser = null;
-            state.yjsTokens = {};
-          });
-        },
+        reset: () => set(initStore),
       })),
       {
         version: 1,

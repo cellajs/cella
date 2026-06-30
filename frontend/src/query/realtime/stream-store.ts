@@ -51,6 +51,9 @@ interface StreamStoreActions {
 
 type StreamStore = StreamStoreState & StreamStoreActions;
 
+/** Default state values. */
+const initStore: StreamStoreState = { state: 'disconnected', cursor: null };
+
 /**
  * Manages SSE connection lifecycle with robust reconnect logic and circuit breaker.
  */
@@ -58,11 +61,10 @@ function createStreamStore(name: string) {
   return create<StreamStore>()(
     devtools(
       (set) => ({
-        state: 'disconnected',
-        cursor: null,
+        ...initStore,
         setState: (state) => set({ state }),
         setCursor: (cursor) => set({ cursor }),
-        reset: () => set({ state: 'disconnected', cursor: null }),
+        reset: () => set(initStore),
       }),
       { name, enabled: isDebugMode },
     ),

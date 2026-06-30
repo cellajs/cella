@@ -26,7 +26,7 @@ interface UIStoreState {
   lockUI: (source: string) => void; // Add a UI lock
   unlockUI: (source: string) => void; // Remove a UI lock
 
-  clearUIStore: () => void; // Resets store to initial state
+  reset: () => void; // Resets store to initial state
 }
 
 // Detects system preference
@@ -90,7 +90,8 @@ export const useUIStore = create<UIStoreState>()(
             }
           });
         },
-        clearUIStore: () =>
+        // Partial reset (not `set(initStore)`): only session flags are cleared; mode/theme/uiLocks persist.
+        reset: () =>
           set(() => ({
             offlineAccess: false,
             impersonating: false,
