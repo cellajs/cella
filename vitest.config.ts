@@ -28,18 +28,6 @@ export default defineConfig({
       'backend',
       'bench',
       'cli/cella',
-      {
-        // The release tests validate the built npm artifact (fresh build + package-root cwd) and
-        // run via create-cella's own `test:release` (prepublishOnly gates them at publish time).
-        // The e2e scaffolds from the local checkout with install skipped (fast, CI-safe); set
-        // CREATE_CELLA_E2E_FULL=true to also run its install/generate/type-check assertions.
-        extends: 'cli/create-cella/vitest.config.ts',
-        test: {
-          name: '@cellajs/create-cella',
-          root: 'cli/create-cella',
-          exclude: ['**/node_modules/**', '**/dist/**', 'tests/release-smoke.test.ts'],
-        },
-      },
       'shared',
       'yjs',
       'cdc',
@@ -55,7 +43,6 @@ export default defineConfig({
         'backend/src/**/*.ts',
         'bench/src/**/*.ts',
         'cli/cella/src/**/*.ts',
-        'cli/create-cella/src/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',

@@ -10,8 +10,6 @@
       "frontend/vite/**",
       "cli/cella/src/**",
       "cli/cella/tests/**",
-      "cli/create-cella/src/**",
-      "cli/create-cella/tests/**",
       "packages/data-grid/src/**",
       "bench/src/**",
       "!bench/src/**/dist",

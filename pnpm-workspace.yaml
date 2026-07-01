@@ -25,7 +25,7 @@ packages:
   - backend
   - cdc
   - shared
-  - cli/*
+  - cli/cella
   - frontend
   - infra
   - locales

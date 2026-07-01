@@ -105,13 +105,6 @@ jobs:
           node-version: 24
           cache: "pnpm"
 
-      # The create-cella e2e test scaffolds a project and runs `git commit`,
-      # which needs an author identity the runner doesn't have by default.
-      - name: Configure git identity
-        run: |
-          git config --global user.email "ci@cellajs.com"
-          git config --global user.name "cella CI"
-
       - name: Create .env files
         run: |
           cp ./backend/.env.example ./backend/.env
