@@ -7,23 +7,15 @@ export default defineConfig({
   settings: {
     upstreamUrl: 'git@github.com:cellajs/cella.git',
     upstreamBranch: 'main',
-    // Sync to the latest cella release by default (recommended): stable, reviewable,
-    // and tied to a changelog. To pin a specific release, set `upstreamTag: 'v0.5.0'`
-    // and bump it via PR. For active development on unreleased cella changes, set
-    // `upstreamTrack: 'branch'` to follow the tip of `upstreamBranch` instead.
     // upstreamTrack: 'release',
-    // upstreamTag: 'v0.5.0',
     syncWithPackages: true,
     packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides'],
-    mergeStrategy: 'squash',
     fileLinkMode: 'file',
   },
 
   // Top-down interaction with forks.
-  // - pullBranch: branch cella pulls contributions from (contributions service)
-  // - pushBranch: branch cella syncs changes into (forks service)
   forks: [
-    { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'main', pushBranch: 'main' },
+    { name: 'raak', localPath: '../raak', remoteUrl: 'git@github.com:cellajs/raak.git', pullBranch: 'main' },
   ],
 
   // File overrides

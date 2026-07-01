@@ -22,7 +22,7 @@ import {
   refreshViewWorktree,
   registerWorktree,
 } from '../utils/cleanup';
-import { resolveUpstream } from '../utils/config';
+import { DEFAULT_UPSTREAM_REMOTE, resolveUpstream } from '../utils/config';
 import { formatFetchedUpstreamDetail, formatMergeInProgressDetail } from '../utils/display';
 import {
   batchGitRm,
@@ -50,7 +50,6 @@ import {
   removeFileFromWorktree,
   removeMergeHead,
   resolveLatestReleaseTag,
-  resolvePinnedReleaseTag,
   restoreToHead,
   storeLastSyncRef,
 } from '../utils/git';
@@ -398,7 +397,8 @@ export async function runMergeEngine(
   try {
     // Setup upstream remote
     onProgress?.('setting up upstream remote...');
-    const { remoteName, track: configTrack, tag, branchRef } = resolveUpstream(config.settings);
+    const { track: configTrack, branchRef } = resolveUpstream(config.settings);
+    const remoteName = DEFAULT_UPSTREAM_REMOTE;
     // A per-run --track flag (config.track) overrides the configured tracking mode.
     const track = config.track ?? configTrack;
     await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
@@ -407,26 +407,21 @@ export async function runMergeEngine(
     onProgress?.(`fetching upstream (${remoteName})...`);
     await fetch(forkPath, remoteName);
 
-    // Resolve the concrete ref to merge from. Release tracking (default) syncs to a
-    // published release tag; branch tracking follows the upstream branch tip.
+    // Resolve the concrete ref to merge from. Release tracking (default) syncs to the
+    // latest published release tag; branch tracking follows the upstream branch tip.
     let upstreamRef = branchRef;
     let releaseTag: string | undefined;
     if (track === 'release') {
       await fetchUpstreamTags(forkPath, remoteName);
-      if (tag) {
-        upstreamRef = await resolvePinnedReleaseTag(forkPath, remoteName, tag);
-        releaseTag = tag;
-      } else {
-        const latest = await resolveLatestReleaseTag(forkPath, remoteName);
-        if (!latest) {
-          throw new Error(
-            `no upstream releases (v*) found on '${remoteName}'. Set upstreamTrack: 'branch' to follow ${branchRef}, ` +
-              `or check that ${config.settings.upstreamUrl} publishes release tags.`,
-          );
-        }
-        upstreamRef = latest.ref;
-        releaseTag = latest.tag;
+      const latest = await resolveLatestReleaseTag(forkPath, remoteName);
+      if (!latest) {
+        throw new Error(
+          `no upstream releases (v*) found on '${remoteName}'. Set upstreamTrack: 'branch' to follow ${branchRef}, ` +
+            `or check that ${config.settings.upstreamUrl} publishes release tags.`,
+        );
       }
+      upstreamRef = latest.ref;
+      releaseTag = latest.tag;
     }
 
     // Expose the resolved ref to downstream steps (packages/analyze read config.upstreamRef

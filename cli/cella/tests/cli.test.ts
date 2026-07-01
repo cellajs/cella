@@ -23,7 +23,6 @@ const baseConfig: CellaCliConfig = {
   settings: {
     upstreamUrl: 'git@github.com:cellajs/cella.git',
     upstreamBranch: 'main',
-    workingBranch: 'main',
   },
 };
 
