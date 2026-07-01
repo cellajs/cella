@@ -29,10 +29,6 @@
 <br />
 </div>
 
-> [!CAUTION]
-> This is a prerelease. Versioned releases will start once we have enough tests for authentication, authorization and
-> data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
-
 #### Contents
 
 - [Agent guidelines](/info/AGENTS.md)
