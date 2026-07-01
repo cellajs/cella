@@ -96,7 +96,6 @@ async function main(): Promise<void> {
     templateRef,
     portOffset,
     adminEmail,
-    skipInstall: cli.options.skipInstall,
   };
 
   await create(createOptions);

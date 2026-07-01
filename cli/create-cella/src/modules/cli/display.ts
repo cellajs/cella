@@ -53,6 +53,8 @@ export function showSuccess(
   if (needsCd) {
     console.info(`${pc.dim('$')} cd ${pc.cyan(relativePath)}`);
   }
+  console.info(`${pc.dim('$')} ${pc.cyan(`${packageManager} install`)}`);
+  console.info(`${pc.dim('$')} ${pc.cyan(`${packageManager} generate`)}`);
   console.info(
     `${pc.dim('$')} ${pc.cyan(`${packageManager} docker`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} seed`)} ${pc.dim('&&')} ${pc.cyan(`${packageManager} dev`)}`,
   );

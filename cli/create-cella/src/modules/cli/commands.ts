@@ -34,7 +34,6 @@ export const command = new Command(NAME)
   .option('--template <path>', 'use a custom template (local path or github:user/repo)')
   .option('--port-offset <number>', 'set the port offset (0-490 in steps of 10)', parsePortOffset)
   .option('--admin-email <email>', 'set the admin email for the initial seed user')
-  .option('--skip-install', 'scaffold only: skip dependency installation and migration generation')
   .action((name: string) => {
     const trimmedName = typeof name === 'string' ? name.trim() : name;
 

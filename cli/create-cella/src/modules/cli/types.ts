@@ -3,7 +3,6 @@ export interface CLIOptions {
   template?: string;
   portOffset?: number;
   adminEmail?: string;
-  skipInstall?: boolean;
 }
 
 /** CLI configuration state */
@@ -26,8 +25,6 @@ export interface CreateOptions {
   portOffset: number;
   /** Admin email for initial seed user (defaults to admin@{slug}.example.com) */
   adminEmail?: string;
-  /** Skip dependency installation and migration generation (scaffold only) */
-  skipInstall?: boolean;
   /** Suppress all output (for testing) */
   silent?: boolean;
 }
