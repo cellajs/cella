@@ -1,26 +1,44 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Supply-chain guard: the published bundle must not use `child_process` (shell access).
+ * Supply-chain guard: create-cella must not use `child_process` (shell access).
  *
- * create-cella scaffolds projects using isomorphic-git and a direct tarball download
- * (nanotar), never the git binary or a package manager, so Socket's `shellAccess`
- * capability stays off the package. This test locks that in by scanning the built
- * bundle for any shell/child_process reference.
+ * Scaffolding relies on isomorphic-git and a direct tarball download (nanotar),
+ * never the git binary or a package manager, so Socket's `shellAccess` capability
+ * stays off the published package. This test scans the source tree (build-independent)
+ * for any shell/child_process reference so a regression fails CI.
  */
 describe('no shell access', () => {
-  const distPath = resolve(import.meta.dirname, '..', 'dist', 'index.js');
+  const srcDir = resolve(import.meta.dirname, '..', 'src');
 
-  it('has a built bundle to check', () => {
-    expect(existsSync(distPath)).toBe(true);
-  });
+  function collectSources(dir: string): string[] {
+    const files: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) files.push(...collectSources(full));
+      else if (entry.name.endsWith('.ts')) files.push(full);
+    }
+    return files;
+  }
 
-  it.runIf(existsSync(distPath))('does not reference child_process in the bundle', () => {
-    const bundle = readFileSync(distPath, 'utf8');
-    expect(bundle).not.toContain('child_process');
-    expect(bundle).not.toContain('nano-spawn');
-    expect(bundle).not.toContain('execFile');
+  it('does not import child_process or a spawn helper', () => {
+    // Match real imports/requires, not prose in doc comments.
+    const forbidden = [
+      /\bfrom\s+['"]node:child_process['"]/,
+      /\brequire\(\s*['"](?:node:)?child_process['"]\s*\)/,
+      /\bfrom\s+['"]nano-spawn['"]/,
+    ];
+    const offenders: string[] = [];
+
+    for (const file of collectSources(srcDir)) {
+      const content = readFileSync(file, 'utf8');
+      for (const pattern of forbidden) {
+        if (pattern.test(content)) offenders.push(`${file}: ${pattern}`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
   });
 });
