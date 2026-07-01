@@ -7,19 +7,18 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
 2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated `CHANGELOG.md`.
 3. Merge the release PR when ready — it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
-4. Merging the `@cellajs/create-cella` PR additionally runs the release gate and, on success, publishes to npm with provenance.
+4. On merge, the `release-gate` job (security audit + full e2e) runs before the GitHub Release is finalized — see below.
 
 ### Deploys happen on release, not per merge
 
-Production deploys fire only when the `cella` template GitHub Release is published, not on every merge: [deploy.yml](../.github/workflows/deploy.yml) listens for `release: published`. `@cellajs/create-cella` ships as a draft release and never triggers a deploy. Manual staging/production deploys remain available via `workflow_dispatch`.
+Production deploys fire only when the `cella` template GitHub Release is published, not on every merge: [deploy.yml](../.github/workflows/deploy.yml) listens for `release: published`. Manual staging/production deploys remain available via `workflow_dispatch`.
 
 ### Release gate (security + e2e)
 
 Heavy checks run **only at release time** in [release.yml](../.github/workflows/release.yml), not as branch-protection required checks:
 
 - On release-PR merge, the `release-gate` job runs the security audit (`pnpm audit --audit-level=high`) and the full test/e2e suite.
-- Publishing `needs` the gate, so a failed gate ships nothing.
-- The `@cellajs/create-cella` GitHub Release is created as a **draft**, made public (`--draft=false`) only after npm publish succeeds — a failed gate leaves no public release and no npm version.
+- The GitHub Release is finalized only if the gate passes, so a failed gate ships nothing.
 
 This keeps day-to-day PRs fast and gates only the irreversible publish. Add release-only checks as steps in `release-gate` — no ruleset changes needed.
 
@@ -30,9 +29,8 @@ Versioning is per package via [release-please-config.json](../.github/release-pl
 | Package | Path | Tag prefix | Published |
 | --- | --- | --- | --- |
 | `cella` (the template) | `.` | `v*` | GitHub Release only |
-| `@cellajs/create-cella` | `cli/create-cella` | `create-cella-v*` | npm + GitHub Release |
 
-Commits route to a package by path: `cli/create-cella/**` updates the scaffolder, everything else the template. **Add another releasable package by adding one entry to both files — no workflow changes.**
+The scaffolder (`@cellajs/create-cella`) lives in its own repo, [cellajs/create-cella](https://github.com/cellajs/create-cella), with its own release automation. **Add another releasable package by adding one entry to both files — no workflow changes.**
 
 ### Commit types → changelog sections
 
@@ -64,12 +62,7 @@ While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and fea
 
 *One App, many repos:* one org-owned App serves cella plus every fork **you own** — install per repo, credentials as org secrets (only the install is per-repo). Forks owned by **others** can't read your org secrets, so each independent fork needs its own App.
 
-**npm publishing** (`@cellajs/create-cella`) — the template is GitHub-Release-only and needs no npm auth. The publish runs with `--provenance` and prefers **OIDC Trusted Publishing** (no long-lived token):
-
-- **Trusted Publishing (preferred):** on npmjs, package/org → **Settings → Trusted Publisher** → GitHub Actions, repo `cellajs/cella`, workflow `release.yml`. The job's `id-token: write` then mints auth + provenance via OIDC, no `NPM_TOKEN` required. If it isn't configured the OIDC token exchange 404s and pnpm falls back to `NPM_TOKEN`.
-- **`NPM_TOKEN` fallback:** must be an npm **automation** token. A classic/granular *publish* token still prompts for an OTP and fails headlessly (`ERR_PNPM_OTP_NON_INTERACTIVE`); automation tokens and OIDC bypass 2FA. Store as a repo or org secret scoped to publishing repos.
-- **2FA / human-in-the-loop:** CI can't answer an interactive OTP, so publishing *must* go through OIDC or an automation token. Any first-time change on npmjs — adding a trusted publisher, creating/rotating a token — is a manual step a human performs once.
-- **Forks:** publish your scaffolder under your **own** npm scope with your own trusted publisher/token; a `@cellajs` token can't publish someone else's package.
+**npm publishing** — the `cella` template is GitHub-Release-only and needs no npm auth. The scaffolder `@cellajs/create-cella` is published from its own repo ([cellajs/create-cella](https://github.com/cellajs/create-cella)); its npm Trusted Publisher / `NPM_TOKEN` setup lives there.
 
 **Repo settings:**
 - `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `test-cella-cli`. Do **not** require `release-gate` (it runs at release time, not on PRs).

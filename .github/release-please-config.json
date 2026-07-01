@@ -25,14 +25,6 @@
       "component": "cella",
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md"
-    },
-    "cli/create-cella": {
-      "release-type": "node",
-      "package-name": "@cellajs/create-cella",
-      "component": "create-cella",
-      "include-component-in-tag": true,
-      "changelog-path": "CHANGELOG.md",
-      "draft": true
     }
   }
 }
