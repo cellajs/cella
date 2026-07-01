@@ -35,10 +35,13 @@ jobs:
       # for the throwaway scaffold so the runner needs no git identity or network remote.
       CREATE_CELLA_SKIP_GIT: "true"
       CREATE_CELLA_SKIP_REMOTE: "true"
-      # Absolute, outside-the-checkout target so create-cella's "inside template" guard
-      # is satisfied and the copy can't recurse into the source.
-      SCAFFOLD_DIR: ${{ runner.temp }}/drift-app
     steps:
+      # Absolute, outside-the-checkout target so create-cella's "inside template" guard
+      # is satisfied and the copy can't recurse into the source. The `runner` context is
+      # not available in job-level `env:`, so resolve it here via $RUNNER_TEMP instead.
+      - name: Resolve scaffold dir
+        run: echo "SCAFFOLD_DIR=$RUNNER_TEMP/drift-app" >> "$GITHUB_ENV"
+
       - name: Checkout repo (the template under test)
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
