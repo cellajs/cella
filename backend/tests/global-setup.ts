@@ -65,5 +65,23 @@ export default async function globalSetup() {
   // apply all functions + triggers directly from the source definition.
   await pool.query(immutabilityTriggersSQL);
 
+  // Ensure RLS roles exist (idempotent) before any test module is evaluated.
+  // The RLS test suites gate themselves at module-load time on the presence of
+  // `runtime_role`; on a fresh database those roles would otherwise only be
+  // created later in the suites' own `beforeAll`, causing the whole suite to be
+  // skipped on the first run (e.g. in CI). Creating them here guarantees the
+  // guard sees them. Grants/ownership are still applied per-suite in `beforeAll`.
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
+        CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+        CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
+      END IF;
+    END $$;
+  `);
+
   await pool.end();
 }
