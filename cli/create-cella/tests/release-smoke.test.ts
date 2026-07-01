@@ -57,8 +57,6 @@ describe('release smoke', () => {
         encoding: 'utf8',
         env: {
           ...process.env,
-          CREATE_CELLA_SKIP_INSTALL: 'true',
-          CREATE_CELLA_SKIP_GENERATE: 'true',
           CREATE_CELLA_SKIP_GIT: 'true',
           CREATE_CELLA_SKIP_REMOTE: 'true',
         },

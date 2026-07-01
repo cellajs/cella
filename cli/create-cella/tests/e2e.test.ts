@@ -1,5 +1,4 @@
-import { execSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -12,39 +11,31 @@ import { create } from '#/create';
  * config template is validated against the local backend/frontend/shared in the same PR -
  * no remote drift, no network. This keeps the test deterministic and CI-safe.
  *
- * By default install + generate are skipped (fast scaffold-only run) and the scaffolding,
- * env interpolation and git wiring are asserted. Set `CREATE_CELLA_E2E_FULL=true` to run the
- * heavy path that also installs deps, generates migrations and type-checks the scaffold.
+ * Dependency install is not part of scaffolding (users run `pnpm install` themselves), so the
+ * test asserts the scaffolding, env interpolation and git wiring only.
  */
-const FULL = process.env.CREATE_CELLA_E2E_FULL === 'true';
-
 describe('create-cella e2e', () => {
   const repoRoot = resolve(import.meta.dirname, '../../..');
   const projectName = `cella-e2e-test-${Date.now()}`;
   const targetFolder = join(tmpdir(), projectName);
 
-  beforeAll(
-    async () => {
-      // Create a full project with all steps
-      await create({
-        projectName,
-        targetFolder,
-        packageManager: 'pnpm',
-        portOffset: 0,
-        templateUrl: repoRoot,
-        skipInstall: !FULL,
-        silent: true,
-      });
-    },
-    FULL ? 600000 : 120000,
-  ); // FULL also copies the repo + runs pnpm install/generate
+  beforeAll(async () => {
+    await create({
+      projectName,
+      targetFolder,
+      packageManager: 'pnpm',
+      portOffset: 0,
+      templateUrl: repoRoot,
+      silent: true,
+    });
+  }, 120000); // copies the repo via the local-template path
 
   afterAll(() => {
     // Cleanup
     if (existsSync(targetFolder)) {
       rmSync(targetFolder, { recursive: true, force: true });
     }
-  }, 60000); // Removing node_modules can take a while
+  }, 60000); // Removing the scaffold can take a while
 
   describe('project structure', () => {
     it('should create essential directories', () => {
@@ -52,12 +43,6 @@ describe('create-cella e2e', () => {
       expect(existsSync(join(targetFolder, 'frontend'))).toBe(true);
       expect(existsSync(join(targetFolder, 'shared'))).toBe(true);
       expect(existsSync(join(targetFolder, 'locales'))).toBe(true);
-    });
-
-    it.skipIf(!FULL)('should have node_modules installed', () => {
-      expect(existsSync(join(targetFolder, 'node_modules'))).toBe(true);
-      expect(existsSync(join(targetFolder, 'backend', 'node_modules'))).toBe(true);
-      expect(existsSync(join(targetFolder, 'frontend', 'node_modules'))).toBe(true);
     });
   });
 
@@ -101,32 +86,6 @@ describe('create-cella e2e', () => {
     });
   });
 
-  describe('database migrations', () => {
-    it.skipIf(!FULL)('should have generated drizzle migrations', () => {
-      const drizzlePath = join(targetFolder, 'backend', 'drizzle');
-      expect(existsSync(drizzlePath)).toBe(true);
-
-      // Migrations live in timestamped subdirectories containing migration.sql
-      const dirs = readdirSync(drizzlePath, { withFileTypes: true })
-        .filter((d) => d.isDirectory())
-        .map((d) => d.name);
-      expect(dirs.length).toBeGreaterThan(0);
-
-      const hasMigrationSql = dirs.some((dir) => existsSync(join(drizzlePath, dir, 'migration.sql')));
-      expect(hasMigrationSql).toBe(true);
-    });
-
-    it.skipIf(!FULL)('should have snapshot files in migration directories', () => {
-      const drizzlePath = join(targetFolder, 'backend', 'drizzle');
-      const dirs = readdirSync(drizzlePath, { withFileTypes: true })
-        .filter((d) => d.isDirectory())
-        .map((d) => d.name);
-
-      const hasSnapshot = dirs.some((dir) => existsSync(join(drizzlePath, dir, 'snapshot.json')));
-      expect(hasSnapshot).toBe(true);
-    });
-  });
-
   describe('git repository', () => {
     it('should have initialized git', () => {
       expect(existsSync(join(targetFolder, '.git'))).toBe(true);
@@ -146,17 +105,6 @@ describe('create-cella e2e', () => {
       const content = readFileSync(configPath, 'utf-8');
       expect(content).not.toContain('__project_name__');
       expect(content).not.toContain('__project_slug__');
-    });
-
-    it.skipIf(!FULL)('should produce no TypeScript errors in shared/config/config.default.ts', () => {
-      // Run tsc via the backend tsconfig which includes ../shared/*
-      try {
-        execSync('npx tsc --noEmit', { cwd: join(targetFolder, 'backend'), stdio: 'pipe' });
-      } catch (error) {
-        const e = error as { stdout?: Buffer; stderr?: Buffer };
-        const output = `${e.stdout?.toString() ?? ''}${e.stderr?.toString() ?? ''}`;
-        throw new Error(`tsc reported errors in the scaffolded project:\n${output}`);
-      }
     });
   });
 

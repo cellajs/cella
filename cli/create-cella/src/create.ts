@@ -2,16 +2,15 @@ import { existsSync } from 'node:fs';
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkbox } from '@inquirer/prompts';
-import { downloadTemplate } from 'giget';
 import pc from 'picocolors';
 import { addRemote } from '#/add-remote';
 import { TEMPLATE_URL } from '#/constants';
 import { type CreateOptions, confirmChoice, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
+import { downloadGithubTemplate } from '#/utils/download-template';
 import { gitAddAll, gitCommit, gitInit } from '#/utils/git';
 import { listTemplateFiles } from '#/utils/list-template-files';
 import { createProgress, pauseSpinner, resumeSpinner } from '#/utils/progress';
-import { generate, install } from '#/utils/run-package-manager-command';
 import { optionalModuleFolders, scanOptionalModules } from '#/utils/scan-optional-modules';
 
 /** Check if a path is a local directory */
@@ -19,7 +18,7 @@ function isLocalPath(path: string): boolean {
   return path.startsWith('/') || path.startsWith('./') || path.startsWith('../');
 }
 
-function shouldSkipStep(name: 'install' | 'generate' | 'git' | 'remote'): boolean {
+function shouldSkipStep(name: 'git' | 'remote'): boolean {
   return process.env[`CREATE_CELLA_SKIP_${name.toUpperCase()}`] === 'true';
 }
 
@@ -31,7 +30,6 @@ export async function create({
   templateRef,
   portOffset,
   adminEmail,
-  skipInstall = false,
   silent = false,
 }: CreateOptions): Promise<void> {
   // Save the original working directory
@@ -76,15 +74,10 @@ export async function create({
         await cp(src, dest);
       }
     } else {
-      // Pin to the chosen ref (release tag or commit SHA) when provided.
-      const downloadId = templateRef ? `${template}#${templateRef}` : template;
+      // Pin to the chosen ref (release tag or commit SHA), else the default branch.
+      const ref = templateRef ?? 'main';
       progress.step(`downloading cella template${templateRef ? ` (${templateRef})` : ''}`);
-      await downloadTemplate(downloadId, {
-        cwd: process.cwd(),
-        dir: targetFolder,
-        force: true,
-        provider: 'github',
-      });
+      await downloadGithubTemplate(template, ref, targetFolder);
     }
 
     // Ask which optional modules to keep, then drop deselected paths
@@ -94,18 +87,6 @@ export async function create({
     progress.step('cleaning template');
     const displayName = projectName.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     await cleanTemplate({ targetFolder, projectName, displayName, portOffset, adminEmail });
-
-    // Install dependencies (generate needs installed deps, so --skip-install skips both)
-    if (!skipInstall && !shouldSkipStep('install')) {
-      progress.step('installing dependencies');
-      await install(packageManager);
-    }
-
-    // Generate SQL files
-    if (!skipInstall && !shouldSkipStep('generate')) {
-      progress.step('generating migrations');
-      await generate(packageManager);
-    }
 
     // Initialize git repository
     const gitFolderPath = join(targetFolder, '.git');

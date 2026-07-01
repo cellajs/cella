@@ -33,7 +33,7 @@
   },
   "scripts": {
     "start": "tsx ./src/create-cella-cli.ts",
-    "try": "tsx ./src/create-cella-cli.ts ../../../cella-try-app --template ../.. --skip-install",
+    "try": "tsx ./src/create-cella-cli.ts ../../../cella-try-app --template ../..",
     "clean": "rimraf ./dist",
     "build": "tsup",
     "test-build": "pnpm run build && node index.js",
@@ -49,10 +49,9 @@
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
     "commander": "^15.0.0",
-    "giget": "^3.3.0",
     "ignore": "^7.0.5",
     "isomorphic-git": "^1.38.5",
-    "nano-spawn": "^2.0.0",
+    "nanotar": "^0.3.0",
     "ora": "^9.4.1",
     "picocolors": "^1.1.1",
     "validate-npm-package-name": "^8.0.0"
