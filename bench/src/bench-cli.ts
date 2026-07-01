@@ -17,12 +17,18 @@
  * The scenario name is a positional argument. The legacy `--scenario <name>`
  * flag is still accepted as an alias.
  *
- * `--all` runs each discovered scenario in sequence. `--short` shrinks every
+ * `--all` runs each discovered scenario in sequence. It runs quietly — Artillery
+ * output is hidden behind a per-scenario spinner and, instead of a table per
+ * scenario, a single summary of every scenario is printed at the end. Baselines
+ * are still saved. Between scenarios the system gets a short cooldown pause so
+ * load from one run does not bleed into the next. `--short` shrinks every
  * scenario to a single 1s / 1-VU phase and drops the ensure thresholds, turning
- * a run into a fast smoke check rather than a load test (no baselines saved).
+ * a run into a fast smoke check rather than a load test (no baselines saved, no
+ * pause).
  *
- * Each run is automatically saved to .baselines/<scenario>.json and compared
- * against the previous run — no flag required.
+ * A single-scenario run stays verbose: Artillery output streams live and a
+ * comparison table is printed. Each run is automatically saved to
+ * .baselines/<scenario>.json and compared against the previous run.
  */
 
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
@@ -41,6 +47,9 @@ import { isPostgresReady, isServiceHealthy, SERVICES } from './preflight';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
+
+/** Cooldown between scenarios in `--all` mode so load settles between runs. */
+const PAUSE_SECONDS = 5;
 
 // ── CLI args ───────────────────────────────────────────────────────────────
 
@@ -96,7 +105,7 @@ function printUsage(scenarios: string[]): void {
   console.info(`${pc.bold('Usage:')} pnpm bench [scenario] [--all] [--short] [--skip-seed]\n`);
   console.info('Run without a scenario for an interactive picker.\n');
   console.info(pc.bold('Flags:'));
-  console.info(`  ${'--all'.padEnd(22)}${pc.dim('run every scenario in sequence')}`);
+  console.info(`  ${'--all'.padEnd(22)}${pc.dim('run every scenario in sequence (quiet, prints a final summary)')}`);
   console.info(`  ${'--short'.padEnd(22)}${pc.dim('quick smoke run (1s/1VU, no thresholds, no baselines)')}`);
   console.info(`  ${'--skip-seed'.padEnd(22)}${pc.dim('skip bench data seeding')}\n`);
   console.info(pc.bold('Scenarios:'));
@@ -196,7 +205,7 @@ const SHORT_OVERRIDES = JSON.stringify({
 
 function runArtillery(
   name: string,
-  { short = false }: { short?: boolean } = {},
+  { short = false, quiet = false }: { short?: boolean; quiet?: boolean } = {},
 ): { exitCode: number; reportPath: string } {
   const reportPath = resolve(tmpdir(), `artillery-${name}-${Date.now()}.json`);
   const args = ['artillery', 'run', `scenarios/${name}.yaml`, '--output', reportPath];
@@ -204,14 +213,16 @@ function runArtillery(
   try {
     execFileSync('npx', args, {
       cwd: BENCH_ROOT,
-      stdio: 'inherit',
+      // Quiet runs (used by --all) hide Artillery's live report — the JSON
+      // report is still written to `reportPath` and summarized at the end.
+      stdio: quiet ? 'ignore' : 'inherit',
       env: createBenchProcessEnv(),
     });
     return { exitCode: 0, reportPath };
   } catch (err) {
     const code = (err as { status?: number }).status ?? 1;
     // Artillery exits 1 when ensure checks fail — the report is already printed above
-    console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
+    if (!quiet) console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
     return { exitCode: code, reportPath };
   }
 }
@@ -297,7 +308,7 @@ function loadBaseline(scenario: string): BaselineMetrics | null {
   }
 }
 
-function saveBaseline(metrics: BaselineMetrics): void {
+function saveBaseline(metrics: BaselineMetrics, { quiet = false }: { quiet?: boolean } = {}): void {
   mkdirSync(BASELINES_DIR, { recursive: true });
   const file = resolve(BASELINES_DIR, `${metrics.scenario}.json`);
 
@@ -313,6 +324,8 @@ function saveBaseline(metrics: BaselineMetrics): void {
 
   runs.push(metrics);
   writeFileSync(file, `${JSON.stringify(runs, null, 2)}\n`);
+
+  if (quiet) return;
 
   const count = runs.length;
   console.info(
@@ -388,6 +401,35 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
   console.info();
 }
 
+/**
+ * One combined table for a `--all` run: a row per scenario with its key metrics
+ * and the p95 delta vs the previous baseline. Printed once at the end so the run
+ * stays quiet until every scenario is done.
+ */
+function printAllSummary(results: { name: string; result: ScenarioResult }[]): void {
+  console.info(`\n${pc.bold('Summary')} ${pc.dim('— all scenarios')}\n`);
+
+  const cols = `  ${pc.bold('Scenario'.padEnd(22))} ${pc.bold('Req/s'.padStart(8))} ${pc.bold('Mean'.padStart(8))} ${pc.bold('p95'.padStart(8))} ${pc.bold('p99'.padStart(8))} ${pc.bold('Errors'.padStart(8))} ${pc.bold('p95 Δ'.padStart(10))}`;
+  console.info(cols);
+  console.info(`  ${'─'.repeat(80)}`);
+
+  for (const { name, result } of results) {
+    const { current, baseline, exitCode } = result;
+    const fail = exitCode === 0 ? '' : pc.red('  ✗');
+
+    if (!current) {
+      console.info(`  ${name.padEnd(22)} ${pc.dim('no metrics'.padStart(8))}${fail}`);
+      continue;
+    }
+
+    const delta = baseline ? formatDelta(current.p95, baseline.p95, true) : pc.dim('new');
+    console.info(
+      `  ${name.padEnd(22)} ${String(current.requestRate).padStart(8)} ${String(current.mean).padStart(8)} ${String(current.p95).padStart(8)} ${String(current.p99).padStart(8)} ${String(current.errors).padStart(8)} ${delta.padStart(10)}${fail}`,
+    );
+  }
+  console.info();
+}
+
 // ── Cleanup ────────────────────────────────────────────────────────────────
 
 const cleanupFns: (() => void)[] = [];
@@ -407,37 +449,63 @@ function cleanup() {
 
 // ── Run a single scenario ──────────────────────────────────────────────────
 
+interface ScenarioResult {
+  exitCode: number;
+  /** Aggregate metrics for this run, or null for short/failed runs. */
+  current: BaselineMetrics | null;
+  /** Previous baseline this run was compared against, or null on a first run. */
+  baseline: BaselineMetrics | null;
+}
+
 /**
  * Run one scenario end to end: start the silent CDC poller, run Artillery, then
  * (for full runs) compare against and save the baseline. Short runs are smoke
  * checks, so their metrics are not comparable and never touch baselines.
- * Returns the Artillery exit code.
+ *
+ * In `quiet` mode (used by `--all`) Artillery output is hidden behind a spinner
+ * and the per-scenario comparison table is skipped — the caller prints one
+ * combined summary at the end. Returns the run's exit code and metrics.
  */
-async function runScenario(name: string, { short }: { short: boolean }): Promise<number> {
+async function runScenario(
+  name: string,
+  { short, quiet }: { short: boolean; quiet: boolean },
+): Promise<ScenarioResult> {
   // Always runs in the background, silently. Stays invisible unless CDC actually
   // processed events during the run — no flag, no developer awareness needed.
   const cdcPoller = startCdcPoller();
   const stopPoller = () => cdcPoller.proc.kill('SIGINT');
   registerCleanup(stopPoller);
 
-  console.info(`${pc.cyan('▸')} running ${pc.bold(name)}${short ? pc.dim(' (short)') : ''}...\n`);
-  const { exitCode, reportPath } = runArtillery(name, { short });
+  const spinner = quiet ? ora(`running ${name}${short ? ' (short)' : ''}...`).start() : null;
+  if (!quiet) console.info(`${pc.cyan('▸')} running ${pc.bold(name)}${short ? pc.dim(' (short)') : ''}...\n`);
+
+  const { exitCode, reportPath } = runArtillery(name, { short, quiet });
 
   // Stop the poller and flush its summary (printed only if CDC saw events).
   stopPoller();
   const cdcSummary = (await cdcPoller.summary).trimEnd();
-  if (cdcSummary) console.info(cdcSummary);
+
+  let current: BaselineMetrics | null = null;
+  let baseline: BaselineMetrics | null = null;
 
   if (!short) {
-    const metrics = extractMetrics(reportPath, name);
-    if (metrics) {
-      const baseline = loadBaseline(name);
-      printComparison(metrics, baseline);
-      saveBaseline(metrics);
+    current = extractMetrics(reportPath, name);
+    if (current) {
+      baseline = loadBaseline(name);
+      if (!quiet) printComparison(current, baseline);
+      saveBaseline(current, { quiet });
     }
   }
 
-  return exitCode;
+  if (spinner) {
+    if (exitCode === 0) spinner.succeed(`${name} ${pc.dim('done')}`);
+    else spinner.fail(`${name} ${pc.dim(`exited ${exitCode}`)}`);
+  }
+
+  // Verbose runs print CDC throughput inline; quiet runs stay clean for the summary.
+  if (!quiet && cdcSummary) console.info(cdcSummary);
+
+  return { exitCode, current, baseline };
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
@@ -545,14 +613,35 @@ async function main() {
   // ── 4. Run scenario(s) ──
 
   const toRun = all ? scenarios : [selected];
+  // --all runs quietly and prints one combined summary at the end; a single
+  // scenario stays verbose with live Artillery output and a comparison table.
+  const quiet = all;
+  // Cooldown between scenarios so load from one run settles before the next.
+  // Skipped for short smoke runs, where speed matters more than isolation.
+  const pauseSeconds = all && !short ? PAUSE_SECONDS : 0;
+
+  const results: { name: string; result: ScenarioResult }[] = [];
   let failureCode = 0;
   try {
-    for (const name of toRun) {
-      const code = await runScenario(name, { short });
-      if (code !== 0) failureCode = code;
+    for (let i = 0; i < toRun.length; i++) {
+      const name = toRun[i];
+      const result = await runScenario(name, { short, quiet });
+      results.push({ name, result });
+      if (result.exitCode !== 0) failureCode = result.exitCode;
+
+      if (pauseSeconds > 0 && i < toRun.length - 1) {
+        const cooldown = ora(`cooling down ${pauseSeconds}s...`).start();
+        await sleep(pauseSeconds * 1000);
+        cooldown.stop();
+      }
     }
   } finally {
     cleanup();
+  }
+
+  if (all) {
+    if (short) console.info(`\n${pc.green('✓')} all scenarios completed short run\n`);
+    else printAllSummary(results);
   }
 
   if (failureCode !== 0) process.exit(failureCode);

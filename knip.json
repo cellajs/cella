@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "ignoreWorkspaces": ["backend"],
+  "ignore": ["shared/config/config.template.ts"],
   "workspaces": {
     "backend": {},
     "infra": {
