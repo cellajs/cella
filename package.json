@@ -56,7 +56,7 @@
     "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc dev & pnpm --filter frontend offline",
     "story": "pnpm --filter frontend storybook",
     "bench": "pnpm -C bench bench",
-    "session": "bash bin/session.sh"
+    "session": "bash session.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
