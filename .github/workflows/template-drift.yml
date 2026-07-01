@@ -1,0 +1,85 @@
+name: Template drift
+
+# Reverse guard for template drift.
+#
+# Scaffolds a fresh app from the CURRENT checkout using the published create-cella
+# CLI, then generates the SDK and typechecks the result. If a template change ever
+# breaks what create-cella produces — e.g. the placeholder config template
+# (configs/default-config.ts.template) drifting from the shared config types, or a
+# renamed module folder — this job fails loudly.
+#
+# This replaces the monorepo-coupled tests that used to live in create-cella
+# (optional-module folder existence, placeholder-config typecheck, real backend
+# .env substitution). Those checks belong here, where the template files are local.
+
+permissions: {}
+
+on:
+  schedule:
+    # Weekly, Monday 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold-and-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      # create-cella runs `git init` + `git remote add` as its final steps. Skip both
+      # for the throwaway scaffold so the runner needs no git identity or network remote.
+      CREATE_CELLA_SKIP_GIT: "true"
+      CREATE_CELLA_SKIP_REMOTE: "true"
+      # Absolute, outside-the-checkout target so create-cella's "inside template" guard
+      # is satisfied and the copy can't recurse into the source.
+      SCAFFOLD_DIR: ${{ runner.temp }}/drift-app
+    steps:
+      - name: Checkout repo (the template under test)
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      # `--template ./` copies the git-tracked files of THIS checkout, so the guard
+      # validates the exact template state on the default branch rather than whatever
+      # the published tarball currently contains. Optional modules are kept (no TTY).
+      - name: Scaffold a fresh app from the current checkout
+        run: |
+          pnpm create @cellajs/cella@latest "$SCAFFOLD_DIR" \
+            --template ./ \
+            --port-offset 0 \
+            --admin-email admin@example.com
+
+      - name: Ensure env files exist
+        working-directory: ${{ env.SCAFFOLD_DIR }}
+        run: |
+          for pkg in backend frontend cdc; do
+            if [ -f "$pkg/.env.example" ] && [ ! -f "$pkg/.env" ]; then
+              cp "$pkg/.env.example" "$pkg/.env"
+            fi
+          done
+
+      - name: Install scaffold dependencies
+        working-directory: ${{ env.SCAFFOLD_DIR }}
+        run: pnpm install --frozen-lockfile
+
+      # SDK generation runs with NODB=true (see backend/scripts/generate-openapi.ts),
+      # so no database is needed. The frontend typecheck depends on these generated types.
+      - name: Generate OpenAPI + SDK
+        working-directory: ${{ env.SCAFFOLD_DIR }}
+        run: pnpm sdk
+
+      - name: Typecheck the scaffolded project
+        working-directory: ${{ env.SCAFFOLD_DIR }}
+        run: pnpm ts
