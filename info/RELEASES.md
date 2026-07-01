@@ -1,44 +1,42 @@
 ## Releases
 
-Releases are automated with [release-please](https://github.com/googleapis/release-please). You never bump versions or push tags by hand — versions and changelogs are derived from [Conventional Commits](https://www.conventionalcommits.org).
+Releases are automated with [release-please](https://github.com/googleapis/release-please); versions and changelogs derive from [Conventional Commits](https://www.conventionalcommits.org). Never bump versions or push tags by hand.
 
 ### How it works
 
-1. Land your work on `main` using Conventional Commit messages (enforced locally by a lefthook `commit-msg` hook running commitlint).
-2. release-please opens and continuously updates a **release PR** per package, with the proposed version bump and a generated `CHANGELOG.md`.
-3. Review the release PR. When you're happy, **merge it**. That bumps the version, updates the changelog, creates the git tag and publishes the GitHub Release.
-4. For `@cellajs/create-cella`, merging its release PR runs the release gate and, on success, publishes the package to npm (with provenance).
-
-There is no manual `pnpm version` / `git push --tags` step anymore.
+1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
+2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated `CHANGELOG.md`.
+3. Merge the release PR when ready — it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
+4. Merging the `@cellajs/create-cella` PR additionally runs the release gate and, on success, publishes to npm with provenance.
 
 ### Deploys happen on release, not per merge
 
-Production deploys are triggered only when the `cella` template GitHub Release is published — not on every merge to `main`. The deploy workflow ([.github/workflows/deploy.yml](../.github/workflows/deploy.yml)) listens for `release: published`, so a deploy is tied to release-please cutting a release. `@cellajs/create-cella` ships as a draft release and does not trigger a deploy. Manual deploys to staging/production are still available via `workflow_dispatch`.
+Production deploys fire only when the `cella` template GitHub Release is published, not on every merge: [deploy.yml](../.github/workflows/deploy.yml) listens for `release: published`. `@cellajs/create-cella` ships as a draft release and never triggers a deploy. Manual staging/production deploys remain available via `workflow_dispatch`.
 
 ### Release gate (security + e2e)
 
-Heavy checks we don't want on every feature PR run **only at release time**, inside [.github/workflows/release.yml](../.github/workflows/release.yml), not as branch-protection required checks:
+Heavy checks run **only at release time** in [release.yml](../.github/workflows/release.yml), not as branch-protection required checks:
 
-- When a release PR is merged, the `release-gate` job runs the security audit (`pnpm audit`) and the full test/e2e suite.
-- Publishing `needs` that gate, so a failed gate ships nothing.
-- The `@cellajs/create-cella` GitHub Release is created as a **draft** and only made public after npm publish succeeds (`--draft=false`). A failed gate leaves no public release and no npm version.
+- On release-PR merge, the `release-gate` job runs the security audit (`pnpm audit --audit-level=high`) and the full test/e2e suite.
+- Publishing `needs` the gate, so a failed gate ships nothing.
+- The `@cellajs/create-cella` GitHub Release is created as a **draft**, made public (`--draft=false`) only after npm publish succeeds — a failed gate leaves no public release and no npm version.
 
-This keeps day-to-day PRs fast while making the irreversible publish step the thing that's actually gated. To add a release-only check, add a step to the `release-gate` job — no ruleset changes needed.
+This keeps day-to-day PRs fast and gates only the irreversible publish. Add release-only checks as steps in `release-gate` — no ruleset changes needed.
 
 ### Packages
 
-Versioning is per package via [.github/release-please-config.json](../.github/release-please-config.json) and [.github/release-please-manifest.json](../.github/release-please-manifest.json):
+Versioning is per package via [release-please-config.json](../.github/release-please-config.json) and [release-please-manifest.json](../.github/release-please-manifest.json):
 
 | Package | Path | Tag prefix | Published |
 | --- | --- | --- | --- |
 | `cella` (the template) | `.` | `v*` | GitHub Release only |
 | `@cellajs/create-cella` | `cli/create-cella` | `create-cella-v*` | npm + GitHub Release |
 
-Commits are routed to a package by path: a commit touching `cli/create-cella/**` updates the scaffolder, everything else updates the template. **To add another releasable package later, add one entry to both files — no workflow changes are needed.**
+Commits route to a package by path: `cli/create-cella/**` updates the scaffolder, everything else the template. **Add another releasable package by adding one entry to both files — no workflow changes.**
 
 ### Commit types → changelog sections
 
-Commit messages must use a Conventional Commit type. Types map to changelog sections (see `changelog-sections` in [.github/release-please-config.json](../.github/release-please-config.json)):
+Types map to changelog sections (`changelog-sections` in [release-please-config.json](../.github/release-please-config.json)):
 
 - `feat:` → 🎉 New features (minor bump)
 - `fix:` → 🐞 Bug fixes (patch bump)
@@ -47,34 +45,34 @@ Commit messages must use a Conventional Commit type. Types map to changelog sect
 - `docs:` → 📖 Documentation
 - `chore:`, `build:`, `ci:`, `style:`, `test:` → hidden from notes
 
-Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to trigger a breaking-change section and a larger version bump. For fork-facing breaking changes, link a short migration note in `info/` from the commit body.
+A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `info/` from the commit body.
 
 ### Pre-1.0 versioning
 
-While the template is on `0.x`, breaking changes bump the minor and features bump the patch (`bump-minor-pre-major`), so the version stays meaningful for forks consuming upstream via `pnpm cella`.
+While on `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features bump the patch — keeping versions meaningful for forks consuming upstream via `pnpm cella`.
 
 ### Release automation setup (one-time)
 
-The release workflow ([.github/workflows/release.yml](../.github/workflows/release.yml)) needs a few secrets and settings. With a per-repo App this is done once per repo; with an org-wide App (recommended for an org that owns multiple repos/forks) most of it is done once for the whole org.
+[release.yml](../.github/workflows/release.yml) needs a few secrets/settings. A per-repo GitHub App is set up once per repo; an org-wide App (recommended when one org owns multiple repos/forks) is mostly set up once for the org.
 
-**GitHub App token** — release-please opens the release PR with a token from a dedicated GitHub App. An App token (not the default `GITHUB_TOKEN`) is used so the release PR also *triggers* the CI/`pr-title` checks that are required to merge it.
+**GitHub App token** — release-please opens the release PR with a dedicated GitHub App token (not `GITHUB_TOKEN`) so the PR *triggers* the required CI/`pr-title` checks.
 
-1. Create a GitHub App (org or account settings → Developer settings → GitHub Apps → New). Disable the webhook. Grant **repository permissions**: `Contents: Read and write` and `Pull requests: Read and write`.
-2. Generate a private key (downloads a `.pem`) and note the numeric **Client ID**.
-3. Install the App on the repositories that should release — a single repo, or several repos in your org.
-4. Provide the App credentials to the workflow as secrets:
-   - `RELEASE_APP_ID` — the Client ID.
-   - `RELEASE_APP_PRIVATE_KEY` — the full contents of the `.pem`.
+1. Create a GitHub App (org/account → Developer settings → GitHub Apps → New), disable the webhook, grant repo permissions `Contents: Read and write` and `Pull requests: Read and write`.
+2. Generate a private key (`.pem`) and note the numeric **Client ID**.
+3. Install the App on each repo that releases.
+4. Add `RELEASE_APP_ID` (Client ID) and `RELEASE_APP_PRIVATE_KEY` (full `.pem`) as **repo** or **org** secrets — org secrets let every repo reuse one App.
 
-   Add these as **repo secrets** for a single repo, or as **organization secrets** (scoped to the relevant repos) so every repo in the org reuses the same App without re-adding secrets.
+*One App, many repos:* one org-owned App serves cella plus every fork **you own** — install per repo, credentials as org secrets (only the install is per-repo). Forks owned by **others** can't read your org secrets, so each independent fork needs its own App.
 
-**One App for cella and its forks** — a single GitHub App can be installed on many repositories, so one org-owned App can serve cella itself plus every fork **you own**: install it on each repo and store `RELEASE_APP_ID` / `RELEASE_APP_PRIVATE_KEY` as org secrets. Only the App install is per-repo; the credentials are shared. Forks owned by **other** accounts or orgs can't read your org secrets or private key, so each independent fork still needs to create and install its own App.
+**npm publishing** (`@cellajs/create-cella`) — the template is GitHub-Release-only and needs no npm auth. The publish runs with `--provenance` and prefers **OIDC Trusted Publishing** (no long-lived token):
 
-**npm publishing** (`@cellajs/create-cella`):
-- `NPM_TOKEN` — an npm **automation** token (does not prompt for OTP). Only the npm-published package needs this; the `cella` template is GitHub-Release-only. It can be a **repo secret** or an **organization secret** (scoped to the publishing repos) so repos publishing under the same npm scope reuse one token. Forks that publish their own scaffolder under their **own** npm scope must supply their own token — a `@cellajs` token can't (and shouldn't) publish someone else's package.
+- **Trusted Publishing (preferred):** on npmjs, package/org → **Settings → Trusted Publisher** → GitHub Actions, repo `cellajs/cella`, workflow `release.yml`. The job's `id-token: write` then mints auth + provenance via OIDC, no `NPM_TOKEN` required. If it isn't configured the OIDC token exchange 404s and pnpm falls back to `NPM_TOKEN`.
+- **`NPM_TOKEN` fallback:** must be an npm **automation** token. A classic/granular *publish* token still prompts for an OTP and fails headlessly (`ERR_PNPM_OTP_NON_INTERACTIVE`); automation tokens and OIDC bypass 2FA. Store as a repo or org secret scoped to publishing repos.
+- **2FA / human-in-the-loop:** CI can't answer an interactive OTP, so publishing *must* go through OIDC or an automation token. Any first-time change on npmjs — adding a trusted publisher, creating/rotating a token — is a manual step a human performs once.
+- **Forks:** publish your scaffolder under your **own** npm scope with your own trusted publisher/token; a `@cellajs` token can't publish someone else's package.
 
 **Repo settings:**
-- `main` ruleset: squash-merge only, require linear history, and require the `pr-title`, `lint`, `test` and `test-cella-cli` checks. Do **not** require `release-gate` (it runs at release time, not on PRs).
-- "Allow GitHub Actions to create and approve pull requests" can stay **disabled** — the GitHub App creates the release PR, not Actions.
+- `main` ruleset: squash-merge only, linear history, require `pr-title`, `lint`, `test`, `test-cella-cli`. Do **not** require `release-gate` (it runs at release time, not on PRs).
+- "Allow GitHub Actions to create and approve pull requests" can stay **disabled** — the App, not Actions, creates the release PR.
 
 

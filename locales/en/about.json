@@ -91,7 +91,7 @@
   "features.eu_cloud": "EU cloud",
   "features.eu_cloud.text": "EU-based hosting for data residency and compliance from day one.",
   "features.file_based_routing": "File-based routing",
-  "features.file_based_routing.text": "Drop a file in the routes folder and it's registered into a type-safe route tree automatically.",
+  "features.file_based_routing.text": "Drop a file in the frontend routes folder and it's registered into a type-safe route tree automatically.",
   "features.gap_detection": "Gap detection",
   "features.gap_detection.text": "On reconnect, the client knows exactly what changed while you were away and fetches only that, including removals.",
   "features.github_actions": "GitHub Actions",

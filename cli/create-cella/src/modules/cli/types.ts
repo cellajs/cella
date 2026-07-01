@@ -19,7 +19,7 @@ export interface CreateOptions {
   targetFolder: string;
   packageManager: string;
   templateUrl?: string;
-  /** Giget ref (release tag or commit SHA) to download the template at. Ignored for local templates. */
+  /** Git ref (release tag or commit SHA) to download the template at. Ignored for local templates. */
   templateRef?: string;
   /** Port offset to avoid collisions with sibling forks (0 = default ports) */
   portOffset: number;
