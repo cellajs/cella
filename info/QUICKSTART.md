@@ -6,6 +6,7 @@ When you finished installing cella, use:
 
 ```bash
 pnpm install
+pnpm generate
 pnpm docker
 pnpm seed
 pnpm dev

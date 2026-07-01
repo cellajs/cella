@@ -109,7 +109,7 @@ main().catch((error) => {
 /**
  * Show a short intro with the two starting points (latest release and latest
  * commit, each with its date) and let the user choose which template snapshot to
- * scaffold from. Returns the giget ref (release tag or commit SHA), or undefined
+ * scaffold from. Returns the template ref (release tag or commit SHA), or undefined
  * to use the default branch (when metadata is unavailable).
  */
 async function promptTemplateRef(theme: object, context: object): Promise<string | undefined> {
