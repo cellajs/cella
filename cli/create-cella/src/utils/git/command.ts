@@ -1,75 +1,58 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execFileAsync = promisify(execFile);
+import fs from 'node:fs';
+import git from 'isomorphic-git';
 
 /**
- * Executes a Git command in a specific repository path and returns the trimmed stdout.
- * Uses execFile for safety (no shell injection) aligned with sync package pattern.
- *
- * @param args - The Git command arguments to execute (e.g., ['status'], ['checkout', 'branch-name']).
- * @param repoPath - The path to the Git repository.
- * @param options - Optional settings for command execution.
- * @returns The stdout of the Git command, trimmed of leading and trailing whitespace.
+ * Git helpers backed by isomorphic-git (pure JS) instead of shelling out to the
+ * `git` binary. This keeps `create-cella` free of `child_process` (no shell access)
+ * and removes any dependency on the user's global git config — the initial commit
+ * uses an explicit author, so scaffolding never fails with "Author identity unknown".
  */
-export async function runGitCommand(
-  args: string[],
-  repoPath: string,
-  options: { skipEditor?: boolean; maxBuffer?: number } = {},
-): Promise<string> {
-  const gitArgs = repoPath ? ['-C', repoPath, ...args] : args;
 
-  const env = {
-    ...process.env,
-    ...(options.skipEditor ? { GIT_EDITOR: 'true' } : {}),
-  };
-
-  // Default to 10MB buffer for typical outputs
-  const maxBuffer = options.maxBuffer ?? 10 * 1024 * 1024;
-
-  const { stdout } = await execFileAsync('git', gitArgs, { env, maxBuffer });
-
-  return stdout.trim();
-}
+/** Author used for the scaffold's initial commit (users re-author their own commits later). */
+const INITIAL_AUTHOR = { name: 'cella', email: 'info@cellajs.com' } as const;
 
 /**
  * Initializes a new Git repository in the specified directory.
  */
-export async function gitInit(repoPath: string): Promise<string> {
-  return runGitCommand(['init'], repoPath);
+export async function gitInit(repoPath: string): Promise<void> {
+  await git.init({ fs, dir: repoPath, defaultBranch: 'main' });
 }
 
 /**
- * Stages all files in the repository.
+ * Stages all files in the repository (respects `.gitignore`).
  */
-export async function gitAddAll(repoPath: string): Promise<string> {
-  return runGitCommand(['add', '.'], repoPath);
+export async function gitAddAll(repoPath: string): Promise<void> {
+  await git.add({ fs, dir: repoPath, filepath: '.' });
 }
 
 /**
- * Creates a commit with the specified message.
+ * Creates a commit with the specified message and returns the commit SHA.
  */
 export async function gitCommit(repoPath: string, message: string): Promise<string> {
-  return runGitCommand(['commit', '--quiet', '--no-verify', '-m', message], repoPath);
+  return git.commit({ fs, dir: repoPath, message, author: INITIAL_AUTHOR });
 }
 
 /**
- * Gets the URL of a remote.
+ * Gets the URL of a remote. Throws when the remote does not exist (mirrors
+ * `git remote get-url` failing) so callers can detect a missing remote.
  */
 export async function gitRemoteGetUrl(repoPath: string, remoteName: string): Promise<string> {
-  return runGitCommand(['remote', 'get-url', remoteName], repoPath);
+  const remotes = await git.listRemotes({ fs, dir: repoPath });
+  const match = remotes.find((r) => r.remote === remoteName);
+  if (!match) throw new Error(`No such remote '${remoteName}'`);
+  return match.url;
 }
 
 /**
  * Adds a new remote.
  */
-export async function gitRemoteAdd(repoPath: string, remoteName: string, remoteUrl: string): Promise<string> {
-  return runGitCommand(['remote', 'add', remoteName, remoteUrl], repoPath);
+export async function gitRemoteAdd(repoPath: string, remoteName: string, remoteUrl: string): Promise<void> {
+  await git.addRemote({ fs, dir: repoPath, remote: remoteName, url: remoteUrl });
 }
 
 /**
  * Removes a remote.
  */
-export async function gitRemoteRemove(repoPath: string, remoteName: string): Promise<string> {
-  return runGitCommand(['remote', 'remove', remoteName], repoPath);
+export async function gitRemoteRemove(repoPath: string, remoteName: string): Promise<void> {
+  await git.deleteRemote({ fs, dir: repoPath, remote: remoteName });
 }

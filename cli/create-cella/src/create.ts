@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -10,6 +9,7 @@ import { TEMPLATE_URL } from '#/constants';
 import { type CreateOptions, confirmChoice, showSuccess } from '#/modules/cli';
 import { cleanTemplate } from '#/utils/clean-template';
 import { gitAddAll, gitCommit, gitInit } from '#/utils/git';
+import { listTemplateFiles } from '#/utils/list-template-files';
 import { createProgress, pauseSpinner, resumeSpinner } from '#/utils/progress';
 import { generate, install } from '#/utils/run-package-manager-command';
 import { optionalModuleFolders, scanOptionalModules } from '#/utils/scan-optional-modules';
@@ -67,32 +67,13 @@ export async function create({
       }
 
       // Copy only what git would track (respects .gitignore: no build output, no local .env secrets).
-      // Falls back to a plain recursive copy when the template isn't a git repo.
-      let tracked: string[] = [];
-      try {
-        tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
-          cwd: sourcePath,
-        })
-          .toString()
-          .split('\0')
-          .filter(Boolean);
-      } catch {
-        // not a git repo - fall through to recursive copy
-      }
-
-      if (tracked.length > 0) {
-        for (const rel of tracked) {
-          const src = join(sourcePath, rel);
-          if (!existsSync(src)) continue; // tracked but deleted in the working tree
-          const dest = join(targetFolder, rel);
-          await mkdir(dirname(dest), { recursive: true });
-          await cp(src, dest);
-        }
-      } else {
-        await cp(sourcePath, targetFolder, {
-          recursive: true,
-          filter: (src) => !src.includes('node_modules') && !src.includes('.git'),
-        });
+      const tracked = await listTemplateFiles(sourcePath);
+      for (const rel of tracked) {
+        const src = join(sourcePath, rel);
+        if (!existsSync(src)) continue; // listed but deleted in the working tree
+        const dest = join(targetFolder, rel);
+        await mkdir(dirname(dest), { recursive: true });
+        await cp(src, dest);
       }
     } else {
       // Pin to the chosen ref (release tag or commit SHA) when provided.
