@@ -22,7 +22,7 @@ import {
 import { select } from '@inquirer/prompts';
 import type { FileStatus, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { loadConfig } from '../utils/config';
+import { DEFAULT_BRANCH, loadConfig } from '../utils/config';
 import {
   createSpinner,
   DIVIDER,
@@ -301,17 +301,15 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   // configured branch, so contributions reflect the branch you're working on.
   const baseRef = await getCurrentBranch(config.forkPath);
 
-  // Warn when not on the regular working branch. The comparison is a 3-way
-  // analysis against merge-base(baseRef, fork), so a long-lived feature branch
-  // has an older merge-base than '<workingBranch>' and may surface extra
-  // 'diverged' files that would show clean from the working branch.
-  const workingBranch = config.settings.workingBranch ?? 'main';
-  if (baseRef !== workingBranch) {
+  // Warn when not on cella's base branch. The comparison is a 3-way analysis against
+  // merge-base(baseRef, fork), so a long-lived feature branch has an older merge-base
+  // than 'main' and may surface extra 'diverged' files that would show clean from main.
+  if (baseRef !== DEFAULT_BRANCH) {
     console.info(
-      `${warningMark} ${pc.yellow(`not on working branch '${workingBranch}'`)} ${pc.dim(`comparing forks against '${baseRef}'`)}`,
+      `${warningMark} ${pc.yellow(`not on base branch '${DEFAULT_BRANCH}'`)} ${pc.dim(`comparing forks against '${baseRef}'`)}`,
     );
     console.info(
-      `  ${pc.dim(`older merge-base may show extra 'diverged' files; switch to '${workingBranch}' for the cleanest result`)}`,
+      `  ${pc.dim(`older merge-base may show extra 'diverged' files; switch to '${DEFAULT_BRANCH}' for the cleanest result`)}`,
     );
     console.info('');
   }

@@ -44,9 +44,5 @@ export function validateForkPath(fork: ForkConfig, basePath: string, requireConf
 export function printNoForksHint(action: string): void {
   console.info(pc.yellow('no forks configured in cella.config.ts'));
   console.info(pc.dim(action));
-  console.info(
-    pc.dim(
-      `  forks: [{ name: 'my-app', localPath: '../my-app', pullBranch: 'development', pushBranch: 'development' }]`,
-    ),
-  );
+  console.info(pc.dim(`  forks: [{ name: 'my-app', localPath: '../my-app', pullBranch: 'development' }]`));
 }

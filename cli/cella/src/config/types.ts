@@ -42,36 +42,27 @@ export interface SyncSettings {
   /**
    * How to track upstream cella. Defaults to 'release'.
    * - 'release' (default): sync to a published cella release tag (`v*`). Stable and
-   *   reviewable — each bump maps to a changelog. Uses the latest release unless
-   *   `upstreamTag` pins a specific one.
+   *   reviewable — each bump maps to a changelog. Uses the latest release.
    * - 'branch': follow the bleeding-edge tip of `upstreamBranch`. For cella
    *   maintainers and forks doing active development on top of unreleased changes.
    */
   upstreamTrack?: 'release' | 'branch';
 
   /**
-   * Pin to a specific cella release tag (e.g. 'v0.5.0') instead of the latest.
-   * Only used when `upstreamTrack` is 'release' (the default). Bump via PR after
-   * reviewing the release's changelog — analogous to a lockfile entry for the
-   * upstream template, but human-readable and tied to semver.
-   */
-  upstreamTag?: string;
-
-  /** Git remote name for upstream (default: 'cella-upstream') */
-  upstreamRemoteName?: string;
-
-  /**
    * Fork branch that must be checked out to receive upstream syncs (preflight
-   * guardrail). This is a fork-side branch, unrelated to cella's branching.
-   * Defaults to 'main'.
+   * guardrail + auto-create). Defaults to 'cella-sync'.
    *
-   * With release-please, `main` is squash-merge-only with linear history, so you
-   * cannot commit a sync directly onto it. Point this at a dedicated long-lived
-   * integration branch (e.g. 'cella-sync'): run `pnpm cella sync` there, then open
-   * a PR into `main` and squash-merge it with a conventional commit
-   * (`chore: sync upstream cella <tag>`). See info/RELEASES.md.
+   * Under release-please, a fork's `main` is squash-merge-only with linear history, so a
+   * sync merge cannot be committed directly onto it. `pnpm cella sync` runs on this
+   * dedicated long-lived integration branch (auto-created from your current branch on
+   * first run), then you open a PR into `main` and squash-merge it with a conventional
+   * commit (`chore: sync upstream cella <tag>`). See info/RELEASES.md.
+   *
+   * This is the single source of truth for a fork's sync branch: when cella (upstream)
+   * pushes to this fork via the forks service, it reads this value from the fork's own
+   * config.
    */
-  workingBranch?: string;
+  syncBranch?: string;
 
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
@@ -115,7 +106,7 @@ export interface SyncSettings {
  *
  * Cella is the upstream/source-of-truth. For each fork it can:
  * - pull contributions FROM the fork's `pullBranch` (contributions service)
- * - sync changes INTO the fork's `pushBranch` (forks service)
+ * - sync changes INTO the fork's own `settings.syncBranch` (forks service)
  */
 export interface ForkConfig {
   /** Display name for the fork (also used as the contrib/<name> branch slug) */
@@ -132,8 +123,6 @@ export interface ForkConfig {
   remoteUrl?: string;
   /** Fork branch that cella pulls contributions from (contributions service) */
   pullBranch: string;
-  /** Fork branch that cella syncs changes into (forks service) */
-  pushBranch: string;
 }
 
 /**
@@ -198,9 +187,7 @@ export const cellaConfigSchema = z
         upstreamUrl: z.string().min(1),
         upstreamBranch: z.string().min(1).optional(),
         upstreamTrack: z.enum(['release', 'branch']).optional(),
-        upstreamTag: z.string().optional(),
-        upstreamRemoteName: z.string().optional(),
-        workingBranch: z.string().min(1).optional(),
+        syncBranch: z.string().min(1).optional(),
         packageJsonSync: z
           .array(
             z.enum([
@@ -236,7 +223,6 @@ export const cellaConfigSchema = z
             localPath: z.string().min(1),
             remoteUrl: z.string().optional(),
             pullBranch: z.string().min(1),
-            pushBranch: z.string().min(1),
           })
           .strict(),
       )

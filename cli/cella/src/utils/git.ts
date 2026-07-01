@@ -74,6 +74,21 @@ export async function getCurrentBranch(cwd: string): Promise<string> {
 }
 
 /**
+ * Check if a local branch exists.
+ */
+export async function localBranchExists(cwd: string, branch: string): Promise<boolean> {
+  const out = await git(['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], cwd, { ignoreErrors: true });
+  return out.trim().length > 0;
+}
+
+/**
+ * Create and check out a new branch from the current HEAD.
+ */
+export async function createBranch(cwd: string, branch: string): Promise<void> {
+  await git(['switch', '-c', branch], cwd);
+}
+
+/**
  * Check if a remote exists.
  */
 async function remoteExists(cwd: string, remoteName: string): Promise<boolean> {
@@ -144,21 +159,6 @@ export async function resolveLatestReleaseTag(
     if (/^v\d/.test(tag)) return { tag, ref };
   }
   return null;
-}
-
-/**
- * Resolve a pinned upstream release tag to its remote-scoped ref, verifying the
- * tag exists locally after a tag fetch.
- */
-export async function resolvePinnedReleaseTag(cwd: string, remoteName: string, tag: string): Promise<string> {
-  const ref = `refs/${remoteName}/tags/${tag}`;
-  const verified = await git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], cwd, { ignoreErrors: true });
-  if (!verified) {
-    throw new Error(
-      `upstreamTag '${tag}' not found in '${remoteName}' releases. Check the tag name (e.g. 'v0.5.0') or that upstream publishes release tags.`,
-    );
-  }
-  return ref;
 }
 
 /**
@@ -306,6 +306,16 @@ export async function getFileChangeInfo(
 export async function isClean(cwd: string): Promise<boolean> {
   const status = await git(['status', '--porcelain'], cwd);
   return !status;
+}
+
+/**
+ * Throw if the working tree has uncommitted changes.
+ * `subject` labels the repo in the error (e.g. 'working directory', 'fork').
+ */
+export async function assertClean(cwd: string, subject = 'working directory'): Promise<void> {
+  if (!(await isClean(cwd))) {
+    throw new Error(`${subject} has uncommitted changes. please commit or stash before syncing.`);
+  }
 }
 
 /**

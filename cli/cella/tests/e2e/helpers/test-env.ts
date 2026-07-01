@@ -188,7 +188,6 @@ export function buildRuntimeConfig(
     ignored?: string[];
     mergeStrategy?: 'merge' | 'squash';
     track?: 'release' | 'branch';
-    tag?: string;
     trackOverride?: 'release' | 'branch';
   } = {},
 ): RuntimeConfig {
@@ -198,7 +197,6 @@ export function buildRuntimeConfig(
     ignored = [],
     mergeStrategy = 'squash',
     track = 'branch',
-    tag,
     trackOverride,
   } = options;
 
@@ -207,8 +205,6 @@ export function buildRuntimeConfig(
       upstreamUrl: env.upstreamPath,
       upstreamBranch: 'main',
       upstreamTrack: track,
-      upstreamTag: tag,
-      workingBranch: 'main',
       mergeStrategy,
     },
     overrides: {

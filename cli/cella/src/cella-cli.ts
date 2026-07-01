@@ -19,9 +19,9 @@ import { runStats } from './services/stats';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
 import pc from './utils/colors';
-import { loadConfig } from './utils/config';
+import { loadConfig, resolveSyncBranch } from './utils/config';
 import { warningMark } from './utils/display';
-import { getCurrentBranch, isClean } from './utils/git';
+import { assertClean, createBranch, getCurrentBranch, localBranchExists } from './utils/git';
 
 /**
  * Determine the fork path.
@@ -57,7 +57,7 @@ function getForkPath(): string {
  */
 async function preflight(
   forkPath: string,
-  workingBranch: string,
+  syncBranch: string,
   options: { skipCleanCheck?: boolean; warnOnBranch?: boolean } = {},
 ): Promise<void> {
   // Check we're in a git repository
@@ -65,23 +65,28 @@ async function preflight(
     throw new Error(`not a git repository: ${forkPath}`);
   }
 
-  // Check we're on the correct branch
-  const currentBranch = await getCurrentBranch(forkPath);
-  if (currentBranch !== workingBranch) {
-    if (options.warnOnBranch) {
-      console.warn(
-        `${warningMark} not on branch '${workingBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
-      );
-    } else {
-      throw new Error(`must be on branch '${workingBranch}' to sync. currently on '${currentBranch}'.`);
-    }
+  // Check for uncommitted changes (skip for analyze/dry-run mode). Done before any
+  // branch switch so auto-create only ever happens on a clean tree.
+  if (!options.skipCleanCheck) {
+    await assertClean(forkPath);
   }
 
-  // Check for uncommitted changes (skip for analyze/dry-run mode)
-  if (!options.skipCleanCheck) {
-    const clean = await isClean(forkPath);
-    if (!clean) {
-      throw new Error('working directory has uncommitted changes. please commit or stash before syncing.');
+  // Check we're on the sync branch
+  const currentBranch = await getCurrentBranch(forkPath);
+  if (currentBranch !== syncBranch) {
+    if (options.warnOnBranch) {
+      console.warn(
+        `${warningMark} not on branch '${syncBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
+      );
+    } else if (!(await localBranchExists(forkPath, syncBranch))) {
+      // First run: create the integration branch from the current branch so the sync
+      // lands off `main` (which is squash-merge-only under release-please).
+      await createBranch(forkPath, syncBranch);
+      console.info(pc.green(`created and switched to sync branch '${syncBranch}' (from '${currentBranch}')`));
+    } else {
+      throw new Error(
+        `must be on branch '${syncBranch}' to sync. currently on '${currentBranch}'. run: git switch ${syncBranch}`,
+      );
     }
   }
 }
@@ -106,7 +111,7 @@ async function main(): Promise<void> {
     // Run preflight checks (except for audit/forks/contributions/stats which don't need clean working dir)
     if (!['audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze';
-      await preflight(forkPath, userConfig.settings.workingBranch ?? 'main', {
+      await preflight(forkPath, resolveSyncBranch(userConfig.settings), {
         skipCleanCheck: isReadOnly,
         warnOnBranch: isReadOnly,
       });

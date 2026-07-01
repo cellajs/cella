@@ -5,15 +5,30 @@
  * Selecting a fork immediately runs sync (+ packages if enabled), then returns to selection.
  */
 
-import { basename, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import process from 'node:process';
 import { Separator, select } from '@inquirer/prompts';
 import type { ForkConfig, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
-import { loadConfig, resolveUpstream } from '../utils/config';
+import { DEFAULT_SYNC_BRANCH, loadConfig, resolveSyncBranch, resolveUpstream } from '../utils/config';
 import { warningMark } from '../utils/display';
-import { getCommitInfo, getCurrentBranch, getStoredSyncRef, git, isClean } from '../utils/git';
+import { assertClean, getCommitInfo, getCurrentBranch, getStoredSyncRef, git } from '../utils/git';
 import { printNoForksHint, validateForkPath } from './fork-utils';
+
+/**
+ * Resolve the branch a fork receives syncs on.
+ *
+ * The fork's own `cella.config.ts` (`settings.syncBranch`) is the source of truth.
+ * Falls back to the default sync branch when the fork config can't be read.
+ */
+async function resolveForkBranch(forkPath: string): Promise<string> {
+  try {
+    const forkConfig = await loadConfig(forkPath);
+    return resolveSyncBranch(forkConfig.settings);
+  } catch {
+    return DEFAULT_SYNC_BRANCH;
+  }
+}
 
 /**
  * Run preflight checks for the selected fork.
@@ -21,13 +36,12 @@ import { printNoForksHint, validateForkPath } from './fork-utils';
 async function preflightFork(forkPath: string, forkBranch: string): Promise<void> {
   const currentBranch = await getCurrentBranch(forkPath);
   if (currentBranch !== forkBranch) {
-    throw new Error(`fork must be on branch '${forkBranch}'. currently on '${currentBranch}'.`);
+    throw new Error(
+      `fork must be on branch '${forkBranch}'. currently on '${currentBranch}'. run: git switch ${forkBranch}`,
+    );
   }
 
-  const clean = await isClean(forkPath);
-  if (!clean) {
-    throw new Error('fork has uncommitted changes. please commit or stash before syncing.');
-  }
+  await assertClean(forkPath, 'fork');
 }
 
 /** Status info gathered from a fork repository */
@@ -106,7 +120,8 @@ async function buildForkChoices(
     validated
       .filter((v) => v.valid)
       .map(async (v) => {
-        const status = await gatherForkStatus(v.resolvedPath, v.fork.pushBranch);
+        const expectedBranch = await resolveForkBranch(v.resolvedPath);
+        const status = await gatherForkStatus(v.resolvedPath, expectedBranch);
         return { path: v.fork.localPath, status };
       }),
   );
@@ -130,16 +145,19 @@ async function buildForkChoices(
 /**
  * Sync a single fork: preflight, sync, and optionally run packages.
  */
-async function syncFork(config: RuntimeConfig, forkPath: string, forkName: string, pushBranch: string): Promise<void> {
+async function syncFork(config: RuntimeConfig, fork: ForkConfig, forkPath: string): Promise<void> {
   console.info();
-  console.info(pc.cyan(`syncing to ${forkName}...`));
+  console.info(pc.cyan(`syncing to ${fork.name}...`));
   console.info(pc.dim(`path: ${forkPath}`));
   console.info();
 
   const forkConfig = await loadConfig(forkPath);
 
+  // The fork's own config is the source of truth for its sync branch.
+  const forkBranch = resolveSyncBranch(forkConfig.settings);
+
   // Preflight
-  await preflightFork(forkPath, pushBranch);
+  await preflightFork(forkPath, forkBranch);
 
   // Build runtime config for the fork
   const { branchRef } = resolveUpstream(forkConfig.settings);
@@ -194,7 +212,7 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
       return;
     }
     const resolvedPath = resolve(config.forkPath, match.localPath);
-    await syncFork(config, resolvedPath, match.name, match.pushBranch);
+    await syncFork(config, match, resolvedPath);
     return;
   }
 
@@ -216,10 +234,12 @@ export async function runForks(config: RuntimeConfig): Promise<void> {
 
     const resolvedForkPath = resolve(config.forkPath, selectedPath);
     const selectedFork = forks.find((f) => f.localPath === selectedPath);
-    const forkName = selectedFork?.name ?? basename(resolvedForkPath);
-    const pushBranch = selectedFork?.pushBranch ?? config.settings.workingBranch ?? 'main';
+    if (!selectedFork) {
+      console.error(pc.red(`fork '${selectedPath}' not found in config`));
+      continue;
+    }
 
-    await syncFork(config, resolvedForkPath, forkName, pushBranch);
+    await syncFork(config, selectedFork, resolvedForkPath);
 
     console.info();
   }

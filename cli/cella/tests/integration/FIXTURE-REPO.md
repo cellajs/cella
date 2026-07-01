@@ -43,7 +43,6 @@ export default defineConfig({
   settings: {
     upstreamUrl: 'git@github.com:cellajs/sync-test-fixture.git',
     upstreamBranch: 'main',
-    workingBranch: 'main',
   },
   overrides: {
     pinned: ['custom-file.ts', 'cella.config.ts'],
@@ -77,7 +76,6 @@ export default {
   settings: {
     upstreamUrl: 'git@github.com:cellajs/sync-test-fixture.git',
     upstreamBranch: 'main',
-    workingBranch: 'main',
   },
   overrides: {
     pinned: ['custom-file.ts', 'cella.config.ts'],

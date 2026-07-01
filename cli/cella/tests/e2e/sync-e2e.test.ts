@@ -688,33 +688,6 @@ describe('sync e2e', () => {
       expect(fileExists(env.forkPath, 'unreleased.ts')).toBe(false);
     });
 
-    it('should sync to a pinned release tag instead of the latest', async () => {
-      makeCommit(env.upstreamPath, {
-        files: { 'v1.ts': '// v1\nexport const a = 1;\n' },
-        message: 'feat: v1 change',
-      });
-      tagUpstream(env.upstreamPath, 'v0.1.0');
-      makeCommit(env.upstreamPath, {
-        files: { 'v2.ts': '// v2\nexport const b = 1;\n' },
-        message: 'feat: v2 change',
-      });
-      tagUpstream(env.upstreamPath, 'v0.2.0');
-
-      fetchUpstream(env.forkPath);
-      const config = buildRuntimeConfig(env, {
-        service: 'sync',
-        track: 'release',
-        tag: 'v0.1.0',
-        mergeStrategy: 'merge',
-      });
-      const result = await runSync(config);
-
-      expect(result.success).toBe(true);
-      expect(result.upstreamTag).toBe('v0.1.0');
-      expect(fileExists(env.forkPath, 'v1.ts')).toBe(true);
-      expect(fileExists(env.forkPath, 'v2.ts')).toBe(false);
-    });
-
     it('should error when release tracking finds no release tags', async () => {
       makeCommit(env.upstreamPath, {
         files: { 'untagged.ts': '// untagged\nexport const x = 1;\n' },

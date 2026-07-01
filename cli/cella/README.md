@@ -74,13 +74,25 @@ The sync CLI tracks upstream cella one of two ways, set via `settings.upstreamTr
 | `release` (default) | Sync to a published cella release tag (`v*`). Stable and reviewable — each bump maps to a changelog. | Most forks |
 | `branch` | Follow the bleeding-edge tip of `settings.upstreamBranch`. | cella maintainers, active development on unreleased changes |
 
-With `release`, the **latest** release is used unless you pin a specific one with `settings.upstreamTag` (e.g. `'v0.5.0'`), which you bump via PR after reviewing the release's changelog — like a human-readable lockfile entry.
+With `release`, the **latest** published release tag is always used.
 
 For a one-off run that ignores the configured mode, pass `--track`:
 
 ```bash
 pnpm cella sync --track branch   # follow the tip once, without editing config
 ```
+
+## Sync branch
+
+Syncs land on a dedicated integration branch (`settings.syncBranch`, default `cella-sync`),
+not `main`. Under release-please a fork's `main` is squash-merge-only with linear history,
+so a sync merge can't be committed onto it directly. On first run the CLI auto-creates the
+sync branch from your current branch; you then open a PR into `main` and squash-merge it
+(`chore: sync upstream cella <tag>`). See [../../info/RELEASES.md](../../info/RELEASES.md).
+
+When cella (upstream) pushes to a fork via the **forks** service, it reads that fork's own
+`settings.syncBranch` as the source of truth — there's no per-fork branch to configure on
+the cella side.
 
 ## Merge Strategy
 
@@ -200,7 +212,6 @@ forks: [
     name: 'raak',
     localPath: '../raak',     // Path to the local fork clone
     pullBranch: 'main',       // Branch cella pulls contributions FROM
-    pushBranch: 'main',       // Branch cella syncs changes INTO (forks service)
   },
 ],
 ```

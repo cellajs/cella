@@ -13,35 +13,45 @@ import { resolveAppModuleFolders } from './module-territory';
 /** Default git remote name used to point at the upstream repository. */
 export const DEFAULT_UPSTREAM_REMOTE = 'cella-upstream';
 
-/** Default branch used when a config omits `upstreamBranch` / `workingBranch`. */
+/** Default branch used when a config omits `upstreamBranch`; also cella's fork-compare base. */
 export const DEFAULT_BRANCH = 'main';
+
+/**
+ * Default branch a fork receives upstream syncs on.
+ *
+ * Under release-please, a fork's `main` is squash-merge-only with linear history, so a
+ * sync merge cannot be committed onto it directly. The sync lands on this dedicated
+ * long-lived integration branch, from which you open a PR into `main`.
+ */
+export const DEFAULT_SYNC_BRANCH = 'cella-sync';
+
+/**
+ * Resolve the branch a fork must be on to receive upstream syncs.
+ *
+ * The fork's own `cella.config.ts` (`settings.syncBranch`) is the source of truth.
+ */
+export function resolveSyncBranch(settings: SyncSettings): string {
+  return settings.syncBranch ?? DEFAULT_SYNC_BRANCH;
+}
 
 /**
  * Resolve the upstream tracking plan from sync settings.
  *
  * Single source of truth shared by the CLI entry point and the merge engine.
- * The concrete ref for release tracking (latest/pinned tag) can only be resolved
- * after fetching, so this returns a plan; the merge engine turns it into a ref.
+ * The concrete ref for release tracking (latest tag) can only be resolved after
+ * fetching, so this returns a plan; the merge engine turns it into a ref.
  *
- * - `remoteName`: the local git remote pointing at `upstreamUrl` (defaulted).
- * - `track`: 'release' (default) syncs to a release tag; 'branch' follows the tip.
- * - `branch`: upstream branch (defaulted to 'main'), used for branch tracking + links.
- * - `tag`: an explicit release tag to pin to (release track only).
- * - `branchRef`: `<remoteName>/<branch>` — the branch-track ref and static fallback.
+ * - `track`: 'release' (default) syncs to the latest release tag; 'branch' follows the tip.
+ * - `branchRef`: `<DEFAULT_UPSTREAM_REMOTE>/<branch>` — the branch-track ref and static fallback.
  */
 export function resolveUpstream(settings: SyncSettings): {
-  remoteName: string;
   track: 'release' | 'branch';
-  branch: string;
-  tag?: string;
   branchRef: string;
 } {
-  const remoteName = settings.upstreamRemoteName || DEFAULT_UPSTREAM_REMOTE;
   const track = settings.upstreamTrack ?? 'release';
   const branch = settings.upstreamBranch ?? DEFAULT_BRANCH;
-  const tag = settings.upstreamTag;
-  const branchRef = `${remoteName}/${branch}`;
-  return { remoteName, track, branch, tag, branchRef };
+  const branchRef = `${DEFAULT_UPSTREAM_REMOTE}/${branch}`;
+  return { track, branchRef };
 }
 
 /**
