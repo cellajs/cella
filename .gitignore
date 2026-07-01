@@ -56,6 +56,7 @@ bench/.baselines/
 scripts/migration/
 
 # Other
+session.sh
 .netlify
 .wrangler
 frontend/stats.html
