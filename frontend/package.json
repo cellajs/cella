@@ -24,7 +24,8 @@
     "stop": "tsx vite/stop-vite.ts",
     "generate:sdk": "pnpm --filter sdk generate:sdk",
     "storybook": "tsx .storybook/start-storybook.ts",
-    "build:storybook": "storybook build"
+    "build:storybook": "storybook build",
+    "preview:storybook": "storybook build --preview-only"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^2.0.1",

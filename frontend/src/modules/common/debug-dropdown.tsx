@@ -22,7 +22,6 @@ interface DebugDropdownProps {
 
 const debugOptions: DebugItem[] = [
   { id: 'drizzle-studio', icon: '💦', url: 'https://local.drizzle.studio/' },
-  { id: 'docs', icon: '🧑‍💻', url: '/docs' },
   { id: 'storybook', icon: '📖', url: 'http://localhost:6006/' },
   { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
   { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },

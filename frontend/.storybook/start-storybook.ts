@@ -14,6 +14,25 @@ import { appConfig } from '../../shared';
 
 const port = Number(new URL(appConfig.frontendUrl).port) + 3006;
 
+/**
+ * Ensure the Playwright browsers used by the Storybook Vitest addon are present.
+ * Playwright pins an exact browser build; when the `playwright` dependency is
+ * bumped it expects a newer build than what's cached on disk, which makes the
+ * addon fail with "Executable doesn't exist". `playwright install` is idempotent
+ * and does nothing (no download) when the correct build is already installed, so
+ * this is cheap on every run. We do this here instead of a `postinstall` hook to
+ * avoid tripping supply-chain scanners and to survive `pnpm install --ignore-scripts`.
+ */
+function ensurePlaywrightBrowsers() {
+  try {
+    execSync('playwright install chromium chromium-headless-shell', { stdio: 'inherit' });
+  } catch {
+    console.warn('[storybook] Could not verify Playwright browsers. Run `pnpm --filter frontend exec playwright install` if browser tests fail.');
+  }
+}
+
+ensurePlaywrightBrowsers();
+
 function isPortInUse(p: number, host = '127.0.0.1'): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();

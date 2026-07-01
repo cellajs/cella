@@ -29,7 +29,8 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 
 /** Visually-hidden sentinel that redirects focus back into the trap */
 function FocusGuard({ onFocus }: { onFocus: (e: React.FocusEvent) => void }) {
-  return <span onFocus={onFocus} aria-hidden data-focus-guard="" style={guardStyle} />;
+  // biome-ignore lint/a11y/noNoninteractiveTabindex: sentinel guard must be tabbable so a Tab/Shift+Tab off the trap edge lands here and can be redirected back inside
+  return <span tabIndex={0} onFocus={onFocus} aria-hidden data-focus-guard="" style={guardStyle} />;
 }
 
 export function FocusTrap({

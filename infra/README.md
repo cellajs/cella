@@ -338,7 +338,7 @@ Only `production` is supported out of the box, but additional stacks (e.g. `stag
 
 ```text
 infra/
-├── agent/                  cella-boot-agent source + its container image (Dockerfile), `docker run` at VM first boot
+├── agent/                  cella-boot-agent source + its container image
 ├── caddy/                  Frontend Caddy proxy image and config
 ├── cli/                    Infra CLI
 ├── compose/                Build and generate compose.gen.yml

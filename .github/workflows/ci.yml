@@ -3,11 +3,7 @@ name: CI
 # Deny-by-default: each job opts in to the scopes it actually needs.
 permissions: {}
 
-# CI runs on pull requests only. We squash-merge with linear history and require
-# these checks to pass before merge, so the PR run already validates the exact
-# tree that lands on main — a post-merge `push: main` run would just re-test
-# identical content. Release automation is unaffected: release-please
-# (release.yml) and the deploy (deploy.yml) have their own triggers.
+# CI runs on pull requests only.
 on:
   pull_request:
     branches: [main]
@@ -18,10 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lint the PR title as a Conventional Commit. We squash-merge, so the PR title
-  # becomes the commit message on main that release-please reads. This is the
-  # real enforcement point (the local lefthook hook can be bypassed with
-  # --no-verify).
+  # Lint the PR title as a Conventional Commit.
   pr-title:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -113,9 +106,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: cd frontend && pnpm exec playwright install
-
       - name: Generate OpenAPI spec
         run: pnpm sdk
 
@@ -128,6 +118,42 @@ jobs:
         run: pnpm test:full
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+  # Storybook component tests (Vitest browser mode via Playwright).
+  storybook-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Create .env files
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          cp ./frontend/.env.example ./frontend/.env
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate SDK (types imported by stories)
+        run: pnpm sdk
+
+      - name: Install Playwright browser
+        run: pnpm --filter frontend exec playwright install --with-deps chromium chromium-headless-shell
+
+      - name: Run Storybook tests
+        run: pnpm --filter frontend exec vitest run --project=storybook
 
   # Tests for cella CLI
   test-cella-cli:
@@ -159,16 +185,13 @@ jobs:
       - name: Run sync analysis (dry-run)
         # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
         # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
-        # --track branch keeps this a stable tool smoke-test independent of whether
-        # upstream has cut a release yet (release resolution is covered by e2e tests).
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           pnpm cella analyze --track branch
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
-  # so offline clients wipe stale persisted query data. Temporary escape hatch
-  # until the lens system lands. See info/SCHEMA_EVOLUTION.md.
+  # so offline clients wipe stale persisted query data. 
   schema-bust-gate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
