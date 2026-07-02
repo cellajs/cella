@@ -29,6 +29,7 @@ import {
   getCurrentBranch,
   getShortSha,
   getUpstreamStatus,
+  isClean,
   mergeInProgress,
   pullFastForward,
   pushBranch,
@@ -287,9 +288,13 @@ async function resumeSyncMerge(config: RuntimeConfig, branch: string): Promise<v
     return;
   }
 
-  // Reconcile deps + regenerate derived files, then stage everything so the merge commit is
-  // complete (package.json key-sync and the merge both touch package.json, leaving the lockfile
-  // and generated files stale/unstaged).
+  // Stage everything up front (resolved conflicts + any manual edits) before running tooling that
+  // may fail: `finalizeWorkspace` returns early on a failing `pnpm check`, so staging afterwards
+  // would never happen and the edits would never be recorded in the merge.
+  await stageAll(forkPath);
+
+  // Reconcile deps + regenerate derived files (package.json key-sync and the merge both touch
+  // package.json, leaving the lockfile and generated files stale/unstaged).
   if (!finalizeWorkspace(forkPath)) {
     console.info();
     console.info(
@@ -298,9 +303,10 @@ async function resumeSyncMerge(config: RuntimeConfig, branch: string): Promise<v
     return;
   }
 
-  // Read the merged upstream sha before squashing (commitSquash clears MERGE_HEAD), then commit
-  // the staged delta as a single-parent commit so the PR shows one clean commit instead of the
-  // whole upstream history (the merge's upstream ancestry isn't shared on the remote).
+  // Read the merged upstream sha before squashing (commitSquash clears MERGE_HEAD), re-stage (the
+  // install/check step may have touched files), then commit the staged delta as a single-parent
+  // commit so the PR shows one clean commit instead of the whole upstream history (the merge's
+  // upstream ancestry isn't shared on the remote).
   const upstreamSha = await getShortSha(forkPath, 'MERGE_HEAD').catch(() => '');
   await stageAll(forkPath);
   const message = upstreamSha ? `chore: sync upstream cella ${upstreamSha}` : 'chore: sync upstream cella';
@@ -334,6 +340,18 @@ export async function runSyncCommand(config: RuntimeConfig): Promise<void> {
 
   // On a sync branch with the merge already committed: ship it (push + PR + back to trunk).
   if (onSyncBranch) {
+    // shipSyncBranch only pushes HEAD, so any edits made after the squash commit would be silently
+    // left out of the pushed branch/PR. Refuse to ship over a dirty tree and make them commit.
+    if (!(await isClean(forkPath))) {
+      console.info();
+      console.info(
+        pc.yellow(
+          `sync branch '${currentBranch}' has uncommitted changes that would not be shipped.\n` +
+            'commit them (`git commit --amend --no-edit` or a new commit), then re-run `pnpm cella sync`.',
+        ),
+      );
+      return;
+    }
     console.info();
     console.info(pc.green(`sync branch '${currentBranch}' is already committed.`));
     await shipSyncBranch(config, currentBranch);
