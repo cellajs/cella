@@ -10,6 +10,7 @@ import { mkdir, readdir, rmdir, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
+import { readManifestBase } from './manifest';
 
 const execFileAsync = promisify(execFile);
 
@@ -86,6 +87,64 @@ export async function localBranchExists(cwd: string, branch: string): Promise<bo
  */
 export async function createBranch(cwd: string, branch: string): Promise<void> {
   await git(['switch', '-c', branch], cwd);
+}
+
+/**
+ * Switch to an existing branch.
+ */
+export async function switchBranch(cwd: string, branch: string): Promise<void> {
+  await git(['switch', branch], cwd);
+}
+
+/**
+ * Create and check out a new branch from a specific start point (branch/ref).
+ */
+export async function createBranchFrom(cwd: string, branch: string, startPoint: string): Promise<void> {
+  await git(['switch', '-c', branch, startPoint], cwd);
+}
+
+/**
+ * Delete a local branch (force). No-op if it doesn't exist.
+ */
+export async function deleteBranch(cwd: string, branch: string): Promise<void> {
+  await git(['branch', '-D', branch], cwd, { ignoreErrors: true });
+}
+
+/**
+ * Fast-forward the current branch from its upstream tracking branch.
+ * Best-effort: ignores errors (e.g. no origin, offline, or nothing to pull).
+ */
+export async function pullFastForward(cwd: string): Promise<void> {
+  await git(['pull', '--ff-only'], cwd, { ignoreErrors: true, skipEditor: true });
+}
+
+/**
+ * Push a branch to a remote, setting upstream tracking.
+ */
+export async function pushBranch(cwd: string, remote: string, branch: string): Promise<void> {
+  await git(['push', '-u', remote, branch], cwd);
+}
+
+/**
+ * Commit staged changes without opening an editor (keeps the default/merge message).
+ * With a merge in progress this produces a two-parent merge commit.
+ */
+export async function commitNoEdit(cwd: string): Promise<void> {
+  await git(['commit', '--no-edit'], cwd, { skipEditor: true });
+}
+
+/**
+ * Whether a merge is currently in progress (MERGE_HEAD present).
+ */
+export function mergeInProgress(cwd: string): boolean {
+  return existsSync(join(cwd, '.git', 'MERGE_HEAD'));
+}
+
+/**
+ * Get the abbreviated (short) SHA for a ref.
+ */
+export async function getShortSha(cwd: string, ref: string): Promise<string> {
+  return git(['rev-parse', '--short', ref], cwd);
 }
 
 /**
@@ -357,10 +416,9 @@ export async function listWorktrees(cwd: string): Promise<string[]> {
 export async function merge(
   cwd: string,
   ref: string,
-  options: { noCommit?: boolean; noEdit?: boolean; squash?: boolean } = {},
+  options: { noCommit?: boolean; noEdit?: boolean } = {},
 ): Promise<{ success: boolean; conflicts: string[] }> {
   const args = ['merge', '--no-ff', ref];
-  if (options.squash) args.push('--squash');
   if (options.noCommit) args.push('--no-commit');
   if (options.noEdit) args.push('--no-edit');
 
@@ -650,6 +708,11 @@ export async function storeLastSyncRef(cwd: string, upstreamHash: string): Promi
   }
 }
 
+/** Stage a single path (git add). Best-effort — never throws. */
+export async function stagePath(cwd: string, path: string): Promise<void> {
+  await git(['add', '--', path], cwd, { ignoreErrors: true });
+}
+
 /**
  * Get the stored last-sync upstream ref.
  * Returns null if no previous sync has been recorded.
@@ -666,6 +729,76 @@ export async function getStoredSyncRef(cwd: string): Promise<string | null> {
 export async function getStoredSyncHead(cwd: string): Promise<string | null> {
   const ref = await git(['rev-parse', 'refs/cella/last-sync-head'], cwd, { ignoreErrors: true });
   return ref || null;
+}
+
+/**
+ * Check whether a commit object is present in the local object store.
+ */
+async function commitObjectExists(cwd: string, sha: string): Promise<boolean> {
+  try {
+    await git(['cat-file', '-e', `${sha}^{commit}`], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get the root (parentless) commit of a ref's history. A create-cella scaffold has a
+ * single rootless "Initial commit". Returns null when no root is found.
+ */
+async function getRootCommit(cwd: string, ref: string): Promise<string | null> {
+  const out = await git(['rev-list', '--max-parents=0', ref], cwd, { ignoreErrors: true });
+  const roots = out.split('\n').filter(Boolean);
+  return roots.length > 0 ? roots[roots.length - 1] : null;
+}
+
+/**
+ * Ensure a native git merge-base exists between the fork and upstream.
+ *
+ * A create-cella scaffold — or a fork whose upstream squashed its history — has unrelated
+ * histories, so `git merge-base` finds nothing and every sync fails at the very first step.
+ * This bootstraps ancestry non-destructively:
+ *   1. If a native merge-base already exists, do nothing (the common case).
+ *   2. Otherwise resolve the logical base commit: the stored `refs/cella/last-sync` ref, else
+ *      the `cella.manifest.json` provenance committed by the last sync (or create-cella scaffold).
+ *   3. Graft the fork's root commit onto that base with `git replace --graft`, so every native
+ *      git operation (merge-base and the 3-way merge itself) sees correct ancestry. The replace
+ *      ref is local-only and never pushed, so the fork's own published history stays clean.
+ *
+ * Throws an actionable error when no base can be determined or the recorded base is missing.
+ */
+export async function ensureSyncBase(cwd: string, headRef: string, upstreamRef: string): Promise<void> {
+  // Native ancestry already present — nothing to bootstrap.
+  const nativeBase = await git(['merge-base', headRef, upstreamRef], cwd, { ignoreErrors: true });
+  if (nativeBase) return;
+
+  const baseSha = (await getStoredSyncRef(cwd)) ?? (await readManifestBase(cwd));
+  if (!baseSha) {
+    throw new Error(
+      `no common ancestor between the fork and '${upstreamRef}', and no sync base recorded.\n\n` +
+        'This fork has unrelated history with upstream — typical for a create-cella scaffold, or after\n' +
+        'upstream squashed its history. Seed the base with the upstream commit the fork was created from,\n' +
+        'then re-run sync:\n\n' +
+        '  git update-ref refs/cella/last-sync <upstream-sha>\n',
+    );
+  }
+
+  if (!(await commitObjectExists(cwd, baseSha))) {
+    throw new Error(
+      `recorded sync base ${baseSha.slice(0, 12)} is not present after fetching '${upstreamRef}'.\n` +
+        'It may belong to a different upstream, or have been dropped by an upstream history rewrite.',
+    );
+  }
+
+  const root = await getRootCommit(cwd, headRef);
+  if (!root) throw new Error("could not determine the fork's root commit to bootstrap sync ancestry");
+
+  // Graft the fork root onto the base (idempotent via -f) so native git sees the ancestry.
+  await git(['replace', '-f', '--graft', root, baseSha], cwd);
+
+  // Record the base as the last-sync ref so future runs and the squash strategy stay consistent.
+  await git(['update-ref', 'refs/cella/last-sync', baseSha], cwd);
 }
 
 /**
@@ -719,17 +852,4 @@ export async function getEffectiveMergeBase(
   }
 
   return { base: gitBase, isStale: false, storedRef };
-}
-
-/**
- * Remove .git/MERGE_HEAD to convert a pending merge into a regular commit.
- * Used by squash strategy to create single-parent commits while preserving
- * correct 3-way merge behavior internally.
- */
-export async function removeMergeHead(cwd: string): Promise<void> {
-  try {
-    await unlink(join(cwd, '.git', 'MERGE_HEAD'));
-  } catch {
-    // MERGE_HEAD doesn't exist - that's fine
-  }
 }

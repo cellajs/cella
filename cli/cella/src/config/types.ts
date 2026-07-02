@@ -22,9 +22,6 @@ export type PackageJsonSyncKey =
   | 'overrides'
   | 'pnpm';
 
-/** Merge strategy for syncing upstream changes */
-type MergeStrategy = 'merge' | 'squash';
-
 /**
  * Sync settings - all configurable options for the sync CLI.
  * Hover over each property for documentation.
@@ -61,28 +58,21 @@ export interface SyncSettings {
    * This is the single source of truth for a fork's sync branch: when cella (upstream)
    * pushes to this fork via the forks service, it reads this value from the fork's own
    * config.
+   *
+   * `pnpm cella release` also uses this value as the prefix for the ephemeral, uniquely
+   * named integration branch it cuts per cycle (e.g. `cella-sync/20260702-1430-c5a1970`).
    */
   syncBranch?: string;
 
+  /**
+   * Trunk branch that `pnpm cella release` cuts the ephemeral sync branch from and opens
+   * the squash-merge PR into. Defaults to 'main'. Cutting fresh from trunk each cycle keeps
+   * every PR limited to that cycle's upstream delta (no accumulation) and `main` linear.
+   */
+  releaseBase?: string;
+
   /** Which package.json keys to sync (default: ['dependencies', 'devDependencies']) */
   packageJsonSync?: PackageJsonSyncKey[];
-
-  /**
-   * Merge strategy for syncing upstream changes. Both use a real git 3-way merge
-   * internally and leave the result staged for you to commit (neither auto-commits).
-   * The difference is the ancestry of the commit you create:
-   * - 'squash' (default): drops `MERGE_HEAD` on a clean sync so your commit is
-   *   single-parent. Keeps linear history — the right choice under release-please,
-   *   where the sync PR is squash-merged into `main` anyway. Relies on the stored
-   *   `refs/cella/last-sync` ref for the next merge-base.
-   * - 'merge': keeps `MERGE_HEAD` so your commit is a two-parent merge commit with
-   *   full upstream ancestry (native git merge-base). Useful on a dedicated
-   *   integration branch where you want true ancestry; not compatible with a
-   *   linear-history `main`.
-   * Conflicts always fall back to a merge commit (with IDE 3-way support) regardless
-   * of strategy.
-   */
-  mergeStrategy?: MergeStrategy;
 
   /**
    * Automatically run packages sync after the sync service completes.
@@ -188,6 +178,7 @@ export const cellaConfigSchema = z
         upstreamBranch: z.string().min(1).optional(),
         upstreamTrack: z.enum(['release', 'branch']).optional(),
         syncBranch: z.string().min(1).optional(),
+        releaseBase: z.string().min(1).optional(),
         packageJsonSync: z
           .array(
             z.enum([
@@ -203,7 +194,6 @@ export const cellaConfigSchema = z
             ]),
           )
           .optional(),
-        mergeStrategy: z.enum(['merge', 'squash']).optional(),
         syncWithPackages: z.boolean().optional(),
         fileLinkMode: z.enum(['commit', 'file', 'local']).optional(),
       })
@@ -235,7 +225,7 @@ export const cellaConfigSchema = z
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'audit' | 'forks' | 'contributions' | 'stats';
+export type SyncService = 'analyze' | 'sync' | 'release' | 'audit' | 'forks' | 'contributions' | 'stats';
 
 /** Analyze output scope for interactive and machine-readable flows */
 export type AnalyzeScope = 'all' | 'risk' | 'protected';
@@ -300,6 +290,12 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Regenerate test coverage before showing the stats summary (stats service) */
   coverage?: boolean;
+
+  /** Push the ephemeral branch and open a PR (release service; default true, disable with --no-push) */
+  releasePush?: boolean;
+
+  /** Auto squash-merge the PR and clean up after a clean sync (release service; --merge) */
+  releaseAutoMerge?: boolean;
 }
 
 /** File status after analysis */

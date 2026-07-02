@@ -27,7 +27,6 @@ export default defineConfig({
       'infra/Pulumi.production.yaml',
       'infra/Pulumi.staging.yaml',
       'sdk/gen',
-      'sdk/src/.generate-sdk.lock',
       'shared/config',
       'backend/drizzle',
       'frontend/public/static/common',

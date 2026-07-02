@@ -14,7 +14,6 @@ function buildConfig(overrides: { pinned?: string[]; ignored?: string[] }): Cell
     settings: {
       upstreamUrl: 'test',
       upstreamBranch: 'main',
-      mergeStrategy: 'squash',
     },
     overrides: {
       pinned: overrides.pinned ?? [],
@@ -97,7 +96,6 @@ describe('overrides', () => {
         settings: {
           upstreamUrl: 'test',
           upstreamBranch: 'main',
-          mergeStrategy: 'squash',
         },
       };
       expect(isPinned('any/file.ts', config)).toBe(false);

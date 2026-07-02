@@ -29,6 +29,7 @@ pnpm cella contributions --fork raak --json
 |---------|-------------|
 | `analyze` | Dry run to see what would change on sync |
 | `sync` | Merge upstream changes into your app |
+| `release` | Sync upstream on a fresh branch and open a squash-merge PR into `main` |
 | `audit` | Check for outdated packages & vulnerabilities |
 | `stats` | Count files by category and workspace package |
 | `forks` * | Sync downstream to local fork repositories |
@@ -48,6 +49,7 @@ Service-specific help is available via `pnpm cella <service> --help`.
 |---------|----------------|
 | analyze | `--log`, `--list`, `--json`, `--scope <all\|risk\|protected>`, `--diff <path>`, `--open-diff <path>` |
 | sync | `--log`, `--hard`, `--unpinned`, `--track <release\|branch>` |
+| release | `--merge`, `--no-push`, `--track <release\|branch>` |
 | audit | `--list`, `--force`, `--check-overrides` |
 | forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
 | contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
@@ -93,6 +95,30 @@ sync branch from your current branch; you then open a PR into `main` and squash-
 When cella (upstream) pushes to a fork via the **forks** service, it reads that fork's own
 `settings.syncBranch` as the source of truth — there's no per-fork branch to configure on
 the cella side.
+
+### `cella release` (recommended cycle)
+
+`pnpm cella release` automates the full cycle on a **throwaway, uniquely named** branch cut
+fresh from the trunk (`settings.releaseBase`, default `main`):
+
+```
+main ──▶ cella-sync/<stamp>-<sha> ──(sync merge + commit)──▶ push ──▶ PR ──(squash)──▶ main
+```
+
+Cutting a fresh branch each cycle keeps every PR scoped to just that sync's upstream delta —
+no accumulation of previously squash-merged commits — while `main` stays linear. Upstream
+ancestry for the merge-base is carried by `refs/cella/last-sync` (and the committed
+`cella.manifest.json` for fresh clones), so the ephemeral branch is safe to delete after each cycle.
+
+```bash
+pnpm cella release            # sync on a fresh branch, push, open a PR (you squash-merge)
+pnpm cella release --merge    # also auto squash-merge and realign trunk (needs gh + perms)
+pnpm cella release --no-push   # leave the branch local; push + open the PR yourself
+```
+
+On conflicts it stops after staging so you resolve in the IDE, then finish with
+`git commit --no-edit` + push + `gh pr create`. Only `main` needs branch protection;
+ephemeral `cella-sync/*` branches are auto-deleted on merge.
 
 ## Merge Strategy
 
@@ -170,30 +196,21 @@ packageJsonSync: ['dependencies', 'devDependencies', 'scripts']
 
 This allows your fork to have extra dependencies or scripts without them being removed on each sync.
 
-## Merge Strategy
+## Merge strategy
 
-The `mergeStrategy` setting controls the ancestry of the commit a sync produces:
+A sync always uses a real git 3-way merge and leaves the result **staged for you to
+commit** (it never auto-commits). The commit you create keeps `MERGE_HEAD`, so it is a
+two-parent merge commit with full upstream ancestry (native git merge-base). Conflicts
+are surfaced with IDE 3-way support and also resolve to a merge commit.
 
-```typescript
-mergeStrategy: 'squash' // default
-```
+This is why sync runs on a dedicated long-lived integration branch (`cella-sync`): the
+merge commits bake durable upstream ancestry into the branch, so `git merge-base` keeps
+working across syncs without re-bootstrapping. `refs/cella/last-sync` is still tracked as
+a fallback for when upstream squashes its own history.
 
-Both strategies use a real git 3-way merge and leave the result **staged for you to commit** (neither auto-commits). They differ only in the commit you then create:
-
-| Strategy | Clean-sync commit | History | IDE 3-way on conflicts |
-|----------|-------------------|---------|------------------------|
-| `squash` (default) | single-parent | linear | yes (falls back to a merge commit) |
-| `merge` | two-parent merge commit, full upstream ancestry | non-linear | yes |
-
-**Use `squash` (default)** for:
-- Linear history — required when you squash-merge the sync PR into a release-please `main`
-- One clean commit per sync (`refs/cella/last-sync` tracks the merge-base)
-
-**Use `merge`** for:
-- A dedicated long-lived integration branch where you want native git upstream ancestry
-- Not compatible with a linear-history `main`
-
-> Under release-please, sync on a dedicated branch (e.g. `cella-sync`) and squash-merge the PR into `main` with a conventional commit. See [info/RELEASES.md](../../info/RELEASES.md).
+> Under release-please, sync on the dedicated `cella-sync` branch, then open a PR and
+> **squash-merge** it into `main` with a conventional commit — keeping `main` linear while
+> `cella-sync` retains true ancestry. See [info/RELEASES.md](../../info/RELEASES.md).
 
 
 ## Contributions (pull from forks)
