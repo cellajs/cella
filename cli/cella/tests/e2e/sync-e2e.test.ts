@@ -231,9 +231,9 @@ describe('sync e2e', () => {
         message: 'chore: add temp file',
       });
 
-      // Sync to get the file (use regular merge, not squash, for proper merge-base tracking)
+      // Sync to get the file
       fetchUpstream(env.forkPath);
-      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      let config = buildRuntimeConfig(env, { service: 'sync' });
       await runSync(config);
 
       expect(fileExists(env.forkPath, 'temp.ts')).toBe(true);
@@ -262,7 +262,7 @@ describe('sync e2e', () => {
       deleteFileAndCommit(env.upstreamPath, 'temp.ts', 'chore: remove temp file');
 
       fetchUpstream(env.forkPath);
-      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      config = buildRuntimeConfig(env, { service: 'sync' });
       const result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -279,7 +279,7 @@ describe('sync e2e', () => {
 
       // Sync to get the file
       fetchUpstream(env.forkPath);
-      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      let config = buildRuntimeConfig(env, { service: 'sync' });
       await runSync(config);
 
       expect(fileExists(env.forkPath, 'old-dir/moved-file.ts')).toBe(true);
@@ -304,7 +304,7 @@ describe('sync e2e', () => {
       );
 
       fetchUpstream(env.forkPath);
-      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      config = buildRuntimeConfig(env, { service: 'sync' });
       const result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -319,7 +319,7 @@ describe('sync e2e', () => {
       expect(renamedFile?.renamedFrom).toBe('old-dir/moved-file.ts');
     });
 
-    it('should handle file renames with squash strategy', async () => {
+    it('should handle file renames with squashed (single-parent) history', async () => {
       const fs = await import('node:fs');
       const { getFileChanges, getMergeBase, git } = await import('../../src/utils/git');
       const { execSync } = await import('node:child_process');
@@ -332,12 +332,16 @@ describe('sync e2e', () => {
 
       // Sync to get the file
       fetchUpstream(env.forkPath);
-      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      let config = buildRuntimeConfig(env, { service: 'sync' });
       await runSync(config);
 
       expect(fileExists(env.forkPath, 'src/old-name.ts')).toBe(true);
 
-      // Complete the squash commit
+      // Simulate a squashed (single-parent) history: drop MERGE_HEAD before committing so
+      // git's native merge-base becomes stale and recovery relies on refs/cella/last-sync.
+      fs.rmSync(`${env.forkPath}/.git/MERGE_HEAD`, { force: true });
+
+      // Complete the (single-parent) commit
       try {
         execSync('git add -A && git commit --allow-empty -m "sync: squash upstream"', {
           cwd: env.forkPath,
@@ -369,7 +373,7 @@ describe('sync e2e', () => {
       };
       fs.writeFileSync('/tmp/cella-test-debug1.json', JSON.stringify(debugInfo1, null, 2));
 
-      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      config = buildRuntimeConfig(env, { service: 'sync' });
       const result = await runSync(config);
 
       // Debug: Check what status was detected for the files
@@ -482,7 +486,7 @@ describe('sync e2e', () => {
 
       // Sync shared.ts into the fork and finalize so it becomes part of the merge base.
       fetchUpstream(env.forkPath);
-      await runSync(buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' }));
+      await runSync(buildRuntimeConfig(env, { service: 'sync' }));
       try {
         execSync('git add -A && git commit --allow-empty -m "sync: shared"', { cwd: env.forkPath });
       } catch {
@@ -550,7 +554,7 @@ describe('sync e2e', () => {
       });
 
       fetchUpstream(env.forkPath);
-      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      let config = buildRuntimeConfig(env, { service: 'sync' });
       let result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -573,7 +577,7 @@ describe('sync e2e', () => {
       });
 
       fetchUpstream(env.forkPath);
-      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'merge' });
+      config = buildRuntimeConfig(env, { service: 'sync' });
       result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -607,6 +611,7 @@ describe('sync e2e', () => {
 
     it('should recover from stale merge-base after squash sync', async () => {
       const { execSync } = await import('node:child_process');
+      const fs = await import('node:fs');
 
       // ── Cycle 1: squash sync ──
       makeCommit(env.upstreamPath, {
@@ -615,12 +620,16 @@ describe('sync e2e', () => {
       });
 
       fetchUpstream(env.forkPath);
-      let config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      let config = buildRuntimeConfig(env, { service: 'sync' });
       let result = await runSync(config);
 
       expect(result.success).toBe(true);
 
-      // Complete squash commit (MERGE_HEAD was removed, so this is single-parent)
+      // Simulate a squashed (single-parent) history: drop MERGE_HEAD before committing so
+      // git's native merge-base becomes stale and recovery relies on refs/cella/last-sync.
+      fs.rmSync(`${env.forkPath}/.git/MERGE_HEAD`, { force: true });
+
+      // Complete the single-parent commit
       try {
         execSync('git add -A && git commit --allow-empty -m "sync: squash cycle 1"', {
           cwd: env.forkPath,
@@ -651,7 +660,7 @@ describe('sync e2e', () => {
       expect(effectiveBase.storedRef).not.toBeNull();
 
       // Sync should work correctly despite squash history
-      config = buildRuntimeConfig(env, { service: 'sync', mergeStrategy: 'squash' });
+      config = buildRuntimeConfig(env, { service: 'sync' });
       result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -678,7 +687,7 @@ describe('sync e2e', () => {
       });
 
       fetchUpstream(env.forkPath);
-      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release', mergeStrategy: 'merge' });
+      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release' });
       const result = await runSync(config);
 
       expect(result.success).toBe(true);
@@ -695,7 +704,7 @@ describe('sync e2e', () => {
       });
 
       fetchUpstream(env.forkPath);
-      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release', mergeStrategy: 'merge' });
+      const config = buildRuntimeConfig(env, { service: 'sync', track: 'release' });
 
       await expect(runSync(config)).rejects.toThrow(/no upstream releases/);
     });
@@ -712,7 +721,6 @@ describe('sync e2e', () => {
         service: 'sync',
         track: 'release',
         trackOverride: 'branch',
-        mergeStrategy: 'merge',
       });
       const result = await runSync(config);
 

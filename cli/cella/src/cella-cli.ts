@@ -15,6 +15,7 @@ import { runAudit } from './services/audit';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
 import { runPackages } from './services/packages';
+import { runRelease } from './services/release';
 import { runStats } from './services/stats';
 import { runSync } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
@@ -71,9 +72,10 @@ async function preflight(
     await assertClean(forkPath);
   }
 
-  // Check we're on the sync branch
+  // Check we're on the sync branch (or an ephemeral child of it, e.g. cella-sync/<stamp>)
   const currentBranch = await getCurrentBranch(forkPath);
-  if (currentBranch !== syncBranch) {
+  const onSyncBranch = currentBranch === syncBranch || currentBranch.startsWith(`${syncBranch}/`);
+  if (!onSyncBranch) {
     if (options.warnOnBranch) {
       console.warn(
         `${warningMark} not on branch '${syncBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
@@ -108,8 +110,8 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for audit/forks/contributions/stats which don't need clean working dir)
-    if (!['audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
+    // Run preflight checks (except for services that manage their own branch/clean state)
+    if (!['audit', 'forks', 'contributions', 'stats', 'release'].includes(config.service)) {
       const isReadOnly = config.service === 'analyze';
       await preflight(forkPath, resolveSyncBranch(userConfig.settings), {
         skipCleanCheck: isReadOnly,
@@ -134,6 +136,10 @@ async function main(): Promise<void> {
         }
         break;
       }
+
+      case 'release':
+        await runRelease(config);
+        break;
 
       case 'audit':
         await runAudit(config, { force: config.force, checkOverrides: config.checkOverrides });

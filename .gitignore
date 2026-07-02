@@ -43,9 +43,8 @@ my-cella-app
 backend/openapi.cache.json
 backend/openapi.manifest.json
 frontend/vite/temp-api-gen-*
-frontend/vite/.generate-client.lock
 sdk/src/temp-api-gen-*
-sdk/src/.generate-client.lock
+sdk/src/.generate-sdk.lock
 sdk/src/.spec-hash
 *.cache.json
 

@@ -186,26 +186,17 @@ export function buildRuntimeConfig(
     service?: SyncService;
     pinned?: string[];
     ignored?: string[];
-    mergeStrategy?: 'merge' | 'squash';
     track?: 'release' | 'branch';
     trackOverride?: 'release' | 'branch';
   } = {},
 ): RuntimeConfig {
-  const {
-    service = 'analyze',
-    pinned = [],
-    ignored = [],
-    mergeStrategy = 'squash',
-    track = 'branch',
-    trackOverride,
-  } = options;
+  const { service = 'analyze', pinned = [], ignored = [], track = 'branch', trackOverride } = options;
 
   const config: CellaCliConfig = {
     settings: {
       upstreamUrl: env.upstreamPath,
       upstreamBranch: 'main',
       upstreamTrack: track,
-      mergeStrategy,
     },
     overrides: {
       pinned,
