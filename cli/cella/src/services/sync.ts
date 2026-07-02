@@ -28,6 +28,7 @@ import {
   getConflictedFiles,
   getCurrentBranch,
   getShortSha,
+  getUpstreamStatus,
   mergeInProgress,
   pullFastForward,
   pushBranch,
@@ -48,6 +49,42 @@ interface TemporarySyncBranch {
 }
 
 /**
+ * Make sure the trunk is current with its remote before a sync cycle cuts a branch from it.
+ *
+ * Fetches the trunk's upstream and reacts to how local compares:
+ * - behind (fast-forwardable): fast-forward it so the branch is cut from the latest trunk.
+ * - diverged (local commits the remote lacks *and* vice versa): abort with guidance, since
+ *   syncing onto a stale/diverged trunk produces a PR against an out-of-date base and avoidable
+ *   conflicts.
+ * - ahead-only / up to date / no upstream (local-only repo): fine, just note it and continue.
+ */
+async function ensureBaseUpToDate(forkPath: string, base: string): Promise<void> {
+  const { upstream, ahead, behind } = await getUpstreamStatus(forkPath);
+
+  if (!upstream) {
+    console.info(pc.dim(`'${base}' has no upstream — skipping the up-to-date check.`));
+    return;
+  }
+
+  if (ahead > 0 && behind > 0) {
+    throw new Error(
+      `'${base}' has diverged from '${upstream}' (${ahead} ahead, ${behind} behind).\n` +
+        `Reconcile '${base}' with '${upstream}' first (e.g. rebase or reset it), then re-run sync.`,
+    );
+  }
+
+  if (behind > 0) {
+    console.info(pc.dim(`fast-forwarding '${base}' to '${upstream}' (${behind} behind)...`));
+    await pullFastForward(forkPath);
+    return;
+  }
+
+  if (ahead > 0) {
+    console.info(pc.dim(`'${base}' is ${ahead} commit(s) ahead of '${upstream}' (unpushed) — continuing.`));
+  }
+}
+
+/**
  * Cut a fresh temporary sync branch from the trunk.
  *
  * Switches to `releaseBase`, fast-forwards it, then creates `<syncBranchPrefix>/<stamp>` so the
@@ -60,7 +97,7 @@ async function setupTemporarySyncBranch(config: RuntimeConfig): Promise<Temporar
 
   console.info(pc.dim(`switching to '${base}' and updating...`));
   await switchBranch(forkPath, base);
-  await pullFastForward(forkPath);
+  await ensureBaseUpToDate(forkPath, base);
 
   const temporaryBranch = buildTemporarySyncBranch(settings);
 

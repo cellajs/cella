@@ -118,6 +118,37 @@ export async function pullFastForward(cwd: string): Promise<void> {
   await git(['pull', '--ff-only'], cwd, { ignoreErrors: true, skipEditor: true });
 }
 
+/** How the current branch compares to its upstream tracking branch. */
+export interface UpstreamStatus {
+  /** Upstream tracking ref (e.g. `origin/main`), or null when none is configured. */
+  upstream: string | null;
+  /** Commits the local branch has that its upstream doesn't. */
+  ahead: number;
+  /** Commits the upstream has that the local branch doesn't. */
+  behind: number;
+}
+
+/**
+ * Fetch the current branch's upstream, then report how far ahead/behind local is.
+ *
+ * The fetch is best-effort so an offline/no-remote run still returns whatever is already local.
+ * Returns `upstream: null` when the branch has no tracking branch configured (local-only repo).
+ */
+export async function getUpstreamStatus(cwd: string): Promise<UpstreamStatus> {
+  const upstream = await git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], cwd, {
+    ignoreErrors: true,
+  });
+  if (!upstream) return { upstream: null, ahead: 0, behind: 0 };
+
+  // Refresh the remote-tracking ref so the comparison reflects the remote's latest state.
+  const remote = upstream.split('/')[0];
+  await git(['fetch', remote], cwd, { ignoreErrors: true, skipEditor: true });
+
+  const counts = await git(['rev-list', '--left-right', '--count', `HEAD...${upstream}`], cwd, { ignoreErrors: true });
+  const [ahead, behind] = counts.split(/\s+/).map((n) => Number.parseInt(n, 10) || 0);
+  return { upstream, ahead: ahead ?? 0, behind: behind ?? 0 };
+}
+
 /**
  * Push a branch to a remote, setting upstream tracking.
  */
