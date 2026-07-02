@@ -70,10 +70,11 @@ describe('compute module source invariants', () => {
     expect(source).not.toMatch(/image:\s*'ubuntu_noble'/)
   })
 
-  it('derives the VM service list from the canonical registry (enabledServices)', () => {
-    // compute filters the canonical registry by feature flag rather than
-    // re-declaring the service set, so LB / image-wait / compose wiring can't drift.
-    expect(source).toMatch(/enabledServices\(appConfig\.services\)/)
+  it('derives the VM service list from the canonical registry (deployedServices)', () => {
+    // compute filters the canonical registry by feature flag (and folds
+    // co-hosted workers into the host under singleVM) rather than re-declaring
+    // the service set, so LB / image-wait / compose wiring can't drift.
+    expect(source).toMatch(/deployedServices\(appConfig\.services, appConfig\.singleVM\)/)
   })
 
   it('binds compose env from the registry placeholder scan + bindings + envPool (no per-service env maps)', () => {
@@ -155,7 +156,7 @@ describe('compute module source invariants', () => {
     // Under immutable releases every change replaces the VM anyway, so the
     // manifest (metadata only) is baked into the new generation's cloud-init
     // rather than published as a deploy-bucket object the VM fetches.
-    expect(source).toMatch(/buildRuntimeSecretsManifest\(service\.name\)/)
+    expect(source).toMatch(/buildRuntimeSecretsManifest\(service\.secretConsumers\)/)
     expect(source).not.toMatch(/new scaleway\.object\.Item\(`runtime-manifest-/)
     expect(source).not.toMatch(/runtimeSecretsManifestKey/)
     expect(source).not.toContain('COOKIE_SECRET=')

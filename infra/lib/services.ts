@@ -62,6 +62,39 @@ export function enabledServices(serviceConfig: Record<string, AppServiceEndpoint
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false)
 }
 
+/**
+ * Services that get their OWN dedicated VM for a given app. In the normal
+ * split-VM deploy this is every enabled service. Under `singleVM` the enabled
+ * `coHosted` workers (cdc/yjs/ai) are dropped — they run in-process on the host
+ * (backend) VM instead — so only the host and any non-co-hosted service (the
+ * SPA proxy) keep their own VM. The load balancer still derives its routes from
+ * `enabledServices`, so a co-hosted service keeps its public endpoint; only its
+ * backend target changes (see `serviceGenerationIps`).
+ */
+export function deployedServices(
+  serviceConfig: Record<string, AppServiceEndpointConfig>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  const enabled = enabledServices(serviceConfig)
+  if (!singleVM) return enabled
+  return enabled.filter((s) => !s.coHosted)
+}
+
+/**
+ * Enabled co-hosted worker services for an app under singleVM (empty when
+ * singleVM is off) — the workers folded into the host process, used to union
+ * their runtime secrets onto the host VM and to gate the host's replacement
+ * strategy (a co-hosted `exclusive` worker forces the host to cut over
+ * exclusively).
+ */
+export function coHostedServices(
+  serviceConfig: Record<string, AppServiceEndpointConfig>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  if (!singleVM) return []
+  return enabledServices(serviceConfig).filter((s) => s.coHosted)
+}
+
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
 export interface ServiceEndpoint {
   slug: ServiceName

@@ -93,6 +93,8 @@ export interface ServiceMeta {
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
   dockerfile?: string
+  /** Under `appConfig.singleVM`, this service runs in-process on the host VM (backend) */
+  coHosted?: boolean
   /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
   instanceType: ServiceInstanceType
   /**
@@ -204,6 +206,15 @@ export interface AppServiceConfig {
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
   dockerfile?: string
+  /**
+   * Under `appConfig.singleVM`, co-host this service in-process on the host
+   * (backend) VM instead of giving it its own VM — the cost escape hatch for
+   * zero/low-traffic apps. Mirrors the in-process worker startup in
+   * `backend/src/main.api.ts`; set on the backend's worker subsystems (cdc, yjs,
+   * ai), never on the host service or the SPA proxy. Ignored when `singleVM` is
+   * false.
+   */
+  coHosted?: boolean
   /**
    * Per-service VM size — a fork resizes its fleet by editing this. Required:
    * every service declares its own box (there is no fleet-wide fallback). A

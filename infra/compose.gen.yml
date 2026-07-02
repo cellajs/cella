@@ -9,6 +9,9 @@ services:
     restart: unless-stopped
     ports:
       - '4000:4000'
+      - '4001:4001'
+      - '4002:4002'
+      - '4003:4003'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -88,6 +91,7 @@ services:
       drainSeconds: 0
       instanceType: DEV1-S
       dockerfile: cdc/Dockerfile
+      coHosted: true
       bindings:
         API_WS_URL: ws://@{backend.privateIp}:@{backend.port}/internal/cdc
   yjs:
@@ -124,6 +128,7 @@ services:
       lbRoute: host
       lbWebsockets: true
       dockerfile: yjs/Dockerfile
+      coHosted: true
   ai:
     image: ${REGISTRY}/backend:${AI_TAG:-latest}
     profiles: [ai]
@@ -161,6 +166,7 @@ services:
       drainPolicy: requests
       lbRoute: host
       reusesImageOf: backend
+      coHosted: true
       bindings:
         AI_API_URL: '@{self.url}'
   frontend:
