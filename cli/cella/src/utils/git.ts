@@ -126,11 +126,27 @@ export async function pushBranch(cwd: string, remote: string, branch: string): P
 }
 
 /**
- * Commit staged changes without opening an editor (keeps the default/merge message).
- * With a merge in progress this produces a two-parent merge commit.
+ * Commit the staged changes as a single-parent commit, discarding any in-progress merge state.
+ *
+ * A normal commit with `MERGE_HEAD` present records a two-parent merge commit. Because the fork
+ * doesn't share pushed ancestry with upstream (the local `git replace` graft that makes merges
+ * incremental is never pushed), such a merge commit makes the PR list the upstream branch's
+ * entire history. Removing the merge state first collapses the staged delta into one clean
+ * commit, so the PR shows a single commit with the incremental diff.
  */
-export async function commitNoEdit(cwd: string): Promise<void> {
-  await git(['commit', '--no-edit'], cwd, { skipEditor: true });
+export async function commitSquash(cwd: string, message: string): Promise<void> {
+  for (const file of ['MERGE_HEAD', 'MERGE_MSG', 'MERGE_MODE']) {
+    const path = join(cwd, '.git', file);
+    if (existsSync(path)) await unlink(path);
+  }
+  await git(['commit', '-m', message], cwd, { skipEditor: true });
+}
+
+/**
+ * Stage every change in the working tree (`git add -A`), including untracked and deleted files.
+ */
+export async function stageAll(cwd: string): Promise<void> {
+  await git(['add', '-A'], cwd);
 }
 
 /**
