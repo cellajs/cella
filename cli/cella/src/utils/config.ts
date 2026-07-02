@@ -19,13 +19,13 @@ export const DEFAULT_BRANCH = 'main';
 /**
  * Default branch a fork receives upstream syncs on via the **forks** (maintainer→fork)
  * service. This is a real, checked-out branch in the fork clone the maintainer pushes onto —
- * distinct from the ephemeral `cella/sync/*` branches the fork owner's own `cella sync` cuts.
+ * distinct from the temporary `cella/sync/*` branches the fork owner's own `cella sync` cuts.
  */
 export const DEFAULT_SYNC_BRANCH = 'cella-sync';
 
 /**
- * Default prefix for the ephemeral integration branches that `cella sync` cuts per run
- * (e.g. `cella/sync/20260702-1430-c5a1970`).
+ * Default prefix for the temporary integration branches that `cella sync` cuts per run
+ * (e.g. `cella/sync/20260702-1430`).
  *
  * The three-segment shape (`cella/sync/<stamp>`) means it can never collide with a real branch
  * named `cella` or `cella/sync`, and there is no long-lived `cella-sync` branch to conflict with
@@ -48,7 +48,7 @@ export function resolveSyncBranch(settings: SyncSettings): string {
 }
 
 /**
- * Resolve the prefix for the ephemeral sync branches cut by `cella sync`.
+ * Resolve the prefix for the temporary sync branches cut by `cella sync`.
  *
  * The fork's own `cella.config.ts` (`settings.syncBranchPrefix`) is the source of truth.
  */
@@ -57,30 +57,30 @@ function resolveSyncPrefix(settings: SyncSettings): string {
 }
 
 /**
- * Whether `branch` is one of the ephemeral integration branches `cella sync` cuts, i.e. it
+ * Whether `branch` is one of the temporary integration branches `cella sync` cuts, i.e. it
  * lives under the `<syncBranchPrefix>/` namespace (default `cella/sync/`).
  */
-export function isEphemeralSyncBranch(settings: SyncSettings, branch: string): boolean {
+export function isTemporarySyncBranch(settings: SyncSettings, branch: string): boolean {
   return branch.startsWith(`${resolveSyncPrefix(settings)}/`);
 }
 
 /**
- * Resolve the trunk branch `cella sync` cuts the ephemeral branch from and PRs into.
+ * Resolve the trunk branch `cella sync` cuts the temporary branch from and PRs into.
  */
 export function resolveReleaseBase(settings: SyncSettings): string {
   return settings.releaseBase ?? DEFAULT_RELEASE_BASE;
 }
 
 /**
- * Build a unique ephemeral integration branch name for a sync cycle, e.g.
- * `cella/sync/20260702-1430-c5a1970`. Cutting a fresh branch per cycle keeps each PR
+ * Build a unique temporary integration branch name for a sync cycle, e.g.
+ * `cella/sync/20260702-1430`. Cutting a fresh branch per cycle keeps each PR
  * scoped to that sync's upstream delta.
  */
-export function buildEphemeralSyncBranch(settings: SyncSettings, shortSha: string): string {
+export function buildTemporarySyncBranch(settings: SyncSettings): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-  return `${resolveSyncPrefix(settings)}/${stamp}-${shortSha}`;
+  return `${resolveSyncPrefix(settings)}/${stamp}`;
 }
 
 /**

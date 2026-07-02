@@ -621,23 +621,6 @@ export function printSyncComplete(result: MergeResult): void {
   console.info();
   console.info(`  ${updated} files updated, ${merged} auto-merged, ${conflicts} conflicts`);
 
-  if (conflicts > 0) {
-    console.info();
-    console.info(pc.dim('  resolve conflicts in your IDE, then commit the merge.'));
-  } else if (updated > 0) {
-    console.info();
-    console.info(pc.dim('  review staged changes and commit to finish the sync.'));
-  }
-
-  // Suggest a Conventional Commit message so the sync lands a changelog entry under
-  // release-please (a non-conventional message is rejected by the commit-msg hook).
-  if (conflicts > 0 || updated > 0) {
-    const ref = result.upstreamTag ?? result.upstreamCommit?.hash.slice(0, 7);
-    const suggested = `chore: sync upstream cella${ref ? ` ${ref}` : ''}`;
-    console.info();
-    console.info(pc.dim('  suggested commit message (conventional commits):'));
-    console.info(`    ${pc.cyan(`git commit -m "${suggested}"`)}`);
-  }
   console.info();
 }
 

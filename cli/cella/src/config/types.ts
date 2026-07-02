@@ -51,17 +51,17 @@ export interface SyncSettings {
    * cella maintainer pushes onto; it is the single source of truth read from the fork's own
    * config when cella pushes downstream.
    *
-   * Note: the fork owner's own `pnpm cella sync` does NOT use this branch — it cuts ephemeral
+   * Note: the fork owner's own `pnpm cella sync` does NOT use this branch — it cuts temporary
    * `syncBranchPrefix` branches from `releaseBase` instead.
    */
   syncBranch?: string;
 
   /**
-   * Prefix for the ephemeral integration branches that `pnpm cella sync` cuts per run.
+   * Prefix for the temporary integration branches that `pnpm cella sync` cuts per run.
    * Defaults to 'cella/sync'.
    *
    * Each run cuts a fresh, uniquely named branch from `releaseBase` (e.g.
-   * `cella/sync/20260702-1430-c5a1970`), lands the upstream merge there, and leaves it for you
+   * `cella/sync/20260702-1430`), lands the upstream merge there, and leaves it for you
    * to commit and open a PR into `releaseBase`. Cutting fresh each cycle keeps every PR scoped
    * to that cycle's upstream delta (no accumulation) and keeps `main` linear. The three-segment
    * shape means it never collides with git's ref namespacing (no long-lived `cella-sync`
@@ -70,7 +70,7 @@ export interface SyncSettings {
   syncBranchPrefix?: string;
 
   /**
-   * Trunk branch that `pnpm cella sync` cuts the ephemeral branch from and that you open the
+   * Trunk branch that `pnpm cella sync` cuts the temporary branch from and that you open the
    * squash-merge PR into. Defaults to 'main'. Cutting fresh from trunk each cycle keeps every
    * PR limited to that cycle's upstream delta (no accumulation) and `main` linear.
    */

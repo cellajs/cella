@@ -75,12 +75,12 @@ pnpm cella sync --track branch   # follow the tip once, without editing config
 ## Sync workflow
 
 `pnpm cella sync` never commits to `main` directly. Under release-please, `main` is
-squash-merge-only with linear history, so each run cuts a **fresh ephemeral branch** from the
+squash-merge-only with linear history, so each run cuts a **fresh temporary branch** from the
 trunk (`settings.releaseBase`, default `main`), named with `settings.syncBranchPrefix` (default
 `cella/sync`):
 
 ```
-main ──▶ cella/sync/<stamp>-<sha> ──(3-way merge)──▶ PR ──(squash)──▶ main
+main ──▶ cella/sync/<stamp> ──(3-way merge)──▶ PR ──(squash)──▶ main
 ```
 
 It runs a real git 3-way merge and leaves the result **staged** — it never auto-commits on the
@@ -107,8 +107,8 @@ mid-merge). If `pnpm check`, the push, or `gh` fails, it degrades gracefully —
 issue and printing the remaining manual steps:
 
 ```bash
-git push -u origin cella/sync/<stamp>-<sha>
-gh pr create --base main --head cella/sync/<stamp>-<sha> --fill
+git push -u origin cella/sync/<stamp>
+gh pr create --base main --head cella/sync/<stamp> --fill
 ```
 
 ## Sync rules
