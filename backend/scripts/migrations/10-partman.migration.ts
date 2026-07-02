@@ -289,8 +289,9 @@ async function run() {
 -- - activities: partitioned by created_at (weekly, 90-day retention)
 -- - seen_by: partitioned by created_at (weekly, 90-day retention)
 --
--- For environments without pg_partman: migration is skipped,
--- manual cleanup via db-maintenance.ts handles expired records.
+-- pg_partman is required to reap these tables. If it is not available the
+-- migration is skipped and the tables grow unbounded — local dev installs the
+-- extension via backend/db/Dockerfile; production managed Postgres has it enabled.
 -- =============================================================================
 
 -- First check: Skip entirely if extensions are not supported

@@ -1,5 +1,5 @@
 /**
- * Database maintenance CLI — token/session/activity cleanup.
+ * Database maintenance CLI — pg_partman partition maintenance.
  *
  * Thin wrapper around `runDbMaintenance` in `src/lib/db-maintenance.ts`. The same logic also
  * runs in-process on a daily schedule (see `scheduleDbMaintenance`), so this script is only

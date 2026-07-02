@@ -1,0 +1,1 @@
+DROP TABLE "seen_counts";

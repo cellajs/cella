@@ -1,15 +1,19 @@
 /**
- * Database maintenance: expired token/session/activity cleanup.
+ * Database maintenance: pg_partman partition maintenance.
  *
- * Two modes, chosen automatically:
- * 1. With pg_partman (production): runs partman.run_maintenance() to drop old partitions.
- * 2. Without pg_partman (dev / non-Neon): runs manual DELETE queries for expired data.
+ * Calls partman.run_maintenance() to create upcoming partitions and drop
+ * partitions past their retention window for the partitioned tables
+ * (sessions, tokens, unsubscribe_tokens, activities, seen_by).
  *
- * Exposed as a reusable function so it can be invoked from:
- * - the CLI script `scripts/db-maintenance.ts` (external scheduler), and
- * - the in-process scheduler (`scheduleDbMaintenance`) started on the migration-owning instance.
+ * pg_partman has no background worker configured, so run_maintenance() must be
+ * invoked periodically. It runs in-process via the daily scheduler
+ * (`scheduleDbMaintenance`) on the migration-owning instance.
  *
- * Both DELETE and partman.run_maintenance() are idempotent, so overlapping runs are harmless.
+ * run_maintenance() is idempotent, so overlapping runs are harmless.
+ *
+ * Requires the pg_partman extension (local dev installs it via backend/db/Dockerfile;
+ * production managed Postgres has it enabled). If it is missing, maintenance is
+ * skipped with a warning and the partitioned tables will grow unbounded.
  */
 import { sql } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
@@ -26,71 +30,20 @@ async function isPgPartmanAvailable(): Promise<boolean> {
   }
 }
 
-/** Run pg_partman maintenance for all configured partition sets (drops partitions past retention). */
-async function runPartmanMaintenance(log: (msg: string) => void): Promise<void> {
-  log('Running pg_partman maintenance...');
-  await db.execute(sql`SELECT partman.run_maintenance()`);
-  log('pg_partman maintenance completed');
-}
-
 /**
- * Manual cleanup for environments without pg_partman.
- * Deletes expired tokens and sessions based on their expiration/creation timestamps.
- */
-async function runManualCleanup(log: (msg: string) => void): Promise<void> {
-  log('Running manual cleanup (pg_partman not available)...');
-
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-  // Delete expired tokens (30-day buffer after expiration)
-  const tokensResult = await db.execute<{ count: string }>(
-    sql`DELETE FROM tokens WHERE expires_at < ${thirtyDaysAgo} RETURNING 1`,
-  );
-  log(`Deleted ${tokensResult.rowCount ?? 0} expired tokens`);
-
-  // Delete expired sessions (30-day buffer after expiration)
-  const sessionsResult = await db.execute<{ count: string }>(
-    sql`DELETE FROM sessions WHERE expires_at < ${thirtyDaysAgo} RETURNING 1`,
-  );
-  log(`Deleted ${sessionsResult.rowCount ?? 0} expired sessions`);
-
-  // Delete old unsubscribe tokens (90-day retention)
-  const unsubscribeResult = await db.execute<{ count: string }>(
-    sql`DELETE FROM unsubscribe_tokens WHERE created_at < ${ninetyDaysAgo} RETURNING 1`,
-  );
-  log(`Deleted ${unsubscribeResult.rowCount ?? 0} old unsubscribe tokens`);
-
-  // Delete old seen_by records (90-day retention)
-  const seenByResult = await db.execute<{ count: string }>(
-    sql`DELETE FROM seen_by WHERE created_at < ${ninetyDaysAgo} RETURNING 1`,
-  );
-  log(`Deleted ${seenByResult.rowCount ?? 0} old seen_by records`);
-
-  // Delete orphaned seen_counts where no recent seen_by references exist
-  const seenCountsResult = await db.execute<{ count: string }>(
-    sql`DELETE FROM seen_counts WHERE updated_at < ${ninetyDaysAgo} RETURNING 1`,
-  );
-  log(`Deleted ${seenCountsResult.rowCount ?? 0} old seen_counts records`);
-
-  log('Manual cleanup completed');
-}
-
-/**
- * Run a single database maintenance pass. Picks partman or manual cleanup automatically.
+ * Run a single pg_partman maintenance pass (creates upcoming partitions, drops expired ones).
  *
  * @param log - Optional log sink (defaults to console.info). Throws on failure; callers decide how to handle it.
  */
 export async function runDbMaintenance(log: (msg: string) => void = console.info): Promise<void> {
-  const hasPartman = await isPgPartmanAvailable();
-
-  if (hasPartman) {
-    log('pg_partman detected - using partition management');
-    await runPartmanMaintenance(log);
-  } else {
-    log('pg_partman not available - using manual cleanup');
-    await runManualCleanup(log);
+  if (!(await isPgPartmanAvailable())) {
+    log('pg_partman not installed - skipping maintenance (partitioned tables will not be reaped)');
+    return;
   }
+
+  log('Running pg_partman maintenance...');
+  await db.execute(sql`SELECT partman.run_maintenance()`);
+  log('pg_partman maintenance completed');
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
