@@ -52,6 +52,8 @@ export default defineServices({
     // drain. No lbRoute → internal-only, reached over the private network.
     replacementStrategy: 'exclusive',
     instanceType: 'DEV1-S',
+    // singleVM: fold into the backend process in-process (holds the same slot).
+    coHosted: true,
     env: {
       API_WS_URL: '${API_WS_URL}',
       BACKEND_URL: '${BACKEND_URL}',
@@ -81,6 +83,8 @@ export default defineServices({
     lbWebsockets: true,
     // Only deployed when appConfig.services.yjs.enabled is true.
     instanceType: 'DEV1-S',
+    // singleVM: fold into the backend process (LB still routes to the host VM).
+    coHosted: true,
     env: {
       BACKEND_URL: '${BACKEND_URL}',
       YJS_PORT: '4002',
@@ -100,6 +104,8 @@ export default defineServices({
     lbRoute: 'host',
     // Only deployed when appConfig.services.ai.enabled is true.
     instanceType: 'DEV1-S',
+    // singleVM: fold into the backend process (LB still routes to the host VM).
+    coHosted: true,
     env: {
       MODE: 'ai-worker',
       PORT: '4003',

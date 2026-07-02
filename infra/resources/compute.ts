@@ -46,7 +46,7 @@ import { appConfig } from '../../shared'
 import { naming, zone, region, tags, infra, mode, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
 import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
-import { enabledServices, servicesByName, type ServiceDefinition } from '../lib/services'
+import { deployedServices, coHostedServices, servicesByName, type ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { deriveGenId } from '../lib/gen-id'
 import { frontendCsp } from '../lib/frontend-csp'
@@ -89,8 +89,15 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 // from Secret Manager before the app boots.
 // ---------------------------------------------------------------------------
 
-function buildRuntimeSecretsManifest(serviceName: string): pulumi.Output<string> {
-  const definitions = runtimeSecretsForConsumer(serviceName as RuntimeSecretConsumer)
+function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
+  // Union the definitions across consumers (singleVM host carries its workers'
+  // secrets too), deduplicated by id and kept in registry order.
+  const seen = new Set<string>()
+  const definitions = consumers.flatMap((consumer) => runtimeSecretsForConsumer(consumer)).filter((definition) => {
+    if (seen.has(definition.id)) return false
+    seen.add(definition.id)
+    return true
+  })
   return pulumi.all(definitions.map((definition) => secretIds[definition.id]!)).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
@@ -131,6 +138,12 @@ interface ServiceConfig {
   /** Whether this service runs the one-shot migrate companion before the app. */
   runMigrate: boolean
   /**
+   * Runtime-secret consumers whose secrets this VM's `.env.runtime` manifest
+   * carries. Usually just the service itself; the singleVM host also lists the
+   * co-hosted workers folded into its process.
+   */
+  secretConsumers: RuntimeSecretConsumer[]
+  /**
    * Compose env var suppliers (REGISTRY, URLs, the baked image tag). Lazy so
    * values backed by Pulumi resources (bucket names, the internal backend IP)
    * are only resolved when VMs are actually created.
@@ -147,7 +160,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 
   return pulumi.all([
     envLines,
-    buildRuntimeSecretsManifest(service.name),
+    buildRuntimeSecretsManifest(service.secretConsumers),
     scwAccessKey,
     scwSecretKey,
     registryEndpoint,
@@ -289,16 +302,46 @@ function buildComposeEnv(svc: ServiceDefinition, releaseSha: string): Record<str
   return env
 }
 
-// Concrete enabled service list, derived from the canonical registry (feature
-// flags). Each runs on its own dedicated VM (the multi-fork shared-workers
-// placement is not yet implemented here — guard loudly).
-const enabled = enabledServices(appConfig.services).map((svc) => {
+// Services that get their own dedicated VM. Under `appConfig.singleVM` the
+// enabled `coHosted` workers (cdc/yjs/ai) are folded into the backend process
+// and do NOT get their own VM (see `deployedServices`); the load balancer still
+// routes to them via the host VM (see `serviceGenerationIps`). Each remaining
+// service runs on its own dedicated VM (the multi-fork shared-workers placement
+// is not yet implemented here — guard loudly).
+const enabled = deployedServices(appConfig.services, appConfig.singleVM).map((svc) => {
   const placement = svc.placement ?? 'dedicated-vm'
   if (placement !== 'dedicated-vm') {
     throw new Error(`compute: placement '${placement}' for service '${svc.slug}' is not yet supported`)
   }
   return svc
 })
+
+// Workers folded into the host (backend) process under singleVM — empty in the
+// normal split-VM deploy. Their runtime secrets are unioned onto the host VM and
+// an `exclusive` one among them forces the host to cut over exclusively.
+const coHosted = coHostedServices(appConfig.services, appConfig.singleVM)
+const hostSlug = enabled.find((s) => s.primaryRollout)?.slug
+
+/** Runtime-secret consumers whose secrets a service's VM must carry. In singleVM
+ *  the host VM additionally carries every co-hosted worker's secrets (the folded
+ *  workers read them from the same process). */
+function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsumer[] {
+  if (appConfig.singleVM && svc.slug === hostSlug) {
+    return [svc.slug, ...coHosted.map((s) => s.slug)] as RuntimeSecretConsumer[]
+  }
+  return [svc.slug as RuntimeSecretConsumer]
+}
+
+/** The replacement strategy a service's VM actually uses. Under singleVM a host
+ *  co-hosting an `exclusive` worker (cdc holds the single replication slot) must
+ *  itself cut over exclusively — two overlapping host generations would double-
+ *  consume the slot. */
+function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
+  if (appConfig.singleVM && svc.slug === hostSlug && coHosted.some((s) => s.replacementStrategy === 'exclusive')) {
+    return 'exclusive'
+  }
+  return svc.replacementStrategy
+}
 
 // ---------------------------------------------------------------------------
 // Generation state (from the S3 control object, written by the orchestrator
@@ -326,15 +369,25 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   const blocks = Object.values(composeConfig.services)
     .filter((block) => block.profiles.includes(svc.slug))
     .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }))
-  const secrets = runtimeSecretsForConsumer(svc.slug as RuntimeSecretConsumer).map((definition) => ({
-    secretName: definition.secretName,
-    envVar: definition.envVar,
-    required: definition.required,
-  }))
+  // Union across secret consumers so the singleVM host's genId also captures the
+  // co-hosted workers' secret manifest (any change rolls a new generation).
+  const seenSecrets = new Set<string>()
+  const secrets = secretConsumersFor(svc)
+    .flatMap((consumer) => runtimeSecretsForConsumer(consumer))
+    .filter((definition) => (seenSecrets.has(definition.id) ? false : (seenSecrets.add(definition.id), true)))
+    .map((definition) => ({
+      secretName: definition.secretName,
+      envVar: definition.envVar,
+      required: definition.required,
+    }))
   return {
     slug: svc.slug,
     port: svc.healthPort,
     runMigrate: svc.runMigrate ?? false,
+    // Only fold in the strategy when singleVM changes it (host co-hosting an
+    // exclusive worker) — keeps the split-VM fingerprint byte-stable so this
+    // feature doesn't churn every existing service's genId.
+    ...(effectiveStrategy(svc) !== svc.replacementStrategy ? { singleVmStrategy: effectiveStrategy(svc) } : {}),
     bindings: svc.bindings ?? {},
     blocks,
     secrets,
@@ -368,8 +421,9 @@ function activeGenerations(svc: ServiceDefinition): Generation[] {
   // Exclusive services (cdc) hold a single resource the platform permits one
   // consumer of (the replication slot), so there is no overlap: materialise
   // ONLY the live generation (the pending intent, else active), which replaces
-  // the old VM in place.
-  if (svc.replacementStrategy === 'exclusive') {
+  // the old VM in place. Under singleVM the host inherits this when it co-hosts
+  // an exclusive worker (it now holds the slot in-process).
+  if (effectiveStrategy(svc) === 'exclusive') {
     add(pending ?? active)
     if (generations.length === 0) add({ id: deriveGenId('latest', fingerprint), sha: 'latest' })
     return generations
@@ -458,6 +512,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     profile: svc.slug,
     port: svc.healthPort,
     runMigrate: svc.runMigrate ?? false,
+    secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
   }
 
@@ -553,7 +608,13 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
  * Private IPs of every active generation of a service — the initial LB backend
  * server list. The live list is then owned by the cutover task (the LB backend
  * declares `ignoreChanges: ['serverIps']`).
+ *
+ * Under singleVM a co-hosted worker (cdc/yjs/ai) has no VM of its own — it runs
+ * in the host (backend) process — so its LB backend targets the HOST VM's
+ * generation IPs (on the worker's own port, which the host block publishes).
  */
 export function serviceGenerationIps(slug: string): pulumi.Output<string>[] {
-  return instances.filter((i) => i.service === slug).map((i) => i.privateIp)
+  const target =
+    appConfig.singleVM && hostSlug && coHosted.some((s) => s.slug === slug) ? hostSlug : slug
+  return instances.filter((i) => i.service === target).map((i) => i.privateIp)
 }

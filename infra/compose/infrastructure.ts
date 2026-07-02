@@ -56,6 +56,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.lbWebsockets) meta.lbWebsockets = true
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
+  if (cfg.coHosted) meta.coHosted = true
   if (cfg.bindings) meta.bindings = cfg.bindings
   return meta
 }
@@ -137,5 +138,29 @@ export function assembleCompose(appServices: AppServices): ComposeFile {
     services[slug] = appBlock(slug, cfg, { extraEnv: cfg.runMigrate ? MIGRATE_GATED_ENV : undefined })
     if (cfg.runMigrate) services.migrate = migrateBlock(slug, cfg)
   }
+  publishCoHostedPorts(appServices, services)
   return { services }
+}
+
+/**
+ * singleVM support: publish every co-hosted service's port on the host
+ * (`primaryRollout`) block so that when `appConfig.singleVM` folds the workers
+ * into the backend process, the load balancer can still reach each in-process
+ * worker at the host VM on its own port. Published unconditionally (the Compose
+ * file is shared across deploy modes); in the normal split-VM deploy the extra
+ * host ports simply have nothing bound behind them and are never reachable from
+ * the public internet (the VM security group drops all public inbound and the
+ * LB only targets a service's own VM). No-op when no service opts in.
+ */
+function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {
+  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
+  if (!hostSlug) return
+  const hostBlock = blocks[hostSlug]
+  if (!hostBlock) return
+  const coHostedPorts = Object.values(appServices)
+    .filter((cfg) => cfg.coHosted)
+    .map((cfg) => `${cfg.port}:${cfg.port}`)
+  if (coHostedPorts.length === 0) return
+  const existing = new Set(hostBlock.ports ?? [])
+  hostBlock.ports = [...(hostBlock.ports ?? []), ...coHostedPorts.filter((p) => !existing.has(p))]
 }

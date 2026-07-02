@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { enabledServices, services } from './services'
+import { coHostedServices, deployedServices, enabledServices, services } from './services'
 
 const allOn = { yjs: { enabled: true }, ai: { enabled: true } }
 const allOff = { yjs: { enabled: false }, ai: { enabled: false } }
@@ -33,6 +33,41 @@ describe('service registry — enabledServices', () => {
     const yjsOnly = enabledServices({ yjs: { enabled: true }, ai: { enabled: false } }).map((s) => s.slug)
     expect(yjsOnly).toContain('yjs')
     expect(yjsOnly).not.toContain('ai')
+  })
+})
+
+describe('service registry — singleVM (deployedServices / coHostedServices)', () => {
+  it('split-VM (singleVM off) deploys every enabled service on its own VM', () => {
+    const deployed = deployedServices(allOn, false).map((s) => s.slug)
+    expect(deployed).toEqual(enabledServices(allOn).map((s) => s.slug))
+    expect(deployed).toContain('cdc')
+    expect(deployed).toContain('yjs')
+    expect(deployed).toContain('ai')
+  })
+
+  it('singleVM folds co-hosted workers off their own VM but keeps the host + SPA proxy', () => {
+    const deployed = deployedServices(allOn, true).map((s) => s.slug)
+    expect(deployed).toContain('backend')
+    expect(deployed).toContain('frontend')
+    expect(deployed).not.toContain('cdc')
+    expect(deployed).not.toContain('yjs')
+    expect(deployed).not.toContain('ai')
+  })
+
+  it('coHostedServices lists only enabled co-hosted workers, and only under singleVM', () => {
+    expect(coHostedServices(allOn, false)).toEqual([])
+    const folded = coHostedServices(allOn, true).map((s) => s.slug)
+    expect(folded).toContain('cdc')
+    expect(folded).toContain('yjs')
+    expect(folded).toContain('ai')
+    expect(folded).not.toContain('backend')
+    expect(folded).not.toContain('frontend')
+  })
+
+  it('a disabled co-hosted worker is neither deployed nor folded under singleVM', () => {
+    const cfg = { yjs: { enabled: false }, ai: { enabled: true } }
+    expect(coHostedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs')
+    expect(deployedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs')
   })
 })
 
