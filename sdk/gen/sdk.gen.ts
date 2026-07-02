@@ -1212,7 +1212,7 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
 /**
  * Delete self
  *
- * Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
+ * Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
  *
  * **DELETE /me** ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me) ·· [deleteMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me) ·· _me_cella_
  *
@@ -1873,7 +1873,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
 /**
  * Delete users
  *
- * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
+ * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
  *
  * **DELETE /system** ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/DELETE/system) ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/system) ·· _system_cella_
  *
@@ -1913,7 +1913,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
 /**
  * Update user
  *
- * Updates a *user* identified by ID.
+ * Updates a user identified by ID.
  *
  * **PUT /system/{id}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/system/{id}) ·· _system_cella_
  *
@@ -2477,7 +2477,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(
 /**
  * Get public counts
  *
- * Returns basic count metrics for entity types such as `users` and `organizations`.
+ * Returns basic count metrics for entity types such as users and organizations.
  * This endpoint is public and uses a 1 minute in memory cache for performance.
  *
  * **GET /metrics/public** ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=metrics#tag/metrics/GET/metrics/public) ·· [getPublicCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/metrics/public) ·· _metrics_cella_
@@ -2632,7 +2632,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
 /**
  * Get organization
  *
- * Retrieves an organization by ID within a tenant. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.
  *
  * **GET /{tenantId}/organizations/{id}** ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/organizations/{id}) ·· [getOrganization](https://www.cellajs.com/docs/operations?operationTag=context#tag/context/GET/{tenantId}/organizations/{id}) ·· _organizations_cella_context_
  *
@@ -2914,7 +2914,7 @@ export const updatePage = <ThrowOnError extends boolean = true>(
 /**
  * Get list of users
  *
- * Returns a list of *users*.
+ * Returns a list of users.
  *
  * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
  *
@@ -2956,7 +2956,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
 /**
  * Get user
  *
- * Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.
+ * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.
  *
  * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
  *
@@ -3330,7 +3330,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates the membership metadata, such as role, `muted`, or `archived` status.
+ * Updates the membership metadata, such as role, muted, or archived status.
  *
  * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *

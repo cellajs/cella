@@ -59,7 +59,7 @@ const systemRoutes = {
     tags: ['system', 'cella'],
     summary: 'Delete users',
     description:
-      "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
+      "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
     request: {
       body: {
         required: true,
@@ -85,7 +85,7 @@ const systemRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['system', 'cella'],
     summary: 'Update user',
-    description: 'Updates a *user* identified by ID.',
+    description: 'Updates a user identified by ID.',
     request: {
       params: entityIdParamSchema,
       body: {

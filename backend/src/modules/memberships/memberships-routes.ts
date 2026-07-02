@@ -110,7 +110,7 @@ const membershipRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Update membership',
-    description: 'Updates the membership metadata, such as role, `muted`, or `archived` status.',
+    description: 'Updates the membership metadata, such as role, muted, or archived status.',
     request: {
       params: idInTenantOrgParamSchema,
       body: {

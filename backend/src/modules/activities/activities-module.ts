@@ -4,7 +4,7 @@ registerModule({
   name: 'activities',
   owner: 'cella',
   scope: ['frontend', 'backend'],
-  description: `Endpoints for retrieving activities (audit log entries). Activities track create, update, and
-    delete operations across all resources. This serves as an audit trail and can be extended for webhook
+  description: `Endpoints for retrieving activities, which are audit log entries tracking create, update, and
+    delete operations across all resources. Activities provide an audit trail and can be extended for webhook
     delivery.`,
 });

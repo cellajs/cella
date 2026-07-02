@@ -17,7 +17,7 @@ const metricRouteConfig = {
     middleware: isNoBot,
     tags: ['metrics', 'cella'],
     summary: 'Get public counts',
-    description: `Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
+    description: `Returns basic count metrics for entity types such as users and organizations.
       This endpoint is public and uses a 1 minute in memory cache for performance.`,
     responses: {
       200: {

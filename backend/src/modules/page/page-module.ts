@@ -5,5 +5,5 @@ registerModule({
   owner: 'cella',
   scope: ['frontend', 'backend'],
   description: `Endpoints for managing pages, which are product entities supporting realtime sync and offline
-    capabilities. Pages can be organized hierarchically and are used in /docs.`,
+    capabilities. Pages can be organized hierarchically and are used in the /docs section.`,
 });

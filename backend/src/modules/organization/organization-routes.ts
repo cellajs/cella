@@ -92,7 +92,7 @@ const organizationRoutes = {
     xGuard: [authGuard, tenantGuard],
     tags: ['organizations', 'cella', 'context'],
     summary: 'Get organization',
-    description: 'Retrieves an organization by ID within a tenant. Pass `?slug=true` to resolve by slug instead.',
+    description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: organizationQuerySchema },
     responses: {
       200: {

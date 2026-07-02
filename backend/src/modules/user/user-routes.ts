@@ -16,7 +16,7 @@ const userRoutes = {
     xGuard: [authGuard, crossTenantGuard],
     tags: ['users', 'cella'],
     summary: 'Get list of users',
-    description: 'Returns a list of *users*.',
+    description: 'Returns a list of users.',
     request: { query: userListQuerySchema },
     responses: {
       200: {
@@ -46,7 +46,7 @@ const userRoutes = {
     tags: ['users', 'cella'],
     summary: 'Get user',
     description:
-      'Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass `?slug=true` to resolve by slug instead.',
+      'Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.',
     request: { params: relatableUserIdParamSchema, query: slugQuerySchema },
     responses: {
       200: {
