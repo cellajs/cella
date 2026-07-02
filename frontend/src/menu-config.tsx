@@ -14,8 +14,8 @@ import router from '~/routes/router';
  */
 function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   const callback = (args: CallbackArgs<Organization>) => {
-    useDialoger.getState().remove('create-organization');
     if (args.status === 'success') {
+      useDialoger.getState().remove('create-organization');
       router.navigate({
         to: '/$tenantId/$organizationSlug/organization/members',
         params: { tenantId: args.data.tenantId, organizationSlug: args.data.slug },
@@ -26,12 +26,12 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
     className: 'md:max-w-2xl',
     id: 'create-organization',
+    description: i18n.t('c:create_organization.text'),
     triggerRef,
     title: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }),
     titleContent: (
       <UnsavedBadge title={i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() })} />
     ),
-    description: i18n.t('c:create_organization.text'),
   });
 }
 

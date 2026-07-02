@@ -14,7 +14,7 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getAttachments, getOrganizations } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
-import { testRuntimeDatabaseUrl } from '../../../test-db-config';
+import { testRuntimeDatabaseUrl } from '../../../shared/src/test-db';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';

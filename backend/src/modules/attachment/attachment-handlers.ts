@@ -30,6 +30,7 @@ app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
   const result = await getAttachmentOp(ctx, id);
   assertSuccess(result, 'attachment');
+  // TODO review
   ctx.set('entityCacheData', result.data as Record<string, unknown>);
   return ctx.json(result.data, 200);
 });

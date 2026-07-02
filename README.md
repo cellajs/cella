@@ -1,7 +1,7 @@
 <div style="text-align: center">
 
-  <img alt="screenshot" src="./info/screenshot-dark.png#gh-dark-mode-only" />
-  <img alt="screenshot" src="./info/screenshot.png#gh-light-mode-only" />
+  <img alt="screenshot" src="./frontend/public/static/marketing/screenshots/readme-screenshot-dark.png#gh-dark-mode-only" />
+  <img alt="screenshot" src="./frontend/public/static/marketing/srcreenshots/readme-screenshot.png#gh-light-mode-only" />
 
 <br />
 

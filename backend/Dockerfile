@@ -1,8 +1,10 @@
 # =============================================================================
 # Backend - Production Dockerfile
 # =============================================================================
-# Multi-stage build for Node.js 24 Hono API server
-# Optimized for Scaleway Serverless Containers
+# Multi-stage build for the Node.js 24 Hono API server.
+# Built by CI and deployed to Scaleway Instances (VMs) via infra/ (Pulumi).
+# The same image is reused for the `ai` service (MODE=ai-worker); see
+# infra/config/services.config.ts. Not used in local dev.
 # =============================================================================
 
 # -----------------------------------------------------------------------------

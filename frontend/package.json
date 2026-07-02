@@ -23,9 +23,7 @@
     "offline": "cross-env NODE_ENV=development vite build --mode development && cross-env NODE_ENV=development vite preview",
     "stop": "tsx vite/stop-vite.ts",
     "generate:sdk": "pnpm --filter sdk generate:sdk",
-    "storybook": "tsx .storybook/start-storybook.ts",
-    "build:storybook": "storybook build",
-    "preview:storybook": "storybook build --preview-only"
+    "storybook": "tsx .storybook/start-storybook.ts"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^2.0.1",

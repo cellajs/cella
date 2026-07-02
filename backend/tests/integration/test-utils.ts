@@ -30,7 +30,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
-import { testDatabaseUrl } from '../../../test-db-config';
+import { testDatabaseUrl } from '../../../shared/src/test-db';
 
 /**
  * Run database migrations for integration tests.

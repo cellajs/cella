@@ -1,98 +1,37 @@
-# Cella Copilot Instructions
+# Cella Copilot instructions
 
-Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities.
+## Template vs fork
+Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities. It is designed to be forked and extended, with a dynamic, per-app configurable entity model (`user` and `organization` are built-in). If package.json has `cella` as its name, it is the template. Otherwise it is a 'fork'.
 
-## Important information
-Cella is a minimal yet complete implementation of itself. It is designed to be forked and extended to build custom web applications. The entity model is dynamic and configurable per app, with `user` and `organization` as built-in entities. The architecture focuses on a hybrid sync engine to enable offline-first experiences with real-time updates. Raak is an example app built with the Cella template, showcasing its capabilities. It should be used as a reference to build  implementations so please check it out in the raak folder if it is included in a VSCode workspace.
+The canonical agent guidelines live in [info/AGENTS.md](../info/AGENTS.md) — read it for architecture, routing, guards, permissions, state/query patterns, sync engine, coding style, testing, deploy debugging, and commands. This file is intentionally thin so it stays in sync.
 
-## Architecture Overview
+## Start here
+- **Agent guidelines**: [info/AGENTS.md](../info/AGENTS.md)
+- **Architecture & tech stack**: [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
+- **Testing**: [info/TESTING.md](../info/TESTING.md)
 
-**Flat-root monorepo** with pnpm workspaces:
-- `backend/` - Hono API server, Drizzle ORM, PostgreSQL
-- `frontend/` - React SPA, TanStack Router/Query, Zustand
-- `config/` - Shared environment configs (development, production, staging)
-- `locales/` - i18n translations (en, nl)
-- `info/` - Documentation
-- `cdc/` - CDC (Change Data Capture) worker (optional)
+## Quick reference
+- **Monorepo** (pnpm workspaces): `backend/` (Hono, Drizzle, PostgreSQL), `frontend/` (React SPA, TanStack Router/Query, Zustand), `shared/` (config), `locales/` (i18n), `cdc/` (Change Data Capture worker). Both backend and frontend use a modular structure in `src/modules/` — keep new features in their own module.
+- **Backend routes/handlers**: OpenAPI-first with `@hono/zod-openapi`. Routes in `backend/src/modules/<module>/<module>-routes.ts` via `createXRoute`; handlers in `<module>-handlers.ts` via `.openapi()`. Use `import { z } from '@hono/zod-openapi'` in backend (not plain zod).
+- **Frontend SDK**: Generated in `sdk/gen/`, consumed via the `sdk` package — never edit manually. Run `pnpm sdk` after backend route/schema changes.
+- **Routing**: File-based routes in `frontend/src/routes/` auto-registered into `routeTree.gen.ts` (committed, never hand-edited). Route files are thin shims; logic/components live in modules, wired via `getRouteApi('<route id>')`.
+- **State**: Server state → TanStack Query (`frontend/src/modules/<module>/query.ts`); client state → Zustand (`frontend/src/store/`).
+- **Entities**: `ContextEntityType` (has memberships, e.g. `organization`) and `ProductEntityType` (content, e.g. `attachment`). See `frontend/src/modules/attachments/` for reference.
 
-Both backend and frontend use **modular structure** in `src/modules/` (e.g., `auth`, `users`, `organizations`, `attachments`). Keep new features in their own modules.
+## Code style
+- Formatter/Linter: Biome (`pnpm lint:fix`). 2 spaces, single quotes, trailing commas (ES5), line width 100.
+- kebab-case files, camelCase variables/functions (incl. constants), PascalCase components, snake_case translation keys.
+- Sentence-case headers. Avoid `useMemo`/`useCallback` (React Compiler). Avoid barrel files except utils.
+- Prefer reading actual code over README files, which often go stale.
 
-## Key Patterns
+## Essential commands
+- `pnpm dev` — full dev (PostgreSQL + CDC Worker, requires Docker); `pnpm dev:core` — PostgreSQL only.
+- `pnpm check` — sdk + typecheck + lint:fix.
+- `pnpm generate` — Drizzle migrations from schema changes.
+- `pnpm sdk` — regenerate OpenAPI spec + frontend SDK.
+- `pnpm seed` — seed test data.
+- `pnpm test` — full Vitest suite (`pnpm test:core` for narrower core mode).
+- `pnpm cella` — sync changes from upstream cella to fork.
 
-### Backend Routes & Handlers
-Routes are OpenAPI-first using `@hono/zod-openapi`:
-```typescript
-// backend/src/modules/<module>/routes.ts - Define OpenAPI spec
-createXRoute({ operationId, method, path, guard, request, responses })
-
-// backend/src/modules/<module>/handlers.ts - Implement handlers
-app.openapi(routes.operationName, async (ctx) => { ... })
-```
-Use `import { z } from '@hono/zod-openapi'` in backend (NOT plain zod).
-
-### Frontend API Client
-Generated SDK in `sdk/gen/`, consumed via the `sdk` workspace package - **never edit manually**. After backend route/schema changes:
-```bash
-pnpm sdk
-```
-
-### Frontend Routing (File-based)
-Route files in `frontend/src/routes/` use `createFileRoute` and are auto-registered by the TanStack Router vite plugin into the generated `routeTree.gen.ts` (committed — never edit manually). Route files are thin shims; `beforeLoad` logic and components live in modules and are wired via `getRouteApi('<route id>')`.
-
-### State Management
-- **Server state**: TanStack Query with query options in `frontend/src/modules/<module>/query.ts`
-- **Client state**: Zustand stores in `frontend/src/store/`
-
-### Entity Types
-A core concept of cella is the ability to dynamically manage different types of entities for each app built with the template. `user` is a special entity that exists across all apps. `organization` is a required entity. There are two main categories of entityType (singular):
-- `ContextEntityType` - Has memberships (e.g., `organization`, but apps could add `project`)
-- `ProductEntityType` - Content entities without membership (e.g., `attachment`, `page`)
-
-Product entities are typically daily-use content data models that can optionally benefit from for realtime updates. See `frontend/src/modules/attachments/` for reference implementation.
-
-## Essential Commands
-
-```bash
-pnpm dev:core       # Dev with PostgreSQL only (DEV_MODE=core, no CDC, requires Docker)
-pnpm dev            # Full dev with PostgreSQL + CDC Worker (DEV_MODE=full, requires Docker)
-pnpm check          # Run sdk + typecheck + lint:fix
-pnpm generate       # Create Drizzle migrations from schema changes
-pnpm seed           # Seed database with test data
-pnpm test           # Run all Vitest tests
-pnpm cella           # Sync changes from upstream cella to fork (useful for forks)
-```
-
-## Code style and conventions
-
-- **Git**: Use `git` and `gh` CLI wherever possible. Do not use GitKraken or other third-party git tools. **Never** run destructive worktree ops (`git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean -fd`) to "isolate" or reset state — other Copilot sessions or the user may share this worktree. Read-only `git status`/`git diff` are fine.
-- **Formatter/Linter**: Biome (`pnpm lint:fix`)
-- **Indentation**: 2 spaces, single quotes, trailing commas (ES5)
-- **Files**: kebab-case (`user-profile.tsx`)
-- **Variables/functions**: camelCase (including constants)
-- **Components**: PascalCase
-- **Translation keys**: snake_case
-- **Headers**: Sentence case only (`## Code style`, not `## Code Style`)
-- **React Compiler**: Avoid `useMemo`/`useCallback` in most cases
-- **Import/export**: Avoid barrel files unless for utils folders. Don't re-export except for proper barrel files.
-- **Test files**: `*.test.ts` adjacent to source or in `tests/`
-- **Commit format**: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`)
-- **PRs**: Include description, linked issues, screenshots for UI changes
-
-**Avoid relying on README files** - They often become stale. Prefer reading actual code and design decision documentation.
-
-## File Locations
-
-| Purpose | Location |
-|---------|----------|
-| DB schemas | `backend/src/db/schema/[tablename]` |
-| API validation | `backend/src/modules/<module>/[module]-schema.ts` |
-| Generated types | `sdk/gen/` via `sdk` package exports |
-| Query keys/options | `frontend/src/modules/<module>/query.ts` |
-| Route definitions | `frontend/src/routes/` (file-based, auto-generated `routeTree.gen.ts`) |
-| UI react components | `frontend/src/modules/ui/` (Shadcn) |
-| Common react components | `frontend/src/modules/common/` |
-
-
-For detailed architecture, see [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
-For more rules and guidelinse, see [info/AGENTS.md](../info/AGENTS.md).
-For writing tests and testing instructions, see [info/TESTING.md](../info/TESTING.md).
+## Git safety
+Use `git` and `gh` CLI; do not use GitKraken or other third-party git tools. **Never** run destructive worktree ops (`git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean -fd`) — the worktree may be shared with other sessions or the user. Read-only `git status`/`git diff` are fine.

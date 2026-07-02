@@ -5,6 +5,8 @@ Cella is a TypeScript template to collaborative web apps with sync engine for of
 
  Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
+You are either in the cella template or in a fork of it. If the root package.json has name "cella", you are in the template; otherwise you are in a fork.
+
 ## Architecture & tech stack
 See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
 
@@ -122,8 +124,9 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - **Validate infra changes** with `pnpm --filter infra exec vitest run` (infra is **Biome-ignored** — match style by hand) and `pnpm check` at the root.
 
 ## Commits & pull requests
-- Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
-- PRs: concise description, linked issues, passing checks. Keep changes scoped.
+- Use `git` and `gh` CLI. Do not use GitKraken or other third-party git tools. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
+- **Never** run destructive worktree ops (`git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean -fd`) to "isolate" or reset state — other Copilot sessions or the user may share this worktree. Read-only `git status`/`git diff` are fine.
+- PRs: concise description, linked issues, screenshots for UI changes, passing checks. Keep changes scoped.
 
 ## Commands
 - `pnpm dev`: Dev with PostgreSQL + CDC Worker (requires Docker).

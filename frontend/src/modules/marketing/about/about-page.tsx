@@ -24,7 +24,7 @@ import { Input } from '~/modules/ui/input';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
-const aboutSectionIds = ['hero', 'benefits', 'showcase', 'template', 'stack', 'integrations', 'call-to-action'];
+const aboutSectionIds = ['welcome', 'benefits', 'showcase', 'template', 'stack', 'integrations', 'call-to-action'];
 
 function AboutPage() {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ function AboutPage() {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero
-          key={'hero'}
+          key={'welcome'}
           title="about:hero.title"
           // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
           text="about:hero.text"

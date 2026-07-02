@@ -1,6 +1,6 @@
 // Load backend/.env so DB_TEST_PORT (fork-specific) is available; in CI it's set directly in process.env.
 try {
-  process.loadEnvFile(new URL('./backend/.env', import.meta.url));
+  process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {
   // .env not present (e.g. CI) — DB_TEST_PORT must come from process.env instead.
 }

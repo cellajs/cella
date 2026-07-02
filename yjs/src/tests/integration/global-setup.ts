@@ -1,13 +1,13 @@
 /**
  * Global setup for yjs integration tests.
- * Checks Postgres availability on the configured test database (see `test-db-config.ts`).
+ * Checks Postgres availability on the configured test database (see `shared/test-db-config`).
  *
  * Migrations are owned by the backend package — run `pnpm vitest --project=backend`
  * or `pnpm test` from root first to ensure the test DB schema is up to date.
  */
 
 import pg from 'pg';
-import { testDatabaseUrl } from '../../../../test-db-config';
+import { testDatabaseUrl } from '../../../../shared/src/test-db';
 
 // Always target the dedicated test DB (no external override) so integration tests have a single, predictable DB source.
 const DATABASE_URL = testDatabaseUrl;

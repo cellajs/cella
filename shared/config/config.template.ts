@@ -1,19 +1,3 @@
-/**
- * Fork config template — consumed by `create-cella`, NOT by Cella at runtime.
- *
- * Cella itself always runs from `config.default.ts`. This file is a parallel copy
- * whose fork-sensitive values (branding, URLs, secrets, company details) are
- * reduced to placeholders and `__project_name__` / `__project_slug__` tokens.
- *
- * It is a real, compiled module: `satisfies RequiredConfig` means Cella's own
- * `pnpm ts` typechecks it. If the shared config types gain a required field, this
- * file fails to compile alongside `config.default.ts`, so template drift is caught
- * at compile time instead of by a scaffolding job.
- *
- * At fork creation `create-cella` interpolates the tokens, writes the result over
- * `config.default.ts`, then deletes this file. Nothing imports it, so it is inert
- * for Cella (see the knip ignore entry) and never loaded as an environment config.
- */
 import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
 
 // Re-export for external consumers
@@ -227,7 +211,7 @@ export const config = {
 
   /** API version prefix for endpoints */
   apiVersion: 'v1',
-  /** API documentation description shown in Scalar */
+  /** API documentation description */
   apiDescription: `⚠️ ATTENTION: PRERELEASE!
                   This API is organized into modules based on logical domains.`,
 

@@ -14,6 +14,13 @@ describe('yjs schema-naming conventions match the drizzle schema', () => {
   // Logical column keys the relay's permission SQL reads (id, ownership, tenant, ancestor scopes).
   const readKeys = ['id', 'createdBy', 'tenantId', ...Object.values(appConfig.entityIdColumnKeys)];
 
+  it('entity table set matches appConfig.entityTypes', () => {
+    // yjs derives the resolvable entity set from `appConfig.entityTypes` (shared), while CDC and the
+    // backend derive it from `entityTables` (drizzle). Keep the two "what exists" lists in sync so
+    // they can't silently drift — a fork that adds an entity to one but not the other fails here.
+    expect([...appConfig.entityTypes].sort()).toEqual(Object.keys(entityTables).sort());
+  });
+
   it('memberships table and the columns the engine reads', () => {
     const cols = getColumns(membershipsTable) as Record<string, { name: string }>;
     expect(toTableName('membership')).toBe(getTableName(membershipsTable));

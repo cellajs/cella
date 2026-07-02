@@ -22,13 +22,3 @@ export const entityRouteConfig = {
     paramName: 'organizationSlug',
   },
 } as const satisfies Record<ContextEntityType, EntityRouteEntry>;
-
-/** Legacy alias retained for backwards compatibility — prefer `entityRouteConfig`. */
-export const baseEntityRoutes = {
-  organization: entityRouteConfig.organization.path,
-} as const;
-
-/** Map entity types to their route param names. */
-export const routeParamMap: Record<string, string> = {
-  organization: entityRouteConfig.organization.paramName,
-};

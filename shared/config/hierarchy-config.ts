@@ -21,6 +21,8 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * Entity relationships with single-parent inheritance.
  * Parents are defined before children. Order determines ancestor chain.
  *
+ * Optional `relatedContexts` on products declare non-ancestor context references (nullable id columns).
+ *
  * publicRead declares how an entity becomes publicly readable:
  * - 'always': Always publicly readable, no runtime check needed (e.g., published pages)
  * - 'publicSelf': Public when own publicAt timestamp is set
@@ -34,3 +36,20 @@ export const hierarchy = createEntityHierarchy(roles)
   .product('attachment', { parent: 'organization' })
   .product('page', { parent: null, publicRead: 'always' })
   .build();
+
+/**
+ * Example hierarchy from raak.dev:
+ *
+ * createEntityHierarchy(roles)
+ *   .user()
+ *   .context('organization', { parent: null, roles: ['admin', 'member'] })
+ *   .context('workspace', { parent: 'organization', roles: roles.all })
+ *   .context('project', { parent: 'organization', roles: roles.all, publicRead: 'publicSelf' })
+ *   .product('task', { parent: 'project', publicRead: 'publicParent' })
+ *   .product('label', { parent: 'project' })
+ *   .product('attachment', { parent: 'project', publicRead: 'publicParent' })
+ *   .product('page', { parent: null, publicRead: 'always' })
+ *   .product('chat', { parent: 'organization', relatedContexts: ['project', 'workspace'] })
+ *   .product('message', { parent: 'organization', relatedContexts: ['project', 'workspace'] })
+ *   .build();
+ */

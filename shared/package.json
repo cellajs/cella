@@ -19,7 +19,8 @@
     "./config-builder": "./src/config-builder/index.ts",
     "./pino": "./src/pino.ts",
     "./module-registry": "./src/module-registry.ts",
-    "./version-changes": "./src/version-changes/index.ts"
+    "./version-changes": "./src/version-changes/index.ts",
+    "./test-db-config": "./src/test-db-config.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.51.4",

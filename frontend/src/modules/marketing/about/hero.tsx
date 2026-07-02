@@ -34,7 +34,7 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
   const headerClass = `transition-all will-change-transform duration-500 ease-out ${inView ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   return (
-    <section id="spy-hero" className={sectionClass}>
+    <section id="spy-welcome" className={sectionClass}>
       <header ref={ref} className={cn('container flex max-w-4xl flex-col items-center gap-4 text-center', headerClass)}>
         <h1 className="mb-6 font-heading text-3xl leading-10 sm:mt-6 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
           <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>

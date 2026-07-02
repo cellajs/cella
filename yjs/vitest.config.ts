@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { defineProject } from 'vitest/config';
-import { testDatabaseUrl } from '../test-db-config';
+import { testDatabaseUrl } from 'shared/test-db-config';
 
 const testMode = process.env.TEST_MODE || 'core';
 

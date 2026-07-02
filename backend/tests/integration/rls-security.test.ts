@@ -29,7 +29,7 @@ import { nanoidTenant } from 'shared/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type Tx } from '#/db/db';
 import { entityTables } from '#/tables';
-import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from '../../../test-db-config';
+import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from '../../../shared/src/test-db';
 
 /** Local read-only tenant context helper — mirrors tenantRead without importing it. */
 async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {

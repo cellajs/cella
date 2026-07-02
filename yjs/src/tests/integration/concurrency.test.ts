@@ -3,7 +3,7 @@ import pg from 'pg';
 import * as Y from 'yjs';
 import { createDoc, loadState, saveState, deleteState } from '../../data/storage';
 import type { DocContext } from '../../constants';
-import { testDatabaseUrl } from '../../../../test-db-config';
+import { testDatabaseUrl } from '../../../../shared/src/test-db';
 
 const DATABASE_URL = testDatabaseUrl;
 

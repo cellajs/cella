@@ -13,7 +13,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
-import { testDatabaseUrl } from '../../../../test-db-config';
+import { testDatabaseUrl } from '../../../../shared/src/test-db';
 import type { DocContext } from '../../constants';
 import { canEditEntity } from '../../data/permissions';
 

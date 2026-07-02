@@ -10,7 +10,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { immutabilityTriggersSQL } from '#/db/immutability-triggers';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
-import { testDatabaseUrl } from '../../test-db-config';
+import { testDatabaseUrl } from '../../shared/src/test-db';
 
 // Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

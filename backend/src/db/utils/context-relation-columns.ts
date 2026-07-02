@@ -19,9 +19,6 @@ type NullableUuid = ReturnType<typeof uuid>;
  * - strict ancestors (parent chain) → non-null id columns, unless listed in `NullableAncestors`
  * - related contexts (`relatedContexts`) → nullable id columns
  *
- * Column names come from `entityIdColumnKeys` (single source of truth) rather than a
- * re-derived `${C}Id` template literal, so type and runtime stay in lockstep.
- *
  * `NullableAncestors` lets a fork opt specific ancestor id columns into being nullable (e.g. a
  * project-scoped entity that may also exist at org level only) while keeping the ancestor in the
  * hierarchy for permission/public-read inheritance.
