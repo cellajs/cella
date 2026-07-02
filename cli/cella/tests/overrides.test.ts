@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { CellaCliConfig } from '../src/config/types';
-import { findIgnoredFiles, findPinnedFiles, isIgnored, isPinned, isUnderAnyFolder } from '../src/utils/overrides';
+import { isIgnored, isPinned, isUnderAnyFolder } from '../src/utils/overrides';
 
 /** Helper to build a minimal config with overrides */
 function buildConfig(overrides: { pinned?: string[]; ignored?: string[] }): CellaCliConfig {
@@ -100,31 +100,6 @@ describe('overrides', () => {
       };
       expect(isPinned('any/file.ts', config)).toBe(false);
       expect(isIgnored('any/file.ts', config)).toBe(false);
-    });
-  });
-
-  describe('findIgnoredFiles', () => {
-    it('should filter file list to only ignored files', () => {
-      const config = buildConfig({ ignored: ['docs'] });
-      const files = ['src/index.ts', 'docs/guide.md', 'docs/api/ref.md', 'README.md'];
-      const ignored = findIgnoredFiles(files, config);
-      expect(ignored).toEqual(['docs/guide.md', 'docs/api/ref.md']);
-    });
-
-    it('should return empty array when nothing matches', () => {
-      const config = buildConfig({ ignored: ['nonexistent'] });
-      const files = ['src/index.ts', 'README.md'];
-      expect(findIgnoredFiles(files, config)).toEqual([]);
-    });
-  });
-
-  describe('findPinnedFiles', () => {
-    it('should filter file list to only pinned files', () => {
-      const config = buildConfig({ pinned: ['docs'] });
-      const files = ['src/index.ts', 'docs/guide.md', 'package.json', 'tsconfig.json'];
-      const pinned = findPinnedFiles(files, config);
-      // package.json is auto-pinned
-      expect(pinned).toEqual(['docs/guide.md', 'package.json']);
     });
   });
 });

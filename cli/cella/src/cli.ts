@@ -53,27 +53,12 @@ type ServiceDefinition = {
   menuDescription?: (context: MenuContext) => string;
 };
 
-const defaultOptions: CliOptionState = {
-  logFile: false,
-  verbose: false,
-  list: false,
-  json: false,
-  diff: undefined,
-  openDiff: undefined,
-  scope: undefined,
-  fork: undefined,
-  hard: false,
-  unpinned: false,
-  track: undefined,
-  force: false,
-  checkOverrides: false,
-  coverage: false,
-};
-
 function readOptions(opts: Record<string, unknown>): CliOptionState {
   const scope = typeof opts.scope === 'string' ? opts.scope : undefined;
-  const normalizedScope: AnalyzeScope | undefined =
-    scope === 'all' || scope === 'risk' || scope === 'protected' ? scope : undefined;
+  if (scope && scope !== 'all' && scope !== 'risk' && scope !== 'protected') {
+    throw new Error(`invalid --scope '${scope}'. expected one of: all, risk, protected`);
+  }
+  const normalizedScope = scope as AnalyzeScope | undefined;
 
   return {
     logFile: opts.log === true,
@@ -236,10 +221,10 @@ function buildProgram(setSelection: (selection: CliServiceSelection) => void): C
 
 function parseCommandLine(argv: string[]): CliServiceSelection {
   if (argv.length <= 2) {
-    return { options: { ...defaultOptions } };
+    return { options: readOptions({}) };
   }
 
-  let selection: CliServiceSelection = { options: { ...defaultOptions } };
+  let selection: CliServiceSelection = { options: readOptions({}) };
   const program = buildProgram((nextSelection) => {
     selection = nextSelection;
   });

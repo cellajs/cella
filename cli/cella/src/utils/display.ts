@@ -113,11 +113,6 @@ export function setJsonMode(enabled: boolean): void {
   console.warn = toStderr;
 }
 
-/** Whether JSON mode is active. */
-export function isJsonMode(): boolean {
-  return jsonMode;
-}
-
 /** Write a machine-readable payload to stdout (bypasses the stderr routing of JSON mode). */
 export function writeStdout(text: string): void {
   process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
@@ -237,14 +232,13 @@ export function showDiffInPager(diffOutput: Buffer): void {
  * Create a clickable hyperlink for terminals that support OSC 8.
  * Falls back to just the label if no URL provided.
  */
-function hyperlink(label: string, url?: string): string {
+export function hyperlink(label: string, url?: string): string {
   if (!url) return label;
+  // Strip control characters from URL to prevent terminal escape injection (CWE-116)
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control chars is the security purpose here.
+  const safeUrl = url.replace(/[\x00-\x1f\x7f]/g, '');
   // OSC 8 hyperlink format: \x1b]8;;URL\x07LABEL\x1b]8;;\x07
-  return `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
-}
-
-function quoteShellArg(value: string): string {
-  return `'${value.split("'").join("'\\''")}'`;
+  return `\x1b]8;;${safeUrl}\x07${label}\x1b]8;;\x07`;
 }
 
 /**
@@ -357,29 +351,6 @@ function formatFileDateInfo(
 }
 
 /**
- * Build a copyable `code --diff` command for this file.
- * `command:` URIs only execute inside trusted VS Code markdown/webviews, while
- * terminal OSC 8 links are opened as external URLs and cannot run them.
- */
-function getVsCodeDiffLink(filePath: string, options: LinkOptions): string {
-  const showTerminalDiffCommands = false;
-  // TODO: Re-enable rendered diff commands once we have a terminal UX that is
-  // clearly actionable without implying click support that VS Code cannot honor.
-  if (!showTerminalDiffCommands) return '';
-
-  const { upstreamViewPath, forkPath } = options;
-  if (!upstreamViewPath || !forkPath) return '';
-
-  const upstreamAbsolute = resolve(upstreamViewPath, filePath);
-  // Skip the diff link for files absent upstream (e.g. local-only or newly deleted upstream).
-  if (!existsSync(upstreamAbsolute)) return '';
-
-  const forkAbsolute = resolve(forkPath, filePath);
-
-  return ` ${pc.dim('·')} ${pc.dim(`code --diff ${quoteShellArg(upstreamAbsolute)} ${quoteShellArg(forkAbsolute)}`)}`;
-}
-
-/**
  * Format merge-in-progress detail with conflicts and auto-merged file links.
  */
 export function formatMergeInProgressDetail(
@@ -400,8 +371,7 @@ export function formatMergeInProgressDetail(
   const shown = autoMergedFiles.slice(0, maxFiles);
   for (const filePath of shown) {
     const fileLink = getVsCodeOpenFileLink(filePath, linkOptions);
-    const diffInfo = getVsCodeDiffLink(filePath, linkOptions);
-    lines.push(`  - ${fileLink}${diffInfo}`);
+    lines.push(`  - ${fileLink}`);
   }
 
   if (autoMergedFiles.length > shown.length) {
@@ -509,8 +479,7 @@ function printFileGroup(
     const commit = useUpstream ? file.upstreamCommit : file.changedCommit;
     const date = useUpstream ? file.upstreamChangedAt : file.changedAt;
     const dateInfo = formatFileDateInfo(file.path, commit, date, linkOptions);
-    const diffInfo = getVsCodeDiffLink(file.path, linkOptions);
-    console.info(`  ${config.icon} ${file.path}${dateInfo}${diffInfo}`);
+    console.info(`  ${config.icon} ${file.path}${dateInfo}`);
   }
 
   if (filtered.length > maxLines) {
@@ -524,52 +493,26 @@ function printFileGroup(
 }
 
 /**
- * Print files that will sync from upstream.
+ * Print all analyze-mode file group sections in review order:
+ * behind, ahead (protected), drifted, diverged, and pinned.
  */
-export function printSyncFiles(files: AnalyzedFile[], linkOptions: LinkOptions): void {
+export function printAnalysisFileGroups(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'behind', linkOptions, {
     title: pc.cyan('↓ behind on upstream'),
   });
-}
-
-/**
- * Print protected fork changes preview for analyze mode.
- * These files differ from upstream but are protected by ignored/pinned config.
- */
-export function printAheadPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'ahead', linkOptions, {
     title: `${pc.blue('↑ protected in fork')}`,
     hint: 'these files have fork changes and are protected by pinned or ignored config.',
   });
-}
-
-/**
- * Print drifted files warning.
- */
-export function printDriftedWarning(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'drifted', linkOptions, {
     title: `${warningMark} ${pc.yellow('drifted from upstream')}`,
     hint: 'these files have fork changes but are not pinned or ignored.',
   });
-}
-
-/**
- * Print diverged files preview for analyze mode.
- * These will be merged by git - some may auto-merge, others may conflict.
- */
-export function printDivergedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'diverged', linkOptions, {
     title: `${pc.magenta('⇅ diverged')}`,
     hint: 'both fork and upstream changed.',
     dateSource: 'upstream',
   });
-}
-
-/**
- * Print pinned files preview for analyze mode.
- * These files have both fork and upstream changes, but fork changes take precedence.
- */
-export function printPinnedPreview(files: AnalyzedFile[], linkOptions: LinkOptions): void {
   printFileGroup(files, 'pinned', linkOptions, {
     title: `${pc.green('⨀ pinned')}`,
     hint: 'both changed, fork wins (pinned in cella.config.ts).',

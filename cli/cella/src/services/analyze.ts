@@ -5,21 +5,16 @@
  * Uses the same merge-engine as sync, but discards the result.
  */
 
-import { spawnSync } from 'node:child_process';
 import { basename } from 'node:path';
 import type { MergeResult, RuntimeConfig } from '../config/types';
 import { refreshViewWorktree } from '../utils/cleanup';
 import pc from '../utils/colors';
-import { openVsCodeDiff } from '../utils/diff';
+import { gitDiffFile, openVsCodeDiff } from '../utils/diff';
 import {
   createSpinner,
   type LinkOptions,
-  printAheadPreview,
-  printDivergedPreview,
-  printDriftedWarning,
-  printPinnedPreview,
+  printAnalysisFileGroups,
   printSummary,
-  printSyncFiles,
   spinnerSuccess,
   spinnerText,
   writeLogFile,
@@ -27,21 +22,13 @@ import {
 } from '../utils/display';
 import { runMergeEngine } from './merge-engine';
 
-type AnalyzeScopeResolved = 'all' | 'risk' | 'protected';
-
-const scopeStatuses: Record<AnalyzeScopeResolved, Set<string>> = {
+const scopeStatuses: Record<'all' | 'risk' | 'protected', Set<string>> = {
   all: new Set(['ahead', 'drifted', 'diverged']),
   risk: new Set(['drifted', 'diverged']),
   protected: new Set(['ahead']),
 };
 
-function resolveScope(scope?: string): AnalyzeScopeResolved {
-  if (!scope) return 'all';
-  if (scope === 'all' || scope === 'risk' || scope === 'protected') return scope;
-  throw new Error(`invalid --scope '${scope}'. expected one of: all, risk, protected`);
-}
-
-function filterByScope(files: MergeResult['files'], scope: AnalyzeScopeResolved): MergeResult['files'] {
+function filterByScope(files: MergeResult['files'], scope: 'all' | 'risk' | 'protected'): MergeResult['files'] {
   const statuses = scopeStatuses[scope];
   return files.filter((f) => statuses.has(f.status));
 }
@@ -57,29 +44,11 @@ function findTargetFile(files: MergeResult['files'], targetPath: string) {
 function printUnifiedDiff(config: RuntimeConfig, filePath: string): void {
   // Label the upstream side 'cella/' and the local side with the repo's folder name
   // so the diff reads cella/<path> vs <fork>/<path> instead of opaque a/ and b/.
-  const upstreamName = 'cella/';
-  const forkName = `${basename(config.forkPath)}/`;
-
-  const diffResult = spawnSync(
-    'git',
-    [
-      'diff',
-      '--no-color',
-      `--src-prefix=${upstreamName}`,
-      `--dst-prefix=${forkName}`,
-      `${config.upstreamRef}..HEAD`,
-      '--',
-      filePath,
-    ],
-    { cwd: config.forkPath, stdio: ['pipe', 'pipe', 'pipe'] },
-  );
-
-  if (diffResult.status !== 0) {
-    const stderr = diffResult.stderr.toString().trim();
-    throw new Error(stderr || `failed to diff ${filePath}`);
-  }
-
-  writeStdout(diffResult.stdout.toString());
+  const diff = gitDiffFile(config.forkPath, `${config.upstreamRef}..HEAD`, filePath, {
+    dstPrefix: basename(config.forkPath),
+    color: 'never',
+  });
+  writeStdout(diff.toString());
 }
 
 /**
@@ -103,8 +72,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
 
   spinnerSuccess();
 
-  const scope = resolveScope(config.scope);
-  const scopedFiles = filterByScope(result.files, scope);
+  const scopedFiles = filterByScope(result.files, config.scope ?? 'all');
 
   if (config.diff) {
     const file = findTargetFile(scopedFiles, config.diff) ?? findTargetFile(result.files, config.diff);
@@ -157,11 +125,7 @@ export async function runAnalyze(config: RuntimeConfig): Promise<MergeResult> {
   };
 
   // Print file lists first (analyze shows file lists for review)
-  printSyncFiles(result.files, linkOptions);
-  printAheadPreview(result.files, linkOptions);
-  printDriftedWarning(result.files, linkOptions);
-  printDivergedPreview(result.files, linkOptions);
-  printPinnedPreview(result.files, linkOptions);
+  printAnalysisFileGroups(result.files, linkOptions);
 
   // Print summary at the end
   printSummary(result.summary, 'analysis summary');

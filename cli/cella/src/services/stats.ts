@@ -11,6 +11,7 @@ import pc from '../utils/colors';
 import { printCoverageSummary } from '../utils/coverage-utils';
 import { createSpinner, DIVIDER, spinnerSuccess } from '../utils/display';
 import { git } from '../utils/git';
+import { parseYamlBlockList } from '../utils/yaml';
 
 /** Extensions Biome can check (source code, config, styles) */
 const sourceExtensions = new Set(['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'json', 'jsonc', 'css', 'html']);
@@ -40,41 +41,18 @@ interface WorkspacePackage {
 
 /**
  * Parse pnpm-workspace.yaml to extract package paths.
- * Uses simple line parsing to avoid adding a YAML dependency.
  */
 async function getWorkspacePackages(forkPath: string): Promise<WorkspacePackage[]> {
   const content = await readFile(join(forkPath, 'pnpm-workspace.yaml'), 'utf-8');
-  const packages: WorkspacePackage[] = [];
 
-  let inPackages = false;
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-
-    if (trimmed === 'packages:') {
-      inPackages = true;
-      continue;
+  return parseYamlBlockList(content, 'packages').map((pattern) => {
+    // Handle wildcard patterns like 'cli/*' — resolved per file when matching
+    if (pattern.endsWith('/*')) {
+      const base = pattern.slice(0, -2);
+      return { name: `${base}/*`, prefix: `${base}/` };
     }
-
-    // Stop when hitting next top-level key
-    if (inPackages && !trimmed.startsWith('-') && !trimmed.startsWith('#') && trimmed.length > 0) {
-      break;
-    }
-
-    if (inPackages && trimmed.startsWith('- ')) {
-      const pattern = trimmed.slice(2).trim();
-
-      // Handle wildcard patterns like 'cli/*'
-      if (pattern.endsWith('/*')) {
-        const base = pattern.slice(0, -2);
-        // We'll resolve wildcards when matching files
-        packages.push({ name: `${base}/*`, prefix: `${base}/` });
-      } else {
-        packages.push({ name: pattern, prefix: `${pattern}/` });
-      }
-    }
-  }
-
-  return packages;
+    return { name: pattern, prefix: `${pattern}/` };
+  });
 }
 
 /**

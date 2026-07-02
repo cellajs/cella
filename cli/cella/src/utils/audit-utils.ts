@@ -469,15 +469,3 @@ export function formatDependents(dependents: string[]): string {
   if (dependents.length === 1) return dependents[0];
   return `${dependents[0]} +${dependents.length - 1}`;
 }
-
-/**
- * Formats a clickable terminal link (OSC 8 escape sequence).
- * Falls back to plain text if terminal doesn't support it.
- */
-export function terminalLink(text: string, url: string): string {
-  // Strip control characters from URL to prevent terminal escape injection (CWE-116)
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control chars is the security purpose here.
-  const safeUrl = url.replace(/[\x00-\x1f\x7f]/g, '');
-  // OSC 8 hyperlink format: \e]8;;URL\e\\TEXT\e]8;;\e\\
-  return `\u001B]8;;${safeUrl}\u0007${text}\u001B]8;;\u0007`;
-}

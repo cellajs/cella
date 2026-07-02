@@ -362,12 +362,9 @@ export interface MergeResult {
   upstreamTag?: string;
   files: AnalyzedFile[];
   summary: AnalysisSummary;
-  worktreePath: string;
   conflicts: string[];
   /** Upstream GitHub URL base for commit links */
   upstreamGitHubUrl?: string;
-  /** Fork GitHub URL base for commit links */
-  forkGitHubUrl?: string;
   /** Upstream commit info */
   upstreamCommit?: {
     hash: string;
@@ -382,6 +379,4 @@ export interface MergeResult {
   }>;
   /** Files that were auto-merged by git (diverged without remaining conflicts) */
   autoMergedFiles?: string[];
-  /** Whether the sync was auto-committed (squash strategy with no conflicts) */
-  autoCommitted?: boolean;
 }

@@ -12,7 +12,7 @@ export interface AiJobData {
  * Builds a synthetic AuthContext from job data so the worker can use
  * tenantContext()/tenantRead() and permission helpers.
  *
- * TODO: as unknown as AuthContext
+ * TODO: as unknown as AuthContext and not wired atm
  * Phase 5 will use this for Yjs peer mode and retry tasks.
  */
 export function buildWorkerContext(jobData: AiJobData): AuthContext {

@@ -1,15 +1,45 @@
 /**
  * Diff helpers for sync CLI v2.
  *
- * Shared logic for opening a visual diff in VS Code, used by both the analyze
- * service (`--open-diff`) and any other consumer that needs an upstream-vs-fork
- * comparison.
+ * Shared logic for producing a single-file `git diff` (labeled cella/ vs fork/)
+ * and for opening a visual diff in VS Code. Used by the analyze and
+ * contributions services.
  */
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+
+/**
+ * Run `git diff` for a single file across a ref range, labeling the sides
+ * `cella/<path>` vs `<dstPrefix>/<path>` instead of opaque a/ and b/.
+ *
+ * @param cwd - Repo to run the diff in
+ * @param range - Ref range (e.g. 'upstreamRef..HEAD')
+ * @param filePath - File to diff
+ * @param options.dstPrefix - Label for the destination side (e.g. the fork name)
+ * @param options.color - 'always' for pager output, 'never' for machine output
+ * @returns Raw diff output (empty when the file is identical)
+ */
+export function gitDiffFile(
+  cwd: string,
+  range: string,
+  filePath: string,
+  options: { dstPrefix: string; color?: 'always' | 'never' },
+): Buffer {
+  const args = ['diff'];
+  if (options.color === 'always') args.push('--color=always');
+  if (options.color === 'never') args.push('--no-color');
+  args.push('--src-prefix=cella/', `--dst-prefix=${options.dstPrefix}/`, range, '--', filePath);
+
+  const result = spawnSync('git', args, { cwd, maxBuffer: 50 * 1024 * 1024 });
+  if (result.status !== 0) {
+    const stderr = result.stderr?.toString().trim();
+    throw new Error(stderr || `failed to diff ${filePath}`);
+  }
+  return result.stdout;
+}
 
 /**
  * Open a VS Code visual diff (`code --diff`) comparing the upstream version of a

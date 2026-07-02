@@ -27,16 +27,14 @@ import {
   middleTruncate,
   runPnpmAudit,
   saveCache,
-  terminalLink,
   type VulnerabilityInfo,
 } from '../utils/audit-utils';
 import pc from '../utils/colors';
-import { createSpinner, spinnerSuccess, warningMark } from '../utils/display';
+import { createSpinner, hyperlink, spinnerSuccess, spinnerText, warningMark } from '../utils/display';
+import { parseYamlBlockMap } from '../utils/yaml';
 
 /** Options for the audit service */
 interface AuditOptions {
-  /** Whether to clear the changelog cache before running */
-  clearCache?: boolean;
   /** Whether to bypass pnpm metadata cache for fresh registry data */
   force?: boolean;
   /** Whether to check which pnpm.overrides are still needed */
@@ -49,12 +47,6 @@ interface AuditOptions {
 export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}): Promise<void> {
   const { forkPath } = config;
 
-  // Handle cache clearing
-  if (options.clearCache) {
-    clearCache();
-    return;
-  }
-
   // Handle check-overrides mode
   if (options.checkOverrides) {
     await checkOverrides(forkPath);
@@ -65,13 +57,13 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
   try {
     // Clear pnpm metadata cache when force is set to get fresh registry data
     if (options.force) {
-      spinner.text = 'clearing pnpm metadata cache...';
+      spinnerText('clearing pnpm metadata cache...');
       clearCache();
       spawnSync('pnpm', ['cache', 'delete', '*'], {
         cwd: forkPath,
         stdio: 'ignore',
       });
-      spinner.text = 'checking for outdated packages & vulnerabilities...';
+      spinnerText('checking for outdated packages & vulnerabilities...');
     }
 
     // Run outdated check and audit in parallel
@@ -88,20 +80,31 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
     // Load cache for changelog URLs
     const cache = loadCache();
 
-    spinner.text = `found ${packageNames.length} outdated package(s) - fetching metadata...`;
+    spinnerText(`found ${packageNames.length} outdated package(s) - fetching metadata...`);
 
-    // Pre-cache package.json reads for dependent names
+    // Read each dependent's package.json once; used for display names and pin detection.
+    type DependentPkgJson = { name?: string } & Partial<
+      Record<'dependencies' | 'devDependencies', Record<string, string>>
+    >;
+    const pkgJsonCache = new Map<string, DependentPkgJson | null>();
+    const readDependentPkg = (location: string): DependentPkgJson | null => {
+      let cached = pkgJsonCache.get(location);
+      if (cached === undefined) {
+        try {
+          cached = JSON.parse(fs.readFileSync(path.join(location, 'package.json'), 'utf-8'));
+        } catch {
+          cached = null;
+        }
+        pkgJsonCache.set(location, cached ?? null);
+      }
+      return cached ?? null;
+    };
+
     const dependentNameCache = new Map<string, string>();
     for (const name of packageNames) {
       for (const dep of outdatedPackages[name].dependentPackages) {
         if (!dependentNameCache.has(dep.location)) {
-          const packageJsonPath = path.join(dep.location, 'package.json');
-          try {
-            const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-            dependentNameCache.set(dep.location, pkgJson.name || path.basename(dep.location));
-          } catch {
-            dependentNameCache.set(dep.location, path.basename(dep.location));
-          }
+          dependentNameCache.set(dep.location, readDependentPkg(dep.location)?.name || path.basename(dep.location));
         }
       }
     }
@@ -122,14 +125,9 @@ export async function runAudit(config: RuntimeConfig, options: AuditOptions = {}
           // Detect workspaces where this package is pinned (exact version, no ^ or ~)
           const pinnedIn: string[] = [];
           for (const d of pkg.dependentPackages) {
-            try {
-              const pkgJson = JSON.parse(fs.readFileSync(path.join(d.location, 'package.json'), 'utf-8'));
-              const spec = pkgJson[pkg.dependencyType]?.[name] || '';
-              if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
-                pinnedIn.push(d.name);
-              }
-            } catch {
-              // skip
+            const spec = readDependentPkg(d.location)?.[pkg.dependencyType]?.[name] || '';
+            if (spec && !spec.startsWith('^') && !spec.startsWith('~') && !spec.startsWith('>')) {
+              pinnedIn.push(d.name);
             }
           }
 
@@ -241,13 +239,13 @@ function printOutdatedResults(
     // Build links (compact)
     const links: string[] = [];
     if (pkg.changelogUrl) {
-      links.push(terminalLink(pc.magenta('log'), pkg.changelogUrl));
+      links.push(hyperlink(pc.magenta('log'), pkg.changelogUrl));
     }
     if (pkg.releasesUrl) {
-      links.push(terminalLink(pc.blue('rel'), pkg.releasesUrl));
+      links.push(hyperlink(pc.blue('rel'), pkg.releasesUrl));
     }
     if (pkg.repoUrl) {
-      links.push(terminalLink(pc.cyan('repo'), pkg.repoUrl));
+      links.push(hyperlink(pc.cyan('repo'), pkg.repoUrl));
     }
 
     const linksStr = links.length > 0 ? links.join(' ') : pc.dim('n/a');
@@ -278,7 +276,7 @@ function printOutdatedResults(
     const relativePath = path.relative(forkPath, packageJsonPath);
     const paddedName = dependentName.padEnd(maxDependentNameLen);
     console.info(
-      `  ${pc.dim('•')} ${paddedName}  ${terminalLink(relativePath, `file://${packageJsonPath}`)} ${pc.dim(`${count}`)}`,
+      `  ${pc.dim('•')} ${paddedName}  ${hyperlink(relativePath, `file://${packageJsonPath}`)} ${pc.dim(`${count}`)}`,
     );
   }
 }
@@ -554,76 +552,11 @@ function printVulnerabilityResults(auditResult: AuditResult | null, vulnMap: Map
   console.info();
 }
 
-/**
- * Parses the top-level 'overrides:' block from pnpm-workspace.yaml.
- * Simple line-based parser for flat key: value entries — avoids a YAML dependency.
- */
-function parseYamlOverrides(content: string): Record<string, string> {
-  const result: Record<string, string> = {};
-  const lines = content.split('\n');
-  let inOverrides = false;
-
-  for (const line of lines) {
-    // Detect start of overrides block (top-level key, no indentation)
-    if (/^overrides:\s*$/.test(line)) {
-      inOverrides = true;
-      continue;
-    }
-
-    // If we're in overrides, parse indented key: value lines
-    if (inOverrides) {
-      // End of block: non-indented non-empty line
-      if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
-        break;
-      }
-
-      // Match "  key: 'value'" or "  key: value"
-      const match = line.match(/^\s+(.+?):\s+['"]?([^'"]+)['"]?\s*$/);
-      if (match) {
-        result[match[1]] = match[2];
-      }
-    }
-  }
-
-  return result;
-}
-
-/**
- * Parses the top-level default 'catalog:' block from pnpm-workspace.yaml.
- * Simple line-based parser for flat key: value entries — avoids a YAML dependency.
- */
-function parseYamlCatalog(content: string): Record<string, string> {
-  const result: Record<string, string> = {};
-  const lines = content.split('\n');
-  let inCatalog = false;
-
-  for (const line of lines) {
-    if (/^catalog:\s*$/.test(line)) {
-      inCatalog = true;
-      continue;
-    }
-
-    if (inCatalog) {
-      if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')) {
-        break;
-      }
-
-      const match = line.match(/^\s+(.+?):\s+['"]?([^'"]+)['"]?\s*$/);
-      if (match) {
-        const key = match[1].replace(/^['"]|['"]$/g, '');
-        result[key] = match[2];
-      }
-    }
-  }
-
-  return result;
-}
-
 function readCatalogPackageNames(forkPath: string): Set<string> {
   const workspacePath = path.join(forkPath, 'pnpm-workspace.yaml');
   try {
     const content = fs.readFileSync(workspacePath, 'utf-8');
-    return new Set(Object.keys(parseYamlCatalog(content)));
+    return new Set(Object.keys(parseYamlBlockMap(content, 'catalog')));
   } catch {
     return new Set();
   }
@@ -652,7 +585,7 @@ function readOverrides(forkPath: string): Map<string, { target: string; source: 
   const workspacePath = path.join(forkPath, 'pnpm-workspace.yaml');
   try {
     const content = fs.readFileSync(workspacePath, 'utf-8');
-    const wsOverrides = parseYamlOverrides(content);
+    const wsOverrides = parseYamlBlockMap(content, 'overrides');
     for (const [key, value] of Object.entries(wsOverrides)) {
       overrides.set(key, { target: value, source: 'pnpm-workspace.yaml' });
     }

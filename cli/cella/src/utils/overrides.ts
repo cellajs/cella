@@ -138,17 +138,3 @@ export function printWarnings(warnings: ConfigWarning[]): void {
     console.info(`${warningMark} ${warning.message}`);
   }
 }
-
-/**
- * Find all files matching ignored patterns from a file list.
- */
-export function findIgnoredFiles(files: string[], config: CellaCliConfig): string[] {
-  return files.filter((file) => isIgnored(file, config));
-}
-
-/**
- * Find all files matching pinned patterns from a file list.
- */
-export function findPinnedFiles(files: string[], config: CellaCliConfig): string[] {
-  return files.filter((file) => isPinned(file, config));
-}

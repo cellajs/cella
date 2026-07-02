@@ -14,20 +14,14 @@
  */
 
 import type { AnalysisSummary, AnalyzedFile, MergeResult, RuntimeConfig } from '../config/types';
-import {
-  cleanupLeftoverWorktrees,
-  cleanupWorktree,
-  detectLeftoverWorktree,
-  getWorktreePath,
-  refreshViewWorktree,
-  registerWorktree,
-} from '../utils/cleanup';
+import { cleanupLeftoverWorktrees, cleanupWorktree, getWorktreePath, registerWorktree } from '../utils/cleanup';
 import { DEFAULT_UPSTREAM_REMOTE, resolveUpstream } from '../utils/config';
 import { formatFetchedUpstreamDetail, formatMergeInProgressDetail } from '../utils/display';
 import {
   batchGitRm,
   batchRestoreToHead,
   batchUnstageFiles,
+  type CommitRangeEntry,
   checkoutFromRef,
   countCommitsBetween,
   createWorktree,
@@ -41,14 +35,13 @@ import {
   getConflictedFiles,
   getEffectiveMergeBase,
   getMergeBase,
-  getRemoteUrl,
   getStagedNewFiles,
   gitMv,
-  gitRm,
   listCommitsBetween,
   merge,
   mergeAbort,
   removeFileFromWorktree,
+  removeFileFully,
   resolveLatestReleaseTag,
   restoreToHead,
   stagePath,
@@ -113,7 +106,6 @@ async function applyDirectMerge(
   config: RuntimeConfig,
   onProgress?: ProgressCallback,
 ): Promise<{
-  resolved: number;
   remainingConflicts: string[];
   analyzedFiles: AnalyzedFile[];
   autoMergedFiles: string[];
@@ -175,8 +167,6 @@ async function applyDirectMerge(
 
   // Phase 5: Apply remaining individual resolutions.
   // Pinned/ignored already handled in batch above — skip them here.
-  let resolved = batchRestorePaths.length + batchRemovePaths.length;
-
   for (const file of analyzedFiles) {
     const { path: filePath, status, isPinned: pinned, isIgnored: ignored, existsInFork } = file;
 
@@ -198,8 +188,7 @@ async function applyDirectMerge(
           await gitMv(forkPath, file.renamedFrom, filePath);
         } catch {
           // git mv failed — copy content manually
-          await gitRm(forkPath, file.renamedFrom);
-          await removeFileFromWorktree(forkPath, file.renamedFrom);
+          await removeFileFully(forkPath, file.renamedFrom);
           // Checkout upstream's new path first, then restore fork content
           await checkoutFromRef(forkPath, 'HEAD', file.renamedFrom).catch(() => {});
         }
@@ -208,14 +197,12 @@ async function applyDirectMerge(
         onProgress?.(`→ ${filePath}: keeping fork content (pinned rename, old path removed)`);
         await restoreToHead(forkPath, filePath);
       }
-      resolved++;
       continue;
     }
 
     if (status === 'diverged') {
       // Let git's merge result stand - trust the merge
       onProgress?.(`→ ${filePath}: using git merge result (diverged)`);
-      resolved++;
       continue;
     }
 
@@ -226,27 +213,20 @@ async function applyDirectMerge(
         onProgress?.(`→ ${filePath}: adding from upstream (new file)`);
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       } else if (!file.existsInUpstream) {
-        // Upstream deleted file - remove from fork
+        // Upstream deleted file - remove from fork (including leftovers after squash merge)
         onProgress?.(`→ ${filePath}: removing (deleted in upstream)`);
-        await gitRm(forkPath, filePath);
-        // Also remove from filesystem if git rm didn't (e.g., after squash merge)
-        await removeFileFromWorktree(forkPath, filePath);
+        await removeFileFully(forkPath, filePath);
       } else {
         // Both exist, only upstream changed - accept upstream version explicitly.
         // This resolves false conflicts from stale merge-base (previous squash syncs).
         onProgress?.(`→ ${filePath}: accepting upstream (behind)`);
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       }
-      resolved++;
       continue;
     }
 
     if (status === 'deleted') {
-      if (await fileExistsInWorktree(forkPath, filePath)) {
-        await gitRm(forkPath, filePath);
-        await removeFileFromWorktree(forkPath, filePath);
-      }
-      resolved++;
+      await removeFileFully(forkPath, filePath);
       continue;
     }
 
@@ -263,60 +243,37 @@ async function applyDirectMerge(
           await gitMv(forkPath, oldPath, filePath);
         } catch {
           // git mv failed (possibly due to merge state) - fall back to manual approach
-          await gitRm(forkPath, oldPath);
-          await removeFileFromWorktree(forkPath, oldPath);
+          await removeFileFully(forkPath, oldPath);
           await checkoutFromRef(forkPath, upstreamRef, filePath);
         }
       } else if (oldPathExists && newPathExists) {
         // Both exist (merge already staged the new file, but old still in worktree)
         // Remove old and ensure new has correct content
         onProgress?.(`→ ${oldPath} → ${filePath}: completing rename (removing old)`);
-        await gitRm(forkPath, oldPath);
-        await removeFileFromWorktree(forkPath, oldPath);
-        await checkoutFromRef(forkPath, upstreamRef, filePath);
-      } else if (!oldPathExists && newPathExists) {
-        // Rename already fully applied - just ensure content is correct
-        onProgress?.(`→ ${filePath}: updating from upstream (rename already applied)`);
+        await removeFileFully(forkPath, oldPath);
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       } else {
-        // Neither exists - checkout new path from upstream
-        onProgress?.(`→ ${filePath}: adding from upstream (renamed)`);
+        // Rename already applied (or neither path exists) - ensure new path has upstream content
+        onProgress?.(`→ ${filePath}: updating from upstream (renamed)`);
         await checkoutFromRef(forkPath, upstreamRef, filePath);
       }
-      resolved++;
     }
   }
 
-  // Handle remaining git conflicts (only auto-resolve ignored/pinned)
+  // Handle remaining git conflicts: auto-resolve only ignored/pinned (fork wins);
+  // everything else keeps its markers for IDE 3-way resolution.
   const gitConflicts = await getConflictedFiles(forkPath);
   for (const filePath of gitConflicts) {
-    const fileIsIgnored = isIgnored(filePath, config);
-    const fileIsPinned = isPinnedForSync(filePath, config, config.unpinned);
+    const isProtected = isIgnored(filePath, config) || isPinnedForSync(filePath, config, config.unpinned);
+    if (!isProtected) continue;
 
-    if (fileIsIgnored) {
-      const existsInFork = await fileExistsAtRef(forkPath, 'HEAD', filePath);
-      if (existsInFork) {
-        onProgress?.(`→ ${filePath}: keeping fork (ignored conflict)`);
-        await restoreToHead(forkPath, filePath);
-      } else {
-        onProgress?.(`→ ${filePath}: removing (ignored conflict)`);
-        await gitRm(forkPath, filePath);
-        await removeFileFromWorktree(forkPath, filePath);
-      }
-      resolved++;
-    } else if (fileIsPinned) {
-      const existsInFork = await fileExistsAtRef(forkPath, 'HEAD', filePath);
-      if (existsInFork) {
-        onProgress?.(`→ ${filePath}: keeping fork (pinned conflict)`);
-        await restoreToHead(forkPath, filePath);
-      } else {
-        onProgress?.(`→ ${filePath}: removing (pinned conflict, not in fork)`);
-        await gitRm(forkPath, filePath);
-        await removeFileFromWorktree(forkPath, filePath);
-      }
-      resolved++;
+    if (await fileExistsAtRef(forkPath, 'HEAD', filePath)) {
+      onProgress?.(`→ ${filePath}: keeping fork (protected conflict)`);
+      await restoreToHead(forkPath, filePath);
+    } else {
+      onProgress?.(`→ ${filePath}: removing (protected conflict, not in fork)`);
+      await removeFileFully(forkPath, filePath);
     }
-    // Non-ignored, non-pinned conflicts are left for user in IDE
   }
 
   // Get remaining conflicts (these have markers for IDE)
@@ -340,7 +297,7 @@ async function applyDirectMerge(
     }
   }
 
-  return { resolved, remainingConflicts, analyzedFiles, autoMergedFiles };
+  return { remainingConflicts, analyzedFiles, autoMergedFiles };
 }
 
 /**
@@ -369,10 +326,248 @@ function calculateSummary(files: AnalyzedFile[]): AnalysisSummary {
 }
 
 /**
- * Main merge engine entry point.
- *
- * Creates worktree, performs merge, resolves all files,
- * and applies result via patch.
+ * Upstream context resolved once per run and shared by both engine modes.
+ */
+interface UpstreamContext {
+  /** Concrete upstream ref merged from (branch tip or release-tag ref) */
+  upstreamRef: string;
+  /** Release tag when tracking releases */
+  releaseTag?: string;
+  /** Effective merge-base used for the 3-way analysis */
+  mergeBase: string;
+  /** Upstream GitHub URL base for commit links */
+  upstreamGitHubUrl?: string;
+  /** Upstream HEAD commit info */
+  upstreamCommit: { hash: string; message: string; date: string };
+  /** Commits included in this sync range (oldest-first) */
+  upstreamCommits: CommitRangeEntry[];
+}
+
+/**
+ * Resolve everything both modes need from upstream: remote setup, the concrete
+ * ref to merge (branch tip or latest release tag), sync ancestry bootstrap,
+ * effective merge-base, and commit info for progress output.
+ */
+async function prepareUpstream(
+  config: RuntimeConfig,
+  onProgress?: ProgressCallback,
+  onStep?: StepCallback,
+): Promise<UpstreamContext> {
+  const { forkPath } = config;
+
+  // Setup upstream remote
+  onProgress?.('setting up upstream remote...');
+  const { track: configTrack, branchRef } = resolveUpstream(config.settings);
+  const remoteName = DEFAULT_UPSTREAM_REMOTE;
+  // A per-run --track flag (config.track) overrides the configured tracking mode.
+  const track = config.track ?? configTrack;
+  await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
+
+  // Fetch upstream (branches, plus release tags into a fork-safe namespace).
+  onProgress?.(`fetching upstream (${remoteName})...`);
+  await fetch(forkPath, remoteName);
+
+  // Resolve the concrete ref to merge from. Release tracking (default) syncs to the
+  // latest published release tag; branch tracking follows the upstream branch tip.
+  let upstreamRef = branchRef;
+  let releaseTag: string | undefined;
+  if (track === 'release') {
+    await fetchUpstreamTags(forkPath, remoteName);
+    const latest = await resolveLatestReleaseTag(forkPath, remoteName);
+    if (!latest) {
+      throw new Error(
+        `no upstream releases (v*) found on '${remoteName}'. Set upstreamTrack: 'branch' to follow ${branchRef}, ` +
+          `or check that ${config.settings.upstreamUrl} publishes release tags.`,
+      );
+    }
+    upstreamRef = latest.ref;
+    releaseTag = latest.tag;
+  }
+
+  // Expose the resolved ref to downstream steps (packages/analyze read config.upstreamRef
+  // after the engine runs). The static fallback set at CLI parse time is the branch tip.
+  config.upstreamRef = upstreamRef;
+  onStep?.('remote configured', `${releaseTag ?? upstreamRef} → ${config.settings.upstreamUrl}`);
+
+  // Bootstrap sync ancestry for forks with unrelated history (create-cella scaffold or an
+  // upstream history squash). No-op once a native merge-base exists. Runs after fetch so the
+  // base commit object is present, and after upstreamRef is finalized so release tags resolve.
+  onProgress?.('checking sync base...');
+  await ensureSyncBase(forkPath, 'HEAD', upstreamRef);
+
+  const upstreamGitHubUrl = getGitHubBaseUrl(config.settings.upstreamUrl) ?? undefined;
+
+  // Get effective merge base (handles stale base from previous squash syncs).
+  // --hard and --unpinned use the natural merge-base instead, resurfacing the
+  // full upstream history so previously-hidden drift/pins reappear consistently.
+  const aggressive = config.hard === true || config.unpinned === true;
+  const mergeBase = aggressive
+    ? await getMergeBase(forkPath, 'HEAD', upstreamRef)
+    : (await getEffectiveMergeBase(forkPath, 'HEAD', upstreamRef)).base;
+
+  // Get upstream commit info and count commits since merge-base
+  const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
+  const commitCount = await countCommitsBetween(forkPath, mergeBase, upstreamRef);
+  const commitListMax = 50;
+  const commitSkip = commitCount > commitListMax ? commitCount - commitListMax : 0;
+  const upstreamCommits =
+    commitCount > 0
+      ? await listCommitsBetween(forkPath, mergeBase, upstreamRef, {
+          oldestFirst: true,
+          skip: commitSkip,
+          limit: commitListMax,
+        })
+      : [];
+
+  onStep?.('fetched upstream', formatFetchedUpstreamDetail(commitCount, upstreamCommits, upstreamGitHubUrl));
+
+  return { upstreamRef, releaseTag, mergeBase, upstreamGitHubUrl, upstreamCommit, upstreamCommits };
+}
+
+/** MergeResult fields shared by both engine modes. */
+function resultMeta(config: RuntimeConfig, ctx: UpstreamContext) {
+  return {
+    upstreamBranch: config.settings.upstreamBranch ?? 'main',
+    upstreamRef: ctx.upstreamRef,
+    upstreamTag: ctx.releaseTag,
+    upstreamGitHubUrl: ctx.upstreamGitHubUrl,
+    upstreamCommit: ctx.upstreamCommit,
+    upstreamCommits: ctx.upstreamCommits,
+  };
+}
+
+/**
+ * SYNC MODE: merge, analyze, and resolve directly in the fork, then record the
+ * sync point (local ref + committed manifest) and leave the merge staged.
+ */
+async function runSyncMerge(
+  config: RuntimeConfig,
+  ctx: UpstreamContext,
+  onProgress?: ProgressCallback,
+  onStep?: StepCallback,
+): Promise<MergeResult> {
+  const { forkPath } = config;
+  const { upstreamRef, releaseTag, mergeBase, upstreamGitHubUrl, upstreamCommit } = ctx;
+
+  const { remainingConflicts, analyzedFiles, autoMergedFiles } = await applyDirectMerge(
+    forkPath,
+    upstreamRef,
+    mergeBase,
+    config,
+    onProgress,
+  );
+
+  const summary = calculateSummary(analyzedFiles);
+  const synced = summary.behind + summary.diverged + summary.renamed;
+
+  // Count total resolved changes (includes ignored/pinned resolutions)
+  const totalResolved = synced + summary.ignored + summary.pinned;
+
+  // Record the upstream sync point in lockstep: the local `refs/cella/last-sync` ref plus
+  // the committed `cella.manifest.json` (staged so it rides in the sync commit and travels
+  // with the repo for fresh-clone bootstrap).
+  const syncManifest: SyncManifest = {
+    upstream: {
+      repo: upstreamGitHubUrl ? upstreamGitHubUrl.replace('https://github.com/', '') : undefined,
+      track: releaseTag ? 'release' : 'branch',
+      commit: upstreamCommit.hash,
+      release: releaseTag ?? null,
+      url: upstreamGitHubUrl
+        ? releaseTag
+          ? `${upstreamGitHubUrl}/releases/tag/${releaseTag}`
+          : `${upstreamGitHubUrl}/commit/${upstreamCommit.hash}`
+        : undefined,
+      syncedAt: new Date().toISOString(),
+    },
+  };
+  const recordSyncPoint = async () => {
+    await storeLastSyncRef(forkPath, upstreamCommit.hash);
+    await writeSyncManifest(forkPath, syncManifest);
+    await stagePath(forkPath, MANIFEST_FILE);
+  };
+
+  if (remainingConflicts.length > 0) {
+    // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
+    // When user commits, it becomes a merge commit (self-healing ancestry).
+    await recordSyncPoint();
+    onStep?.(
+      'merge in progress',
+      formatMergeInProgressDetail(remainingConflicts.length, autoMergedFiles, { forkPath }, 100),
+    );
+  } else if (totalResolved > 0) {
+    const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
+    // Keep MERGE_HEAD so the commit the user creates is a two-parent merge commit
+    // with full upstream ancestry (native git merge-base). The sync branch is a
+    // dedicated integration branch; PRs into `main` are squash-merged separately.
+    await recordSyncPoint();
+    onStep?.('synced', `${label} (staged, commit to finish)`);
+  } else {
+    // Truly nothing changed - clean up merge state
+    await mergeAbort(forkPath);
+    onStep?.('up to date', 'no upstream changes to sync');
+  }
+
+  return {
+    success: remainingConflicts.length === 0,
+    files: analyzedFiles,
+    summary,
+    conflicts: remainingConflicts,
+    autoMergedFiles,
+    ...resultMeta(config, ctx),
+  };
+}
+
+/**
+ * ANALYZE MODE: preview the merge in a temp worktree (invisible to the IDE),
+ * classify all files, and discard the worktree — the fork is never touched.
+ */
+async function runAnalyzePreview(
+  config: RuntimeConfig,
+  ctx: UpstreamContext,
+  onProgress?: ProgressCallback,
+  onStep?: StepCallback,
+): Promise<MergeResult> {
+  const { forkPath } = config;
+  const worktreePath = getWorktreePath(forkPath);
+
+  // Create worktree in temp directory (invisible to VSCode)
+  onProgress?.('creating worktree in temp directory...');
+  await createWorktree(forkPath, worktreePath, 'HEAD');
+  onStep?.('worktree created', worktreePath);
+
+  // Perform merge in worktree (always real merge, never --squash, for correct 3-way)
+  onProgress?.('performing merge in worktree...');
+  await merge(worktreePath, ctx.upstreamRef, { noCommit: true, noEdit: true });
+  onStep?.('merge complete', 'upstream merged into worktree');
+
+  // Analyze all files, then enrich with change dates and commit hashes
+  onProgress?.('analyzing files...');
+  const analyzedFiles = await analyzeRefs(
+    forkPath,
+    'HEAD',
+    ctx.upstreamRef,
+    ctx.mergeBase,
+    syncPredicates(config),
+    onProgress,
+  );
+  await enrichChangeInfo(forkPath, analyzedFiles, ctx.mergeBase, 'HEAD', ctx.upstreamRef);
+  onStep?.('analysis complete', `${analyzedFiles.length} files analyzed, dry run — no changes applied`);
+
+  onProgress?.('cleaning up worktree...');
+  await cleanupWorktree(forkPath, worktreePath);
+
+  return {
+    success: true,
+    files: analyzedFiles,
+    summary: calculateSummary(analyzedFiles),
+    // For analyze mode, count diverged files as potential conflicts
+    conflicts: analyzedFiles.filter((f) => f.status === 'diverged').map((f) => f.path),
+    ...resultMeta(config, ctx),
+  };
+}
+
+/**
+ * Main merge engine entry point: prepare upstream once, then run the requested mode.
  */
 export async function runMergeEngine(
   config: RuntimeConfig,
@@ -386,230 +581,17 @@ export async function runMergeEngine(
   const worktreePath = getWorktreePath(forkPath);
   const { apply, onProgress, onStep } = options;
 
-  // Check for leftover worktree
-  if (await detectLeftoverWorktree(forkPath)) {
-    onProgress?.('cleaning up leftover worktree from previous run...');
-    await cleanupLeftoverWorktrees(forkPath);
-  }
+  // Clean up any leftover worktree from a previous interrupted run
+  await cleanupLeftoverWorktrees(forkPath);
 
   // Register worktree for cleanup on abort
   registerWorktree(forkPath, worktreePath);
 
   try {
-    // Setup upstream remote
-    onProgress?.('setting up upstream remote...');
-    const { track: configTrack, branchRef } = resolveUpstream(config.settings);
-    const remoteName = DEFAULT_UPSTREAM_REMOTE;
-    // A per-run --track flag (config.track) overrides the configured tracking mode.
-    const track = config.track ?? configTrack;
-    await ensureRemote(forkPath, remoteName, config.settings.upstreamUrl);
-
-    // Fetch upstream (branches, plus release tags into a fork-safe namespace).
-    onProgress?.(`fetching upstream (${remoteName})...`);
-    await fetch(forkPath, remoteName);
-
-    // Resolve the concrete ref to merge from. Release tracking (default) syncs to the
-    // latest published release tag; branch tracking follows the upstream branch tip.
-    let upstreamRef = branchRef;
-    let releaseTag: string | undefined;
-    if (track === 'release') {
-      await fetchUpstreamTags(forkPath, remoteName);
-      const latest = await resolveLatestReleaseTag(forkPath, remoteName);
-      if (!latest) {
-        throw new Error(
-          `no upstream releases (v*) found on '${remoteName}'. Set upstreamTrack: 'branch' to follow ${branchRef}, ` +
-            `or check that ${config.settings.upstreamUrl} publishes release tags.`,
-        );
-      }
-      upstreamRef = latest.ref;
-      releaseTag = latest.tag;
-    }
-
-    // Expose the resolved ref to downstream steps (packages/analyze read config.upstreamRef
-    // after the engine runs). The static fallback set at CLI parse time is the branch tip.
-    config.upstreamRef = upstreamRef;
-    onStep?.('remote configured', `${releaseTag ?? upstreamRef} → ${config.settings.upstreamUrl}`);
-
-    // Bootstrap sync ancestry for forks with unrelated history (create-cella scaffold or an
-    // upstream history squash). No-op once a native merge-base exists. Runs after fetch so the
-    // base commit object is present, and after upstreamRef is finalized so release tags resolve.
-    onProgress?.('checking sync base...');
-    await ensureSyncBase(forkPath, 'HEAD', upstreamRef);
-
-    // Get GitHub base URLs for commit links
-    const upstreamGitHubUrl = getGitHubBaseUrl(config.settings.upstreamUrl);
-    const forkOriginUrl = await getRemoteUrl(forkPath, 'origin');
-    const forkGitHubUrl = forkOriginUrl ? getGitHubBaseUrl(forkOriginUrl) : null;
-
-    // Get effective merge base (handles stale base from previous squash syncs).
-    // --hard and --unpinned use the natural merge-base instead, resurfacing the
-    // full upstream history so previously-hidden drift/pins reappear consistently.
-    const aggressive = config.hard === true || config.unpinned === true;
-    const mergeBase = aggressive
-      ? await getMergeBase(forkPath, 'HEAD', upstreamRef)
-      : (await getEffectiveMergeBase(forkPath, 'HEAD', upstreamRef)).base;
-
-    // Get upstream commit info and count commits since merge-base
-    const upstreamCommit = await getCommitInfo(forkPath, upstreamRef);
-    const commitCount = await countCommitsBetween(forkPath, mergeBase, upstreamRef);
-    const commitListMax = 50;
-    const commitSkip = commitCount > commitListMax ? commitCount - commitListMax : 0;
-    const upstreamCommits =
-      commitCount > 0
-        ? await listCommitsBetween(forkPath, mergeBase, upstreamRef, {
-            oldestFirst: true,
-            skip: commitSkip,
-            limit: commitListMax,
-          })
-        : [];
-
-    const commitInfo = formatFetchedUpstreamDetail(commitCount, upstreamCommits, upstreamGitHubUrl ?? undefined);
-
-    onStep?.('fetched upstream', commitInfo);
-
-    // For sync mode, we'll do the merge directly in fork
-    // For analyze mode, we use a worktree to preview changes
-    if (apply) {
-      // SYNC MODE: Do merge, analysis, and resolution directly in fork
-      const {
-        resolved: _resolved,
-        remainingConflicts,
-        analyzedFiles,
-        autoMergedFiles,
-      } = await applyDirectMerge(forkPath, upstreamRef, mergeBase, config, onProgress);
-
-      const summary = calculateSummary(analyzedFiles);
-      const synced = summary.behind + summary.diverged + summary.renamed;
-
-      // Count total resolved changes (includes ignored/pinned resolutions)
-      const totalResolved = synced + summary.ignored + summary.pinned;
-
-      // Record the upstream sync point in lockstep: the local `refs/cella/last-sync` ref plus
-      // the committed `cella.manifest.json` (staged so it rides in the sync commit and travels
-      // with the repo for fresh-clone bootstrap).
-      const upstreamRepo = upstreamGitHubUrl ? upstreamGitHubUrl.replace('https://github.com/', '') : undefined;
-      const syncManifest: SyncManifest = {
-        upstream: {
-          repo: upstreamRepo,
-          track: releaseTag ? 'release' : 'branch',
-          commit: upstreamCommit.hash,
-          release: releaseTag ?? null,
-          url: upstreamGitHubUrl
-            ? releaseTag
-              ? `${upstreamGitHubUrl}/releases/tag/${releaseTag}`
-              : `${upstreamGitHubUrl}/commit/${upstreamCommit.hash}`
-            : undefined,
-          syncedAt: new Date().toISOString(),
-        },
-      };
-      const recordSyncPoint = async () => {
-        await storeLastSyncRef(forkPath, upstreamCommit.hash);
-        await writeSyncManifest(forkPath, syncManifest);
-        await stagePath(forkPath, MANIFEST_FILE);
-      };
-
-      if (remainingConflicts.length > 0) {
-        // Conflicts: leave MERGE_HEAD intact for IDE 3-way merge resolution.
-        // When user commits, it becomes a merge commit (self-healing ancestry).
-        await recordSyncPoint();
-        // Materialize the upstream view worktree so auto-merged files get exact
-        // `code --diff` commands (byte-consistent with the fetched upstream ref).
-        const upstreamViewPath = await refreshViewWorktree(forkPath, upstreamRef);
-        onStep?.(
-          'merge in progress',
-          formatMergeInProgressDetail(
-            remainingConflicts.length,
-            autoMergedFiles,
-            {
-              upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
-              upstreamBranch: config.settings.upstreamBranch ?? 'main',
-              fileLinkMode: config.settings.fileLinkMode,
-              upstreamViewPath,
-              forkPath,
-            },
-            100,
-          ),
-        );
-      } else if (totalResolved > 0) {
-        const label = synced > 0 ? `${synced} files from upstream` : 'upstream changes';
-        // Keep MERGE_HEAD so the commit the user creates is a two-parent merge commit
-        // with full upstream ancestry (native git merge-base). The sync branch is a
-        // dedicated integration branch; PRs into `main` are squash-merged separately.
-        await recordSyncPoint();
-        onStep?.('synced', `${label} (staged, commit to finish)`);
-      } else {
-        // Truly nothing changed - clean up merge state
-        await mergeAbort(forkPath);
-        onStep?.('up to date', 'no upstream changes to sync');
-      }
-
-      return {
-        success: remainingConflicts.length === 0,
-        files: analyzedFiles,
-        summary,
-        worktreePath: forkPath,
-        conflicts: remainingConflicts,
-        upstreamBranch: config.settings.upstreamBranch ?? 'main',
-        upstreamRef,
-        upstreamTag: releaseTag,
-        upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
-        forkGitHubUrl: forkGitHubUrl ?? undefined,
-        upstreamCommit,
-        upstreamCommits,
-        autoMergedFiles,
-      };
-    }
-    // ANALYZE MODE: Use worktree to preview changes without affecting fork
-
-    // Create worktree in temp directory (invisible to VSCode)
-    onProgress?.('creating worktree in temp directory...');
-    await createWorktree(forkPath, worktreePath, 'HEAD');
-    onStep?.('worktree created', worktreePath);
-
-    // Perform merge in worktree (always real merge, never --squash, for correct 3-way)
-    onProgress?.('performing merge in worktree...');
-    await merge(worktreePath, upstreamRef, { noCommit: true, noEdit: true });
-    onStep?.('merge complete', 'upstream merged into worktree');
-
-    // Analyze all files
-    onProgress?.('analyzing files...');
-    const analyzedFiles = await analyzeRefs(
-      forkPath,
-      'HEAD',
-      upstreamRef,
-      mergeBase,
-      syncPredicates(config),
-      onProgress,
-    );
-
-    // Enrich files with change dates and commit hashes (cached lookup for non-identical files)
-    await enrichChangeInfo(forkPath, analyzedFiles, mergeBase, 'HEAD', upstreamRef);
-
-    onStep?.('analysis complete', `${analyzedFiles.length} files analyzed, dry run — no changes applied`);
-
-    const summary = calculateSummary(analyzedFiles);
-
-    // Cleanup worktree
-    onProgress?.('cleaning up worktree...');
-    await cleanupWorktree(forkPath, worktreePath);
-
-    // For analyze mode, count diverged files as potential conflicts
-    const potentialConflicts = analyzedFiles.filter((f) => f.status === 'diverged').map((f) => f.path);
-
-    return {
-      success: true,
-      files: analyzedFiles,
-      summary,
-      worktreePath,
-      conflicts: potentialConflicts,
-      upstreamBranch: config.settings.upstreamBranch ?? 'main',
-      upstreamRef,
-      upstreamTag: releaseTag,
-      upstreamGitHubUrl: upstreamGitHubUrl ?? undefined,
-      forkGitHubUrl: forkGitHubUrl ?? undefined,
-      upstreamCommit,
-      upstreamCommits,
-    };
+    const ctx = await prepareUpstream(config, onProgress, onStep);
+    return apply
+      ? await runSyncMerge(config, ctx, onProgress, onStep)
+      : await runAnalyzePreview(config, ctx, onProgress, onStep);
   } catch (error) {
     // Clean up on error
     await cleanupWorktree(forkPath, worktreePath);

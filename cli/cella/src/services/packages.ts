@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import type { PackageJsonSyncKey, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { createSpinner, spinnerSuccess, spinnerText, warningMark } from '../utils/display';
+import { git } from '../utils/git';
 
 /** Package.json structure */
 interface PackageJson {
@@ -97,15 +98,18 @@ function isHigherVersion(upstreamVersion: string, forkVersion: string): boolean 
 
 /**
  * Safe merge for Record<string, string> — add new entries, bump versions, never remove or downgrade.
- * Returns the merged record sorted alphabetically, or undefined if no changes.
+ * With `addOnly` (e.g. scripts), existing fork entries are never overwritten.
+ * Returns the merged record sorted alphabetically, plus the keys that were newly added.
  */
 function safeMergeRecord(
   forkRecord: Record<string, string> | undefined,
   upstreamRecord: Record<string, string> | undefined,
-): { merged: Record<string, string>; changed: boolean } | undefined {
+  addOnly = false,
+): { merged: Record<string, string>; changed: boolean; added: string[] } | undefined {
   if (!upstreamRecord) return undefined;
 
   const merged = { ...(forkRecord || {}) };
+  const added: string[] = [];
   let changed = false;
 
   for (const [name, upstreamValue] of Object.entries(upstreamRecord)) {
@@ -114,8 +118,9 @@ function safeMergeRecord(
     if (forkValue === undefined) {
       // New entry from upstream — add it
       merged[name] = upstreamValue;
+      added.push(name);
       changed = true;
-    } else if (forkValue !== upstreamValue && isHigherVersion(upstreamValue, forkValue)) {
+    } else if (!addOnly && forkValue !== upstreamValue && isHigherVersion(upstreamValue, forkValue)) {
       // Upstream has a higher version — bump (preserve upstream's range prefix)
       merged[name] = upstreamValue;
       changed = true;
@@ -125,7 +130,7 @@ function safeMergeRecord(
 
   // Sort alphabetically
   const sorted = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
-  return { merged: sorted, changed };
+  return { merged: sorted, changed, added };
 }
 
 /**
@@ -234,17 +239,10 @@ async function getUpstreamPackageJson(
   upstreamRef: string,
   relativePath: string,
 ): Promise<PackageJson | null> {
-  const { execFile } = await import('node:child_process');
-  const { promisify } = await import('node:util');
-  const execFileAsync = promisify(execFile);
-
   const filePath = relativePath ? `${relativePath}/package.json` : 'package.json';
 
   try {
-    const { stdout } = await execFileAsync('git', ['show', `${upstreamRef}:${filePath}`], {
-      cwd: forkPath,
-    });
-    return JSON.parse(stdout);
+    return JSON.parse(await git(['show', `${upstreamRef}:${filePath}`], forkPath));
   } catch {
     return null;
   }
@@ -254,29 +252,15 @@ async function getUpstreamPackageJson(
  * Discover all package.json locations that exist in both fork and upstream.
  */
 async function discoverPackageLocations(forkPath: string, upstreamRef: string): Promise<string[]> {
-  const { execFile } = await import('node:child_process');
-  const { promisify } = await import('node:util');
-  const execFileAsync = promisify(execFile);
-
   // Get all package.json paths from upstream
-  let upstreamPaths: string[];
-  try {
-    const { stdout } = await execFileAsync('git', ['ls-tree', '-r', '--name-only', upstreamRef], {
-      cwd: forkPath,
-    });
-    upstreamPaths = stdout
-      .split('\n')
-      .filter((p) => p.endsWith('/package.json') || p === 'package.json')
-      .map((p) => (p === 'package.json' ? '' : p.replace('/package.json', '')));
-  } catch {
-    return [];
-  }
+  const stdout = await git(['ls-tree', '-r', '--name-only', upstreamRef], forkPath, { ignoreErrors: true });
+  const upstreamPaths = stdout
+    .split('\n')
+    .filter((p) => p.endsWith('/package.json') || p === 'package.json')
+    .map((p) => (p === 'package.json' ? '' : p.replace('/package.json', '')));
 
   // Filter to locations that also exist in fork
-  return upstreamPaths.filter((loc) => {
-    const forkPkgPath = join(forkPath, loc, 'package.json');
-    return existsSync(forkPkgPath);
-  });
+  return upstreamPaths.filter((loc) => existsSync(join(forkPath, loc, 'package.json')));
 }
 
 /**
@@ -334,35 +318,19 @@ async function syncPackageJson(
       continue;
     }
 
-    // All Record<string, string> keys — safe merge (add + bump only)
+    // All Record<string, string> keys — safe merge.
+    // Scripts are add-only (never overwrite fork scripts); the rest also bump versions.
     const forkValue = forkPkg[key] as Record<string, string> | undefined;
     const upstreamValue = upstreamPkg[key] as Record<string, string> | undefined;
 
-    if (key === 'scripts') {
-      // Scripts: add-only — don't overwrite existing fork scripts
-      if (upstreamValue) {
-        const forkScripts = { ...(forkValue || {}) };
-        let scriptChanged = false;
-
-        for (const [name, script] of Object.entries(upstreamValue)) {
-          if (!(name in forkScripts)) {
-            forkScripts[name] = script;
-            scriptChanged = true;
-            changes.push(`scripts.${name}: added`);
-          }
-        }
-
-        if (scriptChanged) {
-          (forkPkg as Record<string, unknown>)[key] = forkScripts;
-          updated = true;
-        }
-      }
-    } else {
-      // Dependency-like keys — add + bump, never remove or downgrade
-      const result = safeMergeRecord(forkValue, upstreamValue);
-      if (result?.changed) {
-        (forkPkg as Record<string, unknown>)[key] = result.merged;
-        updated = true;
+    const addOnly = key === 'scripts';
+    const result = safeMergeRecord(forkValue, upstreamValue, addOnly);
+    if (result?.changed) {
+      (forkPkg as Record<string, unknown>)[key] = result.merged;
+      updated = true;
+      if (addOnly) {
+        changes.push(...result.added.map((name) => `scripts.${name}: added`));
+      } else {
         changes.push(`${key}: merged`);
       }
     }

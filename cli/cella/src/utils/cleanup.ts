@@ -108,22 +108,14 @@ export async function cleanupWorktree(repoPath: string, worktreePath: string): P
 }
 
 /**
- * Check for leftover worktree from previous interrupted run.
- */
-export async function detectLeftoverWorktree(repoPath: string): Promise<boolean> {
-  const worktreePath = getWorktreePath(repoPath);
-  return existsSync(worktreePath);
-}
-
-/**
- * Clean up any leftover worktrees.
+ * Clean up any leftover worktrees from a previous (interrupted) run.
+ * No-op when no leftover sync worktree exists (the common case).
  */
 export async function cleanupLeftoverWorktrees(repoPath: string): Promise<void> {
   const worktreePath = getWorktreePath(repoPath);
+  if (!existsSync(worktreePath)) return;
 
-  if (existsSync(worktreePath)) {
-    await cleanupWorktree(repoPath, worktreePath);
-  }
+  await cleanupWorktree(repoPath, worktreePath);
 
   // Also prune any orphaned git worktree references for our managed prefixes.
   const prefixes = Object.values(WORKTREE_PREFIXES);

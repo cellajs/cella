@@ -497,11 +497,9 @@ describe('sync e2e', () => {
       expect(content).toContain('>>>>>>>');
     });
 
-    it('materializes a view worktree and emits diff links for auto-merged files', async () => {
+    it('emits file links for auto-merged files without materializing a view worktree', async () => {
       const fs = await import('node:fs');
-      const path = await import('node:path');
       const { execSync } = await import('node:child_process');
-      const { getViewWorktreePath } = await import('../../src/utils/cleanup');
 
       // Shared multi-line file present at the merge base in BOTH repos.
       const baseLines = `${Array.from({ length: 9 }, (_, i) => `line ${i + 1}`).join('\n')}\n`;
@@ -536,6 +534,12 @@ describe('sync e2e', () => {
 
       fetchUpstream(env.forkPath);
 
+      // Clear any leftover view worktree (persists in tmpdir across runs by design)
+      // so we can assert sync does not create one.
+      const { getViewWorktreePath } = await import('../../src/utils/cleanup');
+      const viewPath = getViewWorktreePath(env.forkPath);
+      fs.rmSync(viewPath, { recursive: true, force: true });
+
       // Capture human-facing output to assert the diff link is rendered.
       const logs: string[] = [];
       const spy = vi.spyOn(console, 'info').mockImplementation((...args: unknown[]) => {
@@ -553,16 +557,11 @@ describe('sync e2e', () => {
       expect(result.conflicts).toContain('README.md');
       expect(result.autoMergedFiles).toContain('shared.ts');
 
-      // The view worktree persists (outside the fork) and holds the upstream version.
-      const viewPath = getViewWorktreePath(env.forkPath);
-      expect(fs.existsSync(viewPath)).toBe(true);
-      expect(fs.existsSync(path.join(viewPath, 'shared.ts'))).toBe(true);
-
-      // The merge-in-progress detail emitted a clickable VS Code file link.
+      // The merge-in-progress detail emitted a clickable VS Code file link (into the fork).
       expect(logs.join('\n')).toContain('vscode://file');
 
-      // Clean up the persistent view worktree (lives in tmpdir, outside testDir).
-      fs.rmSync(viewPath, { recursive: true, force: true });
+      // Sync no longer materializes the upstream view worktree (only analyze does).
+      expect(fs.existsSync(viewPath)).toBe(false);
     });
   });
 

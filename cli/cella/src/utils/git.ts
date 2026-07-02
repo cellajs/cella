@@ -75,21 +75,6 @@ export async function getCurrentBranch(cwd: string): Promise<string> {
 }
 
 /**
- * Check if a local branch exists.
- */
-export async function localBranchExists(cwd: string, branch: string): Promise<boolean> {
-  const out = await git(['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], cwd, { ignoreErrors: true });
-  return out.trim().length > 0;
-}
-
-/**
- * Create and check out a new branch from the current HEAD.
- */
-export async function createBranch(cwd: string, branch: string): Promise<void> {
-  await git(['switch', '-c', branch], cwd);
-}
-
-/**
  * Switch to an existing branch.
  */
 export async function switchBranch(cwd: string, branch: string): Promise<void> {
@@ -265,17 +250,6 @@ export async function resolveLatestReleaseTag(
     if (/^v\d/.test(tag)) return { tag, ref };
   }
   return null;
-}
-
-/**
- * Resolve a ref to its full commit SHA. Returns null if the ref does not exist.
- */
-export async function resolveSha(cwd: string, ref: string): Promise<string | null> {
-  try {
-    return (await git(['rev-parse', '--verify', `${ref}^{commit}`], cwd)).trim();
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -711,6 +685,15 @@ export async function removeFileFromWorktree(cwd: string, filePath: string): Pro
   } catch {
     // File doesn't exist or can't be removed - ignore
   }
+}
+
+/**
+ * Fully remove a file: tracked delete from the index (git rm) plus filesystem removal
+ * for cases git rm leaves behind (e.g. during a merge), including empty parent dirs.
+ */
+export async function removeFileFully(cwd: string, filePath: string): Promise<void> {
+  await gitRm(cwd, filePath);
+  await removeFileFromWorktree(cwd, filePath);
 }
 
 /**

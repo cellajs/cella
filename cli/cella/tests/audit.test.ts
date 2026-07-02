@@ -8,8 +8,8 @@ import {
   isMajorVersionChange,
   loadCache,
   type NpmRegistryData,
-  terminalLink,
 } from '../src/utils/audit-utils';
+import { hyperlink } from '../src/utils/display';
 
 describe('audit-utils', () => {
   describe('isMajorVersionChange', () => {
@@ -63,11 +63,20 @@ describe('audit-utils', () => {
     });
   });
 
-  describe('terminalLink', () => {
+  describe('hyperlink', () => {
     it('should create OSC 8 hyperlink format', () => {
-      const result = terminalLink('click me', 'https://example.com');
+      const result = hyperlink('click me', 'https://example.com');
       expect(result).toContain('\u001B]8;;https://example.com\u0007');
       expect(result).toContain('click me');
+    });
+
+    it('should strip control characters from the URL', () => {
+      const result = hyperlink('label', 'https://example.com/\x07evil');
+      expect(result).toContain('https://example.com/evil');
+    });
+
+    it('should fall back to the plain label without a URL', () => {
+      expect(hyperlink('plain')).toBe('plain');
     });
   });
 

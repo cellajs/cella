@@ -7,7 +7,6 @@
  * to review and adopt individual files into the working tree.
  */
 
-import { spawnSync } from 'node:child_process';
 import {
   createPrompt,
   isDownKey,
@@ -23,6 +22,7 @@ import { select } from '@inquirer/prompts';
 import type { FileStatus, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { DEFAULT_BRANCH, loadConfig } from '../utils/config';
+import { gitDiffFile } from '../utils/diff';
 import {
   createSpinner,
   DIVIDER,
@@ -77,21 +77,8 @@ interface ContribPromptConfig {
  * Show diff in terminal for a contrib file using a pager.
  */
 function showContribDiff(item: ContribItem, baseRef: string, cwd: string, forkName: string): void {
-  const diffResult = spawnSync(
-    'git',
-    [
-      'diff',
-      '--color=always',
-      '--src-prefix=cella/',
-      `--dst-prefix=${forkName}/`,
-      `${baseRef}..${item.ref}`,
-      '--',
-      item.path,
-    ],
-    { cwd },
-  );
-
-  showDiffInPager(diffResult.stdout);
+  const diff = gitDiffFile(cwd, `${baseRef}..${item.ref}`, item.path, { dstPrefix: forkName, color: 'always' });
+  showDiffInPager(diff);
 }
 
 // ── Custom prompt ────────────────────────────────────────────────────────────
@@ -451,16 +438,8 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
       return;
     }
     for (const item of matches) {
-      const res = spawnSync(
-        'git',
-        ['diff', '--src-prefix=cella/', `--dst-prefix=${forkName}/`, `${baseRef}..${item.ref}`, '--', item.path],
-        {
-          cwd: config.forkPath,
-          encoding: 'utf8',
-          maxBuffer: 50 * 1024 * 1024,
-        },
-      );
-      writeStdout(res.stdout);
+      const diff = gitDiffFile(config.forkPath, `${baseRef}..${item.ref}`, item.path, { dstPrefix: forkName });
+      writeStdout(diff.toString());
     }
     return;
   }

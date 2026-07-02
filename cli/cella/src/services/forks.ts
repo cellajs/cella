@@ -14,6 +14,8 @@ import { DEFAULT_SYNC_BRANCH, loadConfig, resolveSyncBranch, resolveUpstream } f
 import { warningMark } from '../utils/display';
 import { assertClean, getCommitInfo, getCurrentBranch, getStoredSyncRef, git } from '../utils/git';
 import { printNoForksHint, validateForkPath } from './fork-utils';
+import { runPackages } from './packages';
+import { runSync } from './sync';
 
 /**
  * Resolve the branch a fork receives syncs on.
@@ -176,12 +178,10 @@ async function syncFork(config: RuntimeConfig, fork: ForkConfig, forkPath: strin
   };
 
   // Run sync
-  const { runSync } = await import('./sync');
   const result = await runSync(forkRuntimeConfig);
 
   // Auto-run packages if enabled and sync succeeded
   if (forkConfig.settings.syncWithPackages !== false && result.success) {
-    const { runPackages } = await import('./packages');
     await runPackages(forkRuntimeConfig);
   } else if (forkConfig.settings.syncWithPackages !== false) {
     console.warn(
