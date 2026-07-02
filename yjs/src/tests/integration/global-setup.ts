@@ -1,6 +1,6 @@
 /**
  * Global setup for yjs integration tests.
- * Checks Postgres availability on the configured test database (see `shared/test-db-config`).
+ * Checks Postgres availability on the configured test database (see `shared/test-db`).
  *
  * Migrations are owned by the backend package — run `pnpm vitest --project=backend`
  * or `pnpm test` from root first to ensure the test DB schema is up to date.
