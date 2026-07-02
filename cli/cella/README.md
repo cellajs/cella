@@ -83,25 +83,33 @@ trunk (`settings.releaseBase`, default `main`), named with `settings.syncBranchP
 main ──▶ cella/sync/<stamp>-<sha> ──(3-way merge)──▶ PR ──(squash)──▶ main
 ```
 
-It runs a real git 3-way merge and leaves the result **staged** — it never auto-commits. When you
-commit, `MERGE_HEAD` is preserved, so you get a two-parent merge commit carrying full upstream
-ancestry. Ancestry also lives in `refs/cella/last-sync` (and the committed `cella.manifest.json`
-for fresh clones), so `git merge-base` keeps working across throwaway branches — each is safe to
-delete once its PR lands. The three-segment name can't collide with git's ref namespacing, so
-there's no long-lived `cella-sync` branch to conflict with.
+It runs a real git 3-way merge and leaves the result **staged** — it never auto-commits on the
+first pass. `sync` is **idempotent and two-phase**:
 
-**Clean merge** — review, then push and open a squash-merge PR:
+1. **First run** cuts the branch and stages the merge, then stops so you can review (and resolve
+   any conflicts in your IDE — `git add` the resolved files).
+2. **Re-run `pnpm cella sync`** on the same branch to finish: it reconciles dependencies
+   (`pnpm install` + `pnpm check`), stages everything, commits the delta, pushes to `origin`,
+   opens a PR into `main` (via `gh`), and switches you back to `main`.
+
+When you commit, the in-progress merge state (`MERGE_HEAD`) is discarded, so the staged delta
+collapses into a **single-parent commit** (`chore: sync upstream cella <sha>`). This keeps the PR
+to one clean commit with the incremental diff — a two-parent merge commit would instead list the
+upstream branch's entire history, because the fork doesn't share pushed ancestry with upstream
+and the local `git replace` graft that makes merges incremental is never pushed. Ancestry lives
+in `refs/cella/last-sync` (and the committed `cella.manifest.json` for fresh clones), so
+`git merge-base` keeps working across throwaway branches — each is safe to delete once its PR
+lands. The three-segment name can't collide with git's ref namespacing, so there's no long-lived
+`cella-sync` branch to conflict with.
+
+If conflicts remain when you re-run, `sync` lists them and stops (never starting a second cycle
+mid-merge). If `pnpm check`, the push, or `gh` fails, it degrades gracefully — reporting the
+issue and printing the remaining manual steps:
 
 ```bash
-git commit --no-edit
 git push -u origin cella/sync/<stamp>-<sha>
 gh pr create --base main --head cella/sync/<stamp>-<sha> --fill
 ```
-
-**Conflicts** — `sync` is idempotent. It stops after staging, leaving you mid-merge on the
-ephemeral branch. Resolve + `git add`, then re-run `pnpm cella sync`: it detects the in-progress
-merge and finishes it for you (or finish manually with `git commit --no-edit`). It never starts a
-second cycle while a merge is in progress; switch back to `main` to begin a fresh sync.
 
 ## Sync rules
 
