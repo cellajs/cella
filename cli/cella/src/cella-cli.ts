@@ -52,7 +52,7 @@ function getForkPath(): string {
 /**
  * Pre-flight checks before running a service.
  *
- * The sync service cuts its own ephemeral branch from the trunk and owns its own clean/resume
+ * The sync service cuts its own temporary branch from the trunk and owns its own clean/resume
  * state, so preflight no longer cares which branch you are on or whether the tree is clean — it
  * only verifies we are inside a git repository.
  */

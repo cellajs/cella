@@ -16,7 +16,7 @@ import { createWorktree, listWorktrees, mergeAbort, removeWorktree } from './git
 /**
  * Managed worktree kinds and their system-temp directory prefixes.
  *
- * - `sync`: ephemeral merge preview worktree. Registered for signal cleanup and
+ * - `sync`: temporary merge preview worktree. Registered for signal cleanup and
  *   removed when the process exits.
  * - `view`: persistent "upstream view" worktree backing VS Code diff/open links.
  *   Must outlive the process, so it is refreshed (removed + recreated) on the next
@@ -34,7 +34,7 @@ function buildWorktreePath(kind: WorktreeKind, repoPath: string): string {
   return join(tmpdir(), `${WORKTREE_PREFIXES[kind]}${basename(repoPath)}`);
 }
 
-/** Get the ephemeral sync worktree path in system temp directory (invisible to VSCode). */
+/** Get the temporary sync worktree path in system temp directory (invisible to VSCode). */
 export function getWorktreePath(repoPath: string): string {
   return buildWorktreePath('sync', repoPath);
 }
