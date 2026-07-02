@@ -186,8 +186,17 @@ export async function analyzeRefs(
     if (fileIsIgnored) {
       status = 'ignored';
     } else if (!inFork && inUpstream) {
-      // Incoming added a new file
-      status = fileIsPinned ? 'deleted' : 'behind';
+      // File is missing locally but present in incoming. Distinguish a genuinely new
+      // incoming file from a file the local side deliberately deleted, by consulting
+      // the merge-base (the symmetric `inFork && !inUpstream` branch does the same):
+      // - pinned: local owns the path, keep it removed.
+      // - existed at base and incoming hasn't touched it since (upstreamHash === baseHash):
+      //   the absence is a deliberate local deletion — keep it deleted instead of
+      //   re-adding it as if incoming introduced a new file (which resurfaces every sync).
+      // - otherwise (never in base = truly new, or incoming modified a file the local side
+      //   deleted = delete/modify): surface incoming's version.
+      const locallyDeleted = baseHash !== null && upstreamHash === baseHash;
+      status = fileIsPinned || locallyDeleted ? 'deleted' : 'behind';
     } else if (inFork && !inUpstream) {
       // File exists locally but not in incoming
       if (baseHash !== null) {

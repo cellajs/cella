@@ -38,6 +38,9 @@ export const DIVIDER = '─'.repeat(60);
 /** Warning mark for non-fatal warnings */
 export const warningMark = pc.yellow('⚠');
 
+/** Check mark for successful status lines */
+export const checkMark = pc.green('✓');
+
 interface Spinner {
   text: string;
   start(): Spinner;
@@ -146,7 +149,7 @@ export function printHeader(): void {
  * Optionally include a detail line in grey, followed by a blank line.
  */
 function printStep(label: string, detail?: string): void {
-  console.info(`${pc.green('✓')} ${label}`);
+  console.info(`${checkMark} ${label}`);
   if (detail) {
     console.info(`  ${pc.dim(detail)}`);
     console.info(); // blank line after detail block
@@ -392,7 +395,7 @@ export function formatMergeInProgressDetail(
   }
 
   lines.push('');
-  lines.push(`auto-merged files (${autoMergedFiles.length}):`);
+  lines.push(`  auto-merged files (${autoMergedFiles.length}):`);
 
   const shown = autoMergedFiles.slice(0, maxFiles);
   for (const filePath of shown) {
@@ -618,8 +621,7 @@ export function printSyncComplete(result: MergeResult): void {
 
   console.info();
   console.info(`${pc.green('✓')} sync complete`);
-  console.info();
-  console.info(`  ${updated} files updated, ${merged} auto-merged, ${conflicts} conflicts`);
+  console.info(pc.dim(`  ${updated} files updated, ${merged} auto-merged, ${conflicts} conflicts`));
 
   console.info();
 }

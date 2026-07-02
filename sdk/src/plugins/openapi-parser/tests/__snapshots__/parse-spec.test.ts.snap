@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "2e487f5248932a55",
+  "inputHash": "9ff5422bcd1525a5",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -944,7 +944,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
+        "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1462,7 +1462,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to \`null\` where applicable.",
+        "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1496,7 +1496,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates a *user* identified by ID.",
+        "description": "Updates a user identified by ID.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -1968,7 +1968,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
+        "description": "Returns basic count metrics for entity types such as users and organizations.
       This endpoint is public and uses a 1 minute in memory cache for performance.",
         "extensions": {
           "xCache": [],
@@ -2114,7 +2114,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves an organization by ID within a tenant. Pass \`?slug=true\` to resolve by slug instead.",
+        "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
         "entityType": "organization",
         "extensions": {
           "xCache": [],
@@ -2374,7 +2374,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Returns a list of *users*.",
+        "description": "Returns a list of users.",
         "entityType": "user",
         "extensions": {
           "xCache": [],
@@ -2407,7 +2407,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Retrieves a *user* by ID. The requesting user must share at least one organization membership. Pass \`?slug=true\` to resolve by slug instead.",
+        "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
         "entityType": "user",
         "extensions": {
           "xCache": [],
@@ -2746,7 +2746,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "deprecated": false,
-        "description": "Updates the membership metadata, such as role, \`muted\`, or \`archived\` status.",
+        "description": "Updates the membership metadata, such as role, muted, or archived status.",
         "extensions": {
           "xCache": [],
           "xGuard": [
@@ -21878,71 +21878,72 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
     "tags": [
       {
         "count": 0,
-        "description": "AI capability layer: a server-side tool registry and a Model Context Protocol (MCP) endpoint that exposes that registry to external MCP clients. Ships no LLM transport or agent of its own — forks build AI features and agent products (e.g. chat) on top, reusing the same tool registry.",
+        "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to
+    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its
+    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
         "kind": "module",
         "name": "ai",
       },
       {
         "count": 6,
-        "description": "Endpoints for managing file based attachments (e.g. images, PDFs, documents) linked to
-    entities such as organizations or users. Files are uploaded directly by the client; the API handles
+        "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to
+    entities such as organizations or users. Files are uploaded directly by the client, while the API handles
     metadata registration, linking, access, and preview utilities.",
         "kind": "module",
         "name": "attachments",
       },
       {
         "count": 23,
-        "description": "Authentication endpoints supporting multiple sign-in methods, including OAuth
-    (Google, Microsoft, GitHub), and passkeys (WebAuthn). These routes cover user sign-up, sign-in,
-    email verification, account linking, and impersonation for system admins.",
+        "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth
+    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,
+    account linking, and impersonation for system admins.",
         "kind": "module",
         "name": "auth",
       },
       {
         "count": 5,
-        "description": "Endpoints that operate across multiple entity types, such as \`users\` and \`organizations\`.
+        "description": "Endpoints that operate across multiple entity types, such as users and organizations.
     Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child
-    relations), or actor-like. These endpoints offer shared logic across modules, including slug validation
+    relations), or actor-like. These routes provide shared logic across modules, including slug validation
     and entity visibility.",
         "kind": "module",
         "name": "entities",
       },
       {
         "count": 11,
-        "description": "Endpoints related to the current user, meaning the user associated with the active session making
-    the request. These routes are distinct from general \`users\` endpoints: while \`users\` may operate on
-    any user in the system, \`me\` endpoints are scoped exclusively to the current user and follow a
-    different authorization flow.",
+        "description": "Endpoints scoped to the current user, meaning the user associated with the active session making
+    the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act
+    exclusively on the current user and follow a different authorization flow.",
         "kind": "module",
         "name": "me",
       },
       {
         "count": 6,
         "description": "Endpoints for managing memberships, which represent one-to-one relationships between a
-    \`user\` and a contextual \`entity\` (e.g., an \`organization\`). Each membership includes role information
-    and status flags such as \`archived\` or \`muted\`. Memberships can also reference parent entities,
-    enabling hierarchical context.",
+    user and a contextual entity such as an organization. Each membership includes role information and
+    status flags such as archived or muted. Memberships can also reference parent entities to easily have a
+    hierarchical context available.",
         "kind": "module",
         "name": "memberships",
       },
       {
         "count": 1,
-        "description": "Endpoints for retrieving high-level counts for entities such as \`users\` and \`organizations\`.",
+        "description": "Endpoints for retrieving high-level counts for entities such as users and organizations.",
         "kind": "module",
         "name": "metrics",
       },
       {
         "count": 5,
-        "description": "Endpoints for managing \`organizations\`, which are core context entities. Organizations are
-    the highest ancestor in the parent hierarchy. They define access boundaries and are often the minimal
-    primary scope for permission and resource management.",
+        "description": "Endpoints for managing organizations, which are core context entities and the highest ancestor
+    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for
+    permissions and resource management.",
         "kind": "module",
         "name": "organizations",
       },
       {
         "count": 5,
         "description": "Endpoints for managing pages, which are product entities supporting realtime sync and offline
-    capabilities. Pages can be organized hierarchically and are used in /docs.",
+    capabilities. Pages can be organized hierarchically and are used in the /docs section.",
         "kind": "module",
         "name": "pages",
       },
@@ -21961,30 +21962,30 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
       },
       {
         "count": 4,
-        "description": "*System level* endpoints for administrative actions and platform wide functionality. These endpoints
-    support operations such as user invitations, file uploads, and webhook handling.",
+        "description": "System level endpoints for administrative actions and platform wide functionality, such as user
+    invitations, file uploads, and webhook handling.",
         "kind": "module",
         "name": "system",
       },
       {
         "count": 9,
-        "description": "System-level endpoints for managing tenants. Tenants are top-level isolation boundaries used by
-    Row-Level Security (RLS) to partition data. Only system administrators can manage tenants.",
+        "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level
+    Security (RLS) to partition data. Only system administrators can manage tenants.",
         "kind": "module",
         "name": "tenants",
       },
       {
         "count": 2,
-        "description": "Endpoints for managing users at the system level. Unlike context entities (such as
-    \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context. These endpoints
-    are intended for administrative operations on any user in the system.",
+        "description": "Endpoints for managing users at the system level. Unlike context entities such as
+    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are
+    intended for administrative operations on any user in the system.",
         "kind": "module",
         "name": "users",
       },
       {
         "count": 1,
-        "description": "Endpoints for Yjs collaborative editing support. Provides auth tokens for the Yjs relay worker and
-    accepts client-computed derived fields from collaborative editing sessions.",
+        "description": "Endpoints for Yjs collaborative editing support. They provide auth tokens for the Yjs relay worker
+    and accept client-computed derived fields from collaborative editing sessions.",
         "kind": "module",
         "name": "yjs",
       },

@@ -270,6 +270,29 @@ describe('sync e2e', () => {
       expect(fileExists(env.forkPath, 'temp.ts')).toBe(false);
     });
 
+    it('should keep fork-deleted files deleted when upstream leaves them unchanged', async () => {
+      // README.md exists in the shared base. The fork deliberately removes it.
+      deleteFileAndCommit(env.forkPath, 'README.md', 'chore: remove readme in fork');
+      expect(fileExists(env.forkPath, 'README.md')).toBe(false);
+
+      // Upstream leaves README.md untouched, so its absence in the fork is a fork-owned deletion.
+      fetchUpstream(env.forkPath);
+
+      // Analyze: the fork's deletion must be classified as 'deleted', not 'behind' — otherwise it
+      // would be re-added as if upstream introduced a new file, resurfacing on every sync.
+      const analyzeConfig = buildRuntimeConfig(env, { service: 'analyze' });
+      const analysis = await runAnalyze(analyzeConfig);
+      const deletedFile = analysis.files.find((f) => f.path === 'README.md');
+      expect(deletedFile).toBeDefined();
+      expect(deletedFile?.status).toBe('deleted');
+
+      // Sync: the deletion is respected — README.md stays gone.
+      const syncConfig = buildRuntimeConfig(env, { service: 'sync' });
+      const result = await runSync(syncConfig);
+      expect(result.success).toBe(true);
+      expect(fileExists(env.forkPath, 'README.md')).toBe(false);
+    });
+
     it('should handle file renames from upstream with git mv', async () => {
       // Add a file in a subdirectory to upstream first
       makeCommit(env.upstreamPath, {

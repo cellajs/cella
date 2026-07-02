@@ -11,6 +11,7 @@ import type { MergeResult, RuntimeConfig } from '../config/types';
 import pc from '../utils/colors';
 import { buildTemporarySyncBranch, isTemporarySyncBranch, resolveReleaseBase } from '../utils/config';
 import {
+  checkMark,
   createSpinner,
   printFlagWarnings,
   printSummary,
@@ -18,6 +19,7 @@ import {
   spinnerFail,
   spinnerSuccess,
   spinnerText,
+  warningMark,
   writeLogFile,
 } from '../utils/display';
 import {
@@ -103,6 +105,7 @@ async function setupTemporarySyncBranch(config: RuntimeConfig): Promise<Temporar
   const temporaryBranch = buildTemporarySyncBranch(settings);
 
   console.info(pc.dim(`creating temporary sync branch '${temporaryBranch}' from '${base}'...`));
+  console.info();
   await createBranchFrom(forkPath, temporaryBranch, base);
 
   return { temporaryBranch, base, startBranch };
@@ -160,7 +163,7 @@ function printShipSteps(temporaryBranch: string, base: string): void {
 
 /** Guidance shown after a fresh cycle stages a merge: re-run to finish and ship it. */
 function printFinishSteps(): void {
-  console.info(pc.dim('  pnpm cella sync            # re-run to commit, push, and open the PR'));
+  console.info(pc.dim('  pnpm cella sync'));
 }
 
 /** Whether the GitHub CLI is available on PATH. */
@@ -370,9 +373,9 @@ export async function runSyncCommand(config: RuntimeConfig): Promise<void> {
 
   const { temporaryBranch } = outcome.branch;
   if (outcome.status === 'conflicts') {
-    console.info(pc.yellow(`conflicts on '${temporaryBranch}'. resolve them in your editor and stage them, then:`));
+    console.info(`${warningMark} ${pc.yellow(`conflicts on '${temporaryBranch}'. Resolve them and then:`)}`);
   } else {
-    console.info(pc.green(`sync merge staged on '${temporaryBranch}'. review, then:`));
+    console.info(`${checkMark} ${pc.green(`Sync merge staged on '${temporaryBranch}'. Review, then:`)}`);
   }
   printFinishSteps();
 }
