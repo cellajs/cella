@@ -1,20 +1,11 @@
 # @cellajs/cli
 
-CLI tool to keep your app in sync with Cella.
-
-## Overview
-
-When you create a web app with Cella, you start from the template. We recommend `pnpm create @cellajs/cella`. Over time, Cella receives updates - bug fixes, new features, dependency updates. This CLI helps you pull those changes into your app while preserving your customizations.
+Keep your Cella-based app in sync with upstream template updates while preserving your
+customizations.
 
 ## Usage
 
-From your monorepo root:
-
-```bash
-pnpm cella
-```
-
-Run a service directly:
+From your monorepo root, run `pnpm cella` for the interactive menu, or call a service directly:
 
 ```bash
 pnpm cella analyze
@@ -28,8 +19,7 @@ pnpm cella contributions --fork raak --json
 | Service | Description |
 |---------|-------------|
 | `analyze` | Dry run to see what would change on sync |
-| `sync` | Merge upstream changes into your app |
-| `release` | Sync upstream on a fresh branch and open a squash-merge PR into `main` |
+| `sync` | Merge upstream changes onto a fresh branch and open a squash-merge PR into `main` |
 | `audit` | Check for outdated packages & vulnerabilities |
 | `stats` | Count files by category and workspace package |
 | `forks` * | Sync downstream to local fork repositories |
@@ -37,19 +27,18 @@ pnpm cella contributions --fork raak --json
 
 \* `forks` and `contributions` only appear in the menu when you have `forks` configured in `cella.config.ts`. These are for upstream template developers who maintain multiple downstream forks.
 
-## CLI Options
+## CLI options
 
 ```bash
 pnpm cella [service] [options]
 ```
 
-Service-specific help is available via `pnpm cella <service> --help`.
+Per-service help: `pnpm cella <service> --help`.
 
 | Service | Useful options |
 |---------|----------------|
 | analyze | `--log`, `--list`, `--json`, `--scope <all\|risk\|protected>`, `--diff <path>`, `--open-diff <path>` |
 | sync | `--log`, `--hard`, `--unpinned`, `--track <release\|branch>` |
-| release | `--merge`, `--no-push`, `--track <release\|branch>` |
 | audit | `--list`, `--force`, `--check-overrides` |
 | forks | `--fork <name>`, `--log`, `--hard`, `-V, --verbose` |
 | contributions | `--fork <name>`, `--list`, `--json`, `--diff <path>` |
@@ -62,10 +51,11 @@ Service-specific help is available via `pnpm cella <service> --help`.
 
 ## Configuration
 
-Configure sync behavior in `cella.config.ts` at your monorepo root. A sensible default is already included after you created your app. To deviate files or folders from template:
+Sync behavior lives in `cella.config.ts` at your monorepo root (a sensible default ships with new
+apps). To deviate files or folders from the template:
 
-- **`ignored`** - Files completely excluded from sync (existing and new)
-- **`pinned`** - Full fork control: existing, modified, or deleted files are preserved
+- **`ignored`** — files completely excluded from sync (existing and new)
+- **`pinned`** — full fork control: existing, modified, or deleted files are preserved
 
 ## Upstream tracking
 
@@ -73,10 +63,8 @@ The sync CLI tracks upstream cella one of two ways, set via `settings.upstreamTr
 
 | Mode | Behavior | For |
 |------|----------|-----|
-| `release` (default) | Sync to a published cella release tag (`v*`). Stable and reviewable — each bump maps to a changelog. | Most forks |
-| `branch` | Follow the bleeding-edge tip of `settings.upstreamBranch`. | cella maintainers, active development on unreleased changes |
-
-With `release`, the **latest** published release tag is always used.
+| `release` (default) | Sync to a last cella release tag. Stable and reviewable — each bump maps to a changelog. | Most forks |
+| `branch` | Follow the bleeding-edge tip of `settings.upstreamBranch`. | cella maintainers, active development |
 
 For a one-off run that ignores the configured mode, pass `--track`:
 
@@ -84,55 +72,42 @@ For a one-off run that ignores the configured mode, pass `--track`:
 pnpm cella sync --track branch   # follow the tip once, without editing config
 ```
 
-## Sync branch
+## Sync workflow
 
-Syncs land on a dedicated integration branch (`settings.syncBranch`, default `cella-sync`),
-not `main`. Under release-please a fork's `main` is squash-merge-only with linear history,
-so a sync merge can't be committed onto it directly. On first run the CLI auto-creates the
-sync branch from your current branch; you then open a PR into `main` and squash-merge it
-(`chore: sync upstream cella <tag>`). See [../../info/RELEASES.md](../../info/RELEASES.md).
-
-When cella (upstream) pushes to a fork via the **forks** service, it reads that fork's own
-`settings.syncBranch` as the source of truth — there's no per-fork branch to configure on
-the cella side.
-
-### `cella release` (recommended cycle)
-
-`pnpm cella release` automates the full cycle on a **throwaway, uniquely named** branch cut
-fresh from the trunk (`settings.releaseBase`, default `main`):
+`pnpm cella sync` never commits to `main` directly. Under release-please, `main` is
+squash-merge-only with linear history, so each run cuts a **fresh ephemeral branch** from the
+trunk (`settings.releaseBase`, default `main`), named with `settings.syncBranchPrefix` (default
+`cella/sync`):
 
 ```
-main ──▶ cella-sync/<stamp>-<sha> ──(sync merge + commit)──▶ push ──▶ PR ──(squash)──▶ main
+main ──▶ cella/sync/<stamp>-<sha> ──(3-way merge)──▶ PR ──(squash)──▶ main
 ```
 
-Cutting a fresh branch each cycle keeps every PR scoped to just that sync's upstream delta —
-no accumulation of previously squash-merged commits — while `main` stays linear. Upstream
-ancestry for the merge-base is carried by `refs/cella/last-sync` (and the committed
-`cella.manifest.json` for fresh clones), so the ephemeral branch is safe to delete after each cycle.
+It runs a real git 3-way merge and leaves the result **staged** — it never auto-commits. When you
+commit, `MERGE_HEAD` is preserved, so you get a two-parent merge commit carrying full upstream
+ancestry. Ancestry also lives in `refs/cella/last-sync` (and the committed `cella.manifest.json`
+for fresh clones), so `git merge-base` keeps working across throwaway branches — each is safe to
+delete once its PR lands. The three-segment name can't collide with git's ref namespacing, so
+there's no long-lived `cella-sync` branch to conflict with.
+
+**Clean merge** — review, then push and open a squash-merge PR:
 
 ```bash
-pnpm cella release            # sync on a fresh branch, push, open a PR (you squash-merge)
-pnpm cella release --merge    # also auto squash-merge and realign trunk (needs gh + perms)
-pnpm cella release --no-push   # leave the branch local; push + open the PR yourself
+git commit --no-edit
+git push -u origin cella/sync/<stamp>-<sha>
+gh pr create --base main --head cella/sync/<stamp>-<sha> --fill
 ```
 
-On conflicts it stops after staging so you resolve in the IDE, then finish with
-`git commit --no-edit` + push + `gh pr create`. Only `main` needs branch protection;
-ephemeral `cella-sync/*` branches are auto-deleted on merge.
+**Conflicts** — `sync` is idempotent. It stops after staging, leaving you mid-merge on the
+ephemeral branch. Resolve + `git add`, then re-run `pnpm cella sync`: it detects the in-progress
+merge and finishes it for you (or finish manually with `git commit --no-edit`). It never starts a
+second cycle while a merge is in progress; switch back to `main` to begin a fresh sync.
 
-## Merge Strategy
+## Sync rules
 
-The sync CLI uses **blob comparison** (file content) to determine what to sync. For each file, it evaluates in order:
-
-1. **Ignored?** → Skip entirely (existing and new files)
-2. **Content identical?** → Keep fork (nothing to do)
-3. **Pinned?** → Keep fork version (existing, modified, or deleted)
-4. **New file in upstream?** → Add file
-5. **Content differs?** → Sync to upstream
-
-This ensures your fork eventually matches upstream for all non-overridden files.
-
-### Quick Reference
+For each file, `sync` compares fork and upstream **content** (blob comparison) and resolves it
+per the table below. Unconfigured files converge on upstream; `ignored` and `pinned` let you opt
+out:
 
 | Scenario | `ignored` | `pinned` | Default |
 |----------|:---------:|:--------:|:-------:|
@@ -142,19 +117,9 @@ This ensures your fork eventually matches upstream for all non-overridden files.
 | Deleted in upstream | ✅ Keep | ✅ Keep | 🗑️ Delete |
 | Only in your app | ✅ Keep | ✅ Keep | ✅ Keep |
 
-### Override Guide
-
-| Goal | Action |
-|------|--------|
-| File should never sync (existing or new) | Add to `ignored` — file is completely hidden |
-| Full fork control (keep, modify, or delete) | Add to `pinned` — your version always wins |
-| Always match upstream | Leave unconfigured — syncs automatically |
-
-### Tips
-
-- Run `pnpm cella analyze` first to preview changes without applying
-- Use `pinned` for files you fully control (modify, keep, or delete)
-- Use `ignored` for app-specific docs, assets, or config you fully own
+**Choosing an override:** `ignored` = file never syncs and is fully hidden (app-specific docs,
+assets, config you own). `pinned` = your version always wins but stays visible (files you
+customize). Unconfigured = syncs automatically. Run `pnpm cella analyze` first to preview.
 
 ### Aggressive sync flags
 
@@ -165,7 +130,7 @@ Two opt-in flags make `sync` more aggressive. Both resurface full upstream histo
 | `--hard` | Overwrites `drifted` files with upstream (local-only changes are replaced) |
 | `--unpinned` | Ignores `pinned` files so upstream surfaces as `behind`/`diverged`; `package.json` stays pinned |
 
-## Status Indicators
+## Status indicators
 
 During analysis and sync, files are displayed with status indicators:
 
@@ -181,7 +146,7 @@ During analysis and sync, files are displayed with status indicators:
 
 ## Package.json sync
 
-The `packageJsonSync` setting controls which package.json sections are synced from upstream:
+`packageJsonSync` controls which package.json sections sync from upstream:
 
 ```typescript
 packageJsonSync: ['dependencies', 'devDependencies', 'scripts']
@@ -189,35 +154,12 @@ packageJsonSync: ['dependencies', 'devDependencies', 'scripts']
 
 **Supported keys:** `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`, `scripts`, `engines`, `packageManager`, `overrides`
 
-**Behavior:**
-- **Adds** new keys from upstream
-- **Updates** existing keys to match upstream versions
-- Does **NOT remove** keys that only exist in your fork
-
-This allows your fork to have extra dependencies or scripts without them being removed on each sync.
-
-## Merge strategy
-
-A sync always uses a real git 3-way merge and leaves the result **staged for you to
-commit** (it never auto-commits). The commit you create keeps `MERGE_HEAD`, so it is a
-two-parent merge commit with full upstream ancestry (native git merge-base). Conflicts
-are surfaced with IDE 3-way support and also resolve to a merge commit.
-
-This is why sync runs on a dedicated long-lived integration branch (`cella-sync`): the
-merge commits bake durable upstream ancestry into the branch, so `git merge-base` keeps
-working across syncs without re-bootstrapping. `refs/cella/last-sync` is still tracked as
-a fallback for when upstream squashes its own history.
-
-> Under release-please, sync on the dedicated `cella-sync` branch, then open a PR and
-> **squash-merge** it into `main` with a conventional commit — keeping `main` linear while
-> `cella-sync` retains true ancestry. See [info/RELEASES.md](../../info/RELEASES.md).
-
+It **adds** new keys and **updates** existing ones to match upstream, but never **removes** keys
+that only exist in your fork — so extra dependencies and scripts survive each sync.
 
 ## Contributions (pull from forks)
 
-Upstream can pull modifications from local forks and selectively adopt them. This
-enables a lightweight contribution flow without pull requests, driven entirely
-from the upstream side.
+Upstream can pull modifications from local forks and selectively adopt them.
 
 ### Configuration
 
@@ -225,28 +167,12 @@ List your local forks in `cella.config.ts`:
 
 ```typescript
 forks: [
-  {
-    name: 'raak',
-    localPath: '../raak',     // Path to the local fork clone
-    pullBranch: 'main',       // Branch cella pulls contributions FROM
-  },
+  { name: 'raak', localPath: '../raak', pullBranch: 'main' },
 ],
 ```
 
 ### Pulling contributions
 
-Run `pnpm cella` and choose **contributions** (or run `pnpm cella contributions`).
-Select one or more forks; cella fetches each fork's `pullBranch`, builds a clean
-local `contrib/<fork>` branch containing only that fork's contributed files, and
-presents an interactive TUI:
-
-| Key | Action |
-|-----|--------|
-| `↑↓` | Navigate files |
-| `d` | View diff in terminal pager |
-| `a` | Select all files from same fork |
-| `space` | Toggle file selection |
-| `enter` | Accept selected files (staged for commit) |
-| `q` | Quit |
-
-Accepted files are checked out from the contrib branch and staged — review and commit when ready.
+Run `pnpm cella contributions` (or pick **contributions** from the menu). Select one or more
+forks; cella fetches each fork's `pullBranch`, builds a clean local `contrib/<fork>` branch with
+only that fork's contributed files. Accepted files are checked out from the contrib branch and staged for review.

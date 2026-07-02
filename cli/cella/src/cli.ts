@@ -9,9 +9,8 @@ import { select } from '@inquirer/prompts';
 import { Command } from 'commander';
 import type { AnalyzeScope, CellaCliConfig, RuntimeConfig, SyncService } from './config/types';
 import pc from './utils/colors';
-import { isCellaTemplate, isSyncBranch, resolveUpstream } from './utils/config';
+import { resolveUpstream } from './utils/config';
 import { NAME, printHeader, setJsonMode, VERSION } from './utils/display';
-import { getCurrentBranch } from './utils/git';
 import { printWarnings, validateOverrides } from './utils/overrides';
 
 type CliServiceSelection = {
@@ -35,16 +34,10 @@ type CliOptionState = Pick<
   | 'force'
   | 'checkOverrides'
   | 'coverage'
-  | 'releasePush'
-  | 'releaseAutoMerge'
 >;
 
 type MenuContext = {
   hasForks: boolean;
-  /** True when running inside the cella template itself (upstream services are hidden). */
-  isTemplate: boolean;
-  /** True when currently on a sync branch (or an ephemeral child of it). */
-  onSyncBranch: boolean;
 };
 
 type ServiceOptionDefinition = {
@@ -75,8 +68,6 @@ const defaultOptions: CliOptionState = {
   force: false,
   checkOverrides: false,
   coverage: false,
-  releasePush: true,
-  releaseAutoMerge: false,
 };
 
 function readOptions(opts: Record<string, unknown>): CliOptionState {
@@ -99,8 +90,6 @@ function readOptions(opts: Record<string, unknown>): CliOptionState {
     force: opts.force === true,
     checkOverrides: opts.checkOverrides === true,
     coverage: opts.coverage === true,
-    releasePush: opts.push !== false,
-    releaseAutoMerge: opts.merge === true,
   };
 }
 
@@ -108,7 +97,6 @@ const serviceDefinitions: ServiceDefinition[] = [
   {
     name: 'analyze',
     description: 'dry run to see what would change on sync',
-    includeInMenu: (context) => !context.isTemplate,
     options: [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--list', description: 'non-interactive output for tooling (one file per line)' },
@@ -122,7 +110,6 @@ const serviceDefinitions: ServiceDefinition[] = [
   {
     name: 'sync',
     description: 'merge upstream changes into your app',
-    includeInMenu: (context) => !context.isTemplate,
     options: [
       { flags: '--log', description: 'write complete file list to cella-sync.log' },
       { flags: '--hard', description: 'overwrite drifted files with upstream version (aggressive realignment)' },
@@ -130,17 +117,6 @@ const serviceDefinitions: ServiceDefinition[] = [
       { flags: '--track <mode>', description: 'override upstream tracking for this run: release|branch' },
     ],
     menuDescription: () => 'merge upstream changes + sync package.json',
-  },
-  {
-    name: 'release',
-    description: 'sync upstream on a fresh branch and open a squash-merge PR',
-    includeInMenu: (context) => !context.isTemplate && context.onSyncBranch,
-    options: [
-      { flags: '--merge', description: 'auto squash-merge the PR and realign trunk (needs gh + permissions)' },
-      { flags: '--no-push', description: 'leave the branch local; skip pushing and opening a PR' },
-      { flags: '--track <mode>', description: 'override upstream tracking for this run: release|branch' },
-    ],
-    menuDescription: () => 'sync on an ephemeral branch + open a PR into main',
   },
   {
     name: 'audit',
@@ -183,12 +159,9 @@ const serviceDefinitions: ServiceDefinition[] = [
   },
 ];
 
-async function getMenuContext(userConfig: CellaCliConfig, forkPath: string): Promise<MenuContext> {
-  const currentBranch = await getCurrentBranch(forkPath).catch(() => '');
+function getMenuContext(userConfig: CellaCliConfig): MenuContext {
   return {
     hasForks: (userConfig.forks?.length ?? 0) > 0,
-    isTemplate: isCellaTemplate(forkPath),
-    onSyncBranch: currentBranch !== '' && isSyncBranch(currentBranch, userConfig.settings),
   };
 }
 
@@ -275,10 +248,10 @@ function parseCommandLine(argv: string[]): CliServiceSelection {
   return selection;
 }
 
-async function promptForService(userConfig: CellaCliConfig, forkPath: string): Promise<SyncService> {
+async function promptForService(userConfig: CellaCliConfig): Promise<SyncService> {
   const selected = await select<SyncService | 'exit'>({
     message: 'choose a service:',
-    choices: buildServiceChoices(await getMenuContext(userConfig, forkPath)),
+    choices: buildServiceChoices(getMenuContext(userConfig)),
     loop: false,
   });
 
@@ -332,7 +305,7 @@ export async function parseCli(userConfig: CellaCliConfig, forkPath: string): Pr
 
   // If no service provided, prompt for it
   if (!selection.service) {
-    selection.service = await promptForService(userConfig, forkPath);
+    selection.service = await promptForService(userConfig);
   }
 
   return buildRuntimeConfig(userConfig, forkPath, selection);

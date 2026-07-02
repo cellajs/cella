@@ -4,7 +4,7 @@
  * Shared between main entry point and forks service.
  */
 
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { type CellaCliConfig, cellaConfigSchema, type SyncSettings } from '../config/types';
@@ -17,21 +17,29 @@ export const DEFAULT_UPSTREAM_REMOTE = 'cella-upstream';
 export const DEFAULT_BRANCH = 'main';
 
 /**
- * Default branch a fork receives upstream syncs on.
- *
- * Under release-please, a fork's `main` is squash-merge-only with linear history, so a
- * sync merge cannot be committed onto it directly. The sync lands on this dedicated
- * long-lived integration branch, from which you open a PR into `main`.
+ * Default branch a fork receives upstream syncs on via the **forks** (maintainer→fork)
+ * service. This is a real, checked-out branch in the fork clone the maintainer pushes onto —
+ * distinct from the ephemeral `cella/sync/*` branches the fork owner's own `cella sync` cuts.
  */
 export const DEFAULT_SYNC_BRANCH = 'cella-sync';
 
 /**
- * Default trunk branch that `cella release` cuts from and opens PRs into.
+ * Default prefix for the ephemeral integration branches that `cella sync` cuts per run
+ * (e.g. `cella/sync/20260702-1430-c5a1970`).
+ *
+ * The three-segment shape (`cella/sync/<stamp>`) means it can never collide with a real branch
+ * named `cella` or `cella/sync`, and there is no long-lived `cella-sync` branch to conflict with
+ * git's ref namespacing (`refs/heads/cella-sync` file vs `refs/heads/cella-sync/` dir).
+ */
+const DEFAULT_SYNC_PREFIX = 'cella/sync';
+
+/**
+ * Default trunk branch that `cella sync` cuts from and opens PRs into.
  */
 export const DEFAULT_RELEASE_BASE = 'main';
 
 /**
- * Resolve the branch a fork must be on to receive upstream syncs.
+ * Resolve the branch a fork must be on to receive upstream syncs via the forks service.
  *
  * The fork's own `cella.config.ts` (`settings.syncBranch`) is the source of truth.
  */
@@ -40,31 +48,39 @@ export function resolveSyncBranch(settings: SyncSettings): string {
 }
 
 /**
- * Whether a branch counts as a sync branch: either the exact sync branch or an
- * ephemeral child of it (`<syncBranch>/<...>`, as created by `cella release`).
+ * Resolve the prefix for the ephemeral sync branches cut by `cella sync`.
+ *
+ * The fork's own `cella.config.ts` (`settings.syncBranchPrefix`) is the source of truth.
  */
-export function isSyncBranch(branch: string, settings: SyncSettings): boolean {
-  const syncBranch = resolveSyncBranch(settings);
-  return branch === syncBranch || branch.startsWith(`${syncBranch}/`);
+function resolveSyncPrefix(settings: SyncSettings): string {
+  return settings.syncBranchPrefix ?? DEFAULT_SYNC_PREFIX;
 }
 
 /**
- * Resolve the trunk branch `cella release` cuts the ephemeral branch from and PRs into.
+ * Whether `branch` is one of the ephemeral integration branches `cella sync` cuts, i.e. it
+ * lives under the `<syncBranchPrefix>/` namespace (default `cella/sync/`).
+ */
+export function isEphemeralSyncBranch(settings: SyncSettings, branch: string): boolean {
+  return branch.startsWith(`${resolveSyncPrefix(settings)}/`);
+}
+
+/**
+ * Resolve the trunk branch `cella sync` cuts the ephemeral branch from and PRs into.
  */
 export function resolveReleaseBase(settings: SyncSettings): string {
   return settings.releaseBase ?? DEFAULT_RELEASE_BASE;
 }
 
 /**
- * Build a unique ephemeral integration branch name for a release cycle, e.g.
- * `cella-sync/20260702-1430-c5a1970`. Cutting a fresh branch per cycle keeps each PR
+ * Build a unique ephemeral integration branch name for a sync cycle, e.g.
+ * `cella/sync/20260702-1430-c5a1970`. Cutting a fresh branch per cycle keeps each PR
  * scoped to that sync's upstream delta.
  */
 export function buildEphemeralSyncBranch(settings: SyncSettings, shortSha: string): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-  return `${resolveSyncBranch(settings)}/${stamp}-${shortSha}`;
+  return `${resolveSyncPrefix(settings)}/${stamp}-${shortSha}`;
 }
 
 /**
@@ -85,22 +101,6 @@ export function resolveUpstream(settings: SyncSettings): {
   const branch = settings.upstreamBranch ?? DEFAULT_BRANCH;
   const branchRef = `${DEFAULT_UPSTREAM_REMOTE}/${branch}`;
   return { track, branchRef };
-}
-
-/**
- * Whether the given path is the cella template itself (not a fork).
- *
- * The template's root `package.json` is named `cella`; any fork renames it. Used to hide
- * upstream-facing services (analyze/sync/release) from the menu when running inside cella,
- * where they are meaningless. Direct subcommands still work for testing.
- */
-export function isCellaTemplate(forkPath: string): boolean {
-  try {
-    const pkg = JSON.parse(readFileSync(join(forkPath, 'package.json'), 'utf-8')) as { name?: string };
-    return pkg.name === 'cella';
-  } catch {
-    return false;
-  }
 }
 
 /**

@@ -46,28 +46,33 @@ export interface SyncSettings {
   upstreamTrack?: 'release' | 'branch';
 
   /**
-   * Fork branch that must be checked out to receive upstream syncs (preflight
-   * guardrail + auto-create). Defaults to 'cella-sync'.
+   * Branch a fork receives upstream syncs on via the **forks** (maintainer→fork) service.
+   * Defaults to 'cella-sync'. This is a real, checked-out branch in the fork clone that a
+   * cella maintainer pushes onto; it is the single source of truth read from the fork's own
+   * config when cella pushes downstream.
    *
-   * Under release-please, a fork's `main` is squash-merge-only with linear history, so a
-   * sync merge cannot be committed directly onto it. `pnpm cella sync` runs on this
-   * dedicated long-lived integration branch (auto-created from your current branch on
-   * first run), then you open a PR into `main` and squash-merge it with a conventional
-   * commit (`chore: sync upstream cella <tag>`). See info/RELEASES.md.
-   *
-   * This is the single source of truth for a fork's sync branch: when cella (upstream)
-   * pushes to this fork via the forks service, it reads this value from the fork's own
-   * config.
-   *
-   * `pnpm cella release` also uses this value as the prefix for the ephemeral, uniquely
-   * named integration branch it cuts per cycle (e.g. `cella-sync/20260702-1430-c5a1970`).
+   * Note: the fork owner's own `pnpm cella sync` does NOT use this branch — it cuts ephemeral
+   * `syncBranchPrefix` branches from `releaseBase` instead.
    */
   syncBranch?: string;
 
   /**
-   * Trunk branch that `pnpm cella release` cuts the ephemeral sync branch from and opens
-   * the squash-merge PR into. Defaults to 'main'. Cutting fresh from trunk each cycle keeps
-   * every PR limited to that cycle's upstream delta (no accumulation) and `main` linear.
+   * Prefix for the ephemeral integration branches that `pnpm cella sync` cuts per run.
+   * Defaults to 'cella/sync'.
+   *
+   * Each run cuts a fresh, uniquely named branch from `releaseBase` (e.g.
+   * `cella/sync/20260702-1430-c5a1970`), lands the upstream merge there, and leaves it for you
+   * to commit and open a PR into `releaseBase`. Cutting fresh each cycle keeps every PR scoped
+   * to that cycle's upstream delta (no accumulation) and keeps `main` linear. The three-segment
+   * shape means it never collides with git's ref namespacing (no long-lived `cella-sync`
+   * file-vs-dir conflict).
+   */
+  syncBranchPrefix?: string;
+
+  /**
+   * Trunk branch that `pnpm cella sync` cuts the ephemeral branch from and that you open the
+   * squash-merge PR into. Defaults to 'main'. Cutting fresh from trunk each cycle keeps every
+   * PR limited to that cycle's upstream delta (no accumulation) and `main` linear.
    */
   releaseBase?: string;
 
@@ -225,7 +230,7 @@ export const cellaConfigSchema = z
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Sync services available in the CLI */
-export type SyncService = 'analyze' | 'sync' | 'release' | 'audit' | 'forks' | 'contributions' | 'stats';
+export type SyncService = 'analyze' | 'sync' | 'audit' | 'forks' | 'contributions' | 'stats';
 
 /** Analyze output scope for interactive and machine-readable flows */
 export type AnalyzeScope = 'all' | 'risk' | 'protected';
@@ -290,12 +295,6 @@ export interface RuntimeConfig extends CellaCliConfig {
 
   /** Regenerate test coverage before showing the stats summary (stats service) */
   coverage?: boolean;
-
-  /** Push the ephemeral branch and open a PR (release service; default true, disable with --no-push) */
-  releasePush?: boolean;
-
-  /** Auto squash-merge the PR and clean up after a clean sync (release service; --merge) */
-  releaseAutoMerge?: boolean;
 }
 
 /** File status after analysis */

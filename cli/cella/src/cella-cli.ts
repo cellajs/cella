@@ -14,15 +14,11 @@ import { runAnalyze } from './services/analyze';
 import { runAudit } from './services/audit';
 import { runContributions } from './services/contributions';
 import { runForks } from './services/forks';
-import { runPackages } from './services/packages';
-import { runRelease } from './services/release';
 import { runStats } from './services/stats';
-import { runSync } from './services/sync';
+import { runSyncCommand } from './services/sync';
 import { registerSignalHandlers } from './utils/cleanup';
 import pc from './utils/colors';
-import { loadConfig, resolveSyncBranch } from './utils/config';
-import { warningMark } from './utils/display';
-import { assertClean, createBranch, getCurrentBranch, localBranchExists } from './utils/git';
+import { loadConfig } from './utils/config';
 
 /**
  * Determine the fork path.
@@ -54,42 +50,15 @@ function getForkPath(): string {
 }
 
 /**
- * Pre-flight checks before running sync.
+ * Pre-flight checks before running a service.
+ *
+ * The sync service cuts its own ephemeral branch from the trunk and owns its own clean/resume
+ * state, so preflight no longer cares which branch you are on or whether the tree is clean — it
+ * only verifies we are inside a git repository.
  */
-async function preflight(
-  forkPath: string,
-  syncBranch: string,
-  options: { skipCleanCheck?: boolean; warnOnBranch?: boolean } = {},
-): Promise<void> {
-  // Check we're in a git repository
+async function preflight(forkPath: string): Promise<void> {
   if (!existsSync(join(forkPath, '.git'))) {
     throw new Error(`not a git repository: ${forkPath}`);
-  }
-
-  // Check for uncommitted changes (skip for analyze/dry-run mode). Done before any
-  // branch switch so auto-create only ever happens on a clean tree.
-  if (!options.skipCleanCheck) {
-    await assertClean(forkPath);
-  }
-
-  // Check we're on the sync branch (or an ephemeral child of it, e.g. cella-sync/<stamp>)
-  const currentBranch = await getCurrentBranch(forkPath);
-  const onSyncBranch = currentBranch === syncBranch || currentBranch.startsWith(`${syncBranch}/`);
-  if (!onSyncBranch) {
-    if (options.warnOnBranch) {
-      console.warn(
-        `${warningMark} not on branch '${syncBranch}' (currently on '${currentBranch}'). results may differ from your sync branch.`,
-      );
-    } else if (!(await localBranchExists(forkPath, syncBranch))) {
-      // First run: create the integration branch from the current branch so the sync
-      // lands off `main` (which is squash-merge-only under release-please).
-      await createBranch(forkPath, syncBranch);
-      console.info(pc.green(`created and switched to sync branch '${syncBranch}' (from '${currentBranch}')`));
-    } else {
-      throw new Error(
-        `must be on branch '${syncBranch}' to sync. currently on '${currentBranch}'. run: git switch ${syncBranch}`,
-      );
-    }
   }
 }
 
@@ -110,13 +79,9 @@ async function main(): Promise<void> {
     // Parse CLI and get runtime config
     const config = await parseCli(userConfig, forkPath);
 
-    // Run preflight checks (except for services that manage their own branch/clean state)
-    if (!['audit', 'forks', 'contributions', 'stats', 'release'].includes(config.service)) {
-      const isReadOnly = config.service === 'analyze';
-      await preflight(forkPath, resolveSyncBranch(userConfig.settings), {
-        skipCleanCheck: isReadOnly,
-        warnOnBranch: isReadOnly,
-      });
+    // Run preflight checks (except for services that operate on other fork paths)
+    if (!['audit', 'forks', 'contributions', 'stats'].includes(config.service)) {
+      await preflight(forkPath);
     }
 
     // Route to service
@@ -127,19 +92,9 @@ async function main(): Promise<void> {
       }
 
       case 'sync': {
-        const result = await runSync(config);
-        if (config.settings.syncWithPackages !== false) {
-          // Run package sync even when the merge left conflicts: package.json files
-          // that are themselves conflicted are skipped and reported; all others are
-          // still synced so you get the latest upstream deps.
-          await runPackages(config, { conflictedFiles: result.conflicts });
-        }
+        await runSyncCommand(config);
         break;
       }
-
-      case 'release':
-        await runRelease(config);
-        break;
 
       case 'audit':
         await runAudit(config, { force: config.force, checkOverrides: config.checkOverrides });
