@@ -3,12 +3,12 @@
 ## Template vs fork
 Cella is a TypeScript monorepo template for building collaborative web apps with sync & offline capabilities. It is designed to be forked and extended, with a dynamic, per-app configurable entity model (`user` and `organization` are built-in). If package.json has `cella` as its name, it is the template. Otherwise it is a 'fork'.
 
-The canonical agent guidelines live in [info/AGENTS.md](../info/AGENTS.md) — read it for architecture, routing, guards, permissions, state/query patterns, sync engine, coding style, testing, deploy debugging, and commands. This file is intentionally thin so it stays in sync.
+The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md) — read it for architecture, routing, guards, permissions, state/query patterns, sync engine, coding style, testing, deploy debugging, and commands. This file is intentionally thin so it stays in sync.
 
 ## Start here
-- **Agent guidelines**: [info/AGENTS.md](../info/AGENTS.md)
-- **Architecture & tech stack**: [info/ARCHITECTURE.md](../info/ARCHITECTURE.md)
-- **Testing**: [info/TESTING.md](../info/TESTING.md)
+- **Agent guidelines**: [cella/AGENTS.md](../cella/AGENTS.md)
+- **Architecture & tech stack**: [cella/ARCHITECTURE.md](../cella/ARCHITECTURE.md)
+- **Testing**: [cella/TESTING.md](../cella/TESTING.md)
 
 ## Quick reference
 - **Monorepo** (pnpm workspaces): `backend/` (Hono, Drizzle, PostgreSQL), `frontend/` (React SPA, TanStack Router/Query, Zustand), `shared/` (config), `locales/` (i18n), `cdc/` (Change Data Capture worker). Both backend and frontend use a modular structure in `src/modules/` — keep new features in their own module.

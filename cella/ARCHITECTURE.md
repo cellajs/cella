@@ -236,7 +236,7 @@ Mock generators in `backend/mocks/` serve three purposes:
 
 ## Testing
 
-See [info/TESTING.md](./TESTING.md) for test modes, infrastructure, and writing guidelines.
+See [cella/TESTING.md](./TESTING.md) for test modes, infrastructure, and writing guidelines.
 
 
 ## File structure
@@ -251,7 +251,6 @@ Cella is a flat-root monorepo.
 │   ├── scripts               Seed scripts and other dev scripts
 ├── bench                     Artillery load testing
 ├── cdc                       Change Data Capture worker (WAL → activities → SSE)
-├── cli/cella                 CLI for syncing forks with upstream Cella
 ├── frontend                  SPA using vite, React etc
 ├── infra                     Pulumi IaC (Scaleway) deployment with CLI
 ├── info                      Documentation, changelog, migration plans
@@ -262,6 +261,5 @@ Cella is a flat-root monorepo.
 ├── studio                    Drizzle Studio launcher for local DB inspection
 └── yjs                       Yjs collaborative editing worker (ws binary relay)
 ```
-
 
 

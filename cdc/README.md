@@ -91,5 +91,5 @@ pnpm test:watch   # Run tests in watch mode
 
 ## Related docs
 
-- [Architecture overview](../info/ARCHITECTURE.md)
-- [Sync engine](../info/SYNC_ENGINE.md)
+- [Architecture overview](../cella/ARCHITECTURE.md)
+- [Sync engine](../cella/SYNC_ENGINE.md)

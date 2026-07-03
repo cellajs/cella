@@ -1,13 +1,13 @@
 // DORMANT: lens-system module, intentionally not wired (not imported by the
 // persister/query-client). Reconnect when lenses are activated. Active mechanism
-// today is clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
+// today is clientCacheVersion.
 /**
  * Boot-time cache migration (Phase 1, runtime touch point 2).
  *
  * When the persisted schema ordinal is behind the running bundle, cached
  * product-entity rows and queued mutations are rewritten in place via the lens
  * engine — no refetch. Migrations are idempotent, so an interrupted pass is
- * safe to re-run. See info/SCHEMA_EVOLUTION.md (1.4, 1.5, 1.6).
+ * safe to re-run.
  */
 import type { DehydratedState } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';

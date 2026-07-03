@@ -26,6 +26,17 @@ describe('createOtelSDK', () => {
     expect(otel.sdk).toBeDefined();
   });
 
+  it('normalizes metric interval below exporter timeout', () => {
+    expect(() =>
+      createOtelSDK({
+        serviceName: 'test-service',
+        mapleSecretIngestKey: 'test-key',
+        metricIntervalMs: 1,
+        autoInstrumentations: false,
+      }),
+    ).not.toThrow();
+  });
+
   it('does not create sdk without Maple key or spanProcessors', () => {
     const otel = createOtelSDK({ serviceName: 'test-service' });
     expect(otel.sdk).toBeUndefined();

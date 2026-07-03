@@ -4,9 +4,6 @@
  * APPEND-ONLY: never reorder or remove existing entries. Add new lenses at the
  * END, in date order. The 0-based index + 1 is the lens's global schema ordinal;
  * `currentSchemaVersion` (engine.ts) is the array length.
- *
- * The CI append-only guard freezes the dated lens module files; this file is the
- * mutable append point. See info/SCHEMA_EVOLUTION.md.
  */
 import type { LensDefinition } from './define';
 

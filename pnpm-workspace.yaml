@@ -12,15 +12,11 @@ allowUnusedPatches: true
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
+  - '@cellajs/cli'
   - '@opentelemetry/core@2.8.0'
   - esbuild@0.24.3
   - esbuild@0.28.1
 overrides:
-  # protobufjs 8.0.0–8.4.0 carries multiple high-severity advisories (code
-  # injection GHSA-66ff-xgx4-vchm, prototype-pollution code-gen, and DoS
-  # GHSA-wcpc-wj8m-hjx6), all patched by 8.4.1. It's pulled in transitively via
-  # backend > pino-opentelemetry-transport > @opentelemetry/*. Pin the 8.x line
-  # to the latest stable; the separate 7.x line is left untouched.
   '@opentelemetry/core@<2.8.0': ^2.8.0
   esbuild@<0.28.1: ^0.28.1
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
@@ -30,7 +26,6 @@ packages:
   - backend
   - cdc
   - shared
-  - cli/cella
   - frontend
   - infra
   - locales

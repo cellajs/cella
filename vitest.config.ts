@@ -27,7 +27,6 @@ export default defineConfig({
     projects: [
       'backend',
       'bench',
-      'cli/cella',
       'shared',
       'yjs',
       'cdc',
@@ -37,12 +36,12 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
+      reportsDirectory: '.coverage',
       reportOnFailure: true,
       reporter: coverageReporters,
       include: [
         'backend/src/**/*.ts',
         'bench/src/**/*.ts',
-        'cli/cella/src/**/*.ts',
         'cdc/src/**/*.ts',
         'frontend/src/**/*.{ts,tsx}',
         'yjs/src/**/*.ts',

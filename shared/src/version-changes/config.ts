@@ -1,5 +1,5 @@
 /**
- * Schema-evolution lifecycle policy (info/SCHEMA_EVOLUTION.md, 1.3 / 1.7).
+ * Schema-evolution lifecycle policy.
  *
  * Centralizes the timing knobs that gate expand → contract transitions and
  * force stale bundles to update. Values are conservative defaults; forks tune

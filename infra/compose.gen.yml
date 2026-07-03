@@ -129,9 +129,9 @@ services:
       lbWebsockets: true
       dockerfile: yjs/Dockerfile
       coHosted: true
-  ai:
-    image: ${REGISTRY}/backend:${AI_TAG:-latest}
-    profiles: [ai]
+  mcp:
+    image: ${REGISTRY}/backend:${MCP_TAG:-latest}
+    profiles: [mcp]
     restart: unless-stopped
     ports:
       - '4003:4003'
@@ -143,11 +143,11 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      MODE: ai-worker
+      MODE: mcp-worker
       PORT: '4003'
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      AI_API_URL: ${AI_API_URL}
+      MCP_API_URL: ${MCP_API_URL}
       SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
@@ -156,7 +156,7 @@ services:
       retries: 3
       start_period: '15s'
     x-service:
-      slug: ai
+      slug: mcp
       healthPort: 4003
       healthTimeoutSeconds: 240
       runMigrate: false
@@ -168,7 +168,7 @@ services:
       reusesImageOf: backend
       coHosted: true
       bindings:
-        AI_API_URL: '@{self.url}'
+        MCP_API_URL: '@{self.url}'
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]

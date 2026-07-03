@@ -43,7 +43,7 @@ pnpm story # Start storybook
 
 Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations. It also covers auditing outdated/vulnerable packages, file stats, and (for template maintainers) syncing downstream forks.
 
-See [cli/cella/README.md](../cli/cella/README.md) for full documentation, services, and configuration.
+See the `@cellajs/cli` package for full documentation, services, and configuration.
 
 ```bash
 pnpm cella
@@ -68,4 +68,3 @@ See [bench/README.md](../bench/README.md) for full documentation and scenarios.
 ```bash
 pnpm bench
 ```
-

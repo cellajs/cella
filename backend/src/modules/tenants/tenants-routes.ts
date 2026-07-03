@@ -4,7 +4,7 @@
  * Tenants are system-level resources managed exclusively by admins.
  * These routes provide CRUD operations for tenant management.
  *
- * @see info/ARCHITECTURE.md for architecture documentation
+ * @see cella/ARCHITECTURE.md for architecture documentation
  */
 
 import { createXRoute } from '#/core/x-routes';

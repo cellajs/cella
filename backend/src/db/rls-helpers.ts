@@ -19,7 +19,7 @@
  * Context entities and memberships have no RLS policies — access is enforced by guards.
  *
  * Session variables: app.tenant_id
- * @see info/ARCHITECTURE.md for full architecture documentation
+ * @see cella/ARCHITECTURE.md for full architecture documentation
  */
 
 import { sql } from 'drizzle-orm';

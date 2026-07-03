@@ -1,5 +1,5 @@
 /**
- * CI guards for schema-evolution lenses (info/SCHEMA_EVOLUTION.md, 1.8).
+ * CI guards for schema-evolution lenses.
  *
  * 1. Append-only lint — dated lens module files must never change after their
  *    first commit (frozen). lens-list.ts / define.ts / engine.ts are exempt.

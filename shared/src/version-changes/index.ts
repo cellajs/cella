@@ -3,8 +3,6 @@
  *
  * The ordered, append-only lens list lives in `lens-list.ts` (the designated
  * append point). `currentSchemaVersion` is derived as the list length (engine.ts).
- *
- * See info/SCHEMA_EVOLUTION.md.
  */
 export { lenses } from './lens-list';
 export { schemaEvolutionPolicy } from './config';

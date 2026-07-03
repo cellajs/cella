@@ -179,8 +179,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run sync CLI unit tests
-        run: pnpm --filter @cellajs/cli test
+      - name: Smoke sync CLI
+        run: pnpm cella --help
 
       - name: Run sync analysis (dry-run)
         # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
@@ -244,4 +244,3 @@ jobs:
           echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
           echo "Bump appConfig.clientCacheVersion (e.g. 'v1' → 'v2') in $CFG and use a 'feat!' PR title so clients wipe stale cache."
           exit 1
-

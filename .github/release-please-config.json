@@ -22,7 +22,7 @@
     ".": {
       "release-type": "node",
       "include-component-in-tag": false,
-      "changelog-path": "info/CHANGELOG.md"
+      "changelog-path": "cella/CHANGELOG.md"
     }
   }
 }
