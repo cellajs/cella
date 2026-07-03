@@ -110,7 +110,7 @@ interface DependencyPathInfo {
  ************************************************************************************************/
 
 /** Cache file location (in cli/cella directory) */
-export const CACHE_FILE = path.join(import.meta.dirname, '..', '.audit.cache.json');
+export const CACHE_FILE = path.join(import.meta.dirname, '..', '..', '.audit.cache.json');
 
 /** Cache TTL: 7 days in ms */
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -140,7 +140,7 @@ export function loadCache(): ChangelogCache {
 /** Saves the changelog cache to disk. */
 export function saveCache(cache: ChangelogCache): void {
   try {
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
+    fs.writeFileSync(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`);
   } catch {
     // Ignore cache write errors
   }

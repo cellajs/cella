@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CACHE_FILE,
@@ -93,6 +94,7 @@ describe('audit-utils', () => {
 
     it('should have correct cache file location', () => {
       expect(CACHE_FILE).toContain('.audit.cache.json');
+      expect(CACHE_FILE).not.toContain(`${path.sep}src${path.sep}`);
     });
   });
 

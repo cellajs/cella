@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "24.10.13",
-    "@typescript/native-preview": "7.0.0-dev.20260701.1",
+    "@typescript/native-preview": "7.0.0-dev.20260702.3",
     "cross-env": "^10.1.0",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",

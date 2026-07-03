@@ -118,7 +118,12 @@ async function setupTemporarySyncBranch(config: RuntimeConfig): Promise<Temporar
  * markers for IDE 3-way resolution, everything else is resolved per the override rules. Called
  * by `runSyncCycle` and by the forks service.
  */
-export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
+export async function runSync(
+  config: RuntimeConfig,
+  options?: {
+    onAfterSummary?: (result: MergeResult) => void;
+  },
+): Promise<MergeResult> {
   createSpinner('starting sync...');
 
   const result = await runMergeEngine(config, {
@@ -140,6 +145,7 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
 
   // Print summary only (no file lists for sync)
   printSummary(result.summary, 'merge summary');
+  options?.onAfterSummary?.(result);
 
   // Write log file if requested
   if (config.logFile) {
@@ -155,15 +161,37 @@ export async function runSync(config: RuntimeConfig): Promise<MergeResult> {
   return result;
 }
 
+/** Conventional PR title required by release-please. */
+const SYNC_PR_TITLE = 'chore: sync upstream cella';
+
+/** Print the GitHub CLI command for opening the finished sync PR. */
+function printPrCreateStep(branch: string, base: string): void {
+  console.info(pc.dim(`  gh pr create --base ${base} --head ${branch} --title "${SYNC_PR_TITLE}" --fill`));
+}
+
 /** Print the "push + open a PR" steps for a sync branch whose merge is already committed. */
 function printShipSteps(temporaryBranch: string, base: string): void {
   console.info(pc.dim(`  git push -u origin ${temporaryBranch}`));
-  console.info(pc.dim(`  gh pr create --base ${base} --head ${temporaryBranch} --fill`));
+  printPrCreateStep(temporaryBranch, base);
 }
 
 /** Guidance shown after a fresh cycle stages a merge: re-run to finish and ship it. */
 function printFinishSteps(): void {
   console.info(pc.dim('  pnpm cella sync'));
+}
+
+/** Whether sync applied changes that need a finishing rerun. */
+function hasStagedSyncChanges(result: MergeResult): boolean {
+  const { summary } = result;
+  return summary.behind + summary.diverged + summary.renamed + summary.ignored + summary.pinned > 0;
+}
+
+/** Guidance shown immediately after a clean sync summary. */
+function printCleanSyncNextStep(branch: string): void {
+  console.info();
+  console.info(`${checkMark} ${pc.green(`Sync merge staged on '${branch}'. No conflicts. Review, then finish with:`)}`);
+  printFinishSteps();
+  console.info(pc.dim('  rerun commits the sync, pushes the branch, and opens a PR.'));
 }
 
 /** Whether the GitHub CLI is available on PATH. */
@@ -195,17 +223,17 @@ async function shipSyncBranch(config: RuntimeConfig, branch: string): Promise<vo
 
   if (ghAvailable()) {
     console.info(pc.dim('opening a pull request...'));
-    const pr = spawnSync('gh', ['pr', 'create', '--base', base, '--head', branch, '--fill'], {
+    const pr = spawnSync('gh', ['pr', 'create', '--base', base, '--head', branch, '--title', SYNC_PR_TITLE, '--fill'], {
       cwd: forkPath,
       stdio: 'inherit',
     });
     if (pr.status !== 0) {
       console.info(pc.yellow('could not open the PR automatically (it may already exist). open it with:'));
-      console.info(pc.dim(`  gh pr create --base ${base} --head ${branch} --fill`));
+      printPrCreateStep(branch, base);
     }
   } else {
     console.info(pc.yellow('`gh` not found — open the PR manually:'));
-    console.info(pc.dim(`  gh pr create --base ${base} --head ${branch} --fill`));
+    printPrCreateStep(branch, base);
   }
 
   console.info(pc.dim(`switching back to '${base}'...`));
@@ -250,7 +278,13 @@ async function runSyncCycle(config: RuntimeConfig): Promise<SyncCycleOutcome> {
   const { forkPath } = config;
   const branch = await setupTemporarySyncBranch(config);
 
-  const result = await runSync(config);
+  const result = await runSync(config, {
+    onAfterSummary: (syncResult) => {
+      if (syncResult.conflicts.length === 0 && hasStagedSyncChanges(syncResult)) {
+        printCleanSyncNextStep(branch.temporaryBranch);
+      }
+    },
+  });
 
   if (config.settings.syncWithPackages !== false) {
     // Run package sync even when the merge left conflicts: package.json files that are
@@ -312,7 +346,7 @@ async function resumeSyncMerge(config: RuntimeConfig, branch: string): Promise<v
   // upstream ancestry isn't shared on the remote).
   const upstreamSha = await getShortSha(forkPath, 'MERGE_HEAD').catch(() => '');
   await stageAll(forkPath);
-  const message = upstreamSha ? `chore: sync upstream cella ${upstreamSha}` : 'chore: sync upstream cella';
+  const message = upstreamSha ? `${SYNC_PR_TITLE} ${upstreamSha}` : SYNC_PR_TITLE;
   await commitSquash(forkPath, message);
   console.info();
   console.info(pc.green(`committed the sync on '${branch}' as '${message}'.`));
@@ -374,8 +408,6 @@ export async function runSyncCommand(config: RuntimeConfig): Promise<void> {
   const { temporaryBranch } = outcome.branch;
   if (outcome.status === 'conflicts') {
     console.info(`${warningMark} ${pc.yellow(`conflicts on '${temporaryBranch}'. Resolve them and then:`)}`);
-  } else {
-    console.info(`${checkMark} ${pc.green(`Sync merge staged on '${temporaryBranch}'. Review, then:`)}`);
+    printFinishSteps();
   }
-  printFinishSteps();
 }
