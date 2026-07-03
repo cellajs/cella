@@ -51,7 +51,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
 
       {!isLoading && domains.length === 0 && (
         <p className="py-4 text-center text-muted-foreground text-sm">
-          {t('c:no_resource_yet', { resource: t('c:domains').toLowerCase() })}
+          {t('c:no_resource_yet', { resource: t('c:domain_other').toLowerCase() })}
         </p>
       )}
 

@@ -212,7 +212,7 @@
     },
     {
       // The MODE=cdc shim is the one sanctioned place backend boots the CDC
-      // worker (single backend image, split deploy via MODE). It mirrors ai/.
+      // worker (single backend image, split deploy via MODE). It mirrors mcp/.
       "includes": ["backend/src/main.cdc.ts", "backend/src/main.api.ts"],
       "linter": {
         "rules": {
@@ -271,7 +271,7 @@
       }
     },
     {
-      "includes": ["cdc/**", "yjs/**", "ai/**"],
+      "includes": ["cdc/**", "yjs/**", "mcp/**"],
       "linter": {
         "rules": {
           "style": {
@@ -362,7 +362,7 @@
         "frontend/vite.config.ts",
         "cdc/src/env.ts",
         "yjs/src/env.ts",
-        "ai/src/ai-worker.ts",
+        "mcp/src/mcp-worker.ts",
         "cli/**"
       ],
       "linter": {

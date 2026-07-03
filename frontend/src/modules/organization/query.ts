@@ -13,7 +13,7 @@ import {
 } from 'sdk';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
-import { addMyMembershipCache } from '~/modules/memberships/query-mutations';
+import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import {
   baseInfiniteQueryOptions,
@@ -128,7 +128,8 @@ export const useOrganizationCreateMutation = () => {
       return result.data[0] as EnrichedOrganization;
     },
     onSuccess: (createdOrganization) => {
-      if (createdOrganization.included?.membership) addMyMembershipCache(createdOrganization.included.membership);
+      const membership = getApiIncludedMembership(createdOrganization);
+      if (membership) addMyMembershipCache(membership);
       cacheCreate(listKey, [createdOrganization]);
     },
     onSettled: () => {

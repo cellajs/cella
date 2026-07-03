@@ -11,7 +11,7 @@ const UsersTable = lazy(() => import('~/modules/user/table/users-table'));
  */
 export const Route = createFileRoute('/_app/system/users')({
   validateSearch: usersRouteSearchParamsSchema,
-  staticData: { isAuth: true, navTab: { id: 'users', label: 'c:users' } },
+  staticData: { isAuth: true, navTab: { id: 'users', label: 'c:user_other' } },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   component: withSuspense(UsersTable),
 });

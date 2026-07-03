@@ -89,7 +89,8 @@ const main = async () => {
           await (await import('cdc')).runCdcWorker();
         }
         if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
-        if (appConfig.services.ai.enabled) await (await import('#/modules/ai/worker/ai-worker-entry')).startAiWorker();
+        if (appConfig.services.mcp.enabled)
+          await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker();
       }
 
       const tunnelUrl = await startTunnel(info);

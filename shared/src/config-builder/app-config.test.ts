@@ -19,7 +19,7 @@ describe('appConfig service endpoints', () => {
     expect(appConfig.services.frontend.publicUrl).toBe(appConfig.frontendUrl);
     expect(appConfig.services.backend.publicUrl).toBe(appConfig.backendUrl);
     expect(appConfig.services.yjs.publicUrl).toBe(appConfig.yjsUrl);
-    expect(appConfig.services.ai.publicUrl).toBe(appConfig.aiUrl);
+    expect(appConfig.services.mcp.publicUrl).toBe(appConfig.mcpUrl);
     expect('publicUrl' in appConfig.services.cdc).toBe(false);
 
   });
@@ -30,18 +30,18 @@ describe('appConfig service endpoints', () => {
       FRONTEND_URL: 'https://front.example',
       BACKEND_URL: 'https://api.example',
       YJS_URL: 'wss://yjs.example',
-      AI_API_URL: 'https://ai.example',
+      MCP_API_URL: 'https://mcp.example',
     });
     expect(appConfig.services.frontend.publicUrl).toBe('https://front.example');
     expect(appConfig.services.backend.publicUrl).toBe('https://api.example');
     expect(appConfig.services.yjs.publicUrl).toBe('wss://yjs.example');
-    expect(appConfig.services.ai.publicUrl).toBe('https://ai.example');
+    expect(appConfig.services.mcp.publicUrl).toBe('https://mcp.example');
   });
 
   it('loads service enablement from mode config overrides', async () => {
     const appConfig = await loadAppConfig({ APP_MODE: 'test' });
     expect(appConfig.services.cdc.enabled).toBe(true);
     expect(appConfig.services.yjs.enabled).toBe(true);
-    expect(appConfig.services.ai.enabled).toBe(false);
+    expect(appConfig.services.mcp.enabled).toBe(false);
   });
 });

@@ -11,14 +11,17 @@
  */
 
 import { getTableName } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, toColumnName } from 'shared';
 import { entityTables } from '#/tables';
 
 // ─── Immutable column sets ──────────────────────────────────────────────────
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
 const PARENTLESS_ENTITY_COLUMNS = ['id', 'entity_type', 'created_at', 'created_by'] as const;
-const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'organization_id', 'context_id', 'context_type'] as const;
+const MEMBERSHIP_CONTEXT_ID_COLUMNS = appConfig.contextEntityTypes.map((type) =>
+  toColumnName(appConfig.entityIdColumnKeys[type]),
+);
+const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'context_id', 'context_type', ...MEMBERSHIP_CONTEXT_ID_COLUMNS] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments) */
 export const productEntityImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;

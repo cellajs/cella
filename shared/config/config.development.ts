@@ -17,7 +17,7 @@ export default {
   backendUrl: 'http://localhost:4000',
   backendAuthUrl: 'http://localhost:4000/auth',
   yjsUrl: 'http://localhost:4002',
-  aiUrl: 'http://localhost:4003',
+  mcpUrl: 'http://localhost:4003',
 
   // Shared Cella Maps key is referer-restricted to official domains and rejects localhost.
   // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.

@@ -19,7 +19,7 @@ export function openUpdateSheet(tenant: Tenant, buttonRef: RefObject<HTMLButtonE
       </Card>
       <Card className="mb-20">
         <CardHeader>
-          <CardTitle>{i18n.t('c:domains')}</CardTitle>
+          <CardTitle>{i18n.t('c:domain_other')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ManageDomainsContent tenant={tenant} />

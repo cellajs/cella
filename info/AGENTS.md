@@ -5,8 +5,6 @@ Cella is a TypeScript template to collaborative web apps with sync engine for of
 
  Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
-You are either in the cella template or in a fork of it. If the root package.json has name "cella", you are in the template; otherwise you are in a fork.
-
 ## Architecture & tech stack
 See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
 
@@ -51,6 +49,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - **Client state**: Zustand stores in `frontend/src/store/`. Prefer Zustand over React context. Context is only for tree-local wiring of compound UI components (e.g. `Carousel`, `Select`, `Stepper`) or third-party libs that require a provider — never for app/feature state.
 - **Persistence boundaries**: Server entities → React Query cache (persisted via global persister). Local UI selections/preferences → Zustand `persist` (see `navigation-store`, `ui-store`). Never call `localStorage` directly from hooks/components. Never mirror entities into Zustand. Per-user client state (persisted Zustand kv, query cache, attachment blobs, failed-sync) lives in ONE IndexedDB per user, `${appConfig.slug}:${userId}` — see `frontend/src/query/app-db.ts` + auth-driven lifecycle in `app-storage.ts`. Only `ui-store`/`user-store` stay in plain localStorage (bootstrap stores). New per-user stores: `idbKvStorage('<base>')` + `skipHydration: true` and register in `app-storage.ts`. Per-tenant/org/entity scoping goes inside state (e.g. `Record<\`${tenantId}:${orgId}\`, T>`), never in the key.
 - **API client**: Generated SDK in `sdk/gen/`, consumed from the `sdk` workspace package. **Never modify manually** — run `pnpm sdk` after backend route/schema changes.
+- **Frontend membership enrichment**: Backend context-entity responses may include `included.membership` for external API clients. Frontend app code should use that field only to seed `meKeys.memberships`; context entities get their direct `entity.membership` field from the enrichment pipeline. Do not flatten `included.membership` onto entities or read `entity.included.membership` in UI components, cache mutations, or feature logic.
 - **DB schemas**: `backend/src/db/schema/` (Drizzle ORM). Run `pnpm generate` for migrations. Entity IDs use UUID v7 by default (time-ordered, via `uuidv7`). Nanoid is used only where short IDs are needed (e.g., tenant IDs) or longer IDs are required.
 - **API validation**: Zod schemas in `backend/src/modules/<module>/<module>-schema.ts` (using `@hono/zod-openapi`). Shared base schemas in `backend/src/schemas/`.
 - **Frontend types**: Generated in `sdk/gen/` and imported from `sdk`; module-specific types live in `frontend/src/modules/<module>/types.ts`.
@@ -124,9 +123,8 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - **Validate infra changes** with `pnpm --filter infra exec vitest run` (infra is **Biome-ignored** — match style by hand) and `pnpm check` at the root.
 
 ## Commits & pull requests
-- Use `git` and `gh` CLI. Do not use GitKraken or other third-party git tools. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
-- **Never** run destructive worktree ops (`git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean -fd`) to "isolate" or reset state — other Copilot sessions or the user may share this worktree. Read-only `git status`/`git diff` are fine.
-- PRs: concise description, linked issues, screenshots for UI changes, passing checks. Keep changes scoped.
+- Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
+- PRs: concise description, linked issues, passing checks. Keep changes scoped.
 
 ## Commands
 - `pnpm dev`: Dev with PostgreSQL + CDC Worker (requires Docker).
@@ -139,4 +137,3 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - `pnpm bench`: Run benchmark scenarios: [bench/README.md](../bench/README.md)
 - `pnpm cella`: CLI to sync with cella and more: [cli/cella/README.md](../cli/cella/README.md)
 - `pnpm story`: Start storybook
-

@@ -1,7 +1,6 @@
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ContextScope, hierarchy, type SubjectForPermission } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
-import type { ContextScope, SubjectForPermission } from '#/permissions/permission-manager/types';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /** Assert that a function throws an AppError with the given type */

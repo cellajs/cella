@@ -122,7 +122,7 @@ On the frontend, `computeCan()` produces a three-state map: `true | false | 'own
 |------|---------|
 | `config/default.ts` | Entity hierarchy definition (entityConfig) |
 | `permissions-config.ts` | Access policy definitions |
-| `permission-manager/check.ts` | Core permission check logic (incl. owner relation) |
-| `permission-manager/types.ts` | TypeScript interfaces (`SubjectForPermission`, `GrantSource`) |
+| `shared/src/permissions/permission-manager/check.ts` | Core permission check logic (incl. owner relation) |
+| `shared/src/permissions/permission-manager/types.ts` | TypeScript interfaces (`SubjectForPermission`, `GrantSource`) |
 | `shared/src/permissions/action-helpers.ts` | `resolvePermission()` helper for frontend |
 | `shared/src/permissions/compute-can.ts` | Frontend permission map computation |

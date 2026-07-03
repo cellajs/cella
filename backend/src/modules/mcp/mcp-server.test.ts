@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '#/core/context';
-import { handleMcpMessage } from '#/modules/ai/mcp/mcp-server';
-import { describeMcpTools, type ExecutableTool } from '#/modules/ai/mcp/tool-source';
+import { handleMcpMessage } from '#/modules/mcp/mcp-server';
+import { describeMcpTools, type ExecutableTool } from '#/modules/mcp/tool-source';
 
 // The MCP server is chat-free: it only depends on the tool registry, not on any
 // chat/message persistence. A minimal context is enough for these unit tests

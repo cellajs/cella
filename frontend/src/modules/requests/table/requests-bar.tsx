@@ -67,7 +67,7 @@ export const RequestsTableBar = ({
             ? t('c:success.delete_resource', { resource: t('c:request') })
             : t('c:success.delete_counted_resources', {
                 count: args.data.length,
-                resources: t('c:requests').toLowerCase(),
+                resources: t('c:request_other').toLowerCase(),
               });
         toaster(message, 'success');
       }
@@ -81,7 +81,7 @@ export const RequestsTableBar = ({
       title: t('c:delete'),
       description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('c:requests').toLowerCase() : t('c:request').toLowerCase(),
+        resource: selected.length > 1 ? t('c:request_other').toLowerCase() : t('c:request').toLowerCase(),
       }),
     });
   };

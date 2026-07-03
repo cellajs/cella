@@ -155,8 +155,8 @@ function BlockNoteFullHtml({
     });
   };
 
-  // Mirror the live editor's DOM (bn-container > bn-editor.bn-default-styles) so that
-  // descendant CSS overrides in styles.css (font-family, dense line-height) actually match.
+  // Mirror live editor styling without using `.bn-editor`; BlockNote's side-menu plugin
+  // scans `.bn-editor` nodes and expects editor-only children such as `.bn-block-group`.
   return (
     <div
       id={id}
@@ -169,7 +169,7 @@ function BlockNoteFullHtml({
       <div
         // select-text: opt static (read-only) content into text selection — it sits inside a focusable,
         // click-to-expand task Card, so without this the user can't highlight/copy the text.
-        className="bn-editor bn-default-styles select-text"
+        className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html) }}
       />

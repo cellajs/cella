@@ -21,6 +21,6 @@
       "#json/*": ["../json/*"],
     },
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*",  "tests", "scripts", "trigger.config.ts", "../shared/*", "../cdc/src/**/*", "../ai/src/**/*"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "../shared/*", "../json/*", "../locales/*",  "tests", "scripts", "trigger.config.ts", "../shared/*", "../cdc/src/**/*", "../mcp/src/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

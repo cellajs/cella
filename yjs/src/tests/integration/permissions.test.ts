@@ -13,7 +13,8 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
-import { testDatabaseUrl } from '../../../../shared/src/test-db';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { testDatabaseUrl } from 'shared/test-db';
 import type { DocContext } from '../../constants';
 import { canEditEntity } from '../../data/permissions';
 
@@ -33,6 +34,22 @@ const attachmentA = randomUUID(); // tenantA / orgA, owned by userA
 const attachmentB = randomUUID(); // tenantA / orgB, no membership for userA
 const attachmentC = randomUUID(); // tenantB / orgC
 
+const hierarchyA = buildTestEntityHierarchyPlan({
+  entityType: 'attachment',
+  rootContextId: orgA,
+  makeContextId: () => randomUUID(),
+});
+const hierarchyB = buildTestEntityHierarchyPlan({
+  entityType: 'attachment',
+  rootContextId: orgB,
+  makeContextId: () => randomUUID(),
+});
+const hierarchyC = buildTestEntityHierarchyPlan({
+  entityType: 'attachment',
+  rootContextId: orgC,
+  makeContextId: () => randomUUID(),
+});
+
 function ctx(overrides: Partial<DocContext>): DocContext {
   return {
     entityType: 'attachment',
@@ -43,6 +60,43 @@ function ctx(overrides: Partial<DocContext>): DocContext {
     verified: false,
     ...overrides,
   };
+}
+
+function quoteIdent(identifier: string) {
+  return `"${identifier.replaceAll('"', '""')}"`;
+}
+
+async function seedEntityHierarchy(
+  client: pg.Client,
+  plan: TestEntityHierarchyPlan,
+  tenantId: string,
+  createdBy: string,
+  slugPrefix: string,
+) {
+  for (const row of plan.seedContextRows) {
+    const columns = ['id', 'tenant_id', 'entity_type', 'name', 'slug', 'created_by', row.parentColumnName];
+    const values = [
+      row.id,
+      tenantId,
+      row.contextType,
+      `Authz ${row.contextType}`,
+      `${slugPrefix}-${row.contextType}-${row.id.slice(0, 8)}`,
+      createdBy,
+      row.parentId,
+    ];
+    const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+
+    await client.query(
+      `INSERT INTO ${quoteIdent(row.tableName)} (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
+      values,
+    );
+  }
+}
+
+async function cleanupEntityHierarchy(client: pg.Client, plans: TestEntityHierarchyPlan[]) {
+  for (const row of plans.flatMap((plan) => plan.seedContextRows).reverse()) {
+    await client.query(`DELETE FROM ${quoteIdent(row.tableName)} WHERE id = $1`, [row.id]);
+  }
 }
 
 async function seedUser(client: pg.Client, id: string, suffix: string) {
@@ -74,12 +128,42 @@ async function seedMembership(client: pg.Client, tenantId: string, orgId: string
   );
 }
 
-async function seedAttachment(client: pg.Client, id: string, tenantId: string, orgId: string, createdBy: string) {
+async function seedAttachment(
+  client: pg.Client,
+  id: string,
+  tenantId: string,
+  plan: TestEntityHierarchyPlan,
+  createdBy: string,
+) {
+  const columns = [
+    'id',
+    'tenant_id',
+    'created_by',
+    ...plan.sqlContextColumns.map(({ columnName }) => columnName),
+    'bucket_name',
+    'filename',
+    'content_type',
+    'size',
+    'original_key',
+    'stx',
+  ];
+  const values = [
+    id,
+    tenantId,
+    createdBy,
+    ...plan.sqlContextColumns.map(({ id: contextId }) => contextId),
+    'authz-bucket',
+    'authz.pdf',
+    'application/pdf',
+    '1024',
+    `authz/${id}.pdf`,
+    JSON.stringify({ mutationId: id, sourceId: 'test', fieldTimestamps: {} }),
+  ];
+  const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+
   await client.query(
-    `INSERT INTO attachments (id, tenant_id, organization_id, created_by, bucket_name, filename, content_type, size, original_key, stx)
-     VALUES ($1, $2, $3, $4, 'authz-bucket', 'authz.pdf', 'application/pdf', '1024', $5, $6)
-     ON CONFLICT (id) DO NOTHING`,
-    [id, tenantId, orgId, createdBy, `authz/${id}.pdf`, JSON.stringify({ mutationId: id, sourceId: 'test', fieldTimestamps: {} })],
+    `INSERT INTO attachments (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
+    values,
   );
 }
 
@@ -100,17 +184,22 @@ describe('Local entity authorization (canEditEntity)', () => {
     await seedOrg(admin, tenantA, orgB, 'authz-b');
     await seedOrg(admin, tenantB, orgC, 'authz-c');
 
+    await seedEntityHierarchy(admin, hierarchyA, tenantA, userA, 'authz-a');
+    await seedEntityHierarchy(admin, hierarchyB, tenantA, userA, 'authz-b');
+    await seedEntityHierarchy(admin, hierarchyC, tenantB, userB, 'authz-c');
+
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
 
-    await seedAttachment(admin, attachmentA, tenantA, orgA, userA);
-    await seedAttachment(admin, attachmentB, tenantA, orgB, userA);
-    await seedAttachment(admin, attachmentC, tenantB, orgC, userB);
+    await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
+    await seedAttachment(admin, attachmentB, tenantA, hierarchyB, userA);
+    await seedAttachment(admin, attachmentC, tenantB, hierarchyC, userB);
   });
 
   afterAll(async () => {
     await admin.query(`DELETE FROM attachments WHERE id = ANY($1::uuid[])`, [[attachmentA, attachmentB, attachmentC]]);
     await admin.query(`DELETE FROM memberships WHERE user_id = ANY($1::uuid[])`, [[userA, userB]]);
+    await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyB, hierarchyC]);
     await admin.query(`DELETE FROM organizations WHERE id = ANY($1::uuid[])`, [[orgA, orgB, orgC]]);
     await admin.query(`DELETE FROM tenants WHERE id = ANY($1::text[])`, [[tenantA, tenantB]]);
     await admin.query(`DELETE FROM users WHERE id = ANY($1::uuid[])`, [[userA, userB]]);

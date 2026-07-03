@@ -11,7 +11,7 @@ const TenantsTable = lazy(() => import('~/modules/tenants/table/tenants-table'))
  */
 export const Route = createFileRoute('/_app/system/tenants')({
   validateSearch: tenantsRouteSearchParamsSchema,
-  staticData: { isAuth: true, navTab: { id: 'tenants', label: 'c:tenants' } },
+  staticData: { isAuth: true, navTab: { id: 'tenants', label: 'c:tenant_other' } },
   head: () => ({ meta: [{ title: appTitle('Tenants') }] }),
   component: withSuspense(TenantsTable),
 });

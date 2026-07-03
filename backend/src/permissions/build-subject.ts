@@ -1,11 +1,10 @@
-import type { ContextEntityType, ProductEntityType } from 'shared';
+import type { ContextEntityIdColumns, ContextEntityType, ProductEntityType, SubjectForPermission } from 'shared';
 import {
   MissingScopeError,
   buildSubject as sharedBuildSubject,
   buildSubjectFromEntity as sharedBuildSubjectFromEntity,
 } from 'shared';
 import { AppError } from '#/core/error';
-import type { ContextEntityIdColumns, SubjectForPermission } from '#/permissions/permission-manager/types';
 
 /**
  * Translate the tier-neutral `MissingScopeError` thrown by the shared engine into the backend's

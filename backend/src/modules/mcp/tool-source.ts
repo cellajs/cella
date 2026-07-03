@@ -1,6 +1,6 @@
 import { convertSchemaToJsonSchema, type JSONSchema } from '@tanstack/ai';
 import type { AuthContext } from '#/core/context';
-import { buildTools } from '#/modules/ai/tool-registry';
+import { buildTools } from '#/modules/mcp/tool-registry';
 
 /**
  * A server tool reduced to the fields the MCP layer needs. Cella's tool registry

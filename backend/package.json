@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production tsx dist/main.js",
-    "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/main.ts",
-    "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/main.ts",
+    "dev": "cross-env NODE_ENV=development tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
+    "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src --watch-path=../shared/src --watch-path=../shared/config src/main.ts",
     "ts": "cd .. && tsgo -p backend/tsconfig.json --pretty",
     "tsperf": "rm -rf dist && rm -rf tsconfig.tsbuildinfo && tsgo --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production tsup",

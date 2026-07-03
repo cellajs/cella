@@ -1,5 +1,4 @@
 import { appConfig } from 'shared';
-import { mcpHandlers } from '#/modules/ai/mcp/mcp-handlers';
 import { attachmentHandlers } from '#/modules/attachment/attachment-handlers';
 import { authGeneralHandlers } from '#/modules/auth/general/general-handlers';
 import { authMagicLinkHandlers } from '#/modules/auth/magic/magic-handlers';
@@ -8,6 +7,7 @@ import { authPasskeysHandlers } from '#/modules/auth/passkeys/passkeys-handlers'
 import { authTotpHandlers } from '#/modules/auth/totps/totps-handlers';
 import { domainHandlers } from '#/modules/domains/domains-handlers';
 import { entityHandlers } from '#/modules/entities/entities-handlers';
+import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { meHandlers } from '#/modules/me/me-handlers';
 import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 import { metricHandlers } from '#/modules/metrics/metrics-handlers';

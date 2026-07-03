@@ -1,6 +1,9 @@
-import { MissingScopeError, validateAncestorScope as sharedValidateAncestorScope } from 'shared';
+import {
+  MissingScopeError,
+  type SubjectForPermission,
+  validateAncestorScope as sharedValidateAncestorScope,
+} from 'shared';
 import { AppError } from '#/core/error';
-import type { SubjectForPermission } from '#/permissions/permission-manager/types';
 
 /**
  * Backend wrapper over the shared `validateAncestorScope`.

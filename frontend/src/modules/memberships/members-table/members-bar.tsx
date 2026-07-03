@@ -89,7 +89,7 @@ export const MembersTableBar = ({
         id: 'delete-memberships',
         triggerRef: deleteButtonRef,
         className: 'max-w-xl',
-        title: t('c:remove_resource', { resource: t('c:members').toLowerCase() }),
+        title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
         description: (
           <Trans
             t={t}

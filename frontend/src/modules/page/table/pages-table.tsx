@@ -159,7 +159,7 @@ function PagesTable() {
             <ContentPlaceholder
               icon={BirdIcon}
               title="c:no_resource_yet"
-              titleProps={{ resource: t('c:pages').toLowerCase() }}
+              titleProps={{ resource: t('c:page_other').toLowerCase() }}
             />
           }
         />

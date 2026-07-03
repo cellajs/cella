@@ -33,6 +33,8 @@ export interface OtelSDKOptions {
   mapleSecretIngestKey?: string;
   /** Metric export interval in ms (default: 5000). */
   metricIntervalMs?: number;
+  /** Flush exporters on shutdown. Defaults false in development for fast hot restarts. */
+  flushOnShutdown?: boolean;
   /** Enable auto-instrumentations (default: true). Set false for workers without HTTP. */
   autoInstrumentations?: boolean;
   /** Additional span processors (e.g. SpanStoreProcessor for devtools/debug logging). */
@@ -53,9 +55,12 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     serviceVersion = '1.0',
     mapleSecretIngestKey,
     metricIntervalMs = 5000,
+    flushOnShutdown = appConfig.mode !== 'development',
     autoInstrumentations = true,
     spanProcessors = [],
   } = options;
+
+  const exportTimeoutMs = appConfig.mode === 'development' ? 1000 : 10000;
 
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
@@ -70,11 +75,16 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     ? (signal: 'traces' | 'metrics' | 'logs') => ({
         url: `${MAPLE_INGEST_BASE}/${signal}`,
         headers: { 'x-maple-ingest-key': mapleSecretIngestKey },
+        timeoutMillis: exportTimeoutMs,
       })
     : undefined;
 
   const metricReader = hasMaple
-    ? new PeriodicExportingMetricReader({ exporter: new OTLPMetricExporter(hasMaple('metrics')), exportIntervalMillis: metricIntervalMs })
+    ? new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter(hasMaple('metrics')),
+        exportIntervalMillis: metricIntervalMs,
+        exportTimeoutMillis: exportTimeoutMs,
+      })
     : undefined;
 
   // The MeterProvider always exists (with no readers when export is off) so callers can register
@@ -90,7 +100,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       sdk: undefined,
       meterProvider,
       start: () => {},
-      shutdown: () => meterProvider.shutdown(),
+      shutdown: () => (flushOnShutdown ? meterProvider.shutdown() : Promise.resolve()),
       verifyConnection: async () => {
         console.info(MAPLE_DISABLED_MSG);
       },
@@ -112,6 +122,9 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     resource,
     traceExporter,
     logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor(logExporter)] : [],
+    // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
+    // creates a second env-driven OTLP metrics reader that can block hot restarts.
+    metricReaders: [],
     instrumentations: autoInstrumentations ? [getNodeAutoInstrumentations()] : [],
     spanProcessors,
   });
@@ -120,9 +133,31 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     sdk.start();
   }
 
+  async function runWithTimeout(operation: Promise<unknown>, label: string): Promise<void> {
+    const shutdownTimeoutMs = 10_000;
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        console.warn(`[otel] ${serviceName}: ${label} timed out after ${shutdownTimeoutMs}ms`);
+        resolve();
+      }, shutdownTimeoutMs);
+      if (typeof timer.unref === 'function') timer.unref();
+
+      operation.then(
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        },
+      );
+    });
+  }
+
   async function shutdown(): Promise<void> {
-    await sdk.shutdown();
-    await meterProvider.shutdown();
+    if (!flushOnShutdown) return;
+    await runWithTimeout(Promise.all([sdk.shutdown(), meterProvider.shutdown()]), 'shutdown');
   }
 
   async function verifyConnection(): Promise<void> {

@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { AuthContext } from '#/core/context';
-import { describeMcpTools, getMcpTools } from '#/modules/ai/mcp/tool-source';
+import { describeMcpTools, getMcpTools } from '#/modules/mcp/tool-source';
 
 /**
  * Minimal Model Context Protocol (MCP) server over JSON-RPC 2.0.

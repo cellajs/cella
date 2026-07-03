@@ -96,7 +96,7 @@ function TenantsTable() {
             <ContentPlaceholder
               icon={BuildingIcon}
               title="c:no_resource_yet"
-              titleProps={{ resource: t('c:tenants').toLowerCase() }}
+              titleProps={{ resource: t('c:tenant_other').toLowerCase() }}
             />
           ),
         }}

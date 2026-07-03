@@ -91,32 +91,32 @@ export default defineServices({
     },
   },
 
-  ai: {
-    image: '${REGISTRY}/backend:${AI_TAG:-latest}',
+  mcp: {
+    image: '${REGISTRY}/backend:${MCP_TAG:-latest}',
     port: 4003,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
     replacementStrategy: 'lb-overlap',
     drainPolicy: 'requests',
     drainSeconds: 10,
-    // Reuses the backend image at the same SHA; CI builds no separate ai image.
+    // Reuses the backend image at the same SHA; CI builds no separate mcp image.
     reusesImageOf: 'backend',
     lbRoute: 'host',
-    // Only deployed when appConfig.services.ai.enabled is true.
+    // Only deployed when appConfig.services.mcp.enabled is true.
     instanceType: 'DEV1-S',
     // singleVM: fold into the backend process (LB still routes to the host VM).
     coHosted: true,
     env: {
-      MODE: 'ai-worker',
+      MODE: 'mcp-worker',
       PORT: '4003',
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
-      AI_API_URL: '${AI_API_URL}',
+      MCP_API_URL: '${MCP_API_URL}',
       SYSTEM_ADMIN_IP_ALLOWLIST: '95.97.200.45',
     },
     // The worker's own public URL (host-routed through the LB).
     bindings: {
-      AI_API_URL: '@{self.url}',
+      MCP_API_URL: '@{self.url}',
     },
   },
 

@@ -148,7 +148,7 @@ export const UserCombobox = ({ value, onValueChange, contextEntity }: Props) => 
                     <ContentPlaceholder
                       icon={SearchIcon}
                       title="c:no_resource_found"
-                      titleProps={{ resource: t('c:users').toLowerCase() }}
+                      titleProps={{ resource: t('c:user_other').toLowerCase() }}
                     />
                   </ComboboxEmpty>
                 ) : (

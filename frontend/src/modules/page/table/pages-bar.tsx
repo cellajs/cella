@@ -73,7 +73,7 @@ export const PagesTableBar = ({
       title: t('c:delete'),
       description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('c:pages').toLowerCase() : t('c:page').toLowerCase(),
+        resource: selected.length > 1 ? t('c:page_other').toLowerCase() : t('c:page').toLowerCase(),
       }),
     });
   };

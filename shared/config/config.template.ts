@@ -107,7 +107,7 @@ export const config = {
   /** Yjs realtime relay URL */
   yjsUrl: 'wss://yjs.__project_slug__.example.com',
   /** AI service base URL */
-  aiUrl: 'https://ai.__project_slug__.example.com',
+  mcpUrl: 'https://ai.__project_slug__.example.com',
   /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.

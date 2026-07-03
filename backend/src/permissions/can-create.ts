@@ -1,7 +1,7 @@
+import type { SubjectForPermission } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checkPermission } from '#/permissions';
-import type { SubjectForPermission } from '#/permissions/permission-manager/types';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /**

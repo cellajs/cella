@@ -109,17 +109,14 @@ describe('membership enrichment', () => {
     expect(second).toBe(first);
   });
 
-  it('uses included.membership as fallback when not in memberships cache', () => {
+  it('preserves direct membership when not in memberships cache', () => {
     unsubscribe = initContextEntityEnrichment();
 
-    const includedMembership = makeMembership('org-fallback', { role: 'viewer' });
+    const membership = makeMembership('org-fallback', { role: 'guest' });
 
     queryClient.setQueryData(['me', 'memberships'], { items: [] });
 
-    queryClient.setQueryData(
-      ['organization', 'list'],
-      makeInfiniteData([{ id: 'org-fallback', included: { membership: includedMembership } } as any]),
-    );
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-fallback', membership }]));
 
     queryClient.setQueryData(['me', 'memberships'], {
       items: [makeMembership('other-org')],
@@ -128,7 +125,7 @@ describe('membership enrichment', () => {
     const data = queryClient.getQueryData(['organization', 'list']) as any;
     const item = data.pages[0].items[0];
     expect(item.membership).toBeDefined();
-    expect(item.membership.role).toBe('viewer');
+    expect(item.membership.role).toBe('guest');
   });
 
   it('does not enrich non-context-entity queries', () => {

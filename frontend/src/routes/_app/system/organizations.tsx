@@ -11,7 +11,7 @@ const OrganizationsTable = lazy(() => import('~/modules/organization/table/organ
  */
 export const Route = createFileRoute('/_app/system/organizations')({
   validateSearch: organizationsRouteSearchParamsSchema,
-  staticData: { isAuth: true, navTab: { id: 'organizations', label: 'c:organizations' } },
+  staticData: { isAuth: true, navTab: { id: 'organizations', label: 'c:organization_other' } },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   component: withSuspense(OrganizationsTable),
 });

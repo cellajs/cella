@@ -21,7 +21,7 @@ const HASHED_HTML = '<!doctype html><html><head><script type="module" src="/asse
 /** A /health?depth=full body where every component is healthy. */
 const HEALTHY_COMPONENTS = JSON.stringify({
   status: 'healthy',
-  components: { api: { status: 'healthy' }, database: { status: 'healthy' }, cdc: { status: 'healthy' }, yjs: { status: 'healthy' }, ai: { status: 'healthy' } },
+  components: { api: { status: 'healthy' }, database: { status: 'healthy' }, cdc: { status: 'healthy' }, yjs: { status: 'healthy' }, mcp: { status: 'healthy' } },
 })
 
 /** Build a Headers object with the full security baseline, minus any omitted names. */
@@ -111,9 +111,9 @@ describe('formatComponentIssues', () => {
   it('renders a compact name=status(reason) list', () => {
     const issues: ComponentIssue[] = [
       { name: 'cdc', status: 'degraded', reason: 'slot_inactive' },
-      { name: 'ai', status: 'unhealthy' },
+      { name: 'mcp', status: 'unhealthy' },
     ]
-    expect(formatComponentIssues(issues)).toBe('cdc=degraded(slot_inactive), ai=unhealthy')
+    expect(formatComponentIssues(issues)).toBe('cdc=degraded(slot_inactive), mcp=unhealthy')
   })
 })
 

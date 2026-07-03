@@ -57,12 +57,12 @@ export function extractYjsDetails(body: Record<string, unknown>): Record<string,
   };
 }
 
-/** Curate the ai worker's envelope (its own `ai` self-component) into details. */
-export function extractAiDetails(body: Record<string, unknown>): Record<string, unknown> {
+/** Curate the mcp worker's envelope (its own `mcp` self-component) into details. */
+export function extractMcpDetails(body: Record<string, unknown>): Record<string, unknown> {
   const components = body.components as Record<string, { details?: Record<string, unknown> }> | undefined;
-  const aiDetails = components?.ai?.details;
-  if (aiDetails) return aiDetails;
+  const mcpDetails = components?.mcp?.details;
+  if (mcpDetails) return mcpDetails;
   return { mode: body.mode ?? null, queueDepth: null };
 }
 
-export const workerUrls = { yjs: appConfig.yjsUrl, ai: appConfig.aiUrl };
+export const workerUrls = { yjs: appConfig.yjsUrl, mcp: appConfig.mcpUrl };

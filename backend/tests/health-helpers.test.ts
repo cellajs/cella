@@ -56,7 +56,7 @@ describe('rollupStatus', () => {
 
   it('caps a non-critical unhealthy component at degraded', () => {
     expect(rollupStatus({ cdc: { status: 'unhealthy' } }, critical)).toBe('degraded');
-    expect(rollupStatus({ yjs: { status: 'unhealthy' }, ai: { status: 'unhealthy' } }, critical)).toBe('degraded');
+    expect(rollupStatus({ yjs: { status: 'unhealthy' }, mcp: { status: 'unhealthy' } }, critical)).toBe('degraded');
   });
 });
 

@@ -12,7 +12,7 @@ const servicePublicUrl = (slug: string): string => {
 const cspOrigins = {
   api: new URL(servicePublicUrl('backend')).origin,
   yjs: enabledServiceSlugs.has('yjs') ? new URL(servicePublicUrl('yjs')).origin.replace(/^http/, 'ws') : '',
-  ai: enabledServiceSlugs.has('ai') ? new URL(servicePublicUrl('ai')).origin : '',
+  mcp: enabledServiceSlugs.has('mcp') ? new URL(servicePublicUrl('mcp')).origin : '',
   s3Host: appConfig.s3.host ? `https://${appConfig.s3.host}` : '',
   s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
   s3Public: appConfig.s3.publicCDNUrl,
@@ -23,7 +23,7 @@ const connectSrc = [
   `connect-src 'self' blob:`,
   cspOrigins.api,
   cspOrigins.yjs,
-  cspOrigins.ai,
+  cspOrigins.mcp,
   cspOrigins.s3Host,
   cspOrigins.s3Buckets,
   cspOrigins.s3Public,

@@ -84,7 +84,7 @@ describe('runtime secret schema alignment', () => {
   it('maps each backend service secret env var to a declared service env schema', () => {
     for (const secret of runtimeSecrets) {
       for (const service of secret.services) {
-        if (service === 'ai') continue
+        if (service === 'mcp') continue
         if (!(service in envSources)) continue
         const source = envSources[service as keyof typeof envSources]
         expect(source, `missing env schema fixture for ${service}`).toBeTruthy()
@@ -96,8 +96,8 @@ describe('runtime secret schema alignment', () => {
     }
   })
 
-  it('documents ai as a backend-env wrapper instead of requiring a standalone env.ts', () => {
-    const aiSecrets = runtimeSecrets.filter((secret) => runtimeSecretsById.get(secret.id)?.services.includes('ai'))
+  it('documents mcp as a backend-env wrapper instead of requiring a standalone env.ts', () => {
+    const aiSecrets = runtimeSecrets.filter((secret) => runtimeSecretsById.get(secret.id)?.services.includes('mcp'))
     expect(aiSecrets.length).toBeGreaterThan(0)
     expect(backendEnvSource).toContain('DATABASE_ADMIN_URL:')
     expect(backendEnvSource).toContain('SCW_AI_API_KEY:')

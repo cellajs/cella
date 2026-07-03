@@ -76,9 +76,19 @@ const initDocs = async (app: OpenAPIHono<Env>) => {
   // Strip trailing /flags from pattern strings (zod-openapi includes flag suffix; JSON Schema doesn't).
   stripRegexFlagsFromPatterns(openApiDoc as unknown as Record<string, unknown>);
 
+  const cachePath = './openapi.cache.json';
+  const nextDoc = JSON.stringify(openApiDoc, null, 2);
+
+  try {
+    const currentDoc = await fs.readFile(cachePath, 'utf-8');
+    if (currentDoc === nextDoc) return;
+  } catch {
+    // Cache does not exist yet or cannot be read; write a fresh copy below.
+  }
+
   const tmpPath = './openapi.cache.json.tmp';
-  await fs.writeFile(tmpPath, JSON.stringify(openApiDoc, null, 2));
-  await fs.rename(tmpPath, './openapi.cache.json');
+  await fs.writeFile(tmpPath, nextDoc);
+  await fs.rename(tmpPath, cachePath);
 };
 
 /**

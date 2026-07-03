@@ -9,13 +9,13 @@ const fakeAppConfig = {
   frontendUrl: 'https://cella.example',
   backendUrl: 'https://api.cella.example',
   yjsUrl: 'https://yjs.cella.example',
-  aiUrl: 'https://ai.cella.example',
+  mcpUrl: 'https://mcp.cella.example',
   services: {
     frontend: { enabled: true, publicUrl: 'https://cella.example' },
     backend: { enabled: true, publicUrl: 'https://api.cella.example' },
     cdc: { enabled: true },
     yjs: { enabled: false, publicUrl: 'https://yjs.cella.example' },
-    ai: { enabled: false, publicUrl: 'https://ai.cella.example' },
+    mcp: { enabled: false, publicUrl: 'https://mcp.cella.example' },
   },
   securityEmail: 'security@cella.example',
   // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture

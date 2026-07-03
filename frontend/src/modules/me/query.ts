@@ -216,6 +216,7 @@ export const myMembershipsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.memberships,
     queryFn: async ({ signal }) => getMyMemberships({ signal }),
+    staleTime: 0,
   });
 
 /**

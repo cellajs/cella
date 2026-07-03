@@ -115,7 +115,8 @@ li:has(.is-focused) {
   visibility: hidden;
 }
 
-.bn-editor .bn-add-file-button {
+.bn-editor .bn-add-file-button,
+.bn-static-editor .bn-add-file-button {
   visibility: visible;
 }
 
@@ -207,12 +208,14 @@ li:has(.is-focused) {
   border-radius: 2rem;
 }
 
-.bn-block .bn-editor {
+.bn-block .bn-editor,
+.bn-block .bn-static-editor {
   white-space: pre-wrap !important;
   word-break: break-word !important;
 }
 
-.bn-shadcn .bn-editor {
+.bn-shadcn .bn-editor,
+.bn-shadcn .bn-static-editor {
   white-space: pre-wrap !important;
   padding: 0px !important;
   background: transparent !important;

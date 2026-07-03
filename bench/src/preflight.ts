@@ -15,7 +15,7 @@ export const SERVICES = {
   backend: `${BASE_URL}/health`,
   ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${BACKEND_PORT + 1}/health` } : {}),
   ...(appConfig.services.yjs.enabled !== false ? { yjs: `http://localhost:${BACKEND_PORT + 2}/health` } : {}),
-  ...(appConfig.services.ai.enabled !== false ? { ai: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
+  ...(appConfig.services.mcp.enabled !== false ? { mcp: `http://localhost:${BACKEND_PORT + 3}/health` } : {}),
 } as const;
 
 export async function isPostgresReady(): Promise<boolean> {

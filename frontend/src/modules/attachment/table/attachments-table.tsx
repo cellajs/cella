@@ -113,7 +113,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
     <ContentPlaceholder
       icon={PaperclipIcon}
       title="c:no_resource_yet"
-      titleProps={{ resource: t('c:attachments').toLowerCase() }}
+      titleProps={{ resource: t('c:attachment_other').toLowerCase() }}
     />
   );
 

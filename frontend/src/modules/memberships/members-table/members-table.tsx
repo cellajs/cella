@@ -141,7 +141,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
             <ContentPlaceholder
               icon={UsersIcon}
               title="c:no_resource_yet"
-              titleProps={{ resource: t('c:members').toLowerCase() }}
+              titleProps={{ resource: t('c:member_other').toLowerCase() }}
             />
           ),
         }}

@@ -498,6 +498,14 @@ export async function checkoutFromRef(cwd: string, ref: string, filePath: string
 }
 
 /**
+ * Restore a path from a ref into the working tree only, leaving the index untouched.
+ * Useful when we want adopted changes to remain unstaged for review.
+ */
+export async function restoreWorktreeFromRef(cwd: string, ref: string, filePath: string): Promise<void> {
+  await git(['restore', `--source=${ref}`, '--worktree', '--', filePath], cwd);
+}
+
+/**
  * Get the merge base between two refs.
  */
 export async function getMergeBase(cwd: string, ref1: string, ref2: string): Promise<string> {

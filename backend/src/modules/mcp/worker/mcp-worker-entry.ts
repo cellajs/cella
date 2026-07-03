@@ -6,17 +6,17 @@ import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { logEvent } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
-import { mcpHandlers } from '#/modules/ai/mcp/mcp-handlers';
+import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import baseApp from '#/server';
 
 const port = Number(env.PORT ?? '4003');
 
-export async function startAiWorker(): Promise<void> {
+export async function startMcpWorker(): Promise<void> {
   const hasApiKey = !!env.SCW_AI_API_KEY;
 
-  // Stop if ai is disabled via config
-  if (appConfig.services.ai.enabled === false) {
-    logEvent('info', 'AI server disabled by appConfig');
+  // Stop if mcp is disabled via config
+  if (appConfig.services.mcp.enabled === false) {
+    logEvent('info', 'MCP server disabled by appConfig');
     return;
   }
 
@@ -33,7 +33,7 @@ export async function startAiWorker(): Promise<void> {
       await waitForBackend(2000, 60_000);
     }
 
-    // Mount AI routes on the shared base app (middleware, health, error handling)
+    // Mount MCP routes on the shared base app (middleware, health, error handling)
     baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
     // Start pg-boss (creates queues)
@@ -54,12 +54,12 @@ export async function startAiWorker(): Promise<void> {
       port,
     },
     () => {
-      logEvent('info', `AI service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
+      logEvent('info', `MCP service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
     },
   );
 
   setupGracefulShutdown({
-    name: 'ai-worker',
+    name: 'mcp-worker',
     cleanup: async () => {
       if (server) server.close();
       if (hasApiKey) await stopPgBoss();

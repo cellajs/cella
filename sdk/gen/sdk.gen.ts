@@ -3593,7 +3593,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
  *
- * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=ai#tag/ai/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _ai_cella_
+ * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
  *
  * @param {handleMcpData} options
  * @param {string} options.path.tenantid - `string`

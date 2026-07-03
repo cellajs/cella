@@ -61,10 +61,10 @@ export const AttachmentsTableBar = ({
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
-      title: t('c:remove_resource', { resource: t('c:attachments').toLowerCase() }),
+      title: t('c:remove_resource', { resource: t('c:attachment_other').toLowerCase() }),
       description: t('c:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('c:attachments').toLowerCase() : t('c:attachment').toLowerCase(),
+        resource: selected.length > 1 ? t('c:attachment_other').toLowerCase() : t('c:attachment').toLowerCase(),
       }),
     });
   };

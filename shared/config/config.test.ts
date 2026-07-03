@@ -18,7 +18,7 @@ export default {
   backendUrl: development.backendUrl,
   backendAuthUrl: development.backendAuthUrl,
   yjsUrl: development.yjsUrl,
-  aiUrl: development.aiUrl,
+  mcpUrl: development.mcpUrl,
   services: {
     yjs: { enabled: true },
   },

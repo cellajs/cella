@@ -96,7 +96,7 @@ export const useColumns = () => {
     },
     {
       key: 'domainsCount',
-      name: t('c:domains'),
+      name: t('c:domain_other'),
       minBreakpoint: 'md',
       width: 100,
       renderCell: ({ row }) => (

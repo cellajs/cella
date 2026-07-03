@@ -41,6 +41,19 @@ import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;
 
+const getMembershipContextKey = (
+  membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'contextType' | 'contextId'>,
+) => [membership.tenantId, membership.userId, membership.contextType, membership.contextId].join(':');
+
+type ApiResponseWithIncludedMembership = {
+  included?: {
+    membership?: MembershipBase;
+  } | null;
+};
+
+/** Extract API-only included membership data for seeding the myMemberships cache. */
+export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
+
 /**
  * Update a membership in the myMemberships cache.
  * This is the single source of truth for current user's memberships.
@@ -68,15 +81,21 @@ export const addMyMembershipCache = (newMembership: MembershipBase) => {
 
 /**
  * Upsert a membership in the myMemberships cache.
- * Updates existing membership by id, or appends when missing.
+ * Replaces existing membership by context identity, or appends when missing.
  */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
-  const exists = queryClient
-    .getQueryData<{ items: MembershipBase[] }>(meKeys.memberships)
-    ?.items.some((m) => m.id === membership.id);
+  const contextKey = getMembershipContextKey(membership);
+  queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
+    if (!oldData) return { items: [membership] };
+    const exists = oldData.items.some((m) => getMembershipContextKey(m) === contextKey);
 
-  if (exists) updateMyMembershipCache(membership);
-  else addMyMembershipCache(membership);
+    return {
+      ...oldData,
+      items: exists
+        ? oldData.items.map((m) => (getMembershipContextKey(m) === contextKey ? membership : m))
+        : [...oldData.items, membership],
+    };
+  });
 };
 
 /**

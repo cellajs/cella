@@ -7,7 +7,7 @@
  * `x-service` metadata (`ServiceMeta[]`) from the assembled Compose model. This
  * module adapts that metadata to `ServiceDefinition` and is the single place
  * every other surface derives the service set from, so none re-declares
- * `['backend','cdc','yjs','ai','frontend']`:
+ * `['backend','cdc','yjs','mcp','frontend']`:
  *   - resources/compute.ts      — one VM per enabled service + its compose env
  *   - resources/loadbalancer.ts — which services get a public LB backend/route
  *   - tasks/wait-for-images.ts  — which images CI waits for in the registry

@@ -54,10 +54,10 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio', 'url'],
       statusEventHandler: { onComplete },
       title: t('c:upload_item', {
-        item: t('c:attachments').toLowerCase(),
+        item: t('c:attachment_other').toLowerCase(),
       }),
       description: t('c:upload_multiple.text', {
-        item: t('c:attachments').toLowerCase(),
+        item: t('c:attachment_other').toLowerCase(),
         count: maxNumberOfFiles,
       }),
     });

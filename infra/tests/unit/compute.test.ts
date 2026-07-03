@@ -95,12 +95,12 @@ describe('compute module source invariants', () => {
   })
 
   it('contains no inter-service env wiring — service topology lives in registry bindings', () => {
-    // cdc's API_WS_URL and ai's AI_API_URL are declared as @{…} binding
+    // cdc's API_WS_URL and mcp's MCP_API_URL are declared as @{…} binding
     // templates in config/services.config.ts; compute.ts only provides the
     // generic resolver. The backend IS named (it exposes the one stable
     // internal address the resolver targets), but no service's ENV wiring may
     // be hard-coded here.
-    for (const banned of ['API_WS_URL', 'AI_API_URL', 'aiUrl']) {
+    for (const banned of ['API_WS_URL', 'MCP_API_URL', 'mcpUrl']) {
       expect(source, `inter-service env token ${banned} must not appear in compute.ts`).not.toContain(banned)
     }
   })

@@ -34,7 +34,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'manual',
-    services: ['backend', 'yjs', 'ai'],
+    services: ['backend', 'yjs', 'mcp'],
   },
   databaseUrlAdmin: {
     secretName: 'database-url-admin',
@@ -43,7 +43,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   databaseUrlCdc: {
     secretName: 'database-url-cdc',
@@ -62,7 +62,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'manual',
-    services: ['backend', 'yjs', 'ai', 'cdc'],
+    services: ['backend', 'yjs', 'mcp', 'cdc'],
   },
   cookieSecret: {
     secretName: 'cookie-secret',
@@ -71,7 +71,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   unsubscribeSecret: {
     secretName: 'unsubscribe-token-secret',
@@ -80,7 +80,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   cdcSecret: {
     secretName: 'cdc-secret',
@@ -89,7 +89,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'cdc', 'ai'],
+    services: ['backend', 'cdc', 'mcp'],
   },
   yjsSecret: {
     secretName: 'yjs-secret',
@@ -98,7 +98,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'yjs', 'ai'],
+    services: ['backend', 'yjs', 'mcp'],
   },
   piiHashSecret: {
     secretName: 'pii-hash-secret',
@@ -107,7 +107,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   adminEmail: {
     secretName: 'admin-email',
@@ -116,7 +116,7 @@ export default defineRuntimeSecrets({
     required: true,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   brevoApiKey: {
     secretName: 'brevo-api-key',
@@ -125,16 +125,16 @@ export default defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   scwAiApiKey: {
     secretName: 'scw-ai-api-key',
-    description: 'Scaleway AI API key for the AI worker',
+    description: 'Scaleway AI API key for the MCP worker',
     envVar: 'SCW_AI_API_KEY',
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   mapleSecretIngestKey: {
     secretName: 'maple-secret-ingest-key',
@@ -152,7 +152,7 @@ export default defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
   githubClientSecret: {
     secretName: 'github-client-secret',
@@ -161,6 +161,6 @@ export default defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'ai'],
+    services: ['backend', 'mcp'],
   },
 })

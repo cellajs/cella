@@ -97,13 +97,13 @@ export const config = {
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
   yjsUrl: 'wss://yjs.cellajs.com',
-  aiUrl: 'https://ai.cellajs.com',
+  mcpUrl: 'https://mcp.cellajs.com',
   services: {
     frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
     backend: { enabled: true as boolean, publicUrl: 'https://api.cellajs.com' },
     cdc: { enabled: true as boolean },
     yjs: { enabled: false as boolean, publicUrl: 'wss://yjs.cellajs.com' },
-    ai: { enabled: false as boolean, publicUrl: 'https://ai.cellajs.com' },
+    mcp: { enabled: false as boolean, publicUrl: 'https://mcp.cellajs.com' },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled

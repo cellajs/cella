@@ -5,12 +5,12 @@ import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = {
   handleMcp: createXRoute({
-    'x-service': 'ai',
+    'x-service': 'mcp',
     operationId: 'handleMcp',
     method: 'post',
     path: '/',
     xGuard: [authGuard, tenantGuard, orgGuard],
-    tags: ['ai', 'cella'],
+    tags: ['mcp', 'cella'],
     summary: 'MCP endpoint',
     description:
       'Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).',

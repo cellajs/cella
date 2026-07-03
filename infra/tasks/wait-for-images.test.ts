@@ -4,9 +4,9 @@ import { imageRef, imageServices, imageServicesFromBuildMatrix, parseArgs, waitF
 const TAG = 'abc1234'
 
 describe('imageServices', () => {
-  it('excludes services that reuse another image (e.g. ai → backend)', () => {
+  it('excludes services that reuse another image (e.g. mcp → backend)', () => {
     expect(imageServices()).toEqual(['backend', 'cdc', 'yjs', 'frontend'])
-    expect(imageServices()).not.toContain('ai')
+    expect(imageServices()).not.toContain('mcp')
   })
 })
 
@@ -46,11 +46,11 @@ describe('waitForImages', () => {
     expect(out.missing).toEqual(['r/n/yjs:abc1234'])
   })
 
-  it('never waits for an ai image', async () => {
+  it('never waits for an mcp image', async () => {
     const inspect = vi.fn(async (_ref: string) => true)
     await waitForImages({ registry: 'r', namespace: 'n', tag: TAG, inspect, sleep: noSleep, log: noLog })
     const inspectedRefs = inspect.mock.calls.map((c) => c[0])
-    expect(inspectedRefs.some((ref) => ref.includes('/ai:'))).toBe(false)
+    expect(inspectedRefs.some((ref) => ref.includes('/mcp:'))).toBe(false)
   })
 
   it('waits only for the explicit services override', async () => {
@@ -82,7 +82,7 @@ describe('parseArgs', () => {
   })
 
   it('parses a build matrix JSON override', () => {
-    const matrix = JSON.stringify([{ service: 'backend' }, { service: 'ai' }, { service: 'frontend' }, { service: 'bogus' }])
+    const matrix = JSON.stringify([{ service: 'backend' }, { service: 'mcp' }, { service: 'frontend' }, { service: 'bogus' }])
     expect(imageServicesFromBuildMatrix(matrix)).toEqual(['backend', 'frontend'])
     expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--build-images-json', matrix]).services).toEqual(['backend', 'frontend'])
   })

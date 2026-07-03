@@ -213,16 +213,31 @@ function runArtillery(
   try {
     execFileSync('npx', args, {
       cwd: BENCH_ROOT,
-      // Quiet runs (used by --all) hide Artillery's live report — the JSON
-      // report is still written to `reportPath` and summarized at the end.
-      stdio: quiet ? 'ignore' : 'inherit',
+      // Quiet runs (used by --all) hide Artillery's live report, but still pipe
+      // output. Artillery exits non-zero when stdout/stderr are ignored.
+      stdio: quiet ? 'pipe' : 'inherit',
       env: createBenchProcessEnv(),
+      encoding: 'utf-8',
+      maxBuffer: 50 * 1024 * 1024,
     });
     return { exitCode: 0, reportPath };
   } catch (err) {
     const code = (err as { status?: number }).status ?? 1;
     // Artillery exits 1 when ensure checks fail — the report is already printed above
-    if (!quiet) console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
+    if (!quiet) {
+      console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
+    } else {
+      const output = [
+        String((err as { stdout?: string }).stdout ?? ''),
+        String((err as { stderr?: string }).stderr ?? ''),
+      ]
+        .join('\n')
+        .trim();
+      if (output) {
+        const lines = output.split('\n').slice(-40).join('\n');
+        console.error(`\n${pc.red('✗')} ${name} artillery output:\n${lines}\n`);
+      }
+    }
     return { exitCode: code, reportPath };
   }
 }
@@ -640,8 +655,14 @@ async function main() {
   }
 
   if (all) {
-    if (short) console.info(`\n${pc.green('✓')} all scenarios completed short run\n`);
-    else printAllSummary(results);
+    if (short) {
+      const failed = results.filter(({ result }) => result.exitCode !== 0).map(({ name }) => name);
+      if (failed.length === 0) {
+        console.info(`\n${pc.green('✓')} all scenarios completed short run\n`);
+      } else {
+        console.info(`\n${pc.red('✗')} short run failed for ${failed.join(', ')}\n`);
+      }
+    } else printAllSummary(results);
   }
 
   if (failureCode !== 0) process.exit(failureCode);

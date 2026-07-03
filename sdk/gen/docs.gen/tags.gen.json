@@ -1,11 +1,5 @@
 [
   {
-    "name": "ai",
-    "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
-    "count": 0,
-    "kind": "module"
-  },
-  {
     "name": "attachments",
     "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities.",
     "count": 6,
@@ -21,6 +15,12 @@
     "name": "entities",
     "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes provide shared logic across modules, including slug validation\n    and entity visibility.",
     "count": 5,
+    "kind": "module"
+  },
+  {
+    "name": "mcp",
+    "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
+    "count": 0,
     "kind": "module"
   },
   {

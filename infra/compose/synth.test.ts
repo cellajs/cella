@@ -10,7 +10,7 @@ describe('compose synth', () => {
   })
 
   it('derives the logical service list from x-service blocks', () => {
-    expect(serviceNames).toEqual(['backend', 'cdc', 'yjs', 'ai', 'frontend'])
+    expect(serviceNames).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'frontend'])
   })
 
   it('every logical service slug matches a compose profile', () => {

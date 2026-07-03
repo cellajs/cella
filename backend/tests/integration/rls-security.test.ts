@@ -26,10 +26,12 @@ import { getTableName, type SQL, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { appConfig, hierarchy } from 'shared';
 import { nanoidTenant } from 'shared/nanoid';
+import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type Tx } from '#/db/db';
+import { membershipImmutableColumns } from '#/db/immutability-triggers';
 import { entityTables } from '#/tables';
-import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from '../../../shared/src/test-db';
 
 /** Local read-only tenant context helper — mirrors tenantRead without importing it. */
 async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
@@ -71,6 +73,55 @@ let requiredTablesAvailable = false;
 /** Parentless product entity types (no org FK, no RLS) — derived from hierarchy config */
 const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
 
+const attachmentHierarchyA = buildTestEntityHierarchyPlan({
+  entityType: 'attachment',
+  rootContextId: TEST_ORG_A,
+  makeContextId: () => randomUUID(),
+});
+const attachmentHierarchyC = buildTestEntityHierarchyPlan({
+  entityType: 'attachment',
+  rootContextId: TEST_ORG_C,
+  makeContextId: () => randomUUID(),
+});
+
+const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
+
+const hierarchyForOrg = (orgId: string) => (orgId === TEST_ORG_C ? attachmentHierarchyC : attachmentHierarchyA);
+
+const contextColumnList = (plan: TestEntityHierarchyPlan) =>
+  sql.raw(plan.sqlContextColumns.map(({ columnName }) => `, ${quoteIdent(columnName)}`).join(''));
+
+const contextValueList = (plan: TestEntityHierarchyPlan) =>
+  plan.sqlContextColumns.length > 0
+    ? sql`, ${sql.join(
+        plan.sqlContextColumns.map(({ id }) => sql`${id}`),
+        sql`, `,
+      )}`
+    : sql``;
+
+async function seedEntityHierarchy(
+  plan: TestEntityHierarchyPlan,
+  tenantId: string,
+  createdBy: string,
+  slugPrefix: string,
+) {
+  for (const row of plan.seedContextRows) {
+    await adminDb.execute(sql`
+      INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
+        (id, tenant_id, entity_type, name, slug, created_by, ${sql.raw(quoteIdent(row.parentColumnName))})
+      VALUES
+        (${row.id}, ${tenantId}, ${row.contextType}, ${`RLS ${row.contextType}`}, ${`${slugPrefix}-${row.contextType}-${row.id.slice(0, 8)}`}, ${createdBy}, ${row.parentId})
+      ON CONFLICT (id) DO NOTHING
+    `);
+  }
+}
+
+async function cleanupEntityHierarchy(...plans: TestEntityHierarchyPlan[]) {
+  for (const row of plans.flatMap((plan) => plan.seedContextRows).reverse()) {
+    await adminDb.execute(sql`DELETE FROM ${sql.raw(quoteIdent(row.tableName))} WHERE id = ${row.id}`);
+  }
+}
+
 /**
  * Org-scoped product entities are the RLS-subject tables (tenant SELECT policy + FORCE RLS).
  * Derived from config so the suite adapts to whatever entity model is loaded:
@@ -107,17 +158,20 @@ const rlsProductFixtures: Record<string, RlsProductFixture> = {
     table: 'attachments',
     rowId: TEST_ATTACHMENT_A,
     rowName: 'Test File',
-    insert: ({ id, tenantId, orgId, createdBy }) => sql`
-      INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
-      VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}, ${orgId}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
-    `,
+    insert: ({ id, tenantId, orgId, createdBy }) => {
+      const plan = hierarchyForOrg(orgId);
+      return sql`
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${contextColumnList(plan)}, bucket_name, filename, content_type, size, original_key)
+        VALUES (${id}, 'attachment', ${tenantId}, 'WT File', '{}', '', ${createdBy}${contextValueList(plan)}, 'test-bucket', 'wt.txt', 'text/plain', '100', 'attachments/wt.txt')
+      `;
+    },
     seed: async () => {
       // Two attachments: one in Org A (User A has membership), one in Org C (User A has NO membership)
       await adminDb.execute(sql`
-        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by, organization_id, bucket_name, filename, content_type, size, original_key)
+        INSERT INTO attachments (id, entity_type, tenant_id, name, stx, keywords, created_by${contextColumnList(attachmentHierarchyA)}, bucket_name, filename, content_type, size, original_key)
         VALUES
-          (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}, ${TEST_ORG_A}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
-          (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}, ${TEST_ORG_C}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
+          (${TEST_ATTACHMENT_A}, 'attachment', ${TEST_TENANT_A}, 'Test File', '{}', '', ${TEST_USER_A}${contextValueList(attachmentHierarchyA)}, 'test-bucket', 'test.txt', 'text/plain', '1024', 'attachments/test.txt'),
+          (${TEST_ATTACHMENT_C}, 'attachment', ${TEST_TENANT_A}, 'Org C File', '{}', '', ${TEST_USER_B}${contextValueList(attachmentHierarchyC)}, 'test-bucket', 'orgc.txt', 'text/plain', '512', 'attachments/orgc.txt')
         ON CONFLICT (id) DO NOTHING
       `);
     },
@@ -254,6 +308,9 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
+  await seedEntityHierarchy(attachmentHierarchyA, TEST_TENANT_A, TEST_USER_A, `rls-a-${Date.now()}`);
+  await seedEntityHierarchy(attachmentHierarchyC, TEST_TENANT_A, TEST_USER_B, `rls-c-${Date.now()}`);
+
   // Create memberships: User A in Org A (Tenant A), User B in Org B (Tenant B)
   // Note: User A has NO membership in Org C — cross-org isolation tested at app layer
   await adminDb.execute(sql`
@@ -299,6 +356,7 @@ async function cleanupTestData() {
   }
   await adminDb.execute(sql`DELETE FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`);
   await adminDb.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
+  await cleanupEntityHierarchy(attachmentHierarchyA, attachmentHierarchyC);
   await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B}, ${TEST_ORG_C})`);
   await adminDb.execute(sql`DELETE FROM users WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
   await adminDb.execute(sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B})`);
@@ -883,14 +941,7 @@ const rlsSuiteReady = await (async () => {
       return parentlessImmutableColumns.map((col) => [tableName, col, entityType] as [string, string, string]);
     });
 
-    // Membership columns
-    const membershipCases: [string, string][] = [
-      'tenant_id',
-      'organization_id',
-      'context_id',
-      'context_type',
-      'user_id',
-    ].map((col) => ['memberships', col]);
+    const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
 
     const allEntityCases = [...contextCases, ...orgProductCases, ...parentlessCases];
 

@@ -11,7 +11,7 @@ const RequestsTable = lazy(() => import('~/modules/requests/table/requests-table
  */
 export const Route = createFileRoute('/_app/system/requests')({
   validateSearch: requestsRouteSearchParamsSchema,
-  staticData: { isAuth: true, navTab: { id: 'requests', label: 'c:requests' } },
+  staticData: { isAuth: true, navTab: { id: 'requests', label: 'c:request_other' } },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   component: withSuspense(RequestsTable),
 });

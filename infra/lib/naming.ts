@@ -29,7 +29,7 @@ export function deriveInfra(appConfig: Cfg) {
       registryNamespace: appConfig.slug.replace(/-/g, ''),
     },
     // DNS zone the app's records live under (e.g. `cellajs.com`). Per-service
-    // hostnames (api/yjs/ai/www) come from the service registry, not here.
+    // hostnames (api/yjs/mcp/www) come from the service registry, not here.
     dnsZone: appConfig.domain,
     region,
     zone: `${region}-1`,

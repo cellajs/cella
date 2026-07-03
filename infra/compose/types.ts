@@ -223,7 +223,7 @@ export interface AppServiceConfig {
   instanceType: ServiceInstanceType
   /**
    * Service-specific environment variables (e.g. cdc's `API_WS_URL`, ai's
-   * `MODE: ai-worker`). Merged AFTER the standard env so it can override it.
+   * `MODE: mcp-worker`). Merged AFTER the standard env so it can override it.
    * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by cella — don't repeat
    * them here.
    */

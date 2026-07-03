@@ -1,8 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import mcpRoutes from '#/modules/ai/mcp/mcp-routes';
-import { handleMcpMessage, type JsonRpcMessage, type JsonRpcResponse } from '#/modules/ai/mcp/mcp-server';
-import '#/modules/ai/ai-module';
+import mcpRoutes from '#/modules/mcp/mcp-routes';
+import { handleMcpMessage, type JsonRpcMessage, type JsonRpcResponse } from '#/modules/mcp/mcp-server';
+import '#/modules/mcp/mcp-module';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });

@@ -40,7 +40,7 @@ describe('deriveInfra', () => {
     expect(bySlug.get('frontend')).toBe('www.cellajs.com')
     expect(bySlug.get('backend')).toBe('api.cellajs.com')
     expect(bySlug.get('yjs')).toBe('yjs.cellajs.com')
-    expect(bySlug.get('ai')).toBe('ai.cellajs.com')
+    expect(bySlug.get('mcp')).toBe('mcp.cellajs.com')
     // cdc is internal-only (no lbRoute) → no endpoint
     expect(bySlug.has('cdc')).toBe(false)
   })
@@ -52,7 +52,7 @@ describe('deriveInfra', () => {
         frontendUrl: 'http://localhost:3000',
         backendUrl: 'http://localhost:4000',
         yjsUrl: 'ws://localhost:4002',
-        aiUrl: 'http://localhost:4003',
+        mcpUrl: 'http://localhost:4003',
       }),
     )
     expect(d.hasDomain).toBe(false)

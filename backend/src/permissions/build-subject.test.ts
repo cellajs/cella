@@ -1,8 +1,7 @@
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ContextEntityIdColumns, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
 import { buildSubject } from '#/permissions/build-subject';
-import type { ContextEntityIdColumns } from '#/permissions/permission-manager/types';
 
 describe('buildSubject', () => {
   // Use the first product type with ancestors for most tests (e.g., attachment → project → organization)

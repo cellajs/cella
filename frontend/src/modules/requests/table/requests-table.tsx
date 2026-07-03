@@ -93,7 +93,7 @@ function RequestsTable() {
             <ContentPlaceholder
               icon={BirdIcon}
               title="c:no_resource_yet"
-              titleProps={{ resource: t('c:requests').toLowerCase() }}
+              titleProps={{ resource: t('c:request_other').toLowerCase() }}
             />
           ),
         }}

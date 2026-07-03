@@ -15,7 +15,7 @@ import {
   mapProbeComponent,
   rollupStatus,
 } from '#/lib/health-helpers';
-import { extractAiDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
+import { extractMcpDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
 
 export type { HealthResponse, HealthStatus };
 
@@ -58,8 +58,8 @@ function buildCdcComponent(): HealthComponent {
   );
 }
 
-/** Build the ai worker's own component (self-check) when this process IS the ai worker. */
-async function buildAiSelfComponent(): Promise<HealthComponent> {
+/** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */
+async function buildMcpSelfComponent(): Promise<HealthComponent> {
   const mode = env.SCW_AI_API_KEY ? 'active' : 'noop';
   if (mode === 'noop') return { status: 'healthy', checkedVia: 'local', details: { mode, queueDepth: 0 } };
 
@@ -82,7 +82,7 @@ async function buildAiSelfComponent(): Promise<HealthComponent> {
  *
  * Every dependency and sibling worker is a uniform `component` keyed by name.
  * The api process grades its own runtime (`api`), checks the database, watches
- * the pushed CDC report, and actively probes the yjs/ai workers. The ai worker
+ * the pushed CDC report, and actively probes the yjs/mcp workers. The mcp worker
  * process reports its own queue depth instead of probing itself.
  */
 export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
@@ -92,8 +92,8 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
   components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
   components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
 
-  if (env.MODE === 'ai-worker') {
-    components.ai = { ...(await buildAiSelfComponent()), label: 'AI' };
+  if (env.MODE === 'mcp-worker') {
+    components.mcp = { ...(await buildMcpSelfComponent()), label: 'MCP' };
   } else {
     if (appConfig.services.cdc.enabled !== false) components.cdc = { ...buildCdcComponent(), label: 'CDC' };
 
@@ -103,9 +103,9 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
             (result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const,
           )
         : Promise.resolve(null),
-      appConfig.services.ai.enabled !== false
-        ? probeWorker(workerUrls.ai).then(
-            (result) => ['ai', { ...mapProbeComponent(result, extractAiDetails), label: 'AI' }] as const,
+      appConfig.services.mcp.enabled !== false
+        ? probeWorker(workerUrls.mcp).then(
+            (result) => ['mcp', { ...mapProbeComponent(result, extractMcpDetails), label: 'MCP' }] as const,
           )
         : Promise.resolve(null),
     ]);

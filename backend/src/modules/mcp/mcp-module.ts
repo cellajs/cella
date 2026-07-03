@@ -1,7 +1,7 @@
 import { registerModule } from 'shared/module-registry';
 
 registerModule({
-  name: 'ai',
+  name: 'mcp',
   owner: 'cella',
   scope: ['backend'],
   description: `Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to

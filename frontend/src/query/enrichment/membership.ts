@@ -18,10 +18,7 @@ function hasMembershipChanged(a: MembershipBase | null, b: MembershipBase | null
  */
 export function enrichWithMembership(item: EnrichableEntity, memberships: MembershipBase[]): EnrichableEntity {
   const existing = item.membership ?? null;
-
-  // Resolve: memberships array → included fallback → keep existing
-  // biome-ignore lint/suspicious/noExplicitAny: included is an optional API response field not on the type
-  const resolved = findMembership(memberships, item.id) ?? (item as any).included?.membership ?? null;
+  const resolved = findMembership(memberships, item.id) ?? existing;
 
   if (resolved === null || !hasMembershipChanged(existing, resolved)) return item;
 

@@ -7,6 +7,8 @@
  * to review and adopt individual files into the working tree.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   createPrompt,
   isDownKey,
@@ -32,7 +34,7 @@ import {
   warningMark,
   writeStdout,
 } from '../utils/display';
-import { getCurrentBranch, git } from '../utils/git';
+import { getCurrentBranch, git, removeFileFromWorktree, restoreWorktreeFromRef } from '../utils/git';
 import { buildContribBranch, countDetection, detectContributableFiles } from './contrib-core';
 import { printNoForksHint, type ValidatedFork, validateForkPath } from './fork-utils';
 
@@ -79,6 +81,10 @@ interface ContribPromptConfig {
 function showContribDiff(item: ContribItem, baseRef: string, cwd: string, forkName: string): void {
   const diff = gitDiffFile(cwd, `${baseRef}..${item.ref}`, item.path, { dstPrefix: forkName, color: 'always' });
   showDiffInPager(diff);
+}
+
+function shouldApplyContributionsUnstaged(repoPath: string): boolean {
+  return JSON.parse(readFileSync(join(repoPath, 'package.json'), 'utf8')).name === 'cella';
 }
 
 // ── Custom prompt ────────────────────────────────────────────────────────────
@@ -493,6 +499,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
 
   // Apply selected files into the working tree
   createSpinner(`applying ${selected.length} files...`);
+  const applyUnstaged = shouldApplyContributionsUnstaged(config.forkPath);
 
   let applied = 0;
   const errors: string[] = [];
@@ -505,9 +512,17 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
         continue;
       }
       if (item.deleted) {
-        await git(['rm', '-f', '--', item.path], config.forkPath, { ignoreErrors: true });
+        if (applyUnstaged) {
+          await removeFileFromWorktree(config.forkPath, item.path);
+        } else {
+          await git(['rm', '-f', '--', item.path], config.forkPath, { ignoreErrors: true });
+        }
       } else {
-        await git(['checkout', item.ref, '--', item.path], config.forkPath);
+        if (applyUnstaged) {
+          await restoreWorktreeFromRef(config.forkPath, item.ref, item.path);
+        } else {
+          await git(['checkout', item.ref, '--', item.path], config.forkPath);
+        }
       }
       applied++;
     } catch (error) {
@@ -521,7 +536,7 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
       console.info(pc.red(`  ✗ ${err}`));
     }
   } else {
-    spinnerSuccess(`applied ${applied} files (staged)`);
+    spinnerSuccess(`applied ${applied} files ${pc.dim(applyUnstaged ? '(unstaged)' : '(staged)')}`);
   }
 
   // Show summary of adopted files
@@ -532,6 +547,12 @@ export async function runContributions(config: RuntimeConfig): Promise<void> {
   }
 
   console.info();
-  console.info(pc.dim('  files are staged — review and commit when ready'));
+  console.info(
+    pc.dim(
+      applyUnstaged
+        ? '  files are unstaged — review, stage what you want, and commit when ready'
+        : '  files are staged — review and commit when ready',
+    ),
+  );
   console.info();
 }

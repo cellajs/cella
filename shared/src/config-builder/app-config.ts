@@ -28,7 +28,7 @@ if (process.env.FRONTEND_URL) merged.frontendUrl = process.env.FRONTEND_URL;
 if (process.env.BACKEND_URL) merged.backendUrl = process.env.BACKEND_URL;
 if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AUTH_URL;
 if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
-if (process.env.AI_API_URL) merged.aiUrl = process.env.AI_API_URL;
+if (process.env.MCP_API_URL) merged.mcpUrl = process.env.MCP_API_URL;
 
 // Cost escape hatch: backend co-hosts every enabled service in-process. Set via
 // env so `pnpm dev:single` (or a preview deploy) flips it without a config edit.
@@ -39,7 +39,7 @@ merged.services = {
   frontend: { ...(merged.services.frontend ?? {}), publicUrl: merged.frontendUrl },
   backend: { ...(merged.services.backend ?? {}), publicUrl: merged.backendUrl },
   yjs: { ...(merged.services.yjs ?? {}), publicUrl: merged.yjsUrl },
-  ai: { ...(merged.services.ai ?? {}), publicUrl: merged.aiUrl },
+  mcp: { ...(merged.services.mcp ?? {}), publicUrl: merged.mcpUrl },
 };
 
 // Validate slug is a true, URL-safe slug. It feeds resource names (S3 buckets,

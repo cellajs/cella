@@ -1,7 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { ProductEntityType, PublicProductEntityType } from 'shared';
+import type { ContextEntityIdColumns, ProductEntityType, PublicProductEntityType } from 'shared';
 import type { ActivityEvent } from '#/lib/activity-bus';
-import type { ContextEntityIdColumns } from '#/permissions/permission-manager/types';
 import type { StreamNotification } from '#/schemas';
 
 /**

@@ -22,6 +22,7 @@ export async function getMenuData() {
     queryKey: meKeys.memberships,
     queryFn: async ({ signal }) => getMyMemberships({ signal }),
     revalidateIfStale: true,
+    staleTime: 0,
   });
 
   // Fetch entity lists — the subscriber enriches them with memberships on cache write

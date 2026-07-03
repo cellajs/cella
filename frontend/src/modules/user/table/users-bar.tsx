@@ -84,7 +84,7 @@ export const UsersTableBar = ({
             ? t('c:success.delete_resource', { resource: t('c:user') })
             : t('c:success.delete_counted_resources', {
                 count: args.data.length,
-                resources: t('c:users').toLowerCase(),
+                resources: t('c:user_other').toLowerCase(),
               });
         toaster(message, 'success');
       }
@@ -98,7 +98,7 @@ export const UsersTableBar = ({
       title: t('c:delete'),
       description: t('c:confirm.delete_resource', {
         name: selected.map((u) => u.email).join(', '),
-        resource: selected.length > 1 ? t('c:users').toLowerCase() : t('c:user').toLowerCase(),
+        resource: selected.length > 1 ? t('c:user_other').toLowerCase() : t('c:user').toLowerCase(),
       }),
     });
   };

@@ -113,7 +113,7 @@ function OrganizationsTable() {
             <ContentPlaceholder
               icon={BirdIcon}
               title="c:no_resource_yet"
-              titleProps={{ resource: t('c:organizations').toLowerCase() }}
+              titleProps={{ resource: t('c:organization_other').toLowerCase() }}
             />
           ),
         }}

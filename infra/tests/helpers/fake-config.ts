@@ -16,13 +16,13 @@ export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
     frontendUrl: 'https://www.cellajs.com',
     backendUrl: 'https://api.cellajs.com',
     yjsUrl: 'https://yjs.cellajs.com',
-    aiUrl: 'https://ai.cellajs.com',
+    mcpUrl: 'https://mcp.cellajs.com',
     services: {
       frontend: { enabled: true, publicUrl: 'https://www.cellajs.com' },
       backend: { enabled: true, publicUrl: 'https://api.cellajs.com' },
       cdc: { enabled: true },
       yjs: { enabled: false, publicUrl: 'https://yjs.cellajs.com' },
-      ai: { enabled: false, publicUrl: 'https://ai.cellajs.com' },
+      mcp: { enabled: false, publicUrl: 'https://mcp.cellajs.com' },
     },
     securityEmail: 'security@cellajs.com',
     s3: {
