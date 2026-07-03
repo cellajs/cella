@@ -1,6 +1,7 @@
 {
   "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
+  "onboarding_demo_ready.text": "Have a look around to explore what you can do with this template already.",
   "onboarding_welcome": "Welcome to {{appName}}",
   "onboarding_welcome.text": "🚀 This is the Cella template itself (no content). What will you build?"
 }

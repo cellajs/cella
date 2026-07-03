@@ -8,9 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
+import { testDatabaseUrl } from 'shared/test-db';
 import { immutabilityTriggersSQL } from '#/db/immutability-triggers';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
-import { testDatabaseUrl } from '../../shared/src/test-db';
 
 // Get directory path for ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

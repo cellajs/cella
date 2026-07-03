@@ -18,6 +18,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { testDatabaseUrl } from 'shared/test-db';
 import { baseDb as db, type PgDB } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
@@ -30,7 +31,6 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
-import { testDatabaseUrl } from '../../../shared/src/test-db';
 
 /**
  * Run database migrations for integration tests.
