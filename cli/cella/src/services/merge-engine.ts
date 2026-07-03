@@ -359,10 +359,10 @@ function formatLocalCheckoutDetail(
     : ', no tracking branch';
   const workingTree =
     changeCount === 0
-      ? 'working tree clean'
-      : `${changeCount} uncommitted change${changeCount === 1 ? '' : 's'} in working tree, not included in analysis`;
+      ? '  working tree clean'
+      : `  ${changeCount} uncommitted change${changeCount === 1 ? '' : 's'} in working tree, not included in analysis`;
 
-  return [`${forkPath}`, `${branch} @ ${headSha}${tracking}`, workingTree].join('\n');
+  return [`${forkPath}`, `  ${branch} @ ${headSha}${tracking}`, workingTree].join('\n');
 }
 
 /**

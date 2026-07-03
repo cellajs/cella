@@ -10,6 +10,14 @@ vi.mock('@inquirer/prompts', () => ({
   select: selectMock,
 }));
 
+const { readFileSyncMock } = vi.hoisted(() => ({
+  readFileSyncMock: vi.fn(() => '{"name":"my-app"}'),
+}));
+
+vi.mock('node:fs', () => ({
+  readFileSync: readFileSyncMock,
+}));
+
 vi.mock('../src/utils/display', () => ({
   NAME: 'cella',
   VERSION: 'test',
@@ -32,6 +40,7 @@ describe('parseCli', () => {
   afterEach(() => {
     process.argv = originalArgv;
     selectMock.mockReset();
+    readFileSyncMock.mockClear();
     vi.restoreAllMocks();
   });
 
