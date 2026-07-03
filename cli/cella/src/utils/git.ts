@@ -10,7 +10,7 @@ import { mkdir, readdir, rmdir, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
-import { readManifestBase } from './manifest';
+import { MANIFEST_FILE, readManifestBase, type SyncManifest } from './manifest';
 
 const execFileAsync = promisify(execFile);
 
@@ -779,6 +779,26 @@ export async function getStoredSyncHead(cwd: string): Promise<string | null> {
 }
 
 /**
+ * Read the sync manifest committed at a specific ref.
+ *
+ * This intentionally reads from git, not the working tree: a staged/aborted sync can leave the
+ * worktree manifest ahead of the committed trunk, and that must not validate a sync point.
+ */
+async function readManifestBaseAtRef(cwd: string, ref: string): Promise<string | null> {
+  const raw = await git(['show', `${ref}:${MANIFEST_FILE}`], cwd, { ignoreErrors: true });
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as SyncManifest;
+    const commit = parsed?.upstream?.commit;
+    if (typeof commit !== 'string' || !/^[0-9a-f]{40}$/i.test(commit)) return null;
+    return commit.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Check whether a commit object is present in the local object store.
  */
 async function commitObjectExists(cwd: string, sha: string): Promise<boolean> {
@@ -820,7 +840,10 @@ export async function ensureSyncBase(cwd: string, headRef: string, upstreamRef: 
   const nativeBase = await git(['merge-base', headRef, upstreamRef], cwd, { ignoreErrors: true });
   if (nativeBase) return;
 
-  const baseSha = (await getStoredSyncRef(cwd)) ?? (await readManifestBase(cwd));
+  // Ref first (the documented manual seed), then the manifest committed at HEAD, then the
+  // working-tree manifest as a last resort for repos in odd intermediate states.
+  const baseSha =
+    (await getStoredSyncRef(cwd)) ?? (await readManifestBaseAtRef(cwd, headRef)) ?? (await readManifestBase(cwd));
   if (!baseSha) {
     throw new Error(
       `no common ancestor between the fork and '${upstreamRef}', and no sync base recorded.\n\n` +
@@ -861,11 +884,36 @@ export async function isAncestor(cwd: string, ancestor: string, descendant: stri
 }
 
 /**
- * Get the effective merge-base, preferring the stored last-sync ref when it's more recent.
+ * Legacy sync point for forks that last synced before the manifest was committed: the local
+ * last-sync ref, guarded against aborted merges. The ref is written while the merge is still
+ * staged; if the user ran `git merge --abort` instead of committing, HEAD never advanced past
+ * the recorded sync HEAD and the upstream commits were never integrated, so the ref is discarded.
+ */
+async function getLegacySyncRef(cwd: string, headRef: string): Promise<string | null> {
+  const storedRef = await getStoredSyncRef(cwd);
+  if (!storedRef) return null;
+
+  const storedHead = await getStoredSyncHead(cwd);
+  if (storedHead) {
+    const currentHead = await git(['rev-parse', headRef], cwd, { ignoreErrors: true });
+    if (currentHead && currentHead === storedHead) return null;
+  }
+
+  return storedRef;
+}
+
+/**
+ * Get the effective merge-base, preferring the recorded sync point when it's more recent.
  * This handles stale merge-base caused by previous squash syncs (single-parent commits
  * don't update git's merge-base graph).
  *
- * @returns The effective base commit, whether git's base was stale, and the stored ref
+ * The manifest committed at `headRef` is the authoritative record: the sync engine stages it
+ * inside every applied sync, so it lands iff the sync commit lands. That makes it immune to
+ * aborted merges (never committed) and available on fresh clones and other machines (it
+ * travels with the repo, unlike local refs). The local last-sync ref is only consulted as a
+ * fallback for forks whose last sync predates the manifest.
+ *
+ * @returns The effective base commit, whether git's base was stale, and the recorded sync point
  */
 export async function getEffectiveMergeBase(
   cwd: string,
@@ -873,30 +921,17 @@ export async function getEffectiveMergeBase(
   upstreamRef: string,
 ): Promise<{ base: string; isStale: boolean; storedRef: string | null }> {
   const gitBase = await getMergeBase(cwd, headRef, upstreamRef);
-  const storedRef = await getStoredSyncRef(cwd);
 
-  if (!storedRef) {
+  const recorded = (await readManifestBaseAtRef(cwd, headRef)) ?? (await getLegacySyncRef(cwd, headRef));
+  if (!recorded) {
     return { base: gitBase, isStale: false, storedRef: null };
   }
 
-  // Guard against a stale last-sync ref left behind by an aborted merge. The ref is written
-  // while the merge is still staged; if the user runs `git merge --abort` instead of committing,
-  // HEAD never advances past the recorded HEAD. In that case the upstream commits were never
-  // integrated, so the stored ref must be discarded to avoid reporting "0 new commits".
-  const storedHead = await getStoredSyncHead(cwd);
-  if (storedHead) {
-    const currentHead = await git(['rev-parse', headRef], cwd, { ignoreErrors: true });
-    if (currentHead && currentHead === storedHead) {
-      return { base: gitBase, isStale: false, storedRef: null };
-    }
+  // Only prefer the recorded sync point when it is actually newer than git's own answer.
+  const recordedIsNewer = await isAncestor(cwd, gitBase, recorded);
+  if (recordedIsNewer && recorded !== gitBase) {
+    return { base: recorded, isStale: true, storedRef: recorded };
   }
 
-  // Check if stored ref is a descendant of git's merge-base (i.e., more recent)
-  const storedIsNewer = await isAncestor(cwd, gitBase, storedRef);
-
-  if (storedIsNewer && storedRef !== gitBase) {
-    return { base: storedRef, isStale: true, storedRef };
-  }
-
-  return { base: gitBase, isStale: false, storedRef };
+  return { base: gitBase, isStale: false, storedRef: recorded };
 }
