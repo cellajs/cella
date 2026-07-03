@@ -33,9 +33,13 @@ import {
   fileExistsInWorktree,
   getCommitInfo,
   getConflictedFiles,
+  getCurrentBranch,
   getEffectiveMergeBase,
   getMergeBase,
+  getShortSha,
   getStagedNewFiles,
+  getUpstreamStatus,
+  getWorkingTreeChangeCount,
   gitMv,
   listCommitsBetween,
   merge,
@@ -343,6 +347,24 @@ interface UpstreamContext {
   upstreamCommits: CommitRangeEntry[];
 }
 
+function formatLocalCheckoutDetail(
+  forkPath: string,
+  branch: string,
+  headSha: string,
+  changeCount: number,
+  upstream: { upstream: string | null; ahead: number; behind: number },
+): string {
+  const tracking = upstream.upstream
+    ? `, tracking ${upstream.upstream} (${upstream.ahead} ahead, ${upstream.behind} behind)`
+    : ', no tracking branch';
+  const workingTree =
+    changeCount === 0
+      ? 'working tree clean'
+      : `${changeCount} uncommitted change${changeCount === 1 ? '' : 's'} in working tree, not included in analysis`;
+
+  return [`${forkPath}`, `${branch} @ ${headSha}${tracking}`, workingTree].join('\n');
+}
+
 /**
  * Resolve everything both modes need from upstream: remote setup, the concrete
  * ref to merge (branch tip or latest release tag), sync ancestry bootstrap,
@@ -354,6 +376,15 @@ async function prepareUpstream(
   onStep?: StepCallback,
 ): Promise<UpstreamContext> {
   const { forkPath } = config;
+
+  onProgress?.('checking local checkout...');
+  const [branch, headSha, changeCount, upstreamStatus] = await Promise.all([
+    getCurrentBranch(forkPath),
+    getShortSha(forkPath, 'HEAD'),
+    getWorkingTreeChangeCount(forkPath),
+    getUpstreamStatus(forkPath),
+  ]);
+  onStep?.('local checkout', formatLocalCheckoutDetail(forkPath, branch, headSha, changeCount, upstreamStatus));
 
   // Setup upstream remote
   onProgress?.('setting up upstream remote...');
