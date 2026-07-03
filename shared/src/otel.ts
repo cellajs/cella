@@ -61,6 +61,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   } = options;
 
   const exportTimeoutMs = appConfig.mode === 'development' ? 1000 : 10000;
+  const metricExportIntervalMs = Math.max(metricIntervalMs, exportTimeoutMs);
 
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
@@ -82,7 +83,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const metricReader = hasMaple
     ? new PeriodicExportingMetricReader({
         exporter: new OTLPMetricExporter(hasMaple('metrics')),
-        exportIntervalMillis: metricIntervalMs,
+        exportIntervalMillis: metricExportIntervalMs,
         exportTimeoutMillis: exportTimeoutMs,
       })
     : undefined;

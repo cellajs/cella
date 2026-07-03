@@ -20,7 +20,7 @@ const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess
 
 /**
  * Quarantine a mutation that fails replay with a 4xx so no offline edit is lost
- * after a cache bust. Best-effort, lazy-imported to avoid cycles. See info/SCHEMA_EVOLUTION.md.
+ * after a cache bust. Best-effort, lazy-imported to avoid cycles.
  */
 function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
   const status = error?.status;

@@ -49,7 +49,7 @@ app.use('*', cors(corsOptions));
 // CSRF protection
 app.use('*', csrf({ origin: appConfig.frontendUrl }));
 
-// DORMANT (lens system): client schema-version telemetry. See info/SCHEMA_EVOLUTION.md.
+// DORMANT (lens system): client schema-version telemetry.
 // app.use('*', clientVersionMiddleware);
 
 // Body limit

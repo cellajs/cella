@@ -6,7 +6,7 @@ Cella is a TypeScript template to collaborative web apps with sync engine for of
  Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
 ## Architecture & tech stack
-See [info/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
+See [cella/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
 
 ## Routing
 - **Backend (Hono + OpenAPI)**:
@@ -88,7 +88,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - **Entity cache**: CDC-invalidated in-memory cache in `backend/src/middlewares/entity-cache/`. `coalesce()` deduplicates concurrent fetches.
 
 ## Coding patterns
-- **Entities**: `ContextEntityType` (has memberships) and `ProductEntityType` (content-related). See `info/ARCHITECTURE.md`.
+- **Entities**: `ContextEntityType` (has memberships) and `ProductEntityType` (content-related). See `cella/ARCHITECTURE.md`.
 - **Configuration**: `shared/config/config.default.ts` defines the base config (validated against `RequiredConfig`). Per-deploy overrides (e.g. `shared/config/config.development.ts`) deep-merge over it, selected by `NODE_ENV` in `shared/app-config.ts`. Check `.env` for secrets and environment variables.
 - **Debug mode**: Set `VITE_DEBUG_MODE=true` in `frontend/.env`.
 - **OpenAPI nullable**: Use `z.union([schema, z.null()])` instead of `schema.nullable()` for named schemas.
@@ -112,7 +112,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 
 ## Testing
 - Framework: Vitest. Name tests `*.test.ts`; place near source or under `tests/`.
-- See [info/TESTING.md](./TESTING.md) for test modes and detailed documentation.
+- See [cella/TESTING.md](./TESTING.md) for test modes and detailed documentation.
 
 ## Deploy & boot debugging
 Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control object), with an LB-overlap cutover gated on the new VM serving `X-App-Version: <SHA>` (`/health` → 204 backend/yjs/ai, 200 frontend). A "cutover unhealthy / wait-for-version timeout" means the new VM's app never bound its port — almost always a **boot-time crash**, not the LB. Debug it densely:
@@ -135,5 +135,5 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - `pnpm test`: Run the default full test suite and emit summary coverage output. Use `pnpm test:core` for the narrower core-mode suite without CDC/CLI coverage.
 - `pnpm infra`: Manage deployment using Infra CLI: [infra/README.md](../infra/README.md)
 - `pnpm bench`: Run benchmark scenarios: [bench/README.md](../bench/README.md)
-- `pnpm cella`: CLI to sync with cella and more: [cli/cella/README.md](../cli/cella/README.md)
+- `pnpm cella`: CLI to sync with cella and more, provided by `@cellajs/cli`.
 - `pnpm story`: Start storybook

@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "9ff5422bcd1525a5",
+  "inputHash": "55a011f35cbee84a",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -21877,14 +21877,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
     },
     "tags": [
       {
-        "count": 0,
-        "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to
-    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its
-    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
-        "kind": "module",
-        "name": "ai",
-      },
-      {
         "count": 6,
         "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to
     entities such as organizations or users. Files are uploaded directly by the client, while the API handles
@@ -21908,6 +21900,14 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
     and entity visibility.",
         "kind": "module",
         "name": "entities",
+      },
+      {
+        "count": 0,
+        "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to
+    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its
+    own; forks build AI features and agent products (such as chat) on top, reusing the same tool registry.",
+        "kind": "module",
+        "name": "mcp",
       },
       {
         "count": 11,

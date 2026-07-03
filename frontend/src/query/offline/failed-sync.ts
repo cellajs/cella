@@ -1,5 +1,5 @@
 /**
- * Client-side `failed_sync` quarantine (info/SCHEMA_EVOLUTION.md, 1.9).
+ * Client-side `failed_sync` quarantine (cella/SCHEMA_EVOLUTION.md, 1.9).
  *
  * A migrated mutation that still fails replay with a 4xx is quarantined here
  * rather than dropped, so no offline edit is ever silently lost. Records are

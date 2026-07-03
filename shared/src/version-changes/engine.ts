@@ -9,7 +9,7 @@
  *   queued-mutation rewrite).
  *
  * With an empty lens list (`currentSchemaVersion === 0`) every export is a
- * safe passthrough no-op. See info/SCHEMA_EVOLUTION.md.
+ * safe passthrough no-op.
  */
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import type { ProductEntityType } from '../../types';

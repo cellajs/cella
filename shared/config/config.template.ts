@@ -158,7 +158,7 @@ export const config = {
   maintenance: false,
   /** Cookie version - increment when changing cookie structure to invalidate old cookies */
   cookieVersion: 'v1',
-  /** Persisted client query-cache shape - bump on a breaking change to a cached entity so clients wipe stale cache. See info/SCHEMA_EVOLUTION.md */
+  /** Persisted client query-cache shape - bump on a breaking change to a cached entity so clients wipe stale cache */
   clientCacheVersion: 'v1',
 
   /******************************************************************************

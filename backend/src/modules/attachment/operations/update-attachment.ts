@@ -23,7 +23,7 @@ export async function updateAttachmentOp(
   const { fullResponse } = opts;
   const user = ctx.var.user;
 
-  // DORMANT (lens system) — reconnect when lenses are activated. See info/SCHEMA_EVOLUTION.md.
+  // DORMANT (lens system) — reconnect when lenses are activated.
   // const { ops: rawOps, stx } = normalizeOps('attachment', input.ops, input.stx);
 
   // Single tenantContext wraps permission check + write to avoid double-transaction pool pressure

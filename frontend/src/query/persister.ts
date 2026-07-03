@@ -99,7 +99,7 @@ function createIDBPersister(scope = 'rq') {
    * Cache-bust on a breaking schema change: wipe cached query DATA (product
    * records + bundled context queries) but KEEP queued mutations so offline
    * edits replay (and quarantine to failed_sync if they then 4xx). Advances the
-   * stored clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
+   * stored clientCacheVersion.
    */
   async function bustQueriesKeepMutations(db: AppDatabase) {
     await db.transaction('rw', db.queries, db.meta, async () => {
@@ -221,7 +221,7 @@ function createIDBPersister(scope = 'rq') {
         // Cache-bust on breaking schema change: a mismatch between the persisted
         // version and appConfig.clientCacheVersion wipes cached query data (keeping
         // queued mutations). A missing version (pre-feature build) seeds without
-        // wiping. See info/SCHEMA_EVOLUTION.md.
+        // wiping.
         const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
         if (persistedVersion !== appConfig.clientCacheVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {

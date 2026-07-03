@@ -5,7 +5,7 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 ### How it works
 
 1. Land work on `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
-2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [`info/CHANGELOG.md`](./CHANGELOG.md).
+2. release-please keeps an open **release PR per package**, continuously updating the proposed version bump and generated [`cella/CHANGELOG.md`](./CHANGELOG.md).
 3. Merge the release PR when ready — it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
 4. On merge, the `release-gate` job (security audit + full e2e) runs before the GitHub Release is finalized — see below.
 
@@ -43,7 +43,7 @@ Types map to changelog sections (`changelog-sections` in [release-please-config.
 - `docs:` → 📖 Documentation
 - `chore:`, `build:`, `ci:`, `style:`, `test:` → hidden from notes
 
-A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `info/` from the commit body.
+A `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and larger bump; link a fork-facing migration note in `cella/` from the commit body.
 
 ### Pre-1.0 versioning
 

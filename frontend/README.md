@@ -4,4 +4,4 @@ React SPA built with Vite. Uses TanStack Router for routing, Zustand for state m
 
 ## Related docs
 
-- [Architecture overview](../info/ARCHITECTURE.md)
+- [Architecture overview](../cella/ARCHITECTURE.md)

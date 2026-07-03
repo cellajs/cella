@@ -8,8 +8,6 @@
       "!frontend/src/routes/routeTree.gen.ts",
       "frontend/storybook/**",
       "frontend/vite/**",
-      "cli/cella/src/**",
-      "cli/cella/tests/**",
       "packages/data-grid/src/**",
       "bench/src/**",
       "!bench/src/**/dist",

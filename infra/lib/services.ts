@@ -34,7 +34,7 @@ export interface ServiceDefinition extends ServiceMeta {
    *    omitted).
    *  - 'shared-workers' — co-located as a container on a shared workers VM.
    * The shared-workers placement is the lever for the multi-fork "N worker
-   * containers on one VM" model (see info/MULTI_FORK_SHARING.md) and is not yet
+   * containers on one VM" model and is not yet
    * implemented by the compute module — no service sets it today.
    */
   placement?: 'dedicated-vm' | 'shared-workers'

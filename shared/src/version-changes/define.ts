@@ -3,7 +3,7 @@
  *
  * A lens declares a single breaking schema change once; everything else
  * (widened wire schemas, ops/stx key maps, cache-row migrations, versioned
- * OpenAPI specs) is derived from that declaration. See info/SCHEMA_EVOLUTION.md.
+ * OpenAPI specs) is derived from that declaration.
  *
  * Lens modules are FROZEN once shipped and appended in date order to
  * `index.ts`. The global schema version is the lens count (D2).

@@ -73,7 +73,7 @@ storybook-static
 backend/geoip/*.mmdb
 
 # Test coverage output
+.coverage/
 coverage/
 *.lcov
 .nyc_output/
-

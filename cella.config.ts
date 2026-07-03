@@ -1,4 +1,4 @@
-import { defineConfig } from './cli/cella/config';
+import { defineConfig } from '@cellajs/cli/config';
 
 /**
  * Cella sync config: run with `pnpm cella` to interact with cella upstream or forks.

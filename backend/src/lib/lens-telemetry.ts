@@ -1,8 +1,8 @@
 // DORMANT: lens-system module, intentionally not wired into runtime (not imported
 // by server.ts). Reconnect when lenses are activated. Active mechanism today is
-// clientCacheVersion. See info/SCHEMA_EVOLUTION.md.
+// clientCacheVersion.
 /**
- * Wires doba lens telemetry into otel (info/SCHEMA_EVOLUTION.md, 1.9).
+ * Wires doba lens telemetry into otel.
  *
  * Imported for side-effect at server startup. Phase 1 server-side migrations are
  * limited (graph payoff is Phase 2), but the hooks are registered up front so any

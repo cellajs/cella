@@ -151,7 +151,7 @@ export const config = {
    * - clientCacheVersion: persisted client query-cache shape; bump on a breaking
    *   change to a cached entity so clients wipe stale cache (queued mutations are
    *   preserved). CI's schema-bust gate enforces this. Temporary escape hatch
-   *   until the lens system lands. See info/SCHEMA_EVOLUTION.md.
+   *   until the lens system lands.
    ******************************************************************************/
 
   apiVersion: 'v1',

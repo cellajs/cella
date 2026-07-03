@@ -18,7 +18,7 @@
  * - Session variables (app.tenant_id, app.user_id)
  *   are set via set_config() within transactions to drive RLS policy evaluation
  *
- * @see info/ARCHITECTURE.md for full architecture documentation
+ * @see cella/ARCHITECTURE.md for full architecture documentation
  */
 
 import { randomUUID } from 'node:crypto';

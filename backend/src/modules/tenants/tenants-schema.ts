@@ -4,7 +4,7 @@
  * Tenants are system-level resources for RLS isolation.
  * Managed exclusively by system admins.
  *
- * @see info/ARCHITECTURE.md for architecture documentation
+ * @see cella/ARCHITECTURE.md for architecture documentation
  */
 
 import { z } from '@hono/zod-openapi';
