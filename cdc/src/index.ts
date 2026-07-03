@@ -20,7 +20,6 @@ const BACKEND_POLL_TIMEOUT_MS = 60_000;
  */
 export async function runCdcWorker(): Promise<void> {
   // Wait for backend in development before starting
-  // TODO we can use appConfig.mode? env diretly for this isnot the convention
   if (env.NODE_ENV === 'development') {
     await waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS);
   }

@@ -39,7 +39,7 @@
 
 - Nodejs 24.x. Check `node -v`. (Recommend: [Volta](https://docs.volta.sh/guide/)).
 - Make sure you can work with [Docker](https://docs.docker.com/get-docker/). (Recommend: [OrbStack](https://orbstack.dev/)).
-- Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
+- Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have the [gh cli](https://cli.github.com/) installed.
 
 <br>
 

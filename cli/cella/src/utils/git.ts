@@ -180,6 +180,15 @@ export async function getShortSha(cwd: string, ref: string): Promise<string> {
 }
 
 /**
+ * Count uncommitted working tree entries using porcelain status.
+ */
+export async function getWorkingTreeChangeCount(cwd: string): Promise<number> {
+  const status = await git(['status', '--porcelain'], cwd);
+  if (!status) return 0;
+  return status.split('\n').filter(Boolean).length;
+}
+
+/**
  * Check if a remote exists.
  */
 async function remoteExists(cwd: string, remoteName: string): Promise<boolean> {
