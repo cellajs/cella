@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.2.0](https://github.com/cellajs/cella/compare/0.1.1...0.2.0) (2026-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* cella cli moved to an npm package ([#840](https://github.com/cellajs/cella/issues/840))
+
+### 🎉 New features
+
+* cella cli more informative during analyze ([#839](https://github.com/cellajs/cella/issues/839)) ([f8d4cd3](https://github.com/cellajs/cella/commit/f8d4cd34b78773416d4d270b6e42f5fc4d50d842))
+* cella cli moved to an npm package ([#840](https://github.com/cellajs/cella/issues/840)) ([8614d6a](https://github.com/cellajs/cella/commit/8614d6a42a40e89ec86778d2c208c5280686491e))
+* cella cli sync rerun ([#836](https://github.com/cellajs/cella/issues/836)) ([b3bb81d](https://github.com/cellajs/cella/commit/b3bb81dc31aef45a732ede7f13e2a9eb22f82b1c))
+* cli should make sure main is up to date before syncing ([16e45c1](https://github.com/cellajs/cella/commit/16e45c1365faf597f4904d065783719bc325ee5a))
+* **cli:** add release workflow ([#835](https://github.com/cellajs/cella/issues/835)) ([7ab5dff](https://github.com/cellajs/cella/commit/7ab5dff67ad0bb8f7bb3a368a43361e1996b0dc0))
+* dont show analyze/sync in cella itself ([380bd41](https://github.com/cellajs/cella/commit/380bd419b1e9148c78ddd2c7599fdf5c521dd39d))
+* idempotent cella cli sync ([0d774ea](https://github.com/cellajs/cella/commit/0d774ea3797a6e14ab5adf8ee7ac5964d314e3e0))
+* **infra:** wire appConfig.singleVM into the deploy layer ([#833](https://github.com/cellajs/cella/issues/833)) ([267c698](https://github.com/cellajs/cella/commit/267c698e42e698bf988e63276a6cb97057c53703))
+* restage on resume cella sync ([#838](https://github.com/cellajs/cella/issues/838)) ([80e2a86](https://github.com/cellajs/cella/commit/80e2a86880dc395c192b365f376abd88aca718e5))
+* simplify db maintenance logic ([c5a1970](https://github.com/cellajs/cella/commit/c5a1970dca2d94dcd75b274ac8f6b9fc26f0c6b0))
+
+
+### 🐞 Bug fixes
+
+* cella sync should trust manifest.json ([204dd2a](https://github.com/cellajs/cella/commit/204dd2aaee196aec030cbd0a3d09b7f99505b48e))
+* properly clean up test-db-config ([#834](https://github.com/cellajs/cella/issues/834)) ([5d3edbc](https://github.com/cellajs/cella/commit/5d3edbc00843471ef39f2403ad8faaf63eec5c18))
+
 ## [0.1.1](https://github.com/cellajs/cella/compare/0.1.0...0.1.1) (2026-07-01)
 
 
