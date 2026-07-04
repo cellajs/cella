@@ -17,7 +17,7 @@ minimumReleaseAgeExclude:
   - esbuild@0.24.3
   - esbuild@0.28.1
 overrides:
-  '@opentelemetry/core@<2.8.0': ^2.8.0
+  '@opentelemetry/core@>=2.0.0 <2.8.0': ^2.8.0
   esbuild@<0.28.1: ^0.28.1
   esbuild@>=0.27.3 <0.28.1: ^0.28.1
   'protobufjs@>=8.0.0 <8.4.1': 8.6.5
