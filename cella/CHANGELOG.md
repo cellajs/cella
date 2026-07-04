@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/cellajs/cella/compare/0.2.0...0.2.1) (2026-07-04)
+
+
+### 🐞 Bug fixes
+
+* otel versioning mismatch ([#841](https://github.com/cellajs/cella/issues/841)) ([79ca53f](https://github.com/cellajs/cella/commit/79ca53f98875e55fa3c4cd95d95b4d868022efd1))
+
 ## [0.2.0](https://github.com/cellajs/cella/compare/0.1.1...0.2.0) (2026-07-04)
 
 
