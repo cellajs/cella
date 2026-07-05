@@ -1,11 +1,11 @@
 import { appConfig } from 'shared';
-import { createLogger, createLogHelpers } from 'shared/pino';
+import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
 
 // Sensitive fields to redact from logs (auth tokens, credentials).
 // fast-redact (used by pino) does NOT support a recursive `**` wildcard, so each
 // sensitive key is listed at the root (event meta is spread at the log root) and
-// one level deep via `*.` (e.g. errorDetails.token). `code` is deliberately NOT
+// one level deep via `*.` (e.g. session.token). `code` is deliberately NOT
 // redacted: it is logged legitimately as a websocket close code (cdc-websocket.ts),
 // not as an OAuth authorization code.
 const sensitiveKeys = [
@@ -53,9 +53,11 @@ export const requestLogger = createLogger({
 });
 
 /**
- * Logger for manually logging events in the application.
+ * Underlying pino instance for application logs. Not exported: all app logging
+ * goes through `baseLog` below or the request-aware `log` in #/utils/logger,
+ * so the err convention and dedup apply everywhere.
  */
-export const eventLogger = createLogger({
+const eventLogger = createLogger({
   level: env.PINO_LOG_LEVEL,
   isProduction,
   isTest,
@@ -68,4 +70,5 @@ export const eventLogger = createLogger({
   },
 });
 
-export const { logEvent, logError } = createLogHelpers(eventLogger, isProduction);
+// Context-free log facade; most backend code should use `log` from #/utils/logger, which adds request context.
+export const baseLog = createLog(eventLogger);

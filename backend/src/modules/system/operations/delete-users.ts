@@ -2,7 +2,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteUsersByIds, findUsersByIds } from '#/modules/system/system-queries';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 export async function deleteUsersOp(ctx: AuthContext, ids: string[]) {
   const toDeleteIds = Array.isArray(ids) ? ids : [ids];
@@ -20,7 +20,7 @@ export async function deleteUsersOp(ctx: AuthContext, ids: string[]) {
   await deleteUsersByIds(ctx, { ids: foundIds });
 
   for (const id of foundIds) invalidateCache.user(id);
-  logEvent(ctx, 'info', 'Users deleted', { count: foundIds.length, ids: foundIds });
+  log.info('Users deleted', { count: foundIds.length, ids: foundIds });
 
   return { data: [] as never[], rejectedIds };
 }

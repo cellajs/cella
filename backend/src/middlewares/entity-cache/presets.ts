@@ -13,7 +13,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCache } from './app-entity-cache';
 import { publicEntityCache } from './public-entity-cache';
@@ -111,7 +111,7 @@ export const appCache = (): MiddlewareHandler<Env> =>
       if (sessionToken) {
         baseToken = validateSignedCacheToken(signedToken, sessionToken);
         if (!baseToken) {
-          logEvent(ctx, 'debug', 'Cache token signature validation failed', {
+          log.debug('Cache token signature validation failed', {
             signedTokenPrefix: signedToken.slice(0, 8),
           });
         }

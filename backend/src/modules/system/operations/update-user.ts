@@ -6,7 +6,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { findUserById, updateUser } from '#/modules/system/system-queries';
 import type { userUpdateBodySchema } from '#/modules/user/user-schema';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof userUpdateBodySchema>;
 
@@ -39,7 +39,7 @@ export async function updateUserOp(ctx: AuthContext, id: string, input: UpdateUs
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });
 
   invalidateCache.user(updatedUser.id);
-  logEvent(ctx, 'info', 'User updated', { userId: updatedUser.id });
+  log.info('User updated', { userId: updatedUser.id });
 
   // Re-select with userSelect to include timestamps (subqueries from user_counters table)
   const userWithActivity = await findUserById(ctx, { id: updatedUser.id });

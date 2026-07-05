@@ -6,7 +6,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 interface UpdateMembershipInput {
   role?: EntityRole;
@@ -55,7 +55,7 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
 
   invalidateCache.user(updatedMembership.userId);
 
-  logEvent(ctx, 'info', 'Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
+  log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
   return updatedMembership;
 }

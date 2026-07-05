@@ -4,7 +4,7 @@ import { waitForBackend } from 'shared/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/worker-lifecycle';
 import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
-import { logEvent } from '#/lib/pino';
+import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import baseApp from '#/server';
@@ -16,12 +16,12 @@ export async function startMcpWorker(): Promise<void> {
 
   // Stop if mcp is disabled via config
   if (appConfig.services.mcp.enabled === false) {
-    logEvent('info', 'MCP server disabled by appConfig');
+    baseLog.info('MCP server disabled by appConfig');
     return;
   }
 
   if (!hasApiKey) {
-    logEvent('info', 'SCW_AI_API_KEY not set, running as no-op (health-only)');
+    baseLog.info('SCW_AI_API_KEY not set, running as no-op (health-only)');
   }
 
   if (hasApiKey) {
@@ -38,7 +38,7 @@ export async function startMcpWorker(): Promise<void> {
 
     // Start pg-boss (creates queues)
     await getPgBoss();
-    logEvent('info', 'pg-boss started, queues ready');
+    baseLog.info('pg-boss started, queues ready');
 
     // Phase 5: active job handlers will be registered here
     // boss.work('ai-yjs', { teamSize: 3, teamConcurrency: 3 }, yjsJobHandler);
@@ -54,7 +54,7 @@ export async function startMcpWorker(): Promise<void> {
       port,
     },
     () => {
-      logEvent('info', `MCP service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
+      baseLog.info(`MCP service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
     },
   );
 
@@ -65,6 +65,6 @@ export async function startMcpWorker(): Promise<void> {
       if (hasApiKey) await stopPgBoss();
       if (hasApiKey) await otel.shutdown();
     },
-    log: (msg) => logEvent('info', msg),
+    log: (msg) => baseLog.info(msg),
   });
 }

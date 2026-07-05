@@ -77,6 +77,16 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // Hide error if casually trying /me or /me/menu. It should fail silently if no valid session.
     if (isCasualSessionAttempt && statusCode === 401) return;
 
+    // Unexpected server errors: structured console.error is the Maple SDK's capture
+    // path, and logId ties the session timeline to the backend request log.
+    if (statusCode >= 500) {
+      console.error('[api]', error.type ?? 'server_error', {
+        logId: error.logId,
+        path: error.path,
+        status: statusCode,
+      });
+    }
+
     // Honor opt-out from query/mutation `meta` — local handler will (or already did) show its own toast.
     const suppress = meta?.suppressGlobalErrorToast;
     const skipToast = typeof suppress === 'function' ? suppress(error) : suppress === true;
@@ -91,6 +101,11 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         const seconds = Number(error.meta.retryAfter);
         const minutes = Math.ceil(seconds / 60);
         description = i18n.t('c:retry_in_minutes', { count: minutes });
+      }
+      // Surface the correlation id on error toasts so users can quote it to support
+      // (previously only full-page ErrorNotice showed it).
+      else if (error.severity === 'error' && error.logId) {
+        description = `Log ID: ${error.logId}`;
       }
 
       // Show toast

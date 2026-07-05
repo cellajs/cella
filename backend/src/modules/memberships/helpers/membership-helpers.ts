@@ -9,7 +9,7 @@ import {
   type MembershipModel,
   membershipsTable,
 } from '#/modules/memberships/memberships-db';
-import { type LogContext, logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 /**
  * The root context entity type — the parentless context entity (e.g. 'organization').
@@ -80,7 +80,7 @@ export const getBaseMembershipEntityId = <T extends ContextEntityType>(entity: E
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
   ctx: DbContext,
-  { items, logCtx }: { items: Array<InsertMultipleProps<T>>; logCtx?: LogContext },
+  { items }: { items: Array<InsertMultipleProps<T>> },
 ): Promise<Array<MembershipBaseModel>> => {
   const { db } = ctx.var;
   // Early exit: nothing to insert
@@ -201,8 +201,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       : Promise.resolve(),
   ]);
 
-  if (insertedTarget.length && logCtx) {
-    logEvent(logCtx, 'info', 'Memberships created', { count: insertedTarget.length });
+  if (insertedTarget.length) {
+    log.info('Memberships created', { count: insertedTarget.length });
   }
 
   return insertedTarget;

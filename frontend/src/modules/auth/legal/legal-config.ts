@@ -214,13 +214,13 @@ export const sharedDataTypes: SharedDataType[] = [
   },
   {
     slug: 'error_data',
-    name: 'Error and performance data',
-    purpose: 'Collect application errors and performance metrics for reliability.',
+    name: 'Error, performance and session data',
+    purpose: 'Collect application errors, performance metrics and masked session replays for reliability.',
     legalBasis: 'legitimate interest',
-    dataCategories: ['error stacktraces', 'browser metadata', 'anonymized IP addresses'],
+    dataCategories: ['error stacktraces', 'browser metadata', 'masked session recordings', 'anonymized IP addresses'],
     dataSubjects: ['end users'],
-    storageLocation: 'Sentry (EU/US)',
-    retentionPeriod: 'Retained per Sentry plan settings (default 90 days).',
+    storageLocation: 'Maple.dev (EU/US)',
+    retentionPeriod: 'Retained per Maple plan settings (default 30 days).',
     optional: true,
   },
 ];

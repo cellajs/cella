@@ -3,7 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndContext } from '#/modules/memberships/memberships-queries';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 interface DeleteMembershipsInput {
   ids: string[];
@@ -37,7 +37,7 @@ export async function deleteMembershipsOp(ctx: AuthContext, input: DeleteMembers
 
   for (const target of targets) invalidateCache.user(target.userId);
 
-  logEvent(ctx, 'info', 'Memberships deleted', { count: targets.length, ids: targets.map((t) => t.userId) });
+  log.info('Memberships deleted', { count: targets.length, ids: targets.map((t) => t.userId) });
 
   return { data: [] as never[], rejectedIds };
 }

@@ -20,8 +20,6 @@ const dns = read('dns.ts')
 const db = read('database.ts')
 const reg = read('registry.ts')
 const secrets = read('secrets.ts')
-// Shared "stack-config secret else generated" helper both db and secrets use.
-const configuredSecret = read('configured-secret.ts')
 
 describe('loadbalancer resource', () => {
   it('HTTPS frontend on port 443 is defined', () => {
@@ -57,7 +55,7 @@ describe('dns resource', () => {
   })
 
   // Known gap: DMARC TXT record is not currently provisioned.
-  // Tracking it as a TODO surfaces the gap in test output without
+  // Tracking it as a TODO [#18] surfaces the gap in test output without
   // hard-failing the suite.
   it.todo('publishes a DMARC TXT record (p=quarantine or p=reject)')
 })
@@ -79,9 +77,8 @@ describe('database resource', () => {
   })
 
   it('generated passwords have at least 32 chars and special-char floor', () => {
-    expect(db).toMatch(/configuredOrRandomSecret\(/)
-    expect(configuredSecret).toMatch(/length:\s*32/)
-    expect(configuredSecret).toMatch(/minSpecial:\s*[2-9]/)
+    expect(db).toMatch(/length:\s*32/)
+    expect(db).toMatch(/minSpecial:\s*[2-9]/)
   })
 
   it('production instance is protected from accidental deletion', () => {
@@ -111,9 +108,8 @@ describe('secrets module', () => {
   })
 
   it('seeds stable pulumi-owned runtime secrets from stack config only as a migration fallback', () => {
-    expect(secrets).toMatch(/configuredOrRandomSecret\(/)
-    expect(configuredSecret).toMatch(/new random\.RandomPassword\(/)
-    expect(configuredSecret).toContain('const configured = infraConfig.getSecret(configKey)')
+    expect(secrets).toMatch(/new random\.RandomPassword\(/)
+    expect(secrets).toContain('const configured = infraConfig.getSecret(configKey)')
     // Random-generated values come generically from the registry definition,
     // not a hand-maintained per-key list.
     expect(secrets).toContain("pulumiOwnedRuntimeSecret(definition.id, definition.secretName)")
@@ -121,9 +117,7 @@ describe('secrets module', () => {
   })
 
   it('namespaces every secret under the slug/mode path', () => {
-    // Derived from the shared secretManagerPath helper (single source of truth
-    // with the Pulumi program's VM reader lookup and the CLI seeding flow).
-    expect(secrets).toMatch(/const secretPath = secretManagerPath\(naming\.slug, mode\)/)
+    expect(secrets).toMatch(/const secretPath = `\/\$\{naming\.slug\}-\$\{mode\}\/`/)
     // The Secret resource must set path: secretPath so secrets never land at root.
     expect(secrets).toMatch(/path:\s*secretPath/)
   })

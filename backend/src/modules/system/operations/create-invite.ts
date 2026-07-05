@@ -9,7 +9,7 @@ import {
   insertTokens,
   linkWaitlistRequest,
 } from '#/modules/system/system-queries';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -100,7 +100,7 @@ export async function createInviteOp(ctx: AuthContext, emails: string[]) {
   const staticProps = { senderName, senderThumbnailUrl };
   await mailer.prepareEmails(systemInviteEmail, staticProps, recipients, user.email);
 
-  logEvent(ctx, 'info', 'Users invited on system level', { count: recipients.length });
+  log.info('Users invited on system level', { count: recipients.length });
 
   return { data: [] as never[], rejectedIds, invitesSentCount: recipients.length };
 }

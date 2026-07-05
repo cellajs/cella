@@ -32,7 +32,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -97,7 +97,7 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
     if (tokenRecord.type === 'invitation')
       redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
-    logEvent(ctx, 'info', 'Token invoked, redirecting with single use token in cookie', {
+    log.info('Token invoked, redirecting with single use token in cookie', {
       tokenId: tokenRecord.id,
       userId: tokenRecord.userId,
     });
@@ -152,8 +152,8 @@ app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const adminUser = ctx.var.user;
   await setUserSession(ctx, user, 'passkey', 'impersonation');
 
-  logEvent(ctx, 'info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
-  sendAccountSecurityEmail(ctx, user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
+  log.info('Started impersonation', { adminId: adminUser.id, targetUserId });
+  sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
 
   return ctx.body(null, 204);
 });
@@ -174,7 +174,7 @@ app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
 
   await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
 
-  logEvent(ctx, 'info', 'Stopped impersonation', { adminId: adminUserId, targetUserId: session.userId });
+  log.info('Stopped impersonation', { adminId: adminUserId, targetUserId: session.userId });
 
   return ctx.body(null, 204);
 });
@@ -267,10 +267,10 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
       [{ ...recipient, lng: recipientLng }],
       userEmail,
     );
-    logEvent(ctx, 'info', 'Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
+    log.info('Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
   } else {
     await mailer.prepareEmails(systemInviteEmail, defaultEmailProps, [recipient], userEmail);
-    logEvent(ctx, 'info', 'System invitation has been resent');
+    log.info('System invitation has been resent');
   }
 
   return ctx.body(null, 204);
@@ -283,7 +283,7 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
     // Delete mfa cookie
     deleteAuthCookie(ctx, 'confirm-mfa');
 
-    logEvent(ctx, 'info', 'User mfa canceled');
+    log.info('User mfa canceled');
 
     return ctx.body(null, 204);
   }
@@ -295,7 +295,7 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   await deleteSession(ctx, { sessionId: currentSession.id, userId: currentSession.userId });
 
   invalidateCache.user(currentSession.userId);
-  logEvent(ctx, 'info', 'User signed out', { userId: currentSession.userId });
+  log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);
 });

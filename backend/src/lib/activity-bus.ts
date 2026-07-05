@@ -10,7 +10,7 @@ import {
 } from '#/lib/sync-metrics';
 import type { ActivityModel } from '#/modules/activities/activities-db';
 import type { TrackedModel, TrackedType } from '#/tables';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 /**
  * Set of valid event types for onAny/offAny wildcard iteration.
@@ -108,7 +108,7 @@ class ActivityBus {
    */
   emit(event: ActivityEvent): void {
     if (!isValidEventType(event.type)) {
-      logEvent(null, 'warn', 'Unknown activity event type from CDC message', { type: event.type });
+      log.warn('Unknown activity event type from CDC message', { type: event.type });
       return;
     }
 
@@ -119,7 +119,7 @@ class ActivityBus {
     recordMessageReceived(event.entityType || 'unknown');
 
     this.emitter.emit(event.type, event);
-    logEvent(null, 'trace', 'ActivityBus emitted event', { type: event.type, subjectId: event.subjectId });
+    log.trace('ActivityBus emitted event', { type: event.type, subjectId: event.subjectId });
 
     span.setStatus({ code: SpanStatusCode.OK });
     span.end();

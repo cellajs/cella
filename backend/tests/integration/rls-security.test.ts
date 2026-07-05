@@ -912,33 +912,49 @@ const rlsSuiteReady = await (async () => {
   });
 
   // ---- Immutability triggers (apply regardless of role) ----
-  // Data-driven: covers all entity/column combinations from config
+  // Data-driven over configured entities that this suite seeds explicitly.
 
   describe('Immutability triggers', () => {
+    type ImmutableEntityCase = [tableName: string, column: string, entityType: string, rowId: string];
+
     // Base entity columns (shared by context + parentless product entities)
     const baseImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'];
 
-    // Context entities: use base columns
-    const contextCases: [string, string, string][] = appConfig.contextEntityTypes.flatMap((entityType) => {
+    const seededContextRowIdsByTable = new Map<string, string>([
+      ['organizations', TEST_ORG_A],
+      ...attachmentHierarchyA.seedContextRows.map((row) => [row.tableName, row.id] as const),
+    ]);
+
+    // Context entities: use base columns. Only target rows this suite owns.
+    const contextCases: ImmutableEntityCase[] = appConfig.contextEntityTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-      return baseImmutableColumns.map((col) => [tableName, col, entityType] as [string, string, string]);
+      const rowId = seededContextRowIdsByTable.get(tableName);
+      if (!rowId) return [];
+      return baseImmutableColumns.map((col) => [tableName, col, entityType, rowId]);
     });
 
-    // Org-scoped product entities: base + organization_id
-    const orgProductCases: [string, string, string][] = appConfig.productEntityTypes
+    const seededProductRowIdsByTable = new Map<string, string>(
+      iterableRlsProducts.map(([, fixture]) => [fixture.table, fixture.rowId]),
+    );
+
+    // Org-scoped product entities: base + organization_id. Only target rows this suite owns.
+    const orgProductCases: ImmutableEntityCase[] = appConfig.productEntityTypes
       .filter((t) => !parentlessTypes.has(t))
       .flatMap((entityType) => {
         const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-        return [...baseImmutableColumns, 'organization_id'].map(
-          (col) => [tableName, col, entityType] as [string, string, string],
-        );
+        const rowId = seededProductRowIdsByTable.get(tableName);
+        if (!rowId) return [];
+        return [...baseImmutableColumns, 'organization_id'].map((col) => [tableName, col, entityType, rowId]);
       });
 
     // Parentless product entities: no tenant_id column
     const parentlessImmutableColumns = ['id', 'entity_type', 'created_at', 'created_by'];
-    const parentlessCases: [string, string, string][] = hierarchy.parentlessProductTypes.flatMap((entityType) => {
+    const seededParentlessRowIdsByTable = new Map<string, string>([['pages', TEST_PAGE_A]]);
+    const parentlessCases: ImmutableEntityCase[] = hierarchy.parentlessProductTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-      return parentlessImmutableColumns.map((col) => [tableName, col, entityType] as [string, string, string]);
+      const rowId = seededParentlessRowIdsByTable.get(tableName);
+      if (!rowId) return [];
+      return parentlessImmutableColumns.map((col) => [tableName, col, entityType, rowId]);
     });
 
     const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
@@ -953,11 +969,15 @@ const rlsSuiteReady = await (async () => {
       return "'00000000-0000-4000-a000-ffffffffffff'";
     };
 
-    it.each(allEntityCases)('should reject %s.%s mutation (%s)', async (tableName, column) => {
+    it.each(allEntityCases)('should reject %s.%s mutation (%s)', async (tableName, column, _entityType, rowId) => {
       // Attempt to modify an immutable column — trigger should raise exception
       await expect(
         unwrapDrizzle(
-          adminDb.execute(sql.raw(`UPDATE ${tableName} SET ${column} = ${fakeValueForColumn(column)} WHERE 1=1`)),
+          adminDb.execute(
+            sql.raw(
+              `UPDATE ${quoteIdent(tableName)} SET ${quoteIdent(column)} = ${fakeValueForColumn(column)} WHERE id = '${rowId}'`,
+            ),
+          ),
         ),
       ).rejects.toThrow(/immutable/i);
     });

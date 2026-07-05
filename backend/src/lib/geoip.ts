@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { type AsnResponse, type CountryResponse, open, type Reader } from 'maxmind';
 import { env } from '#/env';
-import { eventLogger } from '#/lib/pino';
+import { baseLog } from '#/lib/pino';
 
 let countryReader: Reader<CountryResponse> | null = null;
 let asnReader: Reader<AsnResponse> | null = null;
@@ -12,10 +12,9 @@ const loadCountry = async (): Promise<Reader<CountryResponse> | null> => {
   if (countryReader) return countryReader;
   if (!existsSync(env.GEOIP_COUNTRY_DB_PATH)) {
     if (!countryWarned) {
-      eventLogger.warn(
-        { path: env.GEOIP_COUNTRY_DB_PATH },
-        'GeoIP country database not found — country lookups disabled',
-      );
+      baseLog.warn('GeoIP country database not found — country lookups disabled', {
+        path: env.GEOIP_COUNTRY_DB_PATH,
+      });
       countryWarned = true;
     }
     return null;
@@ -28,7 +27,7 @@ const loadAsn = async (): Promise<Reader<AsnResponse> | null> => {
   if (asnReader) return asnReader;
   if (!existsSync(env.GEOIP_ASN_DB_PATH)) {
     if (!asnWarned) {
-      eventLogger.warn({ path: env.GEOIP_ASN_DB_PATH }, 'GeoIP ASN database not found — ASN lookups disabled');
+      baseLog.warn('GeoIP ASN database not found — ASN lookups disabled', { path: env.GEOIP_ASN_DB_PATH });
       asnWarned = true;
     }
     return null;
@@ -55,7 +54,7 @@ export const lookupIp = async (
       asn: asn?.get(ip)?.autonomous_system_number ?? null,
     };
   } catch (err) {
-    eventLogger.warn({ err, ip }, 'GeoIP lookup failed');
+    baseLog.warn('GeoIP lookup failed', { err, ip });
     return { country: null, asn: null };
   }
 };

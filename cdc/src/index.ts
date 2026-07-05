@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { setupGracefulShutdown } from 'shared/worker-lifecycle';
 import { waitForBackend } from 'shared/wait-for-backend';
 import { env } from './env';
-import { logEvent } from './lib/pino';
+import { log } from './lib/pino';
 import { otel } from './lib/tracing';
 import { getHealthResponse } from './network/health';
 import { startCdcWorker, stopCdcWorker } from './pipeline/worker';
@@ -59,11 +59,11 @@ export async function runCdcWorker(): Promise<void> {
       await stopCdcWorker();
       await otel.shutdown();
     },
-    log: (msg) => logEvent('info', msg),
+    log: (msg) => log.info(msg),
   });
 
   healthServer.listen(env.CDC_HEALTH_PORT, () => {
-    logEvent('info', `CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
+    log.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
   });
 
   await startCdcWorker();

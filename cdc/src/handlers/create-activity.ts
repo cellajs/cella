@@ -5,7 +5,7 @@ import type { TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import { actionToVerb, extractStxData } from '../utils';
 import { getRowValue } from '../utils/get-row-value';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 /**
  * Build a standardized InsertActivityModel from row data and table metadata.
@@ -27,7 +27,7 @@ export function createActivity(
     for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
       const colKey = appConfig.entityIdColumnKeys[ancestor];
       const value = getRowValue(row, colKey);
-      if (!value) logEvent('warn', `Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
+      if (!value) log.warn(`Missing ancestor "${colKey}" for ${subjectType}`, { id: getRowValue(row, 'id') });
       contextEntityIds[colKey] = value ?? null;
     }
   }

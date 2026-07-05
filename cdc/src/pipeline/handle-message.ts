@@ -1,6 +1,6 @@
 import type { Pgoutput } from 'pg-logical-replication';
 
-import { logError, logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
@@ -54,7 +54,7 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
     await replicationState.service?.acknowledge(lsn);
   } else {
-    logEvent('debug', `Holding LSN acknowledgment - WebSocket disconnected`, { lsn });
+    log.debug(`Holding LSN acknowledgment - WebSocket disconnected`, { lsn });
   }
 }
 
@@ -107,7 +107,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     try {
       await txBuffer.onCommit();
     } catch (error) {
-      logError('Error processing transaction commit', error);
+      log.error('Error processing transaction commit', { err: error });
     }
     return;
   }
@@ -124,7 +124,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
   }
 
   try {
-    logEvent('trace', `CDC message received`, { lsn, tag, table: tableName });
+    log.trace(`CDC message received`, { lsn, tag, table: tableName });
 
     const parseResult = parseMessage(msg);
     if (!parseResult) {
@@ -137,7 +137,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     // Buffer the event (or process immediately if no active transaction)
     await txBuffer.onEvent(lsn, parseResult);
   } catch (error) {
-    logError(`Error processing CDC message - LSN NOT acknowledged`, error);
+    log.error(`Error processing CDC message - LSN NOT acknowledged`, { err: error });
   }
 }
 

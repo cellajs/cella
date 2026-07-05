@@ -17,6 +17,7 @@
  */
 import { sql } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
+import { baseLog } from '#/lib/pino';
 
 /** Check if the pg_partman extension is installed. */
 async function isPgPartmanAvailable(): Promise<boolean> {
@@ -60,7 +61,7 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 export function scheduleDbMaintenance(intervalMs: number = ONE_DAY_MS): () => void {
   const run = () => {
     runDbMaintenance().catch((error) => {
-      console.error('[db-maintenance] scheduled run failed:', error instanceof Error ? error.message : error);
+      baseLog.error('db-maintenance scheduled run failed', { err: error });
     });
   };
 

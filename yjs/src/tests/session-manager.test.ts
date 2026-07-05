@@ -5,8 +5,14 @@ import { mockDocContext, mockWebSocket, storageMock } from './helpers';
 vi.mock('../data/storage', () => storageMock());
 
 vi.mock('../lib/pino', () => ({
-  logError: vi.fn(),
-  logEvent: vi.fn(),
+  log: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  },
 }));
 
 // Import real session-manager (not mocked)

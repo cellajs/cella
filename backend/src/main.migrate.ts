@@ -46,5 +46,12 @@ try {
       cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
   }
+  // Also ship the failure to Maple — container stdout is not centrally collected,
+  // so without this a failed production migration is invisible in the log backend.
+  // The OTel transport batches with a 5s schedule; wait past it so the export
+  // actually leaves before the one-shot container exits.
+  const { baseLog } = await import('#/lib/pino');
+  baseLog.fatal('Migration failed', { err: error });
+  await new Promise((resolve) => setTimeout(resolve, 6000));
   process.exit(1);
 }

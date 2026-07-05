@@ -5,7 +5,7 @@ import { MissingScopeError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
 import type { DocContext } from '../constants';
 import { canEditEntity } from '../data/permissions';
-import { logError, logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import { verifyToken } from './auth';
 import { checkConnectionRate } from './rate-limiter';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
@@ -30,9 +30,9 @@ function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): vo
   if (allowed) {
     ctx.verified = true;
     flushPendingBuffer(ws);
-    logEvent('debug', `Entity verified for ${ctx.entityType}:${ctx.entityId}`, { userId: ctx.userId });
+    log.debug(`Entity verified for ${ctx.entityType}:${ctx.entityId}`, { userId: ctx.userId });
   } else {
-    logEvent('warn', `Entity access denied for ${ctx.entityType}:${ctx.entityId}`);
+    log.warn(`Entity access denied for ${ctx.entityType}:${ctx.entityId}`);
     discardPendingBuffer(ws);
     ws.close(4003, 'Access denied');
   }
@@ -52,14 +52,14 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
     if (ws.readyState !== ws.OPEN) return;
     discardPendingBuffer(ws);
     if (err instanceof MissingScopeError) {
-      logEvent('warn', `Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
+      log.warn(`Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
         missingContext: err.missingContext,
         missingKey: err.missingKey,
       });
       ws.close(4400, 'Missing entity scope');
       return;
     }
-    logError(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, err);
+    log.error(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, { err: err });
     ws.close(4503, 'Authorization unavailable');
   }
 }
@@ -76,28 +76,28 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
     const tenantId = url.searchParams.get('tenantId');
 
     if (!token || !rawEntityType || !tenantId) {
-      logEvent('warn', 'WS upgrade missing params', { hasToken: !!token, entityType: rawEntityType, hasTenantId: !!tenantId });
+      log.warn('WS upgrade missing params', { hasToken: !!token, entityType: rawEntityType, hasTenantId: !!tenantId });
       rejectUpgrade(socket, 4400, 'Missing params');
       return;
     }
 
     const payload = verifyToken(token);
     if (!payload) {
-      logEvent('warn', 'WS token verification failed', { entityType: rawEntityType });
+      log.warn('WS token verification failed', { entityType: rawEntityType });
       rejectUpgrade(socket, 4001, 'Invalid or expired token');
       return;
     }
 
     // Token must authorize editing this entity type
     if (payload.entityType !== rawEntityType) {
-      logEvent('warn', 'Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
+      log.warn('Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
       rejectUpgrade(socket, 4003, 'Token not valid for this entity type');
       return;
     }
 
     // Token must be for the correct tenant
     if (payload.tenantId !== tenantId) {
-      logEvent('warn', 'Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
+      log.warn('Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
       rejectUpgrade(socket, 4003, 'Token not valid for this tenant');
       return;
     }
@@ -128,7 +128,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
       verified: false,
     };
 
-    logEvent('info', `Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
+    log.info(`Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
       server.emit('connection', ws, ctx);
       // Start async entity verification — all sync messages are buffered until this completes
@@ -154,14 +154,14 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       try {
         await handleMessage(ctx, ws, data);
       } catch (err) {
-        logError(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, err);
+        log.error(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
       }
     });
 
     ws.on('close', cleanup);
 
     ws.on('error', (err) => {
-      logEvent('error', `WebSocket error for ${ctx.entityType}:${ctx.entityId}`, { error: err.message });
+      log.error('WebSocket error', { entityType: ctx.entityType, entityId: ctx.entityId, err });
       cleanup();
     });
   });

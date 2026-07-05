@@ -1,5 +1,5 @@
 import type { PendingEvent } from '../types';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
 import { cdcMetrics } from './cdc-metrics';
 
@@ -63,7 +63,7 @@ export class FlushBuffer {
 
     // Safety cap
     if (this.pending.length >= RESOURCE_LIMITS.buffers.maxBufferedEvents) {
-      logEvent('trace', 'Flush buffer hit size cap, flushing immediately', {
+      log.trace('Flush buffer hit size cap, flushing immediately', {
         count: this.pending.length,
       });
       await this.flush();
@@ -116,7 +116,7 @@ export class FlushBuffer {
 
       for (const result of results) {
         if (result.status === 'rejected') {
-          logEvent('error', 'Group processing failed', { error: result.reason });
+          log.error('Group processing failed', { err: result.reason });
         }
       }
 
@@ -126,7 +126,7 @@ export class FlushBuffer {
       cdcMetrics.recordFlush(events.length, performance.now() - flushStart);
 
       if (events.length > 1) {
-        logEvent('trace', 'Flush buffer batch processed', {
+        log.trace('Flush buffer batch processed', {
           totalEvents: events.length,
           groups: groups.size,
         });

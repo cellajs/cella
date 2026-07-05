@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { runCdcWorker } from './index';
-import { logEvent } from './lib/pino';
+import { log } from './lib/pino';
 
 /**
  * CDC Worker Entry Point
@@ -11,6 +11,6 @@ import { logEvent } from './lib/pino';
  * `runCdcWorker()` (also reused by the backend `MODE=cdc` shim).
  */
 runCdcWorker().catch((error) => {
-  logEvent('error', 'Failed to start CDC worker', { error });
+  log.error('Failed to start CDC worker', { err: error });
   process.exit(1);
 });

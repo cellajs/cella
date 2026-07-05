@@ -2,7 +2,7 @@ import dns from 'node:dns/promises';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomain, updateDomain } from '#/modules/domains/domains-queries';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 export async function verifyDomainOp(ctx: AuthContext, id: string) {
   const tenantId = ctx.var.tenantId;
@@ -28,7 +28,7 @@ export async function verifyDomainOp(ctx: AuthContext, id: string) {
     // ENOTFOUND / ENODATA means no TXT records exist — not an error
     const code = err instanceof Error && 'code' in err ? (err as NodeJS.ErrnoException).code : undefined;
     if (code !== 'ENOTFOUND' && code !== 'ENODATA') {
-      logEvent(ctx, 'warn', 'DNS lookup failed', { domain: domain.domain, error: String(err) });
+      log.warn('DNS lookup failed', { domain: domain.domain, err });
     }
   }
 
@@ -38,7 +38,7 @@ export async function verifyDomainOp(ctx: AuthContext, id: string) {
   const values = { lastCheckedAt: now, ...(verified ? { verified: true, verifiedAt: now } : {}) };
   const updated = await updateDomain(ctx, { id, values });
 
-  logEvent(ctx, 'info', `Domain verification ${verified ? 'succeeded' : 'failed'}`, {
+  log.info(`Domain verification ${verified ? 'succeeded' : 'failed'}`, {
     tenantId,
     domain: domain.domain,
     verified,

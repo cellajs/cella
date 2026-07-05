@@ -1,4 +1,4 @@
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 type CircuitState = 'closed' | 'open' | 'half_open';
 
@@ -59,7 +59,7 @@ class CircuitBreaker {
     const now = Date.now();
     if (entry.openedAt && now - entry.openedAt >= COOLDOWN_MS) {
       entry.state = 'half_open';
-      logEvent('warn', `Circuit HALF_OPEN for table '${tableName}' — testing recovery`, {
+      log.warn(`Circuit HALF_OPEN for table '${tableName}' — testing recovery`, {
         skippedCount: entry.skippedCount,
         openDurationMs: now - entry.openedAt,
       });
@@ -84,7 +84,7 @@ class CircuitBreaker {
       // Recovery test failed — reopen
       entry.state = 'open';
       entry.openedAt = Date.now();
-      logEvent('warn', `Circuit re-OPENED for table '${tableName}' — recovery test failed`, {
+      log.warn(`Circuit re-OPENED for table '${tableName}' — recovery test failed`, {
         failureCount: entry.failureCount,
         skippedCount: entry.skippedCount,
       });
@@ -95,7 +95,7 @@ class CircuitBreaker {
       entry.state = 'open';
       entry.openedAt = Date.now();
       entry.skippedCount = 0;
-      logEvent('warn', `Circuit OPEN for table '${tableName}' — ${FAILURE_THRESHOLD} consecutive failures`, {
+      log.warn(`Circuit OPEN for table '${tableName}' — ${FAILURE_THRESHOLD} consecutive failures`, {
         failureCount: entry.failureCount,
       });
     }
@@ -118,7 +118,7 @@ class CircuitBreaker {
     entry.openedAt = null;
 
     if (wasOpen) {
-      logEvent('info', `Circuit CLOSED for table '${tableName}' — recovered`, {
+      log.info(`Circuit CLOSED for table '${tableName}' — recovered`, {
         skippedCount: skipped,
       });
     }

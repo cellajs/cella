@@ -1,7 +1,7 @@
 import { RateLimiterPostgres, RateLimiterMemory } from 'rate-limiter-flexible';
 import { pool } from '../data/db';
 import { env } from '../env';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 /**
  * DB-backed per-user WebSocket connection rate limiter.
@@ -32,7 +32,7 @@ export async function checkConnectionRate(userId: string): Promise<boolean> {
     await connectionLimiter.consume(userId);
     return true;
   } catch {
-    logEvent('warn', 'WS connection rate limited', { userId });
+    log.warn('WS connection rate limited', { userId });
     return false;
   }
 }

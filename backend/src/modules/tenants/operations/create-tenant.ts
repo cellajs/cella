@@ -14,15 +14,11 @@ export async function createTenantOp(ctx: AuthContext, input: CreateTenantInput)
   const user = ctx.var.user;
   const { name, status } = input;
 
-  const tenant = await createTenantForUser(
-    db,
-    {
-      name,
-      createdBy: user.id,
-      userEmail: user.email,
-    },
-    ctx,
-  );
+  const tenant = await createTenantForUser(db, {
+    name,
+    createdBy: user.id,
+    userEmail: user.email,
+  });
 
   // Apply status override if provided (createTenantForUser defaults to 'active')
   if (status && status !== 'active') {

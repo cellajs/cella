@@ -5,6 +5,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
+import { reportCriticalError } from '~/lib/tracing';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 import { queryClient } from '~/query/query-client';
 
@@ -224,6 +225,7 @@ export const useSeenStore = create<SeenStoreState>()(
               );
             } catch (error) {
               console.error('[SeenStore] flush failed:', batch.entityType, batch.organizationId.slice(0, 8), error);
+              reportCriticalError('seen.flush_failed', error, { entityType: batch.entityType });
               // Re-add failed batch IDs for next flush
               const current = get().pending;
               const key = batchKey(batch.organizationId, batch.entityType);

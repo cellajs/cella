@@ -22,6 +22,7 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
+import { reportCriticalError } from '~/lib/tracing';
 import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
 
 type DehydratedQuery = DehydratedState['queries'][number];
@@ -266,6 +267,7 @@ function createIDBPersister(scope = 'rq') {
         };
       } catch (error) {
         console.error('[QueryPersister] Failed to restore client:', error);
+        reportCriticalError('persister.restore_failed', error);
         return undefined;
       }
     },
