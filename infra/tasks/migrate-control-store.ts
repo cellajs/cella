@@ -23,16 +23,16 @@
  * Usage (operator, locally, with SCW creds in env):
  *   pnpm --filter infra migrate-control-store --stack production [--dry-run]
  */
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import {
   type BootstrapState,
   type ControlState,
   controlActor,
   controlContextForStack,
   type ServiceRollout,
-} from '../lib/control-store'
-import { errorMessage } from '../lib/errors'
-import { isRecord } from '../lib/guards'
+} from '../lib/stack/control-store'
+import { errorMessage } from '../lib/utils/errors'
+import { isRecord } from '../lib/utils/guards'
 import { getFlag } from './args'
 
 /** A GenRef is only valid with a string id + sha and a numeric seq. A pointer

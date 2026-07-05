@@ -19,9 +19,9 @@
  */
 import { spawnSync } from 'node:child_process'
 import { stackExportHasResource } from './adopt-orphaned-policy'
-import { operatorManagedRuntimeSecrets } from './runtime-secrets'
+import { operatorManagedRuntimeSecrets } from '../runtime-secrets'
 import { createSecretManagerClient } from './scaleway-secret-manager'
-import { errorMessage } from './errors'
+import { errorMessage } from '../utils/errors'
 
 /** Pulumi type token for `@pulumiverse/scaleway` secret containers (`pulumi import`). */
 const SECRET_TYPE = 'scaleway:secrets/secret:Secret'

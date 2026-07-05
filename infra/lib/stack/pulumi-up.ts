@@ -7,7 +7,7 @@
 import { spawn } from 'node:child_process'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
-import { isBootstrapOwned } from './permissions'
+import { isBootstrapOwned } from '../scaleway/permissions'
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)))

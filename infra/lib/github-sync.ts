@@ -5,7 +5,7 @@
  * `environment:` in their workflow.
  */
 import { spawnSync } from 'node:child_process'
-import type { Environment } from './bootstrap-stack-state'
+import type { Environment } from './stack/bootstrap-stack-state'
 import { crossMark, warningMark } from 'shared/console'
 
 /** Parses `git remote get-url origin` output into `owner/repo`. Accepts both

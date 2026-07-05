@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto'
 import pc from 'shared/cli-utils/colors'
 import { checkMark, tildeMark, warningMark } from 'shared/console'
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
-import { createSecretManagerClient } from '../lib/scaleway-secret-manager'
+import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string }
 

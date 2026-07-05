@@ -1,4 +1,4 @@
-import { isRecord } from '../../lib/guards'
+import { isRecord } from '../../lib/utils/guards'
 
 export const supportedSchemaVersion = 1
 export const supportedImageContract = 'docker-node-agent-v1'

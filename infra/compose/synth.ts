@@ -7,8 +7,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isMain } from '../lib/is-main'
-import { infraDir } from '../lib/paths'
+import { isMain } from '../lib/utils/is-main'
+import { infraDir } from '../lib/utils/paths'
 import { composeConfig } from './compose'
 import type { ComposeFile } from './types'
 

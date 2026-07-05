@@ -25,10 +25,10 @@
  */
 import { readFileSync } from 'node:fs'
 import { sleep as defaultSleep } from 'shared/sleep'
-import { errorMessage } from '../lib/errors'
-import { isMain } from '../lib/is-main'
-import { pollUntil } from '../lib/retry'
-import { parseServiceRows } from '../lib/service-rows'
+import { errorMessage } from '../lib/utils/errors'
+import { isMain } from '../lib/utils/is-main'
+import { pollUntil } from '../lib/utils/retry'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
 

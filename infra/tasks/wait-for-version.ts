@@ -14,8 +14,8 @@
  *   tsx infra/tasks/wait-for-version.ts --url https://api.example/health \
  *     --sha <git-sha> [--attempts 100] [--interval 3000] [--timeout 8000]
  */
-import { isMain } from '../lib/is-main'
-import { pollUntil } from '../lib/retry'
+import { isMain } from '../lib/utils/is-main'
+import { pollUntil } from '../lib/utils/retry'
 import { getFlag, getNumFlag, sleep } from './args'
 
 export interface ProbeResult {

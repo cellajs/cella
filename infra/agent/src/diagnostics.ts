@@ -1,6 +1,6 @@
 import { createHash, createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { type FetchLike, resolveFetch } from '../../lib/fetch-like'
+import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like'
 
 export interface UploadBootDiagnosticsOptions {
   bucket: string

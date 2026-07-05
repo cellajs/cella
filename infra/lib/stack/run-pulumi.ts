@@ -4,7 +4,7 @@
  * outputs. Complements `lib/pulumi-up.ts` (the streaming bootstrap wrapper).
  */
 import { spawnSync } from 'node:child_process'
-import { infraDir } from './paths'
+import { infraDir } from '../utils/paths'
 
 /** Run `pulumi <args>` in the infra dir, returning trimmed stdout. */
 export function runPulumi(args: string[], opts: { allowFailure?: boolean; env?: NodeJS.ProcessEnv } = {}): string {

@@ -1,4 +1,4 @@
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { servicesByName } from '../lib/services'
 import {
   type ControlContext,
@@ -8,10 +8,10 @@ import {
   type ServiceRollout,
   setPending,
   updateServiceRollout,
-} from '../lib/control-store'
-import { errorMessage } from '../lib/errors'
+} from '../lib/stack/control-store'
+import { errorMessage } from '../lib/utils/errors'
 import type { GenerationMetadata } from '../lib/generation-metadata'
-import { runPulumi, stackOutput } from '../lib/run-pulumi'
+import { runPulumi, stackOutput } from '../lib/stack/run-pulumi'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, sleep } from './args'
 import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutover'

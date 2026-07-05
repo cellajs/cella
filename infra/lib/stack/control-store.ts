@@ -16,9 +16,9 @@
  * tested directly; the I/O functions take an injected client (`.send`) so they
  * can be exercised with a mock, mirroring `ensure-state-bucket.ts`.
  */
-import { isRecord } from './guards'
-import { scwS3Endpoint } from './scw-fetch'
-import { errorMessage } from './errors'
+import { isRecord } from '../utils/guards'
+import { scwS3Endpoint } from '../scaleway/scw-fetch'
+import { errorMessage } from '../utils/errors'
 
 /** A materialized, content-addressed generation: the VM resource is
  *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */

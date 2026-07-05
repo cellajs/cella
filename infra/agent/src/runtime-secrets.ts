@@ -1,7 +1,7 @@
 import { chmod, writeFile } from 'node:fs/promises'
-import { isEnvFileDeliverable } from '../../lib/env-file'
-import { type FetchLike, resolveFetch } from '../../lib/fetch-like'
-import { parseJsonBody } from '../../lib/json'
+import { isEnvFileDeliverable } from '../../lib/utils/env-file'
+import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like'
+import { parseJsonBody } from '../../lib/utils/json'
 import type { RuntimeSecretManifestEntry } from './plan'
 
 export interface HydrateRuntimeSecretsOptions {

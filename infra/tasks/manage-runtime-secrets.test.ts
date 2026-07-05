@@ -13,7 +13,7 @@ const ensureSecret = vi.fn()
 const putSecretValue = vi.fn()
 const deleteSecret = vi.fn()
 
-vi.mock('../lib/scaleway-secret-manager', () => ({
+vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
     listSecrets,
     getSecretByName,

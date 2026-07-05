@@ -10,7 +10,7 @@ vi.mock('./scaleway-secret-manager', () => ({
 
 // A controlled two-secret operator set so the test is independent of the fork
 // runtime-secrets config.
-vi.mock('./runtime-secrets', () => ({
+vi.mock('../runtime-secrets', () => ({
   operatorManagedRuntimeSecrets: [
     { id: 'adminEmail', secretName: 'admin-email' },
     { id: 'brevoApiKey', secretName: 'brevo-api-key' },

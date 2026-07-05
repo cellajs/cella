@@ -2,12 +2,12 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../shared'
 import generalConfig from './config/general.config'
-import type { Environment } from './lib/bootstrap-stack-state'
+import type { Environment } from './lib/stack/bootstrap-stack-state'
 import { resolvePerMode } from './lib/general-config'
 import { deriveInfra } from './lib/naming'
 import { serviceEndpoints, servicesByName } from './lib/services'
 import type { ServiceName } from './compose/compose'
-import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/vm-reader-secret'
+import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/scaleway/vm-reader-secret'
 
 const stackMode = pulumi.getStack().split('/').pop()
 

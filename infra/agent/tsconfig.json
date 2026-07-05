@@ -14,15 +14,15 @@
   },
   "include": [
     "src/**/*.ts",
-    "../lib/args.ts",
-    "../lib/env-file.ts",
-    "../lib/errors.ts",
-    "../lib/escape-regexp.ts",
-    "../lib/fetch-like.ts",
-    "../lib/guards.ts",
-    "../lib/is-main.ts",
-    "../lib/json.ts",
-    "../lib/retry.ts"
+    "../lib/utils/args.ts",
+    "../lib/utils/env-file.ts",
+    "../lib/utils/errors.ts",
+    "../lib/utils/escape-regexp.ts",
+    "../lib/utils/fetch-like.ts",
+    "../lib/utils/guards.ts",
+    "../lib/utils/is-main.ts",
+    "../lib/utils/json.ts",
+    "../lib/utils/retry.ts"
   ],
   "exclude": ["src/**/*.test.ts"]
 }
