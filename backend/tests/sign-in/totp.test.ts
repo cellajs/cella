@@ -3,6 +3,7 @@ import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
@@ -68,11 +69,12 @@ describe('TOTP Authentication', async () => {
       const sessionCookie = await createTestSession(user);
 
       // First generate TOTP key
-      const { response: generateRes } = await call(generateTotpKey, {
+      const { response: generateRes, data: generateData } = await call(generateTotpKey, {
         headers: { ...defaultHeaders, Cookie: sessionCookie },
       });
 
       expect(generateRes.status).toBe(200);
+      const generatedTotp = generateData as { manualKey: string };
 
       // Get totp-challenge cookie from generate response
       const generateCookies = generateRes.headers.get('set-cookie');
@@ -89,7 +91,9 @@ describe('TOTP Authentication', async () => {
       // Verify TOTP was created in database
       const totpRecord = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
       expect(totpRecord).toHaveLength(1);
-      expect(totpRecord[0].secret).toBeTruthy();
+      expect(totpRecord[0].secret).toMatch(/^v1:/);
+      expect(totpRecord[0].secret).not.toBe(generatedTotp.manualKey);
+      expect(decryptTotpSecret(totpRecord[0].secret)).toBe(generatedTotp.manualKey);
     });
   });
 
