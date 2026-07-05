@@ -25,7 +25,7 @@ COPY shared/package.json ./shared/
 COPY patches/ ./patches/
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --prod --ignore-scripts --filter yjs...
+    pnpm install --frozen-lockfile --prod --ignore-scripts --filter yjs-worker...
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build application
@@ -38,7 +38,7 @@ COPY shared/package.json ./shared/
 COPY patches/ ./patches/
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts --filter yjs...
+    pnpm install --frozen-lockfile --ignore-scripts --filter yjs-worker...
 
 COPY yjs/ ./yjs/
 COPY shared/ ./shared/
