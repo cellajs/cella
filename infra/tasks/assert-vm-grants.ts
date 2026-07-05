@@ -20,10 +20,10 @@
  *     --application-id <vm-app-id> --project-id <project-id> [--organization-id <org>]
  *   (SCW_SECRET_KEY in env)
  */
-import { type FetchLike, resolveFetch } from '../lib/fetch-like'
-import { isMain } from '../lib/is-main'
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
-import { scwFetch } from '../lib/scw-fetch'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { isMain } from '../lib/utils/is-main'
+import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { scwFetch } from '../lib/scaleway/scw-fetch'
 import { getFlag } from './args'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'

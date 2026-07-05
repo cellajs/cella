@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
-import { retry } from '../lib/retry'
+import { isMain } from '../lib/utils/is-main'
+import { retry } from '../lib/utils/retry'
 
 const require = createRequire(import.meta.url)
 

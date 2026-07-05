@@ -9,7 +9,7 @@
  * policy uses the canonical `VM_PROJECT_PERMISSION_SETS` list.
  */
 import * as scaleway from '@pulumiverse/scaleway'
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
+import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '../pulumi-context'
 
 /** Build the single project-scoped policy rule for the VM reader. */

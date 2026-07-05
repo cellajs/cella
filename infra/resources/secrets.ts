@@ -10,7 +10,7 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition, type RuntimeSecretId } from '../lib/runtime-secrets'
-import { secretManagerPath } from '../lib/vm-reader-secret'
+import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
 import { configuredOrRandomSecret } from './configured-secret'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
 

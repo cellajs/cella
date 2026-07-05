@@ -26,9 +26,9 @@
 import pc from 'shared/cli-utils/colors'
 import { DIVIDER } from 'shared/cli-utils/display'
 import { checkMark } from 'shared/console'
-import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
-import { isMain } from '../lib/is-main'
-import { secretManagerPath } from '../lib/vm-reader-secret'
+import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
+import { isMain } from '../lib/utils/is-main'
+import { secretManagerPath } from '../lib/scaleway/vm-reader-secret'
 import { seedVmReaderKey } from './seed-vm-reader-key'
 
 export type SetupVmKeyOptions = ProvisionScopedKeyOptions

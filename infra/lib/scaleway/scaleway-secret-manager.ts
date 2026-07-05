@@ -1,4 +1,4 @@
-import type { FetchLike } from './fetch-like'
+import type { FetchLike } from '../utils/fetch-like'
 import { type ScwAuth, scwFetch, scwSend } from './scw-fetch'
 
 const SECRET_MANAGER_BASE = 'https://api.scaleway.com/secret-manager/v1beta1'

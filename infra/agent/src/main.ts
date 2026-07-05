@@ -1,4 +1,4 @@
-import { getFlag } from '../../lib/args'
+import { getFlag } from '../../lib/utils/args'
 import { boot } from './boot'
 import { supportedSchemaVersion } from './plan'
 

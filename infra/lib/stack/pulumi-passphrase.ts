@@ -11,7 +11,7 @@
  * salt and an encrypted check value ("pulumi") used to verify the passphrase.
  */
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
-import { escapeRegExp } from './escape-regexp'
+import { escapeRegExp } from '../utils/escape-regexp'
 
 const PBKDF2_ITERATIONS = 1_000_000
 const KEY_LEN = 32

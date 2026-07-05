@@ -17,9 +17,9 @@
  *     --service <name> --region <scw-region>
  */
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { getFlag } from './args'
-import { errorMessage } from '../lib/errors'
+import { errorMessage } from '../lib/utils/errors'
 
 export interface DiagSelection {
   /** Recent stage/numbered markers, for a quick "how far did it get" overview. */

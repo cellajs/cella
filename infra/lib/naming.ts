@@ -1,6 +1,6 @@
 
 import type { appConfig as AppConfig } from '../../shared'
-import { stateBucket } from './control-store'
+import { stateBucket } from './stack/control-store'
 
 type Cfg = typeof AppConfig
 

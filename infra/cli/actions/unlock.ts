@@ -1,5 +1,5 @@
 import pc from 'shared/cli-utils/colors'
-import { forceUnlock, lockKey, makeControlClient, stateBucket } from '../../lib/control-store'
+import { forceUnlock, lockKey, makeControlClient, stateBucket } from '../../lib/stack/control-store'
 import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext, promptRequiredInput, promptStackName } from '../shared'
 

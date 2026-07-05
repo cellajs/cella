@@ -26,12 +26,12 @@
  *     --region <region> --project-id <project-id> [--services backend,cdc,frontend]
  *   (SCW_SECRET_KEY in env)
  */
-import { isMain } from '../lib/is-main'
-import { isEnvFileDeliverable } from '../lib/env-file'
-import { type FetchLike, resolveFetch } from '../lib/fetch-like'
-import { parseJsonBody } from '../lib/json'
+import { isMain } from '../lib/utils/is-main'
+import { isEnvFileDeliverable } from '../lib/utils/env-file'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { parseJsonBody } from '../lib/utils/json'
 import { runtimeSecrets } from '../lib/runtime-secrets'
-import { parseServiceRows } from '../lib/service-rows'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { serviceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag } from './args'

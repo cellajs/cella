@@ -8,7 +8,7 @@
  *
  * Usage: tsx infra/tasks/print-deploy-env.ts <staging|production>
  */
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import type { appConfig as AppConfig } from '../../shared'
 import { deriveInfra } from '../lib/naming'
 import { enabledServices, serviceEndpoints } from '../lib/services'

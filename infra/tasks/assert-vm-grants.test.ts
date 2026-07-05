@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { FetchLike } from '../lib/fetch-like'
+import type { FetchLike } from '../lib/utils/fetch-like'
 import { assertVmGrants } from './assert-vm-grants'
 
 /**

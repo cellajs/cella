@@ -1,5 +1,5 @@
-import { createSecretManagerClient } from '../lib/scaleway-secret-manager'
-import { VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/vm-reader-secret'
+import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
+import { VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
 
 export interface SeedVmReaderKeyOptions {
   secretKey: string

@@ -19,9 +19,9 @@
  *     --ns <namespace> --tag <git-sha> [--attempts 80] [--interval 15000]
  */
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
-import { pollUntil } from '../lib/retry'
-import { parseServiceRows } from '../lib/service-rows'
+import { isMain } from '../lib/utils/is-main'
+import { pollUntil } from '../lib/utils/retry'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { imageServiceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'

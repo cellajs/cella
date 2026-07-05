@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { FetchLike } from '../../lib/fetch-like'
+import type { FetchLike } from '../../lib/utils/fetch-like'
 import { hydrateRuntimeSecrets } from './runtime-secrets'
 
 let tempDir: string | undefined

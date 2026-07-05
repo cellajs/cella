@@ -16,7 +16,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { findPolicyIdByName } from './scaleway-iam'
-import { errorMessage } from './errors'
+import { errorMessage } from '../utils/errors'
 
 /** Pulumi type token for `@pulumiverse/scaleway` IAM policies (`pulumi import`). */
 const POLICY_TYPE = 'scaleway:iam/policy:Policy'

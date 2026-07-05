@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
-import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
-import { infraDir } from '../../lib/paths'
+import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
+import { infraDir } from '../../lib/utils/paths'
 import { maskedSecret } from '../prompts/masked-secret'
 import { envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
 

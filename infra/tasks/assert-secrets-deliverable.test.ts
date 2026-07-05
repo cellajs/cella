@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { FetchLike } from '../lib/fetch-like'
+import type { FetchLike } from '../lib/utils/fetch-like'
 import { type SecretToCheck, assertSecretsDeliverable, serviceNamesFromServicesJson } from './assert-secrets-deliverable'
 
 const REGION = 'fr-par'

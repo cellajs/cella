@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
-import { parseServiceRows } from '../lib/service-rows'
+import { isMain } from '../lib/utils/is-main'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
-import { errorMessage } from '../lib/errors'
+import { errorMessage } from '../lib/utils/errors'
 
 interface RolloutItem {
   service: string

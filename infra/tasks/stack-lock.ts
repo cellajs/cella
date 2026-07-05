@@ -11,9 +11,9 @@
  * The owner is derived from GITHUB_RUN_NUMBER (CI) or the local user, so the
  * separate acquire/release CI steps — different processes, same run — match.
  */
-import { isMain } from '../lib/is-main'
-import { acquireLock, controlActor, controlContextForStack, releaseLock } from '../lib/control-store'
-import { errorMessage } from '../lib/errors'
+import { isMain } from '../lib/utils/is-main'
+import { acquireLock, controlActor, controlContextForStack, releaseLock } from '../lib/stack/control-store'
+import { errorMessage } from '../lib/utils/errors'
 import { getFlag, getNumFlag } from './args'
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {

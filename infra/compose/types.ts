@@ -13,7 +13,7 @@
  * block as a *logical service*, so adding/removing a service is a single edit here.
  */
 
-import type { Environment } from '../lib/bootstrap-stack-state'
+import type { Environment } from '../lib/stack/bootstrap-stack-state'
 
 /**
  * How a service's VM generation is cut over on a deploy (immutable-node model):

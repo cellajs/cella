@@ -38,9 +38,9 @@
  *     --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10
  *   (SCW_SECRET_KEY in env for the live LB call)
  */
-import { type FetchLike, resolveFetch } from '../lib/fetch-like'
-import { isRecord } from '../lib/guards'
-import { isMain } from '../lib/is-main'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { isRecord } from '../lib/utils/guards'
+import { isMain } from '../lib/utils/is-main'
 // The canonical strategy vocabulary lives on the Compose model (`x-service`
 // metadata). types.ts is Pulumi-free, so the pure core can import it directly
 // without silently forking the unions.

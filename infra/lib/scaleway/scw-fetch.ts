@@ -8,7 +8,7 @@
  * `Promise<T>` is honest; use `scwSend` for fire-and-forget calls (DELETE,
  * 204-No-Content) where no body is expected.
  */
-import { type FetchLike, resolveFetch } from './fetch-like'
+import { type FetchLike, resolveFetch } from '../utils/fetch-like'
 
 const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'
 
