@@ -1,6 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { __testing, decryptStackSecretsFromText, verifyStackPassphrase } from './pulumi-passphrase'
+import { __testing, verifyStackPassphrase } from './pulumi-passphrase'
 
 const { PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN, decryptV1, deriveKey } = __testing
 
@@ -43,7 +43,7 @@ describe('pulumi-passphrase round-trip', () => {
       'scaleway:secretKey': 'SCWSECRET',
     })
     expect(
-      decryptStackSecretsFromText(yaml, passphrase, ['infra:cookieSecret', 'scaleway:secretKey']),
+      __testing.decryptStackSecretsFromText(yaml, passphrase, ['infra:cookieSecret', 'scaleway:secretKey']),
     ).toEqual({
       'infra:cookieSecret': 'COOKIE-PLAIN',
       'scaleway:secretKey': 'SCWSECRET',
@@ -52,16 +52,16 @@ describe('pulumi-passphrase round-trip', () => {
 
   it('returns empty object when keys are absent', () => {
     const yaml = buildStackYaml('p', { 'infra:cookieSecret': 'C' })
-    expect(decryptStackSecretsFromText(yaml, 'p', ['scaleway:secretKey'])).toEqual({})
+    expect(__testing.decryptStackSecretsFromText(yaml, 'p', ['scaleway:secretKey'])).toEqual({})
   })
 
   it('throws "Bad passphrase" on wrong passphrase', () => {
     const yaml = buildStackYaml('right', { 'infra:cookieSecret': 'C' })
-    expect(() => decryptStackSecretsFromText(yaml, 'wrong', ['infra:cookieSecret'])).toThrow(/Bad passphrase/)
+    expect(() => __testing.decryptStackSecretsFromText(yaml, 'wrong', ['infra:cookieSecret'])).toThrow(/Bad passphrase/)
   })
 
   it('throws on missing encryptionsalt header', () => {
-    expect(() => decryptStackSecretsFromText('config:\n  infra:x: y', 'p', ['infra:x'])).toThrow(/No encryptionsalt/)
+    expect(() => __testing.decryptStackSecretsFromText('config:\n  infra:x: y', 'p', ['infra:x'])).toThrow(/No encryptionsalt/)
   })
 
   it('GCM auth tag rejects tampered ciphertext', () => {
@@ -73,7 +73,7 @@ describe('pulumi-passphrase round-trip', () => {
       buf[0] ^= 0xff
       return `secure: ${p1}${buf.toString('base64')}`
     })
-    expect(() => decryptStackSecretsFromText(tampered, passphrase, ['infra:cookieSecret'])).toThrow()
+    expect(() => __testing.decryptStackSecretsFromText(tampered, passphrase, ['infra:cookieSecret'])).toThrow()
   })
 
   it('rejects truncated ciphertext (tag missing)', () => {
@@ -85,7 +85,7 @@ describe('pulumi-passphrase round-trip', () => {
       return `v1:${n}:${buf.subarray(0, buf.length - 8).toString('base64')}`
     })
     const yaml = `encryptionsalt: ${saltHeader}\nconfig:\n  infra:x:\n    secure: ${truncated}`
-    expect(() => decryptStackSecretsFromText(yaml, 'p', ['infra:x'])).toThrow()
+    expect(() => __testing.decryptStackSecretsFromText(yaml, 'p', ['infra:x'])).toThrow()
   })
 
   it('algorithm constants are locked (KAT-style)', () => {

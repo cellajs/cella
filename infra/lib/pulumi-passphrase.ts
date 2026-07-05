@@ -64,8 +64,8 @@ export function verifyStackPassphrase(yamlText: string, passphrase: string): boo
   }
 }
 
-/** Pure-string variant used by the test suite (no fs access). */
-export function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
+/** Pure-string decryption of `secure:` values — exercised via `__testing` only. */
+function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
   const saltMatch = text.match(/^encryptionsalt:\s*(\S+)/m)
   if (!saltMatch) throw new Error('No encryptionsalt header')
   const salt = saltMatch[1]
@@ -84,4 +84,4 @@ export function decryptStackSecretsFromText(text: string, passphrase: string, ke
 // ---------------------------------------------------------------------------
 // Internals exposed for testing (do not import from production code).
 // ---------------------------------------------------------------------------
-export const __testing = { decryptV1, deriveKey, verify, PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN }
+export const __testing = { decryptV1, deriveKey, verify, decryptStackSecretsFromText, PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN }

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { defineRuntimeSecrets, runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer, runtimeSecretsById } from '../../lib/runtime-secrets'
+import { defineRuntimeSecrets, runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '../../lib/runtime-secrets'
 import runtimeSecretsConfig from '../../config/runtime-secrets.config'
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8')
@@ -97,7 +97,7 @@ describe('runtime secret schema alignment', () => {
   })
 
   it('documents mcp as a backend-env wrapper instead of requiring a standalone env.ts', () => {
-    const aiSecrets = runtimeSecrets.filter((secret) => runtimeSecretsById.get(secret.id)?.services.includes('mcp'))
+    const aiSecrets = runtimeSecrets.filter((secret) => secret.services.includes('mcp'))
     expect(aiSecrets.length).toBeGreaterThan(0)
     expect(backendEnvSource).toContain('DATABASE_ADMIN_URL:')
     expect(backendEnvSource).toContain('SCW_AI_API_KEY:')

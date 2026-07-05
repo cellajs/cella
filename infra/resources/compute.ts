@@ -133,8 +133,6 @@ const composeContent = fs.readFileSync(
 interface ServiceConfig {
   name: string
   profile: string
-  /** App container's internal port; also the host port the app publishes. */
-  port: number
   /** Whether this service runs the one-shot migrate companion before the app. */
   runMigrate: boolean
   /**
@@ -510,7 +508,6 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
-    port: svc.healthPort,
     runMigrate: svc.runMigrate ?? false,
     secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
@@ -602,7 +599,7 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
   serverId,
   privateIp,
   privateNicId,
-})))).apply((items) => items)
+}))))
 
 /**
  * Private IPs of every active generation of a service — the initial LB backend

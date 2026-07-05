@@ -121,11 +121,9 @@ export interface ComposeService {
   profiles: readonly string[]
   restart: string
   ports?: readonly string[]
-  expose?: readonly string[]
   stop_grace_period?: string
   env_file?: readonly string[]
   environment?: Readonly<Record<string, string>>
-  volumes?: readonly string[]
   healthcheck?: HealthCheck
   /** Deploy-plane metadata; presence marks a logical service. */
   'x-service'?: ServiceMeta
@@ -133,7 +131,6 @@ export interface ComposeService {
 
 export interface ComposeFile {
   services: Readonly<Record<string, ComposeService>>
-  volumes?: Readonly<Record<string, null>>
 }
 
 /**

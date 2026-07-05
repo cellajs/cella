@@ -24,16 +24,6 @@ import { imageServiceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
 
-/**
- * Services that ship their own image and must exist in the registry before a VM
- * boots. Derived from the canonical registry (`infra/lib/services.ts`), which
- * already excludes image-reuse services (e.g. `ai`, which pulls the backend
- * image at the same SHA), so this can't drift.
- */
-export function imageServices(): ServiceName[] {
-  return imageServiceNames
-}
-
 /** Inspect a single image ref; resolves true if it exists. Injectable for tests. */
 export type InspectFn = (imageRef: string) => Promise<boolean>
 
@@ -49,9 +39,11 @@ export interface WaitOptions {
   tag: string
   inspect: InspectFn
   /**
-   * Override which image services to wait for. Defaults to `imageServices()`.
-   * The deploy workflow passes the feature-gated build set here so a fork with
-   * yjs/ai disabled doesn't wait for an image that is never built.
+   * Override which image services to wait for. Defaults to `imageServiceNames`
+   * (the canonical registry-derived list, which already excludes image-reuse
+   * services like `ai`). The deploy workflow passes the feature-gated build set
+   * here so a fork with yjs/ai disabled doesn't wait for an image that is never
+   * built.
    */
   services?: ServiceName[]
   attempts?: number
@@ -73,7 +65,7 @@ export async function waitForImages(opts: WaitOptions): Promise<{ ok: boolean; m
   const log = opts.log ?? ((msg: string) => console.info(msg))
 
   const missing: string[] = []
-  for (const service of opts.services ?? imageServices()) {
+  for (const service of opts.services ?? imageServiceNames) {
     const ref = imageRef(opts.registry, opts.namespace, service, opts.tag)
     log(`Waiting for ${service}:${opts.tag}`)
     let ready = false
@@ -113,7 +105,7 @@ export function imageServicesFromBuildMatrix(raw: string): ServiceName[] {
       if (typeof service !== 'string') throw new Error(`--build-images-json[${index}].service must be a string`)
       return service
     })
-    .filter((service): service is ServiceName => (imageServices() as string[]).includes(service))
+    .filter((service): service is ServiceName => (imageServiceNames as string[]).includes(service))
 }
 
 /** Parse `--key value` flags. Exported for testing. */

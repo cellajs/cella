@@ -16,13 +16,8 @@ import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '
 // by bootstrap and resolved from IAM by name.
 const vmApplicationId = vmReaderApplicationId
 
-/**
- * Build the single project-scoped policy rule for the VM reader.
- *
- * Pure + exported so the rule shape (permission sets + project scoping) is
- * unit-testable without a Pulumi runtime.
- */
-export function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
+/** Build the single project-scoped policy rule for the VM reader. */
+function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
   return [
     {
       permissionSetNames: [...VM_PROJECT_PERMISSION_SETS],

@@ -108,5 +108,5 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
     if (code !== 0) process.exit(code)
   }
 
-  return { step, must }
+  return { must }
 }

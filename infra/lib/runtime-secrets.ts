@@ -85,7 +85,6 @@ export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeS
   }
 }
 
-export const runtimeSecretsById = new Map<string, RuntimeSecretDefinition>(runtimeSecrets.map((secret) => [secret.id, secret]))
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator')
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {

@@ -9,10 +9,10 @@
  * bookends and stack-output discovery.
  *
  * Design:
- *   - PURE CORE — `expandBackend` / `contractBackend` / `pollSlotReleased` /
- *     `sequenceCutover` orchestrate the rollout over INJECTED effects, so the
- *     ordering (expand BEFORE contract, health before contract, drain BEFORE
- *     destroy) is fully unit-testable with a fake LB + fetch.
+ *   - PURE CORE — `contractBackend` / `sequenceCutover` orchestrate the rollout
+ *     over INJECTED effects, so the ordering (expand BEFORE contract, health
+ *     before contract, drain BEFORE destroy) is fully unit-testable with a fake
+ *     LB + fetch.
  *   - IMPURE EDGES — `createLbSetServers` (direct Scaleway `SetBackendServers`
  *     REST call) and the `pulumi up` create/destroy bookends in the entrypoint.
  *     These touch live infra and are exercised only in a real deploy / preview,
@@ -27,8 +27,8 @@
  * that Postgres permits exactly one consumer for, so there is no LB and no
  * overlap. The old worker must release the slot before the new one can acquire
  * it; the new generation only reports `/health` healthy once it holds the slot,
- * so "destroy old → poll new healthy" confirms the handoff (the `pollSlotReleased`
- * helper is the belt-and-suspenders Postgres-level gate when a checker is wired).
+ * so "destroy old → poll new healthy" confirms the handoff (deploy-service.ts
+ * orchestrates that ordering around its pulumi bookends).
  *
  * Usage:
  *   tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
@@ -68,9 +68,6 @@ export type GetServersFn = () => Promise<string[]>
 /** Resolve true once the new generation is serving the expected release (app /health gate). */
 export type HealthGateFn = () => Promise<boolean>
 
-/** Resolve true while the replication slot is still held by the old consumer. */
-export type SlotActiveFn = () => Promise<boolean>
-
 /** Minimal `fetch` surface so the live LB call is unit-testable. */
 export type FetchLike = (
   url: string,
@@ -81,47 +78,9 @@ export type FetchLike = (
 // Pure LB operations — one atomic `SetBackendServers` call each.
 // ---------------------------------------------------------------------------
 
-/** Expand the backend to serve BOTH generations (overlap window). */
-export async function expandBackend(setServers: SetServersFn, oldIps: string[], newIps: string[]): Promise<void> {
-  await setServers([...oldIps, ...newIps])
-}
-
 /** Contract the backend to serve ONLY the new generation (old removed, drains). */
 export async function contractBackend(setServers: SetServersFn, newIps: string[]): Promise<void> {
   await setServers(newIps)
-}
-
-// ---------------------------------------------------------------------------
-// Pure slot-release gate (exclusive / cdc). Polls until the old consumer has
-// released the slot, so the deploy never destroys a generation while it still
-// holds WAL. Bounded — exhausting the budget FAILS the deploy rather than
-// proceeding (a stuck old worker would otherwise bloat WAL on disk).
-// ---------------------------------------------------------------------------
-
-export interface PollSlotOptions {
-  isSlotActive: SlotActiveFn
-  attempts?: number
-  intervalMs?: number
-  sleep?: (ms: number) => Promise<void>
-  log?: (msg: string) => void
-}
-
-/** True once the slot is released; false if the budget is exhausted while still active. */
-export async function pollSlotReleased(opts: PollSlotOptions): Promise<boolean> {
-  const attempts = opts.attempts ?? 12
-  const intervalMs = opts.intervalMs ?? 5000
-  const sleep = opts.sleep ?? defaultSleep
-  const log = opts.log ?? ((msg: string) => console.info(msg))
-
-  for (let i = 1; i <= attempts; i++) {
-    if (!(await opts.isSlotActive())) {
-      log(`Replication slot released after ${i} attempt(s)`)
-      return true
-    }
-    log(`Attempt ${i}/${attempts}: replication slot still active — waiting for old consumer to release`)
-    if (i < attempts) await sleep(intervalMs)
-  }
-  return false
 }
 
 // ---------------------------------------------------------------------------
@@ -150,10 +109,6 @@ export interface CutoverPlan {
   getServers?: GetServersFn
   /** lb-overlap: run health/version polling after attaching the new generation to the LB. */
   healthAfterExpand?: boolean
-  /** exclusive: trigger the old generation to stop and release the slot (in practice, the pulumi destroy bookend). */
-  drainOldGeneration?: () => Promise<void>
-  /** exclusive: belt-and-suspenders Postgres-level slot-release gate. */
-  isSlotActive?: SlotActiveFn
 
   sleep?: (ms: number) => Promise<void>
   log?: (msg: string) => void
@@ -162,7 +117,7 @@ export interface CutoverPlan {
 export interface CutoverResult {
   ok: boolean
   /** Why the cutover stopped, when not ok. */
-  aborted?: 'unhealthy' | 'slot-stuck'
+  aborted?: 'unhealthy'
   /** Ordered record of the steps performed — asserted by the unit tests. */
   steps: string[]
 }
@@ -173,7 +128,8 @@ export interface CutoverResult {
  *
  * lb-overlap:  health-gate → expand [old,new] → reattach internal IP → contract [new] → drain
  *              or expand → health-gate → reattach → contract when CI must probe through the public LB
- * exclusive:   health-gate(process up) → drain+destroy old → slot released → (new acquires)
+ * exclusive:   health-gate(process up); the destroy-old / slot-handoff ordering
+ *              is orchestrated by deploy-service.ts around its pulumi bookends
  *
  * With a direct new-generation probe, an unhealthy generation aborts before any
  * LB mutation. With `healthAfterExpand`, the new generation is first attached
@@ -191,19 +147,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
 
   if (plan.strategy === 'exclusive') {
     // cdc: no LB, no overlap. The new worker is warm and idle-contending for the
-    // slot; the old worker must release it first.
+    // slot; the old worker must release it first (deploy-service.ts destroys the
+    // old generation and re-gates health after this returns).
     record('health-gate new generation (process up)')
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
-
-    record('drain + destroy old generation (releases slot)')
-    await plan.drainOldGeneration?.()
-
-    if (plan.isSlotActive) {
-      record('gate on Postgres slot release')
-      const released = await pollSlotReleased({ isSlotActive: plan.isSlotActive, sleep, log })
-      if (!released) return { ok: false, aborted: 'slot-stuck', steps }
-    }
-    record('new generation acquires slot')
+    record('new generation ready to acquire slot')
     return { ok: true, steps }
   }
 

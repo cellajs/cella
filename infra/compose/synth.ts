@@ -72,10 +72,6 @@ export function renderCompose(file: ComposeFile): string {
     lines.push(`  ${name}:`)
     lines.push(...emitMapping(svc as unknown as Record<string, unknown>, 2))
   }
-  if (file.volumes) {
-    lines.push('', 'volumes:')
-    lines.push(...emitMapping(file.volumes as Record<string, unknown>, 1))
-  }
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`
 }
 

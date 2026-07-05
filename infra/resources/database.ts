@@ -173,10 +173,10 @@ export const databaseName = database.name
 export const host = instance.privateNetwork.apply((pn) => pn!.hostname)
 
 /** Private network IP */
-export const ip = instance.privateNetwork.apply((pn) => pn!.ip)
+const ip = instance.privateNetwork.apply((pn) => pn!.ip)
 
 /** Private network port (direct) */
-export const port = instance.privateNetwork.apply((pn) => pn!.port)
+const port = instance.privateNetwork.apply((pn) => pn!.port)
 
 /**
  * Assemble a PostgreSQL DSN from plain string parts.

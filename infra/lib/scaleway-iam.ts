@@ -105,7 +105,13 @@ async function scw<T>(secretKey: string, method: string, url: string, body?: unk
   }
 }
 
-async function resolveOrgId(secretKey: string, projectId: string): Promise<string> {
+/**
+ * Resolve the organization id from a project id via the Account API. Also used
+ * by callers outside the provisioning flow (e.g. the apply CLI, which needs the
+ * org id to look up an existing IAM policy). Throws with guidance when it
+ * cannot be resolved.
+ */
+export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
   // GET /account/v3/projects/{id} returns the Project object directly, not
   // wrapped in { project: ... }.
   const project = await scw<{ organization_id?: string }>(secretKey, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`)
@@ -128,7 +134,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   const { callerSecretKey, projectId, slug } = opts
   const log = opts.log ?? ((msg) => console.info(msg))
 
-  const organizationId = opts.organizationId ?? (await resolveOrgId(callerSecretKey, projectId))
+  const organizationId = opts.organizationId ?? (await resolveOrganizationId(callerSecretKey, projectId))
 
   const appName = `${slug}-${config.suffix}`
   const policyName = `${appName}-policy`
@@ -218,16 +224,6 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     applicationId: app.id,
     organizationId,
   }
-}
-
-/**
- * Resolve the organization id from a project id via the Account API. Exported
- * for callers outside the provisioning flow (e.g. the apply CLI, which needs
- * the org id to look up an existing IAM policy). Throws with guidance when it
- * cannot be resolved.
- */
-export function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  return resolveOrgId(secretKey, projectId)
 }
 
 /**

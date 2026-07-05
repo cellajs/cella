@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
-import { imageRef, imageServices, imageServicesFromBuildMatrix, parseArgs, waitForImages } from './wait-for-images'
+import { imageServiceNames } from '../lib/services'
+import { imageRef, imageServicesFromBuildMatrix, parseArgs, waitForImages } from './wait-for-images'
 
 const TAG = 'abc1234'
 
-describe('imageServices', () => {
+describe('imageServiceNames (registry-derived wait list)', () => {
   it('excludes services that reuse another image (e.g. mcp → backend)', () => {
-    expect(imageServices()).toEqual(['backend', 'cdc', 'yjs', 'frontend'])
-    expect(imageServices()).not.toContain('mcp')
+    expect(imageServiceNames).toEqual(['backend', 'cdc', 'yjs', 'frontend'])
+    expect(imageServiceNames).not.toContain('mcp')
   })
 })
 

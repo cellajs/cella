@@ -135,11 +135,6 @@ describe('parseArgs', () => {
     expect(out).toMatchObject({ attempts: 10, intervalMs: 500, timeoutMs: 2000 })
   })
 
-  it('parses the optional reconciler-status triple', () => {
-    const out = parseArgs(['--url', 'u', '--sha', SHA, '--status-bucket', 'b', '--service', 'backend', '--region', 'nl-ams'])
-    expect(out).toMatchObject({ statusBucket: 'b', service: 'backend', region: 'nl-ams' })
-  })
-
   it('throws when --url is missing', () => {
     expect(() => parseArgs(['--sha', SHA])).toThrow(/Usage/)
   })

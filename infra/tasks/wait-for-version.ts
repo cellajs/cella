@@ -14,7 +14,6 @@
  *   tsx infra/tasks/wait-for-version.ts --url https://api.example/health \
  *     --sha <git-sha> [--attempts 100] [--interval 3000] [--timeout 8000]
  */
-import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
 import { getFlag, getNumFlag, sleep } from './args'
 
@@ -115,24 +114,6 @@ export function createFetchProbe(timeoutMs: number): ProbeFn {
   }
 }
 
-/**
- * Default reconciler-status reader shelling out to the preinstalled aws CLI.
- * Returns undefined on any failure (no object yet, S3 blip, bad JSON) so the
- * poller silently falls back to header-only polling.
- */
-export function createS3StatusReader(endpoint: string, bucket: string, service: string): StatusFn {
-  const uri = `s3://${bucket}/status/${service}.json`
-  return () => {
-    const out = spawnSync('aws', ['--endpoint-url', endpoint, 's3', 'cp', uri, '-'], { encoding: 'utf-8' }).stdout
-    if (!out) return undefined
-    try {
-      return JSON.parse(out) as RollStatus
-    } catch {
-      return undefined
-    }
-  }
-}
-
 /** Poll until the service serves `expectedSha` or the attempt budget is spent. */
 export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
   const { url, expectedSha, probe } = opts
@@ -182,10 +163,6 @@ interface CliArgs {
   attempts: number
   intervalMs: number
   timeoutMs: number
-  /** Optional: enables reconciler-status fast-fail when all three are set. */
-  statusBucket?: string
-  service?: string
-  region?: string
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -193,7 +170,7 @@ export function parseArgs(argv: string[]): CliArgs {
   const url = getFlag(argv, '--url')
   const sha = getFlag(argv, '--sha')
   if (!url || !sha) {
-    throw new Error('Usage: wait-for-version.ts --url <health-url> --sha <git-sha> [--attempts N] [--interval ms] [--timeout ms] [--status-bucket B --service S --region R]')
+    throw new Error('Usage: wait-for-version.ts --url <health-url> --sha <git-sha> [--attempts N] [--interval ms] [--timeout ms]')
   }
 
   return {
@@ -202,9 +179,6 @@ export function parseArgs(argv: string[]): CliArgs {
     attempts: getNumFlag(argv, '--attempts', 100),
     intervalMs: getNumFlag(argv, '--interval', 3000),
     timeoutMs: getNumFlag(argv, '--timeout', 8000),
-    statusBucket: getFlag(argv, '--status-bucket'),
-    service: getFlag(argv, '--service'),
-    region: getFlag(argv, '--region'),
   }
 }
 
@@ -212,19 +186,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv)
   console.info(`Probing ${args.url} — expecting X-App-Version: ${args.sha}`)
 
-  // Wire the reconciler-status fast-fail only when the full S3 triple is given.
-  const status =
-    args.statusBucket && args.service && args.region
-      ? createS3StatusReader(`https://s3.${args.region}.scw.cloud`, args.statusBucket, args.service)
-      : undefined
-
   const outcome = await pollForVersion({
     url: args.url,
     expectedSha: args.sha,
     attempts: args.attempts,
     intervalMs: args.intervalMs,
     probe: createFetchProbe(args.timeoutMs),
-    status,
   })
 
   if (!outcome.ok) {

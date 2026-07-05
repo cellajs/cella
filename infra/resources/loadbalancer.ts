@@ -272,7 +272,10 @@ if (infra.computeEnabled) {
   // -------------------------------------------------------------------------
 
   for (const service of lbServices) {
-    const scheme = schemeBySlug.get(service.slug) ?? 'https:'
+    // lbServices ⊆ endpoints (both are gated on lbRoute), so the scheme lookup
+    // always hits; a miss would be a registry bug worth failing loudly on.
+    const scheme = schemeBySlug.get(service.slug)
+    if (!scheme) throw new Error(`loadbalancer: no endpoint scheme for LB service '${service.slug}'`)
     _serviceUrls[service.slug] = pulumi.output(`${scheme}//${serviceHost(service.slug)}`)
   }
 }

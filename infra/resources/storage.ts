@@ -245,9 +245,6 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
 // Exports
 // ---------------------------------------------------------------------------
 
-/** Frontend bucket ID — consumed by the Caddy frontend VM as its static-file origin. */
-export const frontendBucketId = frontendBucket.id
-
 /** Frontend bucket name */
 export const frontendBucketName = frontendBucket.name
 
