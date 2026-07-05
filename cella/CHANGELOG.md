@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.2](https://github.com/cellajs/cella/compare/0.2.1...0.2.2) (2026-07-05)
+
+
+### 🎉 New features
+
+* encrypt TOTP secrets at rest ([#847](https://github.com/cellajs/cella/issues/847)) ([9f16d90](https://github.com/cellajs/cella/commit/9f16d90f929bd31e61a63a9d106e91ccb3c2944d))
+* log refactor ([#848](https://github.com/cellajs/cella/issues/848)) ([ae1bfa3](https://github.com/cellajs/cella/commit/ae1bfa30b83868fa33bea34b7d7548733faa48f7))
+
+
+### 🐞 Bug fixes
+
+* type in yjs Dockerfile ([#843](https://github.com/cellajs/cella/issues/843)) ([f637c3e](https://github.com/cellajs/cella/commit/f637c3e1412b2e7077896951dc1f9adf3e53dbd6))
+
+
+### 🔧 Small improvements
+
+* infra audit ([#846](https://github.com/cellajs/cella/issues/846)) ([e8b85a0](https://github.com/cellajs/cella/commit/e8b85a0de59b8b42f631380366a9bb1ae45098bf))
+
 ## [0.2.1](https://github.com/cellajs/cella/compare/0.2.0...0.2.1) (2026-07-04)
 
 
