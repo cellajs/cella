@@ -13,7 +13,7 @@
  *     frontend URL (no '*').
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pulumi-mock'
+import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock'
 
 let h: MockHarness
 
@@ -26,7 +26,7 @@ beforeAll(async () => {
     // no longer read from stack config.
     config: { 'bootstrap:computeDeferred': 'test' },
   })
-  await import('../../resources/storage')
+  await import('./storage')
   await flushPulumi()
 })
 
