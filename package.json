@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.2",
-    "@cellajs/cli": "^0.0.1",
+    "@cellajs/cli": "^0.0.3",
     "@commitlint/cli": "^21.2.0",
     "@commitlint/config-conventional": "^21.2.0",
     "@evilmartians/lefthook": "^2.1.9",
