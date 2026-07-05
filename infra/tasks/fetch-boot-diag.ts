@@ -17,8 +17,9 @@
  *     --service <name> --region <scw-region>
  */
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { getFlag } from './args'
+import { errorMessage } from '../lib/utils/errors'
 
 export interface DiagSelection {
   /** Recent stage/numbered markers, for a quick "how far did it get" overview. */
@@ -49,8 +50,8 @@ function escapeRe(s: string): string {
 export function parseKeys(lsOutput: string): string[] {
   const keys: string[] = []
   for (const line of lsOutput.split('\n')) {
-    const cols = line.trim().split(/\s+/)
-    if (cols.length >= 4) keys.push(cols[3])
+    const key = line.trim().split(/\s+/)[3]
+    if (key) keys.push(key)
   }
   return keys
 }
@@ -156,7 +157,7 @@ export function renderDiagnostics(
     try {
       return reader.cat(key)
     } catch (err) {
-      return `<<failed to read ${key}: ${err instanceof Error ? err.message : String(err)}>>`
+      return `<<failed to read ${key}: ${errorMessage(err)}>>`
     }
   }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { type FetchLike, type SecretToCheck, assertSecretsDeliverable, serviceNamesFromServicesJson } from './assert-secrets-deliverable'
+import type { FetchLike } from '../lib/utils/fetch-like'
+import { type SecretToCheck, assertSecretsDeliverable, serviceNamesFromServicesJson } from './assert-secrets-deliverable'
 
 const REGION = 'fr-par'
 const PROJECT = 'proj-1'

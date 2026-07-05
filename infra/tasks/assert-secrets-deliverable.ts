@@ -26,22 +26,17 @@
  *     --region <region> --project-id <project-id> [--services backend,cdc,frontend]
  *   (SCW_SECRET_KEY in env)
  */
-import { isMain } from '../lib/is-main'
-import { isEnvFileDeliverable } from '../lib/env-file'
-import { parseJsonBody } from '../lib/json'
+import { isMain } from '../lib/utils/is-main'
+import { isEnvFileDeliverable } from '../lib/utils/env-file'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { parseJsonBody } from '../lib/utils/json'
 import { runtimeSecrets } from '../lib/runtime-secrets'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { serviceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag } from './args'
 
 const SECRET_BASE = 'https://api.scaleway.com/secret-manager/v1beta1'
-
-/** Minimal fetch surface so the assertion logic is unit-testable. */
-export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{
-  ok: boolean
-  status: number
-  text: () => Promise<string>
-}>
 
 /** A runtime secret to probe, in the shape the VM manifest would carry. */
 export interface SecretToCheck {
@@ -117,7 +112,7 @@ async function readLatestSecretValue(
  * over the injected `fetchImpl`, so it is fully unit-testable.
  */
 export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOptions): Promise<AssertSecretsDeliverableResult> {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const log = opts.log ?? ((msg) => console.info(msg))
   const offenders: DeliverabilityOffender[] = []
 
@@ -135,7 +130,7 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
     const deliverable = isEnvFileDeliverable(value)
     if (!deliverable.ok) {
       // A present-but-multiline value breaks the sync regardless of required.
-      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: deliverable.reason! })
+      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: deliverable.reason })
     }
   }
 
@@ -161,15 +156,8 @@ export function secretsForServices(enabled: readonly ServiceName[]): SecretToChe
 }
 
 export function serviceNamesFromServicesJson(raw: string): ServiceName[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
-  return parsed
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
-      const service = (item as Record<string, unknown>).service
-      if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
-      return service
-    })
+  return parseServiceRows(raw, '--services-json', { required: ['service'] })
+    .map((row) => row.service)
     .filter((service): service is ServiceName => (serviceNames as readonly string[]).includes(service))
 }
 

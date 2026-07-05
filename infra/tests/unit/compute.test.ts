@@ -1,5 +1,6 @@
 /**
- * Source-level security smoke tests for `infra/resources/compute.ts`.
+ * Source-level security smoke tests for the compute stack
+ * (`infra/resources/compute.ts` + its compose-env / generations split).
  *
  * compute.ts is hard to render with the Pulumi mock harness (cascading
  * requireSecret + image-tag pin guard + cross-module imports), so the most
@@ -11,7 +12,12 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const source = readFileSync(resolve(__dirname, '../../resources/compute.ts'), 'utf-8')
+const computeSource = readFileSync(resolve(__dirname, '../../resources/compute.ts'), 'utf-8')
+const composeEnvSource = readFileSync(resolve(__dirname, '../../resources/compose-env.ts'), 'utf-8')
+const generationsSource = readFileSync(resolve(__dirname, '../../resources/generations.ts'), 'utf-8')
+// Most invariants are about the compute stack as a whole, independent of which
+// of the three files a pattern lives in.
+const source = computeSource + composeEnvSource + generationsSource
 
 describe('compute module source invariants', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
@@ -30,7 +36,7 @@ describe('compute module source invariants', () => {
 
   it('builds per-service runtime secret manifests instead of loading app secrets from stack config', () => {
     expect(source).toMatch(/buildRuntimeSecretsManifest\(/)
-    expect(source).toMatch(/runtimeSecretsForConsumer\(/)
+    expect(source).toMatch(/unionRuntimeSecrets\(/)
     expect(source).toMatch(/secretIds\[definition\.id\]/)
     for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
       expect(source).not.toMatch(new RegExp(`requireSecret\\(\\s*['"]${key}['"]\\s*\\)`))

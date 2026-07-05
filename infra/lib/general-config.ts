@@ -18,7 +18,7 @@
  * "Apply infra change" — this file changes *where the value lives*, not *who
  * may apply it*.
  */
-import type { Environment } from './bootstrap-stack-state'
+import type { Environment } from './stack/bootstrap-stack-state'
 
 /** A value fixed for all deploy modes, or varying per mode (e.g. a larger DB in prod only). */
 export type PerMode<T> = T | Partial<Record<Environment, T>>

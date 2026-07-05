@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseControlState } from '../lib/control-store'
+import { parseControlState } from '../lib/stack/control-store'
 import { migrateControlDocument } from './migrate-control-store'
 
 describe('migrateControlDocument', () => {

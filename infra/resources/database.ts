@@ -10,9 +10,9 @@
  * Sizing (node type, volume) comes from config/general.config.ts via `infra`.
  */
 import * as pulumi from '@pulumi/pulumi'
-import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, infraConfig, infra, isProduction } from '../pulumi-context'
+import { configuredOrRandomSecret } from './configured-secret'
 import { privateNetworkId } from './network'
 
 const dbNodeType = infra.dbNodeType
@@ -25,18 +25,10 @@ const dbSlug = naming.slug.replace(/-/g, '_') // PostgreSQL identifiers can't ha
 // Passwords — one per role, each from stack config secret or generated
 // ---------------------------------------------------------------------------
 
+// Resource names (`<role>-password`) are load-bearing: they are the shipped
+// Pulumi identities of the live credentials.
 function rolePassword(name: string): pulumi.Output<string> {
-  const configured = infraConfig.getSecret(`${name}Password`)
-  if (configured) return configured
-  return new random.RandomPassword(`${name}-password`, {
-    length: 32,
-    special: true,
-    overrideSpecial: '-_.~', // URL-safe special chars (RFC 3986 unreserved)
-    minLower: 2,
-    minUpper: 2,
-    minNumeric: 2,
-    minSpecial: 2,
-  }).result
+  return configuredOrRandomSecret(`${name}Password`, `${name}-password`)
 }
 
 const adminPassword = rolePassword('admin')
@@ -169,14 +161,22 @@ export const caCertificate = instance.certificate
 /** Database name */
 export const databaseName = database.name
 
+// The instance is created with a privateNetwork block, so this only trips if
+// Scaleway ever returns an instance without one — fail with a real error
+// instead of an opaque undefined-property crash.
+const privateNetwork = instance.privateNetwork.apply((pn) => {
+  if (!pn) throw new Error('database: main-postgres has no private network endpoint')
+  return pn
+})
+
 /** Private network hostname */
-export const host = instance.privateNetwork.apply((pn) => pn!.hostname)
+export const host = privateNetwork.hostname
 
 /** Private network IP */
-export const ip = instance.privateNetwork.apply((pn) => pn!.ip)
+const ip = privateNetwork.ip
 
 /** Private network port (direct) */
-export const port = instance.privateNetwork.apply((pn) => pn!.port)
+const port = privateNetwork.port
 
 /**
  * Assemble a PostgreSQL DSN from plain string parts.

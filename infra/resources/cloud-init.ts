@@ -4,6 +4,7 @@
  * `docker run`s the containerized boot agent (which drives the host Docker
  * daemon through the mounted socket to bring the service's compose stack up).
  */
+import { type BootPlan, parseRuntimeSecretManifest, supportedImageContract, supportedSchemaVersion } from '../agent/src/plan'
 
 export interface CloudInitParams {
   /** Service name (backend, cdc, yjs, ai, frontend). */
@@ -59,16 +60,21 @@ WantedBy=multi-user.target`
 const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
 systemctl enable cella-boot-replay.service 2>&1 | tail -1`
 
-const scrubCloudInitLogs = (): string => `sed -i '/SECRET\|PASSWORD\|API_KEY\|DATABASE_URL\|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
-sed -i '/SECRET\|PASSWORD\|API_KEY\|DATABASE_URL\|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`
+// -E (ERE) so `|` alternates; in a BRE the unescaped `|` is literal and the
+// scrub silently matches nothing.
+const scrubCloudInitLogs = (): string => `sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
+sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`
 
+// `satisfies BootPlan` + the agent's own schema constants keep producer and
+// consumer in lockstep: a contract change on either side fails the typecheck
+// (or the manifest validation) at plan time instead of at VM boot.
 function bootPlan(p: CloudInitParams): string {
   return JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: supportedSchemaVersion,
     service: p.service,
     profile: p.profile,
     releaseSha: p.releaseSha,
-    imageContract: 'docker-node-agent-v1',
+    imageContract: supportedImageContract,
     registry: p.registry,
     region: p.region,
     credentials: {
@@ -87,14 +93,14 @@ function bootPlan(p: CloudInitParams): string {
     files: {
       compose: p.composeContent,
       env: p.envFileContent,
-      runtimeSecretManifest: JSON.parse(p.manifestContent) as unknown,
+      runtimeSecretManifest: parseRuntimeSecretManifest(JSON.parse(p.manifestContent)),
     },
     timeouts: {
       privateNetworkSeconds: 150,
       pullAttempts: 12,
       pullRetrySeconds: 10,
     },
-  }, null, 2)
+  } satisfies BootPlan, null, 2)
 }
 
 /** Agent image reference: same registry namespace + release SHA as the app images. */

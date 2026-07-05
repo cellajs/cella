@@ -6,8 +6,6 @@ import {
   contractBackend,
   createLbGetServers,
   createLbSetServers,
-  expandBackend,
-  pollSlotReleased,
   sequenceCutover,
 } from './cutover'
 
@@ -40,15 +38,11 @@ function lbPlan(overrides: Partial<CutoverPlan> = {}): CutoverPlan {
   }
 }
 
-describe('expandBackend / contractBackend', () => {
-  it('expand serves both generations, contract serves only the new', async () => {
+describe('contractBackend', () => {
+  it('contract serves only the new generation', async () => {
     const lb = recordingSetServers()
-    await expandBackend(lb.fn, ['10.0.0.4'], ['10.0.0.9'])
     await contractBackend(lb.fn, ['10.0.0.9'])
-    expect(lb.calls).toEqual([
-      ['10.0.0.4', '10.0.0.9'],
-      ['10.0.0.9'],
-    ])
+    expect(lb.calls).toEqual([['10.0.0.9']])
   })
 })
 
@@ -178,7 +172,7 @@ describe('sequenceCutover — lb-overlap', () => {
 })
 
 describe('sequenceCutover — exclusive (cdc)', () => {
-  it('never expands an LB backend, drains old, then signals new-active', async () => {
+  it('never touches an LB backend and succeeds once the new generation is healthy', async () => {
     const lb = recordingSetServers()
     const order: string[] = []
     const res = await sequenceCutover({
@@ -192,38 +186,15 @@ describe('sequenceCutover — exclusive (cdc)', () => {
         return true
       },
       setServers: lb.fn,
-      drainOldGeneration: async () => void order.push('drain-old'),
-      isSlotActive: async () => {
-        order.push('slot-check')
-        return false
-      },
       sleep: noSleep,
       log: silent,
     })
     expect(res.ok).toBe(true)
     expect(lb.calls).toEqual([]) // the LB is never touched for an exclusive service
-    expect(order).toEqual(['health', 'drain-old', 'slot-check'])
+    expect(order).toEqual(['health'])
   })
 
-  it('aborts (slot-stuck) when the old consumer never releases the slot', async () => {
-    const res = await sequenceCutover({
-      service: 'cdc',
-      strategy: 'exclusive',
-      oldIps: [],
-      newIps: [],
-      drainSeconds: 0,
-      healthGate: async () => true,
-      drainOldGeneration: async () => {},
-      isSlotActive: async () => true, // always held
-      sleep: noSleep,
-      log: silent,
-    })
-    expect(res.ok).toBe(false)
-    expect(res.aborted).toBe('slot-stuck')
-  })
-
-  it('aborts (unhealthy) before draining the old generation', async () => {
-    let drained = false
+  it('aborts (unhealthy) when the new generation never comes up', async () => {
     const res = await sequenceCutover({
       service: 'cdc',
       strategy: 'exclusive',
@@ -231,41 +202,11 @@ describe('sequenceCutover — exclusive (cdc)', () => {
       newIps: [],
       drainSeconds: 0,
       healthGate: async () => false,
-      drainOldGeneration: async () => void (drained = true),
       sleep: noSleep,
       log: silent,
     })
     expect(res.ok).toBe(false)
     expect(res.aborted).toBe('unhealthy')
-    expect(drained).toBe(false)
-  })
-})
-
-describe('pollSlotReleased', () => {
-  it('returns true as soon as the slot is inactive', async () => {
-    let calls = 0
-    const released = await pollSlotReleased({
-      isSlotActive: async () => {
-        calls += 1
-        return calls < 3 // active for the first two checks, released on the third
-      },
-      intervalMs: 1,
-      sleep: noSleep,
-      log: silent,
-    })
-    expect(released).toBe(true)
-    expect(calls).toBe(3)
-  })
-
-  it('returns false when the budget is exhausted while still active', async () => {
-    const released = await pollSlotReleased({
-      isSlotActive: async () => true,
-      attempts: 4,
-      intervalMs: 1,
-      sleep: noSleep,
-      log: silent,
-    })
-    expect(released).toBe(false)
   })
 })
 

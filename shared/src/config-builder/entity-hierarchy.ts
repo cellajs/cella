@@ -502,6 +502,7 @@ export class EntityHierarchy<
     let i = 0;
     while (i < queue.length) {
       const current = queue[i++];
+      if (current === undefined) continue;
       descendants.push(current);
       if (this.isContext(current)) queue.push(...this.getChildren(current));
     }

@@ -29,7 +29,7 @@ const STANDARD_ENV = {
 } as const
 
 /** Uniform identity healthcheck injected into every app service. */
-export function healthcheck(port: number, startPeriod: string): HealthCheck {
+function healthcheck(port: number, startPeriod: string): HealthCheck {
   return {
     test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}/health`],
     interval: '30s',

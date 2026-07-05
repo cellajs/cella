@@ -1,13 +1,8 @@
 import { chmod, writeFile } from 'node:fs/promises'
-import { isEnvFileDeliverable } from '../../lib/env-file'
-import { parseJsonBody } from '../../lib/json'
+import { isEnvFileDeliverable } from '../../lib/utils/env-file'
+import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like'
+import { parseJsonBody } from '../../lib/utils/json'
 import type { RuntimeSecretManifestEntry } from './plan'
-
-export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{
-  ok: boolean
-  status: number
-  text: () => Promise<string>
-}>
 
 export interface HydrateRuntimeSecretsOptions {
   manifest: readonly RuntimeSecretManifestEntry[]
@@ -18,8 +13,11 @@ export interface HydrateRuntimeSecretsOptions {
 }
 
 async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecretManifestEntry): Promise<string | null> {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
+  // Manifest ids are `region/uuid` (Pulumi) or a bare uuid; take the last segment
+  // and refuse to build a request URL from a blank id.
   const secretId = entry.secretId.split('/').at(-1)
+  if (!secretId) throw new Error(`${entry.envVar}: manifest entry has a blank secretId ('${entry.secretId}')`)
   const url = `https://api.scaleway.com/secret-manager/v1beta1/regions/${opts.region}/secrets/${secretId}/versions/latest/access`
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': opts.secretKey } })
   const body = await res.text()

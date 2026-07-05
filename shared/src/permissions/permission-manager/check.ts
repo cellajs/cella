@@ -96,8 +96,10 @@ const checkWithIndices = <T extends PermissionMembership>(
   userId?: string,
   debug?: boolean,
 ): PermissionDecision<T> => {
-  // Primary context is always the first (most specific) in the hierarchy
+  // Primary context is always the first (most specific) in the hierarchy.
+  // orderedContexts is derived from the entity hierarchy and is never empty.
   const primaryContext = orderedContexts[0];
+  if (primaryContext === undefined) throw new Error('checkSubject: orderedContexts must not be empty');
 
   // Resolve primary context membership (used by both system admin and normal flow)
   const primaryContextId = getSubjectContextId(subject, primaryContext);
@@ -272,12 +274,8 @@ export function getAllDecisions<T extends PermissionMembership>(
   }
 
   // Validate all inputs before processing
-  for (let i = 0; i < subjectArray.length; i++) {
-    validateSubject(subjectArray[i], i);
-  }
-  for (let i = 0; i < memberships.length; i++) {
-    validateMembership(memberships[i], i);
-  }
+  subjectArray.forEach((subject, i) => validateSubject(subject, i));
+  memberships.forEach((membership, i) => validateMembership(membership, i));
 
   // Build membership index once for all subjects
   const membershipIndex = buildMembershipIndex(memberships);

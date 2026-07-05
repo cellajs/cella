@@ -15,7 +15,7 @@
  * Output is plain headers in a terminal and collapsible groups under CI; the
  * key selection and rendering live in (and are unit-tested by) fetch-boot-diag.ts.
  */
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { getFlag } from './args'
 import { createAwsReader, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag'
 

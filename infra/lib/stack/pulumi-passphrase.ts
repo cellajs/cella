@@ -11,6 +11,7 @@
  * salt and an encrypted check value ("pulumi") used to verify the passphrase.
  */
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
+import { escapeRegExp } from '../utils/escape-regexp'
 
 const PBKDF2_ITERATIONS = 1_000_000
 const KEY_LEN = 32
@@ -64,19 +65,17 @@ export function verifyStackPassphrase(yamlText: string, passphrase: string): boo
   }
 }
 
-/** Pure-string variant used by the test suite (no fs access). */
-export function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
-  const saltMatch = text.match(/^encryptionsalt:\s*(\S+)/m)
-  if (!saltMatch) throw new Error('No encryptionsalt header')
-  const salt = saltMatch[1]
+/** Pure-string decryption of `secure:` values — exercised via `__testing` only. */
+function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
+  const salt = text.match(/^encryptionsalt:\s*(\S+)/m)?.[1]
+  if (!salt) throw new Error('No encryptionsalt header')
   const key = deriveKey(passphrase, salt)
   if (!verify(key, salt)) throw new Error('Bad passphrase')
 
   const out: Record<string, string> = {}
   for (const k of keys) {
-    const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const m = text.match(new RegExp(`\\b${escaped}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))
-    if (m) out[k] = decryptV1(key, m[1])
+    const value = text.match(new RegExp(`\\b${escapeRegExp(k)}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))?.[1]
+    if (value) out[k] = decryptV1(key, value)
   }
   return out
 }
@@ -84,4 +83,4 @@ export function decryptStackSecretsFromText(text: string, passphrase: string, ke
 // ---------------------------------------------------------------------------
 // Internals exposed for testing (do not import from production code).
 // ---------------------------------------------------------------------------
-export const __testing = { decryptV1, deriveKey, verify, PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN }
+export const __testing = { decryptV1, deriveKey, verify, decryptStackSecretsFromText, PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN }

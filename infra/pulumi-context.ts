@@ -2,12 +2,12 @@ import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../shared'
 import generalConfig from './config/general.config'
-import type { Environment } from './lib/bootstrap-stack-state'
+import type { Environment } from './lib/stack/bootstrap-stack-state'
 import { resolvePerMode } from './lib/general-config'
 import { deriveInfra } from './lib/naming'
 import { serviceEndpoints, servicesByName } from './lib/services'
 import type { ServiceName } from './compose/compose'
-import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/vm-reader-secret'
+import { secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from './lib/scaleway/vm-reader-secret'
 
 const stackMode = pulumi.getStack().split('/').pop()
 
@@ -20,7 +20,7 @@ if (appConfig.mode !== stackMode) {
 
 const derived = deriveInfra(appConfig)
 
-export const { naming, dnsZone, region, zone, tags, isProduction } = derived
+export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived
 
 // Deploys require a real domain — fail fast here instead of gating each resource
 // module on `hasDomain` independently.
@@ -49,6 +49,13 @@ export function serviceHost(slug: ServiceName): string {
   const endpoint = endpointBySlug.get(slug)
   if (!endpoint) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`)
   return endpoint.host
+}
+
+/** Full public URL for a service slug (throws for internal-only services like cdc). */
+export function serviceUrl(slug: ServiceName): string {
+  const endpoint = endpointBySlug.get(slug)
+  if (!endpoint) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`)
+  return endpoint.url
 }
 
 /** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
@@ -98,8 +105,8 @@ export const vmReaderApplicationId = scaleway.iam
 const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
 
 // VM size is per-service  — declared in config/services.config.ts
-const registryInstanceType = (serviceName: string): string => {
-  const size = servicesByName.get(serviceName as ServiceName)?.instanceType
+const registryInstanceType = (serviceName: ServiceName): string => {
+  const size = servicesByName.get(serviceName)?.instanceType
   const resolved = typeof size === 'string' ? size : size?.[deployMode]
   if (resolved === undefined) throw new Error(`Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`)
   return resolved
@@ -111,7 +118,7 @@ export const infra = {
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
   dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),
   assetRetentionDays: resolvePerMode(generalConfig.assets.retentionDays, deployMode),
-  instanceTypeFor: (serviceName: string): string => registryInstanceType(serviceName),
+  instanceTypeFor: registryInstanceType,
   computeEnabled: !computeDeferred,
 }
 
@@ -120,7 +127,14 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
   const secretPath = secretManagerPath(naming.slug, mode)
   const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
   const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
-    (data) => JSON.parse(Buffer.from(data, 'base64').toString('utf8')) as VmReaderKeyPayload,
+    (data): VmReaderKeyPayload => {
+      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
+      const record = parsed as Partial<VmReaderKeyPayload> | null
+      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
+        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
+      }
+      return { accessKey: record.accessKey, secretKey: record.secretKey }
+    },
   )
   return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
 }

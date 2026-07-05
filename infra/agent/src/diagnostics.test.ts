@@ -34,10 +34,11 @@ describe('uploadBootDiagnostics', () => {
     })
     expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log', 'boot-diag/backend-failed-20260619T120000Z.log'])
     expect(calls).toHaveLength(2)
-    expect(calls[0].url).toContain('https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log')
-    expect(calls[0].auth).toMatch(/AWS4-HMAC-SHA256 Credential=access\/20260619\/nl-ams\/s3\/aws4_request/)
-    expect(calls[0].body).toContain('release=abc123')
-    expect(calls[0].body).toContain('hello boot')
+    const first = calls[0]!
+    expect(first.url).toContain('https://cella-boot-diag.s3.nl-ams.scw.cloud/boot-diag/backend-20260619T120000Z-boot.log')
+    expect(first.auth).toMatch(/AWS4-HMAC-SHA256 Credential=access\/20260619\/nl-ams\/s3\/aws4_request/)
+    expect(first.body).toContain('release=abc123')
+    expect(first.body).toContain('hello boot')
   })
 
   it('uploads only the full log for successful boots', async () => {

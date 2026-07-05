@@ -1,5 +1,7 @@
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { errorMessage } from '../../lib/utils/errors'
+import { retry } from '../../lib/utils/retry'
 import { createJsonLogger } from './logger'
 import { execCommand, mustExec, type ExecFn } from './exec'
 import { uploadBootDiagnostics } from './diagnostics'
@@ -39,9 +41,13 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
   const deadline = Date.now() + opts.timeoutSeconds * 1000
 
   while (Date.now() <= deadline) {
+    // Two-step probe: a private-network route must exist, and an IPv4 address
+    // in the 10.0.0.0/8 range must be assigned.
     const route = await opts.exec('ip', ['route', 'get', '10.0.0.1'])
-    const addresses = route.code === 0 ? await opts.exec('ip', ['-4', 'addr', 'show']) : { code: 1, stdout: '', stderr: '' }
-    if (route.code === 0 && addresses.code === 0 && addresses.stdout.includes('10.0.')) return
+    if (route.code === 0) {
+      const addresses = await opts.exec('ip', ['-4', 'addr', 'show'])
+      if (addresses.code === 0 && addresses.stdout.includes('10.0.')) return
+    }
     await sleep(retryDelayMs)
   }
 
@@ -55,28 +61,21 @@ async function writeAppFiles(plan: BootPlan): Promise<void> {
 }
 
 async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Promise<void> {
-  const registryHost = plan.registry.split('/')[0]!
+  const [registryHost = ''] = plan.registry.split('/')
   await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], { input: secretKey })
 }
 
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  let lastError: unknown
-  for (let attempt = 1; attempt <= plan.timeouts.pullAttempts; attempt++) {
-    try {
-      await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', plan.profile], { cwd: '/opt/app' })
-      return
-    } catch (err) {
-      lastError = err
-      if (attempt < plan.timeouts.pullAttempts) await sleep(plan.timeouts.pullRetrySeconds * 1000)
-    }
-  }
-  throw lastError instanceof Error ? lastError : new Error('image pull failed')
+  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', plan.profile], { cwd: '/opt/app' }), {
+    attempts: plan.timeouts.pullAttempts,
+    delayMs: plan.timeouts.pullRetrySeconds * 1000,
+  })
 }
 
 async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
   if (!plan.releaseCommand.enabled) return
   const [command, ...args] = plan.releaseCommand.command
-  await mustExec(exec, command!, args, { cwd: '/opt/app' })
+  await mustExec(exec, command, args, { cwd: '/opt/app' })
 }
 
 /**
@@ -120,7 +119,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     logger.log('info', 'boot-complete')
   } catch (err) {
     bootRc = 1
-    logger.log('error', 'boot-failed', { message: err instanceof Error ? err.message : String(err) })
+    logger.log('error', 'boot-failed', { message: errorMessage(err) })
     // The agent runs containerized without the host boot log mounted, so capture
     // the crashed container's own output here to ship it with the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
@@ -139,7 +138,7 @@ export async function boot(opts: BootOptions): Promise<void> {
         appLogs,
       })
     } catch (err) {
-      logger.log('warn', 'boot-diagnostics-upload-failed', { message: err instanceof Error ? err.message : String(err) })
+      logger.log('warn', 'boot-diagnostics-upload-failed', { message: errorMessage(err) })
     }
   }
 }

@@ -44,9 +44,9 @@ export const currentSchemaVersion: number = lenses.length;
 /** Lenses for an entity, paired with their 1-based global ordinal, in order. */
 function lensesFor(entityType: ProductEntityType): { lens: LensDefinition; ordinal: number }[] {
   const result: { lens: LensDefinition; ordinal: number }[] = [];
-  for (let i = 0; i < lenses.length; i++) {
-    if (lenses[i].entityType === entityType) result.push({ lens: lenses[i], ordinal: i + 1 });
-  }
+  lenses.forEach((lens, i) => {
+    if (lens.entityType === entityType) result.push({ lens, ordinal: i + 1 });
+  });
   return result;
 }
 
@@ -62,8 +62,8 @@ export function versionNodeFor(entityType: ProductEntityType, globalVersion: num
 }
 
 function currentNode(entityType: ProductEntityType): string {
-  const entityLenses = lensesFor(entityType);
-  return entityLenses.length === 0 ? 'v0' : `v${entityLenses[entityLenses.length - 1].ordinal}`;
+  const last = lensesFor(entityType).at(-1);
+  return last === undefined ? 'v0' : `v${last.ordinal}`;
 }
 
 // ── Entity (whole-row) migrations, including stx.fieldTimestamps key rewrites ──

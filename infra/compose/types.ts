@@ -13,7 +13,7 @@
  * block as a *logical service*, so adding/removing a service is a single edit here.
  */
 
-import type { Environment } from '../lib/bootstrap-stack-state'
+import type { Environment } from '../lib/stack/bootstrap-stack-state'
 
 /**
  * How a service's VM generation is cut over on a deploy (immutable-node model):
@@ -119,13 +119,11 @@ export interface HealthCheck {
 export interface ComposeService {
   image: string
   profiles: readonly string[]
-  restart: string
+  restart: 'unless-stopped' | 'no' | 'always' | 'on-failure'
   ports?: readonly string[]
-  expose?: readonly string[]
   stop_grace_period?: string
   env_file?: readonly string[]
   environment?: Readonly<Record<string, string>>
-  volumes?: readonly string[]
   healthcheck?: HealthCheck
   /** Deploy-plane metadata; presence marks a logical service. */
   'x-service'?: ServiceMeta
@@ -133,7 +131,6 @@ export interface ComposeService {
 
 export interface ComposeFile {
   services: Readonly<Record<string, ComposeService>>
-  volumes?: Readonly<Record<string, null>>
 }
 
 /**

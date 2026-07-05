@@ -20,19 +20,14 @@
  *     --application-id <vm-app-id> --project-id <project-id> [--organization-id <org>]
  *   (SCW_SECRET_KEY in env)
  */
-import { isMain } from '../lib/is-main'
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { isMain } from '../lib/utils/is-main'
+import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
+import { scwFetch } from '../lib/scaleway/scw-fetch'
 import { getFlag } from './args'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
-
-/** Minimal fetch surface so the assertion logic is unit-testable. */
-export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{
-  ok: boolean
-  status: number
-  text: () => Promise<string>
-}>
 
 export interface AssertVmGrantsOptions {
   secretKey: string
@@ -56,11 +51,8 @@ export interface AssertVmGrantsResult {
   missing: string[]
 }
 
-async function scwGet<T>(fetchImpl: FetchLike, secretKey: string, url: string): Promise<T> {
-  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } })
-  const text = await res.text()
-  if (!res.ok) throw new Error(`Scaleway GET ${url} → ${res.status}: ${text}`)
-  return (text === '' ? {} : JSON.parse(text)) as T
+function scwGet<T>(fetchImpl: FetchLike, secretKey: string, url: string): Promise<T> {
+  return scwFetch<T>({ secretKey, fetchImpl }, 'GET', url)
 }
 
 async function resolveOrgId(fetchImpl: FetchLike, secretKey: string, projectId: string): Promise<string> {
@@ -115,7 +107,7 @@ export async function fetchAppPermissionSetsByName(opts: {
   organizationId?: string
   fetchImpl?: FetchLike
 }): Promise<string[] | null> {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId))
   const applicationId = await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.applicationName)
   if (!applicationId) return null
@@ -127,7 +119,7 @@ export async function fetchAppPermissionSetsByName(opts: {
  * its IAM policies and their rules, then compute which required sets are missing.
  */
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const log = opts.log ?? ((msg) => console.info(msg))
   const required = opts.required ?? VM_PROJECT_PERMISSION_SETS
   const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId))

@@ -6,7 +6,7 @@
  * `await import(...)` would not re-execute its top-level resource constructors.
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pulumi-mock'
+import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock'
 
 let h: MockHarness
 
@@ -15,7 +15,7 @@ beforeAll(async () => {
   // image-tag pin assertion in pulumi-context.ts from firing in unit tests that
   // don't care about compute.
   h = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } })
-  await import('../../resources/network')
+  await import('./network')
   await flushPulumi()
 })
 

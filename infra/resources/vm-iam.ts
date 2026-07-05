@@ -9,20 +9,11 @@
  * policy uses the canonical `VM_PROJECT_PERMISSION_SETS` list.
  */
 import * as scaleway from '@pulumiverse/scaleway'
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
+import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 import { naming, organizationId, projectId, tags, vmReaderApplicationId } from '../pulumi-context'
 
-// Application the policy binds to — the non-human VM reader principal created
-// by bootstrap and resolved from IAM by name.
-const vmApplicationId = vmReaderApplicationId
-
-/**
- * Build the single project-scoped policy rule for the VM reader.
- *
- * Pure + exported so the rule shape (permission sets + project scoping) is
- * unit-testable without a Pulumi runtime.
- */
-export function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
+/** Build the single project-scoped policy rule for the VM reader. */
+function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {
   return [
     {
       permissionSetNames: [...VM_PROJECT_PERMISSION_SETS],
@@ -43,7 +34,8 @@ export function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types
 export const vmReaderPolicy = new scaleway.iam.Policy('vm-reader-policy', {
   name: naming.resource('vm-reader-policy'),
   description: 'Read-only registry + secret manager grant for service VMs (managed by Pulumi)',
-  applicationId: vmApplicationId,
+  // The non-human VM reader principal created by bootstrap, resolved from IAM by name.
+  applicationId: vmReaderApplicationId,
   // Set the org explicitly (resolved in pulumi-context from env, else the project) so
   // the create does not depend on the provider's default org env — the bootstrap
   // "Apply infra change" flow injects SCW_DEFAULT_PROJECT_ID but no org id, which

@@ -13,7 +13,7 @@
  *     frontend URL (no '*').
  */
 import { beforeAll, describe, expect, it } from 'vitest'
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../helpers/pulumi-mock'
+import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock'
 
 let h: MockHarness
 
@@ -26,7 +26,7 @@ beforeAll(async () => {
     // no longer read from stack config.
     config: { 'bootstrap:computeDeferred': 'test' },
   })
-  await import('../../resources/storage')
+  await import('./storage')
   await flushPulumi()
 })
 
@@ -48,7 +48,7 @@ describe('storage module', () => {
     expect(named['public-uploads-policy']).toBeDefined()
 
     for (const name of ['frontend-policy', 'public-uploads-policy']) {
-      const policyJson = String(named[name].inputs.policy ?? '')
+      const policyJson = String(named[name]?.inputs.policy ?? '')
       expect(policyJson, `${name} should reference Principal:*`).toMatch(/"Principal"\s*:\s*"\*"/)
       expect(policyJson, `${name} should allow s3:GetObject`).toMatch(/s3:GetObject/)
     }
@@ -98,9 +98,9 @@ describe('storage module', () => {
     const sites = h.resources.filter((r) => /bucketWebsiteConfiguration/i.test(r.type))
     expect(sites).toHaveLength(1)
     // biome-ignore lint/suspicious/noExplicitAny: raw input shape
-    const idx = (sites[0].inputs.indexDocument as any)?.suffix
+    const idx = (sites[0]?.inputs.indexDocument as any)?.suffix
     // biome-ignore lint/suspicious/noExplicitAny: raw input shape
-    const err = (sites[0].inputs.errorDocument as any)?.key
+    const err = (sites[0]?.inputs.errorDocument as any)?.key
     expect(idx).toBe('index.html')
     expect(err).toBe('index.html')
   })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SETS } from '../lib/permissions'
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
 
 /**
  * Lock the CI key's permission sets. Any addition must be deliberate and visible

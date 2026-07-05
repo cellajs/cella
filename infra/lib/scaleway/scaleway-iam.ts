@@ -15,11 +15,10 @@
  */
 
 import { changeMark, checkMark, tildeMark } from 'shared/console'
+import { scwFetch, scwSend } from './scw-fetch'
 
 const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
-
-const DEBUG = process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1'
 
 interface ScwApp {
   id: string
@@ -85,30 +84,16 @@ export interface ScopedKeyResult {
   organizationId: string
 }
 
-async function scw<T>(secretKey: string, method: string, url: string, body?: unknown): Promise<T> {
-  if (DEBUG) process.stderr.write(`[scw] → ${method} ${url}${body ? ` body=${JSON.stringify(body)}` : ''}\n`)
-  const res = await fetch(url, {
-    method,
-    headers: { 'X-Auth-Token': secretKey, 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-  const text = await res.text()
-  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${text.slice(0, 500)}\n`)
-  if (!res.ok) {
-    throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`)
-  }
-  if (res.status === 204 || text === '') return undefined as T
-  try {
-    return JSON.parse(text) as T
-  } catch {
-    throw new Error(`Scaleway ${method} ${url} returned non-JSON body: ${text.slice(0, 200)}`)
-  }
-}
-
-async function resolveOrgId(secretKey: string, projectId: string): Promise<string> {
+/**
+ * Resolve the organization id from a project id via the Account API. Also used
+ * by callers outside the provisioning flow (e.g. the apply CLI, which needs the
+ * org id to look up an existing IAM policy). Throws with guidance when it
+ * cannot be resolved.
+ */
+export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
   // GET /account/v3/projects/{id} returns the Project object directly, not
   // wrapped in { project: ... }.
-  const project = await scw<{ organization_id?: string }>(secretKey, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`)
+  const project = await scwFetch<{ organization_id?: string }>({ secretKey }, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`)
   if (!project?.organization_id) {
     throw new Error(
       `Could not resolve organization_id from project ${projectId}. ` +
@@ -128,14 +113,13 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   const { callerSecretKey, projectId, slug } = opts
   const log = opts.log ?? ((msg) => console.info(msg))
 
-  const organizationId = opts.organizationId ?? (await resolveOrgId(callerSecretKey, projectId))
+  const organizationId = opts.organizationId ?? (await resolveOrganizationId(callerSecretKey, projectId))
 
   const appName = `${slug}-${config.suffix}`
   const policyName = `${appName}-policy`
 
   // 1. Find or create the IAM application.
-  const { applications } = await scw<{ applications: ScwApp[] }>(
-    callerSecretKey,
+  const { applications } = await scwFetch<{ applications: ScwApp[] }>({ secretKey: callerSecretKey },
     'GET',
     `${IAM_BASE}/applications?name=${encodeURIComponent(appName)}&organization_id=${organizationId}&page_size=20`,
   )
@@ -143,7 +127,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   if (app) {
     log(`  ${checkMark} Reusing IAM application: ${app.name} (${app.id})`)
   } else {
-    app = await scw<ScwApp>(callerSecretKey, 'POST', `${IAM_BASE}/applications`, {
+    app = await scwFetch<ScwApp>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/applications`, {
       name: appName,
       organization_id: organizationId,
       description: config.appDescription,
@@ -163,17 +147,16 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     if (!config.buildRules) {
       throw new Error('provisionScopedKey: buildRules is required when managePolicy is not false')
     }
-    const { policies } = await scw<{ policies: ScwPolicy[] }>(
-      callerSecretKey,
+    const { policies } = await scwFetch<{ policies: ScwPolicy[] }>({ secretKey: callerSecretKey },
       'GET',
       `${IAM_BASE}/policies?application_id=${app.id}&organization_id=${organizationId}&page_size=20`,
     )
     const existingPolicy = policies.find((p) => p.name === policyName)
     if (existingPolicy) {
-      await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
+      await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${existingPolicy.id}`)
       log(`  ${tildeMark} Removed existing policy: ${policyName} (recreating with current rules)`)
     }
-    await scw<ScwPolicy>(callerSecretKey, 'POST', `${IAM_BASE}/policies`, {
+    await scwFetch<ScwPolicy>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
       name: policyName,
       organization_id: organizationId,
       application_id: app.id,
@@ -194,18 +177,18 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId }
   }
 
-  const { api_keys: existingKeys = [] } = await scw<{ api_keys?: Array<{ access_key: string }> }>(
-    callerSecretKey,
+  const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
+    { secretKey: callerSecretKey },
     'GET',
     `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
   )
   for (const key of existingKeys) {
-    await scw(callerSecretKey, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
+    await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`)
     log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`)
   }
 
   // 4. Mint a fresh API key.
-  const apiKey = await scw<ScwApiKey>(callerSecretKey, 'POST', `${IAM_BASE}/api-keys`, {
+  const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
     application_id: app.id,
     description: `${config.suffix} — rotated ${new Date().toISOString().slice(0, 10)}`,
     default_project_id: projectId,
@@ -221,23 +204,12 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 }
 
 /**
- * Resolve the organization id from a project id via the Account API. Exported
- * for callers outside the provisioning flow (e.g. the apply CLI, which needs
- * the org id to look up an existing IAM policy). Throws with guidance when it
- * cannot be resolved.
- */
-export function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  return resolveOrgId(secretKey, projectId)
-}
-
-/**
  * Find an IAM policy id by exact name within an organization, or undefined when
  * none matches. Used to detect a pre-existing (orphaned) policy that must be
  * adopted into Pulumi state rather than re-created.
  */
 export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
-  const { policies } = await scw<{ policies: ScwPolicy[] }>(
-    secretKey,
+  const { policies } = await scwFetch<{ policies: ScwPolicy[] }>({ secretKey },
     'GET',
     `${IAM_BASE}/policies?organization_id=${organizationId}&policy_name=${encodeURIComponent(name)}&page_size=20`,
   )

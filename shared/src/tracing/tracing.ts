@@ -154,8 +154,8 @@ export function computeSpanStats(spans: SpanData[]): SpanStats {
   }
 
   const avgDurationMs: Record<string, number> = {};
-  for (const prefix of Object.keys(durationSums)) {
-    avgDurationMs[prefix] = Math.round(durationSums[prefix] / durationCounts[prefix]);
+  for (const [prefix, sum] of Object.entries(durationSums)) {
+    avgDurationMs[prefix] = Math.round(sum / (durationCounts[prefix] ?? 1));
   }
 
   return { total: spans.length, byPrefix, avgDurationMs, errorCount };

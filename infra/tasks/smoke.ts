@@ -25,7 +25,10 @@
  */
 import { readFileSync } from 'node:fs'
 import { sleep as defaultSleep } from 'shared/sleep'
-import { isMain } from '../lib/is-main'
+import { errorMessage } from '../lib/utils/errors'
+import { isMain } from '../lib/utils/is-main'
+import { pollUntil } from '../lib/utils/retry'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
 
@@ -184,100 +187,95 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS
   const results: SmokeResult[] = []
 
+  // Runs one named check: the body returns `ok` (+ failure detail), the wrapper
+  // owns the try/catch and result collection so no check can short-circuit.
+  const check = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>): Promise<void> => {
+    try {
+      const { ok, detail } = await fn()
+      results.push(ok ? { name, ok: true } : { name, ok: false, detail })
+    } catch (err) {
+      results.push({ name, ok: false, detail: errorMessage(err) })
+    }
+  }
+
   // 1. Frontend index.html references the freshly built hashed entry asset.
   // When the local dist hash is known (expectedAsset), assert the served HTML
   // references that exact bundle — the post-publish bundle check folded in from
   // the former verify-frontend-bundle task. Otherwise fall back to "references
   // some hashed asset" so the check still runs without the artifact.
-  {
-    const name = opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset'
-    try {
-      const res = await get(`${frontendUrl}/`)
-      const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
-      const detail = opts.expectedAsset && res.ok ? `served does not reference ${opts.expectedAsset}` : `status=${res.status}`
-      results.push(res.ok && matched ? { name, ok: true } : { name, ok: false, detail })
-    } catch (err) {
-      results.push({ name, ok: false, detail: (err as Error).message })
-    }
-  }
+  await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
+    const res = await get(`${frontendUrl}/`)
+    const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
+    // Detail mirrors the branch that actually failed: a bad status, or a 200
+    // whose HTML lacks the expected (or any) hashed entry asset.
+    const detail = !res.ok
+      ? `status=${res.status}`
+      : opts.expectedAsset
+        ? `served does not reference ${opts.expectedAsset}`
+        : 'no hashed entry asset found in served index.html'
+    return { ok: res.ok && matched, detail }
+  })
 
   // 2. Backend OpenAPI spec is reachable.
-  try {
+  await check('backend /openapi.json reachable', async () => {
     const res = await get(`${backendUrl}/openapi.json`)
-    results.push({ name: 'backend /openapi.json reachable', ok: res.ok, detail: res.ok ? undefined : `status=${res.status}` })
-  } catch (err) {
-    results.push({ name: 'backend /openapi.json reachable', ok: false, detail: (err as Error).message })
-  }
+    return { ok: res.ok, detail: `status=${res.status}` }
+  })
 
   // 3. Public services report the deployed release SHA. Internal-only services
   // (cdc) have no health_url and are covered by the aggregate backend health.
   const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter((service) => service.health_url)
   for (const service of publicServices) {
-    const name = `${service.service} reports deployed SHA`
-    try {
+    await check(`${service.service} reports deployed SHA`, async () => {
       const res = await get(`${service.health_url}/health`)
       const version = res.headers.get('x-app-version') ?? undefined
-      results.push(
-        isHealthy({ status: res.status, version }, expectedSha)
-          ? { name, ok: true }
-          : { name, ok: false, detail: `served=${version ?? '<missing>'} expected=${expectedSha}` },
-      )
-    } catch (err) {
-      results.push({ name, ok: false, detail: (err as Error).message })
-    }
+      return {
+        ok: isHealthy({ status: res.status, version }, expectedSha),
+        detail: `served=${version ?? '<missing>'} expected=${expectedSha}`,
+      }
+    })
   }
 
   // 4. SPA route fallback returns an HTML document.
-  try {
+  await check('SPA fallback returns HTML', async () => {
     const res = await get(`${frontendUrl}/__smoke_${Date.now()}`)
-    results.push(
-      res.ok && isHtmlDocument(res.body)
-        ? { name: 'SPA fallback returns HTML', ok: true }
-        : { name: 'SPA fallback returns HTML', ok: false, detail: `status=${res.status}` },
-    )
-  } catch (err) {
-    results.push({ name: 'SPA fallback returns HTML', ok: false, detail: (err as Error).message })
-  }
+    return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` }
+  })
 
   // 5. Frontend security headers are present.
-  try {
+  await check('security headers present', async () => {
     const res = await get(`${frontendUrl}/`)
     const missing = missingSecurityHeaders(res.headers)
-    results.push(missing.length === 0 ? { name: 'security headers present', ok: true } : { name: 'security headers present', ok: false, detail: `missing: ${missing.join(', ')}` })
-  } catch (err) {
-    results.push({ name: 'security headers present', ok: false, detail: (err as Error).message })
-  }
+    return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` }
+  })
 
   // 6. Backend reports every health component healthy (db / cdc / yjs / ai).
   // Retried across one CDC-reconnect backoff cycle: right after a roll the
   // worker's WebSocket can still be mid-reconnect, surfacing as a transient
   // worker_disconnected. Pass on the first clean read; a genuinely broken
   // component stays bad for the whole budget and still fails.
-  {
+  await check('backend components healthy', async () => {
     let lastDetail = 'no response'
-    let healthy = false
-    for (let attempt = 1; attempt <= componentsRetryAttempts; attempt++) {
-      try {
-        const res = await get(`${backendUrl}/health?depth=full`)
-        if (!res.ok) {
-          lastDetail = `status=${res.status}`
-        } else {
-          const issues = unhealthyComponents(res.body)
-          if (issues.length === 0) {
-            healthy = true
-            break
+    const healthy = await pollUntil(
+      async () => {
+        try {
+          const res = await get(`${backendUrl}/health?depth=full`)
+          if (!res.ok) {
+            lastDetail = `status=${res.status}`
+            return undefined
           }
+          const issues = unhealthyComponents(res.body)
+          if (issues.length === 0) return true
           lastDetail = formatComponentIssues(issues)
+        } catch (err) {
+          lastDetail = errorMessage(err)
         }
-      } catch (err) {
-        lastDetail = (err as Error).message
-      }
-      if (attempt < componentsRetryAttempts) await sleep(componentsRetryDelayMs)
-    }
-    results.push(
-      healthy ? { name: 'backend components healthy', ok: true } : { name: 'backend components healthy', ok: false, detail: lastDetail },
+        return undefined
+      },
+      { attempts: componentsRetryAttempts, intervalMs: componentsRetryDelayMs, sleep },
     )
-  }
+    return { ok: healthy === true, detail: lastDetail }
+  })
 
   return results
 }
@@ -293,18 +291,7 @@ interface CliArgs {
 }
 
 export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string }> {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
-  return parsed.map((item, index) => {
-    if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
-    const service = (item as Record<string, unknown>).service
-    const healthUrl = (item as Record<string, unknown>).health_url
-    const publicUrl = (item as Record<string, unknown>).public_url
-    if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
-    if (typeof healthUrl !== 'string') throw new Error(`--services-json[${index}].health_url must be a string`)
-    if (publicUrl !== undefined && typeof publicUrl !== 'string') throw new Error(`--services-json[${index}].public_url must be a string`)
-    return { service, health_url: healthUrl, public_url: publicUrl }
-  })
+  return parseServiceRows(raw, '--services-json', { required: ['service', 'health_url'], optional: ['public_url'] })
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -332,7 +319,7 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   try {
     html = readFileSync(dist, 'utf-8')
   } catch (err) {
-    console.error(`::error::Could not read ${dist}: ${(err as Error)?.message ?? 'unknown error'}`)
+    console.error(`::error::Could not read ${dist}: ${errorMessage(err)}`)
     console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
     process.exit(1)
   }

@@ -33,19 +33,19 @@ import { serviceGenerationIps } from './compute'
  * names) stay stable for resources that predate the registry-driven loop.
  * Migration metadata only — a NEW service needs no entry here.
  */
-const legacyBaseNames: Record<string, string> = { backend: 'api', frontend: 'app' }
-const baseName = (slug: string) => legacyBaseNames[slug] ?? slug
+const legacyBaseNames: Partial<Record<ServiceName, string>> = { backend: 'api', frontend: 'app' }
+const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug
 
-const _serviceUrls: Record<string, pulumi.Output<string>> = {}
-let _lbId: pulumi.Output<string | undefined> = pulumi.output(undefined)
-let _lbBackendIds: pulumi.Output<Record<string, string>> = pulumi.output({} as Record<string, string>)
+/** Everything the rest of the program consumes from this module. */
+interface LoadBalancerOutputs {
+  /** Public URL per LB-exposed service slug. */
+  serviceUrls: Record<string, pulumi.Output<string>>
+  lbId: pulumi.Output<string | undefined>
+  lbBackendIds: pulumi.Output<Record<string, string>>
+}
 
-// ---------------------------------------------------------------------------
-// Guard — skip while compute is deferred (fresh bootstrap); without compute VMs
-// the LB has no backends to route to. A real domain is asserted in pulumi-context.
-// ---------------------------------------------------------------------------
-
-if (infra.computeEnabled) {
+/** Provision the LB + DNS + certs + backends/frontends and return the outputs. */
+function provisionLoadBalancer(): LoadBalancerOutputs {
   // LB-exposed services, derived from the canonical registry (feature flag +
   // `lbRoute`) so the LB never re-decides independently of compute. A service
   // is LB-exposed iff it is enabled AND declares an `lbRoute`.
@@ -84,7 +84,6 @@ if (infra.computeEnabled) {
       privateNetworkId,
     }],
   })
-  _lbId = lb.id
 
   // -------------------------------------------------------------------------
   // DNS A Records — all point to the LB public IP.
@@ -184,7 +183,6 @@ if (infra.computeEnabled) {
   }
 
   const defaultBackend = backends.get(defaultService.slug)!
-  _lbBackendIds = pulumi.output(Object.fromEntries([...backends.entries()].map(([service, backend]) => [service, backend.id])))
 
   // -------------------------------------------------------------------------
   // HTTPS Frontend (port 443) — TLS termination + host-header routes
@@ -268,16 +266,32 @@ if (infra.computeEnabled) {
   })
 
   // -------------------------------------------------------------------------
-  // Exports — public URL per LB-exposed service (scheme from appConfig)
+  // Outputs — public URL per LB-exposed service (scheme from appConfig)
   // -------------------------------------------------------------------------
 
+  const serviceUrls: Record<string, pulumi.Output<string>> = {}
   for (const service of lbServices) {
-    const scheme = schemeBySlug.get(service.slug) ?? 'https:'
-    _serviceUrls[service.slug] = pulumi.output(`${scheme}//${serviceHost(service.slug)}`)
+    // lbServices ⊆ endpoints (both are gated on lbRoute), so the scheme lookup
+    // always hits; a miss would be a registry bug worth failing loudly on.
+    const scheme = schemeBySlug.get(service.slug)
+    if (!scheme) throw new Error(`loadbalancer: no endpoint scheme for LB service '${service.slug}'`)
+    serviceUrls[service.slug] = pulumi.output(`${scheme}//${serviceHost(service.slug)}`)
+  }
+
+  return {
+    serviceUrls,
+    lbId: lb.id,
+    lbBackendIds: pulumi.output(Object.fromEntries([...backends.entries()].map(([service, backend]) => [service, backend.id]))),
   }
 }
 
+// Guard — skip while compute is deferred (fresh bootstrap); without compute VMs
+// the LB has no backends to route to. A real domain is asserted in pulumi-context.
+const outputs: LoadBalancerOutputs = infra.computeEnabled
+  ? provisionLoadBalancer()
+  : { serviceUrls: {}, lbId: pulumi.output(undefined), lbBackendIds: pulumi.output({} as Record<string, string>) }
+
 /** Public URL per LB-exposed service slug; empty when no domain/compute. */
-export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = _serviceUrls
-export const lbId = _lbId
-export const lbBackendIds = _lbBackendIds
+export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = outputs.serviceUrls
+export const lbId = outputs.lbId
+export const lbBackendIds = outputs.lbBackendIds

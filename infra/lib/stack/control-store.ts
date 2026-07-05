@@ -16,6 +16,9 @@
  * tested directly; the I/O functions take an injected client (`.send`) so they
  * can be exercised with a mock, mirroring `ensure-state-bucket.ts`.
  */
+import { isRecord } from '../utils/guards'
+import { scwS3Endpoint } from '../scaleway/scw-fetch'
+import { errorMessage } from '../utils/errors'
 
 /** A materialized, content-addressed generation: the VM resource is
  *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
@@ -72,6 +75,59 @@ export interface S3Like {
   send(command: unknown): Promise<{ Body?: { transformToString(): Promise<string> }; ETag?: string }>
 }
 
+/** Lazy SDK loader — keeps `@aws-sdk/client-s3` out of the Pulumi plan path. */
+const s3sdk = () => import('@aws-sdk/client-s3')
+
+/** Conditional-write options mapping to Scaleway's `If-Match`/`If-None-Match`. */
+interface ConditionalWrite {
+  ifMatch?: string
+  ifNoneMatch?: string
+}
+
+/** GET an object's text body + etag; `{}` when the object does not exist. */
+async function getObjectText(s3: S3Like, bucket: string, key: string): Promise<{ body?: string; etag?: string }> {
+  const { GetObjectCommand } = await s3sdk()
+  try {
+    const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+    return { body: res.Body ? await res.Body.transformToString() : '', etag: res.ETag }
+  } catch (err) {
+    if (isNotFound(err)) return {}
+    throw err
+  }
+}
+
+/** PUT a JSON object body with optional conditional-write headers. */
+async function putJsonObject(s3: S3Like, bucket: string, key: string, body: string, opts: ConditionalWrite): Promise<{ etag?: string }> {
+  const { PutObjectCommand } = await s3sdk()
+  const res = await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: 'application/json',
+      ...(opts.ifMatch ? { IfMatch: opts.ifMatch } : {}),
+      ...(opts.ifNoneMatch ? { IfNoneMatch: opts.ifNoneMatch } : {}),
+    }),
+  )
+  return { etag: res.ETag }
+}
+
+/** Name + HTTP status of an S3-style error, however the SDK shaped it. */
+function s3ErrorInfo(err: unknown): { name?: string; status?: number } {
+  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
+  return { name: e?.name, status: e?.$metadata?.httpStatusCode }
+}
+
+function isNotFound(err: unknown): boolean {
+  const { name, status } = s3ErrorInfo(err)
+  return name === 'NoSuchKey' || name === 'NotFound' || status === 404
+}
+
+function isPreconditionFailed(err: unknown): boolean {
+  const { name, status } = s3ErrorInfo(err)
+  return name === 'PreconditionFailed' || status === 412
+}
+
 export function emptyControlState(): ControlState {
   return { schemaVersion: 2, bootstrap: {}, rollout: {} }
 }
@@ -92,10 +148,6 @@ export function controlKey(stack: string): string {
 export function lockKey(stack: string): string {
   const short = stack.split('/').pop() ?? stack
   return `control/${short}.lock.json`
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function parseGenRef(slug: string, field: string, value: unknown): GenRef {
@@ -125,7 +177,7 @@ export function parseControlState(text: string): ControlState {
   try {
     raw = JSON.parse(text)
   } catch (err) {
-    throw new Error(`control: not valid JSON (${(err as Error).message})`)
+    throw new Error(`control: not valid JSON (${errorMessage(err)})`)
   }
   if (!isRecord(raw)) throw new Error('control: root must be an object')
   if (raw.schemaVersion !== 2) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`)
@@ -189,15 +241,8 @@ export function promote(current: ServiceRollout | undefined, resolved: { id: str
 /** Read the control object. Returns the empty state (and no etag) when the
  *  object does not exist yet — the caller decides whether that is acceptable. */
 export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
-  const { GetObjectCommand } = await import('@aws-sdk/client-s3')
-  try {
-    const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
-    const body = res.Body ? await res.Body.transformToString() : ''
-    return { state: body ? parseControlState(body) : emptyControlState(), etag: res.ETag }
-  } catch (err: unknown) {
-    if (isNotFound(err)) return { state: emptyControlState() }
-    throw err
-  }
+  const { body, etag } = await getObjectText(s3, bucket, key)
+  return { state: body ? parseControlState(body) : emptyControlState(), etag }
 }
 
 /** Write the control object. `ifMatch`/`ifNoneMatch` map to the conditional-write
@@ -207,25 +252,9 @@ export async function writeControlState(
   bucket: string,
   key: string,
   state: ControlState,
-  opts: { ifMatch?: string; ifNoneMatch?: string } = {},
+  opts: ConditionalWrite = {},
 ): Promise<{ etag?: string }> {
-  const { PutObjectCommand } = await import('@aws-sdk/client-s3')
-  const res = await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: serializeControlState(state),
-      ContentType: 'application/json',
-      ...(opts.ifMatch ? { IfMatch: opts.ifMatch } : {}),
-      ...(opts.ifNoneMatch ? { IfNoneMatch: opts.ifNoneMatch } : {}),
-    }),
-  )
-  return { etag: res.ETag }
-}
-
-function isNotFound(err: unknown): boolean {
-  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
-  return e?.name === 'NoSuchKey' || e?.name === 'NotFound' || e?.$metadata?.httpStatusCode === 404
+  return putJsonObject(s3, bucket, key, serializeControlState(state), opts)
 }
 
 // ---------------------------------------------------------------------------
@@ -235,27 +264,51 @@ function isNotFound(err: unknown): boolean {
 
 /** Build an S3 client for the state bucket with explicit credentials. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
-  const { S3Client } = await import('@aws-sdk/client-s3')
+  const { S3Client } = await s3sdk()
+  // The cast keeps the SDK behind the minimal structural port above, so tests
+  // can satisfy S3Like with a plain fake instead of the real client.
   return new S3Client({
     region,
-    endpoint: `https://s3.${region}.scw.cloud`,
+    endpoint: scwS3Endpoint(region),
     credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
     forcePathStyle: false,
   }) as unknown as S3Like
-}
-
-/** Build an S3 client for the state bucket from SCW_* (or AWS_*) env credentials. */
-export async function controlClientFromEnv(region: string): Promise<S3Like> {
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
-  if (!accessKey || !secretKey) throw new Error('control-store: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required to write rollout state')
-  return makeControlClient(region, accessKey, secretKey)
 }
 
 /** Identifies the writer in `updatedBy`: CI run or local operator. */
 export function controlActor(): string {
   if (process.env.GITHUB_RUN_NUMBER) return `ci:run-${process.env.GITHUB_RUN_NUMBER}`
   return `operator:${process.env.USER ?? process.env.LOGNAME ?? 'unknown'}`
+}
+
+/** Everything a task needs to address a stack's control + lock objects. */
+export interface ControlContext {
+  s3: S3Like
+  bucket: string
+  /** Key of the control object for the stack. */
+  controlKey: string
+  /** Key of the lock object for the stack. */
+  lockKey: string
+}
+
+/**
+ * Resolve the control-object context for a fully-qualified stack from the
+ * environment: sets APP_MODE from the stack's short name (so `shared`'s
+ * appConfig resolves the right mode), builds the S3 client from SCW_* (or
+ * AWS_*) credentials, and derives bucket + keys. Returns null (with a warning)
+ * when no credentials are present — the caller then skips control-store writes.
+ */
+export async function controlContextForStack(stack: string, log: (msg: string) => void = console.warn): Promise<ControlContext | null> {
+  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
+  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
+  if (!accessKey || !secretKey) {
+    log('control-store: no S3 credentials (SCW_* or AWS_*); cannot read/write rollout state')
+    return null
+  }
+  process.env.APP_MODE ??= stack.split('/').pop()
+  const { appConfig } = await import('shared')
+  const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey)
+  return { s3, bucket: stateBucket(appConfig.slug), controlKey: controlKey(stack), lockKey: lockKey(stack) }
 }
 
 /** Read-modify-write a single service's rollout entry. Uses `If-Match` when the
@@ -305,34 +358,12 @@ function parseLockInfo(text: string): LockInfo | undefined {
 }
 
 async function readLock(s3: S3Like, bucket: string, key: string): Promise<{ info?: LockInfo; etag?: string }> {
-  const { GetObjectCommand } = await import('@aws-sdk/client-s3')
-  try {
-    const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
-    const body = res.Body ? await res.Body.transformToString() : ''
-    return { info: body ? parseLockInfo(body) : undefined, etag: res.ETag }
-  } catch (err) {
-    if (isNotFound(err)) return {}
-    throw err
-  }
+  const { body, etag } = await getObjectText(s3, bucket, key)
+  return { info: body ? parseLockInfo(body) : undefined, etag }
 }
 
-async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, opts: { ifMatch?: string; ifNoneMatch?: string }): Promise<void> {
-  const { PutObjectCommand } = await import('@aws-sdk/client-s3')
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: `${JSON.stringify(info, null, 2)}\n`,
-      ContentType: 'application/json',
-      ...(opts.ifMatch ? { IfMatch: opts.ifMatch } : {}),
-      ...(opts.ifNoneMatch ? { IfNoneMatch: opts.ifNoneMatch } : {}),
-    }),
-  )
-}
-
-function isPreconditionFailed(err: unknown): boolean {
-  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } }
-  return e?.name === 'PreconditionFailed' || e?.$metadata?.httpStatusCode === 412
+async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, opts: ConditionalWrite): Promise<void> {
+  await putJsonObject(s3, bucket, key, `${JSON.stringify(info, null, 2)}\n`, opts)
 }
 
 /** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is
@@ -372,7 +403,7 @@ export async function acquireLock(
 /** Release the lock only if we still own it (avoids deleting a lock that was
  *  broken and re-taken by someone else). */
 export async function releaseLock(s3: S3Like, bucket: string, key: string, owner: string): Promise<void> {
-  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
+  const { DeleteObjectCommand } = await s3sdk()
   const { info } = await readLock(s3, bucket, key)
   if (!info || info.owner !== owner) return
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
@@ -380,7 +411,7 @@ export async function releaseLock(s3: S3Like, bucket: string, key: string, owner
 
 /** Unconditionally remove the lock (the `infra unlock` escape hatch). */
 export async function forceUnlock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
-  const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
+  const { DeleteObjectCommand } = await s3sdk()
   const { info } = await readLock(s3, bucket, key)
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
   return info

@@ -18,12 +18,11 @@ describe('compose synth', () => {
     for (const meta of services) expect(profiles.has(meta.slug)).toBe(true)
   })
 
-  it('expose port equals the declared healthPort for each logical service', () => {
+  it('published port equals the declared healthPort for each logical service', () => {
     for (const svc of Object.values(composeConfig.services)) {
-      const meta = (svc as { 'x-service'?: { healthPort: number } })['x-service']
-      const expose = (svc as { expose?: readonly string[] }).expose
-      if (!meta || !expose) continue
-      expect(expose).toContain(String(meta.healthPort))
+      const meta = svc['x-service']
+      if (!meta || !svc.ports) continue
+      expect(svc.ports.some((port) => port.includes(String(meta.healthPort)))).toBe(true)
     }
   })
 })

@@ -1,5 +1,6 @@
 
 import type { appConfig as AppConfig } from '../../shared'
+import { stateBucket } from './stack/control-store'
 
 type Cfg = typeof AppConfig
 
@@ -22,7 +23,7 @@ export function deriveInfra(appConfig: Cfg) {
       frontendBucket: `${prefix}-frontend`,
       publicBucket: appConfig.s3.publicBucket,
       privateBucket: appConfig.s3.privateBucket,
-      pulumiStateBucket: `${prefix}-pulumi-state`,
+      pulumiStateBucket: stateBucket(prefix),
       bootDiagBucket: `${prefix}-boot-diag`,
       // Registry namespace names require >= 4 chars and no hyphens; slug length
       // is validated at config load, so only hyphens need stripping here.
@@ -34,6 +35,13 @@ export function deriveInfra(appConfig: Cfg) {
     region,
     zone: `${region}-1`,
     tags: [`env=${appConfig.mode}`, `app=${appConfig.slug}`, 'managed-by=pulumi'],
+    // The same tags as a key→value map, for resources (Object Storage buckets)
+    // whose API takes a record instead of `key=value` strings.
+    tagsAsMap: {
+      env: appConfig.mode,
+      app: appConfig.slug,
+      'managed-by': 'pulumi',
+    } as Record<string, string>,
     isProduction: appConfig.mode === 'production',
     hasDomain: Boolean(appConfig.domain && appConfig.domain !== 'localhost'),
   }

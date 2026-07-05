@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { getFlag } from './args'
+import { errorMessage } from '../lib/utils/errors'
 
 interface RolloutItem {
   service: string
@@ -8,16 +10,7 @@ interface RolloutItem {
 }
 
 function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error(`${flag} must be a JSON array`)
-  return parsed.map((item, index) => {
-    if (!item || typeof item !== 'object') throw new Error(`${flag}[${index}] must be an object`)
-    const service = (item as Record<string, unknown>).service
-    const healthUrl = (item as Record<string, unknown>).health_url
-    if (typeof service !== 'string') throw new Error(`${flag}[${index}].service must be a string`)
-    if (typeof healthUrl !== 'string') throw new Error(`${flag}[${index}].health_url must be a string`)
-    return { service, health_url: healthUrl }
-  })
+  return parseServiceRows(raw, flag, { required: ['service', 'health_url'] })
 }
 
 function runDeployService(item: RolloutItem, opts: { stack: string; sha: string }): void {
@@ -49,7 +42,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
 if (isMain(import.meta.url)) {
   main().catch((err) => {
-    console.error(err instanceof Error ? err.message : err)
+    console.error(errorMessage(err))
     process.exit(1)
   })
 }

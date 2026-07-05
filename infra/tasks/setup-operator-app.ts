@@ -9,7 +9,7 @@
  * The shared provisioning flow lives in `lib/scaleway-iam.ts`; this file owns
  * only the operator-specific policy rules.
  */
-import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway-iam'
+import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
 
 export type SetupOperatorAppOptions = ProvisionScopedKeyOptions
 export type OperatorAppResult = ScopedKeyResult

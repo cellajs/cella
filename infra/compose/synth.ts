@@ -7,8 +7,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { isMain } from '../lib/is-main'
-import { infraDir } from '../lib/paths'
+import { isMain } from '../lib/utils/is-main'
+import { infraDir } from '../lib/utils/paths'
 import { composeConfig } from './compose'
 import type { ComposeFile } from './types'
 
@@ -39,10 +39,10 @@ function scalar(v: string, forceQuote = false): string {
   return v
 }
 
-function emitMapping(obj: Record<string, unknown>, indent: number): string[] {
+function emitMapping(obj: object, indent: number): string[] {
   const pad = '  '.repeat(indent)
   const lines: string[] = []
-  for (const [key, val] of Object.entries(obj)) {
+  for (const [key, val] of Object.entries(obj) as Array<[string, unknown]>) {
     if (val === null || val === undefined) {
       lines.push(`${pad}${key}:`)
     } else if (Array.isArray(val)) {
@@ -55,7 +55,7 @@ function emitMapping(obj: Record<string, unknown>, indent: number): string[] {
       }
     } else if (typeof val === 'object') {
       lines.push(`${pad}${key}:`)
-      lines.push(...emitMapping(val as Record<string, unknown>, indent + 1))
+      lines.push(...emitMapping(val, indent + 1))
     } else if (typeof val === 'number' || typeof val === 'boolean') {
       lines.push(`${pad}${key}: ${val}`)
     } else {
@@ -70,11 +70,7 @@ export function renderCompose(file: ComposeFile): string {
   const lines: string[] = ['services:']
   for (const [name, svc] of Object.entries(file.services)) {
     lines.push(`  ${name}:`)
-    lines.push(...emitMapping(svc as unknown as Record<string, unknown>, 2))
-  }
-  if (file.volumes) {
-    lines.push('', 'volumes:')
-    lines.push(...emitMapping(file.volumes as Record<string, unknown>, 1))
+    lines.push(...emitMapping(svc, 2))
   }
   return `${GENERATED_HEADER}\n\n${lines.join('\n')}\n`
 }

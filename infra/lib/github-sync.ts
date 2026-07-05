@@ -5,7 +5,7 @@
  * `environment:` in their workflow.
  */
 import { spawnSync } from 'node:child_process'
-import type { Environment } from './bootstrap-stack-state'
+import type { Environment } from './stack/bootstrap-stack-state'
 import { crossMark, warningMark } from 'shared/console'
 
 /** Parses `git remote get-url origin` output into `owner/repo`. Accepts both
@@ -48,16 +48,13 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
     return
   }
 
-  const step = (label: string, args: string[]) => {
-    console.info(`\n→ ${label}\n  $ ${args.join(' ')}`)
-    const code = run(args[0]!, args.slice(1), { cwd: opts.repoRoot })
+  const step = (label: string, cmd: string, args: string[]) => {
+    console.info(`\n→ ${label}\n  $ ${cmd} ${args.join(' ')}`)
+    const code = run(cmd, args, { cwd: opts.repoRoot })
     if (code !== 0) console.error(`${crossMark} ${label} failed (exit ${code})`)
   }
 
-  step(
-    `Ensure GitHub Environment "${opts.environment}"`,
-    ['gh', 'api', '-X', 'PUT', `repos/${ownerRepo}/environments/${opts.environment}`, '--silent'],
-  )
+  step(`Ensure GitHub Environment "${opts.environment}"`, 'gh', ['api', '-X', 'PUT', `repos/${ownerRepo}/environments/${opts.environment}`, '--silent'])
 
   if (opts.ciKey) {
     const { accessKey, secretKey, projectId, organizationId } = opts.ciKey
@@ -67,10 +64,7 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<vo
       ['SCW_PROJECT_ID', projectId],
       ['SCW_ORGANIZATION_ID', organizationId],
     ] as const) {
-      step(
-        `gh secret set ${name} (env: ${opts.environment})`,
-        ['gh', 'secret', 'set', name, '--env', opts.environment, '--repo', ownerRepo, '--body', value],
-      )
+      step(`gh secret set ${name} (env: ${opts.environment})`, 'gh', ['secret', 'set', name, '--env', opts.environment, '--repo', ownerRepo, '--body', value])
     }
   }
 }

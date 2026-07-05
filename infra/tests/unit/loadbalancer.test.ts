@@ -68,7 +68,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   it('keeps pre-refactor Pulumi resource names stable (regression guard)', () => {
     // backend→api and frontend→app produce the original URNs (api-dns,
     // api-cert, app-dns, app-cert, app-route) so no resource is replaced.
-    expect(src).toMatch(/legacyBaseNames:\s*Record<string,\s*string>\s*=\s*\{\s*backend:\s*'api',\s*frontend:\s*'app'\s*\}/)
+    expect(src).toMatch(/legacyBaseNames:\s*Partial<Record<ServiceName,\s*string>>\s*=\s*\{\s*backend:\s*'api',\s*frontend:\s*'app'\s*\}/)
   })
 
   it('skips dns/cert/route for a service whose host is the zone apex', () => {

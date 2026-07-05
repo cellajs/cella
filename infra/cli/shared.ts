@@ -1,10 +1,15 @@
-import { confirm } from '@inquirer/prompts'
+import { spawnSync } from 'node:child_process'
+import { confirm, input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { crossMark, warningMark } from 'shared/console'
 import type { appConfig as AppConfig } from 'shared'
-import type { Environment, StackState } from '../lib/bootstrap-stack-state'
-import { verifyStackPassphrase } from '../lib/pulumi-passphrase'
+import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state'
+import { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } from '../lib/stack/control-store'
+import { errorMessage } from '../lib/utils/errors'
+import { verifyStackPassphrase } from '../lib/stack/pulumi-passphrase'
 import { maskedSecret } from './prompts/masked-secret'
+
+type AppConfigType = typeof AppConfig
 
 /** Infra CLI operation modes */
 export type CliMode = 'resume' | 'rotate' | 'apply' | 'preview' | 'secrets' | 'unlock'
@@ -38,7 +43,8 @@ export interface StepOptions {
 export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
   const names = Array.isArray(envName) ? envName : [envName]
   for (const name of names) {
-    if (process.env[name]) return process.env[name] as string
+    const value = process.env[name]
+    if (value) return value
   }
   return prompt()
 }
@@ -68,6 +74,68 @@ export async function resolveVerifiedPassphrase(stackYaml: string | undefined): 
     const entered = await maskedSecret({ message: 'Pulumi passphrase' })
     if (verifyStackPassphrase(stackYaml, entered)) return entered
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`)
+  }
+}
+
+/** The "Pulumi stack name" prompt every action shares. */
+export function promptStackName(context: InfraContext): Promise<string> {
+  return input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
+}
+
+/** A required free-text prompt (used for Scaleway access keys). */
+export function promptRequiredInput(message: string): Promise<string> {
+  return input({ message, validate: (value) => !!value.trim() || '(required)' })
+}
+
+/** S3-backend login URL for the app's Pulumi state bucket. */
+export function pulumiLoginUrl(appConfig: AppConfigType): string {
+  return `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`
+}
+
+/** `pulumi login` (exits on failure) + `pulumi stack select` (best-effort — the
+ *  caller may be about to init the stack) against the S3 state backend. */
+export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, appConfig: AppConfigType, targetStack: string): void {
+  const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' })
+  if (login.status !== 0) {
+    console.error(`${crossMark} pulumi login failed (exit ${login.status}). Check the state-bucket credentials (AWS_* env).`)
+    process.exit(login.status ?? 1)
+  }
+  spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env, stdio: 'ignore' })
+}
+
+/** Handle to a held stack lock; `release` never throws (logs a warning instead). */
+export interface StackLockHandle {
+  release: () => Promise<void>
+}
+
+/**
+ * Acquire the S3 conditional-write stack lock (so a second operator or CI
+ * cannot mutate the stack concurrently), or exit(1) with pointers to the
+ * "Unlock" escape hatch when it is already held. A dead run's lock self-expires
+ * after the TTL.
+ */
+export async function acquireStackLockOrExit(opts: {
+  appConfig: AppConfigType
+  accessKey: string
+  secretKey: string
+  stack: string
+  operation: string
+  ttlMs?: number
+}): Promise<StackLockHandle> {
+  const s3 = await makeControlClient(opts.appConfig.s3.region, opts.accessKey, opts.secretKey)
+  const bucket = stateBucket(opts.appConfig.slug)
+  const key = lockKey(opts.stack)
+  const owner = controlActor()
+  const lock = await acquireLock(s3, bucket, key, { owner, operation: opts.operation, ttlMs: opts.ttlMs ?? 30 * 60_000 })
+  if (!lock.acquired) {
+    console.error(
+      `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(lock.held.owner)} (operation: ${lock.held.operation}, since ${lock.held.acquiredAt}).`,
+    )
+    console.error(`  If that run is dead, clear it with the CLI "Unlock" action or remove s3://${bucket}/${key}.`)
+    process.exit(1)
+  }
+  return {
+    release: () => releaseLock(s3, bucket, key, owner).catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`)),
   }
 }
 
@@ -108,5 +176,5 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
     if (code !== 0) process.exit(code)
   }
 
-  return { step, must }
+  return { must }
 }

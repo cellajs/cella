@@ -5,7 +5,7 @@
  * Usage:  tsx infra/tasks/ensure-state-bucket.ts
  * Env:    SCW_ACCESS_KEY, SCW_SECRET_KEY
  */
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
 import { CreateBucketCommand, HeadBucketCommand, type S3Client } from '@aws-sdk/client-s3'
 
 export type EnsureResult = 'exists' | 'created'

@@ -1,11 +1,10 @@
 import { spawnSync } from 'node:child_process'
-import { input } from '@inquirer/prompts'
 import pc from 'shared/cli-utils/colors'
 import { warningMark } from 'shared/console'
-import { buildProviderEnv } from '../../lib/bootstrap-scw-env'
-import { infraDir } from '../../lib/paths'
+import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env'
+import { infraDir } from '../../lib/utils/paths'
 import { maskedSecret } from '../prompts/masked-secret'
-import { envOr, type InfraContext, resolveVerifiedPassphrase } from '../shared'
+import { envOr, type InfraContext, promptRequiredInput, promptStackName, pulumiLoginAndSelect, resolveVerifiedPassphrase } from '../shared'
 
 /** Read-only `pulumi preview` against the stack. Authenticates the provider
  *  from SCW_* env (not stack config) using a Scaleway key supplied here, so it
@@ -22,19 +21,15 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId } = context
 
-  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
-    input({ message: 'Scaleway access key (read access is enough)', validate: (v) => !!v.trim() || '(required)' }),
-  )
+  const accessKey = await envOr('SCW_ACCESS_KEY', () => promptRequiredInput('Scaleway access key (read access is enough)'))
   const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }))
 
-  const targetStack = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
+  const targetStack = await promptStackName(context)
 
   const previewEnv = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase })
 
   const { appConfig } = context
-  const loginUrl = `s3://${appConfig.slug}-pulumi-state?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`
-  spawnSync('pulumi', ['login', loginUrl], { cwd: infraDir, env: previewEnv, stdio: 'inherit' })
-  spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env: previewEnv, stdio: 'ignore' })
+  pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack)
 
   console.info(`\n→ pulumi preview\n  $ pulumi preview --stack ${targetStack} --diff`)
   const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff'], { cwd: infraDir, env: previewEnv, stdio: 'inherit' })

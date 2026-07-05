@@ -1,8 +1,8 @@
-import { getFlag } from '../../lib/args'
+import { getFlag } from '../../lib/utils/args'
 import { boot } from './boot'
 import { supportedSchemaVersion } from './plan'
 
-export const agentVersion = '0.1.0-dev'
+const agentVersion = '0.1.0-dev'
 
 function usage(): never {
   throw new Error('Usage: cella-boot-agent --version | supports --schema-version <n> | boot --plan <path>')

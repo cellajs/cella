@@ -9,10 +9,10 @@
  * bookends and stack-output discovery.
  *
  * Design:
- *   - PURE CORE — `expandBackend` / `contractBackend` / `pollSlotReleased` /
- *     `sequenceCutover` orchestrate the rollout over INJECTED effects, so the
- *     ordering (expand BEFORE contract, health before contract, drain BEFORE
- *     destroy) is fully unit-testable with a fake LB + fetch.
+ *   - PURE CORE — `contractBackend` / `sequenceCutover` orchestrate the rollout
+ *     over INJECTED effects, so the ordering (expand BEFORE contract, health
+ *     before contract, drain BEFORE destroy) is fully unit-testable with a fake
+ *     LB + fetch.
  *   - IMPURE EDGES — `createLbSetServers` (direct Scaleway `SetBackendServers`
  *     REST call) and the `pulumi up` create/destroy bookends in the entrypoint.
  *     These touch live infra and are exercised only in a real deploy / preview,
@@ -27,8 +27,8 @@
  * that Postgres permits exactly one consumer for, so there is no LB and no
  * overlap. The old worker must release the slot before the new one can acquire
  * it; the new generation only reports `/health` healthy once it holds the slot,
- * so "destroy old → poll new healthy" confirms the handoff (the `pollSlotReleased`
- * helper is the belt-and-suspenders Postgres-level gate when a checker is wired).
+ * so "destroy old → poll new healthy" confirms the handoff (deploy-service.ts
+ * orchestrates that ordering around its pulumi bookends).
  *
  * Usage:
  *   tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
@@ -38,21 +38,17 @@
  *     --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10
  *   (SCW_SECRET_KEY in env for the live LB call)
  */
-import { isMain } from '../lib/is-main'
+import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like'
+import { isRecord } from '../lib/utils/guards'
+import { isMain } from '../lib/utils/is-main'
+// The canonical strategy vocabulary lives on the Compose model (`x-service`
+// metadata). types.ts is Pulumi-free, so the pure core can import it directly
+// without silently forking the unions.
+import type { DrainPolicy, ReplacementStrategy } from '../compose/types'
 import { getFlag, getNumFlag, sleep as defaultSleep } from './args'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
-// ---------------------------------------------------------------------------
-// Strategy vocabulary (mirrors config/services.config.ts `replacementStrategy`
-// + `drainPolicy`). Kept as standalone literals so the pure core never imports
-// the Pulumi-bound registry.
-// ---------------------------------------------------------------------------
-
-/** How a service's VM generation is cut over on a deploy. */
-export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
-
-/** How the old generation is drained off the LB when it is de-registered. */
-export type DrainPolicy = 'requests' | 'reconnect'
+export type { DrainPolicy, ReplacementStrategy }
 
 // ---------------------------------------------------------------------------
 // Injected effects — every side effect the rollout performs is a function the
@@ -68,60 +64,13 @@ export type GetServersFn = () => Promise<string[]>
 /** Resolve true once the new generation is serving the expected release (app /health gate). */
 export type HealthGateFn = () => Promise<boolean>
 
-/** Resolve true while the replication slot is still held by the old consumer. */
-export type SlotActiveFn = () => Promise<boolean>
-
-/** Minimal `fetch` surface so the live LB call is unit-testable. */
-export type FetchLike = (
-  url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
-) => Promise<{ ok: boolean; status: number; text: () => Promise<string> }>
-
 // ---------------------------------------------------------------------------
 // Pure LB operations — one atomic `SetBackendServers` call each.
 // ---------------------------------------------------------------------------
 
-/** Expand the backend to serve BOTH generations (overlap window). */
-export async function expandBackend(setServers: SetServersFn, oldIps: string[], newIps: string[]): Promise<void> {
-  await setServers([...oldIps, ...newIps])
-}
-
 /** Contract the backend to serve ONLY the new generation (old removed, drains). */
 export async function contractBackend(setServers: SetServersFn, newIps: string[]): Promise<void> {
   await setServers(newIps)
-}
-
-// ---------------------------------------------------------------------------
-// Pure slot-release gate (exclusive / cdc). Polls until the old consumer has
-// released the slot, so the deploy never destroys a generation while it still
-// holds WAL. Bounded — exhausting the budget FAILS the deploy rather than
-// proceeding (a stuck old worker would otherwise bloat WAL on disk).
-// ---------------------------------------------------------------------------
-
-export interface PollSlotOptions {
-  isSlotActive: SlotActiveFn
-  attempts?: number
-  intervalMs?: number
-  sleep?: (ms: number) => Promise<void>
-  log?: (msg: string) => void
-}
-
-/** True once the slot is released; false if the budget is exhausted while still active. */
-export async function pollSlotReleased(opts: PollSlotOptions): Promise<boolean> {
-  const attempts = opts.attempts ?? 12
-  const intervalMs = opts.intervalMs ?? 5000
-  const sleep = opts.sleep ?? defaultSleep
-  const log = opts.log ?? ((msg: string) => console.info(msg))
-
-  for (let i = 1; i <= attempts; i++) {
-    if (!(await opts.isSlotActive())) {
-      log(`Replication slot released after ${i} attempt(s)`)
-      return true
-    }
-    log(`Attempt ${i}/${attempts}: replication slot still active — waiting for old consumer to release`)
-    if (i < attempts) await sleep(intervalMs)
-  }
-  return false
 }
 
 // ---------------------------------------------------------------------------
@@ -150,10 +99,6 @@ export interface CutoverPlan {
   getServers?: GetServersFn
   /** lb-overlap: run health/version polling after attaching the new generation to the LB. */
   healthAfterExpand?: boolean
-  /** exclusive: trigger the old generation to stop and release the slot (in practice, the pulumi destroy bookend). */
-  drainOldGeneration?: () => Promise<void>
-  /** exclusive: belt-and-suspenders Postgres-level slot-release gate. */
-  isSlotActive?: SlotActiveFn
 
   sleep?: (ms: number) => Promise<void>
   log?: (msg: string) => void
@@ -162,7 +107,7 @@ export interface CutoverPlan {
 export interface CutoverResult {
   ok: boolean
   /** Why the cutover stopped, when not ok. */
-  aborted?: 'unhealthy' | 'slot-stuck'
+  aborted?: 'unhealthy'
   /** Ordered record of the steps performed — asserted by the unit tests. */
   steps: string[]
 }
@@ -173,7 +118,8 @@ export interface CutoverResult {
  *
  * lb-overlap:  health-gate → expand [old,new] → reattach internal IP → contract [new] → drain
  *              or expand → health-gate → reattach → contract when CI must probe through the public LB
- * exclusive:   health-gate(process up) → drain+destroy old → slot released → (new acquires)
+ * exclusive:   health-gate(process up); the destroy-old / slot-handoff ordering
+ *              is orchestrated by deploy-service.ts around its pulumi bookends
  *
  * With a direct new-generation probe, an unhealthy generation aborts before any
  * LB mutation. With `healthAfterExpand`, the new generation is first attached
@@ -191,19 +137,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
 
   if (plan.strategy === 'exclusive') {
     // cdc: no LB, no overlap. The new worker is warm and idle-contending for the
-    // slot; the old worker must release it first.
+    // slot; the old worker must release it first (deploy-service.ts destroys the
+    // old generation and re-gates health after this returns).
     record('health-gate new generation (process up)')
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps }
-
-    record('drain + destroy old generation (releases slot)')
-    await plan.drainOldGeneration?.()
-
-    if (plan.isSlotActive) {
-      record('gate on Postgres slot release')
-      const released = await pollSlotReleased({ isSlotActive: plan.isSlotActive, sleep, log })
-      if (!released) return { ok: false, aborted: 'slot-stuck', steps }
-    }
-    record('new generation acquires slot')
+    record('new generation ready to acquire slot')
     return { ok: true, steps }
   }
 
@@ -288,7 +226,7 @@ function scalewayResourceId(id: string): string {
 
 /** Build the live `SetServersFn` that re-points one Scaleway LB backend. */
 export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const backendId = scalewayResourceId(opts.backendId)
   const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}/servers`
   return async (serverIps) => {
@@ -304,26 +242,35 @@ export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
   }
 }
 
+/** Extract the string entries of a value that may be an array. */
+function stringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.filter((entry): entry is string => typeof entry === 'string')
+}
+
+/** Defensive multi-shape parse of a Scaleway backend payload's server list. */
 function parseBackendServers(payload: string): string[] {
-  const data = JSON.parse(payload) as {
-    backend?: unknown
-    server_ip?: string[]
-    server_ips?: string[]
-    serverIps?: string[]
-    servers?: Array<string | { ip?: string; serverIp?: string; server_ip?: string }>
-  }
-  const backend = (data.backend ?? data) as typeof data
-  if (Array.isArray(backend.server_ip)) return backend.server_ip
-  if (Array.isArray(backend.server_ips)) return backend.server_ips
-  if (Array.isArray(backend.serverIps)) return backend.serverIps
+  const data: unknown = JSON.parse(payload)
+  if (!isRecord(data)) return []
+  // The list may sit on the root or under a `backend` wrapper.
+  const backend = isRecord(data.backend) ? data.backend : data
+  const direct = stringArray(backend.server_ip) ?? stringArray(backend.server_ips) ?? stringArray(backend.serverIps)
+  if (direct) return direct
   if (Array.isArray(backend.servers)) {
-    return backend.servers.map((server) => typeof server === 'string' ? server : (server.ip ?? server.serverIp ?? server.server_ip ?? '')).filter(Boolean)
+    return backend.servers
+      .map((server: unknown) => {
+        if (typeof server === 'string') return server
+        if (!isRecord(server)) return ''
+        const ip = server.ip ?? server.serverIp ?? server.server_ip
+        return typeof ip === 'string' ? ip : ''
+      })
+      .filter(Boolean)
   }
   return []
 }
 
 export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const backendId = scalewayResourceId(opts.backendId)
   const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}`
   return async () => {
@@ -354,8 +301,8 @@ if (isMain(import.meta.url)) {
   const argv = process.argv.slice(2)
   const service = getFlag(argv, '--service')
   const sha = getFlag(argv, '--sha')
-  const strategy = getFlag(argv, '--strategy') as ReplacementStrategy | undefined
-  const drainPolicy = (getFlag(argv, '--drain-policy') as DrainPolicy | undefined) ?? 'requests'
+  const strategy = getFlag(argv, '--strategy')
+  const drainPolicyRaw = getFlag(argv, '--drain-policy') ?? 'requests'
   const healthUrl = getFlag(argv, '--health-url')
   const oldIps = parseIps(getFlag(argv, '--old-ips'))
   const newIps = parseIps(getFlag(argv, '--new-ips'))
@@ -370,6 +317,11 @@ if (isMain(import.meta.url)) {
     process.stderr.write(`Unknown --strategy '${strategy}' (expected lb-overlap | exclusive)\n`)
     process.exit(2)
   }
+  if (drainPolicyRaw !== 'requests' && drainPolicyRaw !== 'reconnect') {
+    process.stderr.write(`Unknown --drain-policy '${drainPolicyRaw}' (expected requests | reconnect)\n`)
+    process.exit(2)
+  }
+  const drainPolicy: DrainPolicy = drainPolicyRaw
 
   const healthGate: HealthGateFn = async () => {
     const outcome = await pollForVersion({
@@ -380,7 +332,10 @@ if (isMain(import.meta.url)) {
     return outcome.ok
   }
 
+  // Both LB effects are built together inside the one validated block, so the
+  // flags are read (and checked) exactly once.
   let setServers: SetServersFn | undefined
+  let getServers: GetServersFn | undefined
   if (strategy === 'lb-overlap') {
     const zone = getFlag(argv, '--lb-zone')
     const backendId = getFlag(argv, '--backend-id')
@@ -389,6 +344,7 @@ if (isMain(import.meta.url)) {
       process.exit(2)
     }
     setServers = createLbSetServers({ secretKey, zone, backendId })
+    getServers = createLbGetServers({ secretKey, zone, backendId })
   }
 
   const result = await sequenceCutover({
@@ -400,7 +356,7 @@ if (isMain(import.meta.url)) {
     drainSeconds,
     healthGate,
     setServers,
-    getServers: strategy === 'lb-overlap' ? createLbGetServers({ secretKey: secretKey!, zone: getFlag(argv, '--lb-zone')!, backendId: getFlag(argv, '--backend-id')! }) : undefined,
+    getServers,
   })
 
   if (!result.ok) {

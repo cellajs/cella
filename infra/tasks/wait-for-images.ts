@@ -19,20 +19,12 @@
  *     --ns <namespace> --tag <git-sha> [--attempts 80] [--interval 15000]
  */
 import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/is-main'
+import { isMain } from '../lib/utils/is-main'
+import { pollUntil } from '../lib/utils/retry'
+import { parseServiceRows } from '../lib/utils/service-rows'
 import { imageServiceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
-
-/**
- * Services that ship their own image and must exist in the registry before a VM
- * boots. Derived from the canonical registry (`infra/lib/services.ts`), which
- * already excludes image-reuse services (e.g. `ai`, which pulls the backend
- * image at the same SHA), so this can't drift.
- */
-export function imageServices(): ServiceName[] {
-  return imageServiceNames
-}
 
 /** Inspect a single image ref; resolves true if it exists. Injectable for tests. */
 export type InspectFn = (imageRef: string) => Promise<boolean>
@@ -49,9 +41,11 @@ export interface WaitOptions {
   tag: string
   inspect: InspectFn
   /**
-   * Override which image services to wait for. Defaults to `imageServices()`.
-   * The deploy workflow passes the feature-gated build set here so a fork with
-   * yjs/ai disabled doesn't wait for an image that is never built.
+   * Override which image services to wait for. Defaults to `imageServiceNames`
+   * (the canonical registry-derived list, which already excludes image-reuse
+   * services like `ai`). The deploy workflow passes the feature-gated build set
+   * here so a fork with yjs/ai disabled doesn't wait for an image that is never
+   * built.
    */
   services?: ServiceName[]
   attempts?: number
@@ -73,18 +67,17 @@ export async function waitForImages(opts: WaitOptions): Promise<{ ok: boolean; m
   const log = opts.log ?? ((msg: string) => console.info(msg))
 
   const missing: string[] = []
-  for (const service of opts.services ?? imageServices()) {
+  for (const service of opts.services ?? imageServiceNames) {
     const ref = imageRef(opts.registry, opts.namespace, service, opts.tag)
     log(`Waiting for ${service}:${opts.tag}`)
-    let ready = false
-    for (let i = 1; i <= attempts; i++) {
-      if (await opts.inspect(ref)) {
-        log(`  ${service} ready after ${i} attempt(s)`)
-        ready = true
-        break
-      }
-      if (i < attempts) await sleepFn(intervalMs)
-    }
+    const ready = await pollUntil(
+      async (attempt) => {
+        if (!(await opts.inspect(ref))) return undefined
+        log(`  ${service} ready after ${attempt} attempt(s)`)
+        return true
+      },
+      { attempts, intervalMs, sleep: sleepFn },
+    )
     if (!ready) {
       log(`::error::${ref} never appeared in registry`)
       missing.push(ref)
@@ -104,16 +97,9 @@ interface CliArgs {
 }
 
 export function imageServicesFromBuildMatrix(raw: string): ServiceName[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--build-images-json must be a JSON array')
-  return parsed
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') throw new Error(`--build-images-json[${index}] must be an object`)
-      const service = (item as Record<string, unknown>).service
-      if (typeof service !== 'string') throw new Error(`--build-images-json[${index}].service must be a string`)
-      return service
-    })
-    .filter((service): service is ServiceName => (imageServices() as string[]).includes(service))
+  return parseServiceRows(raw, '--build-images-json', { required: ['service'] })
+    .map((row) => row.service)
+    .filter((service): service is ServiceName => (imageServiceNames as string[]).includes(service))
 }
 
 /** Parse `--key value` flags. Exported for testing. */

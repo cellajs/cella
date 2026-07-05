@@ -14,8 +14,9 @@
  * read is also skipped under Vitest so unit tests never reach the network.
  */
 import * as pulumi from '@pulumi/pulumi'
-import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/control-store'
+import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/stack/control-store'
 import { naming, region } from '../pulumi-context'
+import { errorMessage } from '../lib/utils/errors'
 
 async function loadControlState(): Promise<ControlState> {
   if (process.env.VITEST) return emptyControlState()
@@ -41,7 +42,7 @@ async function loadControlState(): Promise<ControlState> {
     // readControlState returns the empty state for a missing object (fresh stack);
     // only genuine failures reach here. The control object is the sole source of
     // rollout state, so fail closed rather than regress live compute.
-    throw new Error(`control-store: failed to read rollout state — aborting deploy (${(err as Error).message})`)
+    throw new Error(`control-store: failed to read rollout state — aborting deploy (${errorMessage(err)})`)
   }
 }
 
