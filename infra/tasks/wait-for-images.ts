@@ -20,6 +20,8 @@
  */
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
+import { pollUntil } from '../lib/retry'
+import { parseServiceRows } from '../lib/service-rows'
 import { imageServiceNames } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, getNumFlag, sleep } from './args'
@@ -68,15 +70,14 @@ export async function waitForImages(opts: WaitOptions): Promise<{ ok: boolean; m
   for (const service of opts.services ?? imageServiceNames) {
     const ref = imageRef(opts.registry, opts.namespace, service, opts.tag)
     log(`Waiting for ${service}:${opts.tag}`)
-    let ready = false
-    for (let i = 1; i <= attempts; i++) {
-      if (await opts.inspect(ref)) {
-        log(`  ${service} ready after ${i} attempt(s)`)
-        ready = true
-        break
-      }
-      if (i < attempts) await sleepFn(intervalMs)
-    }
+    const ready = await pollUntil(
+      async (attempt) => {
+        if (!(await opts.inspect(ref))) return undefined
+        log(`  ${service} ready after ${attempt} attempt(s)`)
+        return true
+      },
+      { attempts, intervalMs, sleep: sleepFn },
+    )
     if (!ready) {
       log(`::error::${ref} never appeared in registry`)
       missing.push(ref)
@@ -96,15 +97,8 @@ interface CliArgs {
 }
 
 export function imageServicesFromBuildMatrix(raw: string): ServiceName[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--build-images-json must be a JSON array')
-  return parsed
-    .map((item, index) => {
-      if (!item || typeof item !== 'object') throw new Error(`--build-images-json[${index}] must be an object`)
-      const service = (item as Record<string, unknown>).service
-      if (typeof service !== 'string') throw new Error(`--build-images-json[${index}].service must be a string`)
-      return service
-    })
+  return parseServiceRows(raw, '--build-images-json', { required: ['service'] })
+    .map((row) => row.service)
     .filter((service): service is ServiceName => (imageServiceNames as string[]).includes(service))
 }
 

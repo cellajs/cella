@@ -8,11 +8,12 @@
 //
 // main.ts is a pure library (no self-exec), so bundling this entry to CJS pulls
 // in no `import.meta`.
+import { errorMessage } from '../../lib/errors'
 import { main } from './main'
 
 main(process.argv.slice(2))
   .then((code) => process.exit(code))
   .catch((err: unknown) => {
-    console.error(err instanceof Error ? err.message : err)
+    console.error(errorMessage(err))
     process.exit(1)
   })

@@ -43,8 +43,8 @@ import * as path from 'node:path'
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
-import { naming, zone, region, tags, infra, mode, endpoints, vmAccessKey, vmSecretKey } from '../pulumi-context'
-import { runtimeSecretsForConsumer, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
+import { naming, zone, region, tags, infra, mode, endpoints, serviceUrl, vmAccessKey, vmSecretKey } from '../pulumi-context'
+import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
 import { composeConfig } from '../compose/compose'
 import { deployedServices, coHostedServices, servicesByName, type ServiceDefinition } from '../lib/services'
 import type { ServiceName } from '../compose/compose'
@@ -90,14 +90,7 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 // ---------------------------------------------------------------------------
 
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
-  // Union the definitions across consumers (singleVM host carries its workers'
-  // secrets too), deduplicated by id and kept in registry order.
-  const seen = new Set<string>()
-  const definitions = consumers.flatMap((consumer) => runtimeSecretsForConsumer(consumer)).filter((definition) => {
-    if (seen.has(definition.id)) return false
-    seen.add(definition.id)
-    return true
-  })
+  const definitions = unionRuntimeSecrets(consumers)
   return pulumi.all(definitions.map((definition) => secretIds[definition.id]!)).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
@@ -188,19 +181,13 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string): pulumi.Outp
 /**
  * Pulumi-bound values for the `${VAR}` placeholders a service's compose blocks
  * reference. The registry declares WHICH vars a service consumes; this pool
- * binds the shared, app-wide ones. Service-specific wiring is declared as
+ * binds the shared, app-wide ones (public URLs come from the endpoint
+ * registry via `serviceUrl`). Service-specific wiring is declared as
  * `bindings` on the registry entry and resolved generically below.
  */
-function servicePublicUrl(slug: string): string {
-  const services = appConfig.services as Record<string, { publicUrl?: string }>
-  const service = services[slug]
-  if (!service?.publicUrl) throw new Error(`compute: service '${slug}' has no publicUrl in appConfig.services`)
-  return service.publicUrl
-}
-
 const envPool: Record<string, () => pulumi.Input<string>> = {
-  FRONTEND_URL: () => servicePublicUrl('frontend'),
-  BACKEND_URL: () => servicePublicUrl('backend'),
+  FRONTEND_URL: () => serviceUrl('frontend'),
+  BACKEND_URL: () => serviceUrl('backend'),
   // Frontend SPA proxy: CSP header + the S3 REST hostname Caddy proxies to.
   FRONTEND_CSP: () => frontendCsp,
   ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
@@ -369,15 +356,11 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }))
   // Union across secret consumers so the singleVM host's genId also captures the
   // co-hosted workers' secret manifest (any change rolls a new generation).
-  const seenSecrets = new Set<string>()
-  const secrets = secretConsumersFor(svc)
-    .flatMap((consumer) => runtimeSecretsForConsumer(consumer))
-    .filter((definition) => (seenSecrets.has(definition.id) ? false : (seenSecrets.add(definition.id), true)))
-    .map((definition) => ({
-      secretName: definition.secretName,
-      envVar: definition.envVar,
-      required: definition.required,
-    }))
+  const secrets = unionRuntimeSecrets(secretConsumersFor(svc)).map((definition) => ({
+    secretName: definition.secretName,
+    envVar: definition.envVar,
+    required: definition.required,
+  }))
   return {
     slug: svc.slug,
     port: svc.healthPort,

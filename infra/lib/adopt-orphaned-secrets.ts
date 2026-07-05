@@ -21,6 +21,7 @@ import { spawnSync } from 'node:child_process'
 import { stackExportHasResource } from './adopt-orphaned-policy'
 import { operatorManagedRuntimeSecrets } from './runtime-secrets'
 import { createSecretManagerClient } from './scaleway-secret-manager'
+import { errorMessage } from './errors'
 
 /** Pulumi type token for `@pulumiverse/scaleway` secret containers (`pulumi import`). */
 const SECRET_TYPE = 'scaleway:secrets/secret:Secret'
@@ -96,7 +97,7 @@ export async function adoptOrphanedSecrets(opts: AdoptOrphanedSecretsOptions): P
     const secrets = await client.listSecrets(opts.path)
     liveByName = new Map(secrets.map((secret) => [secret.name, { id: secret.id, region: secret.region }]))
   } catch (error) {
-    log(`  (skipping secret adoption — could not list Secret Manager containers: ${(error as Error).message})`)
+    log(`  (skipping secret adoption — could not list Secret Manager containers: ${errorMessage(error)})`)
     result.unavailable = true
     for (const secret of missing) result.outcomes[secret.secretName] = 'unavailable'
     return result

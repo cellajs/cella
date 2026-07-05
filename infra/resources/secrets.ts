@@ -7,14 +7,15 @@
  * later via the bootstrap secret-management flow.
  */
 import * as pulumi from '@pulumi/pulumi'
-import * as random from '@pulumi/random'
 import * as scaleway from '@pulumiverse/scaleway'
-import { naming, region, tags, mode, infraConfig } from '../pulumi-context'
+import { naming, region, tags, mode } from '../pulumi-context'
 import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
+import { secretManagerPath } from '../lib/vm-reader-secret'
+import { configuredOrRandomSecret } from './configured-secret'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
 
 /** Folder path for secret organization, e.g. '/cella-production/' */
-const secretPath = `/${naming.slug}-${mode}/`
+const secretPath = secretManagerPath(naming.slug, mode)
 
 /**
  * One-time adoption hook for operator secret containers that were created
@@ -81,18 +82,10 @@ function createSecretVersion(
   }, { aliases: [{ type: 'scaleway:index/secretVersion:SecretVersion' }] })
 }
 
+// Resource names (`generated-<secretName>`) are load-bearing: they are the
+// shipped Pulumi identities of the live secret values.
 function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
-  const configured = infraConfig.getSecret(configKey)
-  if (configured) return configured
-  return new random.RandomPassword(`generated-${name}`, {
-    length: 32,
-    special: true,
-    overrideSpecial: '-_.~',
-    minLower: 2,
-    minUpper: 2,
-    minNumeric: 2,
-    minSpecial: 2,
-  }).result
+  return configuredOrRandomSecret(configKey, `generated-${name}`)
 }
 
 /**

@@ -30,7 +30,7 @@ describe('compute module source invariants', () => {
 
   it('builds per-service runtime secret manifests instead of loading app secrets from stack config', () => {
     expect(source).toMatch(/buildRuntimeSecretsManifest\(/)
-    expect(source).toMatch(/runtimeSecretsForConsumer\(/)
+    expect(source).toMatch(/unionRuntimeSecrets\(/)
     expect(source).toMatch(/secretIds\[definition\.id\]/)
     for (const key of ['cookieSecret', 'unsubscribeSecret', 'cdcSecret', 'yjsSecret', 'piiHashSecret', 'brevoApiKey', 'scwAiApiKey', 'adminEmail']) {
       expect(source).not.toMatch(new RegExp(`requireSecret\\(\\s*['"]${key}['"]\\s*\\)`))

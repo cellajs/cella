@@ -10,12 +10,7 @@
  */
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
-import { appConfig } from '../../shared'
-import { naming, region, tagsAsMap, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
-
-// Derived from IAM by name.
-const applicationId = ciDeployApplicationId
-const vmApplicationId = vmReaderApplicationId
+import { naming, region, tagsAsMap, isProduction, infra, serviceUrl, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
 
 // Optional operator application (from SCW_OPERATOR_APPLICATION_ID) granted full
 // S3 access alongside the CI deploy app, so a key under it can read & refresh
@@ -32,6 +27,17 @@ const operatorAccess = (bucketName: pulumi.Input<string>) =>
         Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
       }]
     : []
+
+// Full S3 access for the CI deploy application — the same statement on every
+// bucket policy (bucket policies are deny-by-default, so without it even the
+// deploy key cannot touch the bucket).
+const deployAccess = (bucketName: pulumi.Input<string>) => ({
+  Sid: 'DeployAccess',
+  Effect: 'Allow',
+  Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
+  Action: ['s3:*'],
+  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+})
 
 // Days before stale, content-hashed frontend chunks under `assets/` are
 // expired by Object Storage. Must outlive any reasonable open browser tab on
@@ -101,16 +107,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
         Action: ['s3:GetObject'],
         Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
       },
-      {
-        Sid: 'DeployAccess',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${applicationId}` },
-        Action: ['s3:*'],
-        Resource: [
-          frontendBucket.name,
-          pulumi.interpolate`${frontendBucket.name}/*`,
-        ],
-      },
+      deployAccess(frontendBucket.name),
       ...operatorAccess(frontendBucket.name),
     ],
   }),
@@ -119,12 +116,6 @@ new scaleway.object.BucketPolicy('frontend-policy', {
 // ---------------------------------------------------------------------------
 // Public uploads bucket (user-uploaded public assets)
 // ---------------------------------------------------------------------------
-
-const frontendPublicUrl = (): string => {
-  const service = (appConfig.services as Record<string, { publicUrl?: string }>).frontend
-  if (!service?.publicUrl) throw new Error('storage: service \'frontend\' has no publicUrl in appConfig.services')
-  return service.publicUrl
-}
 
 const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', {
   name: naming.publicBucket,
@@ -136,7 +127,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [frontendPublicUrl()],
+      allowedOrigins: [serviceUrl('frontend')],
       maxAgeSeconds: 3600,
     },
   ],
@@ -156,16 +147,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
         Action: ['s3:GetObject'],
         Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
       },
-      {
-        Sid: 'DeployAccess',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${applicationId}` },
-        Action: ['s3:*'],
-        Resource: [
-          publicUploadsBucket.name,
-          pulumi.interpolate`${publicUploadsBucket.name}/*`,
-        ],
-      },
+      deployAccess(publicUploadsBucket.name),
       ...operatorAccess(publicUploadsBucket.name),
     ],
   }),
@@ -185,7 +167,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
     {
       allowedHeaders: ['*'],
       allowedMethods: ['GET', 'PUT', 'POST'],
-      allowedOrigins: [frontendPublicUrl()],
+      allowedOrigins: [serviceUrl('frontend')],
       maxAgeSeconds: 3600,
     },
   ],
@@ -222,20 +204,11 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
       {
         Sid: 'VmWriteBootDiagnostics',
         Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${vmApplicationId}` },
+        Principal: { SCW: pulumi.interpolate`application_id:${vmReaderApplicationId}` },
         Action: ['s3:PutObject'],
         Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
       },
-      {
-        Sid: 'DeployAccess',
-        Effect: 'Allow',
-        Principal: { SCW: pulumi.interpolate`application_id:${applicationId}` },
-        Action: ['s3:*'],
-        Resource: [
-          bootDiagBucket.name,
-          pulumi.interpolate`${bootDiagBucket.name}/*`,
-        ],
-      },
+      deployAccess(bootDiagBucket.name),
       ...operatorAccess(bootDiagBucket.name),
     ],
   }),

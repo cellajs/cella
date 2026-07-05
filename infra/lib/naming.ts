@@ -1,5 +1,6 @@
 
 import type { appConfig as AppConfig } from '../../shared'
+import { stateBucket } from './control-store'
 
 type Cfg = typeof AppConfig
 
@@ -22,7 +23,7 @@ export function deriveInfra(appConfig: Cfg) {
       frontendBucket: `${prefix}-frontend`,
       publicBucket: appConfig.s3.publicBucket,
       privateBucket: appConfig.s3.privateBucket,
-      pulumiStateBucket: `${prefix}-pulumi-state`,
+      pulumiStateBucket: stateBucket(prefix),
       bootDiagBucket: `${prefix}-boot-diag`,
       // Registry namespace names require >= 4 chars and no hyphens; slug length
       // is validated at config load, so only hyphens need stripping here.

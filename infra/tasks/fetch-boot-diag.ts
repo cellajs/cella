@@ -19,6 +19,7 @@
 import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
 import { getFlag } from './args'
+import { errorMessage } from '../lib/errors'
 
 export interface DiagSelection {
   /** Recent stage/numbered markers, for a quick "how far did it get" overview. */
@@ -156,7 +157,7 @@ export function renderDiagnostics(
     try {
       return reader.cat(key)
     } catch (err) {
-      return `<<failed to read ${key}: ${err instanceof Error ? err.message : String(err)}>>`
+      return `<<failed to read ${key}: ${errorMessage(err)}>>`
     }
   }
 

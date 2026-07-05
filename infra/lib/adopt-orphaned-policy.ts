@@ -16,6 +16,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { findPolicyIdByName } from './scaleway-iam'
+import { errorMessage } from './errors'
 
 /** Pulumi type token for `@pulumiverse/scaleway` IAM policies (`pulumi import`). */
 const POLICY_TYPE = 'scaleway:iam/policy:Policy'
@@ -85,7 +86,7 @@ export async function adoptOrphanedPolicy(opts: AdoptOrphanedPolicyOptions): Pro
   try {
     policyId = await findPolicyIdByName(opts.secretKey, opts.organizationId, opts.policyName)
   } catch (error) {
-    log(`  (skipping policy adoption — could not query Scaleway IAM: ${(error as Error).message})`)
+    log(`  (skipping policy adoption — could not query Scaleway IAM: ${errorMessage(error)})`)
     return 'unavailable'
   }
   if (!policyId) return 'absent'

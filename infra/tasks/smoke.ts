@@ -25,7 +25,10 @@
  */
 import { readFileSync } from 'node:fs'
 import { sleep as defaultSleep } from 'shared/sleep'
+import { errorMessage } from '../lib/errors'
 import { isMain } from '../lib/is-main'
+import { pollUntil } from '../lib/retry'
+import { parseServiceRows } from '../lib/service-rows'
 import { getFlag } from './args'
 import { isHealthy } from './wait-for-version'
 
@@ -203,7 +206,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
           : 'no hashed entry asset found in served index.html'
       results.push(res.ok && matched ? { name, ok: true } : { name, ok: false, detail })
     } catch (err) {
-      results.push({ name, ok: false, detail: (err as Error).message })
+      results.push({ name, ok: false, detail: errorMessage(err) })
     }
   }
 
@@ -212,7 +215,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     const res = await get(`${backendUrl}/openapi.json`)
     results.push({ name: 'backend /openapi.json reachable', ok: res.ok, detail: res.ok ? undefined : `status=${res.status}` })
   } catch (err) {
-    results.push({ name: 'backend /openapi.json reachable', ok: false, detail: (err as Error).message })
+    results.push({ name: 'backend /openapi.json reachable', ok: false, detail: errorMessage(err) })
   }
 
   // 3. Public services report the deployed release SHA. Internal-only services
@@ -229,7 +232,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
           : { name, ok: false, detail: `served=${version ?? '<missing>'} expected=${expectedSha}` },
       )
     } catch (err) {
-      results.push({ name, ok: false, detail: (err as Error).message })
+      results.push({ name, ok: false, detail: errorMessage(err) })
     }
   }
 
@@ -242,7 +245,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
         : { name: 'SPA fallback returns HTML', ok: false, detail: `status=${res.status}` },
     )
   } catch (err) {
-    results.push({ name: 'SPA fallback returns HTML', ok: false, detail: (err as Error).message })
+    results.push({ name: 'SPA fallback returns HTML', ok: false, detail: errorMessage(err) })
   }
 
   // 5. Frontend security headers are present.
@@ -251,7 +254,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     const missing = missingSecurityHeaders(res.headers)
     results.push(missing.length === 0 ? { name: 'security headers present', ok: true } : { name: 'security headers present', ok: false, detail: `missing: ${missing.join(', ')}` })
   } catch (err) {
-    results.push({ name: 'security headers present', ok: false, detail: (err as Error).message })
+    results.push({ name: 'security headers present', ok: false, detail: errorMessage(err) })
   }
 
   // 6. Backend reports every health component healthy (db / cdc / yjs / ai).
@@ -261,25 +264,24 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   // component stays bad for the whole budget and still fails.
   {
     let lastDetail = 'no response'
-    let healthy = false
-    for (let attempt = 1; attempt <= componentsRetryAttempts; attempt++) {
-      try {
-        const res = await get(`${backendUrl}/health?depth=full`)
-        if (!res.ok) {
-          lastDetail = `status=${res.status}`
-        } else {
-          const issues = unhealthyComponents(res.body)
-          if (issues.length === 0) {
-            healthy = true
-            break
+    const healthy = await pollUntil(
+      async () => {
+        try {
+          const res = await get(`${backendUrl}/health?depth=full`)
+          if (!res.ok) {
+            lastDetail = `status=${res.status}`
+            return undefined
           }
+          const issues = unhealthyComponents(res.body)
+          if (issues.length === 0) return true
           lastDetail = formatComponentIssues(issues)
+        } catch (err) {
+          lastDetail = errorMessage(err)
         }
-      } catch (err) {
-        lastDetail = (err as Error).message
-      }
-      if (attempt < componentsRetryAttempts) await sleep(componentsRetryDelayMs)
-    }
+        return undefined
+      },
+      { attempts: componentsRetryAttempts, intervalMs: componentsRetryDelayMs, sleep },
+    )
     results.push(
       healthy ? { name: 'backend components healthy', ok: true } : { name: 'backend components healthy', ok: false, detail: lastDetail },
     )
@@ -299,18 +301,7 @@ interface CliArgs {
 }
 
 export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string }> {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
-  return parsed.map((item, index) => {
-    if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
-    const service = (item as Record<string, unknown>).service
-    const healthUrl = (item as Record<string, unknown>).health_url
-    const publicUrl = (item as Record<string, unknown>).public_url
-    if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
-    if (typeof healthUrl !== 'string') throw new Error(`--services-json[${index}].health_url must be a string`)
-    if (publicUrl !== undefined && typeof publicUrl !== 'string') throw new Error(`--services-json[${index}].public_url must be a string`)
-    return { service, health_url: healthUrl, public_url: publicUrl }
-  })
+  return parseServiceRows(raw, '--services-json', { required: ['service', 'health_url'], optional: ['public_url'] })
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -338,7 +329,7 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   try {
     html = readFileSync(dist, 'utf-8')
   } catch (err) {
-    console.error(`::error::Could not read ${dist}: ${(err as Error)?.message ?? 'unknown error'}`)
+    console.error(`::error::Could not read ${dist}: ${errorMessage(err)}`)
     console.error('::error::The local bundle is required to verify the served bundle. Check the --dist path and the working directory.')
     process.exit(1)
   }

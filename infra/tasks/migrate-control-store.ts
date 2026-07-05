@@ -28,15 +28,12 @@ import {
   type BootstrapState,
   type ControlState,
   controlActor,
-  controlKey,
+  controlContextForStack,
   type ServiceRollout,
-  stateBucket,
 } from '../lib/control-store'
+import { errorMessage } from '../lib/errors'
+import { isRecord } from '../lib/guards'
 import { getFlag } from './args'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 /** A GenRef is only valid with a string id + sha and a numeric seq. A pointer
  *  missing its `id` is the corruption an old sync-rollout-config could write. */
@@ -92,7 +89,7 @@ export function migrateControlDocument(raw: string | undefined): MigrationResult
   try {
     doc = JSON.parse(raw)
   } catch (err) {
-    throw new Error(`control: not valid JSON (${(err as Error).message})`)
+    throw new Error(`control: not valid JSON (${errorMessage(err)})`)
   }
   if (!isRecord(doc)) throw new Error('control: root must be an object')
   if (doc.schemaVersion === 2) return sanitizeV2(doc)
@@ -124,22 +121,10 @@ export async function migrateControlStore(argv = process.argv.slice(2)): Promise
   if (!stack) throw new Error('Usage: migrate-control-store.ts --stack <stack> [--dry-run]')
   const dryRun = argv.includes('--dry-run')
 
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
-  if (!accessKey || !secretKey) throw new Error('migrate-control-store: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required')
-
-  process.env.APP_MODE ??= stack.split('/').pop()
-  const { appConfig } = await import('shared')
-  const { GetObjectCommand, PutObjectCommand, S3Client } = await import('@aws-sdk/client-s3')
-  const region = appConfig.s3.region
-  const s3 = new S3Client({
-    region,
-    endpoint: `https://s3.${region}.scw.cloud`,
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
-  })
-  const bucket = stateBucket(appConfig.slug)
-  const key = controlKey(stack)
+  const ctx = await controlContextForStack(stack)
+  if (!ctx) throw new Error('migrate-control-store: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required')
+  const { s3, bucket, controlKey: key } = ctx
+  const { GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3')
 
   // Raw read — deliberately NOT readControlState(), which now rejects v1.
   let raw: string | undefined
@@ -195,7 +180,7 @@ export async function migrateControlStore(argv = process.argv.slice(2)): Promise
 
 if (isMain(import.meta.url)) {
   migrateControlStore().catch((err) => {
-    console.error(err instanceof Error ? err.message : err)
+    console.error(errorMessage(err))
     process.exit(1)
   })
 }

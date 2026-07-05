@@ -38,21 +38,16 @@
  *     --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10
  *   (SCW_SECRET_KEY in env for the live LB call)
  */
+import { type FetchLike, resolveFetch } from '../lib/fetch-like'
 import { isMain } from '../lib/is-main'
+// The canonical strategy vocabulary lives on the Compose model (`x-service`
+// metadata). types.ts is Pulumi-free, so the pure core can import it directly
+// without silently forking the unions.
+import type { DrainPolicy, ReplacementStrategy } from '../compose/types'
 import { getFlag, getNumFlag, sleep as defaultSleep } from './args'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
-// ---------------------------------------------------------------------------
-// Strategy vocabulary (mirrors config/services.config.ts `replacementStrategy`
-// + `drainPolicy`). Kept as standalone literals so the pure core never imports
-// the Pulumi-bound registry.
-// ---------------------------------------------------------------------------
-
-/** How a service's VM generation is cut over on a deploy. */
-export type ReplacementStrategy = 'lb-overlap' | 'exclusive'
-
-/** How the old generation is drained off the LB when it is de-registered. */
-export type DrainPolicy = 'requests' | 'reconnect'
+export type { DrainPolicy, ReplacementStrategy }
 
 // ---------------------------------------------------------------------------
 // Injected effects — every side effect the rollout performs is a function the
@@ -67,12 +62,6 @@ export type GetServersFn = () => Promise<string[]>
 
 /** Resolve true once the new generation is serving the expected release (app /health gate). */
 export type HealthGateFn = () => Promise<boolean>
-
-/** Minimal `fetch` surface so the live LB call is unit-testable. */
-export type FetchLike = (
-  url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
-) => Promise<{ ok: boolean; status: number; text: () => Promise<string> }>
 
 // ---------------------------------------------------------------------------
 // Pure LB operations — one atomic `SetBackendServers` call each.
@@ -236,7 +225,7 @@ function scalewayResourceId(id: string): string {
 
 /** Build the live `SetServersFn` that re-points one Scaleway LB backend. */
 export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const backendId = scalewayResourceId(opts.backendId)
   const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}/servers`
   return async (serverIps) => {
@@ -271,7 +260,7 @@ function parseBackendServers(payload: string): string[] {
 }
 
 export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const backendId = scalewayResourceId(opts.backendId)
   const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}`
   return async () => {

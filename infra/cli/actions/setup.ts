@@ -14,7 +14,7 @@ import { runPulumiUpWithHint } from '../../lib/pulumi-up'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { createSecretManagerClient } from '../../lib/scaleway-secret-manager'
 import { maskedSecret } from '../prompts/masked-secret'
-import { VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
+import { secretManagerPath, VM_READER_SECRET_NAME } from '../../lib/vm-reader-secret'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
@@ -22,7 +22,8 @@ import { setupCiKey } from '../../tasks/setup-ci-key'
 import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
-import { createStepRunner, envOr, resolveVerifiedPassphrase } from '../shared'
+import { acquireStackLockOrExit, createStepRunner, envOr, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveVerifiedPassphrase } from '../shared'
+import { errorMessage } from '../../lib/errors'
 
 /**
  * Runs the first setup process for the infra CLI, including handling bootstrap keys, CI keys, and Pulumi stack configuration.
@@ -38,9 +39,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // with a freshly-pasted bootstrap key. The provider reads it from SCW_* env
   // (childEnv below), not from stack config.
   const scwProjectId = context.projectId
-  const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-    input({ message: 'Scaleway bootstrap access key', validate: (value) => !!value.trim() || '(required)' }),
-  )
+  const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () => promptRequiredInput('Scaleway bootstrap access key'))
   const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
 
   // The bootstrap key above also holds the object-storage rights needed for the
@@ -48,7 +47,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const stateAccessKey = scwAccessKey
   const stateSecretKey = scwSecretKey
 
-	const stackName = await input({ message: 'Pulumi stack name', default: `organization/infra/${context.environment}` })
+  const stackName = await promptStackName(context)
 
   // Operator-managed runtime secrets (admin email, Brevo, AI key) live in
   // Scaleway Secret Manager and are owned by "Manage runtime secrets", not stack
@@ -92,8 +91,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   })
 
   const { appConfig } = context
-  const loginUrl = `s3://${appConfig.slug}-pulumi-state?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`
-  await must('Pulumi login (S3 backend)', 'pulumi', ['login', loginUrl], spawnSync, { retry: true })
+  await must('Pulumi login (S3 backend)', 'pulumi', ['login', pulumiLoginUrl(appConfig)], spawnSync, { retry: true })
 
   const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' })
   if (selected.status === 0) {
@@ -102,7 +100,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync)
   }
 
-  const runtimeSecretPath = `/${appConfig.slug}-${context.environment}/`
+  const runtimeSecretPath = secretManagerPath(appConfig.slug, context.environment)
 
   // Operator secret VALUES are seeded AFTER the first `pulumi up` (in the
   // provisioning block below), not here. Pulumi now owns the secret containers
@@ -168,7 +166,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         ciOrganizationId = key.organizationId
         break
       } catch (error) {
-        console.error(`\n${warningMark} CI key setup failed: ${(error as Error).message}`)
+        console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`)
         if (!(await confirm({ message: 'Retry?', default: true }))) break
       }
     }
@@ -219,7 +217,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         })
         break
       } catch (error) {
-        console.error(`\n${warningMark} VM key setup failed: ${(error as Error).message}`)
+        console.error(`\n${warningMark} VM key setup failed: ${errorMessage(error)}`)
         if (!(await confirm({ message: 'Retry?', default: true }))) break
       }
     }
@@ -240,7 +238,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         process.env.SCW_OPERATOR_APPLICATION_ID = operatorAppId
       }
     } catch (error) {
-      console.warn(`${warningMark} Operator app setup failed: ${(error as Error).message}`)
+      console.warn(`${warningMark} Operator app setup failed: ${errorMessage(error)}`)
     }
   }
 
@@ -316,7 +314,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         try {
           await ensureDnsZone({ secretKey: scwSecretKey, projectId: scwProjectId, domain: dnsZone })
         } catch (error) {
-          console.error(`\n${warningMark} DNS zone check failed: ${(error as Error).message}`)
+          console.error(`\n${warningMark} DNS zone check failed: ${errorMessage(error)}`)
           if (!(await confirm({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1)
         }
       }
@@ -324,18 +322,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       // second operator or a CI deploy cannot mutate concurrently. Released at
       // the provisioning exit points below; a dead lock self-expires (TTL) or is
       // cleared via the CLI "Unlock" action.
-      const { acquireLock, controlActor, lockKey, makeControlClient, releaseLock, stateBucket } = await import('../../lib/control-store')
-      const lockS3 = await makeControlClient(appConfig.s3.region, scwAccessKey, scwSecretKey)
-      const lockBucket = stateBucket(appConfig.slug)
-      const lockObjectKey = lockKey(stackName)
-      const lockOwner = controlActor()
-      const releaseSetupLock = () =>
-        releaseLock(lockS3, lockBucket, lockObjectKey, lockOwner).catch((e) => console.warn(`${warningMark} failed to release stack lock: ${(e as Error).message}`))
-      const stackLock = await acquireLock(lockS3, lockBucket, lockObjectKey, { owner: lockOwner, operation: 'setup', ttlMs: 30 * 60_000 })
-      if (!stackLock.acquired) {
-        console.error(`${warningMark} Stack ${stackName} is locked by ${pc.cyan(stackLock.held.owner)} (operation: ${stackLock.held.operation}, since ${stackLock.held.acquiredAt}). Use the CLI "Unlock" action if that run is dead.`)
-        process.exit(1)
-      }
+      const stackLock = await acquireStackLockOrExit({ appConfig, accessKey: scwAccessKey, secretKey: scwSecretKey, stack: stackName, operation: 'setup' })
 
       const usingBootstrapKey = context.state === 'fresh'
       if (usingBootstrapKey) {
@@ -360,7 +347,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           break
         }
         if (!(await confirm({ message: 'Retry?', default: true }))) {
-          await releaseSetupLock()
+          await stackLock.release()
           process.exit(code)
         }
       }
@@ -390,7 +377,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         },
       })
 
-      await releaseSetupLock()
+      await stackLock.release()
     } else {
       console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`)
       console.info('  Manual fallback if needed:')

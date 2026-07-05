@@ -1,5 +1,7 @@
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { errorMessage } from '../../lib/errors'
+import { retry } from '../../lib/retry'
 import { createJsonLogger } from './logger'
 import { execCommand, mustExec, type ExecFn } from './exec'
 import { uploadBootDiagnostics } from './diagnostics'
@@ -60,17 +62,10 @@ async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Pro
 }
 
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  let lastError: unknown
-  for (let attempt = 1; attempt <= plan.timeouts.pullAttempts; attempt++) {
-    try {
-      await mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', plan.profile], { cwd: '/opt/app' })
-      return
-    } catch (err) {
-      lastError = err
-      if (attempt < plan.timeouts.pullAttempts) await sleep(plan.timeouts.pullRetrySeconds * 1000)
-    }
-  }
-  throw lastError instanceof Error ? lastError : new Error('image pull failed')
+  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', plan.profile], { cwd: '/opt/app' }), {
+    attempts: plan.timeouts.pullAttempts,
+    delayMs: plan.timeouts.pullRetrySeconds * 1000,
+  })
 }
 
 async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
@@ -120,7 +115,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     logger.log('info', 'boot-complete')
   } catch (err) {
     bootRc = 1
-    logger.log('error', 'boot-failed', { message: err instanceof Error ? err.message : String(err) })
+    logger.log('error', 'boot-failed', { message: errorMessage(err) })
     // The agent runs containerized without the host boot log mounted, so capture
     // the crashed container's own output here to ship it with the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined)
@@ -139,7 +134,7 @@ export async function boot(opts: BootOptions): Promise<void> {
         appLogs,
       })
     } catch (err) {
-      logger.log('warn', 'boot-diagnostics-upload-failed', { message: err instanceof Error ? err.message : String(err) })
+      logger.log('warn', 'boot-diagnostics-upload-failed', { message: errorMessage(err) })
     }
   }
 }

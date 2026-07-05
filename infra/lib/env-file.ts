@@ -16,6 +16,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { escapeRegExp } from './escape-regexp'
 
 export type EnvFileUndeliverableReason = 'empty' | 'multiline'
 
@@ -35,7 +36,7 @@ export function isEnvFileDeliverable(value: string): EnvFileDeliverability {
 export function writeEnvVar(path: string, key: string, value: string): void {
   const existing = existsSync(path) ? readFileSync(path, 'utf8') : ''
   const line = `${key}=${value}`
-  const re = new RegExp(`^${key}=.*$`, 'm')
+  const re = new RegExp(`^${escapeRegExp(key)}=.*$`, 'm')
   const next = re.test(existing) ? existing.replace(re, line) : `${existing}${existing.endsWith('\n') || existing === '' ? '' : '\n'}${line}\n`
   writeFileSync(path, next)
 }

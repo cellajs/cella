@@ -1,3 +1,6 @@
+import type { FetchLike } from './fetch-like'
+import { type ScwAuth, scwFetch, scwSend } from './scw-fetch'
+
 const SECRET_MANAGER_BASE = 'https://api.scaleway.com/secret-manager/v1beta1'
 
 export interface SecretManagerSecret {
@@ -37,7 +40,7 @@ export interface SecretManagerClientOptions {
   secretKey: string
   region: string
   projectId: string
-  fetchImpl?: typeof fetch
+  fetchImpl?: FetchLike
 }
 
 export interface EnsureSecretInput {
@@ -52,30 +55,6 @@ export interface PutSecretValueInput {
   value: string
   description?: string
   disablePrevious?: boolean
-}
-
-async function scw<T>(
-  fetchImpl: typeof fetch,
-  secretKey: string,
-  method: string,
-  url: string,
-  body?: unknown,
-): Promise<T> {
-  const response = await fetchImpl(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Auth-Token': secretKey,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-
-  const text = await response.text()
-  if (!response.ok) {
-    throw new Error(`Scaleway ${method} ${url} → ${response.status}: ${text}`)
-  }
-  if (response.status === 204 || text === '') return undefined as T
-  return JSON.parse(text) as T
 }
 
 function buildSecretsUrl(region: string, query: URLSearchParams) {
@@ -96,7 +75,7 @@ function normalizeSecretPath(path: string): string {
 }
 
 export function createSecretManagerClient(options: SecretManagerClientOptions) {
-  const fetchImpl = options.fetchImpl ?? fetch
+  const auth: ScwAuth = { secretKey: options.secretKey, fetchImpl: options.fetchImpl }
 
   return {
     async listSecrets(path?: string): Promise<SecretManagerSecret[]> {
@@ -105,12 +84,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         scheduled_for_deletion: 'false',
       })
       if (path) query.set('path', normalizeSecretPath(path))
-      const response = await scw<SecretListResponse>(
-        fetchImpl,
-        options.secretKey,
-        'GET',
-        buildSecretsUrl(options.region, query),
-      )
+      const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query))
       return response.secrets
     },
 
@@ -124,25 +98,18 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       const existing = await this.getSecretByName(input.name, input.path)
       if (existing) return existing
 
-      return await scw<SecretManagerSecret>(
-        fetchImpl,
-        options.secretKey,
-        'POST',
-        buildSecretsUrl(options.region, new URLSearchParams()),
-        {
-          project_id: options.projectId,
-          name: input.name,
-          path: input.path,
-          description: input.description,
-          protected: input.protect ?? false,
-        },
-      )
+      return await scwFetch<SecretManagerSecret>(auth, 'POST', buildSecretsUrl(options.region, new URLSearchParams()), {
+        project_id: options.projectId,
+        name: input.name,
+        path: input.path,
+        description: input.description,
+        protected: input.protect ?? false,
+      })
     },
 
     async putSecretValue(input: PutSecretValueInput): Promise<SecretManagerSecretVersion> {
-      return await scw<SecretManagerSecretVersion>(
-        fetchImpl,
-        options.secretKey,
+      return await scwFetch<SecretManagerSecretVersion>(
+        auth,
         'POST',
         `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${input.secretId}/versions`,
         {
@@ -154,9 +121,8 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
     },
 
     async accessLatestValue(secretId: string): Promise<string> {
-      const response = await scw<AccessSecretVersionResponse>(
-        fetchImpl,
-        options.secretKey,
+      const response = await scwFetch<AccessSecretVersionResponse>(
+        auth,
         'GET',
         `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions/latest/access`,
       )
@@ -164,12 +130,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
     },
 
     async deleteSecret(secretId: string): Promise<void> {
-      await scw(
-        fetchImpl,
-        options.secretKey,
-        'DELETE',
-        `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}`,
-      )
+      await scwSend(auth, 'DELETE', `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}`)
     },
   }
 }

@@ -9,6 +9,17 @@
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "../lib/args.ts", "../lib/env-file.ts", "../lib/guards.ts", "../lib/is-main.ts", "../lib/json.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../lib/args.ts",
+    "../lib/env-file.ts",
+    "../lib/errors.ts",
+    "../lib/escape-regexp.ts",
+    "../lib/fetch-like.ts",
+    "../lib/guards.ts",
+    "../lib/is-main.ts",
+    "../lib/json.ts",
+    "../lib/retry.ts"
+  ],
   "exclude": ["src/**/*.test.ts"]
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assertVmGrants, type FetchLike } from './assert-vm-grants'
+import type { FetchLike } from '../lib/fetch-like'
+import { assertVmGrants } from './assert-vm-grants'
 
 /**
  * Build a fetch mock that matches GET requests by url-substring and returns the

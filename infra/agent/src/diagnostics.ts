@@ -1,11 +1,6 @@
 import { createHash, createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-
-export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string }) => Promise<{
-  ok: boolean
-  status: number
-  text: () => Promise<string>
-}>
+import { type FetchLike, resolveFetch } from '../../lib/fetch-like'
 
 export interface UploadBootDiagnosticsOptions {
   bucket: string
@@ -39,7 +34,7 @@ function timestamp(now: Date): { amzDate: string; date: string; keyStamp: string
 }
 
 async function putObject(opts: UploadBootDiagnosticsOptions, key: string, body: string): Promise<void> {
-  const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  const fetchImpl = resolveFetch(opts.fetchImpl)
   const host = `${opts.bucket}.s3.${opts.region}.scw.cloud`
   const { amzDate, date } = timestamp(opts.now ?? new Date())
   const payloadHash = hash(body)

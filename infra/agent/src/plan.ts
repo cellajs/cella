@@ -105,7 +105,10 @@ function commandField(obj: Record<string, unknown>, key: string): string[] {
   return command
 }
 
-function runtimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
+/** Validate a runtime-secret manifest value. Also used by the boot-plan
+ *  producer (resources/cloud-init.ts) so a malformed manifest fails at plan
+ *  time instead of at VM boot. */
+export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
   if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array")
   return value.map((entry, index) => {
     if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`)
@@ -161,7 +164,7 @@ export function parseBootPlanJson(json: string): BootPlan {
     files: {
       compose: stringField(files, 'compose'),
       env: stringField(files, 'env'),
-      runtimeSecretManifest: runtimeSecretManifest(files.runtimeSecretManifest),
+      runtimeSecretManifest: parseRuntimeSecretManifest(files.runtimeSecretManifest),
     },
     timeouts: {
       privateNetworkSeconds: numberField(timeouts, 'privateNetworkSeconds'),

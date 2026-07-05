@@ -11,6 +11,7 @@
  * salt and an encrypted check value ("pulumi") used to verify the passphrase.
  */
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto'
+import { escapeRegExp } from './escape-regexp'
 
 const PBKDF2_ITERATIONS = 1_000_000
 const KEY_LEN = 32
@@ -74,8 +75,7 @@ function decryptStackSecretsFromText(text: string, passphrase: string, keys: str
 
   const out: Record<string, string> = {}
   for (const k of keys) {
-    const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const m = text.match(new RegExp(`\\b${escaped}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))
+    const m = text.match(new RegExp(`\\b${escapeRegExp(k)}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))
     if (m) out[k] = decryptV1(key, m[1])
   }
   return out

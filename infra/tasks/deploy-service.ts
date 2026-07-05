@@ -1,85 +1,47 @@
-import { spawnSync } from 'node:child_process'
 import { isMain } from '../lib/is-main'
 import { servicesByName } from '../lib/services'
-import { promote, setPending } from '../lib/control-store'
+import {
+  type ControlContext,
+  controlContextForStack,
+  promote,
+  readControlState,
+  type ServiceRollout,
+  setPending,
+  updateServiceRollout,
+} from '../lib/control-store'
+import { errorMessage } from '../lib/errors'
 import type { GenerationMetadata } from '../lib/generation-metadata'
+import { runPulumi, stackOutput } from '../lib/run-pulumi'
 import type { ServiceName } from '../compose/compose'
 import { getFlag, sleep } from './args'
 import { createLbGetServers, createLbSetServers, sequenceCutover } from './cutover'
 import { createFetchProbe, pollForVersion } from './wait-for-version'
 
-function run(command: string, args: string[], opts: { cwd?: string; allowFailure?: boolean } = {}): string {
-  const res = spawnSync(command, args, {
-    cwd: opts.cwd,
-    env: process.env,
-    encoding: 'utf-8',
-    stdio: ['inherit', 'pipe', 'pipe'],
-  })
-  if (res.stdout) process.stdout.write(res.stdout)
-  if (res.stderr) process.stderr.write(res.stderr)
-  if (res.status !== 0 && !opts.allowFailure) throw new Error(`${command} ${args.join(' ')} failed with exit ${res.status}`)
-  return res.stdout.trim()
-}
-
-function pulumi(args: string[], opts: { allowFailure?: boolean } = {}): string {
-  return run('pulumi', args, { cwd: new URL('..', import.meta.url).pathname, ...opts })
-}
-
 // ---------------------------------------------------------------------------
 // Control object (S3) — the source of truth for rollout state. Lazily resolved;
 // null when no S3 credentials are present (the deploy then cannot record state).
 // ---------------------------------------------------------------------------
-interface ControlCtx {
-  s3: import('../lib/control-store').S3Like
-  bucket: string
-  key: string
-}
-let controlCtxPromise: Promise<ControlCtx | null> | undefined
+let controlCtxPromise: Promise<ControlContext | null> | undefined
 
-function controlCtx(stack: string): Promise<ControlCtx | null> {
-  if (!controlCtxPromise) {
-    controlCtxPromise = (async () => {
-      const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
-      const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
-      if (!accessKey || !secretKey) {
-        console.warn('[deploy] no S3 credentials; cannot read/write rollout state')
-        return null
-      }
-      process.env.APP_MODE ??= stack.split('/').pop()
-      const { appConfig } = await import('shared')
-      const { controlClientFromEnv, controlKey, stateBucket } = await import('../lib/control-store')
-      const s3 = await controlClientFromEnv(appConfig.s3.region)
-      return { s3, bucket: stateBucket(appConfig.slug), key: controlKey(stack) }
-    })()
-  }
+function controlCtx(stack: string): Promise<ControlContext | null> {
+  controlCtxPromise ??= controlContextForStack(stack, (msg) => console.warn(`[deploy] ${msg}`))
   return controlCtxPromise
 }
 
 /** Read-modify-write one service's rollout entry in the control object. Throws on
  *  failure so a partial cutover never leaves the store inconsistent. */
-async function updateStore(
-  stack: string,
-  service: string,
-  patch: (current: import('../lib/control-store').ServiceRollout | undefined) => import('../lib/control-store').ServiceRollout,
-): Promise<void> {
+async function updateStore(stack: string, service: string, patch: (current: ServiceRollout | undefined) => ServiceRollout): Promise<void> {
   const ctx = await controlCtx(stack)
   if (!ctx) return
-  const { updateServiceRollout } = await import('../lib/control-store')
-  await updateServiceRollout(ctx.s3, ctx.bucket, ctx.key, service, patch)
+  await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, patch)
 }
 
 /** Current live rollout entry for a service, read from the control object. */
-async function currentRollout(stack: string, service: string): Promise<import('../lib/control-store').ServiceRollout | undefined> {
+async function currentRollout(stack: string, service: string): Promise<ServiceRollout | undefined> {
   const ctx = await controlCtx(stack)
   if (!ctx) return undefined
-  const { readControlState } = await import('../lib/control-store')
-  const { state } = await readControlState(ctx.s3, ctx.bucket, ctx.key)
+  const { state } = await readControlState(ctx.s3, ctx.bucket, ctx.controlKey)
   return state.rollout[service]
-}
-
-function stackOutput<T>(stack: string, name: string): T {
-  const raw = pulumi(['stack', 'output', name, '--stack', stack, '--json'])
-  return JSON.parse(raw) as T
 }
 
 /** Resolve the generation just materialised for `sha`. When a redeploy keeps the
@@ -134,7 +96,7 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   // authority — derive the content-addressed id and materialise the VM. We read
   // the resolved id back from `computeGenerationMetadata`.
   await updateStore(stack, service, (cur) => setPending(cur, sha))
-  pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
+  runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 
   const generations = stackOutput<GenerationMetadata[]>(stack, 'computeGenerationMetadata')
   const target = resolvePendingGen(generations, service, sha, current?.active?.id)
@@ -183,12 +145,12 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
   await updateStore(stack, service, (cur) => promote(cur, { id: target.genId, sha }))
   // Reap the old generation now that the new one serves healthily. No `previous`
   // is retained; rollback is a revert commit + redeploy (recreates every service).
-  pulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
+  runPulumi(['up', '--stack', stack, '--yes', '--non-interactive'])
 }
 
 if (isMain(import.meta.url)) {
   deployService().catch((err) => {
-    console.error(err instanceof Error ? err.message : err)
+    console.error(errorMessage(err))
     process.exit(1)
   })
 }

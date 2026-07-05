@@ -12,22 +12,9 @@
  * separate acquire/release CI steps — different processes, same run — match.
  */
 import { isMain } from '../lib/is-main'
-import {
-  acquireLock,
-  controlActor,
-  controlClientFromEnv,
-  lockKey,
-  releaseLock,
-  stateBucket,
-} from '../lib/control-store'
+import { acquireLock, controlActor, controlContextForStack, releaseLock } from '../lib/control-store'
+import { errorMessage } from '../lib/errors'
 import { getFlag, getNumFlag } from './args'
-
-async function context(stack: string) {
-  process.env.APP_MODE ??= stack.split('/').pop()
-  const { appConfig } = await import('shared')
-  const s3 = await controlClientFromEnv(appConfig.s3.region)
-  return { s3, bucket: stateBucket(appConfig.slug), key: lockKey(stack) }
-}
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const command = argv[0]
@@ -35,7 +22,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (!stack || (command !== 'acquire' && command !== 'release')) {
     throw new Error('Usage: stack-lock <acquire|release> --stack <stack> [--operation <op>] [--ttl-min <n>]')
   }
-  const { s3, bucket, key } = await context(stack)
+  const ctx = await controlContextForStack(stack)
+  if (!ctx) throw new Error('stack-lock: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required')
+  const { s3, bucket, lockKey: key } = ctx
   const owner = controlActor()
 
   if (command === 'release') {
@@ -57,7 +46,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
 if (isMain(import.meta.url)) {
   main().catch((err) => {
-    console.error(err instanceof Error ? err.message : err)
+    console.error(errorMessage(err))
     process.exit(1)
   })
 }

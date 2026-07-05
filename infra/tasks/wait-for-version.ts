@@ -15,6 +15,7 @@
  *     --sha <git-sha> [--attempts 100] [--interval 3000] [--timeout 8000]
  */
 import { isMain } from '../lib/is-main'
+import { pollUntil } from '../lib/retry'
 import { getFlag, getNumFlag, sleep } from './args'
 
 export interface ProbeResult {
@@ -119,42 +120,44 @@ export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
   const { url, expectedSha, probe } = opts
   const attempts = opts.attempts ?? 100
   const intervalMs = opts.intervalMs ?? 3000
-  const sleepFn = opts.sleep ?? sleep
   const log = opts.log ?? ((msg: string) => console.info(msg))
 
   let lastStatus: number | undefined
   let lastVersion: string | undefined
 
-  for (let i = 1; i <= attempts; i++) {
-    const result = await probe(url)
-    lastStatus = result.status
-    lastVersion = result.version
+  const outcome = await pollUntil<PollOutcome>(
+    async (i) => {
+      const result = await probe(url)
+      lastStatus = result.status
+      lastVersion = result.version
 
-    if (isHealthy(result, expectedSha)) {
-      log(`Serving ${expectedSha} after ${i} attempt(s)`)
-      return { ok: true, attempts: i, lastStatus, lastVersion }
-    }
-
-    // Consult the reconciler's own status. Fast-fail ONLY on a terminal rollout
-    // failure (bad release); keep polling through self-healing infra transients
-    // (pull/tag-fetch) and just surface the phase/reason so the CI log shows
-    // progress instead of silence.
-    const roll = opts.status?.()
-    if (roll && roll.desired === expectedSha) {
-      if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {
-        const reason = roll.reason || 'unknown'
-        log(`Reconciler reported a terminal rollout failure for ${expectedSha} (exit ${roll.exitCode}): ${reason}`)
-        return { ok: false, attempts: i, lastStatus, lastVersion, failReason: reason }
+      if (isHealthy(result, expectedSha)) {
+        log(`Serving ${expectedSha} after ${i} attempt(s)`)
+        return { ok: true, attempts: i, lastStatus, lastVersion }
       }
-      const where = roll.result === 'failed' ? `retrying after ${roll.reason ?? 'failure'}` : `phase=${roll.phase ?? '<none>'}`
-      log(`Attempt ${i}/${attempts}: reconciler ${where} status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`)
-    } else {
-      log(`Attempt ${i}/${attempts}: status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`)
-    }
-    if (i < attempts) await sleepFn(intervalMs)
-  }
 
-  return { ok: false, attempts, lastStatus, lastVersion }
+      // Consult the reconciler's own status. Fast-fail ONLY on a terminal rollout
+      // failure (bad release); keep polling through self-healing infra transients
+      // (pull/tag-fetch) and just surface the phase/reason so the CI log shows
+      // progress instead of silence.
+      const roll = opts.status?.()
+      if (roll && roll.desired === expectedSha) {
+        if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {
+          const reason = roll.reason || 'unknown'
+          log(`Reconciler reported a terminal rollout failure for ${expectedSha} (exit ${roll.exitCode}): ${reason}`)
+          return { ok: false, attempts: i, lastStatus, lastVersion, failReason: reason }
+        }
+        const where = roll.result === 'failed' ? `retrying after ${roll.reason ?? 'failure'}` : `phase=${roll.phase ?? '<none>'}`
+        log(`Attempt ${i}/${attempts}: reconciler ${where} status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`)
+      } else {
+        log(`Attempt ${i}/${attempts}: status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`)
+      }
+      return undefined
+    },
+    { attempts, intervalMs, sleep: opts.sleep ?? sleep },
+  )
+
+  return outcome ?? { ok: false, attempts, lastStatus, lastVersion }
 }
 
 interface CliArgs {

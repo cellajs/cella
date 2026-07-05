@@ -51,6 +51,13 @@ export function serviceHost(slug: ServiceName): string {
   return endpoint.host
 }
 
+/** Full public URL for a service slug (throws for internal-only services like cdc). */
+export function serviceUrl(slug: ServiceName): string {
+  const endpoint = endpointBySlug.get(slug)
+  if (!endpoint) throw new Error(`Service '${slug}' has no public endpoint (internal-only?)`)
+  return endpoint.url
+}
+
 /** Pulumi stack config for infrastructure-specific values (sizing, secrets) */
 export const infraConfig = new pulumi.Config('infra')
 

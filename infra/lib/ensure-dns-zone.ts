@@ -27,6 +27,7 @@ import pc from 'shared/cli-utils/colors'
 import { checkMark, tildeMark, warningMark } from 'shared/console'
 import { resolveProjectId } from './bootstrap-scw-env'
 import { isMain } from './is-main'
+import { errorMessage } from './errors'
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1'
 const CHALLENGE_NAME = '_scaleway-challenge'
@@ -133,7 +134,7 @@ if (isMain(import.meta.url)) {
     process.exit(1)
   }
   ensureDnsZone({ secretKey, projectId, domain }).catch((err) => {
-    console.error((err as Error).message)
+    console.error(errorMessage(err))
     process.exit(1)
   })
 }

@@ -1,5 +1,7 @@
 import { isMain } from '../lib/is-main'
+import { parseServiceRows } from '../lib/service-rows'
 import { getFlag } from './args'
+import { errorMessage } from '../lib/errors'
 
 interface ServiceUrlRow {
   service: string
@@ -7,16 +9,7 @@ interface ServiceUrlRow {
 }
 
 export function parseServiceUrls(raw: string): ServiceUrlRow[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('--services-json must be a JSON array')
-  return parsed.map((item, index) => {
-    if (!item || typeof item !== 'object') throw new Error(`--services-json[${index}] must be an object`)
-    const service = (item as Record<string, unknown>).service
-    const publicUrl = (item as Record<string, unknown>).public_url
-    if (typeof service !== 'string') throw new Error(`--services-json[${index}].service must be a string`)
-    if (typeof publicUrl !== 'string') throw new Error(`--services-json[${index}].public_url must be a string`)
-    return { service, public_url: publicUrl }
-  })
+  return parseServiceRows(raw, '--services-json', { required: ['service', 'public_url'] })
 }
 
 export function frontendBuildEnv(raw: string): Record<'VITE_BACKEND_URL' | 'VITE_FRONTEND_URL', string> {
@@ -37,7 +30,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
 if (isMain(import.meta.url)) {
   main().catch((err) => {
-    console.error(err instanceof Error ? `::error::${err.message}` : err)
+    console.error(`::error::${errorMessage(err)}`)
     process.exit(1)
   })
 }
