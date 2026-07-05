@@ -17,7 +17,7 @@ interface BaseProps {
   readOnly?: boolean;
 }
 
-// TODO review compactable
+// TODO [#14] review compactable
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */

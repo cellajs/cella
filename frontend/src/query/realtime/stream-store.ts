@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
+import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
@@ -202,6 +203,10 @@ class StreamManager {
         const isPermanentError = this.isPermanentError(error);
 
         console.error(`[${this.name}] Catchup failed:`, error);
+        reportCriticalError('realtime.catchup_failed', error, {
+          stream: this.name,
+          consecutiveFailures: this.consecutiveFailures,
+        });
         this.useStore.getState().setState('error');
 
         // Resolve catchup promise on failure so paused mutations aren't stuck forever

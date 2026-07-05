@@ -10,7 +10,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-import { type LogContext, logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { oauthVerificationEmail } from '../../../../../emails';
@@ -25,10 +25,7 @@ interface Props {
  * OAuth email verification (with oauthAccountId): user verifies by email to connect an OAuth account
  * This is done to be sure that the oauth account holder also owns the email address.
  */
-export const sendOAuthVerificationEmail = async (
-  { userId, oauthAccountId, redirectPath }: Props,
-  logCtx: LogContext = null,
-) => {
+export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
@@ -101,5 +98,5 @@ export const sendOAuthVerificationEmail = async (
     console.info(`[verification-link] ${email} ${verificationURL.toString()}`);
   }
 
-  logEvent(logCtx, 'info', 'Verification email sent', { userId: user.id });
+  log.info('Verification email sent', { userId: user.id });
 };

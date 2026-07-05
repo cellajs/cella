@@ -9,7 +9,7 @@ import type { attachmentUpdateStxBodySchema } from '#/modules/attachment/attachm
 import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-user';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
@@ -41,7 +41,7 @@ export async function updateAttachmentOp(
     return updateAttachment(txCtx, { id, values });
   });
 
-  logEvent(ctx, 'info', 'Attachment updated', { attachmentId: updatedAttachmentRecord.id });
+  log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
   const attachmentResponse = fullResponse
     ? await withAuditUser(ctx, updatedAttachmentRecord, user)

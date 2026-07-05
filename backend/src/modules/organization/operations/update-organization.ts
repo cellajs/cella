@@ -8,7 +8,7 @@ import { updateOrganization } from '#/modules/organization/organization-queries'
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidContextEntity } from '#/permissions';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
 export async function updateOrganizationOp(
@@ -41,7 +41,7 @@ export async function updateOrganizationOp(
 
   invalidateCache.org(tenantId, organization.id);
 
-  logEvent(ctx, 'info', 'Organization updated', { organizationId: updatedOrganizationRecord.id });
+  log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
   const counts = await getEntityCounts(ctx, organization.entityType, organization.id);
 

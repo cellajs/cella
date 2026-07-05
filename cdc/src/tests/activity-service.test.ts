@@ -12,7 +12,7 @@ vi.mock('shared/nanoid', () => ({
 
 import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
 import { wsClient } from '../network/websocket-client';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 describe('generateActivityId', () => {
   it('zero-pads both LSN segments to a fixed 17-char width', () => {
@@ -55,7 +55,7 @@ describe('sendBatchMessageToApi', () => {
     expect(activity.seq).toBe(10); // minSeq
     expect(activity.batchUntilSeq).toBe(12); // maxSeq
     // No error log for contiguous seqs
-    expect(logEvent).not.toHaveBeenCalledWith('error', expect.any(String), expect.any(Object));
+    expect(log.error).not.toHaveBeenCalled();
   });
 
   it('logs error for non-contiguous seqs (gap detection invariant)', () => {
@@ -63,8 +63,7 @@ describe('sendBatchMessageToApi', () => {
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
-    expect(logEvent).toHaveBeenCalledWith(
-      'error',
+    expect(log.error).toHaveBeenCalledWith(
       'Non-contiguous seqs in batch — sync integrity at risk',
       expect.objectContaining({ minSeq: 10, batchUntilSeq: 12, seqCount: 2, expected: 3 }),
     );
@@ -75,7 +74,7 @@ describe('sendBatchMessageToApi', () => {
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
     expect(wsClient.send).toHaveBeenCalledOnce();
-    expect(logEvent).not.toHaveBeenCalledWith('error', expect.any(String), expect.any(Object));
+    expect(log.error).not.toHaveBeenCalled();
   });
 
   it('handles events without seqs (delete batches)', () => {
@@ -91,6 +90,6 @@ describe('sendBatchMessageToApi', () => {
     expect(activity.batchUntilSeq).toBeUndefined();
     expect(activity.action).toBe('delete');
     expect(activity.deletedIds).toBeUndefined();
-    expect(logEvent).not.toHaveBeenCalledWith('error', expect.any(String), expect.any(Object));
+    expect(log.error).not.toHaveBeenCalled();
   });
 });

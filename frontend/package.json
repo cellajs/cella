@@ -35,6 +35,7 @@
     "@blocknote/react": "^0.51.4",
     "@blocknote/shadcn": "^0.51.4",
     "@hookform/resolvers": "^5.4.0",
+    "@maple-dev/browser": "^0.1.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
     "@opentelemetry/instrumentation": "^0.219.0",

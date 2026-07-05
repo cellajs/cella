@@ -1,7 +1,7 @@
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomainByName, findTenantExists, insertDomain } from '#/modules/domains/domains-queries';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 export async function createDomainOp(ctx: AuthContext, domain: string) {
   const tenantId = ctx.var.tenantId;
@@ -20,7 +20,7 @@ export async function createDomainOp(ctx: AuthContext, domain: string) {
 
   const created = await insertDomain(ctx, { domain });
 
-  logEvent(ctx, 'info', 'Domain added', { tenantId, domain });
+  log.info('Domain added', { tenantId, domain });
 
   return created;
 }

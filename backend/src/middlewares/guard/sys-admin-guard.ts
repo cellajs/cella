@@ -20,7 +20,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail(ctx, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
       ip,
       route: ctx.req.path,
       timestamp: new Date().toISOString(),
@@ -41,7 +41,7 @@ const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
   ipRestriction(getIp, { allowList }, async (remote) => {
     const ip = remote.addr ?? 'unknown';
-    sendAccountSecurityEmail(null, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-fail', {
       ip,
       route: 'ip-restricted',
       timestamp: new Date().toISOString(),

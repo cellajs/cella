@@ -5,6 +5,7 @@
  * rather than dropped, so no offline edit is ever silently lost. Records are
  * surfaced in a non-blocking banner with JSON export (UI consumes `listFailedSync`).
  */
+import { reportCriticalError } from '~/lib/tracing';
 import { getAppDb } from '~/query/app-db';
 
 export interface FailedSyncRecord {
@@ -36,6 +37,7 @@ export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' |
     await db.failedSync.add({ ...record, createdAt: Date.now() });
   } catch (error) {
     console.error('[failed-sync] Failed to quarantine mutation:', error);
+    reportCriticalError('offline.quarantine_failed', error, { mutationId: record.mutationId });
   }
 }
 

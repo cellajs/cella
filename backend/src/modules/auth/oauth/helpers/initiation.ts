@@ -11,7 +11,7 @@ import {
   type oauthQuerySchema,
 } from '#/modules/auth/oauth/oauth-schema';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
 type OAuthQueryParams = z.infer<typeof oauthQuerySchema>;
@@ -90,7 +90,7 @@ export const handleOAuthInitiation = async (
 
   await setAuthCookie(ctx, `oauth-state-${state}`, stringifiedContent, new TimeSpan(5, 'm'));
 
-  logEvent(ctx, 'info', 'User redirected to OAuth provider', { strategy: 'oauth', provider, type });
+  log.info('User redirected to OAuth provider', { strategy: 'oauth', provider, type });
 
   return ctx.redirect(url.toString(), 302);
 };

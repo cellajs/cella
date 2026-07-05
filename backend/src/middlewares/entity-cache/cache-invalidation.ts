@@ -1,6 +1,6 @@
 import { isProductEntity, isPublicStreamEntity } from 'shared';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { entityCache } from './app-entity-cache';
 
 let isRegistered = false;
@@ -26,7 +26,7 @@ function handleActivityEvent(event: ActivityEvent): void {
   const invalidated = entityCache.invalidateByEntity(entityType, subjectId);
 
   if (invalidated) {
-    logEvent(null, 'debug', 'Entity cache invalidated', {
+    log.debug('Entity cache invalidated', {
       entityType,
       subjectId,
       action,
@@ -48,14 +48,14 @@ function handleActivityEvent(event: ActivityEvent): void {
  */
 export function registerCacheInvalidation(): void {
   if (isRegistered) {
-    logEvent(null, 'warn', 'Cache hook already registered');
+    log.warn('Cache hook already registered');
     return;
   }
 
   activityBus.onAny(handleActivityEvent);
   isRegistered = true;
 
-  logEvent(null, 'info', 'Entity cache hook registered');
+  log.info('Entity cache hook registered');
 }
 
 /**
@@ -68,5 +68,5 @@ export function unregisterCacheInvalidation(): void {
   activityBus.offAny(handleActivityEvent);
   isRegistered = false;
 
-  logEvent(null, 'info', 'Entity cache hook unregistered');
+  log.info('Entity cache hook unregistered');
 }

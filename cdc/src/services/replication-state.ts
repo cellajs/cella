@@ -1,6 +1,6 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
 import { RESOURCE_LIMITS } from '../constants';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 const { enterLagMs, exitLagMs, exitConsecutiveLive } = RESOURCE_LIMITS.catchup;
 
@@ -141,7 +141,7 @@ class ReplicationStateManager {
         this._catchupStartedAt = Date.now();
         this._catchupEventsProcessed = 0;
         this._consecutiveLiveTxns = 0;
-        logEvent('info', 'Entering catchup mode — WAL lag exceeds threshold', {
+        log.info('Entering catchup mode — WAL lag exceeds threshold', {
           lagMs: Math.round(lagMs),
           thresholdMs: enterLagMs,
         });
@@ -154,7 +154,7 @@ class ReplicationStateManager {
       this._consecutiveLiveTxns++;
       if (this._consecutiveLiveTxns >= exitConsecutiveLive) {
         const duration = Date.now() - (this._catchupStartedAt ?? Date.now());
-        logEvent('info', 'Exiting catchup mode — WAL lag below threshold', {
+        log.info('Exiting catchup mode — WAL lag below threshold', {
           lagMs: Math.round(lagMs),
           consecutiveLive: this._consecutiveLiveTxns,
           catchupDurationMs: duration,

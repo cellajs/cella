@@ -22,7 +22,7 @@ import { hashIpForUser, hashSubnet } from '#/utils/hash-pii';
 import { toSubnet } from '#/utils/ip-subnet';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { encodeLowerCased } from '#/utils/oslo';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -51,7 +51,7 @@ export const setUserSession = async (
   // Notify security email when a system admin signs in (skip in development)
   if (isSystemAdmin && appConfig.mode !== 'development') {
     const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail(ctx, { email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
+    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
       email: user.email,
       ip,
       timestamp: new Date().toISOString(),
@@ -111,7 +111,7 @@ export const setUserSession = async (
     target: userCountersTable.userId,
     set: { lastSignInAt },
   });
-  logEvent(ctx, 'info', 'User signed in', { strategy });
+  log.info('User signed in', { strategy });
 };
 
 /**

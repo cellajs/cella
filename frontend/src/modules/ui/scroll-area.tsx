@@ -35,7 +35,7 @@ export function ScrollArea({
     });
   }, [autoScrollOnDrag, viewportRef]);
 
-  // TODO: revisit once Base UI observes content subtree (https://github.com/mui/base-ui).
+  // TODO [#13]: revisit once Base UI observes content subtree (https://github.com/mui/base-ui).
   // Base UI's ScrollArea only ResizeObserves the viewport, so scrollbar visibility doesn't
   // recompute when inner content grows/shrinks (e.g. sheeter content swap, accordion toggles).
   // Workaround: on subtree mutations, toggle a 1px viewport min-height delta to wake it.

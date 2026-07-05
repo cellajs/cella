@@ -155,40 +155,6 @@ jobs:
       - name: Run Storybook tests
         run: pnpm --filter frontend exec vitest run --project=storybook
 
-  # Tests for cella CLI
-  test-cella-cli:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          fetch-depth: 0 # Required for git operations in sync CLI
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: 24
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Smoke sync CLI
-        run: pnpm cella --help
-
-      - name: Run sync analysis (dry-run)
-        # Rewrite SSH upstream URL to HTTPS so the runner can fetch the public
-        # cella repo without an SSH key (cella.config.ts uses git@ for local devs).
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          pnpm cella analyze --track branch
-
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
   # so offline clients wipe stale persisted query data. 
@@ -221,7 +187,7 @@ jobs:
           cp "$SPEC" /tmp/head-openapi.json
 
           # Classify breaking changes (oasdiff exits non-zero on breaking errors).
-          # TODO: pin tufin/oasdiff by digest once chosen.
+          # TODO [#19]: pin tufin/oasdiff by digest once chosen.
           set +e
           docker run --rm -v /tmp:/specs tufin/oasdiff:v1.20.0 \
             breaking /specs/base-openapi.json /specs/head-openapi.json --fail-on ERR

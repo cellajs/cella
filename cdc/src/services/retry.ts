@@ -1,5 +1,5 @@
 import { RESOURCE_LIMITS, TRANSIENT_ERROR_CODES } from '../constants';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 const { retry: RETRY_CONFIG } = RESOURCE_LIMITS;
 
@@ -78,12 +78,12 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
         RETRY_CONFIG.maxDelayMs,
       );
 
-      logEvent('warn', `Transient error during ${context}, retrying...`, {
+      log.warn(`Transient error during ${context}, retrying...`, {
         attempt,
         maxAttempts: RETRY_CONFIG.maxAttempts,
         delayMs: delay,
         errorCode: getErrorCode(error),
-        errorMessage: lastError.message,
+        err: lastError,
       });
 
 

@@ -4,7 +4,7 @@ import { signCacheToken } from '#/middlewares/entity-cache/token-signer';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions';
 import { buildSubject } from '#/permissions/build-subject';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
 import { createStreamDispatcher } from '../stream/dispatcher';
 import type { AppStreamEvent, PublicStreamEvent } from '../stream/types';
@@ -47,7 +47,7 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
       return checkPermission(subscriber.memberships, 'read', subject, { isSystemAdmin: subscriber.isSystemAdmin })
         .isAllowed;
     } catch {
-      logEvent(null, 'error', 'Malformed stream event: missing ancestor scope', {
+      log.error('Malformed stream event: missing ancestor scope', {
         entityType: event.entityType,
         subjectId: event.subjectId,
       });

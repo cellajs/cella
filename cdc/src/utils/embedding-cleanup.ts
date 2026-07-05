@@ -3,7 +3,7 @@ import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
 import { appConfig, type ActivityAction, hierarchy, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
@@ -93,7 +93,7 @@ export async function cleanupEmbeddingReferences(
       const { id } = result.rowData;
       const parentId = result.rowData[parentColumnName];
       if (!id || typeof parentId !== 'string') {
-        if (id) logEvent('warn', `cleanupEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id });
+        if (id) log.warn(`cleanupEmbeddingReferences: missing "${parentColumnName}" for embedded entity`, { id });
         continue;
       }
 

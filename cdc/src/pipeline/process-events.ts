@@ -2,7 +2,7 @@ import { activitiesTable } from '#/modules/activities/activities-db';
 import { isProductEntity } from 'shared';
 
 import { cdcDb } from '../lib/db';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 import { type BatchEventInfo, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
 import { cdcMetrics } from '../services/cdc-metrics';
@@ -49,20 +49,20 @@ async function persistActivities(
     }, 'insert activity');
 
     if (!insertResult.success) {
-      logEvent('error', 'Activity insert failed permanently — event skipped', {
+      log.error('Activity insert failed permanently — event skipped', {
         activityId: activityWithId.id,
         lsn,
         tableName,
         action: activityWithId.action,
         subjectId: activityWithId.subjectId,
-        errorMessage: insertResult.error.message,
+        err: insertResult.error,
       });
       circuitBreaker.recordFailure(tableName);
       return false;
     }
 
     if (insertResult.attempts > 1) {
-      logEvent('info', `Activity insert succeeded after retry`, {
+      log.info(`Activity insert succeeded after retry`, {
         activityId: activityWithId.id,
         attempts: insertResult.attempts,
         lsn,
@@ -85,13 +85,13 @@ async function persistActivities(
       }, 'insert activity');
 
       if (!singleResult.success) {
-        logEvent('error', 'Activity insert failed permanently — event skipped', {
+        log.error('Activity insert failed permanently — event skipped', {
           activityId: activityWithId.id,
           lsn,
           tableName,
           action: activityWithId.action,
           subjectId: activityWithId.subjectId,
-          errorMessage: singleResult.error.message,
+          err: singleResult.error,
         });
         anyFailed = true;
       }
@@ -120,7 +120,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
   // Circuit breaker: skip events for tables with persistent failures
   if (!circuitBreaker.shouldProcess(tableName)) {
-    logEvent('debug', 'Skipping event — circuit open', { tableName, lsn: firstLsn, count: events.length });
+    log.debug('Skipping event — circuit open', { tableName, lsn: firstLsn, count: events.length });
     return;
   }
 
@@ -159,7 +159,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
     // Log each activity creation
     for (const { activityWithId, lsn } of stamped) {
-      logEvent('trace', `Activity created from CDC`, {
+      log.trace(`Activity created from CDC`, {
         type: activityWithId.type,
         subjectId: activityWithId.subjectId,
         activityId: activityWithId.id,
@@ -190,7 +190,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     cdcMetrics.recordProcessing(events.length, performance.now() - startMs);
 
     if (isBatch) {
-      logEvent('trace', `Batch processed`, {
+      log.trace(`Batch processed`, {
         batchSize: events.length,
         entityType: events[0].result.activity.entityType,
         action,

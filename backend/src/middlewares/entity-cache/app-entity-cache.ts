@@ -13,7 +13,7 @@
  */
 
 import { TTLCache } from '#/lib/ttl-cache';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCacheMetrics } from './metrics';
 
@@ -39,7 +39,7 @@ const cache = new TTLCache<CacheValue>({
   defaultTtl: cacheConfig.defaultTtl,
   onDispose: (key, _value, reason) => {
     if (reason === 'stale' || reason === 'evict') {
-      logEvent(null, 'trace', 'Entity cache disposed', { key, reason });
+      log.trace('Entity cache disposed', { key, reason });
     }
   },
 });

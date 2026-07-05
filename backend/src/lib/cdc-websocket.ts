@@ -8,7 +8,7 @@ import { env } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { entityCache, publicEntityCache } from '#/middlewares/entity-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
-import { logEvent } from '#/utils/logger';
+import { log } from '#/utils/logger';
 
 /**
  * Zod schema for CDC WebSocket message payload.
@@ -183,7 +183,7 @@ class CdcWebSocketServer {
       // X-Forwarded-For while the socket peer is the local proxy.
       const remoteIp = request.socket.remoteAddress;
       if (env.NODE_ENV === 'production' && !isAllowedCdcSource(remoteIp, request.headers['x-forwarded-for'])) {
-        logEvent(null, 'warn', 'CDC WebSocket rejected disallowed source', {
+        log.warn('CDC WebSocket rejected disallowed source', {
           ip: remoteIp,
           forwardedFor: request.headers['x-forwarded-for'],
         });
@@ -195,7 +195,7 @@ class CdcWebSocketServer {
       // Validate shared secret — always required
       const secret = request.headers['x-cdc-secret'];
       if (!env.CDC_SECRET || secret !== env.CDC_SECRET) {
-        logEvent(null, 'warn', 'CDC WebSocket auth failed', {
+        log.warn('CDC WebSocket auth failed', {
           ip: request.socket.remoteAddress,
           reason: !env.CDC_SECRET ? 'CDC_SECRET not configured' : 'invalid secret',
         });
@@ -209,7 +209,7 @@ class CdcWebSocketServer {
       });
     });
 
-    logEvent(null, 'info', 'CDC WebSocket server attached to HTTP server');
+    log.info('CDC WebSocket server attached to HTTP server');
   }
 
   /**
@@ -219,7 +219,7 @@ class CdcWebSocketServer {
   private handleConnection(ws: WebSocket): void {
     // Close existing connection if any (graceful replacement)
     if (this.currentConnection) {
-      logEvent(null, 'info', 'Replacing existing CDC Worker connection');
+      log.info('Replacing existing CDC Worker connection');
       this.currentConnection.close(1000, 'Replaced by new connection');
     }
 
@@ -228,7 +228,7 @@ class CdcWebSocketServer {
     this.resetIdleTimer();
     this.startPingInterval();
 
-    logEvent(null, 'info', 'CDC Worker connected via WebSocket');
+    log.info('CDC Worker connected via WebSocket');
 
     ws.on('message', (data) => {
       this.resetIdleTimer();
@@ -240,12 +240,12 @@ class CdcWebSocketServer {
     });
 
     ws.on('close', (code, reason) => {
-      logEvent(null, 'info', 'CDC Worker disconnected', { code, reason: reason.toString() });
+      log.info('CDC Worker disconnected', { code, reason: reason.toString() });
       this.cleanup();
     });
 
     ws.on('error', (err) => {
-      logEvent(null, 'error', 'CDC WebSocket error', { error: err.message });
+      log.error('CDC WebSocket error', { err });
       this.cleanup();
     });
   }
@@ -274,7 +274,7 @@ class CdcWebSocketServer {
           subjectId: parsed?.activity?.subjectId,
           action: parsed?.activity?.action,
         };
-        logEvent(null, 'error', 'CDC message schema validation failed - message dropped', {
+        log.error('CDC message schema validation failed - message dropped', {
           errors: result.error.issues,
           preview,
         });
@@ -289,7 +289,7 @@ class CdcWebSocketServer {
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;
-        logEvent(null, 'error', 'Unknown event type in CDC message - message dropped', {
+        log.error('Unknown event type in CDC message - message dropped', {
           type,
           subjectId: message.activity.subjectId,
         });
@@ -322,7 +322,7 @@ class CdcWebSocketServer {
         trace: message._trace ?? null,
       } as ActivityEvent;
 
-      logEvent(null, 'trace', 'CDC message processed', {
+      log.trace('CDC message processed', {
         type: message.activity.type,
         subjectId: message.activity.subjectId,
       });
@@ -330,7 +330,7 @@ class CdcWebSocketServer {
       activityBus.emit(activityEvent);
     } catch (err) {
       this._parseErrors++;
-      logEvent(null, 'error', 'Failed to parse CDC message', { error: err });
+      log.error('Failed to parse CDC message', { err });
     }
   }
 
@@ -347,7 +347,7 @@ class CdcWebSocketServer {
       entityCache.clear();
       publicEntityCache.clear();
 
-      logEvent(null, 'info', 'CDC catchup complete — entity caches cleared', {
+      log.info('CDC catchup complete — entity caches cleared', {
         eventsProcessed,
         catchupDurationMs,
       });
@@ -362,7 +362,7 @@ class CdcWebSocketServer {
       return;
     }
 
-    logEvent(null, 'warn', 'Unknown CDC control message', { control: message._control });
+    log.warn('Unknown CDC control message', { control: message._control });
   }
 
   /**
@@ -371,7 +371,7 @@ class CdcWebSocketServer {
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
-      logEvent(null, 'warn', 'CDC WebSocket idle timeout, closing connection');
+      log.warn('CDC WebSocket idle timeout, closing connection');
       this.currentConnection?.close(1000, 'Idle timeout');
     }, IDLE_TIMEOUT_MS);
   }

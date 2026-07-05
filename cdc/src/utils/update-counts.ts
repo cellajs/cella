@@ -5,7 +5,7 @@ import type { InactiveMembershipModel } from '#/modules/memberships/inactive-mem
 import type { MembershipModel } from '#/modules/memberships/memberships-db';
 import type { TableMeta } from '../types';
 import type { CdcRowData } from '../types';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 export interface CountDelta {
   /** Context key (organizationId or 'public:{type}') — the row to update */
@@ -201,7 +201,7 @@ function getEntityDeltas(
 
   // Assert required fields are present
   if (!newRow.id) {
-    logEvent('warn', `getEntityDeltas: missing "id" for ${entityType}`, { action });
+    log.warn(`getEntityDeltas: missing "id" for ${entityType}`, { action });
     return [];
   }
 
@@ -214,7 +214,7 @@ function getEntityDeltas(
     const parentIdColumn = appConfig.entityIdColumnKeys[parentType];
     const row = action === 'delete' ? (oldRow ?? newRow) : newRow;
     const parentId = getStringValue(row, parentIdColumn);
-    if (!parentId) logEvent('warn', `getEntityDeltas: missing "${parentIdColumn}" for ${entityType}`, { id: row.id });
+    if (!parentId) log.warn(`getEntityDeltas: missing "${parentIdColumn}" for ${entityType}`, { id: row.id });
     if (parentId) {
       deltas.push({ contextKey: parentId, deltas: { [`e:${entityType}`]: value } });
     }

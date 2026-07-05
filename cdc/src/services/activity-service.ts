@@ -1,6 +1,6 @@
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { appConfig, hierarchy, isProductEntity } from 'shared';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import type { CdcRowData } from '../types';
 import { excludedRowDataKeys } from '../utils/compact-row-data';
@@ -76,7 +76,7 @@ export function sendMessageToApi(
 ): void {
   const payload = buildActivityPayload(activity, rowData, traceContext, seq);
   if (!wsClient.send(payload)) {
-    logEvent('warn', 'Failed to send message to API');
+    log.warn('Failed to send message to API');
   }
 }
 
@@ -106,7 +106,7 @@ export function sendBatchMessageToApi(
 
   // Invariant: seqs must be contiguous within a batch — gap detection and unseen counts depend on this.
   if (minSeq !== undefined && batchUntilSeq !== undefined && batchUntilSeq - minSeq + 1 !== seqs.length) {
-    logEvent('error', 'Non-contiguous seqs in batch — sync integrity at risk', {
+    log.error('Non-contiguous seqs in batch — sync integrity at risk', {
       minSeq, batchUntilSeq, seqCount: seqs.length, expected: batchUntilSeq - minSeq + 1,
     });
   }
@@ -132,7 +132,7 @@ export function sendBatchMessageToApi(
   const payload = {  ...base, activity, cacheToken: batchToken, batchReservations };
 
   if (!wsClient.send(payload)) {
-    logEvent('warn', 'Failed to send batch message to API', { batchSize: events.length });
+    log.warn('Failed to send batch message to API', { batchSize: events.length });
   }
 }
 

@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import { env } from '../env';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 
 /** WebSocket ready states */
 const WS_OPEN = 1;
@@ -82,7 +82,7 @@ class WebSocketClient {
     };
 
     if (!this.inGracePeriod()) {
-      logEvent('info', 'CDC WebSocket connecting...', { url: this.url, attempt: this.reconnectAttempt + 1 });
+      log.info('CDC WebSocket connecting...', { url: this.url, attempt: this.reconnectAttempt + 1 });
     }
 
     this.ws = new WebSocket(this.url, { headers });
@@ -92,7 +92,7 @@ class WebSocketClient {
       this._disconnectedAt = null;
       this.reconnectAttempt = 0; // Reset backoff on successful connection
 
-      logEvent('info', 'CDC WebSocket connected');
+      log.info('CDC WebSocket connected');
 
       // Start ping interval to keep connection alive
       this.startPingInterval();
@@ -102,21 +102,21 @@ class WebSocketClient {
 
     this.ws.on('close', (code, reason) => {
       if (!this.inGracePeriod()) {
-        logEvent('info', 'CDC WebSocket closed', { code, reason: reason.toString() });
+        log.info('CDC WebSocket closed', { code, reason: reason.toString() });
       }
       this.handleDisconnect();
     });
 
     this.ws.on('error', (error) => {
       if (!this.inGracePeriod()) {
-        logEvent('warn', 'CDC WebSocket error', { error: error.message });
+        log.warn('CDC WebSocket error', { err: error });
       }
       // Don't call handleDisconnect here - 'close' event will follow
     });
 
     this.ws.on('pong', () => {
       // Connection is alive
-      logEvent('trace', 'CDC WebSocket pong received');
+      log.trace('CDC WebSocket pong received');
     });
   }
 
@@ -127,7 +127,7 @@ class WebSocketClient {
   send(data: unknown): boolean {
     if (!this.isConnected()) {
       if (!this.inGracePeriod()) {
-        logEvent('warn', 'CDC WebSocket not connected, cannot send message');
+        log.warn('CDC WebSocket not connected, cannot send message');
       }
       return false;
     }
@@ -139,7 +139,7 @@ class WebSocketClient {
       this._lastMessageAt = new Date();
       return true;
     } catch (error) {
-      logEvent('error', 'CDC WebSocket send error', { error });
+      log.error('CDC WebSocket send error', { err: error });
       return false;
     }
   }
@@ -236,7 +236,7 @@ class WebSocketClient {
     this.reconnectAttempt++;
 
     if (!this.inGracePeriod()) {
-      logEvent('info', 'CDC WebSocket scheduling reconnect', {
+      log.info('CDC WebSocket scheduling reconnect', {
         attempt: this.reconnectAttempt,
         delayMs: delay,
       });

@@ -2,7 +2,7 @@ import type { Pgoutput } from 'pg-logical-replication';
 import { isContextEntity, appConfig } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
 
 /** Reverse lookup: targetType → source types that embed into it (from entityEmbeddings) */
@@ -54,7 +54,7 @@ export class TransactionBuffer {
   onBegin(msg: Pgoutput.MessageBegin): void {
     // If there's already an active transaction (shouldn't happen), flush it
     if (this.activeXid !== null) {
-      logEvent('warn', 'BEGIN received while transaction active, flushing previous', {
+      log.warn('BEGIN received while transaction active, flushing previous', {
         prevXid: this.activeXid,
         newXid: msg.xid,
         pendingCount: this.pendingEvents.length,
@@ -132,7 +132,7 @@ export class TransactionBuffer {
     }
 
     if (suppressedCount > 0) {
-      logEvent('info', 'Suppressed cascaded delete events', {
+      log.info('Suppressed cascaded delete events', {
         suppressedCount,
         processedCount: events.length,
         deletedContextIds,
@@ -165,7 +165,7 @@ export class TransactionBuffer {
             .map((e) => e.result.tableMeta.type),
         );
         if (nonDeleteTypes.size > 1) {
-          logEvent('warn', 'Transaction contains non-delete mutations across types', {
+          log.warn('Transaction contains non-delete mutations across types', {
             types: [...nonDeleteTypes],
           });
         }
@@ -243,7 +243,7 @@ export class TransactionBuffer {
     }
 
     if (softSuppressedCount > 0) {
-      logEvent('info', 'Suppressed soft cascade update events', {
+      log.info('Suppressed soft cascade update events', {
         softSuppressedCount,
         deleteTypes: [...deleteTypes],
         survivingCount: kept.length,
@@ -271,7 +271,7 @@ export class TransactionBuffer {
     this.clearTimeout();
     this.timeoutHandle = setTimeout(() => {
       if (this.activeXid !== null) {
-        logEvent('warn', 'Transaction buffer timeout, flushing without filtering', {
+        log.warn('Transaction buffer timeout, flushing without filtering', {
           xid: this.activeXid,
           count: this.pendingEvents.length,
         });

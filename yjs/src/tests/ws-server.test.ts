@@ -6,8 +6,14 @@ import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createSignedToken, createExpiredToken } from './helpers';
 
 vi.mock('../lib/pino', () => ({
-  logEvent: vi.fn(),
-  logError: vi.fn(),
+  log: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  },
 }));
 
 const { verifyToken } = await import('../server/auth');

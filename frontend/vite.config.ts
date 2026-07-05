@@ -13,12 +13,23 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { appConfig } from '../shared';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 
+import { execSync } from 'node:child_process';
 import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
 
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
 const frontendUrl = new URL(appConfig.frontendUrl);
+
+// Release identifier for error/replay tagging (Maple serviceVersion). Git SHA
+// when available (local/CI builds), 'unknown' otherwise (e.g. sourceless container).
+const gitSha = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return 'unknown';
+  }
+})();
 
 const viteConfig = {
   logLevel: isDev || process.env.DEBUG_MODE ? 'info' : 'warn',
@@ -46,10 +57,9 @@ const viteConfig = {
         },
       },
     },
-    // NOTE: Production source maps are emitted but currently unused by our telemetry backend.
-    // Maple.dev (OpenTelemetry) does not yet consume/symbolicate source maps (no upload or
-    // minified-stack-trace de-minification like Sentry). Kept `true` for devtools/session-replay
-    // readability on this open-source frontend; switch to `false` for leaner builds if desired.
+    // NOTE: Production source maps are public by choice (open-source frontend): Maple has no
+    // sourcemap upload/symbolication, so public maps are what make minified stacks in error
+    // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
     sourcemap: isDev ? false : true,
     manifest: true,
     minify: isDev ? false : 'esbuild',
@@ -122,6 +132,8 @@ const viteConfig = {
     },
     // Injected into lib/sw.ts for periodic badge sync
     '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
+    // Release identifier for observability (lib/maple.ts serviceVersion)
+    '__APP_VERSION__': JSON.stringify(gitSha),
   },
 } satisfies UserConfig;
 

@@ -23,7 +23,7 @@ export const sendLockoutEmail = (rateLimitKey: string, type: 'totp-lockout') => 
     .limit(1)
     .then(([user]) => {
       if (user)
-        sendAccountSecurityEmail(null, user, type, {
+        sendAccountSecurityEmail(user, type, {
           attempts: String(defaultOptions.points),
           duration: String(duration),
         });

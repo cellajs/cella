@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import format from 'pg-format';
 import { cdcDb } from '../lib/db';
-import { logEvent } from '../lib/pino';
+import { log } from '../lib/pino';
 import type { BatchUnifiedDeltaPlan, UnifiedDeltaPlan } from './compute-unified-deltas';
 
 // ── Counter upsert ───────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan): Prom
       await mergedUpsert(group.orgSignal.orgKey, orgMerged);
     }
 
-    logEvent('trace', 'Batch seq stamped', {
+    log.trace('Batch seq stamped', {
       entityType: group.seqKey.replace('s:', ''),
       count: group.count,
       baseSeq: baseSeq + 1,
@@ -244,7 +244,7 @@ export async function applyBatchSeqOnlyDeltas(plan: BatchUnifiedDeltaPlan): Prom
       await mergedUpsert(group.orgSignal.orgKey, orgSeqDelta);
     }
 
-    logEvent('trace', 'Catchup seq stamped', {
+    log.trace('Catchup seq stamped', {
       entityType: group.seqKey.replace('s:', ''),
       count: group.count,
       baseSeq: baseSeq + 1,

@@ -73,6 +73,7 @@ const initDocs = async (app: OpenAPIHono<Env>) => {
   // Catches typos at boot instead of silently breaking docs grouping downstream.
   validateSchemaTags(openApiDoc as unknown as Record<string, unknown>);
 
+  // TODO [#02] review
   // Strip trailing /flags from pattern strings (zod-openapi includes flag suffix; JSON Schema doesn't).
   stripRegexFlagsFromPatterns(openApiDoc as unknown as Record<string, unknown>);
 
