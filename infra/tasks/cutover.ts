@@ -291,8 +291,8 @@ if (isMain(import.meta.url)) {
   const argv = process.argv.slice(2)
   const service = getFlag(argv, '--service')
   const sha = getFlag(argv, '--sha')
-  const strategy = getFlag(argv, '--strategy') as ReplacementStrategy | undefined
-  const drainPolicy = (getFlag(argv, '--drain-policy') as DrainPolicy | undefined) ?? 'requests'
+  const strategy = getFlag(argv, '--strategy')
+  const drainPolicyRaw = getFlag(argv, '--drain-policy') ?? 'requests'
   const healthUrl = getFlag(argv, '--health-url')
   const oldIps = parseIps(getFlag(argv, '--old-ips'))
   const newIps = parseIps(getFlag(argv, '--new-ips'))
@@ -307,6 +307,11 @@ if (isMain(import.meta.url)) {
     process.stderr.write(`Unknown --strategy '${strategy}' (expected lb-overlap | exclusive)\n`)
     process.exit(2)
   }
+  if (drainPolicyRaw !== 'requests' && drainPolicyRaw !== 'reconnect') {
+    process.stderr.write(`Unknown --drain-policy '${drainPolicyRaw}' (expected requests | reconnect)\n`)
+    process.exit(2)
+  }
+  const drainPolicy: DrainPolicy = drainPolicyRaw
 
   const healthGate: HealthGateFn = async () => {
     const outcome = await pollForVersion({
@@ -317,7 +322,10 @@ if (isMain(import.meta.url)) {
     return outcome.ok
   }
 
+  // Both LB effects are built together inside the one validated block, so the
+  // flags are read (and checked) exactly once.
   let setServers: SetServersFn | undefined
+  let getServers: GetServersFn | undefined
   if (strategy === 'lb-overlap') {
     const zone = getFlag(argv, '--lb-zone')
     const backendId = getFlag(argv, '--backend-id')
@@ -326,6 +334,7 @@ if (isMain(import.meta.url)) {
       process.exit(2)
     }
     setServers = createLbSetServers({ secretKey, zone, backendId })
+    getServers = createLbGetServers({ secretKey, zone, backendId })
   }
 
   const result = await sequenceCutover({
@@ -337,7 +346,7 @@ if (isMain(import.meta.url)) {
     drainSeconds,
     healthGate,
     setServers,
-    getServers: strategy === 'lb-overlap' ? createLbGetServers({ secretKey: secretKey!, zone: getFlag(argv, '--lb-zone')!, backendId: getFlag(argv, '--backend-id')! }) : undefined,
+    getServers,
   })
 
   if (!result.ok) {

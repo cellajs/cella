@@ -41,9 +41,13 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
   const deadline = Date.now() + opts.timeoutSeconds * 1000
 
   while (Date.now() <= deadline) {
+    // Two-step probe: a private-network route must exist, and an IPv4 address
+    // in the 10.0.0.0/8 range must be assigned.
     const route = await opts.exec('ip', ['route', 'get', '10.0.0.1'])
-    const addresses = route.code === 0 ? await opts.exec('ip', ['-4', 'addr', 'show']) : { code: 1, stdout: '', stderr: '' }
-    if (route.code === 0 && addresses.code === 0 && addresses.stdout.includes('10.0.')) return
+    if (route.code === 0) {
+      const addresses = await opts.exec('ip', ['-4', 'addr', 'show'])
+      if (addresses.code === 0 && addresses.stdout.includes('10.0.')) return
+    }
     await sleep(retryDelayMs)
   }
 

@@ -187,82 +187,74 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS
   const results: SmokeResult[] = []
 
+  // Runs one named check: the body returns `ok` (+ failure detail), the wrapper
+  // owns the try/catch and result collection so no check can short-circuit.
+  const check = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>): Promise<void> => {
+    try {
+      const { ok, detail } = await fn()
+      results.push(ok ? { name, ok: true } : { name, ok: false, detail })
+    } catch (err) {
+      results.push({ name, ok: false, detail: errorMessage(err) })
+    }
+  }
+
   // 1. Frontend index.html references the freshly built hashed entry asset.
   // When the local dist hash is known (expectedAsset), assert the served HTML
   // references that exact bundle — the post-publish bundle check folded in from
   // the former verify-frontend-bundle task. Otherwise fall back to "references
   // some hashed asset" so the check still runs without the artifact.
-  {
-    const name = opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset'
-    try {
-      const res = await get(`${frontendUrl}/`)
-      const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
-      // Detail mirrors the branch that actually failed: a bad status, or a 200
-      // whose HTML lacks the expected (or any) hashed entry asset.
-      const detail = !res.ok
-        ? `status=${res.status}`
-        : opts.expectedAsset
-          ? `served does not reference ${opts.expectedAsset}`
-          : 'no hashed entry asset found in served index.html'
-      results.push(res.ok && matched ? { name, ok: true } : { name, ok: false, detail })
-    } catch (err) {
-      results.push({ name, ok: false, detail: errorMessage(err) })
-    }
-  }
+  await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
+    const res = await get(`${frontendUrl}/`)
+    const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
+    // Detail mirrors the branch that actually failed: a bad status, or a 200
+    // whose HTML lacks the expected (or any) hashed entry asset.
+    const detail = !res.ok
+      ? `status=${res.status}`
+      : opts.expectedAsset
+        ? `served does not reference ${opts.expectedAsset}`
+        : 'no hashed entry asset found in served index.html'
+    return { ok: res.ok && matched, detail }
+  })
 
   // 2. Backend OpenAPI spec is reachable.
-  try {
+  await check('backend /openapi.json reachable', async () => {
     const res = await get(`${backendUrl}/openapi.json`)
-    results.push({ name: 'backend /openapi.json reachable', ok: res.ok, detail: res.ok ? undefined : `status=${res.status}` })
-  } catch (err) {
-    results.push({ name: 'backend /openapi.json reachable', ok: false, detail: errorMessage(err) })
-  }
+    return { ok: res.ok, detail: `status=${res.status}` }
+  })
 
   // 3. Public services report the deployed release SHA. Internal-only services
   // (cdc) have no health_url and are covered by the aggregate backend health.
   const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter((service) => service.health_url)
   for (const service of publicServices) {
-    const name = `${service.service} reports deployed SHA`
-    try {
+    await check(`${service.service} reports deployed SHA`, async () => {
       const res = await get(`${service.health_url}/health`)
       const version = res.headers.get('x-app-version') ?? undefined
-      results.push(
-        isHealthy({ status: res.status, version }, expectedSha)
-          ? { name, ok: true }
-          : { name, ok: false, detail: `served=${version ?? '<missing>'} expected=${expectedSha}` },
-      )
-    } catch (err) {
-      results.push({ name, ok: false, detail: errorMessage(err) })
-    }
+      return {
+        ok: isHealthy({ status: res.status, version }, expectedSha),
+        detail: `served=${version ?? '<missing>'} expected=${expectedSha}`,
+      }
+    })
   }
 
   // 4. SPA route fallback returns an HTML document.
-  try {
+  await check('SPA fallback returns HTML', async () => {
     const res = await get(`${frontendUrl}/__smoke_${Date.now()}`)
-    results.push(
-      res.ok && isHtmlDocument(res.body)
-        ? { name: 'SPA fallback returns HTML', ok: true }
-        : { name: 'SPA fallback returns HTML', ok: false, detail: `status=${res.status}` },
-    )
-  } catch (err) {
-    results.push({ name: 'SPA fallback returns HTML', ok: false, detail: errorMessage(err) })
-  }
+    return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` }
+  })
 
   // 5. Frontend security headers are present.
-  try {
+  await check('security headers present', async () => {
     const res = await get(`${frontendUrl}/`)
     const missing = missingSecurityHeaders(res.headers)
-    results.push(missing.length === 0 ? { name: 'security headers present', ok: true } : { name: 'security headers present', ok: false, detail: `missing: ${missing.join(', ')}` })
-  } catch (err) {
-    results.push({ name: 'security headers present', ok: false, detail: errorMessage(err) })
-  }
+    return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` }
+  })
 
   // 6. Backend reports every health component healthy (db / cdc / yjs / ai).
   // Retried across one CDC-reconnect backoff cycle: right after a roll the
   // worker's WebSocket can still be mid-reconnect, surfacing as a transient
   // worker_disconnected. Pass on the first clean read; a genuinely broken
   // component stays bad for the whole budget and still fails.
-  {
+  await check('backend components healthy', async () => {
     let lastDetail = 'no response'
     const healthy = await pollUntil(
       async () => {
@@ -282,10 +274,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       },
       { attempts: componentsRetryAttempts, intervalMs: componentsRetryDelayMs, sleep },
     )
-    results.push(
-      healthy ? { name: 'backend components healthy', ok: true } : { name: 'backend components healthy', ok: false, detail: lastDetail },
-    )
-  }
+    return { ok: healthy === true, detail: lastDetail }
+  })
 
   return results
 }

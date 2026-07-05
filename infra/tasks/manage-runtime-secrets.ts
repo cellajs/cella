@@ -50,21 +50,138 @@ export function generateRandomRuntimeSecret() {
   return randomBytes(32).toString('base64url')
 }
 
-export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions): Promise<void> {
-  const log = options.log ?? defaultLog
-  const client = createSecretManagerClient({
-    secretKey: options.secretKey,
-    region: options.region,
-    projectId: options.projectId,
+/** Everything the per-action handlers need. */
+interface MenuContext {
+  client: ReturnType<typeof createSecretManagerClient>
+  secrets: ManagedRuntimeSecret[]
+  prompts: RuntimeSecretPrompts
+  path: string
+  log: (message: string) => void
+}
+
+/** Selection prompt shared by rotate/set/delete; undefined = Esc (go back). */
+async function selectSecret(ctx: MenuContext, message: string, choices: ManagedRuntimeSecret[]): Promise<ManagedRuntimeSecret | undefined> {
+  const selectedId = await ctx.prompts.select<string>({ message, choices: choices.map(formatSecretChoice) })
+  if (selectedId === BACK) return undefined
+  const secret = choices.find((entry) => entry.id === selectedId)
+  if (!secret) throw new Error(`manage-runtime-secrets: prompt returned unknown secret id '${selectedId}'`)
+  return secret
+}
+
+async function handleList(ctx: MenuContext): Promise<void> {
+  const existing = await ctx.client.listSecrets(ctx.path)
+  const byName = new Map(existing.map((secret) => [secret.name, secret]))
+  ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.path)}`)
+  for (const secret of ctx.secrets) {
+    const current = byName.get(secret.secretName)
+    // A secret *object* can exist with zero versions (created but never given a
+    // value). Only a versioned secret actually has content the services can read,
+    // so gate "present" on version_count — otherwise an empty container reports a
+    // false positive. The in-between state (object, no version) is called out
+    // explicitly so the operator knows to run "Set or update".
+    const status = !current
+      ? `${tildeMark} missing`
+      : (current.version_count ?? 0) > 0
+        ? `${checkMark} present`
+        : `${warningMark} empty (no version — run "Set or update")`
+    ctx.log(`- ${secret.secretName} (${secret.envVar}) — ${status}; consumers: ${secret.services.join(', ')}`)
+  }
+}
+
+async function handleRotate(ctx: MenuContext): Promise<void> {
+  const rotatable = ctx.secrets.filter((secret) => secret.generation === 'random')
+  if (rotatable.length === 0) {
+    ctx.log(`${tildeMark} No operator-managed runtime secrets support random rotation yet.`)
+    return
+  }
+  const secret = await selectSecret(ctx, 'Select a runtime secret to rotate (Esc to go back)', rotatable)
+  if (!secret) return
+  // Pulumi owns container creation (resources/secrets.ts); refuse to create one
+  // out-of-band here, since that would make the next `pulumi up` fail with
+  // "secret already exists". Deploy first so the container exists, then rotate.
+  const existing = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  if (!existing) {
+    ctx.log(`${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. Deploy first so Pulumi creates it, then rotate.`)
+    return
+  }
+  const version = await ctx.client.putSecretValue({
+    secretId: existing.id,
+    value: generateRandomRuntimeSecret(),
+    description: 'Rotated by bootstrap manage secrets',
+    disablePrevious: true,
   })
-  const secrets = operatorManagedSecrets()
+  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`)
+}
+
+async function handleDelete(ctx: MenuContext): Promise<void> {
+  const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets)
+  if (!secret) return
+  const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  if (!existingSecret) {
+    ctx.log(`${tildeMark} ${secret.secretName} does not exist in ${ctx.path}`)
+    return
+  }
+  const confirmed = await ctx.prompts.confirm({
+    message: `${warningMark} Delete secret object ${secret.secretName} (${secret.envVar}) for ${secret.services.join(', ')}?`,
+    default: false,
+  })
+  if (!confirmed) {
+    ctx.log(`${tildeMark} Deletion cancelled.`)
+    return
+  }
+  await ctx.client.deleteSecret(existingSecret.id)
+  ctx.log(`${checkMark} Deleted ${secret.secretName}`)
+}
+
+async function handleSet(ctx: MenuContext): Promise<void> {
+  const secret = await selectSecret(ctx, 'Select a runtime secret to set (Esc to go back)', ctx.secrets)
+  if (!secret) return
+  // Pulumi owns container creation (resources/secrets.ts). Refuse to create one
+  // out-of-band here — that would make the next `pulumi up` fail with "secret
+  // already exists". The operator must deploy first so the (empty) container
+  // exists, then set its value here.
+  const existingSecret = await ctx.client.getSecretByName(secret.secretName, ctx.path)
+  if (!existingSecret) {
+    ctx.log(
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
+        `Deploy first so Pulumi creates it, then run "Set or update" again to give it a value.`,
+    )
+    return
+  }
+
+  // Trim so accidental leading/trailing whitespace (e.g. from a paste) never
+  // becomes part of the stored secret; validate on the trimmed length so an
+  // all-whitespace entry is rejected the same as an empty one.
+  const value = (
+    await ctx.prompts.password({
+      message: `New value for ${secret.secretName}`,
+      validate: (input) => input.trim().length > 0 || 'Value is required',
+    })
+  ).trim()
+  const version = await ctx.client.putSecretValue({
+    secretId: existingSecret.id,
+    value,
+    description: 'Updated by bootstrap manage secrets',
+    disablePrevious: true,
+  })
+  ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`)
+}
+
+export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions): Promise<void> {
+  const ctx: MenuContext = {
+    client: createSecretManagerClient({ secretKey: options.secretKey, region: options.region, projectId: options.projectId }),
+    secrets: operatorManagedSecrets(),
+    prompts: options.prompts,
+    path: options.path,
+    log: options.log ?? defaultLog,
+  }
 
   // Explain the two distinct "update" surfaces up front: Secret Manager writes
   // happen immediately as a new immutable VERSION, but running services do not
   // hot-reload runtime secrets. They only observe the latest value the next time
   // the affected VM boots (for example, on a deploy or manual restart). The
   // trailing newline leaves a blank line before the menu.
-  log(
+  ctx.log(
     `${pc.dim('Changes are written to Secret Manager immediately as a new version. Scaleway may keep the parent secret')}\n` +
       `${pc.dim('container metadata looking unchanged; check the secret\'s Versions list for the new revision. Running services pick')}\n` +
       `${pc.dim('up the latest value only on the next VM boot or deploy.')}\n`,
@@ -72,7 +189,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
 
   // Loop the menu so an operator setting up a fresh environment can manage
   // several secrets in one session instead of re-running the CLI per secret.
-  // Each leaf action returns here; "Exit" (or Esc) is the only way out.
+  // Each handler returns here; "Exit" (or Esc) is the only way out.
   while (true) {
     const action = await options.prompts.select<Action>({
       message: 'Manage runtime secrets',
@@ -88,115 +205,10 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     // Esc on the top menu behaves like "Exit" — there is no parent menu to return
     // to (the infra CLI exits once secrets management is done).
     if (action === BACK || action === 'exit') return
-
-    if (action === 'list') {
-      const existing = await client.listSecrets(options.path)
-      const byName = new Map(existing.map((secret) => [secret.name, secret]))
-      log(`\n${pc.bold('Runtime secrets')} ${pc.dim(options.path)}`)
-      for (const secret of secrets) {
-        const current = byName.get(secret.secretName)
-        // A secret *object* can exist with zero versions (created but never given a
-        // value). Only a versioned secret actually has content the services can read,
-        // so gate "present" on version_count — otherwise an empty container reports a
-        // false positive. The in-between state (object, no version) is called out
-        // explicitly so the operator knows to run "Set or update".
-        const status = !current
-          ? `${tildeMark} missing`
-          : (current.version_count ?? 0) > 0
-            ? `${checkMark} present`
-            : `${warningMark} empty (no version — run "Set or update")`
-        log(`- ${secret.secretName} (${secret.envVar}) — ${status}; consumers: ${secret.services.join(', ')}`)
-      }
-      continue
-    }
-
-    if (action === 'rotate') {
-      const rotatable = secrets.filter((secret) => secret.generation === 'random')
-      if (rotatable.length === 0) {
-        log(`${tildeMark} No operator-managed runtime secrets support random rotation yet.`)
-        continue
-      }
-      const selectedId = await options.prompts.select<string>({
-        message: 'Select a runtime secret to rotate (Esc to go back)',
-        choices: rotatable.map(formatSecretChoice),
-      })
-      if (selectedId === BACK) continue
-      const secret = rotatable.find((entry) => entry.id === selectedId)!
-      // Pulumi owns container creation (resources/secrets.ts); refuse to create one
-      // out-of-band here, since that would make the next `pulumi up` fail with
-      // "secret already exists". Deploy first so the container exists, then rotate.
-      const existing = await client.getSecretByName(secret.secretName, options.path)
-      if (!existing) {
-        log(
-          `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
-            `Deploy first so Pulumi creates it, then rotate.`,
-        )
-        continue
-      }
-      const version = await client.putSecretValue({
-        secretId: existing.id,
-        value: generateRandomRuntimeSecret(),
-        description: 'Rotated by bootstrap manage secrets',
-        disablePrevious: true,
-      })
-      log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`)
-      continue
-    }
-
-    const selectedId = await options.prompts.select<string>({
-      message: action === 'delete' ? 'Select a runtime secret to delete (Esc to go back)' : 'Select a runtime secret to set (Esc to go back)',
-      choices: secrets.map(formatSecretChoice),
-    })
-    if (selectedId === BACK) continue
-    const secret = secrets.find((entry) => entry.id === selectedId)!
-    const existingSecret = await client.getSecretByName(secret.secretName, options.path)
-
-    if (action === 'delete') {
-      if (!existingSecret) {
-        log(`${tildeMark} ${secret.secretName} does not exist in ${options.path}`)
-        continue
-      }
-      const confirmed = await options.prompts.confirm({
-        message: `${warningMark} Delete secret object ${secret.secretName} (${secret.envVar}) for ${secret.services.join(', ')}?`,
-        default: false,
-      })
-      if (!confirmed) {
-        log(`${tildeMark} Deletion cancelled.`)
-        continue
-      }
-      await client.deleteSecret(existingSecret.id)
-      log(`${checkMark} Deleted ${secret.secretName}`)
-      continue
-    }
-
-    // Set path: Pulumi owns container creation (resources/secrets.ts). Refuse to
-    // create one out-of-band here — that would make the next `pulumi up` fail with
-    // "secret already exists". The operator must deploy first so the (empty)
-    // container exists, then set its value here.
-    if (!existingSecret) {
-      log(
-        `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
-          `Deploy first so Pulumi creates it, then run "Set or update" again to give it a value.`,
-      )
-      continue
-    }
-
-    // Trim so accidental leading/trailing whitespace (e.g. from a paste) never
-    // becomes part of the stored secret; validate on the trimmed length so an
-    // all-whitespace entry is rejected the same as an empty one.
-    const value = (
-      await options.prompts.password({
-        message: `New value for ${secret.secretName}`,
-        validate: (input) => input.trim().length > 0 || 'Value is required',
-      })
-    ).trim()
-    const version = await client.putSecretValue({
-      secretId: existingSecret.id,
-      value,
-      description: 'Updated by bootstrap manage secrets',
-      disablePrevious: true,
-    })
-    log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`)
+    if (action === 'list') await handleList(ctx)
+    else if (action === 'rotate') await handleRotate(ctx)
+    else if (action === 'delete') await handleDelete(ctx)
+    else await handleSet(ctx)
   }
 }
 

@@ -119,8 +119,10 @@ export async function ensureDnsZone(opts: {
       return { status: 'active' }
     }
     console.info(`  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? ` — ${fresh.message}` : ''}`)
-    console.info(`  ${tildeMark} Raw zones matching ${domain}:`)
-    console.info(`     ${pc.dim(JSON.stringify(freshZones, null, 2))}`)
+    if (process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1') {
+      console.info(`  ${tildeMark} Raw zones matching ${domain}:`)
+      console.info(`     ${pc.dim(JSON.stringify(freshZones, null, 2))}`)
+    }
   }
 }
 
