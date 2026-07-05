@@ -105,8 +105,8 @@ export const vmReaderApplicationId = scaleway.iam
 const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined
 
 // VM size is per-service  — declared in config/services.config.ts
-const registryInstanceType = (serviceName: string): string => {
-  const size = servicesByName.get(serviceName as ServiceName)?.instanceType
+const registryInstanceType = (serviceName: ServiceName): string => {
+  const size = servicesByName.get(serviceName)?.instanceType
   const resolved = typeof size === 'string' ? size : size?.[deployMode]
   if (resolved === undefined) throw new Error(`Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`)
   return resolved
@@ -118,7 +118,7 @@ export const infra = {
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),
   dbVolumeSize: resolvePerMode(generalConfig.database.volumeSizeGb, deployMode),
   assetRetentionDays: resolvePerMode(generalConfig.assets.retentionDays, deployMode),
-  instanceTypeFor: (serviceName: string): string => registryInstanceType(serviceName),
+  instanceTypeFor: registryInstanceType,
   computeEnabled: !computeDeferred,
 }
 

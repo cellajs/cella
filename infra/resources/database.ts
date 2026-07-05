@@ -161,14 +161,22 @@ export const caCertificate = instance.certificate
 /** Database name */
 export const databaseName = database.name
 
+// The instance is created with a privateNetwork block, so this only trips if
+// Scaleway ever returns an instance without one — fail with a real error
+// instead of an opaque undefined-property crash.
+const privateNetwork = instance.privateNetwork.apply((pn) => {
+  if (!pn) throw new Error('database: main-postgres has no private network endpoint')
+  return pn
+})
+
 /** Private network hostname */
-export const host = instance.privateNetwork.apply((pn) => pn!.hostname)
+export const host = privateNetwork.hostname
 
 /** Private network IP */
-const ip = instance.privateNetwork.apply((pn) => pn!.ip)
+const ip = privateNetwork.ip
 
 /** Private network port (direct) */
-const port = instance.privateNetwork.apply((pn) => pn!.port)
+const port = privateNetwork.port
 
 /**
  * Assemble a PostgreSQL DSN from plain string parts.

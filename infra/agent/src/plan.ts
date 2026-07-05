@@ -27,7 +27,7 @@ export interface BootPlan {
   }
   releaseCommand: {
     enabled: boolean
-    command: string[]
+    command: [string, ...string[]]
   }
   docker: {
     composeFile: string
@@ -95,14 +95,16 @@ function assertAllowedPath(path: string): void {
   if (!allowed.some((prefix) => path.startsWith(prefix))) throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`)
 }
 
-function commandField(obj: Record<string, unknown>, key: string): string[] {
+function commandField(obj: Record<string, unknown>, key: string): [string, ...string[]] {
   const value = obj[key]
   if (!Array.isArray(value) || value.length === 0) throw new Error(`boot plan: '${key}' must be a non-empty command array`)
   const command = value.map((part) => {
     if (typeof part !== 'string' || part === '') throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`)
     return part
   })
-  return command
+  // Validated non-empty above; the tuple type lets consumers destructure the
+  // executable without a non-null assertion.
+  return command as [string, ...string[]]
 }
 
 /** Validate a runtime-secret manifest value. Also used by the boot-plan

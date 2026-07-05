@@ -9,7 +9,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tags, mode } from '../pulumi-context'
-import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
+import { runtimeSecrets, type RuntimeSecretDefinition, type RuntimeSecretId } from '../lib/runtime-secrets'
 import { secretManagerPath } from '../lib/vm-reader-secret'
 import { configuredOrRandomSecret } from './configured-secret'
 import { connectionStringAdmin, connectionStringRuntime, connectionStringCdc, caCertificate } from './database'
@@ -144,7 +144,9 @@ const secretResources = Object.fromEntries(runtimeSecrets.map((definition) => {
 // Exports — secret IDs for container references
 // ---------------------------------------------------------------------------
 
-/** Map of runtime secret IDs to their Scaleway Secret IDs. */
+/** Map of runtime secret IDs to their Scaleway Secret IDs. The key type is the
+ *  literal id union, so a typo'd lookup is a compile error rather than an
+ *  undefined Output at deploy time (Object.fromEntries widens, hence the cast). */
 export const secretIds = Object.fromEntries(
   Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),
-) as Record<string, pulumi.Output<string>>
+) as Record<RuntimeSecretId, pulumi.Output<string>>

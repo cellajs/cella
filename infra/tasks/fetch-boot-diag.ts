@@ -50,8 +50,8 @@ function escapeRe(s: string): string {
 export function parseKeys(lsOutput: string): string[] {
   const keys: string[] = []
   for (const line of lsOutput.split('\n')) {
-    const cols = line.trim().split(/\s+/)
-    if (cols.length >= 4) keys.push(cols[3])
+    const key = line.trim().split(/\s+/)[3]
+    if (key) keys.push(key)
   }
   return keys
 }

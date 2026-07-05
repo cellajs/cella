@@ -2,7 +2,11 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "lib": ["es2024", "dom"],
-    "rootDir": ".."
+    "rootDir": "..",
+    // Indexed access (obj[key], arr[i]) yields T | undefined so unchecked
+    // lookups fail the typecheck. Infra-only for now — the workspace root does
+    // not set it.
+    "noUncheckedIndexedAccess": true
   },
   "include": ["./**/*.ts", "../shared/index.ts", "../shared/src/**/*.ts"],
   "exclude": ["node_modules", "dist", "../shared/**/*.test.ts", "../shared/scripts/**"]

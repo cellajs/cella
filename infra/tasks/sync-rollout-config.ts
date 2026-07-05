@@ -1,11 +1,36 @@
 import { isMain } from '../lib/is-main'
 import { controlContextForStack, emptyRollout, controlActor, readControlState, writeControlState } from '../lib/control-store'
 import type { GenerationMetadata } from '../lib/generation-metadata'
+import { isRecord } from '../lib/guards'
 import { tryStackOutputRaw } from '../lib/run-pulumi'
+import { serviceNames } from '../lib/services'
+import type { ServiceName } from '../compose/compose'
 import { getFlag } from './args'
 
 /** The subset of the generation metadata this task reads. */
 type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>
+
+/**
+ * Validate the raw `computeGenerationMetadata` stack output instead of blind-
+ * casting — this exact output once carried corrupt (missing) genIds, so rows
+ * are checked field-by-field. A row with a non-string genId is normalised to ''
+ * and filtered out by `seedCandidates` (the pre-migration numeric-gen shape).
+ */
+export function parseRolloutGenerations(raw: string): RolloutGeneration[] {
+  const parsed: unknown = JSON.parse(raw)
+  if (!Array.isArray(parsed)) throw new Error('sync-rollout-config: computeGenerationMetadata output is not an array')
+  const rows: RolloutGeneration[] = []
+  for (const item of parsed) {
+    if (!isRecord(item)) continue
+    const { service, genId, sha } = item
+    if (typeof service !== 'string' || typeof sha !== 'string') continue
+    // Only rows for services the registry knows — a stale output row for a
+    // removed service must not seed the ledger.
+    if (!(serviceNames as readonly string[]).includes(service)) continue
+    rows.push({ service: service as ServiceName, sha, genId: typeof genId === 'string' ? genId : '' })
+  }
+  return rows
+}
 
 /** Deterministic pick when SEEDING a service that has no active pointer yet. On a
  *  first provision there is exactly one generation per service, so the choice is
@@ -48,7 +73,7 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     return
   }
 
-  const seeds = seedCandidates(JSON.parse(rawMetadata) as RolloutGeneration[])
+  const seeds = seedCandidates(parseRolloutGenerations(rawMetadata))
   if (seeds.size === 0) {
     console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed')
     return

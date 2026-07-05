@@ -7,6 +7,9 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
+    // Node-only VM agent: no DOM globals (the infra config adds "dom" for the
+    // Pulumi program's fetch typing; Node's own types cover fetch here).
+    "lib": ["es2024"],
     "types": ["node"]
   },
   "include": [

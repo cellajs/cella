@@ -80,14 +80,17 @@ async function waitForPublicVersion(url: string, sha: string): Promise<boolean> 
 }
 
 export async function deployService(argv = process.argv.slice(2)): Promise<void> {
-  const service = getFlag(argv, '--service') as ServiceName | undefined
+  const serviceFlag = getFlag(argv, '--service')
   const sha = getFlag(argv, '--sha')
   const stack = getFlag(argv, '--stack')
-  if (!service || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE]')
+  if (!serviceFlag || !sha || !stack) throw new Error('Usage: deploy-service.ts --service <svc> --sha <git-sha> --stack <stack> [--health-url URL] [--lb-zone ZONE]')
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`)
 
-  const definition = servicesByName.get(service)
-  if (!definition) throw new Error(`Unknown service '${service}'`)
+  // The registry lookup IS the validation: a hit narrows the raw flag to a real
+  // ServiceName instead of asserting the union up front.
+  const definition = servicesByName.get(serviceFlag as ServiceName)
+  if (!definition) throw new Error(`Unknown service '${serviceFlag}'`)
+  const service = definition.slug
 
   const current = await currentRollout(stack, service)
   const healthUrl = healthUrlFromFlag(getFlag(argv, '--health-url'))
@@ -119,7 +122,8 @@ export async function deployService(argv = process.argv.slice(2)): Promise<void>
 
   // Old serving generation (the active one). Empty on a first deploy — the
   // reconciler then drives the LB straight to [new] once it is healthy.
-  const oldGen = current?.active ? generations.find((item) => item.service === service && item.genId === current.active!.id) : undefined
+  const activeRef = current?.active
+  const oldGen = activeRef ? generations.find((item) => item.service === service && item.genId === activeRef.id) : undefined
   const oldIps = oldGen ? [oldGen.privateIp] : []
 
   const zone = getFlag(argv, '--lb-zone') ?? `${process.env.SCW_DEFAULT_REGION ?? process.env.REGION ?? 'fr-par'}-1`

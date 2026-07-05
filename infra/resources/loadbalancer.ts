@@ -33,8 +33,8 @@ import { serviceGenerationIps } from './compute'
  * names) stay stable for resources that predate the registry-driven loop.
  * Migration metadata only — a NEW service needs no entry here.
  */
-const legacyBaseNames: Record<string, string> = { backend: 'api', frontend: 'app' }
-const baseName = (slug: string) => legacyBaseNames[slug] ?? slug
+const legacyBaseNames: Partial<Record<ServiceName, string>> = { backend: 'api', frontend: 'app' }
+const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug
 
 /** Everything the rest of the program consumes from this module. */
 interface LoadBalancerOutputs {

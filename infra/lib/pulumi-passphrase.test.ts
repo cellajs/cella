@@ -70,7 +70,7 @@ describe('pulumi-passphrase round-trip', () => {
     // Flip a byte in the secure: value
     const tampered = yaml.replace(/secure: (v1:[^:]+:)([A-Za-z0-9+/=]+)/, (_, p1, p2) => {
       const buf = Buffer.from(p2, 'base64')
-      buf[0] ^= 0xff
+      buf[0] = (buf[0] ?? 0) ^ 0xff
       return `secure: ${p1}${buf.toString('base64')}`
     })
     expect(() => __testing.decryptStackSecretsFromText(tampered, passphrase, ['infra:cookieSecret'])).toThrow()

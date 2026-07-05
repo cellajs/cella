@@ -154,7 +154,7 @@ function makeLockS3(initial?: LockInfo) {
     if (kind === 'PutObjectCommand') {
       if (input.IfNoneMatch === '*' && obj) throw fail412()
       if (input.IfMatch && (!obj || obj.etag !== input.IfMatch)) throw fail412()
-      obj = { body: input.Body, etag: `"e${++counter}"` }
+      obj = { body: input.Body ?? '', etag: `"e${++counter}"` }
       return { ETag: obj.etag }
     }
     if (kind === 'DeleteObjectCommand') {

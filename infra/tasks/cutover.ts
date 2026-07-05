@@ -39,6 +39,7 @@
  *   (SCW_SECRET_KEY in env for the live LB call)
  */
 import { type FetchLike, resolveFetch } from '../lib/fetch-like'
+import { isRecord } from '../lib/guards'
 import { isMain } from '../lib/is-main'
 // The canonical strategy vocabulary lives on the Compose model (`x-service`
 // metadata). types.ts is Pulumi-free, so the pure core can import it directly
@@ -241,20 +242,29 @@ export function createLbSetServers(opts: LbSetServersOptions): SetServersFn {
   }
 }
 
+/** Extract the string entries of a value that may be an array. */
+function stringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.filter((entry): entry is string => typeof entry === 'string')
+}
+
+/** Defensive multi-shape parse of a Scaleway backend payload's server list. */
 function parseBackendServers(payload: string): string[] {
-  const data = JSON.parse(payload) as {
-    backend?: unknown
-    server_ip?: string[]
-    server_ips?: string[]
-    serverIps?: string[]
-    servers?: Array<string | { ip?: string; serverIp?: string; server_ip?: string }>
-  }
-  const backend = (data.backend ?? data) as typeof data
-  if (Array.isArray(backend.server_ip)) return backend.server_ip
-  if (Array.isArray(backend.server_ips)) return backend.server_ips
-  if (Array.isArray(backend.serverIps)) return backend.serverIps
+  const data: unknown = JSON.parse(payload)
+  if (!isRecord(data)) return []
+  // The list may sit on the root or under a `backend` wrapper.
+  const backend = isRecord(data.backend) ? data.backend : data
+  const direct = stringArray(backend.server_ip) ?? stringArray(backend.server_ips) ?? stringArray(backend.serverIps)
+  if (direct) return direct
   if (Array.isArray(backend.servers)) {
-    return backend.servers.map((server) => typeof server === 'string' ? server : (server.ip ?? server.serverIp ?? server.server_ip ?? '')).filter(Boolean)
+    return backend.servers
+      .map((server: unknown) => {
+        if (typeof server === 'string') return server
+        if (!isRecord(server)) return ''
+        const ip = server.ip ?? server.serverIp ?? server.server_ip
+        return typeof ip === 'string' ? ip : ''
+      })
+      .filter(Boolean)
   }
   return []
 }

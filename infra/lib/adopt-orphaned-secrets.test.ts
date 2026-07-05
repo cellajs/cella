@@ -59,7 +59,7 @@ describe('adoptOrphanedSecrets', () => {
     const result = await adoptOrphanedSecrets(opts)
     expect(result.outcomes['admin-email']).toBe('in-state')
     expect(result.imported).toEqual(['brevo-api-key'])
-    const importCall = spawnSyncMock.mock.calls[1]
+    const importCall = spawnSyncMock.mock.calls[1]!
     expect(importCall[0]).toBe('pulumi')
     expect(importCall[1]).toEqual([
       'import',
@@ -79,7 +79,7 @@ describe('adoptOrphanedSecrets', () => {
     spawnSyncMock.mockReturnValueOnce({ status: 0 })
     const result = await adoptOrphanedSecrets(opts)
     expect(result.imported).toEqual(['admin-email'])
-    expect(spawnSyncMock.mock.calls[1][1]).toContain('nl-ams/uuid-admin')
+    expect(spawnSyncMock.mock.calls[1]?.[1]).toContain('nl-ams/uuid-admin')
   })
 
   it('marks a secret absent when it exists in neither state nor Scaleway', async () => {

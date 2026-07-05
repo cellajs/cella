@@ -65,7 +65,7 @@ describe('adoptOrphanedPolicy', () => {
     findPolicyIdByNameMock.mockResolvedValueOnce('pol-123')
     spawnSyncMock.mockReturnValueOnce({ status: 0 }) // import succeeds
     expect(await adoptOrphanedPolicy(opts)).toBe('imported')
-    const importCall = spawnSyncMock.mock.calls[1]
+    const importCall = spawnSyncMock.mock.calls[1]!
     expect(importCall[0]).toBe('pulumi')
     expect(importCall[1]).toEqual(['import', POLICY_TYPE, 'vm-reader-policy', 'pol-123', '--stack', opts.stack, '--yes', '--non-interactive'])
   })

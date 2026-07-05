@@ -48,7 +48,7 @@ describe('pollForVersion', () => {
       { status: 204, version: SHA },
     ]
     let i = 0
-    const probe = vi.fn(async () => results[i++])
+    const probe = vi.fn(async () => results[i++]!)
     const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog })
     expect(out.ok).toBe(true)
     expect(out.attempts).toBe(3)
@@ -87,7 +87,7 @@ describe('pollForVersion', () => {
       { status: 204, version: SHA },
     ]
     let i = 0
-    const probe = vi.fn(async () => results[i++])
+    const probe = vi.fn(async () => results[i++]!)
     // pull_exhausted is exit 3 — NOT terminal; the next tick self-heals.
     const status = vi.fn(() => ({ desired: SHA, result: 'failed', exitCode: '3', reason: 'pull_exhausted' }))
     const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status })
@@ -111,7 +111,7 @@ describe('pollForVersion', () => {
       { status: 204, version: SHA },
     ]
     let i = 0
-    const probe = vi.fn(async () => results[i++])
+    const probe = vi.fn(async () => results[i++]!)
     const status = vi.fn(() => ({ desired: SHA, result: 'rolling', phase: 'probing' }))
     const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status })
     expect(out.ok).toBe(true)

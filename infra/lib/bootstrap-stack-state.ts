@@ -28,8 +28,9 @@ export interface StackProbe {
 const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const
 
 export function detectStackState(probe: StackProbe): StackState {
-  if (probe.yamlText == null) return 'fresh'
-  return BOOTSTRAP_MARKERS.some((marker) => probe.yamlText!.includes(marker)) ? 'bootstrapped' : 'partial'
+  const yamlText = probe.yamlText
+  if (yamlText == null) return 'fresh'
+  return BOOTSTRAP_MARKERS.some((marker) => yamlText.includes(marker)) ? 'bootstrapped' : 'partial'
 }
 
 /**

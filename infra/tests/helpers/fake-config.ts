@@ -8,7 +8,11 @@
  * tests stay fork-agnostic (slug `cella`, not whatever a fork renamed to). Pair
  * with `deriveInfra` to assert on derived names instead of hardcoding literals.
  */
+import type { appConfig } from 'shared'
+
 export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
+  // Returned as the real appConfig type so consuming tests keep property-level
+  // checking (the fixture itself stays a minimal literal).
   return {
     slug: 'cella',
     mode: 'production' as const,
@@ -32,6 +36,5 @@ export function fakeConfig(overrides: Partial<Record<string, unknown>> = {}) {
       privateBucket: 'cella-private',
     },
     ...overrides,
-    // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
-  } as any
+  } as unknown as typeof appConfig
 }

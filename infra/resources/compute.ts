@@ -81,7 +81,7 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers)
-  return pulumi.all(definitions.map((definition) => secretIds[definition.id]!)).apply((ids) =>
+  return pulumi.all(definitions.map((definition) => secretIds[definition.id])).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
         id: definition.id,
@@ -224,7 +224,7 @@ function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
   const ip = genIps.get(genIpKey(slug, liveGen.id))
   if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.id}.`)
   // Strip any CIDR suffix the provider may include ("10.0.0.9/22" → "10.0.0.9").
-  return ip.address.apply((addr) => addr.split('/')[0])
+  return ip.address.apply((addr) => addr.split('/')[0] ?? addr)
 }
 
 // Compute base image. `compute.image` is a Scaleway marketplace LABEL ('docker'
@@ -241,7 +241,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   // Public IP for internet egress (image pull) + the per-generation private IP
   // reserved in the first pass (the LB targets the set of active generations).
   const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags })
-  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id))!
+  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id))
+  if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`)
 
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
@@ -290,10 +291,17 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     deleteBeforeReplace: true,
   })
 
-  const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0])
+  const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0] ?? addr)
   const inst: GenerationInstance = { service: svc.slug, genId: generation.id, sha: generation.sha, name: resourceName, server, privateIp, privateNic }
   instances.push(inst)
   return inst
+}
+
+/** Planned generations for a service; throws if planning did not run for it. */
+function generationsFor(slug: ServiceName): Generation[] {
+  const generations = generationsByService.get(slug)
+  if (!generations) throw new Error(`compute: no generation plan for service '${slug}'`)
+  return generations
 }
 
 if (infra.computeEnabled) {
@@ -303,7 +311,7 @@ if (infra.computeEnabled) {
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
   // creation-order constraints.
   for (const svc of enabled) {
-    for (const generation of generationsByService.get(svc.slug)!) {
+    for (const generation of generationsFor(svc.slug)) {
       genIps.set(
         genIpKey(svc.slug, generation.id),
         new scaleway.ipam.Ip(`ipam-${svc.slug}-${generation.id}`, {
@@ -318,7 +326,7 @@ if (infra.computeEnabled) {
 
   // Pass 2 — create the VMs (order-independent; bindings read reserved IPs).
   for (const svc of enabled) {
-    for (const generation of generationsByService.get(svc.slug)!) createGenerationVm(svc, generation)
+    for (const generation of generationsFor(svc.slug)) createGenerationVm(svc, generation)
   }
 }
 

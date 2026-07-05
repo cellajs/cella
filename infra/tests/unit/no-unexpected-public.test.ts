@@ -47,10 +47,10 @@ function scan(): Finding[] {
     if (!file.endsWith('.ts')) continue
     const src = readFileSync(resolve(resourcesDir, file), 'utf-8')
     const lines = src.split('\n')
-    for (let i = 0; i < lines.length; i++) {
+    for (const [i, line] of lines.entries()) {
       for (const p of PATTERNS) {
-        if (p.rx.test(lines[i])) {
-          findings.push({ resource: file, line: i + 1, text: lines[i].trim(), pattern: p.name })
+        if (p.rx.test(line)) {
+          findings.push({ resource: file, line: i + 1, text: line.trim(), pattern: p.name })
         }
       }
     }

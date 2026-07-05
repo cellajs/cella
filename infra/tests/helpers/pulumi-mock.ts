@@ -116,11 +116,11 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
 
   const byType = (prefix: string) => resources.filter((r) => r.type.startsWith(prefix))
   const oneOfType = (typeStr: string) => {
-    const matches = resources.filter((r) => r.type === typeStr)
-    if (matches.length !== 1) {
-      throw new Error(`Expected exactly 1 resource of type ${typeStr}, got ${matches.length}`)
+    const [match, ...rest] = resources.filter((r) => r.type === typeStr)
+    if (!match || rest.length > 0) {
+      throw new Error(`Expected exactly 1 resource of type ${typeStr}, got ${rest.length + (match ? 1 : 0)}`)
     }
-    return matches[0]
+    return match
   }
 
   return { pulumi, resources, byType, oneOfType }

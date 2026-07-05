@@ -20,10 +20,8 @@ import { escapeRegExp } from './escape-regexp'
 
 export type EnvFileUndeliverableReason = 'empty' | 'multiline'
 
-export interface EnvFileDeliverability {
-  ok: boolean
-  reason?: EnvFileUndeliverableReason
-}
+/** Discriminated union so a failed check always carries its reason. */
+export type EnvFileDeliverability = { ok: true } | { ok: false; reason: EnvFileUndeliverableReason }
 
 /** Whether `value` can be written as a single `KEY=value` line in an env file. */
 export function isEnvFileDeliverable(value: string): EnvFileDeliverability {

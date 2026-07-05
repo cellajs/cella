@@ -119,7 +119,7 @@ export interface HealthCheck {
 export interface ComposeService {
   image: string
   profiles: readonly string[]
-  restart: string
+  restart: 'unless-stopped' | 'no' | 'always' | 'on-failure'
   ports?: readonly string[]
   stop_grace_period?: string
   env_file?: readonly string[]

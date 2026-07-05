@@ -43,7 +43,8 @@ export interface StepOptions {
 export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
   const names = Array.isArray(envName) ? envName : [envName]
   for (const name of names) {
-    if (process.env[name]) return process.env[name] as string
+    const value = process.env[name]
+    if (value) return value
   }
   return prompt()
 }

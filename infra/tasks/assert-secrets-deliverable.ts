@@ -130,7 +130,7 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
     const deliverable = isEnvFileDeliverable(value)
     if (!deliverable.ok) {
       // A present-but-multiline value breaks the sync regardless of required.
-      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: deliverable.reason! })
+      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: deliverable.reason })
     }
   }
 

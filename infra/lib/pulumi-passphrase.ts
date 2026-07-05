@@ -67,16 +67,15 @@ export function verifyStackPassphrase(yamlText: string, passphrase: string): boo
 
 /** Pure-string decryption of `secure:` values — exercised via `__testing` only. */
 function decryptStackSecretsFromText(text: string, passphrase: string, keys: string[]): Record<string, string> {
-  const saltMatch = text.match(/^encryptionsalt:\s*(\S+)/m)
-  if (!saltMatch) throw new Error('No encryptionsalt header')
-  const salt = saltMatch[1]
+  const salt = text.match(/^encryptionsalt:\s*(\S+)/m)?.[1]
+  if (!salt) throw new Error('No encryptionsalt header')
   const key = deriveKey(passphrase, salt)
   if (!verify(key, salt)) throw new Error('Bad passphrase')
 
   const out: Record<string, string> = {}
   for (const k of keys) {
-    const m = text.match(new RegExp(`\\b${escapeRegExp(k)}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))
-    if (m) out[k] = decryptV1(key, m[1])
+    const value = text.match(new RegExp(`\\b${escapeRegExp(k)}:\\s*\\n\\s+secure:\\s*(\\S+)`, 'm'))?.[1]
+    if (value) out[k] = decryptV1(key, value)
   }
   return out
 }

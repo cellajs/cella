@@ -41,9 +41,12 @@ export interface RuntimeSecretConfig {
   services: readonly RuntimeSecretConsumer[]
 }
 
+/** The literal union of fork-config secret ids (the config object keys). */
+export type RuntimeSecretId = keyof typeof runtimeSecretsConfig & string
+
 /** A runtime secret definition: its config data plus the id (the config key). */
 export interface RuntimeSecretDefinition extends RuntimeSecretConfig {
-  id: string
+  id: RuntimeSecretId
 }
 
 /** Helper for `runtime-secrets.config.ts` — typed identity preserving literal keys. */
@@ -53,7 +56,8 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
 
 /** Flattened, ordered runtime secret definitions derived from the fork config. */
 export const runtimeSecrets: RuntimeSecretDefinition[] = Object.entries(runtimeSecretsConfig).map(([id, definition]) => ({
-  id,
+  // Object.entries widens keys to string; the entries ARE the config keys.
+  id: id as RuntimeSecretId,
   ...definition,
 }))
 

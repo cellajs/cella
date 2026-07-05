@@ -61,7 +61,7 @@ async function writeAppFiles(plan: BootPlan): Promise<void> {
 }
 
 async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Promise<void> {
-  const registryHost = plan.registry.split('/')[0]!
+  const [registryHost = ''] = plan.registry.split('/')
   await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], { input: secretKey })
 }
 
@@ -75,7 +75,7 @@ async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
 async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
   if (!plan.releaseCommand.enabled) return
   const [command, ...args] = plan.releaseCommand.command
-  await mustExec(exec, command!, args, { cwd: '/opt/app' })
+  await mustExec(exec, command, args, { cwd: '/opt/app' })
 }
 
 /**
