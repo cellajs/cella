@@ -19,7 +19,10 @@ export interface HydrateRuntimeSecretsOptions {
 
 async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecretManifestEntry): Promise<string | null> {
   const fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
+  // Manifest ids are `region/uuid` (Pulumi) or a bare uuid; take the last segment
+  // and refuse to build a request URL from a blank id.
   const secretId = entry.secretId.split('/').at(-1)
+  if (!secretId) throw new Error(`${entry.envVar}: manifest entry has a blank secretId ('${entry.secretId}')`)
   const url = `https://api.scaleway.com/secret-manager/v1beta1/regions/${opts.region}/secrets/${secretId}/versions/latest/access`
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': opts.secretKey } })
   const body = await res.text()

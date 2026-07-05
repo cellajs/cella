@@ -74,6 +74,26 @@ describe('renderCloudInit', () => {
     expect(out).not.toContain('/usr/local/bin/cella-upload-boot-diag')
   })
 
+  it('emits a log-scrub sed pattern that actually matches secret-bearing lines', () => {
+    const out = renderCloudInit(params())
+
+    // The scrub must be an ERE alternation. A plain-BRE `|` (or a `\|` eaten by
+    // the TS template literal) matches only the literal joined string and
+    // silently scrubs nothing.
+    const sedLines = out.split('\n').filter((line) => line.includes('sed') && line.includes('cloud-init'))
+    expect(sedLines).toHaveLength(2)
+    for (const line of sedLines) {
+      const pattern = line.match(/'\/(.+)\/Id'/)?.[1]
+      expect(pattern, `no sed address in: ${line}`).toBeTruthy()
+      expect(line).toContain('-E')
+      const re = new RegExp(pattern as string, 'i')
+      expect(re.test('docker login rg.fr-par.scw.cloud -u nologin')).toBe(true)
+      expect(re.test('export SCW_SECRET_KEY=abc')).toBe(true)
+      expect(re.test('DATABASE_URL=postgres://…')).toBe(true)
+      expect(re.test('harmless log line')).toBe(false)
+    }
+  })
+
   it('renders different userdata when the release SHA changes', () => {
     const a = renderCloudInit(params({ releaseSha: 'sha-a', envFileContent: 'BACKEND_TAG=sha-a' }))
     const b = renderCloudInit(params({ releaseSha: 'sha-b', envFileContent: 'BACKEND_TAG=sha-b' }))

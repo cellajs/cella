@@ -71,6 +71,17 @@ describe('deriveInfra', () => {
     expect(d.tags).toEqual(['env=staging', 'app=cella', 'managed-by=pulumi'])
   })
 
+  it('tagsAsMap carries the same tags as real key→value pairs', () => {
+    const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }))
+    expect(d.tagsAsMap).toEqual({ env: 'staging', app: 'cella', 'managed-by': 'pulumi' })
+    // Guard against the historic `split(':')` bug: no key may embed `=`,
+    // and no value may be undefined.
+    for (const [key, value] of Object.entries(d.tagsAsMap)) {
+      expect(key).not.toContain('=')
+      expect(value).toBeTypeOf('string')
+    }
+  })
+
   it('region and zone are consistent (zone = region-1)', () => {
     const d = deriveInfra(fakeConfig())
     expect(d.region).toBe('nl-ams')

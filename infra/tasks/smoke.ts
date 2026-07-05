@@ -194,7 +194,13 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     try {
       const res = await get(`${frontendUrl}/`)
       const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body)
-      const detail = opts.expectedAsset && res.ok ? `served does not reference ${opts.expectedAsset}` : `status=${res.status}`
+      // Detail mirrors the branch that actually failed: a bad status, or a 200
+      // whose HTML lacks the expected (or any) hashed entry asset.
+      const detail = !res.ok
+        ? `status=${res.status}`
+        : opts.expectedAsset
+          ? `served does not reference ${opts.expectedAsset}`
+          : 'no hashed entry asset found in served index.html'
       results.push(res.ok && matched ? { name, ok: true } : { name, ok: false, detail })
     } catch (err) {
       results.push({ name, ok: false, detail: (err as Error).message })

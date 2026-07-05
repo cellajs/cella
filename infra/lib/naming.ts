@@ -34,6 +34,13 @@ export function deriveInfra(appConfig: Cfg) {
     region,
     zone: `${region}-1`,
     tags: [`env=${appConfig.mode}`, `app=${appConfig.slug}`, 'managed-by=pulumi'],
+    // The same tags as a key→value map, for resources (Object Storage buckets)
+    // whose API takes a record instead of `key=value` strings.
+    tagsAsMap: {
+      env: appConfig.mode,
+      app: appConfig.slug,
+      'managed-by': 'pulumi',
+    } as Record<string, string>,
     isProduction: appConfig.mode === 'production',
     hasDomain: Boolean(appConfig.domain && appConfig.domain !== 'localhost'),
   }

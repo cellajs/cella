@@ -11,7 +11,7 @@
 import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { appConfig } from '../../shared'
-import { naming, region, tags, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
+import { naming, region, tagsAsMap, isProduction, infra, ciDeployApplicationId, vmReaderApplicationId, operatorApplicationId } from '../pulumi-context'
 
 // Derived from IAM by name.
 const applicationId = ciDeployApplicationId
@@ -47,7 +47,7 @@ const assetRetentionDays = infra.assetRetentionDays
 const frontendBucket = new scaleway.object.Bucket('frontend-bucket', {
   name: naming.frontendBucket,
   region,
-  tags: Object.fromEntries(tags.map((t) => t.split(':') as [string, string])),
+  tags: tagsAsMap,
   forceDestroy: !isProduction,
   versioning: { enabled: true },
   lifecycleRules: [
@@ -129,7 +129,7 @@ const frontendPublicUrl = (): string => {
 const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', {
   name: naming.publicBucket,
   region,
-  tags: Object.fromEntries(tags.map((t) => t.split(':') as [string, string])),
+  tags: tagsAsMap,
   forceDestroy: !isProduction,
   versioning: { enabled: false },
   corsRules: [
@@ -178,7 +178,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
 const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket', {
   name: naming.privateBucket,
   region,
-  tags: Object.fromEntries(tags.map((t) => t.split(':') as [string, string])),
+  tags: tagsAsMap,
   forceDestroy: !isProduction,
   versioning: { enabled: false },
   corsRules: [
@@ -200,7 +200,7 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
 const bootDiagBucket = new scaleway.object.Bucket('boot-diag-bucket', {
   name: naming.bootDiagBucket,
   region,
-  tags: Object.fromEntries(tags.map((t) => t.split(':') as [string, string])),
+  tags: tagsAsMap,
   forceDestroy: !isProduction,
   versioning: { enabled: false },
   lifecycleRules: [

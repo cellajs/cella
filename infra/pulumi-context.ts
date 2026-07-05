@@ -20,7 +20,7 @@ if (appConfig.mode !== stackMode) {
 
 const derived = deriveInfra(appConfig)
 
-export const { naming, dnsZone, region, zone, tags, isProduction } = derived
+export const { naming, dnsZone, region, zone, tags, tagsAsMap, isProduction } = derived
 
 // Deploys require a real domain — fail fast here instead of gating each resource
 // module on `hasDomain` independently.
@@ -120,7 +120,14 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
   const secretPath = secretManagerPath(naming.slug, mode)
   const container = scaleway.secrets.getSecretOutput({ name: VM_READER_SECRET_NAME, path: secretPath, region })
   const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
-    (data) => JSON.parse(Buffer.from(data, 'base64').toString('utf8')) as VmReaderKeyPayload,
+    (data): VmReaderKeyPayload => {
+      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
+      const record = parsed as Partial<VmReaderKeyPayload> | null
+      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
+        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
+      }
+      return { accessKey: record.accessKey, secretKey: record.secretKey }
+    },
   )
   return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
 }

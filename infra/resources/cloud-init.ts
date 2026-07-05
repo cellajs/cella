@@ -59,8 +59,10 @@ WantedBy=multi-user.target`
 const installBootReplayService = (): string => `${writeHeredoc('/etc/systemd/system/cella-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
 systemctl enable cella-boot-replay.service 2>&1 | tail -1`
 
-const scrubCloudInitLogs = (): string => `sed -i '/SECRET\|PASSWORD\|API_KEY\|DATABASE_URL\|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
-sed -i '/SECRET\|PASSWORD\|API_KEY\|DATABASE_URL\|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`
+// -E (ERE) so `|` alternates; in a BRE the unescaped `|` is literal and the
+// scrub silently matches nothing.
+const scrubCloudInitLogs = (): string => `sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
+sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`
 
 function bootPlan(p: CloudInitParams): string {
   return JSON.stringify({
