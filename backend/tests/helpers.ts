@@ -7,6 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { type OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
@@ -61,7 +62,7 @@ export async function createTotpUser(email: string) {
   await verifyUserEmail(email);
   await db.insert(totpsTable).values({
     userId: user.id,
-    secret: 'JBSWY3DPEHPK3PXP',
+    secret: encryptTotpSecret('JBSWY3DPEHPK3PXP'),
     createdAt: mockPastIsoDate(),
   });
   await enableMFAForUser(user.id);

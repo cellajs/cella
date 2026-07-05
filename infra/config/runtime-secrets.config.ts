@@ -109,6 +109,15 @@ export default defineRuntimeSecrets({
     generation: 'random',
     services: ['backend', 'mcp'],
   },
+  dataEncryptionKey: {
+    secretName: 'data-encryption-key',
+    description: 'Root key for reversible encryption of sensitive database fields',
+    envVar: 'DATA_ENCRYPTION_KEY',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'random',
+    services: ['backend', 'mcp'],
+  },
   adminEmail: {
     secretName: 'admin-email',
     description: 'Primary administrative contact email',
