@@ -22,12 +22,11 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  * Parents are defined before children. Order determines ancestor chain.
  *
  * Optional `relatedContexts` on products declare non-ancestor context references (nullable id columns).
+ * Optional `host` on products declares product-to-product ownership (e.g. attachment -> task):
+ * generated nullable `<host>Id` column, lifecycle cascade, per-host CDC counters.
  *
- * publicRead declares how an entity becomes publicly readable:
- * - 'publicSelf': Public when own publicAt timestamp is set
- * - 'publicParent': Public when parent context's publicAt is set
- * - 'publicParentOrSelf': Public when either own or parent's publicAt is set
- * Entities without publicRead are always private.
+ * Public readability is NOT declared here — it is a permission concern, declared per
+ * subject via `publicRead(mode)` in `permissions-config.ts`.
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()
@@ -42,10 +41,10 @@ export const hierarchy = createEntityHierarchy(roles)
  *   .user()
  *   .context('organization', { parent: null, roles: ['admin', 'member'] })
  *   .context('workspace', { parent: 'organization', roles: roles.all })
- *   .context('project', { parent: 'organization', roles: roles.all, publicRead: 'publicSelf' })
- *   .product('task', { parent: 'project', publicRead: 'publicParent' })
+ *   .context('project', { parent: 'organization', roles: roles.all })
+ *   .product('task', { parent: 'project' })
  *   .product('label', { parent: 'project' })
- *   .product('attachment', { parent: 'project', publicRead: 'publicParent' })
+ *   .product('attachment', { parent: 'project', host: 'task' })
  *   .product('chat', { parent: 'organization', relatedContexts: ['project', 'workspace'] })
  *   .product('message', { parent: 'organization', relatedContexts: ['project', 'workspace'] })
  *   .build();

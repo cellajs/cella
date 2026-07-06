@@ -37,6 +37,8 @@ export default defineConfig({
       DATA_ENCRYPTION_KEY: 'test-data-encryption-key-minimum-32-chars',
       SYSTEM_ADMIN_IP_ALLOWLIST: '*',
       DATABASE_URL: testDatabaseUrl,
+      // Public routes read via the admin connection (tenant-less); point it at the test DB
+      DATABASE_ADMIN_URL: testDatabaseUrl,
     },
   },
 });

@@ -145,6 +145,15 @@ export type RelatedContextType<E extends string> = E extends keyof HierarchyRela
   ? HierarchyRelatedMap[E]
   : never;
 
+/** Type-level map of each hosted product to its host product. */
+type HierarchyHostMap = typeof hierarchy._hostMap;
+
+/**
+ * Host product type declared for a hosted product via `host:`.
+ * Example (Raak): `HostEntityType<'attachment'>` → `'task'`.
+ */
+export type HostEntityType<E extends string> = E extends keyof HierarchyHostMap ? HierarchyHostMap[E] : never;
+
 /** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 

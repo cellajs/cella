@@ -7,6 +7,8 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
+import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getOrderColumn } from '#/utils/order-column';
 import { seqCursorFilters } from '#/utils/seq-cursor';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -17,7 +19,25 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const organizationId = ctx.var.organization.id;
   const { q, sort, order, limit, offset, seqCursor } = input;
 
+  // Resolve the caller's readable scope (unconditional + row-conditional read grants,
+  // e.g. `read: 'own'`) and compile it to a single row predicate.
+  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId);
+  const scopeWhere = buildCollectionReadWhere(
+    readFilter,
+    attachmentsTable,
+    attachmentsTable.organizationId,
+    ctx.var.user.id,
+  );
+
+  if (scopeWhere.kind === 'none') {
+    const data = { items: [], total: 0 };
+    return { success: true, data } as OperationResult<typeof data>;
+  }
+
   const filters: SQL[] = [eq(attachmentsTable.organizationId, organizationId)];
+
+  // Restrict to the caller's readable scope unless org-wide (kind 'all').
+  if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
 
   if (!seqCursor) {
     filters.push(isNull(attachmentsTable.deletedAt));

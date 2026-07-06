@@ -2,6 +2,7 @@ import { boolean, foreignKey, index, snakeCase, uuid, varchar } from 'drizzle-or
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { maxLength } from '#/db/utils/constraints';
 import { contextRelationColumns } from '#/db/utils/context-relation-columns';
+import { hostRelationColumns } from '#/db/utils/host-relation-columns';
 import { productEntityColumns } from '#/db/utils/product-entity-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
@@ -13,6 +14,8 @@ export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productEntityColumns('attachment'),
+    // Host relation columns (hierarchy `host:`) — empty unless a fork declares a host for attachments
+    ...hostRelationColumns('attachment'),
     public: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     groupId: uuid(),

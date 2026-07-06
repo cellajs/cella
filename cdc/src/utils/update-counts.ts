@@ -67,6 +67,30 @@ export function getCountDeltas(
     const countAction = isSoftDeleteTransition(newRow, oldRow) ? 'delete' : action;
     const deltas = getEntityDeltas(countAction, organizationId, tableMeta.type, newRow, oldRow);
 
+    // Host counters: track e:<hostedType> counts per host row (hierarchy `host:`, e.g.
+    // e:attachment on the owning task). Mirrors embedding counters, keyed by host id.
+    const hostType = hierarchy.getHostType(tableMeta.type);
+    if (hostType) {
+      const hostIdColumn = `${hostType}Id`;
+      const counterKey = `e:${tableMeta.type}`;
+
+      if (countAction === 'delete') {
+        const hostId = getStringValue(oldRow ?? newRow, hostIdColumn);
+        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: -1 } });
+      } else if (countAction === 'create') {
+        const hostId = getStringValue(newRow, hostIdColumn);
+        if (hostId) deltas.push({ contextKey: hostId, deltas: { [counterKey]: 1 } });
+      } else if (countAction === 'update' && oldRow) {
+        // Re-host: decrement the old host, increment the new one
+        const oldHostId = getStringValue(oldRow, hostIdColumn);
+        const newHostId = getStringValue(newRow, hostIdColumn);
+        if (oldHostId !== newHostId) {
+          if (oldHostId) deltas.push({ contextKey: oldHostId, deltas: { [counterKey]: -1 } });
+          if (newHostId) deltas.push({ contextKey: newHostId, deltas: { [counterKey]: 1 } });
+        }
+      }
+    }
+
     // Embedding counters: track e:<hostEntity> counts per embedded entity ID
     for (const embedding of appConfig.entityEmbeddings) {
       if (embedding.hostEntity !== tableMeta.type) continue;

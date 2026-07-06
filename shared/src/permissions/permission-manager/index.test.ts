@@ -473,7 +473,7 @@ describe('own permission — grant attribution', () => {
 
   const userId = 'user-actor';
 
-  it('attributes own-granted actions to relation:owner', () => {
+  it('attributes own-granted actions to the condition name (relation:own)', () => {
     const memberships: TestMembership[] = [
       createTestMembership({ contextType: 'organization', organizationId: 'org1', role: 'member', userId }),
     ];
@@ -482,15 +482,15 @@ describe('own permission — grant attribution', () => {
     });
     const decision = getAllDecisions(ownPolicies, memberships, subject, { userId });
 
-    // Update was granted via 'own' → should be attributed to relation:owner
+    // Update was granted via the built-in `own` condition → attributed by condition name
     expect(decision.actions.update.enabled).toBe(true);
     expect(decision.actions.update.grantedBy).toHaveLength(1);
-    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'relation', relation: 'owner' });
+    expect(decision.actions.update.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
 
     // Delete same
     expect(decision.actions.delete.enabled).toBe(true);
     expect(decision.actions.delete.grantedBy).toHaveLength(1);
-    expect(decision.actions.delete.grantedBy[0]).toEqual({ type: 'relation', relation: 'owner' });
+    expect(decision.actions.delete.grantedBy[0]).toEqual({ type: 'relation', relation: 'own' });
   });
 
   it('attributes unconditional grants to membership (not relation)', () => {

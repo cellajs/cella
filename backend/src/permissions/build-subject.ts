@@ -32,7 +32,12 @@ const translateMissingScope = (e: unknown): never => {
 export const buildSubject = (
   entityType: ContextEntityType | ProductEntityType,
   ancestorContextIds: Partial<ContextEntityIdColumns>,
-  options?: { id?: string; createdBy?: string | null },
+  options?: {
+    id?: string;
+    createdBy?: string | null;
+    row?: Record<string, unknown>;
+    parentRow?: Record<string, unknown>;
+  },
 ): SubjectForPermission => {
   try {
     return sharedBuildSubject(entityType, ancestorContextIds, options);

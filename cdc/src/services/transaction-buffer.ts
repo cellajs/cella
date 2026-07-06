@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { isContextEntity, appConfig } from 'shared';
+import { isContextEntity, appConfig, hierarchy } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { log } from '../lib/pino';
@@ -11,6 +11,14 @@ for (const { embeddedEntity, hostEntity } of appConfig.entityEmbeddings) {
   const sources = softCascadeTargets.get(hostEntity) ?? new Set<string>();
   sources.add(embeddedEntity);
   softCascadeTargets.set(hostEntity, sources);
+}
+
+/** Host relationships (hierarchy `host:`): product types that host others, and each hosted type's host id column. */
+const hostTypes = new Set<string>();
+const hostIdColumnByHostedType = new Map<string, string>();
+for (const { hostedType, hostType, hostIdColumn } of hierarchy.getHostRelations()) {
+  hostTypes.add(hostType);
+  hostIdColumnByHostedType.set(hostedType, hostIdColumn);
 }
 
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
@@ -35,6 +43,9 @@ export class TransactionBuffer {
 
   /** Context entity IDs deleted in the current transaction (streaming suppression). */
   private deletedContextIds = new Set<string>();
+
+  /** Host product IDs deleted in the current transaction (hosted-row cascade suppression). */
+  private deletedHostIds = new Set<string>();
 
   /** Count of events suppressed in the current transaction. */
   private suppressedCount = 0;
@@ -65,6 +76,7 @@ export class TransactionBuffer {
     this.activeXid = msg.xid;
     this.pendingEvents = [];
     this.deletedContextIds.clear();
+    this.deletedHostIds.clear();
     this.suppressedCount = 0;
     this.startTimeout();
   }
@@ -88,8 +100,13 @@ export class TransactionBuffer {
       this.deletedContextIds.add(activity.subjectId);
     }
 
+    // Track host product deletes: hosted-row deletes in the same tx are cascades
+    if (activity.action === 'delete' && activity.entityType && hostTypes.has(activity.entityType) && activity.subjectId) {
+      this.deletedHostIds.add(activity.subjectId);
+    }
+
     // Drop cascaded child deletes inline — never buffer them
-    if (this.deletedContextIds.size > 0 && this.isCascadedDelete(result)) {
+    if ((this.deletedContextIds.size > 0 || this.deletedHostIds.size > 0) && this.isCascadedDelete(result)) {
       this.suppressedCount++;
       return;
     }
@@ -108,21 +125,24 @@ export class TransactionBuffer {
     let events = this.pendingEvents;
     let suppressedCount = this.suppressedCount;
     const deletedContextIds = this.deletedContextIds.size > 0 ? [...this.deletedContextIds] : null;
+    const deletedHostIds = this.deletedHostIds.size > 0 ? [...this.deletedHostIds] : null;
 
     this.activeXid = null;
     this.pendingEvents = [];
     this.deletedContextIds.clear();
+    this.deletedHostIds.clear();
     this.suppressedCount = 0;
 
-    // Second pass: catch child deletes that arrived before their parent context entity delete.
-    // Most children are dropped inline in onEvent(), but WAL order isn't always parent-first
-    // (e.g., application-level batch deletes). This pass is cheap since only surviving events
-    // remain (typically context entity deletes + non-delete mutations).
-    if (deletedContextIds && events.length > 1) {
-      const deletedSet = new Set(deletedContextIds);
+    // Second pass: catch child deletes that arrived before their parent context entity or
+    // host delete. Most children are dropped inline in onEvent(), but WAL order isn't always
+    // parent-first (e.g., application-level batch deletes). This pass is cheap since only
+    // surviving events remain (typically context entity deletes + non-delete mutations).
+    if ((deletedContextIds || deletedHostIds) && events.length > 1) {
+      const deletedContextSet = new Set(deletedContextIds ?? []);
+      const deletedHostSet = new Set(deletedHostIds ?? []);
       const filtered: PendingEvent[] = [];
       for (const event of events) {
-        if (this.isCascadedDeleteByIds(event.result, deletedSet)) {
+        if (this.isCascadedDeleteByIds(event.result, deletedContextSet, deletedHostSet)) {
           suppressedCount++;
         } else {
           filtered.push(event);
@@ -185,14 +205,19 @@ export class TransactionBuffer {
    * Used in onEvent() for streaming suppression.
    */
   private isCascadedDelete(result: ParseMessageResult): boolean {
-    return this.isCascadedDeleteByIds(result, this.deletedContextIds);
+    return this.isCascadedDeleteByIds(result, this.deletedContextIds, this.deletedHostIds);
   }
 
   /**
-   * Check if an event is a cascaded delete from one of the deleted context entities.
-   * Matches by checking if the event's context entity ID columns reference a deleted context.
+   * Check if an event is a cascaded delete from a deleted context entity or a deleted host.
+   * Context cascades match via the activity's context entity ID columns; host cascades match
+   * via the hosted row's host id column in rowData (host ids are product ids, not on the activity).
    */
-  private isCascadedDeleteByIds(result: ParseMessageResult, deletedContextIds: Set<string>): boolean {
+  private isCascadedDeleteByIds(
+    result: ParseMessageResult,
+    deletedContextIds: Set<string>,
+    deletedHostIds: Set<string>,
+  ): boolean {
     const { activity } = result;
     if (activity.action !== 'delete') return false;
 
@@ -200,11 +225,25 @@ export class TransactionBuffer {
     if (activity.entityType && isContextEntity(activity.entityType)) return false;
 
     // Check all context entity ID columns on this activity
-    for (const contextType of appConfig.contextEntityTypes) {
-      const idColumn = appConfig.entityIdColumnKeys[contextType];
-      const value = (activity as Record<string, unknown>)[idColumn];
-      if (typeof value === 'string' && deletedContextIds.has(value)) {
-        return true;
+    if (deletedContextIds.size > 0) {
+      for (const contextType of appConfig.contextEntityTypes) {
+        const idColumn = appConfig.entityIdColumnKeys[contextType];
+        const value = (activity as Record<string, unknown>)[idColumn];
+        if (typeof value === 'string' && deletedContextIds.has(value)) {
+          return true;
+        }
+      }
+    }
+
+    // Hosted-row cascade: the row's host id references a host deleted in this transaction
+    if (deletedHostIds.size > 0 && activity.entityType) {
+      const hostIdColumn = hostIdColumnByHostedType.get(activity.entityType);
+      if (hostIdColumn) {
+        const row = result.rowData ?? result.oldRowData;
+        const hostId = row?.[hostIdColumn];
+        if (typeof hostId === 'string' && deletedHostIds.has(hostId)) {
+          return true;
+        }
       }
     }
 

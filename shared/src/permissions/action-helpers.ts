@@ -22,13 +22,14 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
 >;
 
 /**
- * Resolves a three-state permission (`true | false | 'own'`) to a boolean
- * by checking the implicit "owner" relation.
+ * Resolves a three-state permission (`true | false | condition name`) to a boolean.
  *
- * In Zanzibar terms: evaluates `check(userId, action, entity)` where an `'own'` policy
- * is resolved via the implicit `owner` relation derived from `entity.createdBy`.
+ * Handles the built-in `'own'` condition (actor created the entity, derived from
+ * `entity.createdBy`). Any other condition name resolves to `false` here — secure
+ * default; call sites using a custom row condition must resolve it via the
+ * condition's own check-form.
  *
- * @param permission - The permission state from `EntityCanMap` (`true`, `false`, or `'own'`)
+ * @param permission - The permission state from `EntityCanMap` (`true`, `false`, or a condition name)
  * @param entityCreatedBy - The `createdBy` field of the entity being checked
  * @param userId - The current user's ID (the actor)
  * @returns `true` if action is allowed, `false` otherwise. Defaults to `false` for safety.

@@ -1,5 +1,5 @@
 import { appConfig } from '../src/config-builder/app-config';
-import { configureAccessPolicies } from '../src/permissions/access-policies';
+import { configurePermissions } from '../src/permissions/access-policies';
 
 /**
  * Access policies for each entity type.
@@ -28,7 +28,9 @@ import { configureAccessPolicies } from '../src/permissions/access-policies';
  * 4. Create DB schema in `backend/src/db/schema/`
  * 5. Run `pnpm generate` to create migrations
  */
-export const accessPolicies = configureAccessPolicies(appConfig.entityTypes, ({ subject, contexts }) => {
+export const { accessPolicies, publicReadGrants, rowRestrictions, hostDelegation } = configurePermissions(
+  appConfig.entityTypes,
+  ({ subject, contexts }) => {
   switch (subject.name) {
     case 'organization':
       // self (this organization) — create is inert here: org creation is gated by tenant quota, not this policy
@@ -40,4 +42,5 @@ export const accessPolicies = configureAccessPolicies(appConfig.entityTypes, ({ 
       contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
       break;
   }
-});
+  },
+);
