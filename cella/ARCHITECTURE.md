@@ -259,7 +259,7 @@ Cella is a flat-root monorepo.
 ├── cdc                       Change Data Capture worker (WAL → activities → SSE)
 ├── frontend                  SPA using vite, React etc
 ├── infra                     Pulumi IaC (Scaleway) deployment with CLI
-├── info                      Documentation, changelog, migration plans
+├── cella                     Documentation, changelog, migration plans
 ├── json                      Static JSON data 
 ├── locales                   Translations
 ├── sdk                       Auto-generated SDK (types, zod schemas, fetch client)
