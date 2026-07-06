@@ -1,36 +1,33 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/docs/sidebar/page-tree-item';
-import { pagesListQueryOptions } from '~/modules/page/query';
+import { docPages } from '~/modules/page/content';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 
 interface PagesSidebarProps {
   onClose: () => void;
 }
 
-/** Sidebar listing published pages as a hierarchical tree, sorted by displayOrder. */
+/** Sidebar listing docs pages as a hierarchical tree, sorted by display order. */
 export function PagesSidebar({ onClose }: PagesSidebarProps) {
   const { t } = useTranslation();
   const { location } = useRouterState();
 
-  const { data: pages } = useInfiniteQuery({
-    ...pagesListQueryOptions({ sort: 'displayOrder', order: 'asc' }),
-    select: ({ pages }) => pages.flatMap(({ items }) => items).filter((page) => page.status === 'published'),
-  });
+  const pages = useMemo(() => docPages.filter((page) => !page.draft), []);
 
-  // Active page id from URL (e.g. /docs/page/<id>)
-  const activePageId = location.pathname.match(/\/docs\/page\/([^/]+)/)?.[1];
+  // Active page slug from URL (e.g. /docs/page/<slug>, slug may contain slashes)
+  const activeMatch = location.pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
+  const activePageId = activeMatch ? decodeURIComponent(activeMatch) : undefined;
 
   // Tree of pages for nested rendering
-  const pageTree = pages ? buildPageNodeTree(pages) : [];
+  const pageTree = buildPageNodeTree(pages);
 
   // Expanded subtree state — additive: ancestors of the active page are seeded on route change,
   // but the user remains free to collapse them afterwards without them snapping back open.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {
-    if (!pages || !activePageId) return;
+    if (!activePageId) return;
     const ancestors = computeAncestorIds(pages, activePageId);
     if (ancestors.size === 0) return;
     setExpandedIds((prev) => {

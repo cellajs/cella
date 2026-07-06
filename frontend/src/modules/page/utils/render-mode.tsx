@@ -1,9 +1,7 @@
 import { FileTextIcon, LayoutListIcon, type LucideIcon, WorkflowIcon } from 'lucide-react';
-import type { Page } from 'sdk';
+import type { DocRenderMode } from '~/modules/page/content';
 
-type RenderMode = NonNullable<Page['renderMode']>;
-
-export const renderModeIcons: Record<RenderMode, LucideIcon> = {
+export const renderModeIcons: Record<DocRenderMode, LucideIcon> = {
   default: FileTextIcon,
   overview: LayoutListIcon,
   nodeOnly: WorkflowIcon,
@@ -12,7 +10,7 @@ export const renderModeIcons: Record<RenderMode, LucideIcon> = {
 export const renderModeLabelKey = (mode: string) => `c:render_mode.${mode === 'nodeOnly' ? 'node_only' : mode}`;
 
 interface RenderModeLabelProps {
-  mode: RenderMode;
+  mode: DocRenderMode;
   label: string;
   iconSize?: number;
   className?: string;

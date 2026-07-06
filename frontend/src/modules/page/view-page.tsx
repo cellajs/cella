@@ -1,131 +1,99 @@
-import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronRightIcon, EditIcon } from 'lucide-react';
-import { Suspense } from 'react';
+import { Link, notFound } from '@tanstack/react-router';
+import { ChevronRightIcon } from 'lucide-react';
+import { type ComponentProps, type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Page } from 'sdk';
-import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { Spinner } from '~/modules/common/spinner';
-import { StickyBox } from '~/modules/common/sticky-box';
-import { pageQueryOptions, pagesListQueryOptions } from '~/modules/page/query';
-import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/modules/user/user-store';
+import { type DocPage, getChildDocPages, getDocPage, getDocPageLoader } from '~/modules/page/content';
 import { dateShort } from '~/utils/date-short';
 
 interface ViewPageProps {
-  pageId: string;
+  slug: string;
 }
 
-/** Get published child pages sorted by displayOrder from the pages list cache. */
-function useChildPages(parentId: string) {
-  const { data } = useInfiniteQuery({
-    ...pagesListQueryOptions({}),
-    select: ({ pages }) =>
-      pages
-        .flatMap(({ items }) => items)
-        .filter((p) => p.parentId === parentId && p.status === 'published')
-        .sort((a, b) => a.displayOrder - b.displayOrder),
-  });
-  return data ?? [];
+/** Internal /docs links in content navigate via the router; external links open in a new tab. */
+function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
+  if (href.startsWith('/')) {
+    return (
+      <Link to={href} {...props}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noreferrer" {...props}>
+      {children}
+    </a>
+  );
 }
+
+const mdxComponents = { a: MdxLink };
 
 /**
- * Displays a page with its name as title and description as the main content.
+ * Displays a docs page: frontmatter title + compiled MDX body.
  * Supports three render modes:
  * - default: renders full page content
  * - overview: renders intro content + auto-generated child page list
- * - nodeOnly: redirects-like experience showing child page navigation only
+ * - nodeOnly: redirect-like experience showing child page navigation only
  */
-function ViewPage({ pageId }: ViewPageProps) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { isSystemAdmin } = useUserStore();
+function ViewPage({ slug }: ViewPageProps) {
+  const page = getDocPage(slug);
 
-  // Get page from React Query
-  const { data: page } = useSuspenseQuery(pageQueryOptions(pageId));
+  // Lazy-load the code-split MDX body for this slug. The component is keyed by
+  // slug at the call site, so this memo lives for exactly one page.
+  const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
+    const loader = getDocPageLoader(slug);
+    return loader ? lazy(async () => ({ default: await loader() })) : null;
+  }, [slug]);
 
-  if (!page) {
-    return (
-      <div className="mx-auto my-4 flex justify-center md:mt-8">
-        <Spinner className="my-16 h-6 w-6" />
-      </div>
-    );
-  }
+  if (!page || !Content) throw notFound();
 
-  const renderMode = page.renderMode ?? 'default';
+  const renderMode = page.renderMode;
 
   return (
     <div className="container">
       <div className="mx-auto max-w-4xl">
-        <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
-          <div className="flex items-center justify-between gap-3 py-3 sm:py-6">
-            <div className="flex items-center gap-2">
-              {isSystemAdmin && (
-                <Button variant="plain" onClick={() => navigate({ to: '/docs/page/$id/edit', params: { id: pageId } })}>
-                  <EditIcon size={16} className="mr-2" />
-                  {t('c:edit')}
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-1 text-muted-foreground text-sm lowercase">
-              <div>
-                {page.status === 'published' ? t('c:published') : t('c:created')} {dateShort(page.createdAt)}
-              </div>
-              {page.status === 'published' && page.updatedAt && (
-                <div className="opacity-50">
-                  {t('c:last_edited')} {dateShort(page.updatedAt)}
-                </div>
-              )}
-            </div>
-          </div>
-        </StickyBox>
-
         <div className="prose dark:prose-invert max-w-none">
-          <h1 className="pt-2">{page.name}</h1>
+          <h1 className="pt-6">{page.name}</h1>
+          {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
           {/* Default mode: render full content */}
-          {renderMode === 'default' && page.description && (
+          {renderMode === 'default' && (
             <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-              <BlockNoteFullHtml
-                id={`page-${pageId}`}
-                defaultValue={page.description}
-                className="text-muted-foreground"
-                clickOpensPreview
-                publicFiles
-              />
+              <Content components={mdxComponents} />
             </Suspense>
           )}
 
-          {/* Overview mode: optional intro content + child page cards */}
+          {/* Overview mode: intro content + child page cards */}
           {renderMode === 'overview' && (
             <>
-              {page.description && (
-                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-                  <BlockNoteFullHtml
-                    id={`page-${pageId}`}
-                    defaultValue={page.description}
-                    className="text-muted-foreground"
-                    clickOpensPreview
-                    publicFiles
-                  />
-                </Suspense>
-              )}
-              <ChildPagesList parentId={pageId} />
+              <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+                <Content components={mdxComponents} />
+              </Suspense>
+              <ChildPagesList parentSlug={slug} />
             </>
           )}
 
           {/* Node-only mode: just navigation to children, no content */}
-          {renderMode === 'nodeOnly' && <ChildPagesList parentId={pageId} />}
+          {renderMode === 'nodeOnly' && <ChildPagesList parentSlug={slug} />}
         </div>
       </div>
     </div>
   );
 }
 
-/** Auto-generated list of published child pages with descriptions. */
-function ChildPagesList({ parentId }: { parentId: string }) {
+function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
   const { t } = useTranslation();
-  const children = useChildPages(parentId);
+  return (
+    <p className="text-muted-foreground text-sm lowercase">
+      {t('c:last_edited')} {dateShort(updatedAt)}
+    </p>
+  );
+}
+
+/** Auto-generated list of child pages with descriptions. */
+function ChildPagesList({ parentSlug }: { parentSlug: string }) {
+  const { t } = useTranslation();
+  const children = getChildDocPages(parentSlug);
 
   if (children.length === 0) {
     return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;
@@ -141,18 +109,16 @@ function ChildPagesList({ parentId }: { parentId: string }) {
 }
 
 /** Card for a child page in overview/nodeOnly mode. */
-function ChildPageCard({ page }: { page: Page }) {
+function ChildPageCard({ page }: { page: DocPage }) {
   return (
     <Link
-      to="/docs/page/$id"
-      params={{ id: page.id }}
+      to="/docs/page/$"
+      params={{ _splat: page.id }}
       className="group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50"
     >
       <div className="min-w-0 flex-1">
         <h3 className="font-medium text-base underline-offset-2 group-hover:underline">{page.name}</h3>
-        {page.description && (
-          <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{extractPlainText(page.description)}</p>
-        )}
+        {page.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{page.description}</p>}
       </div>
       <ChevronRightIcon
         size={16}
@@ -160,25 +126,6 @@ function ChildPageCard({ page }: { page: Page }) {
       />
     </Link>
   );
-}
-
-/** Extract plain text from BlockNote JSON description for preview. */
-function extractPlainText(description: string): string {
-  try {
-    const blocks = JSON.parse(description);
-    const texts: string[] = [];
-    for (const block of blocks) {
-      if (block.content) {
-        for (const inline of block.content) {
-          if (inline.text) texts.push(inline.text);
-        }
-      }
-      if (texts.length > 3) break;
-    }
-    return texts.join(' ').slice(0, 200);
-  } catch {
-    return description.slice(0, 200);
-  }
 }
 
 export default ViewPage;
