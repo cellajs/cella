@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { createUpdateSchema } from '#/core/stx';
+import { createUpdateSchema, widenCreateSchema } from '#/core/stx';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { pagesTable } from '#/modules/page/page-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
@@ -49,14 +49,14 @@ const pageCreateBodySchema = pageInsertSchema
     displayOrder: z.number().optional(),
   });
 
-/** Create body with stx for single page creation */
-const pageCreateStxBodySchema = pageCreateBodySchema.extend({ stx: stxBaseSchema });
+/** Create body with stx for single page creation (lens-widened during expand windows) */
+const pageCreateStxBodySchema = widenCreateSchema('page', pageCreateBodySchema.extend({ stx: stxBaseSchema }));
 
 /** Array schema for batch creates (1-50 pages per request), each with own stx */
 export const pageCreateManyStxBodySchema = pageCreateStxBodySchema.array().min(1).max(50);
 
 /** Update body using fields pattern for single or multi-field updates with conflict detection */
-export const pageUpdateStxBodySchema = createUpdateSchema({
+export const pageUpdateStxBodySchema = createUpdateSchema('page', {
   name: z.string().max(maxLength.field),
   description: z.string().max(maxLength.html).nullable(),
   keywords: z.string().nullable(),

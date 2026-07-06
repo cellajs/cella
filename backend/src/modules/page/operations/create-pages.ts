@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { orderGap } from 'shared/display-order';
 import type { AuthContext } from '#/core/context';
-import { buildStx } from '#/core/stx';
+import { buildStx, normalizeCreateItem } from '#/core/stx';
 import { findPagesByStxEntityId, getMinPageDisplayOrder, insertPages } from '#/modules/page/page-queries';
 import type { pageCreateManyStxBodySchema } from '#/modules/page/page-schema';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
@@ -12,7 +12,9 @@ import { log } from '#/utils/logger';
 
 type CreatePagesInput = z.infer<typeof pageCreateManyStxBodySchema>;
 
-export async function createPagesOp(ctx: AuthContext, input: CreatePagesInput) {
+export async function createPagesOp(ctx: AuthContext, rawInput: CreatePagesInput) {
+  // Lens seam: canonicalize old-shape field names before any body access
+  const input = rawInput.map((item) => normalizeCreateItem('page', item));
   const user = ctx.var.user;
 
   const firstStx = input[0].stx;

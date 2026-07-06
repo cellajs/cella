@@ -44,6 +44,8 @@ export interface PersistedMetaRecord {
   buster: string;
   /** Persisted client cache version (appConfig.clientCacheVersion). Mismatch wipes cached queries. */
   clientCacheVersion?: string;
+  /** Persisted global lens schema ordinal. Behind the bundle → boot migration pass. */
+  schemaVersion?: number;
   mutations: DehydratedState['mutations'];
   /** Context queries bundled directly in meta. */
   contextQueries: DehydratedQuery[];

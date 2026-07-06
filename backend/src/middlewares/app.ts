@@ -7,7 +7,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
-// DORMANT (lens system): import { clientVersionMiddleware } from '#/middlewares/client-version';
+import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { loggerMiddleware } from '#/middlewares/logger';
 import { runWithLogContext } from '#/utils/logger';
 
@@ -44,8 +44,7 @@ const corsOptions: Parameters<typeof cors>[0] = {
   origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-  // DORMANT (lens system): add 'x-client-version' to allowHeaders when reconnecting.
-  allowHeaders: ['content-type', 'x-cache-token', 'traceparent', 'tracestate'],
+  allowHeaders: ['content-type', 'x-cache-token', 'x-client-version', 'traceparent', 'tracestate'],
   maxAge: 7200,
 };
 
@@ -55,8 +54,8 @@ app.use('*', cors(corsOptions));
 // CSRF protection
 app.use('*', csrf({ origin: appConfig.frontendUrl }));
 
-// DORMANT (lens system): client schema-version telemetry.
-// app.use('*', clientVersionMiddleware);
+// Client schema-version telemetry (fleet floor for lens contract gating)
+app.use('*', clientVersionMiddleware);
 
 // Body limit
 app.use('*', dynamicBodyLimit);
