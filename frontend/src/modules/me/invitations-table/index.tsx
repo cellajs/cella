@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { InfoIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -19,8 +18,6 @@ export function InvitationsTable() {
   // Build columns
   const columns = useColumns();
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   const queryOptions = meInvitationsQueryOptions();
   const { data, isLoading, isFetching, error } = useQuery({
     ...queryOptions,
@@ -38,7 +35,7 @@ export function InvitationsTable() {
           rows: data?.items,
           rowHeight: 52,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           readOnly: true,
           error,

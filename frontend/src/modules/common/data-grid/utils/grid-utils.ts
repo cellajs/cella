@@ -7,6 +7,7 @@ export * from './col-span-utils';
 export * from './dom-utils';
 export * from './event-utils';
 export * from './keyboard-utils';
+export * from './merge-utils';
 export * from './render-measuring-cells';
 export * from './selected-cell-utils';
 export * from './style-utils';

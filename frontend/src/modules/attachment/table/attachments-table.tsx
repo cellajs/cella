@@ -107,8 +107,6 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   const NoRowsComponent = (
     <ContentPlaceholder
       icon={PaperclipIcon}
@@ -139,7 +137,7 @@ function AttachmentsTable({ contextEntity, canUpload = true, isSheet = false }: 
           rowHeight: 52,
           onRowsChange,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,

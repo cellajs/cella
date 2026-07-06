@@ -58,8 +58,6 @@ function RequestsTable() {
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   return (
     <>
       <RequestsTableBar
@@ -76,7 +74,7 @@ function RequestsTable() {
           rows,
           rowHeight: 52,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,

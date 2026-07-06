@@ -6,6 +6,7 @@ export {
   getRegisteredEntityTypes,
   hasEntityQueryKeys,
   registerEntityQueryKeys,
+  SYNC_CHUNK_SIZE,
 } from './entity-query-registry';
 export { fetchAllPages } from './fetch-all-pages';
 export { fetchSlugCacheId } from './fetch-slug-cache-id';

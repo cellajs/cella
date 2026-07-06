@@ -102,8 +102,6 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   return (
     <>
       <MembersTableBar
@@ -124,7 +122,7 @@ function MembersTable({ contextEntity, isSheet = false, children }: MembersTable
           rowHeight: 52,
           onRowsChange,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,

@@ -4,7 +4,6 @@ export * from './use-copy-paste';
 export * from './use-drag-auto-scroll';
 export * from './use-grid-dimensions';
 export * from './use-infinite-scroll';
-export * from './use-responsive-columns';
 export * from './use-roving-tab-index';
 export * from './use-row-selection';
 export * from './use-viewport-rows';

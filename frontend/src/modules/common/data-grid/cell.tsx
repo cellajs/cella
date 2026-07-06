@@ -1,8 +1,8 @@
 import { PencilIcon } from 'lucide-react';
 import { type MouseEvent, memo } from 'react';
 import { useRovingTabIndex } from './hooks';
-import type { CellMouseEventHandler, CellRendererProps } from './types';
-import { createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
+import type { CalculatedColumn, CellMouseEventHandler, CellRendererProps, MergedSlots, TileSide } from './types';
+import { cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
 const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10 aria-selected:outline-none';
 const cellRangeTopClassname = 'rdg-cell-range-top border-t-2 border-t-primary';
@@ -155,17 +155,111 @@ function Cell<R, SR>({
       onFocus={onFocus}
       {...props}
     >
-      {renderCellContent(column, {
-        column,
-        row,
-        rowIdx,
-        isCellEditable: isEditable,
-        tabIndex: childTabIndex,
-        onRowChange: handleRowChange,
-      })}
+      {column.mergedSlots != null ? (
+        <MergedCellContent
+          column={column}
+          slots={column.mergedSlots}
+          row={row}
+          rowIdx={rowIdx}
+          isCellEditable={isEditable}
+          tabIndex={childTabIndex}
+          onRowChange={onRowChange}
+        />
+      ) : (
+        renderCellContent(column, {
+          column,
+          row,
+          rowIdx,
+          isCellEditable: isEditable,
+          tabIndex: childTabIndex,
+          onRowChange: handleRowChange,
+        })
+      )}
       {isEditable && (
         <PencilIcon className="pointer-events-none absolute top-2 right-2 hidden size-3 text-muted-foreground sm:group-hover/cell:block" />
       )}
+    </div>
+  );
+}
+
+interface MergedCellContentProps<R, SR> {
+  column: CalculatedColumn<R, SR>;
+  slots: MergedSlots<R, SR>;
+  row: R;
+  rowIdx: number;
+  isCellEditable: boolean;
+  tabIndex: number;
+  onRowChange: (column: CalculatedColumn<R, SR>, newRow: R) => void;
+}
+
+/**
+ * Host-cell content when other columns are merged into this column (`modes.*.merge`).
+ * Layout: top slot row, then left slots | main content | right slots, then bottom slot row.
+ * Slot wrappers carry `data-is-compact` so columns reuse their existing
+ * `in-data-[is-compact=true]:hidden` classes for icon-only rendering, and
+ * `data-tile-slot="<side>"` as a styling hook. Empty slots collapse entirely;
+ * `placeholderValue` is suppressed inside slots (a cell full of `-` is noise).
+ */
+function MergedCellContent<R, SR>({
+  column,
+  slots,
+  row,
+  rowIdx,
+  isCellEditable,
+  tabIndex,
+  onRowChange,
+}: MergedCellContentProps<R, SR>) {
+  function renderSide(side: TileSide, sideClassName: string) {
+    const sideSlots = slots[side];
+    if (sideSlots.length === 0) return null;
+
+    const children = sideSlots.map(({ column: slotColumn, className }) => {
+      const content = slotColumn.renderCell({
+        column: slotColumn,
+        row,
+        rowIdx,
+        isCellEditable: false,
+        tabIndex,
+        onRowChange: (newRow: R) => onRowChange(slotColumn, newRow),
+      });
+      if (content == null) return null;
+      return (
+        <span key={slotColumn.key} className={cn('inline-flex min-w-0 shrink-0 items-center', className)}>
+          {content}
+        </span>
+      );
+    });
+    if (children.every((child) => child === null)) return null;
+
+    return (
+      <div
+        data-tile-slot={side}
+        data-is-compact="true"
+        className={cn('flex min-w-0 items-center gap-2', sideClassName)}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 min-w-0 grow flex-col justify-center gap-0.5">
+      {renderSide('top', '')}
+      <div className="flex min-w-0 items-center gap-2">
+        {renderSide('left', 'shrink-0')}
+        <div data-tile-main className="min-w-0 flex-1">
+          {renderCellContent(column, {
+            column,
+            row,
+            rowIdx,
+            isCellEditable,
+            tabIndex,
+            onRowChange: (newRow: R) => onRowChange(column, newRow),
+          })}
+        </div>
+        {renderSide('right', 'shrink-0')}
+      </div>
+      {renderSide('bottom', '')}
     </div>
   );
 }

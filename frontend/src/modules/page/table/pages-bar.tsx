@@ -78,8 +78,8 @@ export const PagesTableBar = ({
     });
   };
 
-  const fetchExport = async (limit: number) => {
-    return fetchPagesForExport({ limit, q });
+  const fetchExport = async (limit: number, offset: number) => {
+    return fetchPagesForExport({ limit, offset, q });
   };
 
   return (

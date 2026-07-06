@@ -7,6 +7,59 @@ export type Maybe<T> = T | undefined | null;
 /** Supported breakpoint keys for responsive features */
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
+/** Placement of a merged column relative to the host cell content (Base UI positioning vocabulary) */
+export type TileSide = 'top' | 'right' | 'bottom' | 'left';
+
+/**
+ * Named display modes that trigger per-column overrides.
+ * - 'compact': user density toggle (the grid's `isCompact` prop)
+ * - 'mobile': viewport-driven, active on the xs breakpoint
+ * When both are active, 'mobile' takes precedence per overridden property.
+ */
+export type GridMode = 'compact' | 'mobile';
+
+/** Which display modes are currently active */
+export type ActiveModes = Readonly<Record<GridMode, boolean>>;
+
+/**
+ * Merge this column into another column's cell while a mode is active.
+ * The column stops being a grid column (no track, no header, no cell focus)
+ * and its `renderCell` output is rendered inside the host cell instead.
+ */
+export interface ColumnMergeRule {
+  /** Key of the host column to merge into. Must resolve to a non-merged, currently visible column. */
+  readonly into: string;
+  /** Placement relative to the host cell content */
+  readonly side: TileSide;
+  /** Ordering among columns merged to the same side (lower first; ties keep column order) */
+  readonly order?: Maybe<number>;
+  /** Class name(s) for the slot wrapper inside the host cell */
+  readonly className?: Maybe<string>;
+}
+
+/** Per-column overrides applied while the given display mode is active */
+export interface ColumnModeOverrides {
+  /** Width override while this mode is active */
+  readonly width?: Maybe<number | string>;
+  /** Minimum width override while this mode is active */
+  readonly minWidth?: Maybe<number>;
+  /** Maximum width override while this mode is active */
+  readonly maxWidth?: Maybe<number>;
+  /** Merge this column into a host cell while this mode is active */
+  readonly merge?: Maybe<ColumnMergeRule>;
+}
+
+/** A column merged into a host cell, plus its slot wrapper class */
+export interface MergedSlot<TRow, TSummaryRow = unknown> {
+  readonly column: CalculatedColumn<TRow, TSummaryRow>;
+  readonly className?: Maybe<string>;
+}
+
+/** Columns merged into a host cell, grouped by placement side */
+export type MergedSlots<TRow, TSummaryRow = unknown> = Readonly<
+  Record<TileSide, readonly MergedSlot<TRow, TSummaryRow>[]>
+>;
+
 /** Cell position in the grid */
 export interface Position {
   readonly idx: number;
@@ -36,6 +89,13 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** A unique key to distinguish each column */
   readonly key: string;
   /**
+   * Reactive hide flag for non-breakpoint conditions (e.g. a user column-visibility
+   * toggle, or `isSheet`). When true the column is excluded from the grid, same as
+   * a failing `minBreakpoint`/`maxBreakpoint`. Filtered inside the grid — consumers
+   * pass the full column list and toggle this flag.
+   */
+  readonly hidden?: boolean;
+  /**
    * Column width. If not specified, it will be determined automatically based on grid width and specified widths of other columns
    * @default 'auto'
    */
@@ -57,8 +117,6 @@ export interface Column<TRow, TSummaryRow = unknown> {
   /** Render function to render the content of the header cell */
   readonly renderHeaderCell?: Maybe<(props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode>;
 
-  /** Render function to render the content of group cells */
-  readonly renderGroupCell?: Maybe<(props: RenderGroupCellProps<TRow, TSummaryRow>) => ReactNode>;
   /** Render function to render the content of edit cells. When set, the column is automatically set to be editable */
   readonly renderEditCell?: Maybe<(props: RenderEditCellProps<TRow, TSummaryRow>) => ReactNode>;
   /** Enables cell editing. If set and no editor property specified, then a textinput will be used as the cell editor */
@@ -122,14 +180,16 @@ export interface Column<TRow, TSummaryRow = unknown> {
    */
   readonly estimateLines?: (row: TRow) => number;
   /**
-   * Override width, minWidth, and maxWidth when the grid is in compact mode.
-   * Values here take precedence over the base width/minWidth/maxWidth when `isCompact` is true.
+   * Per-mode overrides, keyed by the display mode that activates them.
+   * - `compact`: active while the grid's `isCompact` prop is true (user density toggle)
+   * - `mobile`: active on the xs breakpoint (hardcoded for now)
+   * Each mode can override widths and/or declare a `merge` rule that folds this
+   * column into a host column's cell. When both modes are active, `mobile` wins
+   * per overridden property. A merge rule whose host is not currently a grid
+   * column is inactive — the column then falls back to its normal visibility.
+   * @example modes: { compact: { width: 50 }, mobile: { merge: { into: 'summary', side: 'left' } } }
    */
-  readonly compact?: Maybe<{
-    readonly width?: Maybe<number | string>;
-    readonly minWidth?: Maybe<number>;
-    readonly maxWidth?: Maybe<number>;
-  }>;
+  readonly modes?: Maybe<Partial<Record<GridMode, ColumnModeOverrides>>>;
   /** Options for cell editing */
   readonly editorOptions?: Maybe<{
     /**
@@ -173,6 +233,11 @@ export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TR
   readonly focusable: boolean;
   readonly renderCell: (props: RenderCellProps<TRow, TSummaryRow>) => ReactNode;
   readonly renderHeaderCell: (props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode;
+  /**
+   * Columns merged into this column's cells via an active mode merge rule (§`modes`).
+   * Only set on host columns; merged columns themselves are excluded from the grid's columns.
+   */
+  readonly mergedSlots?: Maybe<MergedSlots<TRow, TSummaryRow>>;
 }
 
 export interface ColumnGroup<R, SR = unknown> {
@@ -180,6 +245,8 @@ export interface ColumnGroup<R, SR = unknown> {
   readonly name: string | ReactElement;
   readonly headerCellClass?: Maybe<string>;
   readonly children: readonly ColumnOrColumnGroup<R, SR>[];
+  /** Reactive hide flag — see {@link Column.hidden}. When true the whole group is excluded. */
+  readonly hidden?: boolean;
 }
 
 export interface CalculatedColumnParent<R, SR> {
@@ -202,16 +269,6 @@ export interface RenderCellProps<TRow, TSummaryRow = unknown> {
   isCellEditable: boolean;
   tabIndex: number;
   onRowChange: (row: TRow) => void;
-}
-
-export interface RenderGroupCellProps<TRow, TSummaryRow = unknown> {
-  groupKey: unknown;
-  column: CalculatedColumn<TRow, TSummaryRow>;
-  row: GroupRow<TRow>;
-  childRows: readonly TRow[];
-  isExpanded: boolean;
-  tabIndex: number;
-  toggleGroup: () => void;
 }
 
 export interface RenderEditCellProps<TRow, TSummaryRow = unknown> {
@@ -358,18 +415,6 @@ export interface CellPasteArgs<TRow, TSummaryRow = unknown> extends CellCopyPast
   pastedValue: string;
 }
 
-export interface GroupRow<TRow> {
-  readonly childRows: readonly TRow[];
-  readonly id: string;
-  readonly parentId: unknown;
-  readonly groupKey: unknown;
-  readonly isExpanded: boolean;
-  readonly level: number;
-  readonly posInSet: number;
-  readonly setSize: number;
-  readonly startRowIndex: number;
-}
-
 export interface SortColumn {
   readonly columnKey: string;
   readonly direction: SortDirection;
@@ -382,8 +427,6 @@ export type ColSpanArgs<TRow, TSummaryRow> =
   | { type: 'HEADER' }
   | { type: 'ROW'; row: TRow }
   | { type: 'SUMMARY'; row: TSummaryRow };
-
-export type RowHeightArgs<TRow> = { type: 'ROW'; row: TRow } | { type: 'GROUP'; row: GroupRow<TRow> };
 
 export interface RenderSortIconProps {
   sortDirection: SortDirection | undefined;

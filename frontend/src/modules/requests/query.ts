@@ -109,13 +109,14 @@ export const useDeleteRequestMutation = () => {
 /** Fetch requests for table export. Bypasses cache; returns flat items. */
 export const fetchRequestsForExport = async (params: {
   limit: number;
+  offset?: number;
   q?: string;
   sort?: NonNullable<GetRequestsData['query']>['sort'];
   order?: NonNullable<GetRequestsData['query']>['order'];
 }) => {
-  const { limit, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'asc' } = params;
   const response = await getRequests({
-    query: { q, sort, order, limit: String(limit), offset: '0' },
+    query: { q, sort, order, limit: String(limit), offset: String(offset) },
   });
   return response.items;
 };

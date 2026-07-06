@@ -122,8 +122,8 @@ export const pendingMembershipsQueryOptions = ({
 };
 
 /** Fetch members for table export. Bypasses cache; returns flat items. */
-export const fetchMembersForExport = async (params: GetMembersParams & { limit: number }) => {
-  const { limit, ...rest } = params;
+export const fetchMembersForExport = async (params: GetMembersParams & { limit: number; offset?: number }) => {
+  const { limit, offset = 0, ...rest } = params;
   const { items } = await getMembers({
     query: {
       q: rest.q,
@@ -131,7 +131,7 @@ export const fetchMembersForExport = async (params: GetMembersParams & { limit: 
       order: rest.order ?? 'asc',
       role: rest.role,
       limit: String(limit),
-      offset: '0',
+      offset: String(offset),
       entityId: rest.entityId,
       entityType: rest.entityType,
     },

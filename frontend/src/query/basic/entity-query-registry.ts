@@ -15,9 +15,17 @@ export interface EntityQueryKeys {
 }
 
 /**
+ * Chunk size for delta-sync fetches — the backend's max limit. A response of exactly this
+ * size means the seq window may exceed one response; fetchRangeAndPatch treats that as
+ * overflow and falls back to full list invalidation instead of paging.
+ */
+export const SYNC_CHUNK_SIZE = 1000;
+
+/**
  * Delta fetch function signature for catchup-based sync.
  * Called with organizationId (null for public entities), tenantId, and a seqCursor string.
  * Returns changed entities since that seq via the list endpoint's `seqCursor` param.
+ * Implementations should request `limit: String(SYNC_CHUNK_SIZE)`.
  *
  * seqCursor formats:
  * - "51" — open-ended (seq >= 51), used by catchup

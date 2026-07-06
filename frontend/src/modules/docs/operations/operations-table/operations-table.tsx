@@ -75,7 +75,7 @@ function OperationsTable() {
         tagFilters={tagFilters}
       />
       <DataTable<GenOperationSummary>
-        columns={columns.filter((column) => !column.hidden)}
+        columns={columns}
         rows={sortedOperations}
         cellSelectionMode="none"
         hasNextPage={false}
