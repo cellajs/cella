@@ -14,7 +14,7 @@ const bytea = customType<{ data: Buffer }>({
 /**
  * Ephemeral Y.Doc binary storage — one row per document.
  * Created on first WS connect, deleted after last disconnect + grace period.
- * Entity table (tasks/pages) is the single source of truth for description.
+ * The entity's own table (e.g. tasks in a fork) is the single source of truth for description.
  */
 export const yjsDocumentsTable = snakeCase.table(
   'yjs_documents',

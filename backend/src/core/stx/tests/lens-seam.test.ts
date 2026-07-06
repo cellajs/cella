@@ -3,7 +3,8 @@
  * ops normalization inside resolveUpdateOps.
  *
  * `shared/version-changes` is mocked with a synthetic expand rename lens
- * (attachment.name → title); 'page' has no lenses, exercising the passthrough
+ * (attachment.name → title); `LENSLESS` is a synthetic entity without lenses,
+ * exercising the passthrough
  * branches. End-to-end engine behavior with real lens modules is covered in
  * shared/src/version-changes/tests.
  */
@@ -37,11 +38,15 @@ vi.mock('shared/version-changes', async (importOriginal) => {
   };
 });
 
+import type { ProductEntityType } from 'shared';
 import { normalizeCreateItem, widenCreateSchema } from '#/core/stx/lens-seam';
 import { resolveUpdateOps } from '#/core/stx/resolve-update';
 import { createUpdateSchema } from '#/core/stx/update-schema';
 
 const stx = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm1', sourceId: 's1', fieldTimestamps });
+
+// Synthetic lens-less entity — widenedOpsKeyMap/normalizeOps are mocked above by name
+const LENSLESS = 'doc' as ProductEntityType;
 
 describe('createUpdateSchema widening', () => {
   const schema = createUpdateSchema('attachment', { title: z.string(), originalKey: z.string() });
@@ -57,7 +62,7 @@ describe('createUpdateSchema widening', () => {
   });
 
   it('does not alias entities without lenses (unknown key stripped → refine fails)', () => {
-    const pageSchema = createUpdateSchema('page', { title: z.string() });
+    const pageSchema = createUpdateSchema(LENSLESS, { title: z.string() });
     expect(() => pageSchema.parse({ ops: { bogus: 'x' }, stx: stx({}) })).toThrow();
   });
 });
@@ -66,7 +71,7 @@ describe('widenCreateSchema', () => {
   const body = z.object({ id: z.string(), title: z.string(), size: z.number().optional() });
 
   it('is identity for entities without lenses', () => {
-    const widened = widenCreateSchema('page', body);
+    const widened = widenCreateSchema(LENSLESS, body);
     expect(widened).toBe(body);
   });
 
@@ -92,7 +97,7 @@ describe('normalizeCreateItem', () => {
 
   it('is passthrough for entities without lenses', () => {
     const item = { id: '1', name: 'doc', stx: stx({}) };
-    expect(normalizeCreateItem('page', item)).toEqual(item);
+    expect(normalizeCreateItem(LENSLESS, item)).toEqual(item);
   });
 });
 
@@ -124,7 +129,7 @@ describe('resolveUpdateOps lens seam', () => {
 
   it('is passthrough for entities without lenses', () => {
     const pageEntity = { id: 'p1', name: 'old', stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: {} } };
-    const resolved = resolveUpdateOps('page', pageEntity, { name: 'new' }, stx({ name: '300:0001:bbb' }));
+    const resolved = resolveUpdateOps(LENSLESS, pageEntity, { name: 'new' }, stx({ name: '300:0001:bbb' }));
     expect(resolved.changed).toBe(true);
     if (!resolved.changed) return;
     expect(resolved.values).toEqual({ name: 'new' });

@@ -26,9 +26,6 @@ import type {
   CreateOrganizationsData,
   CreateOrganizationsErrors,
   CreateOrganizationsResponses,
-  CreatePagesData,
-  CreatePagesErrors,
-  CreatePagesResponses,
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
@@ -62,9 +59,6 @@ import type {
   DeleteOrganizationsData,
   DeleteOrganizationsErrors,
   DeleteOrganizationsResponses,
-  DeletePagesData,
-  DeletePagesErrors,
-  DeletePagesResponses,
   DeletePasskeyData,
   DeletePasskeyErrors,
   DeletePasskeyResponses,
@@ -122,12 +116,6 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
-  GetPageData,
-  GetPageErrors,
-  GetPageResponses,
-  GetPagesData,
-  GetPagesErrors,
-  GetPagesResponses,
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
@@ -243,9 +231,6 @@ import type {
   UpdateOrganizationData,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
-  UpdatePageData,
-  UpdatePageErrors,
-  UpdatePageResponses,
   UpdateTenantData,
   UpdateTenantErrors,
   UpdateTenantResponses,
@@ -271,8 +256,6 @@ import {
   zCreateOrganizationsBody,
   zCreateOrganizationsPath,
   zCreateOrganizationsResponse,
-  zCreatePagesBody,
-  zCreatePagesResponse,
   zCreatePasskeyBody,
   zCreatePasskeyResponse,
   zCreateRequestBody,
@@ -297,8 +280,6 @@ import {
   zDeleteOrganizationsBody,
   zDeleteOrganizationsPath,
   zDeleteOrganizationsResponse,
-  zDeletePagesBody,
-  zDeletePagesResponse,
   zDeletePasskeyPath,
   zDeletePasskeyResponse,
   zDeleteRequestsBody,
@@ -331,10 +312,6 @@ import {
   zGetOrganizationResponse,
   zGetOrganizationsQuery,
   zGetOrganizationsResponse,
-  zGetPagePath,
-  zGetPageResponse,
-  zGetPagesQuery,
-  zGetPagesResponse,
   zGetPendingMembershipsPath,
   zGetPendingMembershipsQuery,
   zGetPendingMembershipsResponse,
@@ -414,10 +391,6 @@ import {
   zUpdateOrganizationBody,
   zUpdateOrganizationPath,
   zUpdateOrganizationResponse,
-  zUpdatePageBody,
-  zUpdatePagePath,
-  zUpdatePageQuery,
-  zUpdatePageResponse,
   zUpdateTenantBody,
   zUpdateTenantPath,
   zUpdateTenantResponse,
@@ -2718,192 +2691,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/organizations/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Delete pages
- *
- * Delete one or more pages by ID.
- *
- * **DELETE /pages** ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/pages) ·· [deletePages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/DELETE/pages) ·· _pages_cella_product_
- *
- * @param {deletePagesData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @param {object} options.body.stx - `object`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deletePages = <ThrowOnError extends boolean = true>(
-  options: Options<DeletePagesData, ThrowOnError>,
-): RequestResult<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeletePagesResponses, DeletePagesErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zDeletePagesBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeletePagesResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get pages
- *
- * Get all matching pages.
- *
- * **GET /pages** ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages) ·· [getPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages) ·· _pages_cella_product_
- *
- * @param {getPagesData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getPages = <ThrowOnError extends boolean = true>(
-  options?: Options<GetPagesData, ThrowOnError>,
-): RequestResult<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetPagesResponses, GetPagesErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetPagesQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetPagesResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/pages',
-    ...options,
-  });
-
-/**
- * Create pages
- *
- * Insert one or more new pages. Returns created pages and any rejected items.
- *
- * **POST /pages** ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/pages) ·· [createPages](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/POST/pages) ·· _pages_cella_product_
- *
- * @param {createPagesData} options
- * @returns Possible status codes: 200, 201, 400, 401, 403, 404, 409, 429
- */
-export const createPages = <ThrowOnError extends boolean = true>(
-  options: Options<CreatePagesData, ThrowOnError>,
-): RequestResult<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreatePagesResponses, CreatePagesErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreatePagesBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCreatePagesResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/pages',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get page
- *
- * Get a single page by ID. Cached using LRU - first request warms cache.
- *
- * **GET /pages/{id}** ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/pages/{id}) ·· [getPage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/GET/pages/{id}) ·· _pages_cella_product_
- *
- * @param {getPageData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getPage = <ThrowOnError extends boolean = true>(
-  options: Options<GetPageData, ThrowOnError>,
-): RequestResult<GetPageResponses, GetPageErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetPageResponses, GetPageErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetPagePath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetPageResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/pages/{id}',
-    ...options,
-  });
-
-/**
- * Update page
- *
- * Update a single page by ID.
- *
- * **PUT /pages/{id}** ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=pages#tag/pages/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/pages/{id}) ·· [updatePage](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/pages/{id}) ·· _pages_cella_product_
- *
- * @param {updatePageData} options
- * @param {string} options.path.id - `string`
- * @param {string | boolean=} options.query.fullresponse - `string | boolean` (optional)
- * @param {object=} options.body.ops - `object` (optional)
- * @param {any=} options.body.stx - `any` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const updatePage = <ThrowOnError extends boolean = true>(
-  options: Options<UpdatePageData, ThrowOnError>,
-): RequestResult<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdatePageResponses, UpdatePageErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zUpdatePageBody,
-          path: zUpdatePagePath,
-          query: zUpdatePageQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zUpdatePageResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/pages/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',

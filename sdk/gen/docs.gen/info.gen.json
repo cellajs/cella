@@ -79,8 +79,7 @@
       "kind": "middleware",
       "values": {
         "appCache": { "name": "app", "description": "Entity-keyed TTL cache with forward-only token resolution" },
-        "httpCache": { "name": "http", "description": "HTTP private cache: max-age=3600s" },
-        "publicCache": { "name": "public", "description": "LRU cache for public page entities" }
+        "httpCache": { "name": "http", "description": "HTTP private cache: max-age=3600s" }
       }
     },
     {

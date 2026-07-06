@@ -286,7 +286,7 @@
         "entityType": {
           "type": "string",
           "required": true,
-          "enum": ["attachment", "page"]
+          "enum": ["attachment"]
         },
         "keywords": { "type": "string", "required": true }
       }
@@ -319,7 +319,7 @@
         "thumbnailUrl": null,
         "entityType": "user"
       },
-      "entityType": "page"
+      "entityType": "attachment"
     }
   },
   {
@@ -337,7 +337,7 @@
         "entityType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": ["attachment", "page", null]
+          "enum": ["attachment", null]
         },
         "resourceType": {
           "type": ["string", "null"],
@@ -455,13 +455,13 @@
       "action": "update",
       "entityType": "attachment",
       "resourceType": null,
-      "subjectId": "781e15ee-c97a-4d0a-8424-18ee4c50d02b",
-      "organizationId": "a9fc6f05-cf39-41b4-8378-e8c3a3796f6a",
-      "tenantId": "4qv8uf107q9zmdjan1ygz1el",
+      "subjectId": "e781e15e-ec97-4ad0-aa42-418ee4c50d02",
+      "organizationId": "3a9fc6f0-5cf3-491b-a437-8e8c3a3796f6",
+      "tenantId": "14qv8uf107q9zmdjan1ygz1e",
       "contextType": null,
-      "contextId": "67b4d7ec-f6a8-40d0-905c-ee1180d3e4a2",
-      "seq": 135,
-      "cacheToken": "V9Umhb9C4l3EKNwaUqHHn49KRYOFMDbd",
+      "contextId": "967b4d7e-cf6a-480d-8005-cee1180d3e4a",
+      "seq": 218,
+      "cacheToken": "gV9Umhb9C4l3EKNwaUqHHn49KRYOFMDb",
       "stx": {
         "mutationId": "725782b0-16f4-4b4f-9577-8ebfa336f370",
         "sourceId": "be2fe601-891c-4ade-b70e-12c6d41d18b9",
@@ -1240,173 +1240,8 @@
             "pending": 13,
             "total": 93
           },
-          "entities": { "attachment": 178, "page": 257 }
+          "entities": { "attachment": 178 }
         }
-      }
-    }
-  },
-  {
-    "name": "Page",
-    "ref": "#/components/schemas/Page",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true, "format": "uuid" },
-        "entityType": {
-          "type": "string",
-          "required": true,
-          "enum": ["page"]
-        },
-        "name": { "type": "string", "required": true, "maxLength": 255 },
-        "updatedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "stx": {
-          "type": "object",
-          "required": true,
-          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-          "properties": {
-            "mutationId": {
-              "type": "string",
-              "required": true,
-              "description": "Unique mutation ID",
-              "maxLength": 36
-            },
-            "sourceId": {
-              "type": "string",
-              "required": true,
-              "description": "Tab/instance identifier for echo prevention",
-              "maxLength": 64
-            },
-            "fieldTimestamps": {
-              "type": "object",
-              "required": true,
-              "description": "Per-field HLC timestamps for scalar fields being changed",
-              "additionalProperties": { "type": "string", "required": false }
-            }
-          },
-          "ref": "#/components/schemas/StxBase"
-        },
-        "description": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 1000000
-        },
-        "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-        "createdBy": {
-          "type": ["object", "null"],
-          "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
-        },
-        "updatedBy": {
-          "type": ["object", "null"],
-          "required": true,
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "extendsRef": "#/components/schemas/UserMinimalBase"
-        },
-        "deletedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "deletedBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "seq": {
-          "type": "integer",
-          "required": true,
-          "minimum": -9007199254740991,
-          "maximum": 9007199254740991
-        },
-        "status": {
-          "type": "string",
-          "required": true,
-          "enum": ["unpublished", "published", "archived"]
-        },
-        "renderMode": {
-          "type": "string",
-          "required": true,
-          "enum": ["default", "overview", "nodeOnly"]
-        },
-        "publicAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "parentId": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "displayOrder": {
-          "type": "number",
-          "required": true,
-          "minimum": -140737488355328,
-          "maximum": 140737488355327
-        }
-      }
-    },
-    "schemaTag": "data",
-    "tagsByKind": {
-      "schema": ["data"],
-      "module": ["pages"],
-      "owner": ["cella"]
-    },
-    "description": "A content page for documentation purposes.",
-    "example": {
-      "id": "851e5ae9-ef5b-4406-a468-8997f0d08f5c",
-      "entityType": "page",
-      "name": "Volubilis conturbo cubo sponte utpote.",
-      "description": "[{\"id\":\"wv1pvo6ikw8yaifq40mapyzk\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"Pecco vulticulus cunctatio dolorum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"xwx21e333ngqujcbpukfple6\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Tremo molestias charisma clam ipsa suscipit solvo atrox tendo compello. Tonsor ullus damnatio. Cupressus depono sto benigne delego decumbo adaugeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"h3tnk9zpovjd1ic979l5apjd\",\"type\":\"heading\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\",\"level\":3},\"content\":[{\"type\":\"text\",\"text\":\"AI-driven optimal concept\",\"styles\":{}}],\"children\":[]},{\"id\":\"fixisx6z8hucvnngw4r6gjfz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Temperantia demonstro chirographum rerum cui temeritas atrocitas creber sordeo.\",\"styles\":{}}],\"children\":[]},{\"id\":\"tcsht8b45feprfkhrd8bblxz\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Animadverto maxime theatrum esse amo statua adfectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"zubypddo8vfjx4d5px26kw7k\",\"type\":\"bulletListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conitor accusantium virgo sublime rem termes agnitio talis catena pectus.\",\"styles\":{}}],\"children\":[]},{\"id\":\"q8bqakccdhvdb8s40m4i46ag\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Adiuvo brevis conturbo alveus ver ait deserunt decet.\",\"styles\":{}}],\"children\":[]},{\"id\":\"l7dazo02dcpq1pli45kzw5po\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Vestrum solus cohors trucido ad vorax voluptatum.\",\"styles\":{}}],\"children\":[]},{\"id\":\"4mygjrjwhp4cvi7x941wz85b\",\"type\":\"numberedListItem\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Conor ullam conculco turpis cui tametsi.\",\"styles\":{}}],\"children\":[]},{\"id\":\"avgoyfos69bvat094q3skvku\",\"type\":\"paragraph\",\"props\":{\"textColor\":\"default\",\"backgroundColor\":\"default\",\"textAlignment\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"Censura volutabrum cogito magni. Ait tenus labore corrigo quasi abstergo omnis statua accendo veniam. Vulariter repellat defendo suadeo defessus.\\nUtique turba demitto tamisium tenus laboriosam tandem depopulo assentator. Soleo harum aduro cohors. Utrimque animadverto quae supplanto careo.\",\"styles\":{}}],\"children\":[]}]",
-      "keywords": "repellat speculum terga",
-      "status": "unpublished",
-      "renderMode": "default",
-      "publicAt": "2024-08-06T00:46:23.127Z",
-      "parentId": null,
-      "displayOrder": 61.84,
-      "createdAt": "2024-08-06T00:46:23.127Z",
-      "createdBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
-      "updatedAt": "2024-08-06T00:46:23.127Z",
-      "updatedBy": "060492d8-cc92-433b-a99e-b40e8d5b42dc",
-      "deletedAt": null,
-      "deletedBy": null,
-      "seq": 434,
-      "stx": {
-        "mutationId": "92f96b53-6d2c-4aad-8195-76ec5239e3ab",
-        "sourceId": "56b8c007-8e68-4f47-b816-fb2404a2a519",
-        "fieldTimestamps": {}
       }
     }
   },
@@ -1750,7 +1585,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1812,7 +1647,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1876,7 +1711,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -1940,7 +1775,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -2004,7 +1839,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -2107,7 +1942,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
@@ -2171,7 +2006,7 @@
         "entityType": {
           "type": "string",
           "required": false,
-          "enum": ["user", "organization", "attachment", "page"]
+          "enum": ["user", "organization", "attachment"]
         },
         "logId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
