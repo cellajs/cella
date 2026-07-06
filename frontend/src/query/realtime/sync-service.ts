@@ -1,6 +1,5 @@
 import { buildEntitySyncQueries } from '~/list-queries-config';
 import type { UserMenuItem } from '~/modules/me/types';
-import { pagesCanonicalOptions } from '~/modules/page/query';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
@@ -21,10 +20,6 @@ const syncQueryConfig = {
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
   // Wait briefly to avoid overloading server on connect
   await waitFor(1000);
-  if (signal.aborted) return;
-
-  // Pages are user-global (not org-scoped) — sync once before menu items
-  await queryClient.ensureQueryData({ ...pagesCanonicalOptions(), ...syncQueryConfig });
   if (signal.aborted) return;
 
   // Get menu from already-cached entity lists (dynamic import to avoid HMR coupling)

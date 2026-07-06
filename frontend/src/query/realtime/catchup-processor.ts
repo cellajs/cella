@@ -1,4 +1,4 @@
-import type { PostAppCatchupResponse, PostPublicCatchupResponse } from 'sdk';
+import type { PostAppCatchupResponse } from 'sdk';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
@@ -277,64 +277,4 @@ function getCachedListTotal(
   }
 
   return null;
-}
-
-/**
- * Process public stream catchup response. Uses the server vs stored seq delta to delta-fetch
- * creates/updates via `seqCursor` (falls back to full list invalidation on first session or when
- * delta fetch is unavailable). Soft deletes arrive as tombstones in the seq result and are removed
- * by cache-ops.
- */
-export async function processPublicCatchup(response: PostPublicCatchupResponse, baselineOnly = false): Promise<void> {
-  const { changes } = response;
-  const syncStore = useSyncStore.getState();
-  const scopes = Object.keys(changes);
-
-  if (scopes.length === 0) return;
-
-  // Baseline mode: store seqs only, skip delta/invalidation
-  if (baselineOnly) {
-    for (const [entityType, scope] of Object.entries(changes)) {
-      if (scope.entitySeqs?.[entityType]) {
-        syncStore.setPublicSeq(entityType, scope.entitySeqs[entityType]);
-      }
-    }
-    console.debug(`[CatchupProcessor] Public baseline: stored seqs for ${scopes.length} entity types`);
-    return;
-  }
-
-  console.debug(`[CatchupProcessor] Public catchup: ${scopes.length} entity types`);
-
-  for (const entityType of scopes) {
-    const { entitySeqs } = changes[entityType];
-    const serverSeq = entitySeqs?.[entityType] ?? 0;
-    const clientSeq = syncStore.getPublicSeq(entityType);
-    const delta = serverSeq - clientSeq;
-
-    if (!hasEntityQueryKeys(entityType)) continue;
-    const keys = getEntityQueryKeys(entityType);
-
-    // Fetch seq changes, including tombstones for soft deletes
-    if (delta > 0) {
-      if (clientSeq === 0) {
-        cacheOps.invalidateEntityList(keys, 'all');
-        console.debug(`[CatchupProcessor] Public ${entityType}: first session → full refetch`);
-      } else if (!hasAnyCachedList(keys, null)) {
-        // Scope-symmetry guard: nothing cached to patch — hydration re-establishes the cursor
-        console.debug(`[CatchupProcessor] Public ${entityType}: no cached list → skip delta`);
-      } else {
-        const seqCursor = String(clientSeq + 1);
-        const patched = await cacheOps.fetchRangeAndPatch(entityType, null, null, seqCursor, keys);
-        if (!patched) {
-          cacheOps.invalidateEntityList(keys, 'all');
-        }
-        console.debug(
-          `[CatchupProcessor] Public ${entityType}: delta=${delta} → ${patched ? 'delta patched' : 'invalidated'}`,
-        );
-      }
-    }
-
-    // Update stored seq
-    syncStore.setPublicSeq(entityType, serverSeq);
-  }
 }
