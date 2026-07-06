@@ -22,7 +22,9 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
+import { currentSchemaVersion } from 'shared/version-changes';
 import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
+import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -113,6 +115,54 @@ function createIDBPersister(scope = 'rq') {
     resetTracker();
   }
 
+  /** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
+  const MIGRATION_CHUNK_SIZE = 200;
+
+  /**
+   * Boot-time lens migration (runtime touch point 2): rewrite cached
+   * product-entity rows, bundled context queries, and queued mutation variables
+   * from the persisted schema ordinal up to the bundle's currentSchemaVersion —
+   * locally, no refetch. Chunked so a crash mid-pass resumes idempotently: the
+   * pointer only advances in the final meta transaction, and re-running the
+   * chain over already-migrated rows is a no-op by construction.
+   */
+  async function migrateScopeToCurrent(db: AppDatabase, fromVersion: number) {
+    const records = await db.queries.where('scope').equals(scope).toArray();
+    for (let i = 0; i < records.length; i += MIGRATION_CHUNK_SIZE) {
+      const chunk = records.slice(i, i + MIGRATION_CHUNK_SIZE);
+      // Rewrites are computed before the write — Dexie transactions auto-commit
+      // on non-Dexie awaits, and the lens chain (doba) is async.
+      const rewritten: PersistedQueryRecord[] = [];
+      for (const record of chunk) {
+        const entityType = entityTypeOf(record.queryKey);
+        if (!entityType) continue;
+        rewritten.push({ ...record, state: await migrateQueryState(entityType, record.state, fromVersion) });
+      }
+      if (rewritten.length > 0) await db.queries.bulkPut(rewritten);
+    }
+
+    const meta = await db.meta.get(scope);
+    if (!meta) return;
+    const contextQueries: typeof meta.contextQueries = [];
+    for (const q of meta.contextQueries ?? []) {
+      const entityType = entityTypeOf(q.queryKey);
+      contextQueries.push(entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q);
+    }
+    const mutations = migrateMutations(meta.mutations ?? [], fromVersion);
+    // Final write advances the pointer atomically with the last rewritten data.
+    await db.meta.put({ ...meta, contextQueries, mutations, schemaVersion: currentSchemaVersion });
+    console.debug(`[QueryPersister] Lens migration v${fromVersion} → v${currentSchemaVersion} complete (${scope})`);
+  }
+
+  /** Cross-tab mutual exclusion for the migration pass (Web Locks when available). */
+  async function withMigrationLock(fn: () => Promise<void>) {
+    if (typeof navigator !== 'undefined' && 'locks' in navigator) {
+      await navigator.locks.request(`cache-migration:${scope}`, fn);
+    } else {
+      await fn();
+    }
+  }
+
   async function flush() {
     const client = pendingClient;
     pendingClient = null;
@@ -177,6 +227,7 @@ function createIDBPersister(scope = 'rq') {
             timestamp: client.timestamp,
             buster: client.buster,
             clientCacheVersion: appConfig.clientCacheVersion,
+            schemaVersion: currentSchemaVersion,
             mutations,
             contextQueries,
           });
@@ -230,6 +281,33 @@ function createIDBPersister(scope = 'rq') {
             return undefined;
           }
           await bustQueriesKeepMutations(db);
+          meta = (await db.meta.get(scope)) ?? meta;
+        }
+
+        // Lens boot migration: persisted schema ordinal behind the bundle →
+        // rewrite cached rows + queued mutations locally (no refetch). Ahead
+        // (rollback deploy) → wipe query data, keep mutations. A missing ordinal
+        // (pre-feature meta) seeds as current — genuinely old caches are covered
+        // by the clientCacheVersion bust above.
+        const pointer = meta.schemaVersion ?? currentSchemaVersion;
+        if (pointer !== currentSchemaVersion) {
+          if (scope.startsWith(SESSION_KEY_PREFIX)) {
+            // Session scopes are cold — wipe rather than migrate.
+            await clearScope(db);
+            return undefined;
+          }
+          if (pointer > currentSchemaVersion) {
+            await bustQueriesKeepMutations(db);
+            const fresh = await db.meta.get(scope);
+            if (fresh) await db.meta.put({ ...fresh, schemaVersion: currentSchemaVersion });
+          } else {
+            await withMigrationLock(async () => {
+              // Re-read after acquiring the lock — another tab may have migrated.
+              const fresh = await db.meta.get(scope);
+              const freshPointer = fresh?.schemaVersion ?? currentSchemaVersion;
+              if (freshPointer < currentSchemaVersion) await migrateScopeToCurrent(db, freshPointer);
+            });
+          }
           meta = (await db.meta.get(scope)) ?? meta;
         }
 

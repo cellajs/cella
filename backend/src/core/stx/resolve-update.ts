@@ -1,3 +1,5 @@
+import type { ProductEntityType } from 'shared';
+import { normalizeOps } from 'shared/version-changes';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import type { ArrayDelta } from './array-delta';
 import { applyArrayDelta, isArrayDelta } from './array-delta';
@@ -24,19 +26,28 @@ interface NoOpUpdate {
 }
 
 /**
- * Pure sync pipeline: filter no-ops → resolve HLC conflicts → apply AWSet deltas → build stx.
+ * Pure sync pipeline: normalize lens keys → filter no-ops → resolve HLC conflicts →
+ * apply AWSet deltas → build stx.
  * Works for any product entity. Returns `{ changed: false }` when nothing survived.
+ *
+ * Lens seam (runtime touch point 1): old-shape `ops` and `stx.fieldTimestamps`
+ * keys are canonicalized and expand-window twins mirror-written before conflict
+ * resolution, so HLC/AWSet logic only ever sees canonical keys. Passthrough
+ * while the lens list is empty.
  */
 export function resolveUpdateOps<T extends Record<string, unknown>>(
+  entityType: ProductEntityType,
   entity: Record<string, unknown> & { stx: StxBase },
   rawOps: T,
-  stx: Pick<StxBase, 'mutationId' | 'sourceId' | 'fieldTimestamps'>,
+  rawStx: Pick<StxBase, 'mutationId' | 'sourceId' | 'fieldTimestamps'>,
 ): ResolvedUpdate<T> | NoOpUpdate {
+  const { ops, stx } = normalizeOps(entityType, rawOps, rawStx);
+
   // Separate AWSet delta ops from scalar ops
   const scalarOps: Record<string, unknown> = {};
   const deltaOps: Record<string, { add: string[]; remove: string[] }> = {};
 
-  for (const [key, value] of Object.entries(rawOps)) {
+  for (const [key, value] of Object.entries(ops)) {
     if (isArrayDelta(value)) {
       deltaOps[key] = value;
     } else {

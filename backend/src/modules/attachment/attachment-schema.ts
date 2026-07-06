@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { createUpdateSchema } from '#/core/stx';
+import { createUpdateSchema, widenCreateSchema } from '#/core/stx';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
@@ -43,14 +43,17 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     id: validUuidSchema,
   });
 
-/** Create body with stx for single attachment creation */
-const attachmentCreateStxBodySchema = attachmentCreateBodySchema.extend({ stx: stxBaseSchema });
+/** Create body with stx for single attachment creation (lens-widened during expand windows) */
+const attachmentCreateStxBodySchema = widenCreateSchema(
+  'attachment',
+  attachmentCreateBodySchema.extend({ stx: stxBaseSchema }),
+);
 
 /** Array schema for batch creates (1-50 attachments per request), each with own stx */
 export const attachmentCreateManyStxBodySchema = attachmentCreateStxBodySchema.array().min(1).max(50);
 
 /** Update body using fields pattern for single or multi-field updates with conflict detection */
-export const attachmentUpdateStxBodySchema = createUpdateSchema({
+export const attachmentUpdateStxBodySchema = createUpdateSchema('attachment', {
   name: z.string().max(maxLength.field),
   originalKey: z.string(),
 });

@@ -1,4 +1,3 @@
-// DORMANT: tests the dormant lens cache-migration module (not wired into runtime).
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the lens engine: simulate a single attachment rename name → title.
