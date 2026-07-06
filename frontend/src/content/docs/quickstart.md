@@ -25,7 +25,7 @@ pnpm check
 
 ## Run tests
 
-See [TESTING.md](/docs/page/guides/testing) for full documentation on writing and running tests.
+See [Testing](/docs/page/guides/testing) for full documentation on writing and running tests.
 
 ```bash
 pnpm test # Run tests (excluding ui stories)
@@ -58,7 +58,7 @@ pnpm cella
 
 Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. CI handles routine zero-downtime deploys on push to `main`. The CLI generates the Docker Compose synth and drives the Pulumi infrastructure tasks.
 
-See [infra/README.md](https://github.com/cellajs/cella/blob/main/infra/README.md) for full documentation and configuration.
+See [Infra docs](/docs/page/guides/deployment) for full documentation and configuration.
 
 ```bash
 pnpm infra
@@ -68,7 +68,7 @@ pnpm infra
 
 Artillery load testing to keep services such as backend, cdc and yjs performant. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one.
 
-See [bench/README.md](https://github.com/cellajs/cella/blob/main/bench/README.md) for full documentation and scenarios.
+See [Bench docs](/docs/page/guides/load-testing) for full documentation and scenarios.
 
 ```bash
 pnpm bench

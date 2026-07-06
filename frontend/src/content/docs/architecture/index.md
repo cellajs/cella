@@ -1,7 +1,7 @@
 ---
 title: Architecture
 description: The high-level architecture of Cella and the reasoning behind it.
-order: 2
+order: 3
 keywords: architecture, stack, sync, backend, frontend
 ---
 This document describes the high-level architecture of Cella.
@@ -35,10 +35,10 @@ This document describes the high-level architecture of Cella.
 
 Tables can be split in `entity`,  `resource` and _other_ tables (see `backend/src/db/schema/`). Entities are split in categories:
 * `ContextEntityType`: Has memberships (`organization`)
-* `ProductEntityType`: Content related, no membership (`attachment`, `page`)
-* All entities, including `user`: (`user`, `organization`, `attachment`, `page`)
+* `ProductEntityType`: Content related, no membership (`attachment`)
+* All entities, including `user`: (`user`, `organization`, `attachment`)
 
-The cella template has a single context entity : `organization`. It has two product entities: `attachment` - with parent `organization` - and a public product entity, `page`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
+The cella template has a single context entity: `organization`. It has one product entity: `attachment`, with parent `organization`. But in a typical app you would likely have more context entities such as a 'bookclub' and more product entities such as 'book' and 'review'.
 
 Both frontend and backend have business logic split in modules. Most of them are in both backend and frontend, such as `authentication`, `user` and `organization`. The benefit of modularity is twofold: better code (readability, portability etc) and to pull upstream cella changes with less friction.
 
@@ -56,13 +56,11 @@ Key methods: `getOrderedAncestors()`, `getChildren()`, `getOrderedDescendants()`
 
 ## Sync engine
 
-Cella has a different approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments, pages) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
+Cella has a different approach to sync and offline. Context entities (e.g. organizations) use standard CRUD OpenAPI endpoints — they only have offline read access. Product entities (e.g. attachments) have a full sync layer using a 'notify-then-fetch' pattern. All data is collected by the react-query queryClient.
 
-The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. There are two independent streams:
-- **App stream** (`/entities/app/stream`): authenticated, carries membership events, org events, and product entity notifications. Uses leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
-- **Public stream** (`/entities/public/stream`): unauthenticated, carries events for public product entities (e.g. pages). Each tab maintains its own connection (no leader election).
+The pipeline flows: **Postgres WAL → CDC Worker → WebSocket → ActivityBus → SSE → Client**. A single authenticated **app stream** (`/entities/app/stream`) carries membership events, org events, and product entity notifications. It uses the leader-tab pattern (Web Locks API) — one tab holds the SSE connection, followers sync via BroadcastChannel.
 
-Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [SYNC_ENGINE.md](/docs/page/architecture/sync-engine) for details.
+Sequence numbers are hierarchy-aware: the CDC worker stamps `seq` on all product entity rows after processing each WAL event. The seq is scoped to the entity's direct parent context (e.g., `organization_id` for attachments, `project_id` for project-scoped entities in forks). List endpoints support `seqCursor` for delta fetches during catchup. Bulk operations in a single database transaction produce batched notifications — one per (entityType, action, context) — rather than per-entity, reducing SSE fan-out. See [Sync engine](/docs/page/architecture/sync-engine) for details.
 
 ### Per-field merge strategies
 
@@ -74,7 +72,7 @@ Product entity mutations use per-field merge strategies instead of a single conf
 | **AWSet** | Add-Wins Set | `labels`, `assignedTo` | Commutative `{ add, remove }` deltas |
 | **YATA** | Yjs CRDT | `description` | Character-level merge via standalone Yjs worker |
 
-Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [FIELD_MERGE_STRATEGIES.md](https://github.com/cellajs/cella/blob/main/cella/FIELD_MERGE_STRATEGIES.md) for full implementation details.
+Scalars resolve silently via HLC comparison; set fields are conflict-free; descriptions use a dedicated Yjs WebSocket relay for real-time co-editing with client-side materialization of derived fields. See [Merge resolution](/docs/page/architecture/sync-engine#merge-resolution-hlc--awset) for full implementation details.
 
 ### Client sync cycle
 
@@ -97,17 +95,17 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.
 
-For more details, see [SYNC_ENGINE.md](/docs/page/architecture/sync-engine).
+For more details, see [Sync engine](/docs/page/architecture/sync-engine).
 
 ## Query layer
 
 React Query (TanStack Query) is the central data layer on the frontend (`frontend/src/query/`) for entities but also other data. Each entity module creates standardized query keys via `createEntityKeys(entityType)` and registers them in a central `contextEntityQueryRegistry` (see `frontend/src/list-queries-config.tsx`), enabling dynamic lookup by stream handlers, cache ops, and invalidation helpers. Optimistic updates (`createOptimisticEntity`) and last-mutation-wins invalidation helpers are core patterns.
 
-Product entity queries (attachment, page) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
+Product entity queries (e.g. attachment) use a sync-aware `staleTime` (`syncStaleTime` in `query/basic/sync-stale-config.ts`): Infinity when the sync stream is live, 5 minutes as fallback when disconnected. Freshness is controlled by catchup-based seq invalidation and count-based integrity checks — not time-based staleness. Non-synced queries (users, tenants, requests) keep the global 30-second default.
 
 ### Canonical vs derived queries
 
-Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments, global for pages). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
+Each product entity has one **canonical query** per parent-context scope — a flat list of all entities in that scope (per organization for attachments). It's the single source of truth the sync layer keeps fresh and patches in place. Components derive narrower views from it via `select()` (e.g. filtering attachments by group) instead of issuing separate server queries. **Filtered** lists that rely on server-side params the client can't replicate are simply refetched on relevant events rather than patched. One canonical source per scope is what makes optimistic updates, offline persistence, and conflict-free patching tractable.
 
 ### Client storage (`appdb`)
 
@@ -190,7 +188,7 @@ The `tenantRead` callback receives a `readCtx` with `{ var: { ...ctx.var, db: tx
 | Category | SELECT | Write | Builder | Use case |
 |----------|--------|-------|---------|----------|
 | Tenant-scoped | tenant + auth | No policy (app-layer) | `tenantSelectPolicy()` | Product entity tables (attachments, tasks, labels, yjs-docs) |
-| No RLS | — | — | — | Context entities (organizations, projects, workspaces), memberships, pages |
+| No RLS | — | — | — | Context entities (organizations, projects, workspaces), memberships |
 
 ### Database roles
 
@@ -216,7 +214,7 @@ Identity columns (`tenant_id`, `organization_id`, `user_id` on memberships, etc.
 
 OTel-based observability across all services (backend, CDC, YJS, frontend) with [Maple.dev](https://maple.dev) as the default telemetry backend. Node services share a `createOtelSDK()` factory for traces, metrics, and logs (gated by the `MAPLE_SECRET_INGEST_KEY` env var); the frontend uses a browser `WebTracerProvider` for `traceparent` propagation and can export spans directly to Maple when `appConfig.maplePublicIngestKey` is set. Logging is Pino-based, bridged to OTel in production via `pino-opentelemetry-transport`.
 
-See [OTEL.md](/docs/page/architecture/observability) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
+See [Observability](/docs/page/architecture/observability) for the full observability architecture, including per-service setup, health endpoints, and graceful shutdown.
 
 
 ## API design
@@ -241,7 +239,7 @@ Mock generators in `backend/mocks/` serve three purposes:
 
 ## Testing
 
-See [cella/TESTING.md](/docs/page/guides/testing) for test modes, infrastructure, and writing guidelines.
+See [Testing](/docs/page/guides/testing) for test modes, infrastructure, and writing guidelines.
 
 
 ## File structure
@@ -266,5 +264,3 @@ Cella is a flat-root monorepo.
 ├── studio                    Drizzle Studio launcher for local DB inspection
 └── yjs                       Yjs collaborative editing worker (ws binary relay)
 ```
-
-

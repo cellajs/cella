@@ -1,22 +1,48 @@
+import { MDXProvider } from '@mdx-js/react';
 import { Link, notFound } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
 import { type ComponentProps, type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { Spinner } from '~/modules/common/spinner';
+import { getHashUrl } from '~/modules/docs/hash-url';
+import { CodeBlock } from '~/modules/page/code-block';
 import { type DocPage, getChildDocPages, getDocPage, getDocPageLoader } from '~/modules/page/content';
+import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';
 
 interface ViewPageProps {
   slug: string;
 }
 
-/** Internal /docs links in content navigate via the router; external links open in a new tab. */
+/**
+ * Internal /docs links in content navigate via the router; in-page #anchor links scroll
+ * via the spy store (which also queues until lazy content is laid out); external links
+ * open in a new tab.
+ */
 function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
   if (href.startsWith('/')) {
     return (
       <Link to={href} {...props}>
         {children}
       </Link>
+    );
+  }
+  if (href.startsWith('#')) {
+    return (
+      <a
+        href={href}
+        {...props}
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey) return;
+          e.preventDefault();
+          scrollToSectionById(decodeURIComponent(href.slice(1)));
+        }}
+      >
+        {children}
+      </a>
     );
   }
   return (
@@ -26,7 +52,37 @@ function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
   );
 }
 
-const mdxComponents = { a: MdxLink };
+/**
+ * Registers the page's headings with the scroll spy. Rendered inside the Suspense
+ * boundary AFTER the content so it mounts only once the lazy body is in the DOM —
+ * registerSections only observes elements that exist at call time, and its
+ * initial-hash scroll needs the targets present.
+ */
+function RegisterSpySections({ ids }: { ids: string[] }) {
+  useScrollSpy(ids);
+  return null;
+}
+
+/**
+ * Section heading (h2) with a hover copy-link button. The copied URL carries the bare
+ * hash slug (spy store convention) — the DOM id keeps its `spy-` prefix. Deeper
+ * headings keep their anchor ids but render plain (the button sits awkwardly at h3 size).
+ */
+function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
+  const hash = id.replace(/^spy-/, '');
+  return (
+    <h2 id={id} className="group" {...props}>
+      {children}
+      {hash && <HashUrlButton url={getHashUrl(hash)} />}
+    </h2>
+  );
+}
+
+const mdxComponents = {
+  a: MdxLink,
+  h2: MdxHeading,
+  pre: CodeBlock,
+};
 
 /**
  * Displays a docs page: frontmatter title + compiled MDX body.
@@ -45,37 +101,60 @@ function ViewPage({ slug }: ViewPageProps) {
     return loader ? lazy(async () => ({ default: await loader() })) : null;
   }, [slug]);
 
+  // "On this page" nav: h2 only — deeper levels stay reachable via anchors but
+  // would make the aside noisy. Stable array identity for the spy registration effect.
+  const tocHeadings = useMemo(() => (page?.headings ?? []).filter((h) => h.depth === 2), [page]);
+  const tocIds = useMemo(() => tocHeadings.map((h) => h.id), [tocHeadings]);
+
   if (!page || !Content) throw notFound();
 
   const renderMode = page.renderMode;
+  const showToc = renderMode !== 'nodeOnly' && tocHeadings.length >= 2;
 
   return (
     <div className="container">
-      <div className="mx-auto max-w-4xl">
-        <div className="prose dark:prose-invert max-w-none">
-          <h1 className="pt-6">{page.name}</h1>
-          {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
+      <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
+        <div className="min-w-0 max-w-[52rem] flex-1">
+          <div className="prose dark:prose-invert max-w-none">
+            <h1 className="pt-6">{page.name}</h1>
+            {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
-          {/* Default mode: render full content */}
-          {renderMode === 'default' && (
-            <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-              <Content components={mdxComponents} />
-            </Suspense>
-          )}
-
-          {/* Overview mode: intro content + child page cards */}
-          {renderMode === 'overview' && (
-            <>
+            {/* Default mode: render full content */}
+            {renderMode === 'default' && (
               <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-                <Content components={mdxComponents} />
+                <MDXProvider components={mdxComponents}>
+                  <Content />
+                </MDXProvider>
+                <RegisterSpySections key={slug} ids={tocIds} />
               </Suspense>
-              <ChildPagesList parentSlug={slug} />
-            </>
-          )}
+            )}
 
-          {/* Node-only mode: just navigation to children, no content */}
-          {renderMode === 'nodeOnly' && <ChildPagesList parentSlug={slug} />}
+            {/* Overview mode: intro content + child page cards */}
+            {renderMode === 'overview' && (
+              <>
+                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+                  <MDXProvider components={mdxComponents}>
+                    <Content />
+                  </MDXProvider>
+                  <RegisterSpySections key={slug} ids={tocIds} />
+                </Suspense>
+                <ChildPagesList parentSlug={slug} />
+              </>
+            )}
+
+            {/* Node-only mode: just navigation to children, no content */}
+            {renderMode === 'nodeOnly' && <ChildPagesList parentSlug={slug} />}
+          </div>
         </div>
+
+        {/* Affixed "On this page" aside (same sticky wrapper as settings/legal asides) */}
+        {showToc && (
+          <aside className="w-52 shrink-0 max-lg:hidden">
+            <div className="group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
+              <TocAside headings={tocHeadings} />
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { DocsPageComponent } from '~/modules/docs/page-route-components';
+import { getDocPage } from '~/modules/page/content';
 import { createErrorComponent, createNotFoundComponent } from '~/routes/route-utils';
 import appTitle from '~/utils/app-title';
 
@@ -9,7 +10,16 @@ import appTitle from '~/utils/app-title';
  */
 export const Route = createFileRoute('/_public/_content/docs/page/$')({
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Page') }] }),
+  // Title/description resolve synchronously from the docs metadata index (frontmatter)
+  head: ({ params }) => {
+    const page = getDocPage(params._splat ?? '');
+    return {
+      meta: [
+        { title: appTitle(page?.name ?? 'Docs') },
+        ...(page?.description ? [{ name: 'description', content: page.description }] : []),
+      ],
+    };
+  },
   errorComponent: createErrorComponent('public', '/docs'),
   notFoundComponent: createNotFoundComponent('public', '/docs'),
   component: DocsPageComponent,

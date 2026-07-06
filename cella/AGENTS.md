@@ -6,7 +6,7 @@ Cella is a TypeScript template to collaborative web apps with sync engine for of
  Cella is an implementation-ready template with quite some modules and a default entity config. The base config lives in [shared/config/config.default.ts](../shared/config/config.default.ts), with entity hierarchy and roles defined in [shared/config/hierarchy-config.ts](../shared/config/hierarchy-config.ts). Those feed into `appConfig`, which is the main merged runtime config object exposed by shared. Each fork will typically change the underlying config, hierarchy and permissions, so it is important to write entity-agnostic code rather than hardcoding assumptions about the default entity set and their roles. 
 
 ## Architecture & tech stack
-See [cella/ARCHITECTURE.md](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
+See [Architecture](./ARCHITECTURE.md) for tech stack, file structure, data modeling, security, and sync/offline design.
 
 ## Routing
 - **Backend (Hono + OpenAPI)**:
@@ -86,7 +86,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - **Realtime frontend** (`frontend/src/query/realtime/`): Two streams — `AppStream` (authenticated, leader-tab via Web Locks + BroadcastChannel, echo prevention via `stx.sourceId`, catchup via `seq` delta) and `PublicStream` (unauthenticated, per-tab connection, catches up deletes on connect then live-only).
 - **Seen-by tracking**: Frontend marks entities seen via `IntersectionObserver`, batches IDs in a Zustand store, flushes on timer + `sendBeacon` on unload. Flushed IDs persist in the per-user `appdb` (`kv` table). Unseen badges are optimistically decremented in React Query cache. Backend: `seen_by` table (one row per user+entity), `product_counters` (denormalized view/usage counts).
 - **Entity cache**: CDC-invalidated in-memory cache in `backend/src/middlewares/entity-cache/`. `coalesce()` deduplicates concurrent fetches.
-- **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/version-changes/` — never edit a shipped module. Until the first lens ships, bump `appConfig.clientCacheVersion` in the same PR as any breaking change to a cached entity's wire shape (`schema-bust-gate` CI enforces this). Playbook: [cella/SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md).
+- **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/version-changes/` — never edit a shipped module. Until the first lens ships, bump `appConfig.clientCacheVersion` in the same PR as any breaking change to a cached entity's wire shape (`schema-bust-gate` CI enforces this). Playbook: [Schema evolution](./SCHEMA_EVOLUTION.md).
 - **Lens seams (new entity modules)**: build update bodies with `createUpdateSchema(entityType, shape)`, create bodies with `widenCreateSchema(entityType, schema)`, resolve updates via `resolveUpdateOps(entityType, …)`, and map create items through `normalizeCreateItem(entityType, item)` — these carry the lens widening/normalization; skipping them breaks version tolerance for that entity.
 
 ## Coding patterns
@@ -114,7 +114,7 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 
 ## Testing
 - Framework: Vitest. Name tests `*.test.ts`; place near source or under `tests/`.
-- See [cella/TESTING.md](./TESTING.md) for test modes and detailed documentation.
+- See [Testing](./TESTING.md) for test modes and detailed documentation.
 
 ## Deploy & boot debugging
 Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control object), with an LB-overlap cutover gated on the new VM serving `X-App-Version: <SHA>` (`/health` → 204 backend/yjs/ai, 200 frontend). A "cutover unhealthy / wait-for-version timeout" means the new VM's app never bound its port — almost always a **boot-time crash**, not the LB. Debug it densely:
@@ -136,7 +136,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
 - `pnpm test`: Run the default full test suite and emit summary coverage output. Use `pnpm test:core` for the narrower core-mode suite without CDC/CLI coverage.
-- `pnpm infra`: Manage deployment using Infra CLI: [infra/README.md](../infra/README.md)
-- `pnpm bench`: Run benchmark scenarios: [bench/README.md](../bench/README.md)
+- `pnpm infra`: Manage deployment using Infra CLI: [Infra docs](../infra/README.md)
+- `pnpm bench`: Run benchmark scenarios: [Bench docs](../bench/README.md)
 - `pnpm cella`: CLI to sync with cella and more, provided by `@cellajs/cli`.
 - `pnpm story`: Start storybook

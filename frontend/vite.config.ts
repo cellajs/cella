@@ -6,6 +6,8 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 import path from 'node:path';
+import rehypeShiki from '@shikijs/rehype';
+import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
@@ -20,6 +22,16 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { execSync } from 'node:child_process';
 import { sdkWatch } from './vite/sdk-watch';
 import { localesHMR } from './vite/locales-hmr';
+import { docsFrontmatter } from './vite/docs-frontmatter';
+
+// Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
+// already renders the frontmatter title as h1 — drop the leading h1 when such a file
+// is compiled as page content. Content-root files are authored without an h1.
+const remarkStripRepoDocH1 = () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
+  if (!file.path || file.path.includes('/src/content/docs/')) return;
+  const index = tree.children.findIndex((node) => node.type === 'heading');
+  if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
+};
 
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
@@ -86,14 +98,45 @@ const viteConfig = {
     // Docs content: compiles src/content/docs md/mdx files to React components with a
     // `frontmatter` named export (consumed by ~/modules/page/content.ts). Must run
     // before react() so the compiled JSX output is plain JS by the time react() sees it.
+    // Repo docs (cella/*.md and package READMEs like infra/README.md) are also compilable
+    // so a thin content/docs .mdx wrapper can import them as the page body — single
+    // source of truth for docs that live in the repo.
     {
       enforce: 'pre' as const,
       ...mdx({
-        include: /\/src\/content\/docs\/.*\.(md|mdx)$/,
+        include: /\/(src\/content\/docs\/.*\.(md|mdx)|cella\/[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
-        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter, remarkGfm],
+        // Read component overrides (links, headings) from MDXProvider context — a
+        // `components` prop does not cross into imported modules, and wrapper pages
+        // render imported repo docs (cella/*.md) as their body.
+        providerImportSource: '@mdx-js/react',
+        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter, remarkGfm, remarkStripRepoDocH1],
+        // Heading ids for anchor links + scroll spy. The `spy-` DOM id prefix follows the
+        // spy store convention (hooks/use-scroll-spy-store.ts); the slug part is
+        // github-slugger, so URL hashes match GitHub's anchors for the same markdown.
+        // Must stay in sync with the heading extraction in vite/docs-frontmatter.ts.
+        rehypePlugins: [
+          [rehypeSlug, { prefix: 'spy-' }],
+          // Syntax highlighting at build time (Node) — no runtime highlighter shipped
+          // and none of the CSP/WASM constraints that force the runtime CodeViewer onto
+          // Shiki's JS engine. Same github theme pair; dual-theme output picks light/dark
+          // via CSS vars keyed off the `.dark` class (styling/tailwind.css).
+          [
+            rehypeShiki,
+            {
+              themes: { light: 'github-light-default', dark: 'github-dark-default' },
+              defaultColor: false,
+              langs: ['typescript', 'bash', 'text'],
+              defaultLanguage: 'text',
+              fallbackLanguage: 'text',
+            },
+          ],
+        ],
       }),
     },
+    // Build-time frontmatter index of docs pages (virtual:docs-frontmatter), so the
+    // docs sidebar/table metadata doesn't statically import the page bodies.
+    docsFrontmatter(),
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
@@ -135,7 +178,10 @@ const viteConfig = {
     // visualizer({ open: true, gzipSize: true }),
   ],
   resolve: {
-    dedupe: ['yjs'],
+    // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,
+    // package READMEs — compiled by the mdx plugin) resolve their jsx runtime and MDX
+    // provider imports to the frontend's copies.
+    dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
     alias: {
       '#json': path.resolve(__dirname, '../json'),
       '~': path.resolve(__dirname, './src'),
