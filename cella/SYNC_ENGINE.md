@@ -1,6 +1,6 @@
 # Cella sync engine
 
-> The [ARCHITECTURE.md](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
+> The [Architecture](./ARCHITECTURE.md) document explains why Cella uses notify-then-fetch. This document explains the reasoning behind the sync engine. It also provides more details on how a mutation travels through the sync pipeline and how clients stay consistent while online and offline.
 
 ## TL;DR
 
@@ -33,7 +33,7 @@ Postgres + OpenAPI + React Query are the foundational primitives. This means sta
 | Entity type | Features | Example |
 |------|--------------|---------|
 | `ContextEntityType` | Standard REST CRUD, server-generated IDs | `organization` |
-| `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `page`, `attachment` |
+| `ProductEntityType` | + Per-field merge strategies (HLC LWW, AWSet), offline queue, Yjs collaborative editing, Live stream (SSE), live cache updates, multi-tab leader election | `attachment` |
 
 ---
 
@@ -214,11 +214,9 @@ SSE transport wraps this as `event: change`, `id: activityId`, `data: JSON(Strea
 
 ---
 
-## Stream types
+## App stream
 
-Cella has two stream types with different characteristics:
-
-### App stream (`/entities/app/stream`)
+### `/entities/app/stream`
 
 
 Authenticated stream for all user-scoped entities and memberships.
@@ -229,20 +227,9 @@ Authenticated stream for all user-scoped entities and memberships.
 | **Scope** | All contexts user belongs to + memberships |
 | **Cursor storage** | Persisted in sync store (survives refresh) |
 
-### Public stream (`/entities/public/stream`)
-
-
-Unauthenticated stream for public entities (e.g., pages).
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Auth** | No authentication required |
-| **Scope** | All public entity types (from `hierarchy.publicStreamTypes`) |
-| **Cursor storage** | In-memory only (module-level variable) |
-
 **How catchup works:**
 
-The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId (app) or entityType (public). Each value is a shared summary shape:
+The backend returns `{ changes, cursor }` where `changes` is keyed by organizationId. Each value is a shared summary shape:
 ```typescript
 interface CatchupChangeSummary {
   entitySeqs?: Record<string, number>;     // Entity-type seqs from context_counters counts JSONB (managed by CDC worker)
@@ -354,7 +341,7 @@ Uses entity-type sequence numbers (`seq`) for **create/update/soft-delete detect
 
 **Two modes of gap detection:**
 
-1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (app stream: `{contextEntityId}:s:{entityType}`) or unscoped `clientEntitySeq` (public stream: `{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether product entity mutations happened. The delta fetch includes tombstone rows, and the client removes those entities from cache.
+1. **Catchup (offline/reconnect):** Client compares stored contextEntity-scoped `clientEntitySeq` (`{contextEntityId}:s:{entityType}`) with `serverEntitySeq` from catchup summary (sourced from `context_counters.counts['s:{type}']`, managed by CDC worker). The delta tells whether product entity mutations happened. The delta fetch includes tombstone rows, and the client removes those entities from cache.
 
 2. **Live (SSE):** Each product entity notification includes `seq`, scoped to its entity type + context (e.g., tasks within a project). Client updates stored seq watermark on each notification. On reconnect, the catchup comparison detects any missed changes.
 
@@ -558,7 +545,7 @@ This runs at the top of every update mutation’s `onMutate` — before squash o
 
 ## Schema evolution (version tolerance)
 
-Deploys change entity schemas; offline clients don't update in lockstep. A PWA tab can run last week's bundle with a persisted cache and queued offline edits in last week's shape. Breaking changes ship as **append-only lens modules** (`shared/src/version-changes/`) that declare the change once; the sync engine derives everything else. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) for the module format and the shipping playbook.
+Deploys change entity schemas; offline clients don't update in lockstep. A PWA tab can run last week's bundle with a persisted cache and queued offline edits in last week's shape. Breaking changes ship as **append-only lens modules** (`shared/src/version-changes/`) that declare the change once; the sync engine derives everything else. See [Schema evolution](./SCHEMA_EVOLUTION.md) for the module format and the shipping playbook.
 
 Exactly two runtime touch points; the rest is build-time schema generation:
 
@@ -607,8 +594,8 @@ All tabs of one user share a single IndexedDB record for the React Query cache, 
 ```
 Problem: Race condition on shared IDB record
 
-Tab A: Edits page, persists cache { mutations: [A1] }
-Tab B: Edits page, persists cache { mutations: [B1] }  ← overwrites A1!
+Tab A: Edits attachment, persists cache { mutations: [A1] }
+Tab B: Edits attachment, persists cache { mutations: [B1] }  ← overwrites A1!
 Tab A: Refreshes → restores { mutations: [B1] } → replays B1, loses A1
 
 With leader-only (current implementation):
@@ -636,7 +623,7 @@ Both tiers are **entity-keyed** (`entityType:entityId` → data). Tokens are a l
 
 | Tier | Cache key | Token role | TTL | Use case |
 |------|-----------|------------|-----|----------|
-| **Public** | `{entityType}:{entityId}` (LRU) | None | 60 min | Public pages (no auth required) |
+| **Public** | `{entityType}:{entityId}` (LRU) | None | 60 min | Public product entities (no auth required) |
 | **App** | `{entityType}:{entityId}` (TTL) | Access control (forward-only) | 10 min | Authenticated entities (tasks, attachments) |
 
 **Forward-only token design (app cache):** Multiple tokens can point to the same entity key. When an entity changes, the old cache entry is invalidated but old tokens still resolve to the same entity key. This means stale clients with an old token get a cache hit (latest data) instead of a DB round-trip. No duplicate cache entries per entity.
@@ -774,7 +761,7 @@ An `updatedAt` guard prevents replacing a fresher embedding with an older one (r
 
 ## Yjs collaborative editing
 
-Descriptions on product entities (`task`, `page`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
+Descriptions on product entities (`task`, `attachment`, etc.) use Yjs CRDT for real-time collaborative editing via a standalone WebSocket relay worker.
 
 ### Architecture
 

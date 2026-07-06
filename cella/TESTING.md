@@ -2,91 +2,79 @@
 
 <!-- Sync test marker: 2026-01-28-test-1 -->
 
-This document describes the test modes available in Cella and how to use them.
+All tests run on [Vitest](https://vitest.dev), orchestrated from the repo root via a single config ([vitest.config.ts](https://github.com/cellajs/cella/blob/main/vitest.config.ts)) with one project per package: `backend`, `bench`, `shared`, `yjs`, `cdc`, `infra`, `frontend` and `sdk`.
 
-## Test Modes
+There are two test surfaces:
 
-Cella supports two test modes to balance speed vs. coverage:
+1. **`pnpm test`** — the full Vitest suite across all packages. Fast enough for day-to-day use; run it before committing.
+2. **Storybook component tests** — frontend browser tests, run separately (see [below](#storybook-component-tests)).
 
-| Mode | Database | Docker | Integration Tests | CLI Tests | Use Case |
-|------|----------|--------|-------------------|-----------|----------|
-| `core` | PostgreSQL | ✅ | ❌ | ❌ | Faster explicit narrow run |
-| `full` | PostgreSQL | ✅ | ✅ | ✅ | Default complete validation |
-
-These align with development modes:
-
-| Dev Command | Test Command | Description |
-|-------------|--------------|-------------|
-| `pnpm dev` | `pnpm test:core` | PostgreSQL + CDC Worker |
-| `pnpm dev` | `pnpm test` / `pnpm test:full` | PostgreSQL + CDC Worker (incl. CDC integration tests) |
-
-### Core Mode (`pnpm test:core`)
-
-- **Database**: PostgreSQL in Docker container (port 5434)
-- **Requirements**: Docker running
-- **Coverage**: Root workspace backend and frontend tests, excludes CDC integration tests and frontend Storybook browser tests
-
-Best for:
-- Standard development workflow
-- Pre-commit validation
-- Faster explicit validation when you do not need CDC/CLI coverage
-
-```bash
-pnpm test:core
-```
-
-### Full Mode (`pnpm test` or `pnpm test:full`)
-- **Database**: PostgreSQL in Docker container
-- **Requirements**: Docker running
-- **Coverage**: Root workspace tests including CDC integration tests and CLI workspace, plus `.coverage/coverage-summary.json`; frontend Storybook browser tests are not part of the root run
-
-Best for:
-- Default validation path
-- Complete CI pipeline
-- Testing CDC Worker → WebSocket → ActivityBus flow end-to-end
+## Running tests
 
 ```bash
 pnpm test
 ```
 
+This starts the test database (Docker, `db_test` service from [backend/compose.yaml](https://github.com/cellajs/cella/blob/main/backend/compose.yaml)), then runs all package tests in full mode with a coverage summary. Passing tests are silenced; only failures print output.
 
+Requirements:
 
-## Writing Tests
+- Docker running
+- `backend/.env` present with `DB_TEST_PORT` set (copied from `.env.example` during setup) — the test database URL is derived from it in [shared/src/test-db.ts](https://github.com/cellajs/cella/blob/main/shared/src/test-db.ts)
 
-### File Naming
+### Variants
 
-- Unit tests: `*.test.ts` adjacent to source files
-- Integration tests: `tests/integration/*.test.ts`
+| Command | What it does |
+|---|---|
+| `pnpm test` | Everything, with coverage summary (alias for `test:full`) |
+| `pnpm test:full:verbose` | Same, but prints passing test output too |
+| `pnpm test:core` | Skips integration tests (backend, yjs, cdc) — quicker loop when you don't need CDC/replication coverage |
+| `pnpm test:core:verbose` | Core mode with full output |
+| `pnpm test:update` | Update snapshots (core mode) |
 
-### Backend Tests
+`core` vs `full` is controlled by the `TEST_MODE` env var. In `core` mode the per-package vitest configs exclude `tests/integration/**`, and individual tests can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
 
-```typescript
-import { describe, expect, it } from 'vitest';
-import { someFunction } from '#/modules/example';
+### Running a subset
 
-describe('someFunction', () => {
-  it('should do something', () => {
-    expect(someFunction()).toBe(expected);
-  });
-});
+Start the test database once (`pnpm docker:test`), then invoke vitest directly:
+
+```bash
+pnpm vitest run --project=backend            # one package
+pnpm vitest run backend/tests/health.test.ts # one file
+pnpm vitest run -t 'rate limiter'            # by test name
 ```
 
-### Integration Tests (Full Mode Only)
+Packages that don't touch the database (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker.
 
-Integration tests require real PostgreSQL and potentially CDC services:
+## Conventions when adding tests
 
-```typescript
-// tests/integration/example.test.ts
-import { beforeAll, describe, it } from 'vitest';
-import { db } from '#/db/db';
+**Placement.** Two patterns are in use — pick based on scope:
 
-describe('Integration: Example', () => {
-  beforeAll(async () => {
-    // Setup requiring real PostgreSQL
-  });
+- *Unit tests*: colocate with the code they cover — either `some-module.test.ts` next to the source file, or a `tests/` folder inside the module directory when there are several files (e.g. [backend/src/lib/tests/](https://github.com/cellajs/cella/blob/main/backend/src/lib/tests/)).
+- *Route/API-level tests*: in the package's top-level `tests/` folder (e.g. [backend/tests/sign-in/](https://github.com/cellajs/cella/blob/main/backend/tests/sign-in/), [backend/tests/security/](https://github.com/cellajs/cella/blob/main/backend/tests/security/)).
+- *Integration tests*: in `tests/integration/` — these are the only tests excluded in `core` mode. Reserve this for tests that need more than the test database (CDC replication slots, spun-up WebSocket servers, RLS verification against real roles).
 
-  it('should work with real database', async () => {
-    // Test that requires PostgreSQL features
-  });
-});
+Coverage automatically excludes `*.test.ts`, `tests/**` folders and mocks, so placement doesn't affect coverage numbers.
+
+**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](https://github.com/cellajs/cella/blob/main/backend/vitest.config.ts) — don't load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](https://github.com/cellajs/cella/blob/main/backend/tests/global-setup.ts); write tests so they don't assume an empty database. Use the `#/` import alias as in source code.
+
+**Keep unit tests core-safe.** A test that only needs the test database (or no database) belongs in the core set. Only reach for `tests/integration/` + `TEST_MODE` gating when external moving parts are genuinely required — core mode is the fast path and should stay fast.
+
+**New packages.** When adding a workspace package with tests, register it in the root [vitest.config.ts](https://github.com/cellajs/cella/blob/main/vitest.config.ts): add it to `projects` and to the `coverage.include` globs.
+
+## Storybook component tests
+
+Frontend components are also tested through Storybook stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`). **These are not part of `pnpm test`** — they run as a separate CI job and must be run explicitly locally:
+
+```bash
+# one-time: install the browser
+pnpm --filter frontend exec playwright install chromium
+
+# stories import generated SDK types
+pnpm sdk
+
+# run the storybook test project
+pnpm --filter frontend exec vitest run --project=storybook
 ```
+
+Every story is render-tested in headless Chromium, and stories with `play` functions get their interactions exercised. When you add a frontend component story, it becomes a test automatically — no separate test file needed.

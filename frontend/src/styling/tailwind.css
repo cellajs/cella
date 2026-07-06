@@ -109,6 +109,55 @@
   }
 }
 
+/* Docs code styling. Deliberately UNLAYERED so it beats @tailwindcss/typography's
+   `prose` rules, which live in @layer utilities (later than @layer components) and set
+   `pre` to a fixed dark background in both themes — a layered override loses to them by
+   layer order regardless of specificity. */
+
+/* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
+.prose code:not(pre code)::before,
+.prose code:not(pre code)::after {
+  content: none !important;
+}
+
+.prose code:not(pre code) {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  color: var(--foreground);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Shiki (build-time syntax highlighting, vite.config.ts). Dual-theme output emits both
+   light and dark token colors as CSS vars per span with no default applied
+   (defaultColor:false) — pick the set matching the active theme. Container chrome
+   (border, radius, padding) comes from app tokens; token/background colors from the
+   github theme so contrast stays correct. */
+.prose pre.shiki {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  overflow-x: auto;
+  background-color: var(--shiki-light-bg);
+}
+
+.prose pre.shiki,
+.prose pre.shiki span {
+  color: var(--shiki-light);
+}
+
+.dark .prose pre.shiki {
+  background-color: var(--shiki-dark-bg);
+}
+
+.dark .prose pre.shiki,
+.dark .prose pre.shiki span {
+  color: var(--shiki-dark);
+}
+
 @layer base {
   /* Theme tokens */
   :root,
@@ -192,7 +241,7 @@
 @layer base {
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   html {
-    @apply font-sans overscroll-none max-sm:text-[19px];
+    @apply font-sans overscroll-none max-sm:text-[18px];
   }
 
   * {

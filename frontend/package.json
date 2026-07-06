@@ -36,6 +36,7 @@
     "@blocknote/shadcn": "^0.51.4",
     "@hookform/resolvers": "^5.4.0",
     "@maple-dev/browser": "^0.1.0",
+    "@mdx-js/react": "^3.1.1",
     "@mdx-js/rollup": "^3.1.1",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
@@ -134,6 +135,7 @@
     "@react-scan/vite-plugin-react-scan": "^0.2.7",
     "@rolldown/plugin-babel": "^0.2.3",
     "@rollup/plugin-terser": "^1.0.0",
+    "@shikijs/rehype": "^4.3.1",
     "@storybook/addon-a11y": "^10.4.6",
     "@storybook/addon-docs": "^10.4.6",
     "@storybook/addon-vitest": "^10.4.6",
@@ -154,9 +156,11 @@
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "cross-env": "^10.1.0",
     "fake-indexeddb": "^6.2.5",
+    "github-slugger": "^2.0.0",
     "hono": "^4.12.27",
     "playwright": "^1.61.1",
     "react-scan": "^0.5.7",
+    "rehype-slug": "^6.0.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "storybook": "^10.4.6",
     "tsx": "^4.22.4",
@@ -169,7 +173,8 @@
     "vitest": "^4.1.9",
     "workbox-build": "^7.4.1",
     "workbox-core": "^7.4.1",
-    "workbox-precaching": "^7.4.1"
+    "workbox-precaching": "^7.4.1",
+    "yaml": "^2.9.0"
   },
   "browserslist": [
     ">0.2%",

@@ -2,7 +2,7 @@
 
 exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
 {
-  "inputHash": "34a1e6f40ef39ce5",
+  "inputHash": "592d714ecb0187f4",
   "output": {
     "info": {
       "description": "⚠️ ATTENTION: PRERELEASE!
@@ -1283,68 +1283,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         "method": "post",
         "path": "/entities/{tenantId}/check-slug",
         "summary": "Check slug availability",
-        "tags": [
-          "entities",
-        ],
-        "tagsByKind": {
-          "module": [
-            "entities",
-          ],
-          "owner": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "SSE stream for real-time public entity changes. No authentication required.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "publicGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": false,
-        "hasRequestBody": false,
-        "hasResponseBody": true,
-        "hash": "tag/entities/GET/entities/public/stream",
-        "id": "getPublicStream",
-        "method": "get",
-        "path": "/entities/public/stream",
-        "summary": "Public entity SSE stream",
-        "tags": [
-          "entities",
-        ],
-        "tagsByKind": {
-          "module": [
-            "entities",
-          ],
-          "owner": [
-            "cella",
-          ],
-        },
-      },
-      {
-        "deprecated": false,
-        "description": "Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.",
-        "extensions": {
-          "xCache": [],
-          "xGuard": [
-            "publicGuard",
-          ],
-          "xRateLimiter": [],
-        },
-        "hasExample": false,
-        "hasParams": false,
-        "hasRequestBody": true,
-        "hasResponseBody": true,
-        "hash": "tag/entities/POST/entities/public/stream",
-        "id": "postPublicCatchup",
-        "method": "post",
-        "path": "/entities/public/stream",
-        "summary": "Public entity catchup",
         "tags": [
           "entities",
         ],
@@ -10272,241 +10210,6 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
           ],
         },
         {
-          "operationId": "getPublicStream",
-          "responses": [
-            {
-              "contentType": "text/event-stream",
-              "description": "SSE stream started",
-              "schema": {
-                "contentType": "text/event-stream",
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
-          "operationId": "postPublicCatchup",
-          "request": {
-            "body": {
-              "contentType": "application/json",
-              "properties": {
-                "cursor": {
-                  "description": "Last activity cursor received by the client (LSN-based). Omit on first sync.",
-                  "required": false,
-                  "type": "string",
-                },
-                "seqs": {
-                  "additionalProperties": {
-                    "required": false,
-                    "type": "integer",
-                  },
-                  "description": "Client-side sequence numbers per scope: { "organizationId:s:page": 42 }",
-                  "required": false,
-                  "type": "object",
-                },
-              },
-              "required": true,
-              "type": "object",
-            },
-          },
-          "responses": [
-            {
-              "contentType": "application/json",
-              "description": "Catchup summary",
-              "schema": {
-                "contentType": "application/json",
-                "properties": {
-                  "changes": {
-                    "additionalProperties": {
-                      "properties": {
-                        "childContextChanges": {
-                          "additionalProperties": {
-                            "properties": {
-                              "entityCounts": {
-                                "additionalProperties": {
-                                  "required": false,
-                                  "type": "integer",
-                                },
-                                "required": false,
-                                "type": "object",
-                              },
-                              "entitySeqs": {
-                                "additionalProperties": {
-                                  "required": false,
-                                  "type": "integer",
-                                },
-                                "required": false,
-                                "type": "object",
-                              },
-                            },
-                            "required": false,
-                            "type": "object",
-                          },
-                          "required": false,
-                          "type": "object",
-                        },
-                        "entityCounts": {
-                          "additionalProperties": {
-                            "required": false,
-                            "type": "integer",
-                          },
-                          "required": false,
-                          "type": "object",
-                        },
-                        "entitySeqs": {
-                          "additionalProperties": {
-                            "required": false,
-                            "type": "integer",
-                          },
-                          "required": false,
-                          "type": "object",
-                        },
-                        "propagation": {
-                          "itemType": "object",
-                          "items": {
-                            "properties": {
-                              "field": {
-                                "description": "Field on the target entity that references the source (e.g. labels)",
-                                "required": true,
-                                "type": "string",
-                              },
-                              "remove": {
-                                "description": "Target entity IDs that need the source reference removed",
-                                "itemType": "string",
-                                "required": true,
-                                "type": "array",
-                              },
-                              "sourceType": {
-                                "description": "Entity type that triggered the propagation (e.g. label)",
-                                "required": true,
-                                "type": "string",
-                              },
-                              "targetType": {
-                                "description": "Entity type whose cache should be invalidated (e.g. task)",
-                                "required": true,
-                                "type": "string",
-                              },
-                              "update": {
-                                "description": "Target entity IDs that need cache refresh",
-                                "itemType": "string",
-                                "required": true,
-                                "type": "array",
-                              },
-                            },
-                            "type": "object",
-                          },
-                          "required": false,
-                          "type": "array",
-                        },
-                      },
-                      "required": false,
-                      "type": "object",
-                    },
-                    "description": "Per-entityType change summary: { [entityType]: { entitySeqs? } }",
-                    "required": true,
-                    "type": "object",
-                  },
-                  "cursor": {
-                    "description": "Last activity ID (use as offset for next request)",
-                    "required": true,
-                    "type": [
-                      "string",
-                      "null",
-                    ],
-                  },
-                },
-                "type": "object",
-              },
-              "status": 200,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Bad request: problem processing request.",
-              "name": "BadRequestError",
-              "ref": "#/components/responses/BadRequestError",
-              "status": 400,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Unauthorized: authentication required.",
-              "name": "UnauthorizedError",
-              "ref": "#/components/responses/UnauthorizedError",
-              "status": 401,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Forbidden: insufficient permissions.",
-              "name": "ForbiddenError",
-              "ref": "#/components/responses/ForbiddenError",
-              "status": 403,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Not found: resource does not exist.",
-              "name": "NotFoundError",
-              "ref": "#/components/responses/NotFoundError",
-              "status": 404,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Conflict: resource state conflict.",
-              "name": "ConflictError",
-              "ref": "#/components/responses/ConflictError",
-              "status": 409,
-            },
-            {
-              "contentType": "application/json",
-              "description": "Rate limit: too many requests.",
-              "name": "TooManyRequestsError",
-              "ref": "#/components/responses/TooManyRequestsError",
-              "status": 429,
-            },
-          ],
-        },
-        {
           "operationId": "getAppStream",
           "responses": [
             {
@@ -10578,7 +10281,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
                     "required": false,
                     "type": "integer",
                   },
-                  "description": "Client-side sequence numbers per scope: { "organizationId:s:page": 42 }",
+                  "description": "Client-side sequence numbers per scope: { "organizationId:s:attachment": 42 }",
                   "required": false,
                   "type": "object",
                 },
@@ -19532,7 +19235,7 @@ exports[`parseOpenApiSpec > parses backend spec correctly 1`] = `
         "name": "auth",
       },
       {
-        "count": 5,
+        "count": 3,
         "description": "Endpoints that operate across multiple entity types, such as users and organizations.
     Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child
     relations), or actor-like. These routes provide shared logic across modules, including slug validation

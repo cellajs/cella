@@ -1,3 +1,4 @@
+import docsFrontmatter from 'virtual:docs-frontmatter';
 import type { ComponentType } from 'react';
 import { z } from 'zod';
 
@@ -27,6 +28,9 @@ const frontmatterSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
+/** A content heading (h2/h3/...) with its `spy-`-prefixed DOM id stripped to the bare hash slug. */
+export type DocHeading = { id: string; text: string; depth: number };
+
 /**
  * A docs page's metadata. Field names (`id`, `parentId`, `name`,
  * `displayOrder`) intentionally mirror the old page entity shape so the tree
@@ -43,9 +47,16 @@ export type DocPage = {
   draft: boolean;
   updatedAt?: string;
   depth: number;
+  headings: DocHeading[];
 };
 
-const metaModules = import.meta.glob('/src/content/docs/**/*.{md,mdx}', { import: 'frontmatter', eager: true });
+/** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids — spy store convention. */
+const HEADING_ID_PREFIX = 'spy-';
+
+// Frontmatter + headings come from a build-time index (vite/docs-frontmatter.ts) rather
+// than an eager glob: eagerly importing page modules for their `frontmatter` export would
+// pull every page body into this chunk, defeating the lazy per-page glob below.
+const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
 /** File path → slug (`architecture/index.md` → `architecture`). */
@@ -59,19 +70,21 @@ function pathToSlug(path: string): string {
 
 function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<ComponentType>> } {
   const slugs = new Set<string>();
-  const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema> }[] = [];
+  const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
 
-  for (const [path, frontmatter] of Object.entries(metaModules)) {
+  for (const [path, entry] of Object.entries(metaModules)) {
     const slug = pathToSlug(path);
     if (!slug) throw new Error(`Docs content: a root index file is not supported (${path}); use a named file.`);
     if (slugs.has(slug)) throw new Error(`Docs content: duplicate slug "${slug}" (${path}).`);
-    const result = frontmatterSchema.safeParse(frontmatter);
+    const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
     slugs.add(slug);
-    parsed.push({ slug, path, meta: result.data });
+    // Bare hash slugs for the spy store: hashes are unprefixed, DOM ids carry the prefix.
+    const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(HEADING_ID_PREFIX, '') }));
+    parsed.push({ slug, path, meta: result.data, headings });
   }
 
-  const pages: DocPage[] = parsed.map(({ slug, meta }) => {
+  const pages: DocPage[] = parsed.map(({ slug, meta, headings }) => {
     // Parent is the index page of the containing directory, when it exists
     const dir = slug.includes('/') ? slug.slice(0, slug.lastIndexOf('/')) : null;
     const parentId = dir && slugs.has(dir) ? dir : null;
@@ -86,6 +99,7 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
       draft: meta.draft,
       updatedAt: meta.updatedAt,
       depth: slug.split('/').length - 1,
+      headings,
     };
   });
   pages.sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));

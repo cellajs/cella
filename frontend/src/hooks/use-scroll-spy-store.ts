@@ -1,5 +1,5 @@
-// NOTE: The docs page scrolls inside <main class="overflow-auto">, NOT the window.
-// performScroll drives the real scroll container and re-asserts across two frames to
+// NOTE: docs pages use window scrolling; performScroll still finds the nearest
+// scroll container for shared scroll-spy consumers and re-asserts across two frames to
 // win the race against TanStack Router's async scrollRestoration on hash changes.
 
 /** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */

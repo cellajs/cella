@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
+import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 export type AlertContextMode = 'public' | 'app';
@@ -19,6 +20,7 @@ export type AlertBanner = {
   title?: string;
   variant?: VariantProps<typeof alertVariants>['variant'];
   animate?: boolean;
+  contextMode?: AlertContextMode;
 };
 
 export const AlertBanner = ({
@@ -29,12 +31,19 @@ export const AlertBanner = ({
   title = '',
   variant = 'default',
   animate = false,
+  contextMode = 'app',
 }: AlertBanner) => {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
+  const { publicAlertsSeen, setPublicAlertSeen } = useUIStore();
 
-  const showAlert = !downAlert && !alertsSeen.includes(id);
-  const setAsSeen = () => setAlertSeen(id);
+  const isPublicContext = contextMode === 'public';
+  const seenAlerts = isPublicContext ? publicAlertsSeen : alertsSeen;
+  const setAsSeen = () => {
+    if (isPublicContext) setPublicAlertSeen(id);
+    else setAlertSeen(id);
+  };
+  const showAlert = !downAlert && !seenAlerts.includes(id);
 
   const alertContent = (
     <Alert variant={variant} onClose={setAsSeen} className={cn('relative', !animate && className)}>

@@ -21,14 +21,13 @@ function DocsLayout() {
   const isMobile = useBreakpointBelow('sm');
   const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const mainRef = useRef<HTMLElement>(null);
 
   // Resizable sidebar width (desktop only). The main content uses window scroll,
-  // offset by this width — no nested scroll container, so window scroll restoration just works.
+  // offset by this width, so window scroll restoration just works.
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
   // Track scroll position for scroll-to-top button visibility (mobile floating nav)
-  const { scrollTop } = useScrollVisibility(isMobile, mainRef);
+  const { scrollTop } = useScrollVisibility(isMobile);
   const showScrollTop = scrollTop > 300;
 
   // Drag the sidebar edge to resize. Updates width during pointer move, ends on pointer up.
@@ -101,7 +100,7 @@ function DocsLayout() {
   };
 
   const scrollToTop = () => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Floating nav items for mobile
@@ -121,13 +120,8 @@ function DocsLayout() {
   if (isMobile) {
     return (
       <div>
-        <FloatingNav
-          items={floatingNavItems}
-          scrollContainerRef={mainRef}
-          bodyClass="docs-floating-nav"
-          resetTrigger={sidebarOpen}
-        />
-        <main ref={mainRef} className="h-screen overflow-auto pb-[70vh]">
+        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={sidebarOpen} />
+        <main className="pb-[70vh]">
           <Outlet />
         </main>
       </div>

@@ -19,6 +19,9 @@ interface UIStoreState {
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void; // Updates the theme
 
+  publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
+  setPublicAlertSeen: (alertSeen: string) => void; // Adds a public alert to the seen list
+
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
 
@@ -33,11 +36,15 @@ interface UIStoreState {
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 // Default state values
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'focusView' | 'uiLocks'> = {
+const initStore: Pick<
+  UIStoreState,
+  'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'
+> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
   impersonating: false,
+  publicAlertsSeen: [],
   focusView: false,
   uiLocks: [],
 };
@@ -68,6 +75,11 @@ export const useUIStore = create<UIStoreState>()(
         setTheme: (theme) => {
           set((state) => {
             state.theme = theme;
+          });
+        },
+        setPublicAlertSeen: (alertSeen) => {
+          set((state) => {
+            if (!state.publicAlertsSeen.includes(alertSeen)) state.publicAlertsSeen.push(alertSeen);
           });
         },
         setFocusView: (status) => {
@@ -105,6 +117,7 @@ export const useUIStore = create<UIStoreState>()(
           impersonating: state.impersonating,
           mode: state.mode,
           theme: state.theme,
+          publicAlertsSeen: state.publicAlertsSeen,
         }),
         storage: createJSONStorage(() => localStorage),
       },
