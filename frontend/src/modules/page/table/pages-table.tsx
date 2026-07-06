@@ -48,7 +48,7 @@ function PagesTable() {
   // max depth from the surrounding `<TreeProvider>`, so no per-cell wiring
   // is needed here.
   const [selected, setSelected] = useState<PageTreeRow[]>([]);
-  const { columns, visibleColumns, setColumns } = usePagesTableColumns();
+  const { columns, setColumns } = usePagesTableColumns();
 
   const queryOptions = pagesListQueryOptions({ q, limit });
 
@@ -138,7 +138,7 @@ function PagesTable() {
           rows={rows}
           rowHeight={tree.rowHeight}
           rowKeyGetter={rowKeyGetter}
-          columns={visibleColumns}
+          columns={columns}
           enableVirtualization={true}
           enableDragAutoScroll={true}
           limit={limit}

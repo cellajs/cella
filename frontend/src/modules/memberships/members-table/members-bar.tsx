@@ -119,9 +119,10 @@ export const MembersTableBar = ({
     });
   };
 
-  const fetchExport = async (limit: number) => {
+  const fetchExport = async (limit: number, offset: number) => {
     return fetchMembersForExport({
       limit,
+      offset,
       q,
       sort: sort || 'createdAt',
       order: order || 'asc',

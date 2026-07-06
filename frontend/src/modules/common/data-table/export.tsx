@@ -2,6 +2,7 @@ import { DownloadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
+import { fetchAllRows } from '~/modules/common/data-table/fetch-all-rows';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -14,7 +15,7 @@ interface Props<TData> {
   filename: string;
   columns: ColumnOrColumnGroup<TData>[];
   selectedRows?: TData[];
-  fetchRows: (limit: number) => Promise<TData[]>;
+  fetchRows: (limit: number, offset: number) => Promise<TData[]>;
   className?: string;
 }
 
@@ -32,7 +33,7 @@ export const Export = <R extends Record<string, any>>({
 
   const exportDefault = async (type: 'csv' | 'pdf') => {
     if (!isOnline) return toaster(t('c:action.offline.text'), 'warning');
-    const rows = await fetchRows(1000);
+    const rows = await fetchAllRows(fetchRows);
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, rows, filenameWithExtension);
@@ -62,11 +63,9 @@ export const Export = <R extends Record<string, any>>({
           <>
             <DropdownMenuItem onClick={() => exportDefault('csv')}>
               <span>CSV</span>
-              <span className="ml-2 text-xs opacity-75">{t('c:max_1k_rows')}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => exportDefault('pdf')}>
               <span>PDF</span>
-              <span className="ml-2 text-xs opacity-75">{t('c:max_1k_rows')}</span>
             </DropdownMenuItem>
           </>
         )}

@@ -7,10 +7,14 @@ export type BaseTableSearchVariables<T> = T & {
   limit: number;
 };
 
+/**
+ * The grid's column union, narrowed so every entry (including groups) carries a
+ * string `key` — the table chrome (columns-view visibility toggle, bars) keys off it.
+ * `hidden` now lives on the grid `Column`/`ColumnGroup` types and is filtered by the
+ * grid itself; consumers pass the full column list.
+ */
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   key: string;
-  /** Reactive hide flag for non-breakpoint conditions (e.g. isSheet). */
-  hidden?: boolean;
 };
 
 export type BaseTableBarProps<T, K> = {

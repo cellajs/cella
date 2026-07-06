@@ -1,6 +1,6 @@
 import { RenderCheckbox } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
-import type { Column, RenderCellProps, RenderGroupCellProps, RenderHeaderCellProps } from './types';
+import type { Column, RenderCellProps, RenderHeaderCellProps } from './types';
 
 export const SELECT_COLUMN_KEY = 'rdg-select-column';
 
@@ -36,21 +36,6 @@ function SelectFormatter(props: RenderCellProps<unknown>) {
   );
 }
 
-function SelectGroupFormatter(props: RenderGroupCellProps<unknown>) {
-  const { isRowSelected, onRowSelectionChange } = useRowSelection();
-
-  return (
-    <RenderCheckbox
-      aria-label="Select Group"
-      tabIndex={props.tabIndex}
-      checked={isRowSelected}
-      onChange={(checked) => {
-        onRowSelectionChange({ row: props.row, checked, isShiftClick: false });
-      }}
-    />
-  );
-}
-
 // biome-ignore lint/suspicious/noExplicitAny: SelectColumn is row-shape agnostic; consumers narrow via Column<Row, SR>.
 export const SelectColumn: Column<any, any> = {
   key: SELECT_COLUMN_KEY,
@@ -67,8 +52,5 @@ export const SelectColumn: Column<any, any> = {
   },
   renderCell(props) {
     return <SelectFormatter {...props} />;
-  },
-  renderGroupCell(props) {
-    return <SelectGroupFormatter {...props} />;
   },
 };

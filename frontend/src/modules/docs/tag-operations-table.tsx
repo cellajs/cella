@@ -96,7 +96,7 @@ export const TagOperationsTable = ({ operations, tagName, onPrerender }: TagOper
     <div onMouseEnter={onPrerender} onFocus={onPrerender}>
       <DataTable<GenOperationSummary>
         className="mb-0"
-        columns={columns.filter((col) => !col.hidden)}
+        columns={columns}
         rows={operations}
         hasNextPage={false}
         rowKeyGetter={(row) => row.hash}

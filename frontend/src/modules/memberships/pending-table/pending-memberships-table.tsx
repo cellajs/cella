@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zGetPendingMembershipsQuery } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
@@ -45,8 +44,6 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
   const [columns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   const queryOptions = pendingMembershipsQueryOptions({
     entityId: contextEntity.id,
     entityType: contextEntity.entityType,
@@ -83,7 +80,7 @@ export function PendingMembershipsTable({ contextEntity }: PendingMembershipsTab
           rows,
           rowHeight: 52,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,

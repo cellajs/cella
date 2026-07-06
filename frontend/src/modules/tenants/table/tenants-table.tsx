@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { BuildingIcon } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { appConfig } from 'shared';
@@ -64,8 +63,6 @@ function TenantsTable() {
     }
   };
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   return (
     <>
       <TenantsTableBar
@@ -81,7 +78,7 @@ function TenantsTable() {
           rowHeight: 52,
           rowKeyGetter,
           onRowsChange,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,

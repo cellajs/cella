@@ -185,13 +185,14 @@ export const useOrganizationDeleteMutation = () => {
 /** Fetch organizations for table export. Bypasses cache; returns flat items. */
 export const fetchOrganizationsForExport = async (params: {
   limit: number;
+  offset?: number;
   q?: string;
   sort?: NonNullable<GetOrganizationsData['query']>['sort'];
   order?: NonNullable<GetOrganizationsData['query']>['order'];
 }) => {
-  const { limit, q = '', sort = 'createdAt', order = 'asc' } = params;
+  const { limit, offset = 0, q = '', sort = 'createdAt', order = 'asc' } = params;
   const response = await getOrganizations({
-    query: { limit: String(limit), q, sort, order, offset: '0' },
+    query: { limit: String(limit), q, sort, order, offset: String(offset) },
   });
   return response.items;
 };

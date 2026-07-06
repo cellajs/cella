@@ -24,6 +24,7 @@ import { useStickyHeader } from './hooks/use-sticky-header';
 import { defaultRenderRow } from './row';
 import { RowDragCell, type RowDragConfig } from './row-drag-cell';
 import type {
+  ActiveModes,
   CalculatedColumn,
   CellClipboardEvent,
   CellCopyArgs,
@@ -55,6 +56,7 @@ import {
   canExitGrid,
   cellValueToText,
   cn,
+  computeMergedSlotExtraHeight,
   computeWrapTextRowHeight,
   createCellEvent,
   createRange,
@@ -266,8 +268,9 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   /** Custom class name for the header row */
   headerRowClass?: Maybe<string>;
   /**
-   * Enable compact mode. When true, columns with a `compact` override use their compact widths,
-   * and `data-is-compact="true"` is set on the grid root for CSS-based content hiding.
+   * Enable compact mode (user density toggle). Activates each column's
+   * `modes.compact` overrides (widths and/or merge rules) and sets
+   * `data-is-compact="true"` on the grid root for CSS-based content hiding.
    * @default false
    */
   isCompact?: Maybe<boolean>;
@@ -280,7 +283,11 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
 }
 
 /**
- * Main API Component to render a data grid of rows and columns
+ * Low-level grid engine: virtualization, cell/row selection, editing, keyboard
+ * navigation, copy/paste, column widths & layout, sticky header, drag-reorder,
+ * and per-mode column merging. For query-backed tables (loading skeleton, error
+ * and empty states, infinite scroll) use the `DataTable` wrapper, which forwards
+ * engine props here untouched.
  *
  * @example
  *
@@ -418,8 +425,16 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // Get current breakpoint for responsive features
   const currentBreakpoint = useCurrentBreakpoint();
 
-  // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
+  // Active display modes: 'compact' is the user density toggle, 'mobile' is
+  // viewport-driven (xs, hardcoded for now). Columns key their `modes`
+  // overrides and merge rules off these.
   const isMobileBreakpoint = currentBreakpoint === 'xs';
+  const activeModes = useMemo<ActiveModes>(
+    () => ({ compact: isCompact ?? false, mobile: isMobileBreakpoint }),
+    [isCompact, isMobileBreakpoint],
+  );
+
+  // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
 
@@ -482,7 +497,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     defaultColumnOptions,
     getColumnWidth,
     currentBreakpoint,
-    isCompact: isCompact ?? false,
+    activeModes,
   });
 
   // Pin header row(s) to viewport top when grid scrolls out of view
@@ -494,12 +509,25 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   // Compute effective rowHeight, wrapping baseRowHeight with wrapText-aware logic
   // when any column has wrapText enabled. This turns a fixed height into a per-row
-  // function that accounts for multi-line content.
+  // function that accounts for multi-line content. Merged host cells with occupied
+  // top/bottom slot rows additionally need constant extra height (virtualization
+  // needs heights without rendering). On the mobile breakpoint rows are scaled up
+  // for easier touch targets — the single source for this (previously duplicated
+  // in DataTable via a second breakpoint read).
   const rowHeight = useMemo(() => {
-    if (typeof baseRowHeight === 'function') return baseRowHeight;
-    if (!hasWrapTextColumns(columns)) return baseRowHeight;
-    return (row: R) => computeWrapTextRowHeight(baseRowHeight, columns as readonly CalculatedColumn<R, unknown>[], row);
-  }, [baseRowHeight, columns]);
+    const slotExtra = computeMergedSlotExtraHeight(columns);
+    const mobileScale = isMobileBreakpoint ? 1.2 : 1;
+    if (typeof baseRowHeight === 'function') {
+      if (mobileScale === 1 && slotExtra === 0) return baseRowHeight;
+      return (row: R) => baseRowHeight(row) * mobileScale + slotExtra;
+    }
+    const scaledBase = baseRowHeight * mobileScale;
+    if (!hasWrapTextColumns(columns)) {
+      return slotExtra === 0 ? scaledBase : () => scaledBase + slotExtra;
+    }
+    return (row: R) =>
+      computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row) + slotExtra;
+  }, [baseRowHeight, columns, isMobileBreakpoint]);
 
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;
   const minRowIdx = -headerRowsCount;
@@ -1306,6 +1334,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       data-testid={testId}
       data-cy={dataCy}
       data-is-compact={isCompact || undefined}
+      // Tile mode: mobile breakpoint with at least one merged host column
+      data-tiled={(activeModes.mobile && columns.some((column) => column.mergedSlots != null)) || undefined}
     >
       {!hideHeader && (
         <HeaderRowSelectionChangeContext value={selectHeaderRowLatest}>

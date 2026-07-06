@@ -17,7 +17,9 @@ interface BaseProps {
   readOnly?: boolean;
 }
 
-// TODO [#14] review compactable
+// DataGrid sets data-is-compact on its root/merged slots; keep the name accessible while hiding it visually.
+const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
+
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
@@ -38,9 +40,7 @@ export const UserCell = ({
     return (
       <div className={cn('flex items-center gap-2', className)}>
         <EntityAvatar type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-        <span className={cn('truncate', { '[[data-is-compact=true]_*&]:hidden': compactable })}>
-          {user.name || '-'}
-        </span>
+        <span className={cn('truncate', { [compactUserNameClass]: compactable })}>{user.name || '-'}</span>
       </div>
     );
   }
@@ -82,7 +82,7 @@ export const UserCell = ({
       <span
         className={cn(
           'truncate decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50',
-          { '[[data-is-compact=true]_*&]:hidden': compactable },
+          { [compactUserNameClass]: compactable },
         )}
       >
         {user.name || '-'}

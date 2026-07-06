@@ -1,5 +1,4 @@
 import { SearchIcon } from 'lucide-react';
-import '~/modules/common/data-grid/style/data-grid.css';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 

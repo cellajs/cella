@@ -64,4 +64,32 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({ items: [], total: 0 });
   });
+
+  it('returns false when the seq window overflows one response — no silent 1000-row delta cap', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    // A full SYNC_CHUNK_SIZE response means more changes may remain beyond this window
+    const items = Array.from({ length: 1000 }, (_, i) => ({
+      id: `att-${i + 1}`,
+      organizationId: 'org-1',
+      seq: i + 1,
+    }));
+    registerEntityQueryKeys('attachment', keys, async () => ({ items, total: 1500 }));
+
+    const patched = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '1', keys);
+
+    // Patching a truncated window would drop the remainder — caller must invalidate instead
+    expect(patched).toBe(false);
+    expect(queryClient.getQueryData(keys.detail.byId('att-1'))).toBeUndefined();
+  });
+
+  it('returns false on a rejected delta fetch so callers fall back to invalidation', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys('attachment', keys, async () => {
+      throw new Error('network down');
+    });
+
+    const patched = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '5', keys);
+
+    expect(patched).toBe(false);
+  });
 });

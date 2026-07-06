@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { CloudOffIcon, GripVerticalIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zPage } from 'sdk/zod.gen';
 import { env } from '~/env';
@@ -140,11 +140,8 @@ export function usePagesTableColumns() {
   // passes this through to memoized Row/Cell; a fresh `.filter()` array each
   // render would defeat that memoization and re-render every visible row on
   // anything that triggers a parent re-render (e.g. checkbox selection).
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   return {
     columns,
-    visibleColumns,
     setColumns,
   };
 }

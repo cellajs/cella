@@ -53,8 +53,6 @@ function UsersTable() {
 
   const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
 
-  const visibleColumns = useMemo(() => columns.filter((column) => !column.hidden), [columns]);
-
   return (
     <>
       <UsersTableBar
@@ -71,7 +69,7 @@ function UsersTable() {
           rows,
           rowHeight: 52,
           rowKeyGetter,
-          columns: visibleColumns,
+          columns,
           enableVirtualization: true,
           limit,
           error,
