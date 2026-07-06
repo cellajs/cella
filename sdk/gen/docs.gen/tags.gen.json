@@ -14,7 +14,7 @@
   {
     "name": "entities",
     "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes provide shared logic across modules, including slug validation\n    and entity visibility.",
-    "count": 5,
+    "count": 3,
     "kind": "module"
   },
   {

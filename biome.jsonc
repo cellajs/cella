@@ -12,6 +12,7 @@
       "bench/src/**",
       "!bench/src/**/dist",
       "!.kilo/worktrees/*",
+      "!.claude/worktrees/*",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",

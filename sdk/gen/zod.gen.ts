@@ -773,45 +773,6 @@ export const zCheckSlugPath = z.object({
  */
 export const zCheckSlugResponse = z.void();
 
-export const zPostPublicCatchupBody = z.object({
-  cursor: z.string().optional(),
-  seqs: z.record(z.string(), z.int()).optional(),
-});
-
-/**
- * Catchup summary
- */
-export const zPostPublicCatchupResponse = z.object({
-  changes: z.record(
-    z.string(),
-    z.object({
-      entitySeqs: z.record(z.string(), z.int()).optional(),
-      entityCounts: z.record(z.string(), z.int()).optional(),
-      childContextChanges: z
-        .record(
-          z.string(),
-          z.object({
-            entitySeqs: z.record(z.string(), z.int()).optional(),
-            entityCounts: z.record(z.string(), z.int()).optional(),
-          }),
-        )
-        .optional(),
-      propagation: z
-        .array(
-          z.object({
-            sourceType: z.string(),
-            targetType: z.string(),
-            field: z.string(),
-            update: z.array(z.string()),
-            remove: z.array(z.string()),
-          }),
-        )
-        .optional(),
-    }),
-  ),
-  cursor: z.string().nullable(),
-});
-
 export const zPostAppCatchupBody = z.object({
   cursor: z.string().optional(),
   seqs: z.record(z.string(), z.int()).optional(),

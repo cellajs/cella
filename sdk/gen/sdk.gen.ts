@@ -125,9 +125,6 @@ import type {
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
-  GetPublicStreamData,
-  GetPublicStreamErrors,
-  GetPublicStreamResponses,
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
@@ -181,9 +178,6 @@ import type {
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
-  PostPublicCatchupData,
-  PostPublicCatchupErrors,
-  PostPublicCatchupResponses,
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
@@ -355,8 +349,6 @@ import {
   zMicrosoftQuery,
   zPostAppCatchupBody,
   zPostAppCatchupResponse,
-  zPostPublicCatchupBody,
-  zPostPublicCatchupResponse,
   zResendInvitationWithTokenBody,
   zResendInvitationWithTokenResponse,
   zSelfCreateTenantBody,
@@ -1660,67 +1652,6 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/entities/{tenantId}/check-slug',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Public entity SSE stream
- *
- * SSE stream for real-time public entity changes. No authentication required.
- *
- * **GET /entities/public/stream** ·· [getPublicStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/public/stream) ·· [getPublicStream](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/entities/public/stream) ·· _entities_cella_
- *
- * @param {getPublicStreamData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getPublicStream = <ThrowOnError extends boolean = true>(
-  options?: Options<GetPublicStreamData, ThrowOnError, unknown>,
-): Promise<ServerSentEventsResult<GetPublicStreamResponses>> =>
-  (options?.client ?? client).sse.get<GetPublicStreamResponses, GetPublicStreamErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    url: '/entities/public/stream',
-    ...options,
-  });
-
-/**
- * Public entity catchup
- *
- * Fetch missed public entity changes since last sync. Send cursor and per-scope seqs in the body.
- *
- * **POST /entities/public/stream** ·· [postPublicCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/public/stream) ·· [postPublicCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/public/stream) ·· _entities_cella_
- *
- * @param {postPublicCatchupData} options
- * @param {string=} options.body.cursor - `string` (optional)
- * @param {object=} options.body.seqs - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const postPublicCatchup = <ThrowOnError extends boolean = true>(
-  options: Options<PostPublicCatchupData, ThrowOnError>,
-): RequestResult<PostPublicCatchupResponses, PostPublicCatchupErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<PostPublicCatchupResponses, PostPublicCatchupErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zPostPublicCatchupBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zPostPublicCatchupResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/entities/public/stream',
     ...options,
     headers: {
       'Content-Type': 'application/json',
