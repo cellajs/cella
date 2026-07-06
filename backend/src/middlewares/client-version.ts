@@ -1,5 +1,3 @@
-// DORMANT: lens-system middleware, intentionally not registered in app.ts.
-// Reconnect when lenses are activated.
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
 import { clientSchemaVersionSeen } from '#/lib/schema-version-metrics';

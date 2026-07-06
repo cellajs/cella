@@ -19,6 +19,13 @@ vi.mock('../lens-list', () => ({
       phase: 'expand',
       delta: { add: { field: 'archived', default: false } },
     }),
+    defineLens({
+      id: '2026-07-03-page-add-label',
+      entityType: 'page',
+      description: 'add page.label (computed default)',
+      phase: 'expand',
+      delta: { add: { field: 'label', default: (row: Record<string, unknown>) => `page-${row.id}` } },
+    }),
   ],
 }));
 
@@ -37,15 +44,16 @@ beforeEach(() => resetLensEngine());
 
 describe('currentSchemaVersion + versionNodeFor', () => {
   it('equals the lens count', () => {
-    expect(currentSchemaVersion).toBe(2);
+    expect(currentSchemaVersion).toBe(3);
   });
 
   it('maps a global version to the latest entity node ≤ it', () => {
     expect(versionNodeFor('attachment', 0)).toBe('v0');
     expect(versionNodeFor('attachment', 1)).toBe('v1');
-    expect(versionNodeFor('attachment', 2)).toBe('v1'); // page lens at ordinal 2 adds no attachment node
+    expect(versionNodeFor('attachment', 3)).toBe('v1'); // page lenses at ordinals 2/3 add no attachment node
     expect(versionNodeFor('page', 1)).toBe('v0');
     expect(versionNodeFor('page', 2)).toBe('v2');
+    expect(versionNodeFor('page', 3)).toBe('v3');
   });
 });
 
@@ -86,9 +94,9 @@ describe('migrateCachedEntity (client boot)', () => {
     expect(migrated).toEqual(row);
   });
 
-  it('fills added fields with their default', async () => {
+  it('fills added fields with their default (static and computed)', async () => {
     const migrated = await migrateCachedEntity('page', { id: '1', title: 'doc' }, 0);
-    expect(migrated).toEqual({ id: '1', title: 'doc', archived: false });
+    expect(migrated).toEqual({ id: '1', title: 'doc', archived: false, label: 'page-1' });
   });
 });
 
@@ -120,5 +128,49 @@ describe('widenedOpsKeyMap', () => {
   it('exposes old→new aliases for expand lenses', () => {
     expect(widenedOpsKeyMap('attachment')).toEqual({ name: 'title' });
     expect(widenedOpsKeyMap('page')).toEqual({});
+  });
+});
+
+describe('normalizeOps unknown-field handling', () => {
+  const canonicalKeys = new Set(['title']);
+
+  it('reports nothing without canonicalKeys', () => {
+    const { unknownFields } = normalizeOps('attachment', { name: 'x', bogus: 1 }, {});
+    expect(unknownFields).toEqual([]);
+  });
+
+  it('exempts canonical keys and expand-window twins', () => {
+    const { ops, unknownFields } = normalizeOps('attachment', { name: 'x' }, {}, { canonicalKeys });
+    expect(unknownFields).toEqual([]);
+    expect(ops).toEqual({ title: 'x', name: 'x' }); // mirror-written twin survives
+  });
+
+  it('strips unmappable fields (default policy) from ops and fieldTimestamps', () => {
+    const { ops, stx, unknownFields } = normalizeOps(
+      'attachment',
+      { name: 'x', bogus: 1 },
+      { fieldTimestamps: { name: 't', bogus: 't2' } },
+      { canonicalKeys },
+    );
+    expect(unknownFields).toEqual(['bogus']);
+    expect(ops).toEqual({ title: 'x', name: 'x' });
+    expect(stx.fieldTimestamps).toEqual({ title: 't', name: 't' });
+  });
+
+  it('passes unmappable fields through under ignore', () => {
+    const { ops, unknownFields } = normalizeOps(
+      'attachment',
+      { name: 'x', bogus: 1 },
+      {},
+      { canonicalKeys, unknownFieldHandling: 'ignore' },
+    );
+    expect(unknownFields).toEqual(['bogus']);
+    expect(ops).toEqual({ title: 'x', name: 'x', bogus: 1 });
+  });
+
+  it('throws under fail', () => {
+    expect(() => normalizeOps('attachment', { bogus: 1 }, {}, { canonicalKeys, unknownFieldHandling: 'fail' })).toThrow(
+      /unmappable fields.*bogus/,
+    );
   });
 });

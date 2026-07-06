@@ -5,8 +5,8 @@
  * append point). `currentSchemaVersion` is derived as the list length (engine.ts).
  */
 export { lenses } from './lens-list';
-export { schemaEvolutionPolicy } from './config';
-export { defineLens } from './define';
+export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
+export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';
 export type {
   AddDelta,
   DropDelta,
@@ -30,4 +30,4 @@ export {
   versionNodeFor,
   widenedOpsKeyMap,
 } from './engine';
-export type { RegistryHooks } from './engine';
+export type { NormalizeOpsOptions, RegistryHooks } from './engine';

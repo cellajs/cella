@@ -13,7 +13,8 @@
  */
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import type { ProductEntityType } from '../../types';
-import { deltaRenameMap, type LensContext, type LensDefinition } from './define';
+import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
+import { deltaRenameMap, type LensContext, type LensDefinition, resolveAddDefault } from './define';
 import { lenses } from './lens-list';
 
 /** Re-exported doba type so telemetry consumers don't import dobajs directly. */
@@ -121,14 +122,14 @@ function buildEntityMigration(lens: LensDefinition): {
   }
 
   if ('add' in delta) {
-    const { field, default: def } = delta.add;
+    const add = delta.add;
     return {
       forward: (v, ctx) => {
-        if (field in v) return v;
-        ctx.defaulted([field], `lens ${lens.id}: filled "${field}" with default`);
-        return { ...v, [field]: def };
+        if (add.field in v) return v;
+        ctx.defaulted([add.field], `lens ${lens.id}: filled "${add.field}" with default`);
+        return { ...v, [add.field]: resolveAddDefault(add, v) };
       },
-      backward: (v) => dropKeyDeep(v, field),
+      backward: (v) => dropKeyDeep(v, add.field),
     };
   }
 
@@ -230,6 +231,18 @@ interface StxLike {
   [key: string]: unknown;
 }
 
+/** Options for `normalizeOps` unknown-field detection. */
+export interface NormalizeOpsOptions {
+  /**
+   * Canonical field names of the entity's current ops schema. When provided,
+   * ops keys that are neither canonical nor a live expand-window alias after
+   * lens mapping are handled per `unknownFieldHandling` and reported.
+   */
+  canonicalKeys?: ReadonlySet<string>;
+  /** Per-call override of `schemaEvolutionPolicy.unknownFieldHandling`. */
+  unknownFieldHandling?: UnknownFieldHandling;
+}
+
 /**
  * Server seam (runtime touch point 1): normalize old-shape `ops` + `stx.fieldTimestamps`
  * to canonical keys, then mirror-write the twin field during expand windows so old
@@ -239,9 +252,10 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
   entityType: ProductEntityType,
   ops: O,
   stx: S,
-): { ops: O; stx: S } {
+  options?: NormalizeOpsOptions,
+): { ops: O; stx: S; unknownFields: string[] } {
   const entityLenses = lensesFor(entityType);
-  if (entityLenses.length === 0) return { ops, stx };
+  if (entityLenses.length === 0) return { ops, stx, unknownFields: [] };
 
   let nextOps: AnyRecord = { ...ops };
   const ft: Record<string, unknown> | undefined = stx.fieldTimestamps ? { ...stx.fieldTimestamps } : undefined;
@@ -279,8 +293,38 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
     }
   }
 
+  // Unknown-field policy: keys that survived lens mapping but are neither
+  // canonical nor an intentional expand-window twin.
+  const unknownFields: string[] = [];
+  if (options?.canonicalKeys) {
+    const expandAliases = new Set<string>();
+    for (const { lens } of entityLenses) {
+      if (lens.phase !== 'expand') continue;
+      const rename = deltaRenameMap(lens.delta);
+      if (rename) expandAliases.add(rename.from);
+    }
+    for (const key of Object.keys(nextOps)) {
+      if (!options.canonicalKeys.has(key) && !expandAliases.has(key)) unknownFields.push(key);
+    }
+    if (unknownFields.length > 0) {
+      const handling = options.unknownFieldHandling ?? schemaEvolutionPolicy.unknownFieldHandling;
+      if (handling === 'fail') {
+        throw new Error(`normalizeOps(${entityType}): unmappable fields after lens chain: ${unknownFields.join(', ')}`);
+      }
+      if (handling === 'strip') {
+        for (const key of unknownFields) {
+          delete nextOps[key];
+          if (ft && key in ft) {
+            delete ft[key];
+            ftTouched = true;
+          }
+        }
+      }
+    }
+  }
+
   const nextStx = ftTouched && ft ? ({ ...stx, fieldTimestamps: ft } as S) : stx;
-  return { ops: nextOps as O, stx: nextStx };
+  return { ops: nextOps as O, stx: nextStx, unknownFields };
 }
 
 /**

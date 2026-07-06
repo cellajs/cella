@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineLens } from '../define';
+import { defineLens, LENS_FORMAT_VERSION } from '../define';
 import { currentSchemaVersion, migrateCachedEntity, normalizeOps } from '../engine';
 
 // No mock here: exercises the real (empty) lens list shipped in lens-list.ts.
@@ -46,5 +46,29 @@ describe('defineLens validation', () => {
         delta: { retype: { field: 'size' } },
       }),
     ).toThrow(/opsConvert/);
+  });
+
+  it('stamps the current format version when omitted', () => {
+    const lens = defineLens({
+      id: '2026-07-01-attachment-rename',
+      entityType: 'attachment',
+      description: 'rename',
+      phase: 'expand',
+      delta: { rename: { from: 'a', to: 'b' } },
+    });
+    expect(lens.formatVersion).toBe(LENS_FORMAT_VERSION);
+  });
+
+  it('rejects an unsupported format version', () => {
+    expect(() =>
+      defineLens({
+        id: '2026-07-01-attachment-rename',
+        formatVersion: LENS_FORMAT_VERSION + 1,
+        entityType: 'attachment',
+        description: 'rename',
+        phase: 'expand',
+        delta: { rename: { from: 'a', to: 'b' } },
+      }),
+    ).toThrow(/formatVersion/);
   });
 });
