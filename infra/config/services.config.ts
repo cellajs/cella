@@ -18,7 +18,8 @@ import { defineServices } from '../compose/infrastructure'
 export default defineServices({
   backend: {
     image: '${REGISTRY}/backend:${BACKEND_TAG:-latest}',
-    dockerfile: 'backend/Dockerfile',
+    dockerfile: 'Dockerfile',
+    target: 'backend',
     port: 4000,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
@@ -42,7 +43,8 @@ export default defineServices({
 
   cdc: {
     image: '${REGISTRY}/cdc:${CDC_TAG:-latest}',
-    dockerfile: 'cdc/Dockerfile',
+    dockerfile: 'Dockerfile',
+    target: 'cdc',
     port: 4001,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
@@ -69,7 +71,8 @@ export default defineServices({
 
   yjs: {
     image: '${REGISTRY}/yjs:${YJS_TAG:-latest}',
-    dockerfile: 'yjs/Dockerfile',
+    dockerfile: 'Dockerfile',
+    target: 'yjs',
     port: 4002,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',

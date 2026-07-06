@@ -1,0 +1,10 @@
+# Keep the build context lean and deterministic: dependencies are installed and
+# artifacts are built inside the image, never copied from the host. CI builds
+# from a clean checkout, so this mainly protects local builds (workspace
+# node_modules, .env files) from leaking into images.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+.git
+frontend
