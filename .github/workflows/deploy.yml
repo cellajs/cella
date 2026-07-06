@@ -4,9 +4,13 @@ name: Deploy
 permissions: {}
 
 on:
-  # Automatic deployment to production only when a release is cut.
-  release:
-    types: [published]
+  # Called by the Release workflow after release-gate passes.
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: string
 
   # Manual deployment for any environment
   workflow_dispatch:
@@ -22,7 +26,7 @@ on:
 
 # Prevent concurrent deployments to the same environment
 concurrency:
-  group: deploy-${{ github.event.inputs.environment || 'production' }}
+  group: deploy-${{ inputs.environment || 'production' }}
   cancel-in-progress: false
 
 env:
@@ -69,7 +73,7 @@ jobs:
       - name: Derive resource names from shared config
         id: derive
         env:
-          ENV: ${{ github.event.inputs.environment || 'production' }}
+          ENV: ${{ inputs.environment || 'production' }}
           GIT_REF: ${{ github.ref }}
           GIT_SHA: ${{ github.sha }}
         run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
@@ -606,4 +610,3 @@ jobs:
             deleted=$((deleted + 1))
           done <<< "$ids"
           echo "Kept newest deployment ${kept:-<none>} for '${ENVIRONMENT}'; deleted ${deleted} stale record(s)."
-
