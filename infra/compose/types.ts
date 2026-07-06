@@ -89,10 +89,12 @@ export interface ServiceMeta {
   lbRoute?: LbRoute
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean
-  /** Service whose image this one reuses (ai reuses backend); no own image built. */
+  /** Service whose image this one reuses (mcp reuses backend); no own image built. */
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
   dockerfile?: string
+  /** Build stage (`docker build --target`) within `dockerfile` for multi-target files (the root Dockerfile). Omit for single-target files. */
+  target?: string
   /** Under `appConfig.singleVM`, this service runs in-process on the host VM (backend) */
   coHosted?: boolean
   /** Per-service VM size; a fork resizes its fleet by editing this. Required — every service declares its own box. */
@@ -198,17 +200,19 @@ export interface AppServiceConfig {
   lbWebsockets?: boolean
   /**
    * Service whose image this one reuses, so CI builds no separate image for it
-   * (ai reuses the backend image at the same SHA).
+   * (mcp reuses the backend image at the same SHA).
    */
   reusesImageOf?: string
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
   dockerfile?: string
+  /** Build stage (`docker build --target`) within `dockerfile` for multi-target files (the root Dockerfile). Omit for single-target files. */
+  target?: string
   /**
    * Under `appConfig.singleVM`, co-host this service in-process on the host
    * (backend) VM instead of giving it its own VM — the cost escape hatch for
    * zero/low-traffic apps. Mirrors the in-process worker startup in
    * `backend/src/main.api.ts`; set on the backend's worker subsystems (cdc, yjs,
-   * ai), never on the host service or the SPA proxy. Ignored when `singleVM` is
+   * mcp), never on the host service or the SPA proxy. Ignored when `singleVM` is
    * false.
    */
   coHosted?: boolean
@@ -219,7 +223,7 @@ export interface AppServiceConfig {
    */
   instanceType: ServiceInstanceType
   /**
-   * Service-specific environment variables (e.g. cdc's `API_WS_URL`, ai's
+   * Service-specific environment variables (e.g. cdc's `API_WS_URL`, mcp's
    * `MODE: mcp-worker`). Merged AFTER the standard env so it can override it.
    * The uniform `NODE_ENV`/`APP_MODE`/`TZ` are injected by cella — don't repeat
    * them here.

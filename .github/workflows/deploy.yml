@@ -108,6 +108,9 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
+          # Stage within a multi-target Dockerfile; empty for single-target
+          # files (build-push-action omits --target for an empty string).
+          target: ${{ matrix.target }}
           push: true
           tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:${{ needs.setup.outputs.image_tag }}
           # RELEASE_SHA is baked into the image as ENV for verification later
