@@ -11,8 +11,7 @@
           "properties": {
             "user": { "type": "number", "required": true },
             "organization": { "type": "number", "required": true },
-            "attachment": { "type": "number", "required": true },
-            "page": { "type": "number", "required": true }
+            "attachment": { "type": "number", "required": true }
           },
           "contentType": "application/json"
         },

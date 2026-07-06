@@ -99,29 +99,18 @@ export const recalculateCounters = async (db: DbOrTx) => {
     const tableName = tbl(entityType);
     const seqKey = `s:${entityType}`;
     const parentType = hierarchy.getParent(entityType);
+    if (!parentType) continue;
 
-    if (parentType === null) {
-      const contextKey = `public:${entityType}`;
-      await upsertContextCounters(
-        db,
-        `
-        SELECT '${contextKey}', jsonb_build_object('${seqKey}', COALESCE(MAX(seq), 0)), NOW()
-        FROM ${tableName}
-        HAVING COUNT(*) > 0
-      `,
-      );
-    } else {
-      const pfk = fkCol(parentType);
-      await upsertContextCounters(
-        db,
-        `
-        SELECT t.${pfk}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
-        FROM ${tableName} t
-        WHERE t.${pfk} IS NOT NULL
-        GROUP BY t.${pfk}
-      `,
-      );
-    }
+    const pfk = fkCol(parentType);
+    await upsertContextCounters(
+      db,
+      `
+      SELECT t.${pfk}, jsonb_build_object('${seqKey}', COALESCE(MAX(t.seq), 0)), NOW()
+      FROM ${tableName} t
+      WHERE t.${pfk} IS NOT NULL
+      GROUP BY t.${pfk}
+    `,
+    );
   }
 
   // ── Phase 4: Product counters ─────────────────────────────────────────

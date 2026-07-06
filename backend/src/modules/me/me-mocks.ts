@@ -89,7 +89,7 @@ export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(moc
 
 /**
  * Generates a mock stream response.
- * Used for getAppStream / getPublicStream endpoint examples (JSON mode).
+ * Used for getAppStream endpoint examples (JSON mode).
  */
 export const mockStreamResponse = (key = 'stream:default') =>
   withFakerSeed(key, () => {

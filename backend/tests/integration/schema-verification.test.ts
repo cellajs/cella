@@ -8,28 +8,21 @@
  * - Write-through + tenant-select RLS policies on RLS tables
  * - Composite foreign keys (tenant_id, organization_id) on org-scoped product entities
  *
- * Data-driven from appConfig/hierarchy so new entity types are auto-tested.
+ * Data-driven from appConfig so new entity types are auto-tested.
  *
  * IMPORTANT: Requires PostgreSQL. Run with `pnpm test:full`.
  */
 
 import { getTableName, sql } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { entityTables } from '#/tables';
 
 // ─── Derived table sets ─────────────────────────────────────────────────────
 
-const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
-
 /** Product entities with a parent org (tasks, labels, attachments) — have RLS + composite FK */
-const orgScopedProductTables = appConfig.productEntityTypes
-  .filter((t) => !parentlessTypes.has(t))
-  .map((t) => getTableName(entityTables[t as keyof typeof entityTables]));
-
-/** Parentless product entities (pages) — no RLS, no composite FK */
-const parentlessProductTables = hierarchy.parentlessProductTypes.map((t) =>
+const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
@@ -150,10 +143,7 @@ describe('Schema verification', () => {
         expect(rows[0].relforcerowsecurity, `FORCE RLS not enabled on ${tableName}`).toBe(true);
       });
 
-      it.each([
-        ...parentlessProductTables,
-        ...contextEntityTables,
-      ])('should NOT have FORCE RLS on %s (app-layer isolation)', async (tableName) => {
+      it.each(contextEntityTables)('should NOT have FORCE RLS on %s (app-layer isolation)', async (tableName) => {
         const rows = getRows<{ relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
               SELECT relforcerowsecurity
@@ -213,10 +203,7 @@ describe('Schema verification', () => {
       expect(rows.length, `Missing write-through policies on ${tableName}`).toBeGreaterThanOrEqual(3);
     });
 
-    it.each([
-      ...parentlessProductTables,
-      ...contextEntityTables,
-    ])('should NOT have RLS policies on %s', async (tableName) => {
+    it.each(contextEntityTables)('should NOT have RLS policies on %s', async (tableName) => {
       const rows = getRows<{ polname: string }>(
         await adminDb.execute(sql`
             SELECT pol.polname
@@ -255,20 +242,6 @@ describe('Schema verification', () => {
       const columns = rows.map((r) => r.column_name);
       expect(columns, `Missing composite FK on ${tableName}`).toContain('tenant_id');
       expect(columns, `Missing composite FK on ${tableName}`).toContain('organization_id');
-    });
-
-    it.each(
-      parentlessProductTables,
-    )('should NOT have organization_id FK on parentless entity %s', async (tableName) => {
-      const rows = getRows<{ column_name: string }>(
-        await adminDb.execute(sql`
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = ${tableName}
-              AND column_name = 'organization_id'
-          `),
-      );
-      expect(rows.length, `Unexpected organization_id column on parentless entity ${tableName}`).toBe(0);
     });
   });
 });

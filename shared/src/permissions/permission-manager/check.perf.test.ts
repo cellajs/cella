@@ -40,10 +40,6 @@ const policies = configureAccessPolicies(appConfig.entityTypes, ({ subject, cont
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
       break;
-    case 'page':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0 });
-      break;
   }
 });
 

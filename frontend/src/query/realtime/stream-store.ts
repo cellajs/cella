@@ -1,5 +1,4 @@
-import type { StreamNotification } from 'sdk';
-import { postAppCatchup, postPublicCatchup } from 'sdk';
+import { postAppCatchup } from 'sdk';
 import { appConfig } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -8,8 +7,7 @@ import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamLive } from '~/query/basic/sync-stale-config';
 import { useSyncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
-import { processAppCatchup, processPublicCatchup } from './catchup-processor';
-import { handlePublicStreamNotification } from './public-stream-handler';
+import { processAppCatchup } from './catchup-processor';
 import {
   broadcastNotification,
   initTabCoordinator,
@@ -482,24 +480,6 @@ class StreamManager {
   }
 }
 
-// Public Stream
-
-export const publicStreamManager = new StreamManager('PublicStream', {
-  endpoint: `${appConfig.backendUrl}/entities/public/stream`,
-  withCredentials: false,
-  useTabCoordination: false,
-  fetchAndProcessCatchup: async (cursor) => {
-    const seqs = useSyncStore.getState().getFlatSeqs();
-    const seqsParam = Object.keys(seqs).length > 0 ? seqs : undefined;
-    const response = await postPublicCatchup({
-      body: { cursor: cursor ?? undefined, seqs: seqsParam },
-    });
-    await processPublicCatchup(response, !cursor);
-    return response.cursor ?? null;
-  },
-  processNotification: (notification) => handlePublicStreamNotification(notification as StreamNotification),
-});
-
 // App Stream
 
 export const appStreamManager = new StreamManager('AppStream', {
@@ -525,7 +505,7 @@ appStreamManager.useStore.subscribe((s) => setSyncStreamLive(s.state === 'live')
 /**
  * Wait for the first stream catchup to complete after page load.
  * Returns a promise created at module init time and resolved when
- * any stream (app or public) finishes its first catchup — or fails.
+ * the app stream finishes its first catchup — or fails.
  *
  * Safe to call before any stream has connected: the promise is
  * already pending and will resolve once a stream catches up.

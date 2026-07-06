@@ -19,8 +19,8 @@ import { withClient } from './db';
 /**
  * Column names that exist on a table, read once from Postgres and cached per process.
  *
- * Lets the relay select only the columns a table actually has (e.g. tenant-less `pages` has no
- * `tenant_id`, and each fork's entities differ) without importing backend drizzle schema. The DB is
+ * Lets the relay select only the columns a table actually has (each fork's entities differ)
+ * without importing backend drizzle schema. The DB is
  * the source of truth, so this stays correct across forks and migrations.
  */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();

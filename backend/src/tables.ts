@@ -4,7 +4,6 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { pagesTable } from '#/modules/page/page-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -19,7 +18,6 @@ export const entityTables = {
   user: usersTable,
   organization: organizationsTable,
   attachment: attachmentsTable,
-  page: pagesTable,
 } as const satisfies Record<string, ResolvableTable>;
 
 /** Resource types that are not entities but have activities logged. */

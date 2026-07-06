@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
-import type { Page } from 'sdk';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import type { DocPage } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
@@ -11,7 +11,7 @@ import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
 
 export type PageNode = {
-  page: Page;
+  page: DocPage;
   children: PageNode[];
 };
 
@@ -48,8 +48,8 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
         )}
 
         <Link
-          to="/docs/page/$id"
-          params={{ id: page.id }}
+          to="/docs/page/$"
+          params={{ _splat: page.id }}
           draggable={false}
           data-active={isActive}
           data-expanded={isExpanded}
@@ -131,7 +131,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
 }
 
 /** Tier 2: Leaf page row (mirrors SchemaItem / OperationItem). */
-function PageLeaf({ page, isActive, onClose }: { page: Page; isActive: boolean; onClose: () => void }) {
+function PageLeaf({ page, isActive, onClose }: { page: DocPage; isActive: boolean; onClose: () => void }) {
   return (
     <Button
       variant="ghost"
@@ -142,8 +142,8 @@ function PageLeaf({ page, isActive, onClose }: { page: Page; isActive: boolean; 
       )}
       render={
         <Link
-          to="/docs/page/$id"
-          params={{ id: page.id }}
+          to="/docs/page/$"
+          params={{ _splat: page.id }}
           draggable={false}
           data-active={isActive}
           onClick={(e) => {
@@ -160,9 +160,9 @@ function PageLeaf({ page, isActive, onClose }: { page: Page; isActive: boolean; 
 }
 
 /** Build a hierarchical tree of pages, sorted by displayOrder at every level. */
-export function buildPageNodeTree(pages: Page[]): PageNode[] {
+export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
   const validIds = new Set(pages.map((p) => p.id));
-  const byParent = new Map<string | null, Page[]>();
+  const byParent = new Map<string | null, DocPage[]>();
   for (const p of pages) {
     // Treat orphans (parent missing from visible set) as roots
     const key = p.parentId && validIds.has(p.parentId) ? p.parentId : null;
@@ -179,7 +179,7 @@ export function buildPageNodeTree(pages: Page[]): PageNode[] {
 }
 
 /** Compute the set of ancestor ids of the given page (excluding the page itself). */
-export function computeAncestorIds(pages: Page[], pageId: string | undefined): Set<string> {
+export function computeAncestorIds(pages: DocPage[], pageId: string | undefined): Set<string> {
   const ancestors = new Set<string>();
   if (!pageId) return ancestors;
   const byId = new Map(pages.map((p) => [p.id, p]));

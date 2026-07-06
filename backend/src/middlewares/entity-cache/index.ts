@@ -2,8 +2,7 @@
 export { entityCache } from './app-entity-cache';
 export { batchCache } from './batch-resolve';
 // xCache middleware presets (use these in routes)
-export { appCache, publicCache } from './presets';
-export { publicEntityCache } from './public-entity-cache';
+export { appCache } from './presets';
 
 // Context type declarations for cache middleware
 declare module 'hono' {

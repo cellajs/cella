@@ -48,7 +48,7 @@ export const mockProductEntityBase = (key = 'product-entity:default') =>
     keywords: faker.lorem.words(3),
     createdBy: mockUserMinimalBase(`${key}:createdBy`),
     updatedBy: mockUserMinimalBase(`${key}:updatedBy`),
-    entityType: 'page' as const,
+    entityType: 'attachment' as const,
   }));
 
 /**

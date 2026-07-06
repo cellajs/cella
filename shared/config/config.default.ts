@@ -4,8 +4,8 @@ import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-bu
 export { roles, hierarchy } from './hierarchy-config';
 
 // Set these early for reuse
-const entityTypes = ['user', 'organization', 'attachment', 'page'] as const;
-const productEntityTypes = ['attachment', 'page'] as const;
+const entityTypes = ['user', 'organization', 'attachment'] as const;
+const productEntityTypes = ['attachment'] as const;
 
 export const config = {
 
@@ -33,7 +33,6 @@ export const config = {
     user: 'userId',
     organization: 'organizationId',
     attachment: 'attachmentId',
-    page: 'pageId',
   } as const,
 
   /** Available CRUD actions for permission checks */
@@ -190,7 +189,6 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    pages: 100,
     pendingMemberships: 20,
   },
 

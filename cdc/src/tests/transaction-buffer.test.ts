@@ -54,9 +54,6 @@ describe('TransactionBuffer', () => {
     const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-2', organizationId: 'org-1' });
     const t3 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-3', organizationId: 'org-1' });
 
-    // Parentless product entity delete — has no organizationId reference, must not be suppressed
-    const l1 = mockParseResult({ action: 'delete', entityType: 'page', subjectId: 'page-1' });
-
     // Membership cascaded delete
     const m1 = mockParseResult({ action: 'delete', resourceType: 'membership', entityType: null, subjectId: 'mem-1', organizationId: 'org-1' });
 
@@ -66,20 +63,18 @@ describe('TransactionBuffer', () => {
     await buffer.onEvent('0/1', t1);
     await buffer.onEvent('0/2', t2);
     await buffer.onEvent('0/3', t3);
-    await buffer.onEvent('0/4', l1);
     await buffer.onEvent('0/5', m1);
     await buffer.onEvent('0/6', proj);
 
     await buffer.onCommit();
 
-    // Only the org delete and the parentless page delete survive
-    expect(processedEvents).toHaveLength(2);
+    // Only the org delete survives
+    expect(processedEvents).toHaveLength(1);
     const survivors = processedEvents.map((e) => ({
       entityType: e.result.activity.entityType,
       subjectId: e.result.activity.subjectId,
     }));
     expect(survivors).toContainEqual({ entityType: 'organization', subjectId: 'org-1' });
-    expect(survivors).toContainEqual({ entityType: 'page', subjectId: 'page-1' });
   });
 
   it('does not suppress deletes from different context entities', async () => {

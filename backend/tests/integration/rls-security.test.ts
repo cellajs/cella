@@ -24,7 +24,7 @@
 import { randomUUID } from 'node:crypto';
 import { getTableName, type SQL, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { nanoidTenant } from 'shared/nanoid';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
@@ -55,9 +55,6 @@ const TEST_ORG_B = '00000000-0000-4000-a000-000000000004';
 const TEST_ORG_C = '00000000-0000-4000-a000-000000000005';
 const TEST_MEMBERSHIP_A = '00000000-0000-4000-a000-000000000006';
 const TEST_MEMBERSHIP_B = '00000000-0000-4000-a000-000000000007';
-const TEST_PAGE_A = '00000000-0000-4000-a000-000000000008';
-const TEST_PAGE_B = '00000000-0000-4000-a000-000000000009';
-const TEST_PAGE_PUBLIC = '00000000-0000-4000-a000-00000000000a';
 const TEST_ATTACHMENT_A = '00000000-0000-4000-a000-00000000000e';
 const TEST_ATTACHMENT_C = '00000000-0000-4000-a000-00000000000f';
 const TEST_ACTIVITY_A = 'rls-activity-001';
@@ -69,9 +66,6 @@ let runtimeDb: NodePgDatabase;
 /** Whether runtime_role exists in the test database */
 let rolesAvailable = false;
 let requiredTablesAvailable = false;
-
-/** Parentless product entity types (no org FK, no RLS) — derived from hierarchy config */
-const parentlessTypes = new Set<string>(hierarchy.parentlessProductTypes);
 
 const attachmentHierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
@@ -127,7 +121,7 @@ async function cleanupEntityHierarchy(...plans: TestEntityHierarchyPlan[]) {
  * Derived from config so the suite adapts to whatever entity model is loaded:
  * base Cella → ['attachment']; a fork may add e.g. 'task', 'label'.
  */
-const rlsProductTypes = appConfig.productEntityTypes.filter((t) => !parentlessTypes.has(t));
+const rlsProductTypes = appConfig.productEntityTypes;
 
 /**
  * Per-entity seed fixtures for the generic RLS product-entity tests
@@ -219,7 +213,7 @@ async function tableExists(tableName: string): Promise<boolean> {
 
 async function checkRequiredTablesExist(): Promise<boolean> {
   // Base entities present in every Cella app — fork-specific product tables are checked per-fixture.
-  const requiredTables = ['attachments', 'organizations', 'memberships', 'pages'];
+  const requiredTables = ['attachments', 'organizations', 'memberships'];
   const results = await Promise.all(requiredTables.map((tableName) => tableExists(tableName)));
   return results.every(Boolean);
 }
@@ -262,7 +256,7 @@ async function ensureRlsRoles() {
   }
 
   // Non-RLS tables runtime_role must access (write isolation enforced by guards at the app layer).
-  const nonRlsTables = ['pages', 'organizations', 'memberships', 'inactive_memberships', 'users', 'tenants'];
+  const nonRlsTables = ['organizations', 'memberships', 'inactive_memberships', 'users', 'tenants'];
   for (const table of nonRlsTables) {
     if (!(await tableExists(table))) continue;
     const priv = table === 'tenants' ? 'SELECT' : 'SELECT, INSERT, UPDATE, DELETE';
@@ -276,7 +270,7 @@ async function ensureRlsRoles() {
 }
 
 /**
- * Setup test data: tenants, users, orgs, memberships, pages, attachments.
+ * Setup test data: tenants, users, orgs, memberships, attachments.
  * Uses adminDb (superuser) to bypass RLS for data insertion.
  */
 async function setupTestData() {
@@ -321,16 +315,6 @@ async function setupTestData() {
     ON CONFLICT (id) DO NOTHING
   `);
 
-  // Create pages: private page + one public page (pages have no tenant)
-  await adminDb.execute(sql`
-    INSERT INTO pages (id, entity_type, name, stx, keywords, created_by, display_order, public_at)
-    VALUES
-      (${TEST_PAGE_A}, 'page', 'Private Page A', '{}', '', ${TEST_USER_A}, 1, null),
-      (${TEST_PAGE_B}, 'page', 'Private Page B', '{}', '', ${TEST_USER_B}, 1, null),
-      (${TEST_PAGE_PUBLIC}, 'page', 'Public Page A', '{}', '', ${TEST_USER_A}, 2, NOW())
-    ON CONFLICT (id) DO NOTHING
-  `);
-
   // Seed RLS-subject product entities via their fixtures (base: attachment; forks add more).
   for (const { fixture } of activeRlsProducts) {
     await fixture.seed();
@@ -354,7 +338,6 @@ async function cleanupTestData() {
   for (const { fixture } of activeRlsProducts) {
     await fixture.cleanup();
   }
-  await adminDb.execute(sql`DELETE FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`);
   await adminDb.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
   await cleanupEntityHierarchy(attachmentHierarchyA, attachmentHierarchyC);
   await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B}, ${TEST_ORG_C})`);
@@ -594,15 +577,6 @@ const rlsSuiteReady = await (async () => {
       expect(rows.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should read all pages without tenant context (no RLS on pages)', async () => {
-      // Pages have no RLS — all pages are readable regardless of context.
-      // Access control for pages is enforced at the API layer (sysAdminGuard for writes, publicGuard for reads).
-      const rows = await queryWithoutContext(async (tx) =>
-        tx.execute(sql`SELECT id FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`),
-      );
-      expect(rows).toHaveLength(3);
-    });
-
     it('should return zero attachments without tenant context', async () => {
       const rows = await queryWithoutContext(async (tx) =>
         tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
@@ -641,14 +615,6 @@ const rlsSuiteReady = await (async () => {
       expect(ids).toContain(TEST_ORG_C);
     });
 
-    it('should see all pages across tenants (no RLS on pages)', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`),
-      );
-      // No RLS on pages — all pages visible regardless of tenant context
-      expect(rows).toHaveLength(3);
-    });
-
     it('should read all memberships (no RLS on memberships)', async () => {
       const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
         tx.execute(sql`SELECT id FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`),
@@ -675,19 +641,6 @@ const rlsSuiteReady = await (async () => {
       await adminDb.execute(sql`DELETE FROM organizations WHERE id = ${fakeOrgId}`);
     });
 
-    it('should allow inserting page (no RLS on pages)', async () => {
-      const fakePageId = '00000000-0000-4000-a000-000000000302';
-      // No RLS on pages — insert succeeds (sysAdminGuard prevents this at API layer)
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-            INSERT INTO pages (id, entity_type, name, stx, keywords, created_by, display_order)
-            VALUES (${fakePageId}, 'page', 'Fake Page', '{}', '', ${TEST_USER_A}, 99)
-          `),
-      );
-      // Cleanup
-      await adminDb.execute(sql`DELETE FROM pages WHERE id = ${fakePageId}`);
-    });
-
     it('should allow inserting membership into any tenant (no RLS on memberships)', async () => {
       // No RLS on memberships — insert succeeds (guard middleware prevents this at API layer)
       await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
@@ -707,22 +660,6 @@ const rlsSuiteReady = await (async () => {
       );
       // Restore
       await adminDb.execute(sql`UPDATE organizations SET name = 'RLS Org B' WHERE id = ${TEST_ORG_B}`);
-    });
-
-    it('should allow deleting pages (no RLS on pages)', async () => {
-      // Create a temp page to delete (don't delete test data)
-      const tempPageId = '00000000-0000-4000-a000-000000000304';
-      await adminDb.execute(sql`
-        INSERT INTO pages (id, entity_type, name, stx, keywords, created_by, display_order)
-        VALUES (${tempPageId}, 'page', 'Temp Delete Page', '{}', '', ${TEST_USER_B}, 99)
-        ON CONFLICT (id) DO NOTHING
-      `);
-      // No RLS on pages — delete succeeds cross-tenant (sysAdminGuard prevents this at API layer)
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`DELETE FROM pages WHERE id = ${tempPageId}`),
-      );
-      const rows = getRows(await adminDb.execute(sql`SELECT id FROM pages WHERE id = ${tempPageId}`));
-      expect(rows).toHaveLength(0);
     });
   });
 
@@ -764,42 +701,9 @@ const rlsSuiteReady = await (async () => {
     });
   });
 
-  // ---- Pages: no RLS (app-layer access control) ----
-
-  describe('Pages (no RLS)', () => {
-    it('should show all pages regardless of authentication status', async () => {
-      // Pages have no RLS — access control is at the API layer (publicGuard for reads, sysAdminGuard for writes)
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, '', async (tx) =>
-        tx.execute(sql`SELECT id FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`),
-      );
-      // All pages visible — no RLS filtering
-      expect(rows).toHaveLength(3);
-    });
-
-    it('should show all pages across tenants to authenticated users', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM pages WHERE id IN (${TEST_PAGE_A}, ${TEST_PAGE_B}, ${TEST_PAGE_PUBLIC})`),
-      );
-      expect(rows).toHaveLength(3);
-    });
-  });
-
   // ---- Unauthenticated write denial ----
 
   describe('Unauthenticated write denial', () => {
-    it('should allow page insert when unauthenticated (no RLS on pages)', async () => {
-      const unauthPageId = '00000000-0000-4000-a000-000000000305';
-      // No RLS on pages — insert succeeds (sysAdminGuard prevents this at API layer)
-      await queryAsRuntimeRole(TEST_TENANT_A, '', async (tx) =>
-        tx.execute(sql`
-            INSERT INTO pages (id, entity_type, name, stx, keywords, display_order)
-            VALUES (${unauthPageId}, 'page', 'Unauth Page', '{}', '', 99)
-          `),
-      );
-      // Cleanup
-      await adminDb.execute(sql`DELETE FROM pages WHERE id = ${unauthPageId}`);
-    });
-
     it('should allow membership insert without authentication (no RLS on memberships)', async () => {
       // No RLS on memberships — insert succeeds. Guard middleware prevents this at API layer.
       // Use TEST_USER_B + TEST_ORG_A to avoid duplicate (tenant_id, user_id, context_id) with setup data.
@@ -917,7 +821,7 @@ const rlsSuiteReady = await (async () => {
   describe('Immutability triggers', () => {
     type ImmutableEntityCase = [tableName: string, column: string, entityType: string, rowId: string];
 
-    // Base entity columns (shared by context + parentless product entities)
+    // Base entity columns (shared by context + product entities)
     const baseImmutableColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'];
 
     const seededContextRowIdsByTable = new Map<string, string>([
@@ -938,28 +842,16 @@ const rlsSuiteReady = await (async () => {
     );
 
     // Org-scoped product entities: base + organization_id. Only target rows this suite owns.
-    const orgProductCases: ImmutableEntityCase[] = appConfig.productEntityTypes
-      .filter((t) => !parentlessTypes.has(t))
-      .flatMap((entityType) => {
-        const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-        const rowId = seededProductRowIdsByTable.get(tableName);
-        if (!rowId) return [];
-        return [...baseImmutableColumns, 'organization_id'].map((col) => [tableName, col, entityType, rowId]);
-      });
-
-    // Parentless product entities: no tenant_id column
-    const parentlessImmutableColumns = ['id', 'entity_type', 'created_at', 'created_by'];
-    const seededParentlessRowIdsByTable = new Map<string, string>([['pages', TEST_PAGE_A]]);
-    const parentlessCases: ImmutableEntityCase[] = hierarchy.parentlessProductTypes.flatMap((entityType) => {
+    const orgProductCases: ImmutableEntityCase[] = appConfig.productEntityTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
-      const rowId = seededParentlessRowIdsByTable.get(tableName);
+      const rowId = seededProductRowIdsByTable.get(tableName);
       if (!rowId) return [];
-      return parentlessImmutableColumns.map((col) => [tableName, col, entityType, rowId]);
+      return [...baseImmutableColumns, 'organization_id'].map((col) => [tableName, col, entityType, rowId]);
     });
 
     const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
 
-    const allEntityCases = [...contextCases, ...orgProductCases, ...parentlessCases];
+    const allEntityCases = [...contextCases, ...orgProductCases];
 
     // Type-appropriate fake values per column type so Postgres doesn't reject the type cast before the trigger fires
     const fakeValueForColumn = (column: string): string => {

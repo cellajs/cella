@@ -14,12 +14,6 @@ function attachmentEntry(): EntityTableMeta {
   return { kind: 'entity', type: 'attachment', table: { [Symbol.for('drizzle:Name')]: 'attachments' } } as unknown as EntityTableMeta;
 }
 
-// `page` has parent = null. resolveContextKey() returns 'public:page', which
-// gives us a contextKey distinct from organizationId — useful to assert
-// multi-contextKey accumulation.
-function pageEntry(): EntityTableMeta {
-  return { kind: 'entity', type: 'page', table: { [Symbol.for('drizzle:Name')]: 'pages' } } as unknown as EntityTableMeta;
-}
 
 function membershipEntry(): ResourceTableMeta {
   return { kind: 'resource', type: 'membership', table: { [Symbol.for('drizzle:Name')]: 'memberships' } } as unknown as ResourceTableMeta;
@@ -80,25 +74,6 @@ describe('computeUnifiedDeltas', () => {
     // Parent is organization, so seq and entity count merge on the single org row
     expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:attachment': 1, 'e:attachment': 1 });
     expect(plan.deltasByContextKey.size).toBe(1);
-  });
-
-  it('page create (parentless product, with org): seq on public + on org', () => {
-    const plan = computeUnifiedDeltas(
-      mockResult({
-        tableMeta: pageEntry(),
-        action: 'create',
-        rowData: { id: 'page-1', organizationId: 'org-1' },
-      }),
-    );
-
-    expect(plan.seqContextKey).toBe('public:page');
-    expect(plan.seqKey).toBe('s:page');
-    expect(plan.entityStamp).toEqual({ tableName: 'pages', entityId: 'page-1' });
-
-    // public:page gets seq delta only; org gets both the org-signal seq and the entity count
-    expect(plan.deltasByContextKey.get('public:page')).toEqual({ 's:page': 1 });
-    expect(plan.deltasByContextKey.get('org-1')).toEqual({ 's:page': 1, 'e:page': 1 });
-    expect(plan.deltasByContextKey.size).toBe(2);
   });
 
   it('attachment hard delete: no seq stamp, decrement entity count on org', () => {
@@ -233,7 +208,7 @@ describe('computeUnifiedDeltas', () => {
     expect(plan.deltasByContextKey.get('org-1')).toEqual({ 'm:pending': -1, 's:membership': 1 });
   });
 
-  it('attachment with no organizationId: seq still computed, no count deltas', () => {
+  it('attachment with no organizationId: no context resolvable, seq deltas skipped', () => {
     const plan = computeUnifiedDeltas(
       mockResult({
         tableMeta: attachmentEntry(),
@@ -243,10 +218,9 @@ describe('computeUnifiedDeltas', () => {
       }),
     );
 
-    // Falls back to 'public:attachment' since parent column is missing and org is null
-    expect(plan.seqContextKey).toBe('public:attachment');
-    expect(plan.deltasByContextKey.get('public:attachment')).toEqual({ 's:attachment': 1 });
-    expect(plan.deltasByContextKey.size).toBe(1);
+    // No parent column and no org — malformed row, no seq scope to stamp
+    expect(plan.seqContextKey).toBeNull();
+    expect(plan.deltasByContextKey.size).toBe(0);
   });
 });
 
@@ -276,26 +250,6 @@ describe('computeBatchUnifiedDeltas', () => {
 
     // Count deltas: accumulated across all 5 events on org
     expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:attachment': 5 });
-  });
-
-  it('batch of page creates: accumulates seq on public:page and counts on org', () => {
-    const events = Array.from({ length: 3 }, (_, i) =>
-      mockEvent({
-        tableMeta: pageEntry(),
-        action: 'create',
-        rowData: { id: `page-${i}`, organizationId: 'org-1' },
-      }),
-    );
-
-    const plan = computeBatchUnifiedDeltas(events);
-
-    expect(plan.seqGroups).toHaveLength(1);
-    expect(plan.seqGroups[0].contextKey).toBe('public:page');
-    expect(plan.seqGroups[0].count).toBe(3);
-    // org signal because contextKey !== organizationId
-    expect(plan.seqGroups[0].orgSignal).toEqual({ orgKey: 'org-1', seqKey: 's:page', count: 3 });
-
-    expect(plan.countDeltasByContextKey.get('org-1')).toEqual({ 'e:page': 3 });
   });
 
   it('batch with non-stampable events (deletes): no seq groups, count deltas accumulated', () => {

@@ -12,7 +12,6 @@ import { meHandlers } from '#/modules/me/me-handlers';
 import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 import { metricHandlers } from '#/modules/metrics/metrics-handlers';
 import { organizationHandlers } from '#/modules/organization/organization-handlers';
-import { pageHandlers } from '#/modules/page/page-handlers';
 import { requestHandlers } from '#/modules/requests/requests-handlers';
 import { seenHandlers, unseenHandlers } from '#/modules/seen/seen-handlers';
 import { systemHandlers } from '#/modules/system/system-handlers';
@@ -37,7 +36,6 @@ baseApp.route('/tenants/:tenantId/domains', domainHandlers);
 baseApp.route('/requests', requestHandlers);
 baseApp.route('/metrics', metricHandlers);
 baseApp.route('/', organizationHandlers);
-baseApp.route('/', pageHandlers);
 baseApp.route('/users', userHandlers);
 // Cross-tenant list routes
 // Tenant-scoped routes: /:tenantId/:organizationId/...

@@ -136,7 +136,6 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'organization', category: 'data' },
   // Optional built-in product entities (can be removed in forks)
   { id: 'attachment', category: 'data' },
-  { id: 'page', category: 'data' },
 
   // Security & multi-tenancy
   { id: 'tenant_isolation', category: 'security' },

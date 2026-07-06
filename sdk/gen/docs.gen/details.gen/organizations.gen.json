@@ -265,7 +265,7 @@
                     "pending": 47,
                     "total": 101
                   },
-                  "entities": { "attachment": 294, "page": 327 }
+                  "entities": { "attachment": 294 }
                 }
               }
             },
@@ -313,7 +313,7 @@
                     "pending": 44,
                     "total": 144
                   },
-                  "entities": { "attachment": 321, "page": 94 }
+                  "entities": { "attachment": 321 }
                 }
               }
             }
@@ -747,7 +747,7 @@
                     "pending": 27,
                     "total": 50
                   },
-                  "entities": { "attachment": 188, "page": 390 }
+                  "entities": { "attachment": 188 }
                 }
               }
             },
@@ -795,7 +795,7 @@
                     "pending": 18,
                     "total": 157
                   },
-                  "entities": { "attachment": 1, "page": 272 }
+                  "entities": { "attachment": 1 }
                 }
               }
             }
@@ -1123,7 +1123,7 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178, "page": 257 }
+              "entities": { "attachment": 178 }
             }
           }
         }
@@ -1433,7 +1433,7 @@
                 "pending": 13,
                 "total": 93
               },
-              "entities": { "attachment": 178, "page": 257 }
+              "entities": { "attachment": 178 }
             }
           }
         }

@@ -8,7 +8,7 @@ import type { CdcRowData } from '../types';
 import { log } from '../lib/pino';
 
 export interface CountDelta {
-  /** Context key (organizationId or 'public:{type}') — the row to update */
+  /** Context key (organizationId or sub-context id) — the row to update */
   contextKey: string;
   /** Key-value deltas: e.g. { 'm:admin': 1, 'm:total': 1 } or { 'e:attachment': -1 } */
   deltas: Record<string, number>;

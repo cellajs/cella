@@ -25,7 +25,7 @@ beforeEach(() => vi.clearAllMocks());
 describe('entityTypeOf', () => {
   it('extracts a product entity type from a query key', () => {
     expect(entityTypeOf(['attachment', 'list'])).toBe('attachment');
-    expect(entityTypeOf(['page'])).toBe('page');
+    expect(entityTypeOf(['attachment'])).toBe('attachment');
   });
 
   it('returns null for non-product keys', () => {

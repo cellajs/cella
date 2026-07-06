@@ -100,19 +100,19 @@ describe('FlushBuffer', () => {
     it('groups events by type and action', async () => {
       const buffer = new FlushBuffer(processEvents, acknowledgeLsn, 10);
 
-      // Two task creates in proj-1
+      // Two attachment creates
       const e1 = mockPendingEvent({ lsn: '0/1', action: 'create', entityType: 'attachment' });
       const e2 = mockPendingEvent({ lsn: '0/2', action: 'create', entityType: 'attachment' });
-      // One label create in proj-1 (different type)
-      const e3 = mockPendingEvent({ lsn: '0/3', action: 'create', entityType: 'page' });
-      // One task create in proj-2 (different contextId, same type:action group)
+      // One user create (different type)
+      const e3 = mockPendingEvent({ lsn: '0/3', action: 'create', entityType: 'user' });
+      // One more attachment create (same type:action group)
       const e4 = mockPendingEvent({ lsn: '0/4', action: 'create', entityType: 'attachment' });
 
       await buffer.enqueue([e1, e2, e3, e4]);
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // 2 groups: task:create (3 events), label:create (1 event)
+      // 2 groups: attachment:create (3 events), user:create (1 event)
       expect(processedBatches).toHaveLength(2);
       // Only one ack for the highest LSN
       expect(acknowledgedLsns).toEqual(['0/4']);

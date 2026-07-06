@@ -10,69 +10,12 @@
  */
 
 import type { MiddlewareHandler } from 'hono';
-import type { ProductEntityType } from 'shared';
 import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { log } from '#/utils/logger';
 import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { entityCache } from './app-entity-cache';
-import { publicEntityCache } from './public-entity-cache';
 import { validateSignedCacheToken } from './token-signer';
-
-/**
- * Public entity cache middleware - LRU cache keyed by entityType:entityId.
- * Uses passthrough pattern: handler fetches/enriches, middleware caches.
- *
- * Flow:
- * 1. Check LRU cache by entityType:entityId
- * 2. HIT: return cached data immediately
- * 3. MISS: handler fetches + optional enrichment, sets entityCacheData
- * 4. Middleware caches result for subsequent requests
- *
- * @param entityType - The product entity type (must be a public entity)
- * @param idParam - Route param name for entity ID (default: 'id')
- */
-export const publicCache = (entityType: ProductEntityType, idParam = 'id'): MiddlewareHandler<Env> =>
-  xMiddleware(
-    {
-      functionName: 'publicCache',
-      type: 'x-cache',
-      name: 'public',
-      description: `LRU cache for public ${entityType} entities`,
-    },
-    async (ctx, next) => {
-      // Extract entity ID from route params
-      const entityId = ctx.req.param(idParam);
-
-      if (!entityId) {
-        ctx.set('entityCacheHit', false);
-        await next();
-        return;
-      }
-
-      // Check LRU cache
-      const cached = publicEntityCache.get(entityType, entityId);
-
-      if (cached) {
-        ctx.set('entityCacheHit', true);
-        ctx.header('X-Cache', 'HIT');
-        return ctx.json(cached);
-      }
-
-      // Cache miss - proceed to handler for fetch/enrichment
-      ctx.set('entityCacheHit', false);
-
-      await next();
-
-      // After handler: cache the response if data was set
-      const entityData = ctx.get('entityCacheData');
-
-      if (entityData) {
-        publicEntityCache.set(entityType, entityId, entityData);
-        ctx.header('X-Cache', 'MISS');
-      }
-    },
-  );
 
 /**
  * App entity cache middleware - entity-keyed TTL cache with forward-only token resolution.

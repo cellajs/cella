@@ -1,4 +1,3 @@
-import { hierarchy } from 'shared';
 import { getEventData } from '#/lib/activity-bus';
 import { signCacheToken } from '#/middlewares/entity-cache/token-signer';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -7,7 +6,7 @@ import { buildSubject } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
 import type { CursoredSubscriber } from '../stream';
 import { createStreamDispatcher } from '../stream/dispatcher';
-import type { AppStreamEvent, PublicStreamEvent } from '../stream/types';
+import type { AppStreamEvent } from '../stream/types';
 
 /**
  * App stream subscriber (authenticated).
@@ -60,23 +59,5 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
       return { ...notification, cacheToken: signCacheToken(notification.cacheToken, subscriber.sessionToken) };
     }
     return notification;
-  },
-});
-
-/**
- * Dispatch public product entity events to subscribers.
- * Only 'always' and 'publicSelf' read modes apply.
- */
-export const dispatchToPublicStream = createStreamDispatcher<CursoredSubscriber, PublicStreamEvent>({
-  getChannel: (event) => `public:${event.entityType}`,
-  shouldReceive: (_subscriber, event) => {
-    const publicReadMode = hierarchy.getPublicReadMode(event.entityType);
-    if (!publicReadMode) return false;
-    if (publicReadMode === 'always') return true;
-    if (event.action === 'delete') return true;
-
-    // publicSelf: check entity's own publicAt from CDC rowData
-    const rowData = event.rowData as Record<string, unknown>;
-    return rowData?.publicAt != null;
   },
 });

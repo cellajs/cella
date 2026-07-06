@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
-import { hierarchy } from 'shared';
 import type { Env } from '#/core/context';
 import { assertSuccess } from '#/core/operation-result';
 import '#/modules/entities/entities-listeners';
@@ -8,7 +7,6 @@ import '#/modules/entities/entities-module';
 import entityRoutes from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
 import { checkSlugOp } from '#/modules/entities/operations/check-slug';
-import { getLatestPublicActivityId, publicCatchupOp } from '#/modules/entities/operations/public-catchup';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
@@ -25,35 +23,6 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
   const result = await checkSlugOp(ctx, slug, entityType);
   assertSuccess(result, 'user');
   return result.data.available ? ctx.body(null, 204) : ctx.body(null, 409);
-});
-
-app.openapi(entityRoutes.publicStream, async (ctx) => {
-  const cursor = await getLatestPublicActivityId();
-
-  return streamSSE(ctx, async (stream) => {
-    ctx.header('Content-Encoding', '');
-    await writeOffset(stream, cursor);
-
-    const channels = hierarchy.publicStreamTypes.map((t) => `public:${t}`);
-    const subscriber = { id: crypto.randomUUID(), channel: channels[0] ?? 'public:default', stream, cursor };
-    streamSubscriberManager.register(subscriber, channels.slice(1));
-    log.debug('Public stream subscriber registered', { subscriberId: subscriber.id });
-
-    stream.onAbort(() => {
-      streamSubscriberManager.unregister(subscriber.id);
-      log.debug('Public stream subscriber disconnected', { subscriberId: subscriber.id });
-    });
-
-    await keepAlive(stream);
-    // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
-  }) as any;
-});
-
-app.openapi(entityRoutes.publicCatchup, async (ctx) => {
-  const { cursor, seqs } = ctx.req.valid('json');
-  const result = await publicCatchupOp(cursor, seqs);
-  assertSuccess(result, 'user');
-  return ctx.json(result.data);
 });
 
 app.openapi(entityRoutes.appStream, async (ctx) => {

@@ -1,5 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { ContextEntityIdColumns, ProductEntityType, PublicProductEntityType } from 'shared';
+import type { ContextEntityIdColumns, ProductEntityType } from 'shared';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
 
@@ -50,6 +50,3 @@ export type AppStreamProductEvent = EntityScopedEvent<
 
 /** Combined event type accepted by the app stream dispatcher. */
 export type AppStreamEvent = AppStreamProductEvent | EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
-
-/** Product entity event routed via the public stream. */
-export type PublicStreamEvent = ActivityEvent & { entityType: PublicProductEntityType; subjectId: string };

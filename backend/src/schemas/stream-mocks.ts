@@ -11,7 +11,7 @@ import { mockStxBase } from './sync-transaction-mocks';
  * Generates a mock StreamNotification example for product entity events.
  * Used for both app and public stream notifications.
  *
- * For product entities (page, attachment):
+ * For product entities (e.g. attachment):
  * - entityType is set, resourceType is null
  * - Includes stx, seq, cacheToken for sync engine
  * - contextType is null (not a context entity event)
@@ -19,7 +19,7 @@ import { mockStxBase } from './sync-transaction-mocks';
 export const mockStreamNotification = (key = 'stream-notification:default') =>
   withFakerSeed(key, () => ({
     action: faker.helpers.arrayElement(['create', 'update', 'delete'] as const),
-    entityType: faker.helpers.arrayElement(['page', 'attachment'] as const),
+    entityType: 'attachment' as const,
     resourceType: null,
     subjectId: mockUuid(),
     organizationId: mockUuid(),

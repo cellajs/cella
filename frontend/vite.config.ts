@@ -1,3 +1,4 @@
+import mdx from '@mdx-js/rollup';
 import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
 import tailwindcss from '@tailwindcss/vite';
@@ -5,6 +6,9 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 import path from 'node:path';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
+import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
@@ -79,6 +83,17 @@ const viteConfig = {
       // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
       routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
     }),
+    // Docs content: compiles src/content/docs md/mdx files to React components with a
+    // `frontmatter` named export (consumed by ~/modules/page/content.ts). Must run
+    // before react() so the compiled JSX output is plain JS by the time react() sees it.
+    {
+      enforce: 'pre' as const,
+      ...mdx({
+        include: /\/src\/content\/docs\/.*\.(md|mdx)$/,
+        format: 'detect',
+        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter, remarkGfm],
+      }),
+    },
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),

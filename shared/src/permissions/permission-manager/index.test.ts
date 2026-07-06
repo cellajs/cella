@@ -79,12 +79,6 @@ describe('hierarchy (from appConfig.hierarchy)', () => {
       const ancestors = hierarchy.getOrderedAncestors('attachment');
       expect(ancestors).toContain('organization');
     });
-
-    it('returns empty array for page entity (no organization scope)', () => {
-      // Note: page entities have parent: null (global)
-      const ancestors = hierarchy.getOrderedAncestors('page');
-      expect(ancestors).toEqual([]);
-    });
   });
 
   describe('getContextRoles', () => {
@@ -99,13 +93,11 @@ describe('hierarchy (from appConfig.hierarchy)', () => {
     it('correctly identifies context entities', () => {
       expect(isContextEntity('organization')).toBe(true);
       expect(isContextEntity('attachment')).toBe(false);
-      expect(isContextEntity('page')).toBe(false);
       expect(isContextEntity('user')).toBe(false);
     });
 
     it('correctly identifies product entities', () => {
       expect(isProductEntity('attachment')).toBe(true);
-      expect(isProductEntity('page')).toBe(true);
       expect(isProductEntity('organization')).toBe(false);
       expect(isProductEntity('user')).toBe(false);
     });
@@ -152,10 +144,6 @@ describe('checkPermission', () => {
       case 'attachment':
         contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
         contexts.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
-        break;
-      case 'page':
-        contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        contexts.organization.member({ create: 1, read: 1, update: 1, delete: 0 });
         break;
     }
   });

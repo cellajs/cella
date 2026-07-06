@@ -48,12 +48,6 @@
     "kind": "module"
   },
   {
-    "name": "pages",
-    "description": "Endpoints for managing pages, which are product entities supporting realtime sync and offline\n    capabilities. Pages can be organized hierarchically and are used in the /docs section.",
-    "count": 5,
-    "kind": "module"
-  },
-  {
     "name": "requests",
     "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
     "count": 3,

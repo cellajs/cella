@@ -17,8 +17,8 @@ const inFlight = new Map<string, Promise<unknown>>();
  * @example
  * ```typescript
  * // 100 concurrent requests for same entity = 1 DB query
- * const data = await coalesce(`page:${id}:${version}`, async () => {
- *   return await db.query.pagesTable.findFirst({ where: eq(id, pageId) });
+ * const data = await coalesce(`attachment:${id}:${version}`, async () => {
+ *   return await db.query.attachmentsTable.findFirst({ where: eq(id, attachmentId) });
  * });
  * ```
  */
