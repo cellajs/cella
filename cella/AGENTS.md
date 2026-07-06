@@ -86,6 +86,8 @@ The permission system (in `backend/src/permissions/`) provides: `checkPermission
 - **Realtime frontend** (`frontend/src/query/realtime/`): Two streams — `AppStream` (authenticated, leader-tab via Web Locks + BroadcastChannel, echo prevention via `stx.sourceId`, catchup via `seq` delta) and `PublicStream` (unauthenticated, per-tab connection, catches up deletes on connect then live-only).
 - **Seen-by tracking**: Frontend marks entities seen via `IntersectionObserver`, batches IDs in a Zustand store, flushes on timer + `sendBeacon` on unload. Flushed IDs persist in the per-user `appdb` (`kv` table). Unseen badges are optimistically decremented in React Query cache. Backend: `seen_by` table (one row per user+entity), `product_counters` (denormalized view/usage counts).
 - **Entity cache**: CDC-invalidated in-memory cache in `backend/src/middlewares/entity-cache/`. `coalesce()` deduplicates concurrent fetches.
+- **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/version-changes/` — never edit a shipped module. Until the first lens ships, bump `appConfig.clientCacheVersion` in the same PR as any breaking change to a cached entity's wire shape (`schema-bust-gate` CI enforces this). Playbook: [cella/SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md).
+- **Lens seams (new entity modules)**: build update bodies with `createUpdateSchema(entityType, shape)`, create bodies with `widenCreateSchema(entityType, schema)`, resolve updates via `resolveUpdateOps(entityType, …)`, and map create items through `normalizeCreateItem(entityType, item)` — these carry the lens widening/normalization; skipping them breaks version tolerance for that entity.
 
 ## Coding patterns
 - **Entities**: `ContextEntityType` (has memberships) and `ProductEntityType` (content-related). See `cella/ARCHITECTURE.md`.
@@ -125,6 +127,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 ## Commits & pull requests
 - Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks. Keep changes scoped.
+- Breaking OpenAPI diffs fail the `schema-bust-gate` CI job unless the PR bumps `clientCacheVersion` (or ships a lens module); title such PRs `feat!:` so release-please cuts a major.
 
 ## Commands
 - `pnpm dev`: Dev with PostgreSQL + CDC Worker (requires Docker).

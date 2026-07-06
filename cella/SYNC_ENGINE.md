@@ -538,6 +538,7 @@ Uses React Query's mutation cache with `squashPendingMutation()` and `coalescePe
 - Same-entity update mutations squash (cancel pending, keep latest `ops`)
 - Delta-aware merge: scalar fields use LWW (last write wins); set fields merge AWSet deltas (`{ add, remove }`)
 - On reconnect: pull upstream first, then flush
+- Queued mutation variables are rewritten at boot when the persisted schema ordinal is behind the bundle (see "Schema evolution" below) — replay always happens in current shape
 
 **Why no scope on updates?** With scope, ALL updates for an entity type (e.g., all task updates) serialize behind each other. If a user rapidly edits task A then task B, task B waits for task A’s response. Without scope, both fire concurrently.
 
@@ -552,6 +553,24 @@ This runs at the top of every update mutation’s `onMutate` — before squash o
 | Create → edit title → edit content → online | 1 create request with final values |
 | Create → delete → online | 0 requests (both cancelled) |
 | Create (online) → offline → edit → online | 1 update request per field |
+
+---
+
+## Schema evolution (version tolerance)
+
+Deploys change entity schemas; offline clients don't update in lockstep. A PWA tab can run last week's bundle with a persisted cache and queued offline edits in last week's shape. Breaking changes ship as **append-only lens modules** (`shared/src/version-changes/`) that declare the change once; the sync engine derives everything else. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) for the module format and the shipping playbook.
+
+Exactly two runtime touch points; the rest is build-time schema generation:
+
+**1. Server seam — inside `resolveUpdateOps` (and `normalizeCreateItem` for creates).** During a lens's *expand window*, the generated ops/create Zod schemas accept both old and new field names, so old-bundle requests pass validation unchanged. `normalizeOps` then canonicalizes `ops` keys **and their `stx.fieldTimestamps` keys** (a renamed scalar must keep its HLC history, or an older offline edit could wrongly win), and mirror-writes the twin field so rows carry both columns. HLC/AWSet resolution only ever sees canonical keys. Responses need no transform: rows dual-emit both field names during the window — old bundles read the old name, new bundles the new one.
+
+**2. Client seam — boot cache migration in the persister.** The persisted meta record carries a `schemaVersion` ordinal (the lens count baked into the bundle). When it's behind, cached product rows, bundled context queries, and queued mutation variables are rewritten in place — chunked Dexie transactions, pointer advanced atomically in the final write, Web Lock so only one tab runs the pass. Migrations are idempotent, so an interrupted pass safely re-runs. No network involved: a fleet of clients migrating costs the server nothing.
+
+**Multi-tab safety**: tabs announce their schema version on the BroadcastChannel; a tab that sees a higher version (or a newer pointer on disk) marks itself **stale** via `schema-version-guard` and stops persisting — a stale bundle must never write old-shape data over a migrated store. A pointer *ahead* of the bundle on restore means the same thing: restore nothing, never write, let the PWA reload prompt replace the bundle.
+
+**Telemetry**: every request carries `X-Client-Version`; the server-side version distribution is the *fleet floor* that gates when the old field may be contracted (dropped). doba lens transforms report duration/warning metrics via otel.
+
+With an empty lens list (the current state) every seam is a passthrough no-op. The interim escape hatch for breaking changes remains `appConfig.clientCacheVersion` (bump → cache wipe keeping queued mutations), enforced by the `schema-bust-gate` CI job.
 
 ---
 
@@ -579,6 +598,7 @@ This runs at the top of every update mutation’s `onMutate` — before squash o
 - All tabs can mutate, but only leader persists mutations to IndexedDB (followers keep in-memory)
 - First tab to acquire Web Lock becomes leader
 - Automatic failover: when leader closes, a waiting follower is promoted
+- Tabs announce their **schema version** on the channel; a tab running an older bundle marks itself stale and stops persisting (see "Schema evolution" above)
 
 **Why leader-only mutation persistence?**
 

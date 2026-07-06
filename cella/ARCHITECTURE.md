@@ -92,6 +92,10 @@ On every stream connect (including reconnects), a two-phase sync cycle runs:
 
 Offline mutations are queued with stx metadata (HLC timestamps for scalars, AWSet deltas for sets) and squashed per entity until connectivity returns.
 
+### Schema evolution
+
+Offline clients don't update in lockstep with deploys, so breaking schema changes to product entities ship as **append-only lens modules** (`shared/src/version-changes/`; global schema version = lens count). Each lens declares one change (`rename`, `add`, `drop`, `retype`, `setRename`); from that declaration the system derives widened wire schemas for the expand window, server-side ops normalization (inside `resolveUpdateOps`), and a boot-time client cache migration that rewrites cached rows and queued mutations locally — no refetch. Tabs broadcast their schema version so a stale bundle stops persisting before it can downgrade a migrated store. With an empty lens list (current state) everything is a passthrough; the interim mechanism for breaking changes is a `clientCacheVersion` bump (cache wipe, mutations kept), CI-enforced by `schema-bust-gate`. See [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md) for the shipping playbook.
+
 For more details, see [SYNC_ENGINE.md](./SYNC_ENGINE.md).
 
 ## Query layer
@@ -119,6 +123,8 @@ The React Query cache is persisted into `appdb` via Dexie with two modes control
 While signed out the persister simply does nothing and the cache stays in memory, so the provider can stay mounted at the app root and persistence follows the user automatically. Within each mode the persister uses a **hybrid storage layout**: product entity queries are stored as individual records in the `queries` table for incremental diffing — only changed queries are written — while context queries are bundled into the `meta` record, since they are few, small, and all needed at startup.
 
 Only the leader tab (elected via Web Locks API) persists mutations to prevent cross-tab conflicts. Since `mutationFn` cannot be serialized, entity modules register their defaults via `addMutationRegistrar()` at load time so paused mutations can resume after page reload.
+
+The meta record also carries a `schemaVersion` ordinal (see [SCHEMA_EVOLUTION.md](./SCHEMA_EVOLUTION.md)): when it's behind the running bundle, a chunked boot-migration pass rewrites cached rows and queued mutations in place before hydration; when it's ahead (another tab migrated forward, or a rollback), the bundle marks itself stale and stops persisting rather than downgrade the store.
 
 ### Enrichment pipeline
 
