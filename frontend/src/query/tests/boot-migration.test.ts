@@ -1,8 +1,9 @@
 /**
  * Boot-time lens migration pass in the persister: persisted schema ordinal
  * behind the bundle → cached rows + queued mutations rewritten locally, pointer
- * advanced atomically; ahead (rollback) → queries wiped, mutations kept;
- * session scopes wiped instead of migrated.
+ * advanced atomically; ahead (stale bundle or rollback) → restore nothing and
+ * stop persisting (schema-version-guard); session scopes wiped instead of
+ * migrated.
  */
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,6 +49,7 @@ vi.stubGlobal('sessionStorage', {
 
 const { persister, sessionPersister } = await import('~/query/persister');
 const { bindAppDb, deleteAppDb, getAppDb } = await import('~/query/app-db');
+const { isBundleStale, resetBundleStale } = await import('~/query/schema-version-guard');
 const { migrateCachedEntity } = await import('shared/version-changes');
 
 const queuedMutation = (variables: Record<string, unknown>) => ({
@@ -90,6 +92,7 @@ async function seedScope(scope: string, schemaVersion: number) {
 describe('persister lens boot migration', () => {
   beforeEach(async () => {
     bindAppDb('u1');
+    resetBundleStale();
     await persister.removeClient();
     vi.clearAllMocks();
   });
@@ -126,15 +129,58 @@ describe('persister lens boot migration', () => {
     expect(migrateCachedEntity).not.toHaveBeenCalled();
   });
 
-  it('wipes query data but keeps mutations on a rollback deploy (pointer ahead)', async () => {
+  it('marks the bundle stale and touches nothing when the pointer is ahead', async () => {
     await seedScope('rq', 5);
 
     const restored = await persister.restoreClient();
-    expect(restored!.clientState.queries).toHaveLength(0);
-    expect(restored!.clientState.mutations).toHaveLength(1);
+    expect(restored).toBeUndefined();
+    expect(isBundleStale()).toBe(true);
 
+    // Newer store is untouched — no downgrade, no wipe.
     const meta = await getAppDb()!.meta.get('rq');
-    expect(meta!.schemaVersion).toBe(1);
+    expect(meta!.schemaVersion).toBe(5);
+    expect(await getAppDb()!.queries.where('scope').equals('rq').count()).toBe(1);
+  });
+
+  it('stale bundle never persists (guard blocks flush)', async () => {
+    await seedScope('rq', 5);
+    await persister.restoreClient(); // marks stale
+
+    await persister.persistClient({
+      timestamp: 999,
+      buster: '',
+      clientState: { queries: [], mutations: [] },
+    });
+    await persister.flush();
+
+    // Meta unchanged — the stale bundle's write was refused.
+    const meta = await getAppDb()!.meta.get('rq');
+    expect(meta!.schemaVersion).toBe(5);
+    expect(meta!.timestamp).not.toBe(999);
+  });
+
+  it('disk-side guard catches a newer pointer even without the broadcast', async () => {
+    // Bundle boots, restores a current-version store...
+    await seedScope('rq', 1);
+    await persister.restoreClient();
+    expect(isBundleStale()).toBe(false);
+
+    // ...then another (newer) tab migrates the store forward.
+    const db = getAppDb()!;
+    const meta = await db.meta.get('rq');
+    await db.meta.put({ ...meta!, schemaVersion: 2 });
+
+    await persister.persistClient({
+      timestamp: 999,
+      buster: '',
+      clientState: { queries: [], mutations: [] },
+    });
+    await persister.flush();
+
+    expect(isBundleStale()).toBe(true);
+    const after = await db.meta.get('rq');
+    expect(after!.schemaVersion).toBe(2);
+    expect(after!.timestamp).not.toBe(999);
   });
 
   it('wipes session scopes on pointer mismatch instead of migrating', async () => {

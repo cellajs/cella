@@ -25,6 +25,7 @@ import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/version-changes';
 import { type AppDatabase, getAppDb, type PersistedQueryRecord } from '~/query/app-db';
 import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
+import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
@@ -169,10 +170,23 @@ function createIDBPersister(scope = 'rq') {
     timeoutId = null;
     if (!client) return;
 
+    // Persist guard (1.7): a stale bundle must never write old-shape data over
+    // a newer bundle's migrated store.
+    if (isBundleStale()) return;
+
     const db = getAppDb();
     if (!db) return;
 
     try {
+      // Disk-side guard: another tab may have migrated the store forward since
+      // this bundle booted (broadcast can race the first write).
+      const existing = await db.meta.get(scope);
+      if ((existing?.schemaVersion ?? 0) > currentSchemaVersion) {
+        markBundleStale();
+        console.debug(`[QueryPersister] Store is at a newer schema version — persisting disabled (${scope})`);
+        return;
+      }
+
       const { queries, mutations } = client.clientState;
 
       // Partition into product vs context
@@ -297,17 +311,19 @@ function createIDBPersister(scope = 'rq') {
             return undefined;
           }
           if (pointer > currentSchemaVersion) {
-            await bustQueriesKeepMutations(db);
-            const fresh = await db.meta.get(scope);
-            if (fresh) await db.meta.put({ ...fresh, schemaVersion: currentSchemaVersion });
-          } else {
-            await withMigrationLock(async () => {
-              // Re-read after acquiring the lock — another tab may have migrated.
-              const fresh = await db.meta.get(scope);
-              const freshPointer = fresh?.schemaVersion ?? currentSchemaVersion;
-              if (freshPointer < currentSchemaVersion) await migrateScopeToCurrent(db, freshPointer);
-            });
+            // Disk is ahead of this bundle — another tab migrated forward, or a
+            // rollback deploy. Never write downward (a stale tab must not wipe a
+            // newer tab's migrated cache): restore nothing, stop persisting, and
+            // let the PWA update flow replace this bundle.
+            markBundleStale();
+            return undefined;
           }
+          await withMigrationLock(async () => {
+            // Re-read after acquiring the lock — another tab may have migrated.
+            const fresh = await db.meta.get(scope);
+            const freshPointer = fresh?.schemaVersion ?? currentSchemaVersion;
+            if (freshPointer < currentSchemaVersion) await migrateScopeToCurrent(db, freshPointer);
+          });
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
